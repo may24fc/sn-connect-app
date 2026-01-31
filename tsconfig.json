@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@hr-portal/ui": ["packages/ui/src"],
+      "@hr-portal/ui/*": ["packages/ui/src/*"],
+      "@hr-portal/database": ["packages/database/src"],
+      "@hr-portal/database/*": ["packages/database/src/*"],
+      "@hr-portal/auth": ["packages/auth/src"],
+      "@hr-portal/auth/*": ["packages/auth/src/*"],
+      "@hr-portal/ai": ["packages/ai/src"],
+      "@hr-portal/ai/*": ["packages/ai/src/*"]
+    }
+  },
+  "references": [
+    { "path": "apps/web" },
+    { "path": "apps/mobile" },
+    { "path": "packages/ui" },
+    { "path": "packages/database" },
+    { "path": "packages/auth" },
+    { "path": "packages/ai" }
+  ],
+  "include": [],
+  "exclude": ["node_modules"]
+}

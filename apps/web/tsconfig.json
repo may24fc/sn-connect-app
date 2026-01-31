@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "jsx": "preserve",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@hr-portal/ui": ["../../packages/ui/src"],
+      "@hr-portal/ui/*": ["../../packages/ui/src/*"],
+      "@hr-portal/database": ["../../packages/database/src"],
+      "@hr-portal/database/*": ["../../packages/database/src/*"],
+      "@hr-portal/auth": ["../../packages/auth/src"],
+      "@hr-portal/auth/*": ["../../packages/auth/src/*"],
+      "@hr-portal/ai": ["../../packages/ai/src"],
+      "@hr-portal/ai/*": ["../../packages/ai/src/*"]
+    },
+    "incremental": true,
+    "noEmit": true
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

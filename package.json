@@ -1,0 +1,40 @@
+{
+  "name": "hr-portal",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --filter @hr-portal/web dev",
+    "dev:mobile": "pnpm --filter @hr-portal/mobile dev",
+    "build": "pnpm -r build",
+    "build:web": "pnpm --filter @hr-portal/web build",
+    "build:packages": "pnpm --filter './packages/*' build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean && rimraf node_modules",
+    "db:migrate": "pnpm --filter @hr-portal/database migrate",
+    "db:seed": "pnpm --filter @hr-portal/database seed",
+    "db:generate": "pnpm --filter @hr-portal/database generate"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@vitest/ui": "^2.1.8",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
