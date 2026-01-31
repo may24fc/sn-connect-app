@@ -49,3 +49,8 @@ n8n/data/
 # Misc
 .turbo/
 *.local
+
+# Local Claude/MCP config
+.claude/
+.mcp.json
+.playwright-mcp/
