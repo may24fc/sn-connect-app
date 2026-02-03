@@ -3,19 +3,15 @@
 import { useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar, Header, AIChatbot } from '@hr-portal/ui';
-
-// Mock user data - replace with actual auth context
-const mockUser = {
-  name: 'John Doe',
-  email: 'john.doe@company.com',
-  role: 'employee',
-};
+import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
 
 export default function EmployeeLayout({
   children,
 }: {
   children: ReactNode;
 }): ReactNode {
+  const user = useRequireAuth(['employee']);
+  const { logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -27,8 +23,7 @@ export default function EmployeeLayout({
   };
 
   const handleLogout = (): void => {
-    // TODO: Implement actual logout logic
-    router.push('/login');
+    logout();
   };
 
   const handleProfileClick = (): void => {
@@ -68,7 +63,7 @@ export default function EmployeeLayout({
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
-          user={mockUser}
+          user={user}
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
           onLogout={handleLogout}
           onProfileClick={handleProfileClick}

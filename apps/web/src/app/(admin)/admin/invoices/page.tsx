@@ -149,7 +149,7 @@ const getInitials = (name: string): string => {
     .slice(0, 2);
 };
 
-export default function COSInvoicesPage(): ReactNode {
+export default function InvoicesPage(): ReactNode {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null);

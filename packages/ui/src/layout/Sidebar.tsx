@@ -10,8 +10,13 @@ import {
   User,
   Users,
   FileCheck,
+  FileText,
   ChevronLeft,
   ChevronRight,
+  Target,
+  BarChart3,
+  GraduationCap,
+  Shield,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
@@ -29,8 +34,10 @@ export interface NavItem {
   badge?: string | number;
 }
 
+export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+
 export interface SidebarProps {
-  variant: 'employee' | 'admin' | 'cos';
+  variant: UserRole;
   currentPath: string;
   onNavigate: (href: string) => void;
   logoUrl?: string;
@@ -38,23 +45,48 @@ export interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
+// Employee navigation
 const employeeNavItems: NavItem[] = [
-  { label: 'Home', href: '/dashboard', icon: Home },
+  { label: 'Dashboard', href: '/dashboard', icon: Home },
+  { label: 'My Profile', href: '/profile', icon: User },
   { label: 'My 201 Files', href: '/files', icon: FolderOpen },
-  { label: 'Onboarding', href: '/onboarding', icon: ClipboardList },
   { label: 'Payroll', href: '/payroll', icon: Receipt },
-  { label: 'Information Hub', href: '/announcements', icon: Megaphone },
+  { label: 'Performance Reviews', href: '/performance', icon: Target },
+  { label: 'Announcements', href: '/announcements', icon: Megaphone },
+];
+
+// Intern navigation
+const internNavItems: NavItem[] = [
+  { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
+  { label: 'My Tasks', href: '/intern/tasks', icon: ClipboardList },
+  { label: 'Learning Resources', href: '/intern/learning', icon: GraduationCap },
+  { label: 'Timesheet', href: '/intern/timesheet', icon: FileText },
+  { label: 'Mentor Connect', href: '/intern/mentor', icon: Users },
+  { label: 'Documents', href: '/documents', icon: FolderOpen },
   { label: 'Profile', href: '/profile', icon: User },
 ];
 
-// Admin (HR) - Only probation tracker, no invoice access
+// Admin (HR) navigation - includes team management features
 const adminNavItems: NavItem[] = [
-  { label: 'Probation Tracker', href: '/probation', icon: Users },
+  { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
+  { label: 'Employee Management', href: '/admin/employees', icon: Users },
+  { label: 'Team Management', href: '/admin/teams', icon: BarChart3 },
+  { label: 'Leave Approvals', href: '/admin/leave-approvals', icon: ClipboardList },
+  { label: 'Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Performance Management', href: '/admin/performance', icon: Target },
+  { label: 'Recruitment', href: '/admin/recruitment', icon: GraduationCap },
 ];
 
-// COS - Only invoice approvals
-const cosNavItems: NavItem[] = [
-  { label: 'Invoice Approvals', href: '/cos/invoices', icon: FileCheck },
+// Super Admin navigation - full system access
+const superAdminNavItems: NavItem[] = [
+  { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
+  { label: 'User Management', href: '/super-admin/users', icon: Users },
+  { label: 'System Settings', href: '/super-admin/settings', icon: FileCheck },
+  { label: 'Audit Logs', href: '/super-admin/audit-logs', icon: FileText },
+  { label: 'Role Management', href: '/super-admin/roles', icon: Shield },
+  { label: 'Employee Management', href: '/admin/employees', icon: Users },
+  { label: 'Team Management', href: '/admin/teams', icon: BarChart3 },
+  { label: 'Performance', href: '/admin/performance', icon: Target },
 ];
 
 export function Sidebar({
@@ -68,8 +100,10 @@ export function Sidebar({
   const navItems =
     variant === 'employee'
       ? employeeNavItems
-      : variant === 'cos'
-      ? cosNavItems
+      : variant === 'intern'
+      ? internNavItems
+      : variant === 'super_admin'
+      ? superAdminNavItems
       : adminNavItems;
 
   return (
@@ -111,7 +145,9 @@ export function Sidebar({
         <nav className="flex-1 overflow-y-auto p-3">
           <ul className="space-y-1">
             {navItems.map((item) => {
-              const isActive = currentPath === item.href;
+              // Check if current path matches or is a child of the nav item
+              const isActive = currentPath === item.href ||
+                (item.href !== '/dashboard' && item.href !== '/' && currentPath.startsWith(item.href));
               const Icon = item.icon;
 
               const navButton = (

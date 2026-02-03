@@ -50,6 +50,14 @@ n8n/data/
 .turbo/
 *.local
 
+# Windows reserved device names (cannot be indexed by Git)
+nul
+con
+prn
+aux
+com1
+lpt1
+
 # Local Claude/MCP config
 .claude/
 .mcp.json

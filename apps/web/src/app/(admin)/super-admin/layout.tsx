@@ -5,12 +5,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar, Header, AIChatbot } from '@hr-portal/ui';
 import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
 
-export default function AdminLayout({
+export default function SuperAdminLayout({
   children,
 }: {
   children: ReactNode;
 }): ReactNode {
-  const user = useRequireAuth(['admin', 'super_admin']);
+  const user = useRequireAuth(['super_admin']);
   const { logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function AdminLayout({
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
-          variant={user.role}
+          variant="super_admin"
           currentPath={pathname}
           onNavigate={handleNavigate}
           collapsed={sidebarCollapsed}
@@ -52,7 +52,7 @@ export default function AdminLayout({
           />
           <div className="relative z-10">
             <Sidebar
-              variant={user.role}
+              variant="super_admin"
               currentPath={pathname}
               onNavigate={handleNavigate}
             />
@@ -67,7 +67,7 @@ export default function AdminLayout({
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
           onLogout={handleLogout}
           onProfileClick={handleProfileClick}
-          notificationCount={5}
+          notificationCount={8}
           onNotificationsClick={() => {
             // TODO: Open notifications panel
           }}

@@ -22,6 +22,7 @@ import {
   Badge,
   Button,
 } from '@hr-portal/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mock data - replace with actual data fetching
 const onboardingProgress = 75;
@@ -82,13 +83,15 @@ const upcomingEvents = [
 ];
 
 export default function DashboardPage(): ReactNode {
+  const { user } = useAuth();
+
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Welcome back, John!
+            Welcome back, {user?.name}!
           </h1>
           <p className="text-muted-foreground">
             Here is what is happening with your HR journey today.

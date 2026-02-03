@@ -84,3 +84,95 @@ export { Header } from './layout/Header';
 
 // Components
 export { AIChatbot, type ChatMessage, type AIChatbotProps } from './components/AIChatbot';
+
+// Performance Components
+export {
+  ReviewStatusBadge,
+  OKRStatusBadge,
+  ProgressStatusBadge,
+} from './components/performance/PerformanceStatusBadge';
+export { OKRCard, OKRList } from './components/performance/OKRCard';
+export { KPICard, KPIList, KPISummary } from './components/performance/KPICard';
+export {
+  CompletionTrendChart,
+  DepartmentPerformanceChart,
+  RatingDistributionChart,
+  ProgressGauge,
+} from './components/performance/PerformanceCharts';
+export {
+  PerformanceSummaryCards,
+  CycleProgressCards,
+} from './components/performance/PerformanceSummaryCards';
+
+// Internship Components
+export {
+  InternshipStatusBadge,
+  ReportStatusBadge,
+  HoursProgressBadge,
+} from './components/internship/InternStatusBadge';
+export { HoursProgressCard, HoursProgressMini } from './components/internship/HoursProgressCard';
+export {
+  DailyReportCard,
+  DailyReportList,
+  DailyReportSummary,
+} from './components/internship/DailyReportCard';
+export { InternCard, InternList, InternRow } from './components/internship/InternCard';
+export {
+  InternshipSummaryCards,
+  InternPersonalStats,
+} from './components/internship/InternshipSummaryCards';
+export { EODReportForm } from './components/internship/EODReportForm';
+
+// Types
+export type {
+  EmployeeId,
+  CycleId,
+  OKRId,
+  KeyResultId,
+  KPIId,
+  ReviewId,
+  CycleStatus,
+  PerformanceCycle,
+  OKRStatus,
+  KeyResult,
+  OKR,
+  KPI,
+  ReviewStatus,
+  PerformanceRating,
+  PerformanceReview,
+  EmployeePerformanceSummary,
+  PerformanceDashboardStats,
+  CompletionTrendData,
+  DepartmentPerformanceData,
+  RatingDistributionData,
+  PerformanceFilters,
+} from './types/performance.types';
+export {
+  REVIEW_STATUS_CONFIG,
+  OKR_STATUS_CONFIG,
+  RATING_CONFIG,
+} from './types/performance.types';
+
+export type {
+  InternId,
+  InternshipPeriodId,
+  DailyReportId,
+  SupervisorId,
+  InternshipStatus,
+  ReportStatus,
+  InternshipPeriod,
+  DailyReport,
+  Intern,
+  InternSummary,
+  InternDashboardStats,
+  WeeklyHoursSummary,
+  InternFilters,
+  EODReportFormData,
+} from './types/internship.types';
+export {
+  INTERNSHIP_STATUS_CONFIG,
+  REPORT_STATUS_CONFIG,
+  calculateHoursProgress,
+  getDaysRemaining,
+  isOnTrack,
+} from './types/internship.types';

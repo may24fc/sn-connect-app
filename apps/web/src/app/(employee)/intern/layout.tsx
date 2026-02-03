@@ -3,19 +3,15 @@
 import { useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar, Header, AIChatbot } from '@hr-portal/ui';
+import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
 
-// Mock COS user data - replace with actual auth context
-const mockCosUser = {
-  name: 'COS Manager',
-  email: 'cos@company.com',
-  role: 'cos',
-};
-
-export default function COSLayout({
+export default function InternLayout({
   children,
 }: {
   children: ReactNode;
 }): ReactNode {
+  const user = useRequireAuth(['intern']);
+  const { logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -27,8 +23,7 @@ export default function COSLayout({
   };
 
   const handleLogout = (): void => {
-    // TODO: Implement actual logout logic
-    router.push('/login');
+    logout();
   };
 
   const handleProfileClick = (): void => {
@@ -40,7 +35,7 @@ export default function COSLayout({
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
-          variant="cos"
+          variant="intern"
           currentPath={pathname}
           onNavigate={handleNavigate}
           collapsed={sidebarCollapsed}
@@ -57,7 +52,7 @@ export default function COSLayout({
           />
           <div className="relative z-10">
             <Sidebar
-              variant="cos"
+              variant="intern"
               currentPath={pathname}
               onNavigate={handleNavigate}
             />
@@ -68,11 +63,11 @@ export default function COSLayout({
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header
-          user={mockCosUser}
+          user={user}
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
           onLogout={handleLogout}
           onProfileClick={handleProfileClick}
-          notificationCount={3}
+          notificationCount={2}
           onNotificationsClick={() => {
             // TODO: Open notifications panel
           }}

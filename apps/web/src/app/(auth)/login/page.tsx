@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Building2, Users, Shield, TrendingUp } from 'lucide-react';
 import {
   Button,
@@ -14,36 +13,47 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  Badge,
 } from '@hr-portal/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage(): ReactNode {
-  const router = useRouter();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
 
-    // Simulated login - replace with actual auth logic
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // For demo purposes, redirect based on email/role
-    // COS users see invoice approvals
-    if (email.includes('cos')) {
-      router.push('/cos/invoices');
-    // Admin/HR users see probation tracker
-    } else if (email.includes('admin') || email.includes('hr')) {
-      router.push('/probation');
-    // Regular employees see their dashboard
-    } else {
-      router.push('/dashboard');
+    try {
+      await login(email, password);
+      // Router navigation is handled by the auth context
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    setIsLoading(false);
+  const quickLogin = async (testEmail: string): Promise<void> => {
+    setEmail(testEmail);
+    setPassword('password');
+    setError('');
+    setIsLoading(true);
+
+    try {
+      await login(testEmail, 'password');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const features = [
@@ -136,6 +146,12 @@ export default function LoginPage(): ReactNode {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -207,6 +223,59 @@ export default function LoginPage(): ReactNode {
                 {isLoading ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
+
+            {/* Quick Login for Testing */}
+            <div className="mt-6 border-t pt-6">
+              <p className="mb-3 text-center text-sm font-medium text-muted-foreground">
+                Quick Test Login
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('employee@test.com')}
+                  disabled={isLoading}
+                >
+                  <Badge variant="secondary" className="mr-2">
+                    Employee
+                  </Badge>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('intern@test.com')}
+                  disabled={isLoading}
+                >
+                  <Badge variant="secondary" className="mr-2">
+                    Intern
+                  </Badge>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('admin@test.com')}
+                  disabled={isLoading}
+                >
+                  <Badge variant="secondary" className="mr-2">
+                    Admin
+                  </Badge>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('superadmin@test.com')}
+                  disabled={isLoading}
+                >
+                  <Badge variant="secondary" className="mr-2">
+                    Super Admin
+                  </Badge>
+                </Button>
+              </div>
+            </div>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
               <p>
