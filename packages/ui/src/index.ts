@@ -107,7 +107,7 @@ export {
 // Internship Components
 export {
   InternshipStatusBadge,
-  ReportStatusBadge,
+  ReportStatusBadge as InternReportStatusBadge,
   HoursProgressBadge,
 } from './components/internship/InternStatusBadge';
 export { HoursProgressCard, HoursProgressMini } from './components/internship/HoursProgressCard';
@@ -122,6 +122,53 @@ export {
   InternPersonalStats,
 } from './components/internship/InternshipSummaryCards';
 export { EODReportForm } from './components/internship/EODReportForm';
+
+// Reports Components
+export {
+  ReportStatusBadge,
+  WeekSelector,
+  WeekDropdownSelector,
+  MetricInput,
+  MetricInputGroup,
+  ReportCard,
+  ReportList,
+  ReportSummaryCards,
+  ReportForm,
+  ReportSubmissionList,
+  SubmissionRateCard,
+  WeekComparisonTable,
+  ExpenditureVsResultsChart,
+  SpendByCategoryChart,
+  ROIByDepartmentChart,
+  WeeklyTrendsChart,
+} from './components/reports';
+export type {
+  ReportId,
+  ReportTypeId,
+  MetricId,
+  ReportStatus,
+  ReportFrequency,
+  MetricType,
+  ReportType,
+  ReportSubmission,
+  ReportContent,
+  ReportMetric,
+  WeekPeriod,
+  WeekComparison,
+  MetricComparison,
+  AnalyticsSummary,
+  DepartmentMetrics,
+  SubmissionTracking,
+} from './components/reports';
+export {
+  REPORT_STATUS_CONFIG as WEEKLY_REPORT_STATUS_CONFIG,
+  getCurrentWeekPeriod,
+  getWeekNumber,
+  formatPeriodLabel,
+  calculateTotalExpenditure,
+  calculateTotalResults,
+  calculateROI,
+} from './components/reports';
 
 // Types
 export type {

@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Target,
   GraduationCap,
+  FileText,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
@@ -47,6 +48,7 @@ const employeeNavItems: NavItem[] = [
   { label: 'My Profile', href: '/profile', icon: User },
   { label: 'My 201 Files', href: '/files', icon: FolderOpen },
   { label: 'Payroll', href: '/payroll', icon: Receipt },
+  { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
 ];
@@ -64,6 +66,7 @@ const internNavItems: NavItem[] = [
 const adminNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
 ];
@@ -72,6 +75,7 @@ const adminNavItems: NavItem[] = [
 const superAdminNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
