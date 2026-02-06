@@ -1,0 +1,178 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # PR title validation
+  validate-pr:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate PR title format
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            test
+            chore
+          requireScope: true
+          subjectPattern: ^[a-z].+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            starts with a lowercase letter and is descriptive.
+
+  # Check for sensitive files
+  security-check:
+    name: Security File Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for sensitive files
+        run: |
+          # List of patterns to check for
+          SENSITIVE_PATTERNS=(
+            "*.env"
+            "*.env.local"
+            "*.pem"
+            "*.key"
+            "*credentials*"
+            "*secrets*"
+            "*.p12"
+            "*.pfx"
+          )
+
+          FOUND_FILES=()
+
+          for pattern in "${SENSITIVE_PATTERNS[@]}"; do
+            while IFS= read -r file; do
+              if [ -n "$file" ]; then
+                FOUND_FILES+=("$file")
+              fi
+            done < <(git diff --name-only origin/master...HEAD | grep -E "$pattern" || true)
+          done
+
+          if [ ${#FOUND_FILES[@]} -gt 0 ]; then
+            echo "::error::Potentially sensitive files detected in PR:"
+            printf '%s\n' "${FOUND_FILES[@]}"
+            echo "Please review these files and ensure no secrets are committed."
+            exit 1
+          fi
+
+          echo "No sensitive files detected."
+
+  # Check for large files
+  file-size-check:
+    name: File Size Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for large files
+        run: |
+          # Check for files larger than 5MB
+          MAX_SIZE=5242880 # 5MB in bytes
+          LARGE_FILES=()
+
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null)
+              if [ "$size" -gt "$MAX_SIZE" ]; then
+                LARGE_FILES+=("$file ($(numfmt --to=iec-i --suffix=B $size))")
+              fi
+            fi
+          done < <(git diff --name-only origin/master...HEAD)
+
+          if [ ${#LARGE_FILES[@]} -gt 0 ]; then
+            echo "::warning::Large files detected in PR:"
+            printf '%s\n' "${LARGE_FILES[@]}"
+            echo "Consider using Git LFS for large binary files."
+          else
+            echo "No large files detected."
+          fi
+
+  # Check for TODOs and FIXMEs
+  todo-check:
+    name: TODO/FIXME Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for TODOs and FIXMEs
+        run: |
+          # Find TODOs and FIXMEs in changed files
+          TODOS=$(git diff origin/master...HEAD | grep -E '^\+.*\b(TODO|FIXME)\b' | grep -v '^+++' || true)
+
+          if [ -n "$TODOS" ]; then
+            echo "::notice::TODOs/FIXMEs found in this PR:"
+            echo "$TODOS"
+            echo ""
+            echo "Consider creating GitHub issues for these items."
+          else
+            echo "No new TODOs or FIXMEs found."
+          fi
+
+  # PR size check
+  pr-size:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR size
+        run: |
+          # Count lines changed
+          ADDED=$(git diff --numstat origin/master...HEAD | awk '{sum+=$1} END {print sum}')
+          DELETED=$(git diff --numstat origin/master...HEAD | awk '{sum+=$2} END {print sum}')
+          TOTAL=$((ADDED + DELETED))
+
+          echo "Lines added: $ADDED"
+          echo "Lines deleted: $DELETED"
+          echo "Total changes: $TOTAL"
+
+          # Warn if PR is very large (>1000 lines)
+          if [ "$TOTAL" -gt 1000 ]; then
+            echo "::warning::This PR is quite large ($TOTAL lines changed)."
+            echo "Consider breaking it into smaller PRs for easier review."
+          fi
+
+          # Add to PR summary
+          echo "### PR Size" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lines added:** $ADDED" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lines deleted:** $DELETED" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total changes:** $TOTAL" >> $GITHUB_STEP_SUMMARY
