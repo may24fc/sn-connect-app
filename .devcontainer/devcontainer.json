@@ -1,0 +1,22 @@
+{
+  "name": "HR Portal Dev",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:18",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    // CORRECTED: Use 'latest' or '1' (not 1.0) for the official feature
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "supabase.supabase-vscode",
+        // CORRECTED: Use 'Anthropic.claude-code' (Case sensitive)
+        "Anthropic.claude-code"
+      ]
+    }
+  },
+  "postCreateCommand": "npm install"
+}

@@ -1,85 +1,26 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { Sidebar, Header, AIChatbot } from '@hr-portal/ui';
-import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
+import { type ReactNode } from 'react';
+import { useRequireAuth } from '@/contexts/AuthContext';
 
+/**
+ * Super Admin Layout - Passthrough
+ *
+ * This layout only enforces role-based access control.
+ * The parent (admin) layout handles the UI (sidebar, header, chatbot).
+ *
+ * @security
+ * - Enforces super_admin only access
+ * - Parent layout at (admin)/layout.tsx renders the super_admin sidebar variant
+ */
 export default function SuperAdminLayout({
   children,
 }: {
   children: ReactNode;
 }): ReactNode {
-  const user = useRequireAuth(['super_admin']);
-  const { logout } = useAuth();
-  const pathname = usePathname();
-  const router = useRouter();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Enforce super_admin access only
+  useRequireAuth(['super_admin']);
 
-  const handleNavigate = (href: string): void => {
-    router.push(href);
-    setMobileMenuOpen(false);
-  };
-
-  const handleLogout = (): void => {
-    logout();
-  };
-
-  const handleProfileClick = (): void => {
-    router.push('/profile');
-  };
-
-  return (
-    <div className="flex h-screen bg-muted/30">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar
-          variant="super_admin"
-          currentPath={pathname}
-          onNavigate={handleNavigate}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="relative z-10">
-            <Sidebar
-              variant="super_admin"
-              currentPath={pathname}
-              onNavigate={handleNavigate}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header
-          user={user}
-          onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-          onLogout={handleLogout}
-          onProfileClick={handleProfileClick}
-          notificationCount={8}
-          onNotificationsClick={() => {
-            // TODO: Open notifications panel
-          }}
-        />
-
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
-      </div>
-
-      {/* AI Chatbot */}
-      <AIChatbot />
-    </div>
-  );
+  // Return children without wrapping UI - parent layout handles that
+  return <>{children}</>;
 }

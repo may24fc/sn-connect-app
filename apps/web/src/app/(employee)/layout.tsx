@@ -10,7 +10,7 @@ export default function EmployeeLayout({
 }: {
   children: ReactNode;
 }): ReactNode {
-  const user = useRequireAuth(['employee']);
+  const user = useRequireAuth(['employee', 'intern']);
   const { logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -30,12 +30,15 @@ export default function EmployeeLayout({
     router.push('/profile');
   };
 
+  // Determine sidebar variant based on user role
+  const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
+
   return (
     <div className="flex h-screen bg-muted/30">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
-          variant="employee"
+          variant={sidebarVariant}
           currentPath={pathname}
           onNavigate={handleNavigate}
           collapsed={sidebarCollapsed}
@@ -52,7 +55,7 @@ export default function EmployeeLayout({
           />
           <div className="relative z-10">
             <Sidebar
-              variant="employee"
+              variant={sidebarVariant}
               currentPath={pathname}
               onNavigate={handleNavigate}
             />
