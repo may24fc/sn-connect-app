@@ -8,9 +8,7 @@ import {
   Receipt,
   Megaphone,
   User,
-  Users,
   FileCheck,
-  FileText,
   ChevronLeft,
   ChevronRight,
   Target,
@@ -53,15 +51,13 @@ const employeeNavItems: NavItem[] = [
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
 ];
 
-// Intern navigation
+// Intern navigation - same as employee except different dashboard and no payroll
 const internNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
-  { label: 'My Tasks', href: '/intern/tasks', icon: ClipboardList },
-  { label: 'Learning Resources', href: '/intern/learning', icon: GraduationCap },
-  { label: 'Timesheet', href: '/intern/timesheet', icon: FileText },
-  { label: 'Mentor Connect', href: '/intern/mentor', icon: Users },
-  { label: 'Documents', href: '/documents', icon: FolderOpen },
-  { label: 'Profile', href: '/profile', icon: User },
+  { label: 'My Profile', href: '/profile', icon: User },
+  { label: 'My 201 Files', href: '/files', icon: FolderOpen },
+  { label: 'Performance Reviews', href: '/performance', icon: Target },
+  { label: 'Announcements', href: '/announcements', icon: Megaphone },
 ];
 
 // Admin (HR) navigation - includes team management features
