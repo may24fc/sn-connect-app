@@ -14,9 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
-  BarChart3,
   GraduationCap,
-  Shield,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
@@ -69,24 +67,18 @@ const internNavItems: NavItem[] = [
 // Admin (HR) navigation - includes team management features
 const adminNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
-  { label: 'Employee Management', href: '/admin/employees', icon: Users },
-  { label: 'Team Management', href: '/admin/teams', icon: BarChart3 },
-  { label: 'Leave Approvals', href: '/admin/leave-approvals', icon: ClipboardList },
-  { label: 'Reports', href: '/admin/reports', icon: FileText },
-  { label: 'Performance Management', href: '/admin/performance', icon: Target },
-  { label: 'Recruitment', href: '/admin/recruitment', icon: GraduationCap },
+  { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Performance', href: '/admin/performance', icon: Target },
+  { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
 ];
 
-// Super Admin navigation - full system access
+// Super Admin navigation - same as admin plus payroll approvals
 const superAdminNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
-  { label: 'User Management', href: '/super-admin/users', icon: Users },
-  { label: 'System Settings', href: '/super-admin/settings', icon: FileCheck },
-  { label: 'Audit Logs', href: '/super-admin/audit-logs', icon: FileText },
-  { label: 'Role Management', href: '/super-admin/roles', icon: Shield },
-  { label: 'Employee Management', href: '/admin/employees', icon: Users },
-  { label: 'Team Management', href: '/admin/teams', icon: BarChart3 },
+  { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Performance', href: '/admin/performance', icon: Target },
+  { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
+  { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
 ];
 
 export function Sidebar({

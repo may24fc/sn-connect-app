@@ -8,11 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
  * Layout for payroll approvals routes with strict role-based access control.
  *
  * Security Rule: Only super_admin can access payroll approvals.
- * Regular admins cannot view or approve payroll/invoices.
+ * Regular admins and other roles cannot view or approve payroll/invoices.
  *
  * @security
  * - Enforces super_admin only access at layout level
- * - Redirects regular admins to their dashboard
+ * - Redirects other users to their appropriate dashboard
  * - Client-side guard (should be paired with server-side validation in production)
  */
 export default function PayrollApprovalsLayout({

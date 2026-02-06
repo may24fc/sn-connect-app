@@ -149,7 +149,7 @@ const getInitials = (name: string): string => {
     .slice(0, 2);
 };
 
-export default function InvoicesPage(): ReactNode {
+export default function PayrollApprovalsPage(): ReactNode {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null);
@@ -196,7 +196,7 @@ export default function InvoicesPage(): ReactNode {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Invoice Approvals</h1>
+        <h1 className="text-2xl font-bold text-foreground">Payroll Approvals</h1>
         <p className="text-muted-foreground">
           Review and approve contractor invoice submissions
         </p>
