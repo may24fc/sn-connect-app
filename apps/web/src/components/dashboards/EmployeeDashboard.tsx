@@ -11,6 +11,7 @@ import {
   Target,
   Calendar,
   TrendingUp,
+  CheckSquare,
 } from 'lucide-react';
 import {
   Card,
@@ -21,7 +22,9 @@ import {
   Progress,
   Badge,
   Button,
+  TaskCard,
 } from '@hr-portal/ui';
+import type { Task, TaskId, TaskStatus } from '@hr-portal/ui';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Mock data - replace with actual data fetching
@@ -80,6 +83,52 @@ const announcements = [
 const upcomingEvents = [
   { title: 'Performance Review', date: 'Jan 15, 2024', time: '2:00 PM' },
   { title: 'Team Building', date: 'Jan 20, 2024', time: '10:00 AM' },
+];
+
+// Mock tasks - replace with actual data fetching
+const recentTasks: Task[] = [
+  {
+    id: '1' as TaskId,
+    title: 'Review Q1 Financial Reports',
+    description: 'Analyze and review all financial reports from Q1.',
+    priority: 'high',
+    status: 'in_progress',
+    category: 'Finance',
+    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'admin-1',
+    createdByName: 'Admin User',
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    assignees: [],
+  },
+  {
+    id: '2' as TaskId,
+    title: 'Prepare Monthly Report',
+    description: 'Compile and prepare the monthly departmental report.',
+    priority: 'medium',
+    status: 'pending',
+    category: 'Reports',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'admin-1',
+    createdByName: 'Admin User',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    assignees: [],
+  },
+  {
+    id: '3' as TaskId,
+    title: 'Update Documentation',
+    description: 'Update the project documentation with recent changes.',
+    priority: 'urgent',
+    status: 'pending',
+    category: 'Documentation',
+    dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'admin-1',
+    createdByName: 'Admin User',
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    assignees: [],
+  },
 ];
 
 export default function EmployeeDashboard(): ReactNode {
@@ -216,6 +265,42 @@ export default function EmployeeDashboard(): ReactNode {
           ))}
         </div>
       </div>
+
+      {/* Assigned Tasks */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <CheckSquare className="h-5 w-5" />
+              Assigned Tasks
+            </CardTitle>
+            <CardDescription>Tasks requiring your attention</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/tasks">View All</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {recentTasks.length > 0 ? (
+            <div className="space-y-3">
+              {recentTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  variant="compact"
+                  onViewDetails={() => window.location.href = `/tasks/${task.id}`}
+                  showAssignees={false}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No tasks assigned yet</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Announcements */}
       <Card>

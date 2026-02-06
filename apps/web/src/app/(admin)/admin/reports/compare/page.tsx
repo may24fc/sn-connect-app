@@ -11,6 +11,7 @@ import {
   CardTitle,
   WeekDropdownSelector,
   WeekComparisonTable,
+  InsightsSummary,
   type WeekPeriod,
   type WeekComparison,
   getCurrentWeekPeriod,
@@ -157,7 +158,7 @@ export default function ComparePage(): React.ReactNode {
           <span className="sr-only">Back to tracking</span>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Week-over-Week Comparison</h1>
+          <h1 className="text-headline">Week-over-Week Comparison</h1>
           <p className="text-muted-foreground">
             Compare metrics between consecutive weeks
           </p>
@@ -196,6 +197,38 @@ export default function ComparePage(): React.ReactNode {
           </div>
         </CardContent>
       </Card>
+
+      {/* Insights Summary */}
+      <InsightsSummary
+        title="Week-over-Week Analysis"
+        summary="Strong growth across most metrics with notable improvements in lead generation and revenue. Submission rate declined but remains acceptable."
+        keyFindings={[
+          {
+            metric: 'Lead Generation',
+            insight: 'Leads increased by 36.1% (65 additional leads), driven by improved Facebook ad targeting',
+            highlight: true,
+          },
+          {
+            metric: 'Revenue Growth',
+            insight: 'Revenue grew 18.1% (PHP 52k increase) while spend only increased 13.6%',
+            highlight: true,
+          },
+          {
+            metric: 'Submission Rate',
+            insight: 'Submissions dropped from 22 to 18, investigate with team leads',
+            highlight: true,
+          },
+          {
+            metric: 'Social Media',
+            insight: 'New followers surged by 41.2%, indicating strong brand awareness campaign',
+          },
+        ]}
+        recommendations={[
+          'Follow up with the 4 team members who didn\'t submit reports this week',
+          'Increase Facebook Ads budget given the 36% improvement in lead generation',
+          'Analyze what changed in social media strategy to replicate the follower growth',
+        ]}
+      />
 
       {/* Comparison Table */}
       <WeekComparisonTable comparison={comparison} />

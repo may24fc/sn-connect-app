@@ -18,6 +18,9 @@ import {
   SpendByCategoryChart,
   ROIByDepartmentChart,
   WeeklyTrendsChart,
+  MetricKPICard,
+  MetricKPICardGrid,
+  InsightsSummary,
 } from '@hr-portal/ui';
 
 // Mock data - replace with actual API calls
@@ -82,7 +85,7 @@ export default function AnalyticsPage(): React.ReactNode {
           <span className="sr-only">Back to tracking</span>
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold">Reports Analytics</h1>
+          <h1 className="text-headline">Reports Analytics</h1>
           <p className="text-muted-foreground">
             Visualize expenditure vs results with comprehensive charts
           </p>
@@ -130,63 +133,75 @@ export default function AnalyticsPage(): React.ReactNode {
         </CardContent>
       </Card>
 
-      {/* Summary Metrics */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              PHP {(totalExpenditure / 1000).toFixed(0)}k
-            </div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 text-green-600">
-              <TrendingUp className="h-3 w-3" />
-              +12% from last period
-            </p>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <MetricKPICardGrid>
+        <MetricKPICard
+          label="Total Spend"
+          value={`PHP ${(totalExpenditure / 1000).toFixed(0)}k`}
+          change={{
+            absolute: '+PHP 72k',
+            percent: 12,
+            trend: 'up',
+          }}
+          color="blue"
+        />
+        <MetricKPICard
+          label="Total Results"
+          value={`PHP ${(totalResults / 1000).toFixed(0)}k`}
+          change={{
+            absolute: '+PHP 335k',
+            percent: 18,
+            trend: 'up',
+          }}
+          color="green"
+        />
+        <MetricKPICard
+          label="Average ROI"
+          value={`${averageROI.toFixed(1)}%`}
+          change={{
+            absolute: '+6%',
+            percent: 6,
+            trend: 'up',
+          }}
+          color="green"
+        />
+        <MetricKPICard
+          label="Total Reports"
+          value={totalReports}
+          change={{
+            absolute: `${totalReports}`,
+            trend: 'stable',
+          }}
+          color="blue"
+        />
+      </MetricKPICardGrid>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              PHP {(totalResults / 1000).toFixed(0)}k
-            </div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 text-green-600">
-              <TrendingUp className="h-3 w-3" />
-              +18% from last period
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average ROI</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {averageROI.toFixed(1)}%
-            </div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 text-green-600">
-              <TrendingUp className="h-3 w-3" />
-              +6% from last period
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reports</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalReports}</div>
-            <p className="text-xs text-muted-foreground">100% submission rate</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Insights Summary */}
+      <InsightsSummary
+        title="Analytics Insights"
+        summary="Strong performance across all departments with ROI trending upward. Marketing continues to drive the highest returns, while Operations shows steady improvement."
+        keyFindings={[
+          {
+            metric: 'Top Performer',
+            insight: 'Marketing department achieved 280% ROI, exceeding target by 40%',
+            highlight: true,
+          },
+          {
+            metric: 'Growth Trend',
+            insight: 'Overall expenditure increased 12% while results grew 18%, indicating improved efficiency',
+            highlight: true,
+          },
+          {
+            metric: 'Submission Rate',
+            insight: '100% report submission rate maintained for 6 consecutive weeks',
+          },
+        ]}
+        recommendations={[
+          'Increase marketing budget allocation given the 280% ROI performance',
+          'Share Marketing team\'s best practices with Operations to improve their ROI',
+          'Consider quarterly deep-dive analysis to identify long-term trends',
+        ]}
+      />
 
       {/* Main Chart */}
       <ExpenditureVsResultsChart data={WEEKLY_DATA} />

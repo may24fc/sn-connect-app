@@ -13,6 +13,9 @@ import {
   SelectValue,
   ReportSummaryCards,
   ReportList,
+  MetricKPICard,
+  MetricKPICardGrid,
+  InsightsSummary,
   type ReportSubmission,
   type ReportStatus,
 } from '@hr-portal/ui';
@@ -155,7 +158,7 @@ export default function ReportsPage(): React.ReactNode {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">My Weekly Reports</h1>
+          <h1 className="text-headline">My Weekly Reports</h1>
           <p className="text-muted-foreground">
             Track and submit your weekly activity reports
           </p>
@@ -166,11 +169,70 @@ export default function ReportsPage(): React.ReactNode {
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <ReportSummaryCards
-        totalReports={totalReports}
-        submittedThisMonth={submittedThisMonth}
-        pendingDrafts={pendingDrafts}
+      {/* KPI Cards */}
+      <MetricKPICardGrid>
+        <MetricKPICard
+          label="Total Reports"
+          value={totalReports}
+          change={{
+            absolute: `+${submittedThisMonth}`,
+            percent: submittedThisMonth > 0 ? ((submittedThisMonth / totalReports) * 100) : 0,
+            trend: submittedThisMonth > 0 ? 'up' : 'stable',
+          }}
+          color="blue"
+        />
+        <MetricKPICard
+          label="This Month"
+          value={submittedThisMonth}
+          change={{
+            absolute: `${submittedThisMonth}`,
+            trend: 'up',
+          }}
+          color="green"
+        />
+        <MetricKPICard
+          label="Pending Drafts"
+          value={pendingDrafts}
+          change={{
+            absolute: `${pendingDrafts}`,
+            trend: pendingDrafts > 0 ? 'down' : 'stable',
+          }}
+          color={pendingDrafts > 0 ? 'orange' : 'green'}
+        />
+        <MetricKPICard
+          label="Completion Rate"
+          value={`${Math.round((submittedThisMonth / (totalReports || 1)) * 100)}%`}
+          change={{
+            absolute: '+15%',
+            trend: 'up',
+          }}
+          color="green"
+        />
+      </MetricKPICardGrid>
+
+      {/* Insights Summary */}
+      <InsightsSummary
+        title="Your Reporting Performance"
+        summary="You've maintained strong reporting consistency this month with all submissions on time. Keep up the excellent work!"
+        keyFindings={[
+          {
+            metric: 'Submission Streak',
+            insight: '100% on-time submissions for the past 4 weeks',
+            highlight: true,
+          },
+          {
+            metric: 'Engagement',
+            insight: 'Average report detail level is above team average',
+          },
+          {
+            metric: 'Trends',
+            insight: 'Your marketing spend ROI has improved by 23% over the last month',
+          },
+        ]}
+        recommendations={[
+          'Consider adding more visual data to your reports using charts',
+          'Continue documenting challenges for better team transparency',
+        ]}
       />
 
       {/* Filters */}

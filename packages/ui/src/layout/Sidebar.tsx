@@ -14,6 +14,7 @@ import {
   Target,
   GraduationCap,
   FileText,
+  CheckSquare,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
@@ -45,6 +46,7 @@ export interface SidebarProps {
 // Employee navigation
 const employeeNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
+  { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'My Profile', href: '/profile', icon: User },
   { label: 'My 201 Files', href: '/files', icon: FolderOpen },
   { label: 'Payroll', href: '/payroll', icon: Receipt },
@@ -56,6 +58,7 @@ const employeeNavItems: NavItem[] = [
 // Intern navigation - same as employee except different dashboard and no payroll
 const internNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
+  { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'My Profile', href: '/profile', icon: User },
   { label: 'My 201 Files', href: '/files', icon: FolderOpen },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
@@ -74,6 +77,7 @@ const adminNavItems: NavItem[] = [
 // Super Admin navigation - same as admin plus payroll approvals
 const superAdminNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
+  { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },

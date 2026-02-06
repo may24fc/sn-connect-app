@@ -141,7 +141,29 @@ export {
   SpendByCategoryChart,
   ROIByDepartmentChart,
   WeeklyTrendsChart,
+  MetricKPICard,
+  MetricKPICardGrid,
+  InsightsSummary,
+  InsightsSummaryList,
 } from './components/reports';
+export type {
+  MetricKPICardProps,
+  InsightsSummaryProps,
+  KeyFinding,
+} from './components/reports';
+
+// Task Components
+export {
+  TaskPriorityBadge,
+  TaskStatusBadge,
+  TaskCard,
+  TaskSummaryCards,
+  TaskFilters,
+  TaskAssigneeSelect,
+  TaskForm,
+  TaskList,
+  TaskDetailView,
+} from './components/tasks';
 export type {
   ReportId,
   ReportTypeId,
@@ -223,3 +245,22 @@ export {
   getDaysRemaining,
   isOnTrack,
 } from './types/internship.types';
+
+export type {
+  TaskId,
+  TaskAssignmentId,
+  TaskPriority,
+  TaskStatus,
+  Task,
+  TaskAssignee,
+  TaskFormData,
+  TaskFilters,
+  TaskDashboardStats,
+} from './types/task.types';
+export {
+  TASK_PRIORITY_CONFIG,
+  TASK_STATUS_CONFIG,
+  isTaskOverdue,
+  getDaysUntilDue,
+  formatDueDate,
+} from './types/task.types';

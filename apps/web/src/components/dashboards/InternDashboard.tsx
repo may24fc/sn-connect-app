@@ -11,6 +11,7 @@ import {
   User,
   GraduationCap,
   Building2,
+  CheckSquare,
 } from 'lucide-react';
 import {
   Card,
@@ -24,11 +25,14 @@ import {
   InternPersonalStats,
   DailyReportSummary,
   EODReportForm,
+  TaskCard,
   type DailyReport,
   type EODReportFormData,
   type InternId,
   type DailyReportId,
   type InternshipPeriodId,
+  type Task,
+  type TaskId,
   getDaysRemaining,
 } from '@hr-portal/ui';
 
@@ -90,6 +94,38 @@ const mockRecentReports: DailyReport[] = [
     reviewedAt: '2024-02-14T10:00:00Z',
     createdAt: '2024-02-13T17:00:00Z',
     updatedAt: '2024-02-14T10:00:00Z',
+  },
+];
+
+// Mock tasks - replace with actual data fetching
+const mockTasks: Task[] = [
+  {
+    id: '1' as TaskId,
+    title: 'Complete Onboarding Documentation',
+    description: 'Review and complete all onboarding documentation for the internship program.',
+    priority: 'high',
+    status: 'in_progress',
+    category: 'Onboarding',
+    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'supervisor-1',
+    createdByName: 'Sarah Johnson',
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    assignees: [],
+  },
+  {
+    id: '2' as TaskId,
+    title: 'Shadow Development Team',
+    description: 'Spend time shadowing the development team to learn about their workflows and processes.',
+    priority: 'medium',
+    status: 'pending',
+    category: 'Learning',
+    dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    createdBy: 'supervisor-1',
+    createdByName: 'Sarah Johnson',
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    assignees: [],
   },
 ];
 
@@ -263,6 +299,45 @@ export default function InternDashboard(): ReactNode {
           isSubmitting={isSubmitting}
         />
       )}
+
+      {/* Assigned Tasks */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <CheckSquare className="h-5 w-5" />
+              Assigned Tasks
+            </CardTitle>
+            <CardDescription>Tasks requiring your attention</CardDescription>
+          </div>
+          <Link href="/tasks">
+            <Button variant="outline" size="sm">
+              View All
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {mockTasks.length > 0 ? (
+            <div className="space-y-3">
+              {mockTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  variant="compact"
+                  onViewDetails={() => (window.location.href = `/tasks/${task.id}`)}
+                  showAssignees={false}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>No tasks assigned yet</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Reports */}
       <Card>

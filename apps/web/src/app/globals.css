@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,6 +26,39 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 217 91% 60%;
     --radius: 0.5rem;
+
+    /* Enhanced Color Palette */
+    --navy-50: 222 47% 97%;
+    --navy-100: 221 43% 93%;
+    --navy-200: 222 41% 85%;
+    --navy-300: 223 41% 72%;
+    --navy-400: 223 40% 58%;
+    --navy-500: 223 39% 44%;
+    --navy-600: 223 47% 35%;
+    --navy-700: 223 49% 28%;
+    --navy-800: 222 52% 23%;
+    --navy-900: 222 55% 19%;
+    --navy-950: 222 57% 12%;
+
+    --gold-50: 48 100% 97%;
+    --gold-100: 48 95% 91%;
+    --gold-200: 48 94% 81%;
+    --gold-300: 46 94% 68%;
+    --gold-400: 43 96% 56%;
+    --gold-500: 38 92% 50%;
+    --gold-600: 32 95% 44%;
+    --gold-700: 26 90% 37%;
+    --gold-800: 23 83% 31%;
+    --gold-900: 22 78% 26%;
+    --gold-950: 21 92% 14%;
+
+    /* Chart Colors */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 61% 50%;
+    --chart-5: 345 82% 53%;
+    --chart-6: 199 89% 48%;
   }
 
   * {
@@ -32,7 +67,14 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Typography Enhancements */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 700;
   }
 
   /* Custom scrollbar */
@@ -69,6 +111,57 @@
   .gradient-text {
     @apply bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent;
   }
+
+  /* Typography Utilities */
+  .text-display {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .text-headline {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .text-title {
+    @apply text-xl md:text-2xl font-semibold tracking-tight;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .text-body {
+    @apply text-base leading-relaxed;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .text-label {
+    @apply text-sm font-medium uppercase tracking-wide text-muted-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .text-metric {
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .text-metric-sm {
+    @apply text-xl md:text-2xl lg:text-3xl font-bold tracking-tight tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .text-data {
+    @apply text-base font-medium tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .text-code {
+    @apply text-sm font-mono;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .text-insight {
+    @apply text-sm leading-relaxed text-muted-foreground;
+    font-family: 'Inter', sans-serif;
+  }
 }
 
 @layer utilities {
@@ -86,4 +179,59 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Color Utilities - Navy */
+  .bg-navy-50 { background-color: hsl(var(--navy-50)); }
+  .bg-navy-100 { background-color: hsl(var(--navy-100)); }
+  .bg-navy-500 { background-color: hsl(var(--navy-500)); }
+  .bg-navy-600 { background-color: hsl(var(--navy-600)); }
+  .bg-navy-700 { background-color: hsl(var(--navy-700)); }
+  .bg-navy-800 { background-color: hsl(var(--navy-800)); }
+  .bg-navy-900 { background-color: hsl(var(--navy-900)); }
+
+  .text-navy-50 { color: hsl(var(--navy-50)); }
+  .text-navy-600 { color: hsl(var(--navy-600)); }
+  .text-navy-700 { color: hsl(var(--navy-700)); }
+  .text-navy-800 { color: hsl(var(--navy-800)); }
+  .text-navy-900 { color: hsl(var(--navy-900)); }
+
+  .border-navy-200 { border-color: hsl(var(--navy-200)); }
+  .border-navy-300 { border-color: hsl(var(--navy-300)); }
+  .border-navy-500 { border-color: hsl(var(--navy-500)); }
+
+  /* Color Utilities - Gold */
+  .bg-gold-50 { background-color: hsl(var(--gold-50)); }
+  .bg-gold-100 { background-color: hsl(var(--gold-100)); }
+  .bg-gold-500 { background-color: hsl(var(--gold-500)); }
+  .bg-gold-600 { background-color: hsl(var(--gold-600)); }
+
+  .text-gold-600 { color: hsl(var(--gold-600)); }
+  .text-gold-700 { color: hsl(var(--gold-700)); }
+  .text-gold-800 { color: hsl(var(--gold-800)); }
+
+  .border-gold-200 { border-color: hsl(var(--gold-200)); }
+  .border-gold-300 { border-color: hsl(var(--gold-300)); }
+  .border-gold-500 { border-color: hsl(var(--gold-500)); }
+
+  /* Chart Colors */
+  .fill-chart-1 { fill: hsl(var(--chart-1)); }
+  .fill-chart-2 { fill: hsl(var(--chart-2)); }
+  .fill-chart-3 { fill: hsl(var(--chart-3)); }
+  .fill-chart-4 { fill: hsl(var(--chart-4)); }
+  .fill-chart-5 { fill: hsl(var(--chart-5)); }
+  .fill-chart-6 { fill: hsl(var(--chart-6)); }
+
+  .stroke-chart-1 { stroke: hsl(var(--chart-1)); }
+  .stroke-chart-2 { stroke: hsl(var(--chart-2)); }
+  .stroke-chart-3 { stroke: hsl(var(--chart-3)); }
+  .stroke-chart-4 { stroke: hsl(var(--chart-4)); }
+  .stroke-chart-5 { stroke: hsl(var(--chart-5)); }
+  .stroke-chart-6 { stroke: hsl(var(--chart-6)); }
+
+  .text-chart-1 { color: hsl(var(--chart-1)); }
+  .text-chart-2 { color: hsl(var(--chart-2)); }
+  .text-chart-3 { color: hsl(var(--chart-3)); }
+  .text-chart-4 { color: hsl(var(--chart-4)); }
+  .text-chart-5 { color: hsl(var(--chart-5)); }
+  .text-chart-6 { color: hsl(var(--chart-6)); }
 }
