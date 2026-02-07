@@ -114,8 +114,8 @@ export function TaskList({
           <TaskCard
             key={task.id}
             task={task}
-            onStatusChange={onStatusChange}
-            onViewDetails={onViewDetails}
+            {...(onStatusChange && { onStatusChange })}
+            {...(onViewDetails && { onViewDetails })}
             showAssignees={true}
           />
         ))}
@@ -134,8 +134,7 @@ export function TaskList({
                 {selectable && (
                   <TableHead className="w-12">
                     <Checkbox
-                      checked={allSelected}
-                      indeterminate={someSelected}
+                      checked={someSelected ? 'indeterminate' : allSelected}
                       onCheckedChange={handleSelectAll}
                       aria-label="Select all tasks"
                     />

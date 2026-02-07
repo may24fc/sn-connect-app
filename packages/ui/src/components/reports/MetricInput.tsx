@@ -164,7 +164,7 @@ export function MetricInputGroup({
               metric={metric}
               onChange={(updated) => handleUpdateMetric(index, updated)}
               onRemove={() => handleRemoveMetric(index)}
-              categories={categories}
+              {...(categories && { categories })}
             />
           ))
         )}

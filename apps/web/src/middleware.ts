@@ -21,9 +21,7 @@ import type { NextRequest } from 'next/server';
  * - Add CSRF protection
  */
 
-export function middleware(request: NextRequest): NextResponse {
-  const { pathname } = request.nextUrl;
-
+export function middleware(_request: NextRequest): NextResponse {
   // Allow all requests to pass through
   // Auth guards are handled by useRequireAuth hook in layouts
   // This middleware will be enhanced with JWT validation in production

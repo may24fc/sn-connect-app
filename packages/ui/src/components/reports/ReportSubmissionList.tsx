@@ -21,7 +21,7 @@ import {
 } from '../../primitives/select';
 import { cn } from '../../utils/cn';
 import { ReportStatusBadge } from './ReportStatusBadge';
-import type { ReportSubmission, ReportStatus } from './types';
+import type { ReportSubmission } from './types';
 
 interface ReportSubmissionListProps {
   submissions: ReportSubmission[];

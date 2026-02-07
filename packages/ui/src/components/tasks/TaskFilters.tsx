@@ -13,7 +13,7 @@ import {
 } from '../../primitives/select';
 import { Label } from '../../primitives/label';
 import { cn } from '../../utils/cn';
-import type { TaskFilters, TaskStatus, TaskPriority } from '../../types/task.types';
+import type { TaskFilters } from '../../types/task.types';
 
 export interface TaskFiltersProps {
   filters: TaskFilters;

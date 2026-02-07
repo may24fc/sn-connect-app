@@ -160,7 +160,7 @@ export function ChatInterface({
       role: 'assistant',
       content,
       timestamp: new Date(),
-      sources: sources.length > 0 ? sources : undefined,
+      ...(sources.length > 0 && { sources }),
     };
 
     setMessages((prev) => [...prev, assistantMessage]);

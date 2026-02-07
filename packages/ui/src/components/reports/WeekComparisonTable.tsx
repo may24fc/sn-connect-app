@@ -19,7 +19,7 @@ import {
 } from '../../primitives/table';
 import { Badge } from '../../primitives/badge';
 import { cn } from '../../utils/cn';
-import type { WeekComparison, MetricComparison } from './types';
+import type { WeekComparison } from './types';
 import { formatPeriodLabel } from './types';
 
 interface WeekComparisonTableProps {

@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '../../primitives/card';
@@ -106,7 +105,7 @@ export function ReportForm({
       challenges: challenges.filter((c) => c.trim() !== ''),
       nextWeekPlans: nextWeekPlans.filter((p) => p.trim() !== ''),
       metrics,
-      notes: notes || undefined,
+      ...(notes && { notes }),
     };
   };
 

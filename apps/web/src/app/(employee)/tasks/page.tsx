@@ -1,32 +1,38 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { CheckSquare, Clock, ArrowRight, CheckCircle2, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import {
+  Badge,
   Tabs,
+  TabsContent,
   TabsList,
   TabsTrigger,
-  TabsContent,
   TaskFilters,
   TaskList,
-  Badge,
 } from '@hr-portal/ui';
-import type {
-  Task,
-  TaskId,
-  TaskStatus,
-  TaskFilters as TaskFiltersType,
-} from '@hr-portal/ui';
-import { useAuth } from '@/contexts/AuthContext';
+import type { Task, TaskId, TaskPriority, TaskStatus } from '@hr-portal/ui';
+
+// Local filter type to avoid name collision with TaskFilters component
+interface TaskFiltersState {
+  status?: TaskStatus | 'all';
+  priority?: TaskPriority | 'all';
+  assigneeId?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+import { ArrowRight, CheckCircle2, CheckSquare, Clock, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 
 // Mock data - Replace with actual API calls
-const mockTasks: Task[] = [
+const mockTasks: Array<Task> = [
   {
     id: '1' as TaskId,
     title: 'Review Q1 Financial Reports',
-    description: 'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities.',
+    description:
+      'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities.',
     priority: 'high',
     status: 'in_progress',
     category: 'Finance',
@@ -50,7 +56,8 @@ const mockTasks: Task[] = [
   {
     id: '2' as TaskId,
     title: 'Prepare Monthly Report',
-    description: 'Compile and prepare the monthly departmental report for submission to management.',
+    description:
+      'Compile and prepare the monthly departmental report for submission to management.',
     priority: 'medium',
     status: 'pending',
     category: 'Reports',
@@ -123,11 +130,11 @@ const mockTasks: Task[] = [
 ];
 
 export default function MyTasksPage(): ReactNode {
-  const { user } = useAuth();
+  useAuth(); // Ensure user is authenticated
   const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Array<Task>>(mockTasks);
   const [activeTab, setActiveTab] = useState<TaskStatus | 'all'>('all');
-  const [filters, setFilters] = useState<TaskFiltersType>({});
+  const [filters, setFilters] = useState<TaskFiltersState>({});
 
   // Calculate task counts per status
   const taskCounts = useMemo(() => {
@@ -177,9 +184,7 @@ export default function MyTasksPage(): ReactNode {
   const handleStatusChange = (taskId: TaskId, status: TaskStatus): void => {
     setTasks(
       tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, status, updatedAt: new Date().toISOString() }
-          : task
+        task.id === taskId ? { ...task, status, updatedAt: new Date().toISOString() } : task
       )
     );
   };
@@ -226,9 +231,7 @@ export default function MyTasksPage(): ReactNode {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
-        <p className="text-muted-foreground">
-          View and manage all tasks assigned to you
-        </p>
+        <p className="text-muted-foreground">View and manage all tasks assigned to you</p>
       </div>
 
       {/* Tabs */}
@@ -250,11 +253,7 @@ export default function MyTasksPage(): ReactNode {
 
         {/* Filters */}
         <div className="mt-6">
-          <TaskFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            showAssigneeFilter={false}
-          />
+          <TaskFilters filters={filters} onFiltersChange={setFilters} showAssigneeFilter={false} />
         </div>
 
         {/* Task Lists */}
@@ -265,7 +264,6 @@ export default function MyTasksPage(): ReactNode {
               variant="cards"
               onStatusChange={handleStatusChange}
               onViewDetails={handleViewDetails}
-              showAssignees={false}
               emptyMessage={
                 tab.value === 'all'
                   ? 'No tasks assigned to you yet'

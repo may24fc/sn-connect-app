@@ -1,7 +1,7 @@
 'use client';
 
-import { type ReactNode } from 'react';
 import { useRequireAuth } from '@/contexts/AuthContext';
+import type { ReactNode } from 'react';
 
 /**
  * Super Admin Layout - Passthrough
@@ -19,7 +19,12 @@ export default function SuperAdminLayout({
   children: ReactNode;
 }): ReactNode {
   // Enforce super_admin access only
-  useRequireAuth(['super_admin']);
+  const user = useRequireAuth(['super_admin']);
+
+  // Show loading state while user is being verified
+  if (!user) {
+    return null;
+  }
 
   // Return children without wrapping UI - parent layout handles that
   return <>{children}</>;

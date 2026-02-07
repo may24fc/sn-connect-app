@@ -207,8 +207,8 @@ export function OKRList({
         <OKRCard
           key={okr.id}
           okr={okr}
-          onEdit={onEdit}
-          onUpdateKeyResult={onUpdateKeyResult}
+          {...(onEdit && { onEdit })}
+          {...(onUpdateKeyResult && { onUpdateKeyResult })}
           readonly={readonly}
         />
       ))}

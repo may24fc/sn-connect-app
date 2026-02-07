@@ -259,7 +259,7 @@ export type {
   DailyReportId,
   SupervisorId,
   InternshipStatus,
-  ReportStatus,
+  ReportStatus as InternReportStatus,
   InternshipPeriod,
   DailyReport,
   Intern,
@@ -285,7 +285,7 @@ export type {
   Task,
   TaskAssignee,
   TaskFormData,
-  TaskFilters,
+  TaskFilters as TaskFiltersState,
   TaskDashboardStats,
 } from './types/task.types';
 export {

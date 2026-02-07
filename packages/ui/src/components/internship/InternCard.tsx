@@ -192,9 +192,9 @@ export function InternList({
         <InternCard
           key={intern.id}
           intern={intern}
-          onView={onView}
-          onViewReports={onViewReports}
-          onContact={onContact}
+          {...(onView && { onView })}
+          {...(onViewReports && { onViewReports })}
+          {...(onContact && { onContact })}
         />
       ))}
     </div>

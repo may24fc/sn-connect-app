@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Calendar, User, Paperclip, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar, Paperclip, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from '../../primitives/card';
 import { Button } from '../../primitives/button';
-import { Badge } from '../../primitives/badge';
 import { cn } from '../../utils/cn';
 import { ReportStatusBadge } from './ReportStatusBadge';
 import type { ReportSubmission } from './types';
@@ -188,9 +187,9 @@ export function ReportList({
         <ReportCard
           key={report.id}
           report={report}
-          onView={onView}
-          onEdit={onEdit}
-          onSubmit={onSubmit}
+          {...(onView && { onView })}
+          {...(onEdit && { onEdit })}
+          {...(onSubmit && { onSubmit })}
         />
       ))}
     </div>

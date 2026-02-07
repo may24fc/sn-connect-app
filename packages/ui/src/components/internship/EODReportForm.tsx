@@ -25,8 +25,9 @@ export function EODReportForm({
   maxHoursPerDay = 12,
   className,
 }: EODReportFormProps): React.ReactNode {
+  const initialDate = defaultDate ?? new Date().toISOString().split('T')[0]!;
   const [formData, setFormData] = React.useState<EODReportFormData>({
-    date: defaultDate || new Date().toISOString().split('T')[0],
+    date: initialDate,
     tasksCompleted: '',
     hoursLogged: 8,
     learnings: '',
@@ -199,7 +200,7 @@ export function EODReportForm({
             variant="outline"
             onClick={() => {
               setFormData({
-                date: defaultDate || new Date().toISOString().split('T')[0],
+                date: initialDate,
                 tasksCompleted: '',
                 hoursLogged: 8,
                 learnings: '',

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
+import { AIChatbot, Header, Sidebar } from '@hr-portal/ui';
 import { usePathname, useRouter } from 'next/navigation';
-import { Sidebar, Header, AIChatbot } from '@hr-portal/ui';
-import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
+import { type ReactNode, useState } from 'react';
 
 export default function EmployeeLayout({
   children,
@@ -16,6 +16,15 @@ export default function EmployeeLayout({
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Show loading state while user is being verified
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-muted/30">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   const handleNavigate = (href: string): void => {
     router.push(href);
@@ -49,16 +58,9 @@ export default function EmployeeLayout({
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setMobileMenuOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
           <div className="relative z-10">
-            <Sidebar
-              variant={sidebarVariant}
-              currentPath={pathname}
-              onNavigate={handleNavigate}
-            />
+            <Sidebar variant={sidebarVariant} currentPath={pathname} onNavigate={handleNavigate} />
           </div>
         </div>
       )}
@@ -76,9 +78,7 @@ export default function EmployeeLayout({
           }}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
 
       {/* AI Chatbot */}

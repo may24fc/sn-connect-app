@@ -1,8 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Maximize2, Minimize2 } from 'lucide-react';
-import { Button } from '../../primitives/button';
 import { cn } from '../../utils/cn';
 import { KnowledgeBasePanel } from './KnowledgeBasePanel';
 import { PlaygroundPanel } from './PlaygroundPanel';
@@ -20,23 +18,7 @@ export function AIKnowledgeManager({
 }: AIKnowledgeManagerProps): React.ReactNode {
   const [sources, setSources] = React.useState<KnowledgeSource[]>(mockSources);
   const [debugMode, setDebugMode] = React.useState(false);
-  const [panelState, setPanelState] = React.useState<PanelState>('both');
-
-  const handleToggleKnowledgePanel = (): void => {
-    setPanelState((current) => {
-      if (current === 'both') return 'playground';
-      if (current === 'playground') return 'both';
-      return 'playground';
-    });
-  };
-
-  const handleTogglePlaygroundPanel = (): void => {
-    setPanelState((current) => {
-      if (current === 'both') return 'knowledge';
-      if (current === 'knowledge') return 'both';
-      return 'knowledge';
-    });
-  };
+  const [panelState] = React.useState<PanelState>('both');
 
   const showKnowledge = panelState === 'both' || panelState === 'knowledge';
   const showPlayground = panelState === 'both' || panelState === 'playground';

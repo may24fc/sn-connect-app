@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { Bell, Search, Menu, Settings, LogOut, User } from 'lucide-react';
-import { cn } from '../utils/cn';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Button } from '../primitives/button';
 import { Input } from '../primitives/input';
