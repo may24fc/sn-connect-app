@@ -178,6 +178,13 @@ export function useRequireAuth(allowedRoles?: UserRole[]): User {
     }
   }, [user, isLoading, allowedRoles, router]);
 
+  // Wait for loading to complete before throwing error
+  if (isLoading) {
+    // Return a placeholder during loading to prevent crashes
+    // The component will re-render once loading completes
+    return null as unknown as User;
+  }
+
   if (!user) {
     throw new Error('User not authenticated');
   }

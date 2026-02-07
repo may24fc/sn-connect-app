@@ -85,6 +85,37 @@ export { Header } from './layout/Header';
 // Components
 export { AIChatbot, type ChatMessage, type AIChatbotProps } from './components/AIChatbot';
 
+// AI Knowledge Components
+export {
+  AIKnowledgeManager,
+  KnowledgeBasePanel,
+  PlaygroundPanel,
+  UploadZone,
+  UploadProgress,
+  SourcesInventory,
+  SourceRow,
+  SourceFilters,
+  ChatInterface,
+  ChatMessage as AIKnowledgeChatMessage,
+  DebugPanel,
+  AccessToggle,
+  mockSources,
+} from './components/ai-knowledge';
+export type {
+  AIKnowledgeManagerProps,
+  KnowledgeBasePanelProps,
+  PlaygroundPanelProps,
+  UploadZoneProps,
+  UploadProgressProps,
+  SourcesInventoryProps,
+  SourceRowProps,
+  SourceFiltersProps,
+  ChatInterfaceProps,
+  ChatMessageProps as AIKnowledgeChatMessageProps,
+  DebugPanelProps,
+  AccessToggleProps,
+} from './components/ai-knowledge';
+
 // Performance Components
 export {
   ReviewStatusBadge,
@@ -264,3 +295,14 @@ export {
   getDaysUntilDue,
   formatDueDate,
 } from './types/task.types';
+
+export type {
+  FileStatus,
+  AccessLevel,
+  FileType,
+  KnowledgeSource,
+  ChatMessage as AIKnowledgeChatMessageType,
+  SourceAttribution,
+  UploadProgress as UploadProgressType,
+  FilterOption,
+} from './types/ai-knowledge.types';

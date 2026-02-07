@@ -15,6 +15,7 @@ import {
   GraduationCap,
   FileText,
   CheckSquare,
+  Brain,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
@@ -72,6 +73,7 @@ const adminNavItems: NavItem[] = [
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
+  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Brain },
 ];
 
 // Super Admin navigation - same as admin plus payroll approvals
@@ -82,6 +84,7 @@ const superAdminNavItems: NavItem[] = [
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
+  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Brain },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
 ];
 
@@ -210,7 +213,7 @@ export function Sidebar({
         {/* Footer */}
         <div
           className={cn(
-            'border-t border-sidebar-border p-4',
+            'border-t border-sidebar-border p-4 relative z-10',
             collapsed && 'p-2'
           )}
         >

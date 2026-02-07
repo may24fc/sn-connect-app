@@ -139,7 +139,7 @@ export function AIChatbot({
   };
 
   return (
-    <div className={cn('fixed bottom-4 left-4 z-50', className)}>
+    <div className={cn('fixed bottom-4 left-20 lg:left-4 z-50', className)}>
       {/* Chat Panel */}
       {isOpen && (
         <div
