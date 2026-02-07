@@ -1,0 +1,142 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    VERCEL DEPLOYMENT CHEAT SHEET                           ║
+║                         HR Portal - Quick Reference                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 1: LOGIN                                                              │
+└────────────────────────────────────────────────────────────────────────────┘
+  vercel login
+  vercel whoami                # Verify login
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 2: LINK PROJECT                                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+  vercel link
+  
+  Prompts:
+  ✓ Set up and deploy? → Yes
+  ✓ Which scope? → [Your account]
+  ✓ Link to existing? → No
+  ✓ Project name? → sn-hr-portal
+  ✓ Directory? → ./
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 3: GET PROJECT IDS                                                    │
+└────────────────────────────────────────────────────────────────────────────┘
+  cat .vercel/project.json
+  
+  Save:
+  • orgId → VERCEL_ORG_ID
+  • projectId → VERCEL_PROJECT_ID
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 4: GET VERCEL TOKEN                                                   │
+└────────────────────────────────────────────────────────────────────────────┘
+  Visit: https://vercel.com/account/tokens
+  Create: "GitHub Actions Deploy"
+  Save → VERCEL_TOKEN
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 5: ADD ENVIRONMENT VARIABLES                                          │
+└────────────────────────────────────────────────────────────────────────────┘
+  vercel env add NEXT_PUBLIC_SUPABASE_URL
+  vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+  vercel env add SUPABASE_SERVICE_ROLE_KEY
+  vercel env add ANTHROPIC_API_KEY
+  vercel env add JWT_SECRET
+  vercel env add N8N_WEBHOOK_URL
+  vercel env add N8N_API_KEY
+
+  For each: Select environments (Prod, Preview, Dev)
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 6: TEST PREVIEW                                                       │
+└────────────────────────────────────────────────────────────────────────────┘
+  vercel                       # Deploy to preview
+  
+  Test:
+  • App loads
+  • Supabase connection works
+  • No console errors
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 7: ADD GITHUB SECRETS                                                 │
+└────────────────────────────────────────────────────────────────────────────┘
+  Go to: Settings → Secrets → Actions
+  
+  Secrets (encrypted):
+  • VERCEL_TOKEN
+  • VERCEL_ORG_ID
+  • VERCEL_PROJECT_ID
+  • SUPABASE_SERVICE_ROLE_KEY
+  • ANTHROPIC_API_KEY
+  • JWT_SECRET
+  • N8N_WEBHOOK_URL
+  • N8N_API_KEY
+  
+  Variables (not secret):
+  • NEXT_PUBLIC_SUPABASE_URL
+  • NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ STEP 8: DEPLOY TO PRODUCTION                                               │
+└────────────────────────────────────────────────────────────────────────────┘
+  vercel --prod                # Production deployment
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ COMMON COMMANDS                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+  vercel                       # Preview deploy
+  vercel --prod                # Production deploy
+  vercel --yes                 # Skip confirmations
+  vercel env ls                # List env vars
+  vercel env pull              # Download env vars
+  vercel logs [url]            # View logs
+  vercel inspect [url]         # Inspect deployment
+  vercel rollback [url]        # Rollback deployment
+  vercel domains ls            # List domains
+  vercel project ls            # List projects
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING                                                            │
+└────────────────────────────────────────────────────────────────────────────┘
+  Build fails:
+  → vercel logs [url]
+  → pnpm build:web
+  
+  Env vars missing:
+  → vercel env ls
+  → vercel env pull .env.local
+  
+  GitHub Actions fails:
+  → Check all secrets added
+  → Verify token is valid
+  → Confirm IDs match .vercel/project.json
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ DOCUMENTATION                                                              │
+└────────────────────────────────────────────────────────────────────────────┘
+  SETUP_SUMMARY.md             # What's configured
+  VERCEL_SETUP_STEPS.md        # Step-by-step guide
+  VERCEL_QUICK_START.md        # Quick reference
+  VERCEL_DEPLOYMENT.md         # Full documentation
+  .env.vercel.example          # Environment template
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ QUICK START COMMAND                                                        │
+└────────────────────────────────────────────────────────────────────────────┘
+  ./scripts/vercel-setup.sh    # Automated setup
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ IMPORTANT URLS                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+  Vercel Dashboard: https://vercel.com/dashboard
+  Create Token: https://vercel.com/account/tokens
+  GitHub Secrets: https://github.com/[user]/[repo]/settings/secrets/actions
+  Supabase: https://app.supabase.com
+  Anthropic: https://console.anthropic.com
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║ Ready? Start with: vercel login                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
