@@ -1,24 +1,23 @@
 'use client';
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, FileText, Calendar, User, Paperclip } from 'lucide-react';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-  Badge,
-  Separator,
   ReportStatusBadge,
   type ReportSubmission,
-  formatPeriodLabel,
+  Separator,
+  calculateROI,
   calculateTotalExpenditure,
   calculateTotalResults,
-  calculateROI,
+  formatPeriodLabel,
 } from '@hr-portal/ui';
+import { ArrowLeft, Calendar, Edit, Paperclip, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Mock data - replace with actual API call
 const MOCK_REPORT: ReportSubmission = {
@@ -31,7 +30,8 @@ const MOCK_REPORT: ReportSubmission = {
   periodStart: '2026-02-03T00:00:00.000Z',
   periodEnd: '2026-02-09T23:59:59.999Z',
   content: {
-    summary: 'Successfully launched Facebook ad campaign targeting Q1 goals. The campaign exceeded expectations with significant ROI improvements.',
+    summary:
+      'Successfully launched Facebook ad campaign targeting Q1 goals. The campaign exceeded expectations with significant ROI improvements.',
     accomplishments: [
       'Generated 245 qualified leads from Facebook Ads',
       'Increased brand awareness by 40% across target demographics',
@@ -43,7 +43,7 @@ const MOCK_REPORT: ReportSubmission = {
     ],
     nextWeekPlans: [
       'Optimize ad targeting based on current data',
-      'Prepare Valentine\'s Day campaign materials',
+      "Prepare Valentine's Day campaign materials",
       'A/B test new ad creative variations',
     ],
     metrics: [
@@ -110,8 +110,9 @@ const MOCK_REPORT: ReportSubmission = {
 export default function ReportDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }): React.ReactNode {
+  const { id: _id } = React.use(params);
   const router = useRouter();
   const [report] = React.useState<ReportSubmission>(MOCK_REPORT);
 
@@ -127,10 +128,7 @@ export default function ReportDetailPage({
     router.push('/reports');
   };
 
-  const handleEdit = (): void => {
-    // TODO: Navigate to edit page
-    console.log('Edit report:', report.id);
-  };
+  const handleEdit = (): void => {};
 
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return '-';
@@ -335,10 +333,7 @@ export default function ReportDetailPage({
           <CardContent>
             <div className="space-y-2">
               {report.filePaths.map((path, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg"
-                >
+                <div key={index} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
                   <Paperclip className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{path.split('/').pop()}</span>
                 </div>

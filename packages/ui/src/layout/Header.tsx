@@ -64,23 +64,23 @@ export function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background px-4 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 lg:px-6">
       {/* Left Section */}
       <div className="flex items-center gap-4">
         {showMobileMenu && onMenuToggle && (
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="lg:hidden text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             onClick={onMenuToggle}
             aria-label="Toggle menu"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-5 w-5 text-zinc-400" strokeWidth={1.5} />
           </Button>
         )}
 
         {title && (
-          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{title}</h1>
         )}
 
         {/* Search Bar */}
@@ -90,13 +90,13 @@ export function Header({
             className="hidden md:flex md:w-80"
           >
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" strokeWidth={1.5} />
               <Input
                 type="search"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="w-80 h-9 pl-9 pr-4 text-sm bg-zinc-100 dark:bg-zinc-800 border-0 rounded-md placeholder:text-zinc-500 focus:ring-2 focus:ring-indigo-600/20 focus:bg-white dark:focus:bg-zinc-900"
               />
             </div>
           </form>
@@ -110,13 +110,13 @@ export function Header({
           <Button
             variant="ghost"
             size="icon"
-            className="relative"
+            className="relative text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             onClick={onNotificationsClick}
             aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
           >
-            <Bell className="h-5 w-5" />
+            <Bell className="h-5 w-5 text-zinc-400" strokeWidth={1.5} />
             {notificationCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-error text-xs font-medium text-error-foreground">
+              <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-rose-600 text-[10px] font-medium text-white">
                 {notificationCount > 9 ? '9+' : notificationCount}
               </span>
             )}
@@ -128,48 +128,48 @@ export function Header({
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="flex items-center gap-3 px-2 hover:bg-muted"
+              className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
               <Avatar className="h-8 w-8">
                 {user.avatarUrl && (
                   <AvatarImage src={user.avatarUrl} alt={user.name} />
                 )}
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                <AvatarFallback className="bg-indigo-600 text-white text-xs">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden flex-col items-start text-left md:flex">
-                <span className="text-sm font-medium">{user.name}</span>
-                <Badge variant="secondary" className="text-xs capitalize">
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</span>
+                <Badge variant="secondary" className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize">
                   {user.role}
                 </Badge>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{user.email}</p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onProfileClick}>
-              <User className="mr-2 h-4 w-4" />
+            <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
+            <DropdownMenuItem onClick={onProfileClick} className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+              <User className="mr-2 h-4 w-4 text-zinc-400" strokeWidth={1.5} />
               Profile
             </DropdownMenuItem>
             {onSettingsClick && (
-              <DropdownMenuItem onClick={onSettingsClick}>
-                <Settings className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={onSettingsClick} className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                <Settings className="mr-2 h-4 w-4 text-zinc-400" strokeWidth={1.5} />
                 Settings
               </DropdownMenuItem>
             )}
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
             <DropdownMenuItem
               onClick={onLogout}
-              className="text-error focus:text-error"
+              className="text-rose-600 dark:text-rose-400 focus:text-rose-600 dark:focus:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4 text-rose-500" strokeWidth={1.5} />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

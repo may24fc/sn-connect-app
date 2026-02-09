@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Testing
+e2e
+*.test.ts
+*.spec.ts
+coverage
+
+# Documentation
+*.md
+!README.md
+docs
+
+# IDE
+.vscode
+.idea
+
+# Build artifacts
+.next
+dist
+.turbo
+
+# Images and media
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+*.webp
+*.avif
+
+# Mobile app
+apps/mobile
+
+# Database migrations (handled separately)
+packages/database/migrations

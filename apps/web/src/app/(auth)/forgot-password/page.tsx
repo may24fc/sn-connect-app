@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, type FormEvent, type ReactNode } from 'react';
-import Link from 'next/link';
-import { ArrowLeft, Mail, CheckCircle2 } from 'lucide-react';
 import {
   Button,
-  Input,
-  Label,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
+  Label,
 } from '@hr-portal/ui';
+import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
+import Link from 'next/link';
+import { type FormEvent, type ReactNode, useState } from 'react';
 
 export default function ForgotPasswordPage(): ReactNode {
   const [isLoading, setIsLoading] = useState(false);
@@ -94,12 +94,7 @@ export default function ForgotPasswordPage(): ReactNode {
               />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading ? 'Sending...' : 'Reset password'}
             </Button>
           </form>

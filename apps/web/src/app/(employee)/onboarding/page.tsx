@@ -1,31 +1,31 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
 import {
-  CheckCircle2,
-  Circle,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  Users,
-  Laptop,
-  BookOpen,
-  Calendar,
-} from 'lucide-react';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Progress,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Progress,
-  Badge,
-  Button,
 } from '@hr-portal/ui';
+import {
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  FileText,
+  Laptop,
+  Users,
+} from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 
 interface ChecklistItem {
   id: string;
@@ -40,11 +40,11 @@ interface ChecklistCategory {
   id: string;
   title: string;
   icon: typeof FileText;
-  items: ChecklistItem[];
+  items: Array<ChecklistItem>;
 }
 
 // Mock onboarding data
-const onboardingCategories: ChecklistCategory[] = [
+const onboardingCategories: Array<ChecklistCategory> = [
   {
     id: 'documents',
     title: 'Document Submission',
@@ -156,7 +156,7 @@ const onboardingCategories: ChecklistCategory[] = [
 ];
 
 // Mock offboarding data
-const offboardingCategories: ChecklistCategory[] = [
+const offboardingCategories: Array<ChecklistCategory> = [
   {
     id: 'clearance',
     title: 'Clearance Process',
@@ -217,10 +217,7 @@ function CategorySection({
 
   return (
     <Card>
-      <CardHeader
-        className="cursor-pointer"
-        onClick={onToggle}
-      >
+      <CardHeader className="cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -270,15 +267,11 @@ function CategorySection({
                   >
                     {item.title}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
                   {item.dueDate && !item.completed && (
                     <div className="mt-2 flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-warning" />
-                      <span className="text-xs text-warning">
-                        Due: {item.dueDate}
-                      </span>
+                      <span className="text-xs text-warning">Due: {item.dueDate}</span>
                     </div>
                   )}
                 </div>
@@ -297,9 +290,7 @@ function CategorySection({
 }
 
 export default function OnboardingPage(): ReactNode {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['documents'])
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['documents']));
 
   const toggleCategory = (categoryId: string): void => {
     setExpandedCategories((prev) => {
@@ -341,13 +332,10 @@ export default function OnboardingPage(): ReactNode {
                   className="h-3 w-48"
                   indicatorClassName="bg-primary"
                 />
-                <span className="text-2xl font-bold text-primary">
-                  {onboardingProgress}%
-                </span>
+                <span className="text-2xl font-bold text-primary">{onboardingProgress}%</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                {completedOnboarding.length} of {totalOnboarding.length} tasks
-                completed
+                {completedOnboarding.length} of {totalOnboarding.length} tasks completed
               </p>
             </div>
             {onboardingProgress === 100 && (
@@ -382,8 +370,8 @@ export default function OnboardingPage(): ReactNode {
           <Card className="border-warning/50 bg-warning/5">
             <CardContent className="p-4">
               <p className="text-sm text-warning-600">
-                The offboarding checklist will become active when you begin your
-                separation process. Contact HR for more information.
+                The offboarding checklist will become active when you begin your separation process.
+                Contact HR for more information.
               </p>
             </CardContent>
           </Card>

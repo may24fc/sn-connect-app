@@ -1,63 +1,61 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft,
-  GraduationCap,
-  Building2,
-  User,
-  Calendar,
-  Clock,
-  Mail,
-  Phone,
-  Edit2,
-  FileText,
-  Download,
-  CheckCircle2,
-  MessageSquare,
-  MoreVertical,
-  Award,
-} from 'lucide-react';
-import {
+  Avatar,
+  AvatarFallback,
+  Badge,
+  Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
-  Button,
-  Badge,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
+  CardHeader,
+  CardTitle,
+  type DailyReport,
+  type DailyReportId,
+  DailyReportList,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  HoursProgressCard,
+  type InternId,
+  type InternshipPeriodId,
+  InternshipStatusBadge,
+  Progress,
+  type SupervisorId,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
   Textarea,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Progress,
-  HoursProgressCard,
-  DailyReportList,
-  InternshipStatusBadge,
-  type DailyReport,
-  type InternId,
-  type DailyReportId,
-  type InternshipPeriodId,
-  type SupervisorId,
-  getDaysRemaining,
   calculateHoursProgress,
+  getDaysRemaining,
 } from '@hr-portal/ui';
+import {
+  ArrowLeft,
+  Award,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Download,
+  Edit2,
+  GraduationCap,
+  Mail,
+  MessageSquare,
+  MoreVertical,
+  Phone,
+  User,
+} from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, use, useState } from 'react';
 
 // Mock data
 const mockIntern = {
@@ -79,13 +77,14 @@ const mockIntern = {
   notes: 'Excellent progress. Shows great initiative and is quick to learn new technologies.',
 };
 
-const mockReports: DailyReport[] = [
+const mockReports: Array<DailyReport> = [
   {
     id: 'report-1' as DailyReportId,
     internId: 'intern-1' as InternId,
     internshipPeriodId: 'period-1' as InternshipPeriodId,
     date: '2024-02-15',
-    tasksCompleted: 'Worked on implementing the dashboard UI components. Fixed several bugs in the navigation system. Participated in code review session.',
+    tasksCompleted:
+      'Worked on implementing the dashboard UI components. Fixed several bugs in the navigation system. Participated in code review session.',
     hoursLogged: 8,
     learnings: 'Learned about React Server Components and how to optimize performance.',
     challenges: 'Had some issues with TypeScript types but resolved with help from mentor.',
@@ -144,14 +143,20 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export default function InternDetailPage({ params }: { params: { id: string } }): ReactNode {
+export default function InternDetailPage({
+  params,
+}: { params: Promise<{ id: string }> }): ReactNode {
+  const { id: _id } = use(params);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [feedback, setFeedback] = useState('');
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
 
   const daysRemaining = getDaysRemaining(mockIntern.endDate);
-  const progressPercentage = calculateHoursProgress(mockIntern.completedHours, mockIntern.requiredHours);
+  const progressPercentage = calculateHoursProgress(
+    mockIntern.completedHours,
+    mockIntern.requiredHours
+  );
   const pendingReports = mockReports.filter((r) => r.status === 'submitted').length;
 
   const handleProvideFeedback = (report: DailyReport): void => {
@@ -161,15 +166,11 @@ export default function InternDetailPage({ params }: { params: { id: string } })
   };
 
   const handleSubmitFeedback = (): void => {
-    // TODO: Implement API call
-    console.log('Submitting feedback for report:', selectedReport?.id, feedback);
     setFeedbackDialogOpen(false);
     setSelectedReport(null);
   };
 
   const handleCompleteInternship = (): void => {
-    // TODO: Implement API call
-    console.log('Completing internship for:', mockIntern.id);
     setCompleteDialogOpen(false);
   };
 
@@ -185,9 +186,7 @@ export default function InternDetailPage({ params }: { params: { id: string } })
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Intern Profile</h1>
-            <p className="text-muted-foreground">
-              View and manage intern details
-            </p>
+            <p className="text-muted-foreground">View and manage intern details</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -229,9 +228,7 @@ export default function InternDetailPage({ params }: { params: { id: string } })
             {/* Avatar and Basic Info */}
             <div className="flex items-start gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl">
-                  {getInitials(mockIntern.name)}
-                </AvatarFallback>
+                <AvatarFallback className="text-2xl">{getInitials(mockIntern.name)}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -294,7 +291,9 @@ export default function InternDetailPage({ params }: { params: { id: string } })
           <TabsTrigger value="reports">
             Daily Reports
             {pendingReports > 0 && (
-              <Badge variant="warning" className="ml-2">{pendingReports}</Badge>
+              <Badge variant="warning" className="ml-2">
+                {pendingReports}
+              </Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -411,26 +410,26 @@ export default function InternDetailPage({ params }: { params: { id: string } })
           <DailyReportList reports={mockReports} />
 
           {/* Add feedback button for pending reports */}
-          {mockReports.filter((r) => r.status === 'submitted').map((report) => (
-            <Card key={report.id} className="border-warning/50">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">
-                      Report for {new Date(report.date).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Awaiting supervisor feedback
-                    </p>
+          {mockReports
+            .filter((r) => r.status === 'submitted')
+            .map((report) => (
+              <Card key={report.id} className="border-warning/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">
+                        Report for {new Date(report.date).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-muted-foreground">Awaiting supervisor feedback</p>
+                    </div>
+                    <Button onClick={() => handleProvideFeedback(report)}>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Provide Feedback
+                    </Button>
                   </div>
-                  <Button onClick={() => handleProvideFeedback(report)}>
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Provide Feedback
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            ))}
         </TabsContent>
 
         {/* Timeline Tab */}
@@ -453,9 +452,7 @@ export default function InternDetailPage({ params }: { params: { id: string } })
                     <Progress
                       value={(week.hours / week.target) * 100}
                       className="h-2"
-                      indicatorClassName={
-                        week.hours >= week.target ? 'bg-success' : 'bg-warning'
-                      }
+                      indicatorClassName={week.hours >= week.target ? 'bg-success' : 'bg-warning'}
                     />
                   </div>
                 ))}

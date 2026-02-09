@@ -1,46 +1,46 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
 import {
-  FileCheck,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Download,
-  DollarSign,
-} from 'lucide-react';
-import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Button,
-  Badge,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Textarea,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
 } from '@hr-portal/ui';
+import {
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  DollarSign,
+  Download,
+  Eye,
+  FileCheck,
+  XCircle,
+} from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 
 type InvoiceStatus = 'pending' | 'approved' | 'rejected';
 
@@ -61,7 +61,7 @@ interface Invoice {
 }
 
 // Mock data
-const invoices: Invoice[] = [
+const invoices: Array<Invoice> = [
   {
     id: '1',
     invoiceNumber: 'INV-2024-001',
@@ -181,15 +181,11 @@ export default function PayrollApprovalsPage(): ReactNode {
   };
 
   const nextCarousel = (): void => {
-    setCarouselIndex((prev) =>
-      prev < pendingInvoices.length - 1 ? prev + 1 : 0
-    );
+    setCarouselIndex((prev) => (prev < pendingInvoices.length - 1 ? prev + 1 : 0));
   };
 
   const prevCarousel = (): void => {
-    setCarouselIndex((prev) =>
-      prev > 0 ? prev - 1 : pendingInvoices.length - 1
-    );
+    setCarouselIndex((prev) => (prev > 0 ? prev - 1 : pendingInvoices.length - 1));
   };
 
   return (
@@ -197,9 +193,7 @@ export default function PayrollApprovalsPage(): ReactNode {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Payroll Approvals</h1>
-        <p className="text-muted-foreground">
-          Review and approve contractor invoice submissions
-        </p>
+        <p className="text-muted-foreground">Review and approve contractor invoice submissions</p>
       </div>
 
       {/* Stats Cards */}
@@ -254,9 +248,7 @@ export default function PayrollApprovalsPage(): ReactNode {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Pending Amount</p>
-                <p className="text-xl font-bold">
-                  {formatCurrency(stats.totalPendingAmount)}
-                </p>
+                <p className="text-xl font-bold">{formatCurrency(stats.totalPendingAmount)}</p>
               </div>
             </div>
           </CardContent>
@@ -270,9 +262,7 @@ export default function PayrollApprovalsPage(): ReactNode {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Pending Invoices</CardTitle>
-                <CardDescription>
-                  Quick review for pending submissions
-                </CardDescription>
+                <CardDescription>Quick review for pending submissions</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -306,9 +296,7 @@ export default function PayrollApprovalsPage(): ReactNode {
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12">
                         {pendingInvoices[carouselIndex]?.employeeAvatar && (
-                          <AvatarImage
-                            src={pendingInvoices[carouselIndex]?.employeeAvatar}
-                          />
+                          <AvatarImage src={pendingInvoices[carouselIndex]?.employeeAvatar} />
                         )}
                         <AvatarFallback>
                           {getInitials(pendingInvoices[carouselIndex]?.employeeName ?? '')}
@@ -326,18 +314,14 @@ export default function PayrollApprovalsPage(): ReactNode {
 
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">
-                          Invoice Number
-                        </p>
+                        <p className="text-sm text-muted-foreground">Invoice Number</p>
                         <p className="font-medium">
                           {pendingInvoices[carouselIndex]?.invoiceNumber}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Period</p>
-                        <p className="font-medium">
-                          {pendingInvoices[carouselIndex]?.period}
-                        </p>
+                        <p className="font-medium">{pendingInvoices[carouselIndex]?.period}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Amount</p>
@@ -346,12 +330,8 @@ export default function PayrollApprovalsPage(): ReactNode {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">
-                          Submitted
-                        </p>
-                        <p className="font-medium">
-                          {pendingInvoices[carouselIndex]?.submittedAt}
-                        </p>
+                        <p className="text-sm text-muted-foreground">Submitted</p>
+                        <p className="font-medium">{pendingInvoices[carouselIndex]?.submittedAt}</p>
                       </div>
                     </div>
                   </div>
@@ -360,9 +340,7 @@ export default function PayrollApprovalsPage(): ReactNode {
                   <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
                     <Button
                       variant="outline"
-                      onClick={() =>
-                        setSelectedInvoice(pendingInvoices[carouselIndex] ?? null)
-                      }
+                      onClick={() => setSelectedInvoice(pendingInvoices[carouselIndex] ?? null)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       View Document
@@ -402,12 +380,8 @@ export default function PayrollApprovalsPage(): ReactNode {
       {/* All Invoices Table */}
       <Tabs defaultValue="pending" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="pending">
-            Pending ({stats.pending})
-          </TabsTrigger>
-          <TabsTrigger value="processed">
-            Processed ({processedInvoices.length})
-          </TabsTrigger>
+          <TabsTrigger value="pending">Pending ({stats.pending})</TabsTrigger>
+          <TabsTrigger value="processed">Processed ({processedInvoices.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending">
@@ -430,24 +404,18 @@ export default function PayrollApprovalsPage(): ReactNode {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            {invoice.employeeAvatar && (
-                              <AvatarImage src={invoice.employeeAvatar} />
-                            )}
+                            {invoice.employeeAvatar && <AvatarImage src={invoice.employeeAvatar} />}
                             <AvatarFallback className="text-xs">
                               {getInitials(invoice.employeeName)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-medium">{invoice.employeeName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {invoice.department}
-                            </p>
+                            <p className="text-xs text-muted-foreground">{invoice.department}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="font-mono text-sm">
-                        {invoice.invoiceNumber}
-                      </TableCell>
+                      <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
                       <TableCell>{invoice.period}</TableCell>
                       <TableCell className="font-medium">
                         {formatCurrency(invoice.amount)}
@@ -519,18 +487,12 @@ export default function PayrollApprovalsPage(): ReactNode {
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">
-                                {invoice.employeeName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {invoice.department}
-                              </p>
+                              <p className="font-medium">{invoice.employeeName}</p>
+                              <p className="text-xs text-muted-foreground">{invoice.department}</p>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {invoice.invoiceNumber}
-                        </TableCell>
+                        <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
                         <TableCell>{invoice.period}</TableCell>
                         <TableCell className="font-medium">
                           {formatCurrency(invoice.amount)}
@@ -541,9 +503,7 @@ export default function PayrollApprovalsPage(): ReactNode {
                         <TableCell>
                           <div>
                             <p className="text-sm">{invoice.reviewedAt}</p>
-                            <p className="text-xs text-muted-foreground">
-                              by {invoice.reviewedBy}
-                            </p>
+                            <p className="text-xs text-muted-foreground">by {invoice.reviewedBy}</p>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -590,21 +550,15 @@ export default function PayrollApprovalsPage(): ReactNode {
                 <div className="grid gap-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Invoice:</span>
-                    <span className="font-medium">
-                      {selectedInvoice.invoiceNumber}
-                    </span>
+                    <span className="font-medium">{selectedInvoice.invoiceNumber}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Employee:</span>
-                    <span className="font-medium">
-                      {selectedInvoice.employeeName}
-                    </span>
+                    <span className="font-medium">{selectedInvoice.employeeName}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Amount:</span>
-                    <span className="font-medium">
-                      {formatCurrency(selectedInvoice.amount)}
-                    </span>
+                    <span className="font-medium">{formatCurrency(selectedInvoice.amount)}</span>
                   </div>
                 </div>
               </div>
@@ -658,17 +612,11 @@ export default function PayrollApprovalsPage(): ReactNode {
                   {selectedInvoice.employeeAvatar && (
                     <AvatarImage src={selectedInvoice.employeeAvatar} />
                   )}
-                  <AvatarFallback>
-                    {getInitials(selectedInvoice.employeeName)}
-                  </AvatarFallback>
+                  <AvatarFallback>{getInitials(selectedInvoice.employeeName)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold">
-                    {selectedInvoice.employeeName}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedInvoice.employeeEmail}
-                  </p>
+                  <h3 className="font-semibold">{selectedInvoice.employeeName}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedInvoice.employeeEmail}</p>
                 </div>
               </div>
 
@@ -708,9 +656,7 @@ export default function PayrollApprovalsPage(): ReactNode {
               {selectedInvoice.notes && (
                 <div>
                   <p className="text-sm text-muted-foreground">Notes</p>
-                  <p className="mt-1 rounded-lg bg-muted p-3 text-sm">
-                    {selectedInvoice.notes}
-                  </p>
+                  <p className="mt-1 rounded-lg bg-muted p-3 text-sm">{selectedInvoice.notes}</p>
                 </div>
               )}
 
@@ -718,9 +664,7 @@ export default function PayrollApprovalsPage(): ReactNode {
               <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
                 <FileCheck className="mx-auto h-10 w-10 text-muted-foreground" />
                 <p className="mt-2 text-sm font-medium">Invoice Document</p>
-                <p className="text-xs text-muted-foreground">
-                  Click to view or download
-                </p>
+                <p className="text-xs text-muted-foreground">Click to view or download</p>
                 <Button variant="outline" size="sm" className="mt-3">
                   <Download className="mr-2 h-4 w-4" />
                   Download PDF

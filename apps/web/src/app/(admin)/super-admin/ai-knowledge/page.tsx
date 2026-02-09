@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { AIKnowledgeManager } from '@hr-portal/ui';
+import type * as React from 'react';
 
 export default function SuperAdminAIKnowledgePage(): React.ReactNode {
   return (

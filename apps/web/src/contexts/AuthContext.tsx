@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Type definitions
 export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
@@ -152,12 +152,12 @@ export function useAuth(): AuthContextValue {
 }
 
 // Role-based route guards
-export function useRequireAuth(allowedRoles?: UserRole[]): User {
+export function useRequireAuth(allowedRoles?: Array<UserRole>): User {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!isLoading && !user) {
+    if (!(isLoading || user)) {
       router.push('/login');
     } else if (user && allowedRoles && !allowedRoles.includes(user.role)) {
       // Redirect to appropriate dashboard if unauthorized

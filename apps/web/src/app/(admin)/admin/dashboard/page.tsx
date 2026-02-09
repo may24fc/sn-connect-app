@@ -1,30 +1,33 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  Users,
-  ClipboardList,
-  FileText,
-  Target,
-  TrendingUp,
-  ChevronRight,
-  AlertCircle,
-  CheckCircle,
-  GraduationCap,
-  BarChart3,
-} from 'lucide-react';
+  BentoGrid,
+  BentoCard,
+  BentoCardHeader,
+  BentoCardTitle,
+  BentoCardContent,
+  StatCard,
+  StatCardGrid,
+} from '@/components/data-display';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Badge,
   Button,
   Progress,
 } from '@hr-portal/ui';
-import { useAuth } from '@/contexts/AuthContext';
+import {
+  AlertCircle,
+  BarChart3,
+  CheckCircle,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  Target,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 // Mock data
 const stats = {
@@ -89,288 +92,251 @@ const departmentStats = [
   { name: 'Operations', headcount: 35, openPositions: 0 },
 ];
 
+const quickActions = [
+  {
+    title: 'Employee Management',
+    description: 'Manage workforce',
+    icon: Users,
+    href: '/admin/employees',
+  },
+  {
+    title: 'Performance',
+    description: 'Reviews & OKRs',
+    icon: Target,
+    href: '/admin/performance',
+  },
+  {
+    title: 'Recruitment',
+    description: 'Open positions',
+    icon: GraduationCap,
+    href: '/admin/recruitment',
+  },
+  {
+    title: 'Reports',
+    description: 'Analytics & insights',
+    icon: FileText,
+    href: '/admin/reports',
+  },
+];
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export default function AdminDashboardPage(): ReactNode {
   const { user } = useAuth();
+  const firstName = user?.name?.split(' ')[0] ?? 'Admin';
+  const greeting = getGreeting();
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
+    <div className="h-full space-y-6">
+      {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Admin Dashboard
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            {greeting}, {firstName}
           </h1>
-          <p className="text-muted-foreground">
-            Welcome back, {user?.name}. Here is your HR overview
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Here is your HR overview for today.
           </p>
         </div>
         <Button asChild>
           <Link href="/admin/employees">
-            <Users className="mr-2 h-4 w-4" />
+            <Users className="mr-2 h-4 w-4" strokeWidth={1.5} />
             Manage Employees
           </Link>
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Employees
-                </p>
-                <p className="text-2xl font-bold">{stats.totalEmployees}</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Users className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Stats Row */}
+      <StatCardGrid columns={4}>
+        <StatCard
+          label="Total Employees"
+          value={stats.totalEmployees}
+          trend={{ direction: 'up', value: '+5 this month' }}
+          icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Active Interns"
+          value={stats.activeInterns}
+          trend={{ direction: 'stable', value: 'No change' }}
+          icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Pending Leaves"
+          value={stats.pendingLeaves}
+          trend={{ direction: 'down', value: '3 approved' }}
+          icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Reviews Due"
+          value={stats.performanceReviews}
+          trend={{ direction: 'up', value: '5 this week' }}
+          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+        />
+      </StatCardGrid>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Active Interns
-                </p>
-                <p className="text-2xl font-bold">{stats.activeInterns}</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-success/10 text-success">
-                <GraduationCap className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Pending Leaves
-                </p>
-                <p className="text-2xl font-bold">{stats.pendingLeaves}</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                <ClipboardList className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Reviews Due
-                </p>
-                <p className="text-2xl font-bold">{stats.performanceReviews}</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Target className="h-6 w-6" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Pending Approvals */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Pending Approvals</CardTitle>
-                <CardDescription>Items requiring your attention</CardDescription>
-              </div>
-              <Badge variant="warning">{pendingApprovals.length}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {pendingApprovals.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                      item.priority === 'urgent'
-                        ? 'bg-destructive/10 text-destructive'
-                        : item.priority === 'high'
-                        ? 'bg-warning/10 text-warning'
-                        : 'bg-primary/10 text-primary'
-                    }`}
-                  >
-                    <AlertCircle className="h-5 w-5" />
+      {/* Main Bento Grid */}
+      <BentoGrid columns={4}>
+        {/* Pending Approvals Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}>
+              Pending Approvals
+            </BentoCardTitle>
+            <Badge variant="warning">{pendingApprovals.length}</Badge>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="space-y-3">
+              {pendingApprovals.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <AlertCircle
+                      className={`h-4 w-4 flex-shrink-0 ${
+                        item.priority === 'urgent'
+                          ? 'text-rose-500'
+                          : item.priority === 'high'
+                            ? 'text-amber-500'
+                            : 'text-zinc-400'
+                      }`}
+                      strokeWidth={1.5}
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {item.type}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {item.employee} - {item.details}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{item.type}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.employee} - {item.details}
-                    </p>
-                  </div>
+                  <Button size="sm" variant="outline" className="h-8 text-xs">
+                    Review
+                  </Button>
                 </div>
-                <Button size="sm" variant="outline">
-                  Review
-                </Button>
-              </div>
-            ))}
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/admin/leave-approvals">
-                View All Approvals
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+              ))}
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/admin/leave-approvals">
+                  View All Approvals
+                  <ChevronRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
+                </Link>
+              </Button>
+            </div>
+          </BentoCardContent>
+        </BentoCard>
 
-        {/* Department Overview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+        {/* Department Overview Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<BarChart3 className="h-4 w-4" strokeWidth={1.5} />}>
               Department Overview
-            </CardTitle>
-            <CardDescription>Headcount and open positions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {departmentStats.map((dept) => (
-              <div key={dept.name} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{dept.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">
-                      {dept.headcount} employees
+            </BentoCardTitle>
+            <Link href="/admin/teams">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                Manage
+              </Button>
+            </Link>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="space-y-4">
+              {departmentStats.map((dept) => (
+                <div key={dept.name} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {dept.name}
                     </span>
-                    {dept.openPositions > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {dept.openPositions} open
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        {dept.headcount} employees
+                      </span>
+                      {dept.openPositions > 0 && (
+                        <Badge variant="secondary" className="text-xs h-5">
+                          {dept.openPositions} open
+                        </Badge>
+                      )}
+                    </div>
                   </div>
+                  <Progress value={(dept.headcount / 100) * 100} className="h-1.5" />
                 </div>
-                <Progress value={(dept.headcount / 100) * 100} className="h-2" />
-              </div>
-            ))}
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/admin/teams">
-                Manage Teams
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest HR system activities</CardDescription>
+              ))}
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/admin/reports">View Reports</Link>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivities.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-start justify-between border-b border-border pb-4 last:border-0 last:pb-0"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success/10 text-success mt-1">
-                    <CheckCircle className="h-4 w-4" />
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* Recent Activity Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
+              Recent Activity
+            </BentoCardTitle>
+            <Link href="/admin/reports">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                View All
+              </Button>
+            </Link>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="space-y-3">
+              {recentActivities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
+                >
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {activity.action}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {activity.employee}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{activity.action}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {activity.employee}
-                    </p>
-                  </div>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                    {activity.timestamp}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {activity.timestamp}
-                </span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </BentoCardContent>
+        </BentoCard>
 
-      {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Link href="/admin/employees">
-          <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Users className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-sm">Employee Management</h3>
-                <p className="text-xs text-muted-foreground">Manage workforce</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/performance">
-          <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 text-success">
-                <Target className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-sm">Performance</h3>
-                <p className="text-xs text-muted-foreground">Reviews & OKRs</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/recruitment">
-          <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                <GraduationCap className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-sm">Recruitment</h3>
-                <p className="text-xs text-muted-foreground">Open positions</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/admin/reports">
-          <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-sm">Reports</h3>
-                <p className="text-xs text-muted-foreground">Analytics & insights</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
+        {/* Quick Actions Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
+              Quick Actions
+            </BentoCardTitle>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {quickActions.map((action) => (
+                <Link key={action.title} href={action.href}>
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
+                    <action.icon className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        {action.title}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                        {action.description}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </BentoCardContent>
+        </BentoCard>
+      </BentoGrid>
     </div>
   );
 }

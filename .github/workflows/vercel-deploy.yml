@@ -1,0 +1,261 @@
+name: Vercel Deployment
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/vercel-deploy.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'apps/web/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/vercel-deploy.yml'
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9.15.0'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+      deployments: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build packages
+        run: pnpm build:packages
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel environment information (Preview)
+        if: github.event_name == 'pull_request'
+        run: |
+          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./apps/web
+
+      - name: Pull Vercel environment information (Production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./apps/web
+
+      - name: Build project artifacts (Preview)
+        if: github.event_name == 'pull_request'
+        run: |
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build project artifacts (Production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: ./apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel (Preview)
+        if: github.event_name == 'pull_request'
+        id: deploy-preview
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $DEPLOYMENT_URL"
+        working-directory: ./apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel (Production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        id: deploy-production
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $DEPLOYMENT_URL"
+        working-directory: ./apps/web
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Create deployment status comment (Preview)
+        if: github.event_name == 'pull_request' && steps.deploy-preview.outputs.url != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deploymentUrl = '${{ steps.deploy-preview.outputs.url }}';
+            const comment = `## ✅ Preview Deployment Successful
+
+            **Preview URL:** ${deploymentUrl}
+
+            ### Deployment Details
+            - **Environment:** Preview
+            - **Branch:** \`${{ github.head_ref }}\`
+            - **Commit:** ${{ github.event.pull_request.head.sha }}
+            - **Workflow:** [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ### What's Next?
+            - Test the preview deployment
+            - Verify all functionality works as expected
+            - Check for any console errors or warnings
+
+            ---
+            <sub>Deployed with [Vercel](https://vercel.com) | Powered by GitHub Actions</sub>`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Preview Deployment')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+      - name: Create deployment status comment (Production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.deploy-production.outputs.url != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const deploymentUrl = '${{ steps.deploy-production.outputs.url }}';
+            const commitMessage = `${{ github.event.head_commit.message }}`.split('\n')[0];
+
+            console.log(`✅ Production Deployment Successful`);
+            console.log(`URL: ${deploymentUrl}`);
+            console.log(`Commit: ${commitMessage}`);
+
+      - name: Deployment failed notification (Preview)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comment = `## ❌ Preview Deployment Failed
+
+            The preview deployment for this PR has failed. Please check the logs for more details.
+
+            ### Troubleshooting
+            - Check the [workflow logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            - Verify all environment variables are set correctly
+            - Ensure the build passes locally with \`pnpm build:web\`
+            - Check for TypeScript errors with \`pnpm typecheck\`
+
+            ---
+            <sub>Deployment failed | [View Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})</sub>`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+
+      - name: Assign deployment to GitHub Deployments API
+        if: success() && (github.event_name == 'push' || github.event_name == 'pull_request')
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const isProduction = context.eventName === 'push' && context.ref === 'refs/heads/master';
+            const deploymentUrl = isProduction
+              ? '${{ steps.deploy-production.outputs.url }}'
+              : '${{ steps.deploy-preview.outputs.url }}';
+
+            if (!deploymentUrl) return;
+
+            // Create deployment
+            const { data: deployment } = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: isProduction ? 'production' : 'preview',
+              required_contexts: [],
+              auto_merge: false,
+              description: `Deploy ${context.sha.substring(0, 7)} to ${isProduction ? 'production' : 'preview'}`
+            });
+
+            // Create deployment status
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.id,
+              state: 'success',
+              environment_url: deploymentUrl,
+              log_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: `Successfully deployed to ${isProduction ? 'production' : 'preview'}`
+            });

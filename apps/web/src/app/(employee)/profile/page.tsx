@@ -1,41 +1,30 @@
 'use client';
 
-import { useState, type ReactNode, type FormEvent } from 'react';
 import {
-  User,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
-  Shield,
-  Edit2,
-  Camera,
-  AlertCircle,
-} from 'lucide-react';
-import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Button,
   Input,
   Label,
-  Separator,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Badge,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@hr-portal/ui';
+import { AlertCircle, Camera, Edit2, Phone, Shield, User } from 'lucide-react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 
 // Mock user data
 const userData = {
@@ -107,13 +96,9 @@ export default function ProfilePage(): ReactNode {
               <h1 className="text-2xl font-bold">
                 {formData.personal.firstName} {formData.personal.lastName}
               </h1>
-              <p className="text-muted-foreground">
-                {formData.employment.position}
-              </p>
+              <p className="text-muted-foreground">{formData.employment.position}</p>
               <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
-                <Badge variant="secondary">
-                  {formData.employment.department}
-                </Badge>
+                <Badge variant="secondary">{formData.employment.department}</Badge>
                 <Badge variant="outline">{formData.employment.employeeId}</Badge>
               </div>
             </div>
@@ -151,9 +136,7 @@ export default function ProfilePage(): ReactNode {
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Your personal details and contact information
-              </CardDescription>
+              <CardDescription>Your personal details and contact information</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSave} className="space-y-6">
@@ -196,15 +179,8 @@ export default function ProfilePage(): ReactNode {
 
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.personal.email}
-                      disabled
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Contact IT to change your email
-                    </p>
+                    <Input id="email" type="email" value={formData.personal.email} disabled />
+                    <p className="text-xs text-muted-foreground">Contact IT to change your email</p>
                   </div>
 
                   <div className="space-y-2">
@@ -263,9 +239,7 @@ export default function ProfilePage(): ReactNode {
                         <SelectItem value="male">Male</SelectItem>
                         <SelectItem value="female">Female</SelectItem>
                         <SelectItem value="other">Other</SelectItem>
-                        <SelectItem value="prefer-not-to-say">
-                          Prefer not to say
-                        </SelectItem>
+                        <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -307,9 +281,7 @@ export default function ProfilePage(): ReactNode {
           <Card>
             <CardHeader>
               <CardTitle>Emergency Contact</CardTitle>
-              <CardDescription>
-                Person to contact in case of emergency
-              </CardDescription>
+              <CardDescription>Person to contact in case of emergency</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSave} className="space-y-6">
@@ -425,9 +397,7 @@ export default function ProfilePage(): ReactNode {
             <Card>
               <CardHeader>
                 <CardTitle>Change Password</CardTitle>
-                <CardDescription>
-                  Update your password to keep your account secure
-                </CardDescription>
+                <CardDescription>Update your password to keep your account secure</CardDescription>
               </CardHeader>
               <CardContent>
                 <form className="space-y-4">
@@ -442,11 +412,7 @@ export default function ProfilePage(): ReactNode {
 
                   <div className="space-y-2">
                     <Label htmlFor="newPassword">New Password</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      placeholder="Enter new password"
-                    />
+                    <Input id="newPassword" type="password" placeholder="Enter new password" />
                   </div>
 
                   <div className="space-y-2">
@@ -466,9 +432,7 @@ export default function ProfilePage(): ReactNode {
             <Card>
               <CardHeader>
                 <CardTitle>Two-Factor Authentication</CardTitle>
-                <CardDescription>
-                  Add an extra layer of security to your account
-                </CardDescription>
+                <CardDescription>Add an extra layer of security to your account</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
@@ -491,9 +455,7 @@ export default function ProfilePage(): ReactNode {
             <Card>
               <CardHeader>
                 <CardTitle>Active Sessions</CardTitle>
-                <CardDescription>
-                  Manage devices where you are logged in
-                </CardDescription>
+                <CardDescription>Manage devices where you are logged in</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -503,9 +465,7 @@ export default function ProfilePage(): ReactNode {
                       <p className="text-sm text-muted-foreground">
                         Windows - Chrome - Manila, Philippines
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Last active: Just now
-                      </p>
+                      <p className="text-xs text-muted-foreground">Last active: Just now</p>
                     </div>
                     <Badge variant="success">Active</Badge>
                   </div>

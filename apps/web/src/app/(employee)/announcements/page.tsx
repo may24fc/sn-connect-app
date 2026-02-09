@@ -1,31 +1,31 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
 import {
-  Megaphone,
-  Calendar,
-  ChevronRight,
-  TrendingUp,
-  Award,
-  Target,
-  BookOpen,
-  Star,
-  ArrowRight,
-} from 'lucide-react';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Progress,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Badge,
-  Button,
-  Progress,
 } from '@hr-portal/ui';
+import {
+  ArrowRight,
+  Award,
+  BookOpen,
+  Calendar,
+  ChevronRight,
+  Megaphone,
+  Star,
+  Target,
+  TrendingUp,
+} from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 
 interface Announcement {
   id: string;
@@ -46,7 +46,7 @@ interface GrowthItem {
 }
 
 // Mock announcements data
-const announcements: Announcement[] = [
+const announcements: Array<Announcement> = [
   {
     id: '1',
     title: 'Company Holiday Schedule 2024',
@@ -95,7 +95,7 @@ const announcements: Announcement[] = [
 ];
 
 // Mock growth data
-const growthItems: GrowthItem[] = [
+const growthItems: Array<GrowthItem> = [
   {
     id: '1',
     title: 'Leadership Fundamentals',
@@ -152,9 +152,7 @@ export default function AnnouncementsPage(): ReactNode {
     ? announcements.filter((a) => a.category === selectedCategory)
     : announcements;
 
-  const completedCourses = growthItems.filter(
-    (item) => item.progress === 100
-  ).length;
+  const completedCourses = growthItems.filter((item) => item.progress === 100).length;
 
   return (
     <div className="space-y-6">
@@ -204,7 +202,10 @@ export default function AnnouncementsPage(): ReactNode {
           {/* Announcements List */}
           <div className="space-y-4">
             {filteredAnnouncements.map((announcement) => (
-              <Card key={announcement.id} className="cursor-pointer hover:shadow-card-hover transition-shadow">
+              <Card
+                key={announcement.id}
+                className="cursor-pointer hover:shadow-card-hover transition-shadow"
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 space-y-2">
@@ -221,12 +222,8 @@ export default function AnnouncementsPage(): ReactNode {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold">
-                        {announcement.title}
-                      </h3>
-                      <p className="text-muted-foreground line-clamp-2">
-                        {announcement.content}
-                      </p>
+                      <h3 className="text-lg font-semibold">{announcement.title}</h3>
+                      <p className="text-muted-foreground line-clamp-2">{announcement.content}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" />
                         {announcement.date}
@@ -251,9 +248,7 @@ export default function AnnouncementsPage(): ReactNode {
                     <Award className="h-5 w-5 text-success" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Completed
-                    </p>
+                    <p className="text-sm text-muted-foreground">Completed</p>
                     <p className="text-2xl font-bold">{completedCourses}</p>
                   </div>
                 </div>
@@ -268,9 +263,7 @@ export default function AnnouncementsPage(): ReactNode {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">In Progress</p>
-                    <p className="text-2xl font-bold">
-                      {growthItems.length - completedCourses}
-                    </p>
+                    <p className="text-2xl font-bold">{growthItems.length - completedCourses}</p>
                   </div>
                 </div>
               </CardContent>
@@ -283,9 +276,7 @@ export default function AnnouncementsPage(): ReactNode {
                     <Star className="h-5 w-5 text-warning" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Learning Hours
-                    </p>
+                    <p className="text-sm text-muted-foreground">Learning Hours</p>
                     <p className="text-2xl font-bold">24</p>
                   </div>
                 </div>
@@ -317,9 +308,7 @@ export default function AnnouncementsPage(): ReactNode {
                       }`}
                     >
                       <Icon
-                        className={`h-5 w-5 ${
-                          isCompleted ? 'text-success' : 'text-primary'
-                        }`}
+                        className={`h-5 w-5 ${isCompleted ? 'text-success' : 'text-primary'}`}
                       />
                     </div>
 
@@ -332,21 +321,15 @@ export default function AnnouncementsPage(): ReactNode {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {item.description}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
                       {!isCompleted && (
                         <div className="mt-2 flex items-center gap-3">
                           <Progress value={item.progress} className="h-2 flex-1" />
-                          <span className="text-sm font-medium">
-                            {item.progress}%
-                          </span>
+                          <span className="text-sm font-medium">{item.progress}%</span>
                         </div>
                       )}
                       {item.dueDate && !isCompleted && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Due: {item.dueDate}
-                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">Due: {item.dueDate}</p>
                       )}
                     </div>
 

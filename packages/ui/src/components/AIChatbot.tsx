@@ -31,7 +31,7 @@ export interface AIChatbotProps {
   className?: string;
 }
 
-const defaultWelcomeMessage = `Hi! I'm your HR Assistant. I can help you with:
+const defaultWelcomeMessage = `Hi! I'm SN Connect AI. I can help you with:
 
 - Employee policies and procedures
 - Leave requests and balances
@@ -144,20 +144,20 @@ export function AIChatbot({
       {isOpen && (
         <div
           className={cn(
-            'mb-4 flex flex-col rounded-xl border bg-background shadow-lg transition-all duration-300',
+            'mb-4 flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg transition-all duration-300',
             isExpanded
               ? 'h-[600px] w-[450px]'
               : 'h-[500px] w-[380px]'
           )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b bg-primary px-4 py-3 rounded-t-xl">
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-indigo-600 px-4 py-3 rounded-t-xl">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                <Sparkles className="h-4 w-4 text-white" />
+                <Sparkles className="h-4 w-4 text-white" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="font-semibold text-white">HR Assistant</h3>
+                <h3 className="font-semibold text-white">SN Connect AI</h3>
                 <p className="text-xs text-white/70">Powered by AI</p>
               </div>
             </div>
@@ -169,9 +169,9 @@ export function AIChatbot({
                 onClick={() => setIsExpanded(!isExpanded)}
               >
                 {isExpanded ? (
-                  <Minimize2 className="h-4 w-4" />
+                  <Minimize2 className="h-4 w-4" strokeWidth={1.5} />
                 ) : (
-                  <Maximize2 className="h-4 w-4" />
+                  <Maximize2 className="h-4 w-4" strokeWidth={1.5} />
                 )}
               </Button>
               <Button
@@ -180,7 +180,7 @@ export function AIChatbot({
                 className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
                 onClick={() => setIsOpen(false)}
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" strokeWidth={1.5} />
               </Button>
             </div>
           </div>
@@ -199,14 +199,14 @@ export function AIChatbot({
                   <AvatarFallback
                     className={cn(
                       message.role === 'assistant'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
                     )}
                   >
                     {message.role === 'assistant' ? (
-                      <Bot className="h-4 w-4" />
+                      <Bot className="h-4 w-4" strokeWidth={1.5} />
                     ) : (
-                      <User className="h-4 w-4" />
+                      <User className="h-4 w-4" strokeWidth={1.5} />
                     )}
                   </AvatarFallback>
                 </Avatar>
@@ -214,8 +214,8 @@ export function AIChatbot({
                   className={cn(
                     'max-w-[75%] rounded-lg px-4 py-2',
                     message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
                   )}
                 >
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
@@ -223,8 +223,8 @@ export function AIChatbot({
                     className={cn(
                       'mt-1 text-xs',
                       message.role === 'user'
-                        ? 'text-primary-foreground/70'
-                        : 'text-muted-foreground'
+                        ? 'text-white/70'
+                        : 'text-zinc-500 dark:text-zinc-400'
                     )}
                   >
                     {formatTime(message.timestamp)}
@@ -236,13 +236,13 @@ export function AIChatbot({
             {isLoading && (
               <div className="flex gap-3">
                 <Avatar className="h-8 w-8 flex-shrink-0">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    <Bot className="h-4 w-4" />
+                  <AvatarFallback className="bg-indigo-600 text-white">
+                    <Bot className="h-4 w-4" strokeWidth={1.5} />
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex items-center gap-2 rounded-lg bg-muted px-4 py-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 px-4 py-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-zinc-400" strokeWidth={1.5} />
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
                     Thinking...
                   </span>
                 </div>
@@ -253,8 +253,8 @@ export function AIChatbot({
           </div>
 
           {/* Input */}
-          <div className="border-t p-4">
-            <div className="flex gap-2">
+          <div className="border-t border-zinc-200 dark:border-zinc-800 p-3">
+            <div className="flex items-center gap-2">
               <Input
                 ref={inputRef}
                 value={inputValue}
@@ -262,17 +262,18 @@ export function AIChatbot({
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 h-10 px-4 text-sm bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 focus:bg-white dark:focus:bg-zinc-900 transition-all"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
                 size="icon"
+                className="h-10 w-10 flex items-center justify-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-4 w-4" strokeWidth={1.5} />
               </Button>
             </div>
-            <p className="mt-2 text-center text-xs text-muted-foreground">
+            <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
               AI responses may not always be accurate. Verify important information.
             </p>
           </div>
@@ -284,14 +285,14 @@ export function AIChatbot({
         onClick={() => setIsOpen(!isOpen)}
         size="lg"
         className={cn(
-          'h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105',
+          'h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 bg-indigo-600 hover:bg-indigo-700 text-white',
           isOpen && 'rotate-0'
         )}
       >
         {isOpen ? (
-          <X className="h-6 w-6" />
+          <X className="h-5 w-5" strokeWidth={1.5} />
         ) : (
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle className="h-5 w-5" strokeWidth={1.5} />
         )}
       </Button>
     </div>

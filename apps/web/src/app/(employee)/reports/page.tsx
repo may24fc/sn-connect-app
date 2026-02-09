@@ -1,27 +1,26 @@
 'use client';
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { Plus, Filter } from 'lucide-react';
 import {
   Button,
   Input,
+  InsightsSummary,
+  MetricKPICard,
+  MetricKPICardGrid,
+  ReportList,
+  type ReportStatus,
+  type ReportSubmission,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ReportSummaryCards,
-  ReportList,
-  MetricKPICard,
-  MetricKPICardGrid,
-  InsightsSummary,
-  type ReportSubmission,
-  type ReportStatus,
 } from '@hr-portal/ui';
+import { Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Mock data - replace with actual API calls
-const MOCK_REPORTS: ReportSubmission[] = [
+const MOCK_REPORTS: Array<ReportSubmission> = [
   {
     id: '1' as any,
     reportTypeId: 'rt-1' as any,
@@ -35,7 +34,7 @@ const MOCK_REPORTS: ReportSubmission[] = [
       summary: 'Successfully launched Facebook ad campaign targeting Q1 goals.',
       accomplishments: ['Generated 245 leads', 'Increased brand awareness by 40%'],
       challenges: ['Budget constraints for Google Ads'],
-      nextWeekPlans: ['Optimize ad targeting', 'Prepare Valentine\'s campaign'],
+      nextWeekPlans: ['Optimize ad targeting', "Prepare Valentine's campaign"],
       metrics: [
         {
           id: 'm1',
@@ -73,7 +72,7 @@ const MOCK_REPORTS: ReportSubmission[] = [
     periodStart: '2026-02-10T00:00:00.000Z',
     periodEnd: '2026-02-16T23:59:59.999Z',
     content: {
-      summary: 'Working on Valentine\'s campaign preparation.',
+      summary: "Working on Valentine's campaign preparation.",
       accomplishments: ['Created campaign materials'],
       challenges: [],
       nextWeekPlans: ['Launch campaign'],
@@ -100,7 +99,7 @@ const MOCK_REPORTS: ReportSubmission[] = [
 
 export default function ReportsPage(): React.ReactNode {
   const router = useRouter();
-  const [reports, setReports] = React.useState<ReportSubmission[]>(MOCK_REPORTS);
+  const [reports, setReports] = React.useState<Array<ReportSubmission>>(MOCK_REPORTS);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
 
@@ -120,9 +119,7 @@ export default function ReportsPage(): React.ReactNode {
   // Filter reports
   const filteredReports = React.useMemo(() => {
     return reports.filter((report) => {
-      const matchesSearch = report.reportTypeName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      const matchesSearch = report.reportTypeName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -137,8 +134,6 @@ export default function ReportsPage(): React.ReactNode {
   };
 
   const handleSubmitReport = (report: ReportSubmission): void => {
-    // TODO: Implement submit API call
-    console.log('Submitting report:', report.id);
     // Update local state for demo
     setReports((prev) =>
       prev.map((r) =>
@@ -159,9 +154,7 @@ export default function ReportsPage(): React.ReactNode {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-headline">My Weekly Reports</h1>
-          <p className="text-muted-foreground">
-            Track and submit your weekly activity reports
-          </p>
+          <p className="text-muted-foreground">Track and submit your weekly activity reports</p>
         </div>
         <Button onClick={handleNewReport}>
           <Plus className="h-4 w-4 mr-2" />
@@ -176,7 +169,7 @@ export default function ReportsPage(): React.ReactNode {
           value={totalReports}
           change={{
             absolute: `+${submittedThisMonth}`,
-            percent: submittedThisMonth > 0 ? ((submittedThisMonth / totalReports) * 100) : 0,
+            percent: submittedThisMonth > 0 ? (submittedThisMonth / totalReports) * 100 : 0,
             trend: submittedThisMonth > 0 ? 'up' : 'stable',
           }}
           color="blue"

@@ -1,25 +1,25 @@
 'use client';
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { BarChart3, GitCompare, Download } from 'lucide-react';
 import {
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  WeekDropdownSelector,
-  SubmissionRateCard,
-  ReportSubmissionList,
+  InsightsSummary,
   MetricKPICard,
   MetricKPICardGrid,
-  InsightsSummary,
-  type WeekPeriod,
   type ReportSubmission,
+  ReportSubmissionList,
+  SubmissionRateCard,
   type SubmissionTracking,
+  WeekDropdownSelector,
+  type WeekPeriod,
   getCurrentWeekPeriod,
 } from '@hr-portal/ui';
+import { BarChart3, Download, GitCompare } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Mock data - replace with actual API calls
 const MOCK_TRACKING: SubmissionTracking = {
@@ -30,7 +30,7 @@ const MOCK_TRACKING: SubmissionTracking = {
   weekPeriod: getCurrentWeekPeriod(),
 };
 
-const MOCK_SUBMISSIONS: ReportSubmission[] = [
+const MOCK_SUBMISSIONS: Array<ReportSubmission> = [
   {
     id: '1' as any,
     reportTypeId: 'rt-1' as any,
@@ -109,17 +109,11 @@ export default function AdminReportsPage(): React.ReactNode {
   const router = useRouter();
   const [selectedWeek, setSelectedWeek] = React.useState<WeekPeriod>(getCurrentWeekPeriod());
   const [tracking] = React.useState<SubmissionTracking>(MOCK_TRACKING);
-  const [submissions] = React.useState<ReportSubmission[]>(MOCK_SUBMISSIONS);
+  const [submissions] = React.useState<Array<ReportSubmission>>(MOCK_SUBMISSIONS);
 
-  const handleViewSubmission = (submission: ReportSubmission): void => {
-    // TODO: Navigate to detailed view
-    console.log('View submission:', submission.id);
-  };
+  const handleViewSubmission = (_submission: ReportSubmission): void => {};
 
-  const handleSendReminder = (submitterId: string): void => {
-    // TODO: Implement send reminder API call
-    console.log('Send reminder to:', submitterId);
-  };
+  const handleSendReminder = (_submitterId: string): void => {};
 
   const handleNavigateToAnalytics = (): void => {
     router.push('/admin/reports/analytics');
@@ -129,10 +123,7 @@ export default function AdminReportsPage(): React.ReactNode {
     router.push('/admin/reports/compare');
   };
 
-  const handleExport = (): void => {
-    // TODO: Implement export functionality
-    console.log('Exporting data for week:', selectedWeek.label);
-  };
+  const handleExport = (): void => {};
 
   return (
     <div className="space-y-6">
@@ -210,7 +201,13 @@ export default function AdminReportsPage(): React.ReactNode {
             percent: 7.1,
             trend: 'up',
           }}
-          color={tracking.submissionRate >= 80 ? 'green' : tracking.submissionRate >= 60 ? 'orange' : 'red'}
+          color={
+            tracking.submissionRate >= 80
+              ? 'green'
+              : tracking.submissionRate >= 60
+                ? 'orange'
+                : 'red'
+          }
         />
       </MetricKPICardGrid>
 
@@ -235,8 +232,8 @@ export default function AdminReportsPage(): React.ReactNode {
           },
         ]}
         recommendations={[
-          'Send reminder to Operations team members who haven\'t submitted',
-          'Consider recognizing Marketing team\'s consistency in next meeting',
+          "Send reminder to Operations team members who haven't submitted",
+          "Consider recognizing Marketing team's consistency in next meeting",
           'Set up automated reminders for Friday afternoon to improve submission rates',
         ]}
       />

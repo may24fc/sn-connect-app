@@ -40,9 +40,9 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="flex h-screen bg-muted/30">
+    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block flex-shrink-0">
         <Sidebar
           variant={user.role}
           currentPath={pathname}
@@ -56,14 +56,14 @@ export default function AdminLayout({
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative z-10">
+          <div className="relative z-10 flex-shrink-0">
             <Sidebar variant={user.role} currentPath={pathname} onNavigate={handleNavigate} />
           </div>
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         <Header
           user={user}
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -75,6 +75,7 @@ export default function AdminLayout({
           }}
         />
 
+        {/* Scrollable Content Area */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
 

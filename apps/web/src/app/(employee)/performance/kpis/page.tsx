@@ -1,25 +1,12 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { Button, Card, CardContent, type KPI, KPIList, KPISummary } from '@hr-portal/ui';
+import { ArrowLeft, BarChart3, Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-} from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  Button,
-  KPIList,
-  KPISummary,
-  type KPI,
-} from '@hr-portal/ui';
+import type { ReactNode } from 'react';
 
 // Mock data
-const mockKPIs: KPI[] = [
+const mockKPIs: Array<KPI> = [
   {
     id: 'kpi-1' as KPI['id'],
     employeeId: 'emp-1' as KPI['employeeId'],
@@ -92,12 +79,12 @@ const mockKPIs: KPI[] = [
   },
 ];
 
-function getWeightedScore(kpis: KPI[]): number {
+function getWeightedScore(kpis: Array<KPI>): number {
   const totalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
   if (totalWeight === 0) return 0;
 
   const weightedSum = kpis.reduce((sum, kpi) => {
-    return sum + (kpi.score * (kpi.weight || 0));
+    return sum + kpi.score * (kpi.weight || 0);
   }, 0);
 
   return Math.round(weightedSum / totalWeight);
@@ -120,9 +107,7 @@ export default function KPIsPage(): ReactNode {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">My KPIs</h1>
-          <p className="text-muted-foreground">
-            Track your key performance indicators
-          </p>
+          <p className="text-muted-foreground">Track your key performance indicators</p>
         </div>
       </div>
 
@@ -199,9 +184,9 @@ export default function KPIsPage(): ReactNode {
               <div>
                 <h3 className="font-semibold text-warning">Performance Alert</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your weighted KPI score is below the target threshold. Focus on improving
-                  the underperforming areas, especially Documentation Coverage which has
-                  the lowest score.
+                  Your weighted KPI score is below the target threshold. Focus on improving the
+                  underperforming areas, especially Documentation Coverage which has the lowest
+                  score.
                 </p>
               </div>
             </div>
@@ -219,8 +204,8 @@ export default function KPIsPage(): ReactNode {
               <div>
                 <h3 className="font-semibold text-success">Excellent Performance!</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your weighted KPI score exceeds the target. Keep up the great work!
-                  Consider sharing your strategies with the team.
+                  Your weighted KPI score exceeds the target. Keep up the great work! Consider
+                  sharing your strategies with the team.
                 </p>
               </div>
             </div>

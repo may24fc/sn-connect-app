@@ -1,17 +1,18 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button, TaskDetailView } from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { use, useEffect, useState } from 'react';
 
 // Mock data - Replace with actual API calls
 const mockTask: Task = {
   id: '1' as any,
   title: 'Review Q1 Financial Reports',
-  description: 'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities. This includes reviewing all departmental budgets, identifying areas of overspending, and preparing recommendations for the executive team.\n\nPlease ensure that:\n- All departmental reports are reviewed\n- Budget variance analysis is completed\n- Recommendations are documented\n- Final report is submitted by the due date',
+  description:
+    'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities. This includes reviewing all departmental budgets, identifying areas of overspending, and preparing recommendations for the executive team.\n\nPlease ensure that:\n- All departmental reports are reviewed\n- Budget variance analysis is completed\n- Recommendations are documented\n- Final report is submitted by the due date',
   priority: 'high',
   status: 'in_progress',
   category: 'Finance',
@@ -43,12 +44,13 @@ const mockTask: Task = {
 };
 
 interface TaskDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNode {
+  const { id } = use(params);
   const router = useRouter();
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,9 +71,9 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
     };
 
     fetchTask();
-  }, [params.id]);
+  }, [id]);
 
-  const handleStatusChange = async (status: TaskStatus, note?: string): Promise<void> => {
+  const handleStatusChange = async (status: TaskStatus, _note?: string): Promise<void> => {
     setIsUpdating(true);
     try {
       // TODO: Replace with actual API call
@@ -95,8 +97,6 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           assignees: updatedAssignees,
         });
       }
-
-      console.log('Status updated:', status, note);
 
       // Show success message (you can use a toast notification library)
       alert('Task status updated successfully!');
@@ -139,11 +139,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Button
-        variant="ghost"
-        onClick={() => router.push('/tasks')}
-        className="w-fit"
-      >
+      <Button variant="ghost" onClick={() => router.push('/tasks')} className="w-fit">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to My Tasks
       </Button>

@@ -1,33 +1,33 @@
 'use client';
 
-import { type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  Target,
-  BarChart3,
-  FileText,
-  Calendar,
-  ChevronRight,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  Button,
-  Badge,
-  Progress,
-  ReviewStatusBadge,
-  ProgressGauge,
-  type OKR,
   type KPI,
+  type OKR,
   type PerformanceCycle,
+  Progress,
+  ProgressGauge,
   type ReviewStatus,
+  ReviewStatusBadge,
 } from '@hr-portal/ui';
+import {
+  AlertCircle,
+  BarChart3,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  FileText,
+  Target,
+} from 'lucide-react';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 // Mock data - replace with actual API calls
 const mockCycle: PerformanceCycle = {
@@ -44,7 +44,7 @@ const mockCycle: PerformanceCycle = {
   updatedAt: '2023-12-15',
 };
 
-const mockOKRs: OKR[] = [
+const mockOKRs: Array<OKR> = [
   {
     id: 'okr-1' as OKR['id'],
     employeeId: 'emp-1' as OKR['employeeId'],
@@ -108,7 +108,7 @@ const mockOKRs: OKR[] = [
   },
 ];
 
-const mockKPIs: KPI[] = [
+const mockKPIs: Array<KPI> = [
   {
     id: 'kpi-1' as KPI['id'],
     employeeId: 'emp-1' as KPI['employeeId'],
@@ -157,13 +157,15 @@ function getDaysUntil(dateString: string): number {
 }
 
 export default function PerformancePage(): ReactNode {
-  const avgOkrProgress = mockOKRs.length > 0
-    ? Math.round(mockOKRs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / mockOKRs.length)
-    : 0;
+  const avgOkrProgress =
+    mockOKRs.length > 0
+      ? Math.round(mockOKRs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / mockOKRs.length)
+      : 0;
 
-  const avgKpiScore = mockKPIs.length > 0
-    ? Math.round(mockKPIs.reduce((sum, kpi) => sum + kpi.score, 0) / mockKPIs.length)
-    : 0;
+  const avgKpiScore =
+    mockKPIs.length > 0
+      ? Math.round(mockKPIs.reduce((sum, kpi) => sum + kpi.score, 0) / mockKPIs.length)
+      : 0;
 
   const selfAssessmentDays = mockCycle.selfAssessmentDeadline
     ? getDaysUntil(mockCycle.selfAssessmentDeadline)
@@ -196,12 +198,14 @@ export default function PerformancePage(): ReactNode {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="success">Active Cycle</Badge>
-              {selfAssessmentDays !== null && selfAssessmentDays > 0 && selfAssessmentDays <= 14 && (
-                <Badge variant="warning" className="gap-1">
-                  <Clock className="h-3 w-3" />
-                  {selfAssessmentDays} days until self-assessment
-                </Badge>
-              )}
+              {selfAssessmentDays !== null &&
+                selfAssessmentDays > 0 &&
+                selfAssessmentDays <= 14 && (
+                  <Badge variant="warning" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    {selfAssessmentDays} days until self-assessment
+                  </Badge>
+                )}
             </div>
           </div>
         </CardContent>
@@ -212,17 +216,11 @@ export default function PerformancePage(): ReactNode {
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Your Progress</CardTitle>
-            <CardDescription>
-              Overview of your performance metrics for this cycle
-            </CardDescription>
+            <CardDescription>Overview of your performance metrics for this cycle</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 sm:grid-cols-3">
-              <ProgressGauge
-                value={avgOkrProgress}
-                label="OKR Progress"
-                size="md"
-              />
+              <ProgressGauge value={avgOkrProgress} label="OKR Progress" size="md" />
               <ProgressGauge
                 value={avgKpiScore > 100 ? 100 : avgKpiScore}
                 label="KPI Score"
@@ -230,9 +228,7 @@ export default function PerformancePage(): ReactNode {
               />
               <div className="flex flex-col items-center justify-center">
                 <ReviewStatusBadge status={mockReviewStatus} />
-                <p className="mt-2 text-sm text-muted-foreground text-center">
-                  Review Status
-                </p>
+                <p className="mt-2 text-sm text-muted-foreground text-center">Review Status</p>
               </div>
             </div>
           </CardContent>
@@ -270,9 +266,7 @@ export default function PerformancePage(): ReactNode {
                     {formatDate(mockCycle.managerReviewDeadline)}
                   </p>
                 </div>
-                <Badge variant="secondary">
-                  {getDaysUntil(mockCycle.managerReviewDeadline)}d
-                </Badge>
+                <Badge variant="secondary">{getDaysUntil(mockCycle.managerReviewDeadline)}d</Badge>
               </div>
             )}
           </CardContent>
@@ -293,7 +287,8 @@ export default function PerformancePage(): ReactNode {
               </div>
               <h3 className="font-semibold mb-1">OKRs</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {mockOKRs.length} objectives with {mockOKRs.reduce((sum, okr) => sum + okr.keyResults.length, 0)} key results
+                {mockOKRs.length} objectives with{' '}
+                {mockOKRs.reduce((sum, okr) => sum + okr.keyResults.length, 0)} key results
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
@@ -328,7 +323,13 @@ export default function PerformancePage(): ReactNode {
                 <Progress
                   value={Math.min(avgKpiScore, 100)}
                   className="h-2"
-                  indicatorClassName={avgKpiScore >= 100 ? 'bg-success' : avgKpiScore >= 80 ? 'bg-warning' : 'bg-error'}
+                  indicatorClassName={
+                    avgKpiScore >= 100
+                      ? 'bg-success'
+                      : avgKpiScore >= 80
+                        ? 'bg-warning'
+                        : 'bg-error'
+                  }
                 />
               </div>
             </CardContent>

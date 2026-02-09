@@ -1,27 +1,25 @@
 'use client';
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Download, TrendingUp } from 'lucide-react';
 import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
+  ExpenditureVsResultsChart,
+  InsightsSummary,
+  MetricKPICard,
+  MetricKPICardGrid,
+  ROIByDepartmentChart,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ExpenditureVsResultsChart,
   SpendByCategoryChart,
-  ROIByDepartmentChart,
   WeeklyTrendsChart,
-  MetricKPICard,
-  MetricKPICardGrid,
-  InsightsSummary,
 } from '@hr-portal/ui';
+import { ArrowLeft, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Mock data - replace with actual API calls
 const WEEKLY_DATA = [
@@ -65,10 +63,7 @@ export default function AnalyticsPage(): React.ReactNode {
     router.push('/admin/reports');
   };
 
-  const handleExport = (): void => {
-    // TODO: Implement export functionality
-    console.log('Exporting analytics data');
-  };
+  const handleExport = (): void => {};
 
   // Calculate summary metrics
   const totalExpenditure = WEEKLY_DATA.reduce((sum, w) => sum + w.expenditure, 0);
@@ -188,7 +183,8 @@ export default function AnalyticsPage(): React.ReactNode {
           },
           {
             metric: 'Growth Trend',
-            insight: 'Overall expenditure increased 12% while results grew 18%, indicating improved efficiency',
+            insight:
+              'Overall expenditure increased 12% while results grew 18%, indicating improved efficiency',
             highlight: true,
           },
           {
@@ -198,7 +194,7 @@ export default function AnalyticsPage(): React.ReactNode {
         ]}
         recommendations={[
           'Increase marketing budget allocation given the 280% ROI performance',
-          'Share Marketing team\'s best practices with Operations to improve their ROI',
+          "Share Marketing team's best practices with Operations to improve their ROI",
           'Consider quarterly deep-dive analysis to identify long-term trends',
         ]}
       />

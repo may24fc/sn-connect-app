@@ -1,39 +1,39 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
 import {
-  Upload,
-  FileText,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Download,
-  Eye,
-  MoreVertical,
-  Search,
-  Filter,
-} from 'lucide-react';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Button,
-  Badge,
-  Progress,
-  Input,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Input,
+  Progress,
 } from '@hr-portal/ui';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  MoreVertical,
+  Search,
+  Upload,
+} from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 
 type DocumentStatus = 'approved' | 'pending' | 'missing' | 'rejected';
 
@@ -48,7 +48,7 @@ interface Document {
 }
 
 // Mock data - replace with actual data fetching
-const documents: Document[] = [
+const documents: Array<Document> = [
   {
     id: '1',
     name: 'Government ID (Front & Back)',
@@ -119,7 +119,11 @@ const documents: Document[] = [
 
 const statusConfig: Record<
   DocumentStatus,
-  { label: string; variant: 'approved' | 'pending' | 'error' | 'secondary'; icon: typeof CheckCircle2 }
+  {
+    label: string;
+    variant: 'approved' | 'pending' | 'error' | 'secondary';
+    icon: typeof CheckCircle2;
+  }
 > = {
   approved: { label: 'Approved', variant: 'approved', icon: CheckCircle2 },
   pending: { label: 'Pending Review', variant: 'pending', icon: Clock },
@@ -144,9 +148,7 @@ export default function FilesPage(): ReactNode {
     rejected: documents.filter((d) => d.status === 'rejected').length,
   };
 
-  const completionPercentage = Math.round(
-    (stats.approved / stats.total) * 100
-  );
+  const completionPercentage = Math.round((stats.approved / stats.total) * 100);
 
   const handleUpload = (doc: Document): void => {
     setSelectedDocument(doc);
@@ -158,9 +160,7 @@ export default function FilesPage(): ReactNode {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">My 201 Files</h1>
-        <p className="text-muted-foreground">
-          Manage and upload your employment documents
-        </p>
+        <p className="text-muted-foreground">Manage and upload your employment documents</p>
       </div>
 
       {/* Progress Overview */}
@@ -171,9 +171,7 @@ export default function FilesPage(): ReactNode {
               <h2 className="text-lg font-semibold">Document Completion</h2>
               <div className="flex items-center gap-2">
                 <Progress value={completionPercentage} className="h-3 w-48" />
-                <span className="text-sm font-medium">
-                  {completionPercentage}%
-                </span>
+                <span className="text-sm font-medium">{completionPercentage}%</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 {stats.approved} of {stats.total} documents approved
@@ -234,12 +232,8 @@ export default function FilesPage(): ReactNode {
                       <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-sm font-medium truncate">
-                        {doc.name}
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        {doc.category}
-                      </CardDescription>
+                      <CardTitle className="text-sm font-medium truncate">{doc.name}</CardTitle>
+                      <CardDescription className="text-xs">{doc.category}</CardDescription>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -277,17 +271,11 @@ export default function FilesPage(): ReactNode {
                   </Badge>
 
                   {doc.uploadedAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Uploaded: {doc.uploadedAt}
-                    </p>
+                    <p className="text-xs text-muted-foreground">Uploaded: {doc.uploadedAt}</p>
                   )}
 
                   {doc.status === 'missing' || doc.status === 'rejected' ? (
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleUpload(doc)}
-                    >
+                    <Button size="sm" className="w-full" onClick={() => handleUpload(doc)}>
                       <Upload className="mr-2 h-4 w-4" />
                       Upload Document
                     </Button>
@@ -304,19 +292,13 @@ export default function FilesPage(): ReactNode {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Upload Document</DialogTitle>
-            <DialogDescription>
-              {selectedDocument?.name}
-            </DialogDescription>
+            <DialogDescription>{selectedDocument?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
               <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-2 text-sm font-medium">
-                Drag and drop your file here
-              </p>
-              <p className="text-xs text-muted-foreground">
-                or click to browse from your computer
-              </p>
+              <p className="mt-2 text-sm font-medium">Drag and drop your file here</p>
+              <p className="text-xs text-muted-foreground">or click to browse from your computer</p>
               <Button variant="outline" size="sm" className="mt-4">
                 Choose File
               </Button>
@@ -329,9 +311,7 @@ export default function FilesPage(): ReactNode {
             <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setUploadDialogOpen(false)}>
-              Upload
-            </Button>
+            <Button onClick={() => setUploadDialogOpen(false)}>Upload</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

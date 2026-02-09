@@ -1,76 +1,81 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
 import {
-  Users,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Search,
-  MoreVertical,
-  Eye,
-  MessageSquare,
-  ChevronRight,
-  Star,
-  Target,
-  X,
-} from 'lucide-react';
-import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Button,
-  Badge,
-  Input,
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Progress,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Textarea,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Input,
+  Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
 } from '@hr-portal/ui';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Eye,
+  MessageSquare,
+  MoreVertical,
+  Search,
+  Star,
+  Target,
+  TrendingUp,
+  Users,
+  X,
+} from 'lucide-react';
+import { type ReactNode, useState } from 'react';
 
 type ProbationStatus = 'on-track' | 'at-risk' | 'completed' | 'extended';
 type ProbationStage = 1 | 2 | 3 | 4;
-type PerformanceRating = 'exceptional' | 'exceeds' | 'meets' | 'needs_improvement' | 'unsatisfactory';
+type PerformanceRating =
+  | 'exceptional'
+  | 'exceeds'
+  | 'meets'
+  | 'needs_improvement'
+  | 'unsatisfactory';
 
 interface OKR {
   id: string;
   objective: string;
-  keyResults: {
+  keyResults: Array<{
     id: string;
     description: string;
     target: string;
     current: string;
     progress: number;
-  }[];
+  }>;
   status: 'draft' | 'submitted' | 'approved' | 'in_progress' | 'completed';
 }
 
@@ -97,12 +102,12 @@ interface Employee {
   avatarUrl?: string;
   documentsComplete: number;
   totalDocuments: number;
-  okrs: OKR[];
-  kpis: KPI[];
+  okrs: Array<OKR>;
+  kpis: Array<KPI>;
 }
 
 // Mock data with OKRs and KPIs
-const employees: Employee[] = [
+const employees: Array<Employee> = [
   {
     id: '1',
     name: 'John Doe',
@@ -326,7 +331,11 @@ const employees: Employee[] = [
 
 const statusConfig: Record<
   ProbationStatus,
-  { label: string; variant: 'success' | 'warning' | 'error' | 'secondary'; icon: typeof CheckCircle2 }
+  {
+    label: string;
+    variant: 'success' | 'warning' | 'error' | 'secondary';
+    icon: typeof CheckCircle2;
+  }
 > = {
   'on-track': { label: 'On Track', variant: 'success', icon: TrendingUp },
   'at-risk': { label: 'At Risk', variant: 'error', icon: AlertTriangle },
@@ -365,7 +374,10 @@ const ratingConfig: Record<
   },
 };
 
-function StageIndicator({ stage, status }: { stage: ProbationStage; status: ProbationStatus }): ReactNode {
+function StageIndicator({
+  stage,
+  status,
+}: { stage: ProbationStage; status: ProbationStatus }): ReactNode {
   const stages = [1, 2, 3, 4];
 
   return (
@@ -377,12 +389,12 @@ function StageIndicator({ stage, status }: { stage: ProbationStage; status: Prob
             s < stage
               ? 'bg-success'
               : s === stage
-              ? status === 'at-risk'
-                ? 'bg-error'
-                : status === 'extended'
-                ? 'bg-warning'
-                : 'bg-primary'
-              : 'bg-muted'
+                ? status === 'at-risk'
+                  ? 'bg-error'
+                  : status === 'extended'
+                    ? 'bg-warning'
+                    : 'bg-primary'
+                : 'bg-muted'
           }`}
         />
       ))}
@@ -412,9 +424,7 @@ function StarRating({
         >
           <Star
             className={`h-6 w-6 ${
-              star <= value
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-muted-foreground'
+              star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
             }`}
           />
         </button>
@@ -440,8 +450,7 @@ export default function ProbationPage(): ReactNode {
       emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
-    const matchesDepartment =
-      departmentFilter === 'all' || emp.department === departmentFilter;
+    const matchesDepartment = departmentFilter === 'all' || emp.department === departmentFilter;
     return matchesSearch && matchesStatus && matchesDepartment;
   });
 
@@ -475,15 +484,6 @@ export default function ProbationPage(): ReactNode {
   };
 
   const handleSubmitAppraisal = (): void => {
-    // TODO: Implement actual submission logic
-    console.log('Submitting appraisal:', {
-      employee: selectedEmployee?.id,
-      overallRating,
-      starRating,
-      feedback,
-      okrRatings,
-      kpiRatings,
-    });
     setAppraisalDialogOpen(false);
     setSelectedEmployee(null);
   };
@@ -493,9 +493,7 @@ export default function ProbationPage(): ReactNode {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Probation Tracker</h1>
-        <p className="text-muted-foreground">
-          Monitor and manage employee probation periods
-        </p>
+        <p className="text-muted-foreground">Monitor and manage employee probation periods</p>
       </div>
 
       {/* Stats Cards */}
@@ -626,27 +624,20 @@ export default function ProbationPage(): ReactNode {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
-                          {employee.avatarUrl && (
-                            <AvatarImage src={employee.avatarUrl} />
-                          )}
+                          {employee.avatarUrl && <AvatarImage src={employee.avatarUrl} />}
                           <AvatarFallback className="text-xs">
                             {getInitials(employee.name)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">{employee.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {employee.position}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{employee.position}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>{employee.department}</TableCell>
                     <TableCell>
-                      <StageIndicator
-                        stage={employee.stage}
-                        status={employee.status}
-                      />
+                      <StageIndicator stage={employee.stage} status={employee.status} />
                     </TableCell>
                     <TableCell>
                       <Badge variant={config.variant} className="gap-1">
@@ -678,11 +669,7 @@ export default function ProbationPage(): ReactNode {
                         <span className="text-muted-foreground">-</span>
                       ) : (
                         <span
-                          className={
-                            employee.daysRemaining <= 15
-                              ? 'text-error font-medium'
-                              : ''
-                          }
+                          className={employee.daysRemaining <= 15 ? 'text-error font-medium' : ''}
                         >
                           {employee.daysRemaining} days
                         </span>
@@ -728,7 +715,8 @@ export default function ProbationPage(): ReactNode {
               Performance Appraisal
             </DialogTitle>
             <DialogDescription>
-              Review and rate {selectedEmployee?.name}&apos;s performance based on their OKRs and KPIs
+              Review and rate {selectedEmployee?.name}&apos;s performance based on their OKRs and
+              KPIs
             </DialogDescription>
           </DialogHeader>
 
@@ -737,9 +725,7 @@ export default function ProbationPage(): ReactNode {
               {/* Employee Info */}
               <div className="flex items-center gap-4 rounded-lg bg-muted/50 p-4">
                 <Avatar className="h-14 w-14">
-                  {selectedEmployee.avatarUrl && (
-                    <AvatarImage src={selectedEmployee.avatarUrl} />
-                  )}
+                  {selectedEmployee.avatarUrl && <AvatarImage src={selectedEmployee.avatarUrl} />}
                   <AvatarFallback className="text-lg">
                     {getInitials(selectedEmployee.name)}
                   </AvatarFallback>
@@ -781,7 +767,10 @@ export default function ProbationPage(): ReactNode {
                             <div>
                               <CardTitle className="text-base">{okr.objective}</CardTitle>
                               <CardDescription>
-                                Status: <Badge variant="secondary" className="ml-1">{okr.status.replace('_', ' ')}</Badge>
+                                Status:{' '}
+                                <Badge variant="secondary" className="ml-1">
+                                  {okr.status.replace('_', ' ')}
+                                </Badge>
                               </CardDescription>
                             </div>
                             <div className="text-right">
@@ -846,10 +835,15 @@ export default function ProbationPage(): ReactNode {
                                 </div>
                                 <div>
                                   <p className="text-xs text-muted-foreground">Score</p>
-                                  <p className={`font-semibold ${
-                                    kpi.score >= 100 ? 'text-success' :
-                                    kpi.score >= 80 ? 'text-warning' : 'text-error'
-                                  }`}>
+                                  <p
+                                    className={`font-semibold ${
+                                      kpi.score >= 100
+                                        ? 'text-success'
+                                        : kpi.score >= 80
+                                          ? 'text-warning'
+                                          : 'text-error'
+                                    }`}
+                                  >
                                     {kpi.score}%
                                   </p>
                                 </div>
@@ -917,7 +911,8 @@ export default function ProbationPage(): ReactNode {
                     <CardHeader>
                       <CardTitle className="text-base">Feedback & Comments</CardTitle>
                       <CardDescription>
-                        Provide detailed feedback based on {selectedEmployee.name}&apos;s performance
+                        Provide detailed feedback based on {selectedEmployee.name}&apos;s
+                        performance
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

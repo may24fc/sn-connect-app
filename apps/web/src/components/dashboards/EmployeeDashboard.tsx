@@ -1,31 +1,31 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  FolderOpen,
-  ClipboardCheck,
-  FileText,
-  Bell,
-  ChevronRight,
-  Target,
-  Calendar,
-  TrendingUp,
-  CheckSquare,
-} from 'lucide-react';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
   Progress,
-  Badge,
-  Button,
   TaskCard,
 } from '@hr-portal/ui';
-import type { Task, TaskId, TaskStatus } from '@hr-portal/ui';
-import { useAuth } from '@/contexts/AuthContext';
+import type { Task, TaskId } from '@hr-portal/ui';
+import {
+  Bell,
+  Calendar,
+  CheckSquare,
+  ChevronRight,
+  ClipboardCheck,
+  FileText,
+  FolderOpen,
+  Target,
+  TrendingUp,
+} from 'lucide-react';
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 // Mock data - replace with actual data fetching
 const onboardingProgress = 75;
@@ -86,7 +86,7 @@ const upcomingEvents = [
 ];
 
 // Mock tasks - replace with actual data fetching
-const recentTasks: Task[] = [
+const recentTasks: Array<Task> = [
   {
     id: '1' as TaskId,
     title: 'Review Q1 Financial Reports',
@@ -139,16 +139,14 @@ export default function EmployeeDashboard(): ReactNode {
       {/* Welcome Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Welcome back, {user?.name}!
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">Welcome back, {user?.name}!</h1>
           <p className="text-muted-foreground">
             Here is what is happening with your HR journey today.
           </p>
         </div>
         <Button asChild>
           <Link href="/files">
-            <FolderOpen className="mr-2 h-4 w-4" />
+            <FolderOpen className="mr-2 h-4 w-4" strokeWidth={1.5} />
             View My Files
           </Link>
         </Button>
@@ -160,7 +158,7 @@ export default function EmployeeDashboard(): ReactNode {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Target className="h-5 w-5 text-primary" />
+              <Target className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
               Onboarding Progress
             </CardTitle>
           </CardHeader>
@@ -176,7 +174,7 @@ export default function EmployeeDashboard(): ReactNode {
                 className="inline-flex items-center text-sm text-primary hover:underline"
               >
                 View checklist
-                <ChevronRight className="ml-1 h-4 w-4" />
+                <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
               </Link>
             </div>
           </CardContent>
@@ -186,7 +184,7 @@ export default function EmployeeDashboard(): ReactNode {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingUp className="h-5 w-5 text-success" />
+              <TrendingUp className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
               Probation Status
             </CardTitle>
           </CardHeader>
@@ -194,11 +192,7 @@ export default function EmployeeDashboard(): ReactNode {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">{probationData.stage}</span>
-                <Badge
-                  variant={
-                    probationData.status === 'on-track' ? 'success' : 'warning'
-                  }
-                >
+                <Badge variant={probationData.status === 'on-track' ? 'success' : 'warning'}>
                   {probationData.status === 'on-track' ? 'On Track' : 'At Risk'}
                 </Badge>
               </div>
@@ -213,21 +207,16 @@ export default function EmployeeDashboard(): ReactNode {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="h-5 w-5 text-primary" />
+              <Calendar className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
               Upcoming Events
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {upcomingEvents.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between text-sm"
-                >
+                <div key={index} className="flex items-center justify-between text-sm">
                   <span className="font-medium">{event.title}</span>
-                  <span className="text-muted-foreground text-xs">
-                    {event.date}
-                  </span>
+                  <span className="text-muted-foreground text-xs">{event.date}</span>
                 </div>
               ))}
             </div>
@@ -243,22 +232,12 @@ export default function EmployeeDashboard(): ReactNode {
             <Link key={card.title} href={card.href}>
               <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
                 <CardContent className="flex items-center gap-4 p-4">
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-lg ${
-                      card.variant === 'warning'
-                        ? 'bg-warning/10 text-warning'
-                        : 'bg-primary/10 text-primary'
-                    }`}
-                  >
-                    <card.icon className="h-6 w-6" />
-                  </div>
+                  <card.icon className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
                   <div className="flex-1">
                     <h3 className="font-medium">{card.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {card.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{card.description}</p>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  <ChevronRight className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
                 </CardContent>
               </Card>
             </Link>
@@ -271,7 +250,7 @@ export default function EmployeeDashboard(): ReactNode {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5" />
+              <CheckSquare className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
               Assigned Tasks
             </CardTitle>
             <CardDescription>Tasks requiring your attention</CardDescription>
@@ -288,14 +267,14 @@ export default function EmployeeDashboard(): ReactNode {
                   key={task.id}
                   task={task}
                   variant="compact"
-                  onViewDetails={() => window.location.href = `/tasks/${task.id}`}
+                  onViewDetails={() => (window.location.href = `/tasks/${task.id}`)}
                   showAssignees={false}
                 />
               ))}
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <CheckSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <CheckSquare className="h-5 w-5 mx-auto mb-3 text-zinc-400" strokeWidth={1.5} />
               <p>No tasks assigned yet</p>
             </div>
           )}
@@ -307,7 +286,7 @@ export default function EmployeeDashboard(): ReactNode {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
+              <Bell className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
               Latest Announcements
             </CardTitle>
             <CardDescription>Stay updated with company news</CardDescription>

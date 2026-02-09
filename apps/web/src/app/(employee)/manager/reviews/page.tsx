@@ -1,49 +1,48 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft,
-  FileText,
-  Star,
-  CheckCircle2,
-  Target,
-  BarChart3,
-  MessageSquare,
-  Clock,
-} from 'lucide-react';
-import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
-  Button,
-  Badge,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  Textarea,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  type KPI,
+  KPIList,
   Label,
+  type OKR,
+  OKRList,
+  type PerformanceRating,
+  RATING_CONFIG,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  Progress,
-  OKRList,
-  KPIList,
-  type OKR,
-  type KPI,
-  type PerformanceRating,
-  RATING_CONFIG,
+  Textarea,
 } from '@hr-portal/ui';
+import {
+  ArrowLeft,
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  FileText,
+  MessageSquare,
+  Star,
+  Target,
+} from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, useState } from 'react';
 
 // Mock data for employee pending review
 const mockEmployee = {
@@ -54,15 +53,19 @@ const mockEmployee = {
   department: 'Engineering',
   avatarUrl: undefined,
   selfAssessment: {
-    accomplishments: 'Led the development of the new HR Portal system, implementing modern React architecture with TypeScript. Successfully migrated legacy systems reducing technical debt by 40%. Mentored 2 junior developers.',
-    challenges: 'Faced tight deadlines with the portal launch but managed through effective prioritization and communication with stakeholders.',
-    areasOfImprovement: 'Would like to improve my public speaking skills and take on more leadership roles in cross-team projects.',
-    goals: 'Complete AWS certification, lead at least one major cross-functional project, and mentor another team member.',
+    accomplishments:
+      'Led the development of the new HR Portal system, implementing modern React architecture with TypeScript. Successfully migrated legacy systems reducing technical debt by 40%. Mentored 2 junior developers.',
+    challenges:
+      'Faced tight deadlines with the portal launch but managed through effective prioritization and communication with stakeholders.',
+    areasOfImprovement:
+      'Would like to improve my public speaking skills and take on more leadership roles in cross-team projects.',
+    goals:
+      'Complete AWS certification, lead at least one major cross-functional project, and mentor another team member.',
     selfRating: 'exceeds' as PerformanceRating,
   },
 };
 
-const mockOKRs: OKR[] = [
+const mockOKRs: Array<OKR> = [
   {
     id: 'okr-1' as OKR['id'],
     employeeId: 'emp-1' as OKR['employeeId'],
@@ -101,7 +104,7 @@ const mockOKRs: OKR[] = [
   },
 ];
 
-const mockKPIs: KPI[] = [
+const mockKPIs: Array<KPI> = [
   {
     id: 'kpi-1' as KPI['id'],
     employeeId: 'emp-1' as KPI['employeeId'],
@@ -157,9 +160,7 @@ function StarRating({
         >
           <Star
             className={`h-8 w-8 ${
-              star <= value
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-muted-foreground'
+              star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
             }`}
           />
         </button>
@@ -175,13 +176,15 @@ export default function ManagerReviewsPage(): ReactNode {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
-  const avgOkrProgress = mockOKRs.length > 0
-    ? Math.round(mockOKRs.reduce((sum, o) => sum + o.progressPercentage, 0) / mockOKRs.length)
-    : 0;
+  const avgOkrProgress =
+    mockOKRs.length > 0
+      ? Math.round(mockOKRs.reduce((sum, o) => sum + o.progressPercentage, 0) / mockOKRs.length)
+      : 0;
 
-  const avgKpiScore = mockKPIs.length > 0
-    ? Math.round(mockKPIs.reduce((sum, k) => sum + k.score, 0) / mockKPIs.length)
-    : 0;
+  const avgKpiScore =
+    mockKPIs.length > 0
+      ? Math.round(mockKPIs.reduce((sum, k) => sum + k.score, 0) / mockKPIs.length)
+      : 0;
 
   const isFormValid = (): boolean => {
     return managerFeedback.trim().length >= 50 && managerRating !== null && starRating > 0;
@@ -207,9 +210,7 @@ export default function ManagerReviewsPage(): ReactNode {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Manager Review</h1>
-            <p className="text-muted-foreground">
-              Complete the performance review
-            </p>
+            <p className="text-muted-foreground">Complete the performance review</p>
           </div>
         </div>
         <Badge variant="warning" className="gap-1">
@@ -223,12 +224,8 @@ export default function ManagerReviewsPage(): ReactNode {
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              {mockEmployee.avatarUrl && (
-                <AvatarImage src={mockEmployee.avatarUrl} />
-              )}
-              <AvatarFallback className="text-lg">
-                {getInitials(mockEmployee.name)}
-              </AvatarFallback>
+              {mockEmployee.avatarUrl && <AvatarImage src={mockEmployee.avatarUrl} />}
+              <AvatarFallback className="text-lg">{getInitials(mockEmployee.name)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <h2 className="text-xl font-semibold">{mockEmployee.name}</h2>
@@ -320,9 +317,7 @@ export default function ManagerReviewsPage(): ReactNode {
                   <Target className="h-5 w-5 text-success" />
                   Objectives & Key Results
                 </CardTitle>
-                <CardDescription>
-                  Average Progress: {avgOkrProgress}%
-                </CardDescription>
+                <CardDescription>Average Progress: {avgOkrProgress}%</CardDescription>
               </CardHeader>
             </Card>
             <OKRList okrs={mockOKRs} readonly />
@@ -338,9 +333,7 @@ export default function ManagerReviewsPage(): ReactNode {
                   <BarChart3 className="h-5 w-5 text-warning" />
                   Key Performance Indicators
                 </CardTitle>
-                <CardDescription>
-                  Average Score: {avgKpiScore}%
-                </CardDescription>
+                <CardDescription>Average Score: {avgKpiScore}%</CardDescription>
               </CardHeader>
             </Card>
             <KPIList kpis={mockKPIs} />
@@ -371,7 +364,7 @@ export default function ManagerReviewsPage(): ReactNode {
               <div className="space-y-3">
                 <Label>Performance Level</Label>
                 <div className="grid gap-2">
-                  {(Object.keys(RATING_CONFIG) as PerformanceRating[]).map((rating) => (
+                  {(Object.keys(RATING_CONFIG) as Array<PerformanceRating>).map((rating) => (
                     <button
                       key={rating}
                       type="button"
@@ -435,8 +428,8 @@ export default function ManagerReviewsPage(): ReactNode {
               Submit Manager Review
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to submit your review for {mockEmployee.name}?
-              This will finalize the performance review and notify HR.
+              Are you sure you want to submit your review for {mockEmployee.name}? This will
+              finalize the performance review and notify HR.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -6,24 +6,24 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../utils/cn';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground shadow hover:bg-primary-600',
+          'bg-indigo-600 text-white shadow hover:bg-indigo-700 active:bg-indigo-800',
         destructive:
-          'bg-error text-error-foreground shadow-sm hover:bg-error-600',
+          'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800',
         outline:
-          'border border-input bg-background shadow-sm hover:bg-muted hover:text-foreground',
+          'border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
         secondary:
-          'bg-muted text-foreground shadow-sm hover:bg-muted/80',
-        ghost: 'hover:bg-muted hover:text-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-700',
+        ghost: 'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
+        link: 'text-indigo-600 dark:text-indigo-400 underline-offset-4 hover:underline',
         success:
-          'bg-success text-success-foreground shadow-sm hover:bg-success-600',
+          'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800',
         warning:
-          'bg-warning text-warning-foreground shadow-sm hover:bg-warning-600',
+          'bg-amber-500 text-white shadow-sm hover:bg-amber-600 active:bg-amber-700',
       },
       size: {
         default: 'h-10 px-4 py-2',

@@ -10,8 +10,8 @@ This comprehensive guide covers all user workflows available in the SN HR Portal
 4. [Employee Workflows](#employee-workflows)
 5. [Manager Workflows](#manager-workflows)
 6. [Intern Workflows](#intern-workflows)
-7. [HR Admin Workflows](#hr-admin-workflows)
-8. [COS (Cost of Service) Workflows](#cos-workflows)
+7. [Admin (HR) Workflows](#admin-hr-workflows)
+8. [Super Admin Workflows](#super-admin-workflows)
 9. [AI Assistant](#ai-assistant)
 10. [Common UI Components](#common-ui-components)
 
@@ -19,7 +19,7 @@ This comprehensive guide covers all user workflows available in the SN HR Portal
 
 ## Overview
 
-The SN HR Portal is a centralized HR management system that provides self-service capabilities for employees, managers, interns, HR administrators, and COS approvers. The application features a responsive design that works across desktop and mobile devices.
+The SN HR Portal is a centralized HR management system that provides self-service capabilities for employees, managers, interns, HR administrators, and super administrators. The application features a responsive design that works across desktop and mobile devices.
 
 ### Key Features
 
@@ -28,7 +28,10 @@ The SN HR Portal is a centralized HR management system that provides self-servic
 - Onboarding and offboarding checklists
 - Performance management (OKRs and KPIs)
 - Payroll invoice submission and approval
-- Intern hour tracking and daily reporting
+- Task assignment and tracking
+- Weekly report submissions and analytics
+- AI Knowledge Base management
+- System health monitoring (Super Admin)
 - AI-powered HR assistant
 - Real-time notifications
 
@@ -36,15 +39,20 @@ The SN HR Portal is a centralized HR management system that provides self-servic
 
 ## User Roles
 
-The portal supports five distinct user roles, each with specific navigation and capabilities:
+The portal supports four distinct user roles, each with specific navigation and capabilities:
 
 | Role | Primary Functions | Navigation Items |
 |------|-------------------|------------------|
-| **Employee** | Self-service HR tasks, document management, performance tracking | Home, My 201 Files, Onboarding, Performance, Payroll, Information Hub, Profile |
-| **Manager** | Team performance monitoring, reviews, plus all employee functions | All employee items + Team Performance |
-| **Intern** | Hour tracking, daily reports | Dashboard, My Reports, Profile |
-| **HR Admin** | Probation tracking, performance management, intern oversight | Probation Tracker, Performance, Intern Management |
-| **COS** | Invoice approvals | Invoice Approvals |
+| **Employee** | Self-service HR tasks, document management, performance tracking, reports | Dashboard, My Tasks, My Profile, My 201 Files, Payroll, Reports, Performance Reviews, Announcements |
+| **Intern** | Task tracking, document management, performance | Dashboard, My Tasks, My Profile, My 201 Files, Performance Reviews, Announcements |
+| **Admin (HR)** | HR administration, performance management, intern oversight, reporting analytics | Dashboard, Interns, Reports, Performance, Probation, AI Knowledge |
+| **Super Admin** | Full system control, task management, payroll approvals, system monitoring | Dashboard, Task Management, Interns, Reports, Performance, Probation, AI Knowledge, Payroll Approvals |
+
+### Manager Access
+
+Employees with manager responsibilities have access to additional features:
+- Team Performance (`/manager/team-performance`)
+- Pending Reviews (`/manager/reviews`)
 
 ---
 
@@ -52,7 +60,7 @@ The portal supports five distinct user roles, each with specific navigation and 
 
 ### Login Page (`/login`)
 
-The login page provides secure access to the portal with the following features:
+The login page provides secure access to the portal.
 
 **Login Form Fields:**
 - Email address
@@ -65,13 +73,16 @@ The login page provides secure access to the portal with the following features:
 3. Optionally check "Remember me for 30 days"
 4. Click "Sign in"
 
-**Role-Based Redirection:**
-- COS users (email contains "cos") are redirected to `/cos/invoices`
-- Admin/HR users (email contains "admin" or "hr") are redirected to `/probation`
-- Regular employees are redirected to `/dashboard`
+**Role-Based Redirection After Login:**
+| Role | Redirect Path |
+|------|---------------|
+| Employee | `/dashboard` |
+| Intern | `/intern/dashboard` |
+| Admin | `/admin/dashboard` |
+| Super Admin | `/super-admin/dashboard` |
 
 **Additional Options:**
-- "Forgot password?" link navigates to password recovery
+- "Forgot password?" link navigates to password recovery (`/forgot-password`)
 - "Contact IT Support" link for assistance
 
 ---
@@ -87,154 +98,79 @@ The dashboard serves as the central hub displaying personalized information.
 **Dashboard Components:**
 
 1. **Welcome Header**
-   - Personalized greeting with user's name
+   - Personalized greeting with user's name (time-based: Good morning/afternoon/evening)
    - Quick access button to "View My Files"
 
-2. **Progress Cards Row**
-   - **Onboarding Progress**: Visual progress bar showing completion percentage with link to full checklist
-   - **Probation Status**: Current stage (1-4), status badge (On Track/At Risk), days remaining
-   - **Upcoming Events**: List of scheduled events with dates
+2. **Stats Row**
+   - **Onboarding Progress**: Percentage complete with trend indicator
+   - **Probation Stage**: Current stage with days remaining
+   - **Tasks Due**: Count of pending tasks
+   - **Notifications**: Unread notification count
 
-3. **Quick Actions**
-   - Upload Documents (shows pending count)
-   - Complete Checklist (shows remaining tasks)
-   - Submit Invoice (shows due date)
+3. **Quick Actions Card**
+   Grid of action buttons:
+   - Upload Files (links to `/files`)
+   - Submit Report (links to `/reports/new`)
+   - View Calendar (links to `/calendar`)
+   - Request Leave (links to `/leave`)
 
-4. **Latest Announcements**
-   - Recent company announcements with category badges
-   - "View All" link to Information Hub
-   - "Read" button for each announcement
-
-### My 201 Files (`/files`)
-
-Document management interface for employment records.
-
-**Features:**
-
-1. **Document Completion Overview**
-   - Visual progress bar showing approval percentage
-   - Legend showing document status counts (Approved, Pending, Missing, Rejected)
-
-2. **Search and Filter**
-   - Search documents by name
-   - Filter button for advanced filtering
-
-3. **Document Grid**
-   - Each document displays:
-     - Document name and category
-     - Status badge (Approved, Pending Review, Not Uploaded, Rejected)
-     - Upload date (if applicable)
-     - Action menu (View, Download, Upload/Replace)
-
-4. **Upload Dialog**
-   - Drag-and-drop file upload
-   - Supported formats: PDF, JPG, PNG (max 10MB)
-   - Cancel/Upload buttons
-
-**Document Categories:**
-- Identity (Government ID, Birth Certificate)
-- Clearances (NBI Clearance)
-- Government (SSS E1, PhilHealth MDR, Pag-IBIG MID, TIN)
-- Education (Diploma/TOR)
-
-### Onboarding (`/onboarding`)
-
-Track and complete onboarding tasks across multiple categories.
-
-**Features:**
-
-1. **Overall Progress Card**
+4. **Onboarding Progress Card**
    - Visual progress bar with percentage
-   - Task completion count
-   - "Onboarding Complete!" badge when finished
+   - Task completion status (e.g., "3 tasks remaining")
+   - On Track/At Risk status badge
+   - Link to view full checklist
 
-2. **Tab Navigation**
-   - Onboarding tab (default)
-   - Offboarding tab (for separation process)
+5. **Upcoming Events Card**
+   - List of scheduled events with dates and times
+   - Performance Review, Team Building, Training Workshop
+   - "View All" link to calendar
 
-3. **Expandable Category Sections**
-   Each category shows:
-   - Category icon and title
-   - Completion count (X of Y completed)
-   - Progress bar
-   - Expand/collapse toggle
+6. **Latest Announcements Card**
+   - Recent company announcements with category badges
+   - Timestamp for each announcement
+   - "View All" link to Information Hub
 
-**Onboarding Categories:**
-- **Document Submission**: ID uploads, clearances, government documents
-- **HR Requirements**: Employee forms, contract signing, orientation
-- **IT Setup**: Email, software installation, security training
-- **Training & Development**: Culture training, mentor meetings
+### My Tasks (`/tasks`)
 
-**Offboarding Categories:**
-- **Clearance Process**: Equipment return, financial obligations
-- **IT Clearance**: File backup, credential handover
-
-**Task Item Display:**
-- Checkbox icon (completed/pending)
-- Task title and description
-- Due date (if applicable, shown with warning icon)
-- "Complete" button for pending tasks
-
-### Payroll (`/payroll`)
-
-Submit and track invoice submissions.
-
-**Features:**
-
-1. **Stats Cards Row**
-   - Total Invoices count
-   - Approved count
-   - Pending count
-   - Total Approved Amount (PHP currency)
-
-2. **Submit Invoice Button**
-   Opens submission dialog with:
-   - Pay period dropdown
-   - Invoice amount input
-   - Document upload area
-   - Optional notes field
-
-3. **Submission History Table**
-   - Invoice number
-   - Period
-   - Amount
-   - Status badge
-   - Submission date
-   - View/Download actions
-
-4. **Invoice Detail Dialog**
-   - Full invoice details
-   - Reviewer notes (for rejected invoices)
-   - Download button
-
-### Information Hub (`/announcements`)
-
-Stay updated with company news and track personal growth.
+View and manage all tasks assigned to you.
 
 **Features:**
 
 1. **Tab Navigation**
-   - Announcements tab
-   - My Growth tab
+   - All Tasks (total count)
+   - Pending (pending count)
+   - In Progress (in progress count)
+   - Completed (completed count)
+   - Blocked (blocked count)
 
-2. **Announcements Tab**
-   - Category filter buttons (All, HR Updates, Benefits, Events, Performance, Training)
-   - Announcement cards showing:
-     - Category badge
-     - "New" badge (if recent)
-     - Title and content preview
-     - Posted date
-     - Click to view details
+2. **Task Filters**
+   - Search by title or description
+   - Filter by priority (Low, Medium, High, Urgent)
+   - Filter by date range
 
-3. **My Growth Tab**
-   - **Stats Cards**: Completed courses, In Progress items, Learning Hours
-   - **Learning & Development List**:
-     - Course/goal cards with progress bars
-     - Completion status badges
-     - Due dates
-     - View details button
+3. **Task Cards**
+   Each task displays:
+   - Title and description
+   - Priority badge (color-coded)
+   - Status indicator
+   - Due date
+   - Category tag
+   - Created by information
+   - Quick status update buttons
 
-### Profile (`/profile`)
+**Task Statuses:**
+- `pending` - Not yet started
+- `in_progress` - Currently being worked on
+- `completed` - Finished
+- `blocked` - Waiting on dependencies
+
+**Task Detail View (`/tasks/[id]`):**
+- Full task description
+- Assignee list
+- Status history
+- Comments and updates
+
+### My Profile (`/profile`)
 
 Manage personal information and account security.
 
@@ -276,7 +212,122 @@ Manage personal information and account security.
 - Toggle "Edit Profile" to enable/disable field editing
 - Save Changes/Cancel buttons appear in edit mode
 
-### Performance (`/performance`)
+### My 201 Files (`/files`)
+
+Document management interface for employment records.
+
+**Features:**
+
+1. **Document Completion Overview**
+   - Visual progress bar showing approval percentage
+   - Legend showing document status counts (Approved, Pending, Missing, Rejected)
+
+2. **Search and Filter**
+   - Search documents by name
+   - Filter button for advanced filtering
+
+3. **Document Grid**
+   Each document displays:
+   - Document name and category
+   - Status badge (Approved, Pending Review, Not Uploaded, Rejected)
+   - Upload date (if applicable)
+   - Action menu (View, Download, Upload/Replace)
+
+4. **Upload Dialog**
+   - Drag-and-drop file upload
+   - Supported formats: PDF, JPG, PNG (max 10MB)
+   - Cancel/Upload buttons
+
+**Document Categories:**
+- Identity (Government ID, Birth Certificate)
+- Clearances (NBI Clearance)
+- Government (SSS E1, PhilHealth MDR, Pag-IBIG MID, TIN)
+- Education (Diploma/TOR)
+
+### Payroll (`/payroll`)
+
+Submit and track invoice submissions.
+
+**Features:**
+
+1. **Stats Cards Row**
+   - Total Invoices count
+   - Approved count
+   - Pending count
+   - Total Approved Amount (PHP currency)
+
+2. **Submit Invoice Button**
+   Opens submission dialog with:
+   - Pay period dropdown
+   - Invoice amount input
+   - Document upload area
+   - Optional notes field
+
+3. **Submission History Table**
+   - Invoice number
+   - Period
+   - Amount
+   - Status badge
+   - Submission date
+   - View/Download actions
+
+4. **Invoice Detail Dialog**
+   - Full invoice details
+   - Reviewer notes (for rejected invoices)
+   - Download button
+
+### Reports (`/reports`)
+
+Track and submit your weekly activity reports.
+
+**Features:**
+
+1. **Header with Actions**
+   - "New Report" button to create new submission
+
+2. **KPI Cards**
+   - Total Reports count
+   - This Month submissions
+   - Pending Drafts
+   - Completion Rate percentage
+
+3. **Insights Summary**
+   - Performance summary text
+   - Key findings with highlights:
+     - Submission Streak
+     - Engagement metrics
+     - Trends analysis
+   - Recommendations for improvement
+
+4. **Filters**
+   - Search reports by name
+   - Status filter (All, Draft, Submitted, Reviewed)
+
+5. **Report List**
+   Each report shows:
+   - Report type name
+   - Week period
+   - Status badge
+   - Submission date
+   - View/Edit/Submit actions
+
+**New Report Creation (`/reports/new`):**
+- Report type selection
+- Week period picker
+- Summary text area
+- Accomplishments list
+- Challenges faced
+- Next week plans
+- Metrics input (expenditure, results)
+- File attachments
+- Save as draft or Submit
+
+**Report Detail View (`/reports/[id]`):**
+- Full report content
+- Attached files
+- Review status and feedback
+
+### Performance Reviews (`/performance`)
 
 Track objectives, KPIs, and performance reviews.
 
@@ -305,6 +356,70 @@ Track objectives, KPIs, and performance reviews.
 5. **Recent OKR Updates**
    - Latest objectives with progress bars
    - "View All" link
+
+**Sub-pages:**
+- OKRs (`/performance/okrs`) - Manage your objectives and key results
+- KPIs (`/performance/kpis`) - Track key performance indicators
+- Review (`/performance/review`) - Complete self-assessment
+
+### Announcements / Information Hub (`/announcements`)
+
+Stay updated with company news and track personal growth.
+
+**Features:**
+
+1. **Tab Navigation**
+   - Announcements tab
+   - My Growth tab
+
+2. **Announcements Tab**
+   - Category filter buttons (All, HR Updates, Benefits, Events, Performance, Training)
+   - Announcement cards showing:
+     - Category badge
+     - "New" badge (if recent)
+     - Title and content preview
+     - Posted date
+     - Click to view details
+
+3. **My Growth Tab**
+   - **Stats Cards**: Completed courses, In Progress items, Learning Hours
+   - **Learning & Development List**:
+     - Course/goal cards with progress bars
+     - Completion status badges
+     - Due dates
+     - View details button
+
+### Onboarding (`/onboarding`)
+
+Track and complete onboarding tasks across multiple categories.
+
+**Features:**
+
+1. **Overall Progress Card**
+   - Visual progress bar with percentage
+   - Task completion count
+   - "Onboarding Complete!" badge when finished
+
+2. **Tab Navigation**
+   - Onboarding tab (default)
+   - Offboarding tab (for separation process)
+
+3. **Expandable Category Sections**
+   Each category shows:
+   - Category icon and title
+   - Completion count (X of Y completed)
+   - Progress bar
+   - Expand/collapse toggle
+
+**Onboarding Categories:**
+- **Document Submission**: ID uploads, clearances, government documents
+- **HR Requirements**: Employee forms, contract signing, orientation
+- **IT Setup**: Email, software installation, security training
+- **Training & Development**: Culture training, mentor meetings
+
+**Offboarding Categories:**
+- **Clearance Process**: Equipment return, financial obligations
+- **IT Clearance**: File backup, credential handover
 
 ---
 
@@ -336,11 +451,13 @@ Monitor and manage team performance metrics.
    - Filter dropdown (All Status, Pending Self-Assessment, Pending My Review, Completed)
 
 5. **Team Members Table**
-   - Member avatar, name, position
-   - OKR Progress bar with percentage and warning icon if below 60%
-   - KPI Score bar with percentage
-   - Review Status badge
-   - Actions: "Review" button (if pending manager review) or "View" button
+   | Column | Content |
+   |--------|---------|
+   | Team Member | Avatar, name, position |
+   | OKR Progress | Progress bar with percentage, warning icon if below 60% |
+   | KPI Score | Progress bar with percentage |
+   | Review Status | Status badge |
+   | Actions | "Review" button (if pending) or "View" button |
 
 6. **Action Required Alert**
    - Warning card when reviews are pending
@@ -361,7 +478,7 @@ Queue of team members awaiting manager review.
 
 ## Intern Workflows
 
-Interns have a specialized interface focused on hour tracking and daily reporting.
+Interns have a specialized interface focused on task completion and development.
 
 ### Intern Dashboard (`/intern/dashboard`)
 
@@ -404,23 +521,191 @@ Central hub for intern activities.
    - Preview of tasks completed
    - "View All" link to full reports
 
-### My Reports (`/intern/reports`)
+### Intern Navigation
 
-View and manage all daily report submissions.
+Interns have access to:
+- Dashboard (`/intern/dashboard`)
+- My Tasks (`/tasks`)
+- My Profile (`/profile`)
+- My 201 Files (`/files`)
+- Performance Reviews (`/performance`)
+- Announcements (`/announcements`)
 
-**Features:**
-- Complete report history
-- Filter by date range
-- View supervisor feedback
-- Report status tracking
+Note: Interns do not have access to Payroll or Reports features.
 
 ---
 
-## HR Admin Workflows
+## Admin (HR) Workflows
 
 HR administrators have access to organization-wide management features.
 
-### Probation Tracker (`/probation`)
+### Admin Dashboard (`/admin/dashboard`)
+
+HR overview and quick actions hub.
+
+**Features:**
+
+1. **Welcome Header**
+   - Personalized greeting
+   - "Manage Employees" quick action button
+
+2. **Stats Row**
+   - Total Employees (with monthly change)
+   - Active Interns
+   - Pending Leaves
+   - Reviews Due
+
+3. **Pending Approvals Card**
+   - List of items requiring approval:
+     - Leave Requests
+     - Performance Reviews
+   - Priority indicators (urgent, high, medium)
+   - Quick "Review" action buttons
+   - "View All Approvals" link
+
+4. **Department Overview Card**
+   - Department headcount bars
+   - Open positions badges
+   - "Manage" link
+
+5. **Recent Activity Card**
+   - Timeline of recent HR actions:
+     - New employee onboarded
+     - Performance review completed
+     - Leave request approved
+   - Timestamp for each activity
+
+6. **Quick Actions Card**
+   Grid of shortcuts:
+   - Employee Management
+   - Performance (Reviews & OKRs)
+   - Recruitment (Open positions)
+   - Reports (Analytics & insights)
+
+### Reports Tracking (`/admin/reports`)
+
+Monitor staff report submissions and completion rates.
+
+**Features:**
+
+1. **Header Actions**
+   - "Analytics" button (links to `/admin/reports/analytics`)
+   - "Compare" button (links to `/admin/reports/compare`)
+
+2. **Week Period Selector**
+   - Dropdown to select week period
+   - Shows last 12 weeks
+
+3. **KPI Cards**
+   - Total Staff count
+   - Submitted count (with trend)
+   - Pending count (color-coded by severity)
+   - Completion Rate percentage
+
+4. **Insights Summary**
+   - Team reporting analysis
+   - Key findings:
+     - Best Performers
+     - Needs Attention
+     - Overall Trend
+   - Recommendations
+
+5. **Submission Rate Card**
+   - Visual progress indicator
+   - Submitted vs pending breakdown
+
+6. **Submission Status List**
+   - Staff submissions with status
+   - "Send Reminder" action for pending
+   - "View" action for submitted
+   - Export button
+
+### Reports Analytics (`/admin/reports/analytics`)
+
+Visualize expenditure vs results with comprehensive charts.
+
+**Features:**
+
+1. **Filters**
+   - Period selector (Last Week, Last 4 Weeks, Last Quarter, Custom)
+   - Department filter
+
+2. **KPI Cards**
+   - Total Spend (PHP)
+   - Total Results (PHP)
+   - Average ROI percentage
+   - Total Reports count
+
+3. **Insights Summary**
+   - Analytics insights text
+   - Key findings with highlights
+   - Recommendations
+
+4. **Charts**
+   - Expenditure vs Results over time
+   - Spend by Category (pie/donut chart)
+   - ROI by Department (bar chart)
+   - Weekly Trends (line chart)
+
+5. **Export Button**
+   - Download analytics report
+
+### Performance Dashboard (`/admin/performance`)
+
+Organization-wide performance metrics and reviews.
+
+**Features:**
+
+1. **Header Actions**
+   - "Manage Cycles" button (links to `/admin/performance/cycles`)
+   - "Export Report" button
+
+2. **Current Cycle Banner**
+   - Cycle name and date range
+   - Active Cycle badge
+
+3. **Performance Summary Cards**
+   - Total Employees
+   - OKRs Completed/In Progress
+   - KPIs On Target/Below Target
+   - Reviews by status
+
+4. **Cycle Progress Cards**
+   - Self-Assessment completion
+   - Manager Review completion
+   - HR Review completion
+
+5. **Charts**
+   - Completion Trend over months
+   - Department Performance comparison
+   - Rating Distribution
+
+6. **Employee Reviews Table**
+   | Column | Content |
+   |--------|---------|
+   | Employee | Avatar, name, email |
+   | Department | Department name |
+   | Manager | Manager name |
+   | OKR Progress | Progress bar with percentage |
+   | KPI Score | Progress bar with percentage |
+   | Review Status | Status badge |
+
+   **Filters:**
+   - Search by name or email
+   - Filter by department
+   - Filter by status
+
+### Performance Cycles (`/admin/performance/cycles`)
+
+Create and manage performance review cycles.
+
+**Features:**
+- Create new cycles
+- Set cycle dates
+- Activate/deactivate cycles
+- View cycle history
+
+### Probation Tracker (`/admin/probation`)
 
 Monitor and manage employee probation periods.
 
@@ -438,17 +723,18 @@ Monitor and manage employee probation periods.
    - Department filter
 
 3. **Employee Table**
-   - Employee avatar, name, position
-   - Department
-   - Stage indicator (visual 4-stage progress)
-   - Status badge
-   - Documents progress bar (X/Y)
-   - View button
-   - Days remaining
-   - Actions menu (View Appraisal, Add Note, Advance Stage)
+   | Column | Content |
+   |--------|---------|
+   | Employee | Avatar, name, position |
+   | Department | Department name |
+   | Stage | Visual 4-stage progress indicator |
+   | Status | Status badge |
+   | Documents | Progress bar (X/Y) |
+   | Days Remaining | Days left badge |
+   | Actions | View, Add Note, Advance Stage |
 
 4. **Performance Appraisal Modal**
-   When clicking "View" or "View Appraisal":
+   When clicking "View Appraisal":
    - Employee info card with status
    - **OKRs Tab**: Objective cards with key results, progress bars, star rating input
    - **KPIs Tab**: KPI cards with target/actual/score, star rating input
@@ -458,14 +744,7 @@ Monitor and manage employee probation periods.
      - Feedback text area
    - Cancel/Submit Appraisal buttons
 
-### Performance Admin (`/admin-performance`)
-
-Manage organization-wide performance settings.
-
-**Sub-pages:**
-- **Cycles** (`/admin-performance/cycles`): Create and manage performance review cycles
-
-### Intern Management (`/interns`)
+### Intern Management (`/admin/interns`)
 
 Oversee all interns across the organization.
 
@@ -495,20 +774,20 @@ Oversee all interns across the organization.
    - List view (row layout)
 
 5. **Intern Display**
-   - Intern cards/rows showing:
-     - Name, school, program
-     - Department, supervisor
-     - Hours progress bar
-     - Status badge
-     - Last report date
-     - Pending reports count
-     - View action
+   Each intern card/row shows:
+   - Name, school, program
+   - Department, supervisor
+   - Hours progress bar
+   - Status badge
+   - Last report date
+   - Pending reports count
+   - View action
 
 6. **Pending Reports Alert**
    - Warning card when reports need review
    - Guidance message for timely feedback
 
-### Intern Detail (`/interns/[id]`)
+### Intern Detail (`/admin/interns/[id]`)
 
 View detailed information for a specific intern.
 
@@ -519,15 +798,138 @@ View detailed information for a specific intern.
 - Supervisor feedback
 - Status management
 
+### AI Knowledge Management (`/admin/ai-knowledge`)
+
+Manage the AI assistant's knowledge base.
+
+**Features:**
+- Add new knowledge entries
+- Edit existing entries
+- Categorize knowledge by topic
+- Enable/disable entries
+- Preview AI responses
+
 ---
 
-## COS Workflows
+## Super Admin Workflows
 
-COS (Cost of Service) users handle invoice approvals for contractors.
+Super administrators have full system access plus additional control features.
 
-### Invoice Approvals (`/cos/invoices`)
+### Super Admin Dashboard (`/super-admin/dashboard`)
 
-Review and approve/reject contractor invoices.
+Complete system overview and control center.
+
+**Features:**
+
+1. **Welcome Header**
+   - Personalized greeting
+   - "System Settings" quick action button
+
+2. **Stats Row**
+   - Total Users (with active count)
+   - System Uptime percentage
+   - Security Alerts count
+   - Audit Logs count
+
+3. **Security Alerts Card**
+   - List of security events:
+     - Login attempts
+     - Permission changes
+     - Data access events
+   - Severity badges (high, medium, low)
+   - Timestamp for each alert
+   - "View All Alerts" link
+
+4. **System Health Card**
+   - Component status monitoring:
+     - Database (uptime percentage)
+     - API Services
+     - Authentication
+     - File Storage
+   - Status badges (healthy, degraded)
+   - Progress bars for uptime
+
+5. **User Role Distribution Card**
+   - Breakdown by role:
+     - Employees
+     - Admins
+     - Interns
+     - Super Admins
+   - User counts and percentages
+   - Progress bars
+
+6. **Recent Audit Logs Card**
+   - Timeline of system actions:
+     - User account creation
+     - System settings updates
+     - Performance review approvals
+   - Actor and details for each log
+   - "View All" link
+
+7. **Quick Actions Grid**
+   - User Management
+   - Role Management
+   - Audit Logs
+   - System Settings
+
+### Task Management (`/super-admin/tasks`)
+
+Create and assign tasks to team members.
+
+**Features:**
+
+1. **Header Actions**
+   - Bulk delete button (when items selected)
+   - "Create Task" button
+
+2. **Task Summary Cards**
+   - Total tasks
+   - Pending count
+   - In Progress count
+   - Completed count
+   - Overdue count
+
+3. **Task Filters**
+   - Search by title or description
+   - Status filter
+   - Priority filter
+   - Assignee filter
+   - Date range filter
+
+4. **Task List Table**
+   | Column | Content |
+   |--------|---------|
+   | Select | Checkbox for bulk actions |
+   | Title | Task title with description preview |
+   | Priority | Priority badge |
+   | Status | Status badge with dropdown |
+   | Assignees | Avatar group |
+   | Due Date | Date with overdue warning |
+   | Actions | View, Edit, Delete |
+
+5. **Create Task Dialog**
+   - Title input
+   - Description text area
+   - Priority selector
+   - Category input
+   - Due date picker
+   - Assignee multi-select
+   - Create/Cancel buttons
+
+### Task Detail (`/super-admin/tasks/[id]`)
+
+View and manage individual task details.
+
+**Features:**
+- Full task information
+- Status update
+- Assignee management
+- Activity history
+- Comments section
+
+### Payroll Approvals (`/super-admin/payroll-approvals`)
+
+Review and approve contractor invoice submissions.
 
 **Features:**
 
@@ -541,7 +943,12 @@ Review and approve/reject contractor invoices.
    - Quick review interface
    - Navigation arrows for multiple pending invoices
    - Current position indicator (X/Y)
-   - Invoice details (employee info, invoice number, period, amount, submission date)
+   - Invoice details:
+     - Employee avatar, name, department
+     - Invoice number
+     - Period
+     - Amount
+     - Submission date
    - Quick action buttons (View Document, Approve, Reject)
 
 3. **Tab Navigation**
@@ -549,18 +956,25 @@ Review and approve/reject contractor invoices.
    - Processed (count) tab
 
 4. **Pending Tab Table**
-   - Employee avatar, name, department
-   - Invoice number
-   - Period
-   - Amount
-   - Submission date
-   - Action buttons (View, Approve, Reject)
+   | Column | Content |
+   |--------|---------|
+   | Employee | Avatar, name, department |
+   | Invoice # | Invoice number |
+   | Period | Pay period |
+   | Amount | PHP amount |
+   | Submitted | Submission date |
+   | Actions | View, Approve, Reject buttons |
 
 5. **Processed Tab Table**
-   - Same columns as pending
-   - Status badge (Approved/Rejected)
-   - Reviewed date and reviewer
-   - View/Download actions
+   | Column | Content |
+   |--------|---------|
+   | Employee | Avatar, name, department |
+   | Invoice # | Invoice number |
+   | Period | Pay period |
+   | Amount | PHP amount |
+   | Status | Approved/Rejected badge |
+   | Reviewed | Date and reviewer name |
+   | Actions | View, Download buttons |
 
 6. **Review Confirmation Dialog**
    - Invoice summary
@@ -574,6 +988,15 @@ Review and approve/reject contractor invoices.
    - Document preview placeholder
    - Download PDF button
    - Approve/Reject buttons (for pending invoices)
+
+### Super Admin Additional Access
+
+Super Admins also have access to:
+- All Admin features (Interns, Reports, Performance, Probation, AI Knowledge)
+- System Settings (`/super-admin/settings`)
+- User Management (`/super-admin/users`)
+- Role Management (`/super-admin/roles`)
+- Audit Logs (`/super-admin/audit-logs`)
 
 ---
 
@@ -613,6 +1036,8 @@ The AI Assistant can help with:
 - Onboarding tasks
 - Benefits information
 - Company policies and procedures
+- Performance review guidance
+- Task management help
 
 ### Example Interactions
 
@@ -634,6 +1059,12 @@ User: "When is my invoice due?"
 Assistant: Explains invoice submission process
 ```
 
+**Task queries:**
+```
+User: "How do I update my task status?"
+Assistant: Explains task management workflow
+```
+
 ---
 
 ## Common UI Components
@@ -653,11 +1084,11 @@ Present on all authenticated pages, the header includes:
 ### Sidebar
 
 Role-based navigation with:
-- Logo/branding area
+- Logo/branding area (SN Connect)
 - Navigation items with icons
-- Active state highlighting
+- Active state highlighting (vertical indicator bar)
 - Collapse/expand toggle
-- Version number in footer
+- Footer tagline: "Where Policy Meets Productivity"
 
 **Collapse Behavior:**
 - Collapsed mode shows icons only with tooltips
@@ -689,16 +1120,24 @@ Consistent badge styling across the application:
 
 | Status | Color | Usage |
 |--------|-------|-------|
-| Approved/Success/On Track | Green | Completed items, successful states |
-| Pending/Warning | Yellow/Amber | Awaiting action, attention needed |
+| Approved/Success/On Track/Healthy | Green | Completed items, successful states |
+| Pending/Warning/Degraded | Yellow/Amber | Awaiting action, attention needed |
 | Error/Rejected/At Risk | Red | Failed states, critical issues |
 | Secondary/Neutral | Gray | Informational, inactive states |
+| In Progress | Blue | Active work items |
 
 ### Progress Indicators
 
 - **Progress Bars**: Horizontal bars showing completion percentage
 - **Progress Gauges**: Circular indicators for scores/progress
 - **Stage Indicators**: Multi-step visual progress (e.g., probation stages)
+
+### Cards and Layout Components
+
+- **Stat Cards**: Display key metrics with trend indicators
+- **Bento Cards**: Flexible content containers with headers
+- **KPI Cards**: Metric displays with change indicators
+- **Insights Summary**: Analysis cards with findings and recommendations
 
 ---
 
@@ -736,6 +1175,7 @@ If you encounter issues or have questions:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.0.0 | Feb 2026 | Added task management, weekly reports, AI knowledge management, super admin features, enhanced dashboards |
 | 1.0.0 | 2024 | Initial release with core features |
 
 ---

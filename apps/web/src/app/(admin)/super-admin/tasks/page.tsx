@@ -1,35 +1,33 @@
 'use client';
-
-import type { ReactNode } from 'react';
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Plus, Trash2 } from 'lucide-react';
+// Task management page for super admin
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  TaskSummaryCards,
   TaskFilters,
-  TaskList,
   TaskForm,
+  TaskList,
+  TaskSummaryCards,
 } from '@hr-portal/ui';
 import type {
   Task,
-  TaskId,
-  TaskStatus,
-  TaskFilters as TaskFiltersType,
+  TaskAssignee,
   TaskDashboardStats,
   TaskFormData,
-  TaskAssignee,
+  TaskId,
+  TaskStatus,
 } from '@hr-portal/ui';
-import { useAuth } from '@/contexts/AuthContext';
+import { Plus, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 
 // Mock data - Replace with actual API calls
-const mockEmployees: TaskAssignee[] = [
+const mockEmployees: Array<TaskAssignee> = [
   {
     id: '1',
     name: 'John Smith',
@@ -68,11 +66,12 @@ const mockEmployees: TaskAssignee[] = [
   },
 ];
 
-const mockTasks: Task[] = [
+const mockTasks: Array<Task> = [
   {
     id: '1' as TaskId,
     title: 'Review Q1 Financial Reports',
-    description: 'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities.',
+    description:
+      'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities.',
     priority: 'high',
     status: 'in_progress',
     category: 'Finance',
@@ -81,12 +80,13 @@ const mockTasks: Task[] = [
     createdByName: 'Admin User',
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[2]],
+    assignees: [mockEmployees[2]!],
   },
   {
     id: '2' as TaskId,
     title: 'Update Employee Handbook',
-    description: 'Review and update the employee handbook with new policies and procedures for remote work.',
+    description:
+      'Review and update the employee handbook with new policies and procedures for remote work.',
     priority: 'medium',
     status: 'pending',
     category: 'HR',
@@ -95,12 +95,13 @@ const mockTasks: Task[] = [
     createdByName: 'Admin User',
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[3]],
+    assignees: [mockEmployees[3]!],
   },
   {
     id: '3' as TaskId,
     title: 'Prepare Marketing Campaign Analysis',
-    description: 'Compile data and insights from recent marketing campaigns to present to the executive team.',
+    description:
+      'Compile data and insights from recent marketing campaigns to present to the executive team.',
     priority: 'urgent',
     status: 'blocked',
     category: 'Marketing',
@@ -109,12 +110,13 @@ const mockTasks: Task[] = [
     createdByName: 'Admin User',
     createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[1]],
+    assignees: [mockEmployees[1]!],
   },
   {
     id: '4' as TaskId,
     title: 'Code Review for Authentication Module',
-    description: 'Review the new authentication module implementation and provide feedback on security and best practices.',
+    description:
+      'Review the new authentication module implementation and provide feedback on security and best practices.',
     priority: 'high',
     status: 'completed',
     category: 'Engineering',
@@ -123,16 +125,23 @@ const mockTasks: Task[] = [
     createdByName: 'Admin User',
     createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[0]],
+    assignees: [mockEmployees[0]!],
   },
 ];
 
 export default function TaskManagementPage(): ReactNode {
   const { user } = useAuth();
   const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
-  const [filters, setFilters] = useState<TaskFiltersType>({});
-  const [selectedIds, setSelectedIds] = useState<TaskId[]>([]);
+  const [tasks, setTasks] = useState<Array<Task>>(mockTasks);
+  const [filters, setFilters] = useState<{
+    status?: TaskStatus | 'all';
+    priority?: 'low' | 'medium' | 'high' | 'urgent' | 'all';
+    assigneeId?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }>({});
+  const [selectedIds, setSelectedIds] = useState<Array<TaskId>>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -144,9 +153,7 @@ export default function TaskManagementPage(): ReactNode {
       pending: tasks.filter((t) => t.status === 'pending').length,
       inProgress: tasks.filter((t) => t.status === 'in_progress').length,
       completed: tasks.filter((t) => t.status === 'completed').length,
-      overdue: tasks.filter(
-        (t) => t.status !== 'completed' && new Date(t.dueDate) < now
-      ).length,
+      overdue: tasks.filter((t) => t.status !== 'completed' && new Date(t.dueDate) < now).length,
     };
   }, [tasks]);
 
@@ -214,7 +221,7 @@ export default function TaskManagementPage(): ReactNode {
         description: data.description,
         priority: data.priority,
         status: 'pending',
-        category: data.category,
+        ...(data.category && { category: data.category }),
         dueDate: data.dueDate,
         createdBy: user?.id || 'admin-1',
         createdByName: user?.name || 'Admin User',
@@ -235,9 +242,7 @@ export default function TaskManagementPage(): ReactNode {
   const handleStatusChange = (taskId: TaskId, status: TaskStatus): void => {
     setTasks(
       tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, status, updatedAt: new Date().toISOString() }
-          : task
+        task.id === taskId ? { ...task, status, updatedAt: new Date().toISOString() } : task
       )
     );
   };
@@ -246,10 +251,7 @@ export default function TaskManagementPage(): ReactNode {
     router.push(`/super-admin/tasks/${taskId}`);
   };
 
-  const handleEdit = (taskId: TaskId): void => {
-    // TODO: Implement edit dialog
-    console.log('Edit task:', taskId);
-  };
+  const handleEdit = (_taskId: TaskId): void => {};
 
   const handleDelete = (taskId: TaskId): void => {
     // TODO: Implement delete confirmation dialog
@@ -271,9 +273,7 @@ export default function TaskManagementPage(): ReactNode {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Task Management</h1>
-          <p className="text-muted-foreground">
-            Create and assign tasks to team members
-          </p>
+          <p className="text-muted-foreground">Create and assign tasks to team members</p>
         </div>
         <div className="flex gap-2">
           {selectedIds.length > 0 && (

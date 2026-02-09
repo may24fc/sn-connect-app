@@ -1,29 +1,21 @@
 'use client';
 
-import { useState, type ReactNode, type FormEvent } from 'react';
 import {
-  Upload,
-  FileText,
-  Calendar,
-  DollarSign,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Plus,
-  Eye,
-  Download,
-} from 'lucide-react';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  Button,
-  Badge,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Label,
-  Textarea,
   Select,
   SelectContent,
   SelectItem,
@@ -35,17 +27,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  Textarea,
 } from '@hr-portal/ui';
+import {
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Download,
+  Eye,
+  FileText,
+  Plus,
+  Upload,
+} from 'lucide-react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 
 type InvoiceStatus = 'approved' | 'pending' | 'rejected';
 
@@ -61,7 +55,7 @@ interface Invoice {
 }
 
 // Mock data
-const invoices: Invoice[] = [
+const invoices: Array<Invoice> = [
   {
     id: '1',
     invoiceNumber: 'INV-2024-001',
@@ -147,9 +141,7 @@ export default function PayrollPage(): ReactNode {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Payroll</h1>
-          <p className="text-muted-foreground">
-            Submit and track your invoice submissions
-          </p>
+          <p className="text-muted-foreground">Submit and track your invoice submissions</p>
         </div>
         <Button onClick={() => setSubmitDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
@@ -209,9 +201,7 @@ export default function PayrollPage(): ReactNode {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Approved</p>
-                <p className="text-xl font-bold">
-                  {formatCurrency(stats.totalAmount)}
-                </p>
+                <p className="text-xl font-bold">{formatCurrency(stats.totalAmount)}</p>
               </div>
             </div>
           </CardContent>
@@ -222,9 +212,7 @@ export default function PayrollPage(): ReactNode {
       <Card>
         <CardHeader>
           <CardTitle>Submission History</CardTitle>
-          <CardDescription>
-            View your past invoice submissions and their status
-          </CardDescription>
+          <CardDescription>View your past invoice submissions and their status</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -243,9 +231,7 @@ export default function PayrollPage(): ReactNode {
                 const config = statusConfig[invoice.status];
                 return (
                   <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">
-                      {invoice.invoiceNumber}
-                    </TableCell>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                     <TableCell>{invoice.period}</TableCell>
                     <TableCell>{formatCurrency(invoice.amount)}</TableCell>
                     <TableCell>
@@ -279,18 +265,14 @@ export default function PayrollPage(): ReactNode {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Submit Invoice</DialogTitle>
-            <DialogDescription>
-              Upload your invoice for the selected pay period
-            </DialogDescription>
+            <DialogDescription>Upload your invoice for the selected pay period</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="period">Pay Period</Label>
               <Select
                 value={formData.period}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, period: value })
-                }
+                onValueChange={(value) => setFormData({ ...formData, period: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select pay period" />
@@ -310,9 +292,7 @@ export default function PayrollPage(): ReactNode {
                 type="number"
                 placeholder="0.00"
                 value={formData.amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, amount: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 required
               />
             </div>
@@ -321,12 +301,8 @@ export default function PayrollPage(): ReactNode {
               <Label>Invoice Document</Label>
               <div className="rounded-lg border-2 border-dashed border-border p-6 text-center">
                 <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                <p className="mt-2 text-sm font-medium">
-                  Drag and drop your invoice
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  PDF or image (max 10MB)
-                </p>
+                <p className="mt-2 text-sm font-medium">Drag and drop your invoice</p>
+                <p className="text-xs text-muted-foreground">PDF or image (max 10MB)</p>
                 <Button type="button" variant="outline" size="sm" className="mt-3">
                   Choose File
                 </Button>
@@ -339,18 +315,12 @@ export default function PayrollPage(): ReactNode {
                 id="notes"
                 placeholder="Add any additional notes..."
                 value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               />
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSubmitDialogOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setSubmitDialogOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit">Submit Invoice</Button>
@@ -360,10 +330,7 @@ export default function PayrollPage(): ReactNode {
       </Dialog>
 
       {/* View Invoice Dialog */}
-      <Dialog
-        open={selectedInvoice !== null}
-        onOpenChange={() => setSelectedInvoice(null)}
-      >
+      <Dialog open={selectedInvoice !== null} onOpenChange={() => setSelectedInvoice(null)}>
         {selectedInvoice && (
           <DialogContent>
             <DialogHeader>
@@ -378,9 +345,7 @@ export default function PayrollPage(): ReactNode {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Amount</p>
-                  <p className="font-medium">
-                    {formatCurrency(selectedInvoice.amount)}
-                  </p>
+                  <p className="font-medium">{formatCurrency(selectedInvoice.amount)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
@@ -396,9 +361,7 @@ export default function PayrollPage(): ReactNode {
               {selectedInvoice.notes && (
                 <div>
                   <p className="text-sm text-muted-foreground">Reviewer Notes</p>
-                  <p className="text-sm mt-1 p-3 bg-muted rounded-lg">
-                    {selectedInvoice.notes}
-                  </p>
+                  <p className="text-sm mt-1 p-3 bg-muted rounded-lg">{selectedInvoice.notes}</p>
                 </div>
               )}
             </div>

@@ -1,44 +1,43 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft,
-  FileText,
-  Save,
-  Send,
-  Star,
-  CheckCircle2,
-  Target,
-  BarChart3,
-} from 'lucide-react';
-import {
+  Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
-  Button,
-  Badge,
-  Textarea,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Label,
+  type PerformanceRating,
+  Progress,
+  RATING_CONFIG,
+  type ReviewStatus,
+  ReviewStatusBadge,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  Progress,
-  ReviewStatusBadge,
-  type ReviewStatus,
-  type PerformanceRating,
-  RATING_CONFIG,
+  Textarea,
 } from '@hr-portal/ui';
+import {
+  ArrowLeft,
+  BarChart3,
+  CheckCircle2,
+  FileText,
+  Save,
+  Send,
+  Star,
+  Target,
+} from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, useState } from 'react';
 
 // Mock data
 const mockReviewStatus: ReviewStatus = 'pending_self';
@@ -73,9 +72,7 @@ function StarRating({
         >
           <Star
             className={`h-8 w-8 ${
-              star <= value
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-muted-foreground'
+              star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
             }`}
           />
         </button>
@@ -154,9 +151,7 @@ export default function ReviewPage(): ReactNode {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Self-Assessment</h1>
-            <p className="text-muted-foreground">
-              Complete your performance self-review
-            </p>
+            <p className="text-muted-foreground">Complete your performance self-review</p>
           </div>
         </div>
         <ReviewStatusBadge status={mockReviewStatus} />
@@ -209,8 +204,12 @@ export default function ReviewPage(): ReactNode {
           <TabsTrigger value="accomplishments">Accomplishments</TabsTrigger>
           <TabsTrigger value="challenges">Challenges</TabsTrigger>
           <TabsTrigger value="improvement">Improvement</TabsTrigger>
-          <TabsTrigger value="goals" className="hidden lg:block">Goals</TabsTrigger>
-          <TabsTrigger value="rating" className="hidden lg:block">Rating</TabsTrigger>
+          <TabsTrigger value="goals" className="hidden lg:block">
+            Goals
+          </TabsTrigger>
+          <TabsTrigger value="rating" className="hidden lg:block">
+            Rating
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="accomplishments">
@@ -218,8 +217,8 @@ export default function ReviewPage(): ReactNode {
             <CardHeader>
               <CardTitle>Key Accomplishments</CardTitle>
               <CardDescription>
-                Describe your main achievements during this performance period.
-                Reference specific projects, metrics, or outcomes.
+                Describe your main achievements during this performance period. Reference specific
+                projects, metrics, or outcomes.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -306,9 +305,7 @@ export default function ReviewPage(): ReactNode {
           <Card>
             <CardHeader>
               <CardTitle>Self-Rating</CardTitle>
-              <CardDescription>
-                Rate your overall performance for this period.
-              </CardDescription>
+              <CardDescription>Rate your overall performance for this period.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Star Rating */}
@@ -321,7 +318,7 @@ export default function ReviewPage(): ReactNode {
               <div className="space-y-3">
                 <Label>Performance Level</Label>
                 <div className="grid gap-2">
-                  {(Object.keys(RATING_CONFIG) as PerformanceRating[]).map((rating) => (
+                  {(Object.keys(RATING_CONFIG) as Array<PerformanceRating>).map((rating) => (
                     <button
                       key={rating}
                       type="button"
@@ -371,10 +368,7 @@ export default function ReviewPage(): ReactNode {
             <Save className="mr-2 h-4 w-4" />
             {isSaving ? 'Saving...' : 'Save Draft'}
           </Button>
-          <Button
-            onClick={() => setConfirmDialogOpen(true)}
-            disabled={!isFormValid() || isSaving}
-          >
+          <Button onClick={() => setConfirmDialogOpen(true)} disabled={!isFormValid() || isSaving}>
             <Send className="mr-2 h-4 w-4" />
             Submit Assessment
           </Button>
@@ -390,9 +384,8 @@ export default function ReviewPage(): ReactNode {
               Submit Self-Assessment
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to submit your self-assessment? Once submitted,
-              you will not be able to make changes. Your manager will be notified
-              to complete their review.
+              Are you sure you want to submit your self-assessment? Once submitted, you will not be
+              able to make changes. Your manager will be notified to complete their review.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

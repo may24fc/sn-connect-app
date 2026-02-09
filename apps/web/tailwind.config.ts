@@ -9,114 +9,143 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Sidebar - Navy blue
+        // Sidebar - Light theme (White/Zinc)
         sidebar: {
-          DEFAULT: '#1e3a5f',
-          foreground: '#ffffff',
-          hover: '#2d4a6f',
-          accent: '#3b5998',
-          muted: '#94a3b8',
-          border: '#334d6e',
+          DEFAULT: '#FFFFFF',
+          foreground: '#18181B',      // Zinc 900
+          hover: '#F4F4F5',            // Zinc 100
+          accent: '#EEF2FF',           // Indigo 50
+          'accent-foreground': '#4F46E5', // Indigo 600
+          muted: '#71717A',            // Zinc 500
+          border: '#E4E4E7',           // Zinc 200
         },
-        // Primary - Blue for buttons and accents
+
+        // Primary - Indigo (NOT Blue)
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
-          DEFAULT: '#3b82f6',
-          foreground: '#ffffff',
+          50: '#EEF2FF',
+          100: '#E0E7FF',
+          200: '#C7D2FE',
+          300: '#A5B4FC',
+          400: '#818CF8',
+          500: '#6366F1',
+          600: '#4F46E5',
+          700: '#4338CA',
+          800: '#3730A3',
+          900: '#312E81',
+          950: '#1E1B4B',
+          DEFAULT: '#4F46E5',
+          foreground: '#FFFFFF',
         },
-        // Status colors
+
+        // Semantic Colors
         success: {
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          200: '#bbf7d0',
-          300: '#86efac',
-          400: '#4ade80',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#15803d',
-          DEFAULT: '#22c55e',
-          foreground: '#ffffff',
+          50: '#ECFDF5',
+          500: '#10B981',
+          600: '#059669',
+          DEFAULT: '#16A34A',
+          foreground: '#FFFFFF',
         },
         warning: {
-          50: '#fffbeb',
-          100: '#fef3c7',
-          200: '#fde68a',
-          300: '#fcd34d',
-          400: '#fbbf24',
-          500: '#f59e0b',
-          600: '#d97706',
-          700: '#b45309',
-          DEFAULT: '#f59e0b',
-          foreground: '#ffffff',
+          50: '#FFFBEB',
+          500: '#F59E0B',
+          600: '#D97706',
+          DEFAULT: '#F59E0B',
+          foreground: '#FFFFFF',
         },
         error: {
-          50: '#fef2f2',
-          100: '#fee2e2',
-          200: '#fecaca',
-          300: '#fca5a5',
-          400: '#f87171',
-          500: '#ef4444',
-          600: '#dc2626',
-          700: '#b91c1c',
-          DEFAULT: '#ef4444',
-          foreground: '#ffffff',
+          50: '#FEF2F2',
+          500: '#EF4444',
+          600: '#DC2626',
+          DEFAULT: '#E11D48',
+          foreground: '#FFFFFF',
         },
-        // Neutral colors for backgrounds and text
-        background: '#ffffff',
-        foreground: '#0f172a',
+
+        // Neutral - Zinc Scale
+        background: '#FAFAFA',
+        foreground: '#09090B',
         muted: {
-          DEFAULT: '#f1f5f9',
-          foreground: '#64748b',
+          DEFAULT: '#F4F4F5',
+          foreground: '#71717A',
         },
         card: {
-          DEFAULT: '#ffffff',
-          foreground: '#0f172a',
+          DEFAULT: '#FFFFFF',
+          foreground: '#18181B',
         },
-        border: '#e2e8f0',
-        input: '#e2e8f0',
-        ring: '#3b82f6',
+        border: '#E4E4E7',
+        input: '#E4E4E7',
+        ring: '#4F46E5',
       },
+
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Menlo', 'monospace'],
       },
+
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1rem' }],
+        'sm': ['0.8125rem', { lineHeight: '1.25rem' }],     // 13px
+        'base': ['0.875rem', { lineHeight: '1.5rem' }],     // 14px (Dense)
+        'lg': ['1rem', { lineHeight: '1.5rem' }],           // 16px
+        'xl': ['1.125rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        '3xl': ['1.5rem', { lineHeight: '2rem' }],
+        '4xl': ['1.875rem', { lineHeight: '2.25rem' }],
+      },
+
+      letterSpacing: {
+        tightest: '-0.02em',
+        tighter: '-0.01em',
+      },
+
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+        'sidebar': '16rem',
+        'sidebar-collapsed': '4rem',
+        'header': '4rem',
+      },
+
       borderRadius: {
-        lg: '0.75rem',
-        md: '0.5rem',
+        lg: '0.5rem',
+        md: '0.375rem',
         sm: '0.25rem',
       },
+
       boxShadow: {
-        'card': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        'card-hover': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'sidebar': '2px 0 8px -2px rgb(0 0 0 / 0.15)',
+        'card': '0 1px 2px 0 rgb(0 0 0 / 0.03)',
+        'card-hover': '0 2px 4px 0 rgb(0 0 0 / 0.05)',
+        'dropdown': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        'sheet': '-4px 0 15px -3px rgb(0 0 0 / 0.1)',
       },
+
       animation: {
-        'fade-in': 'fade-in 0.2s ease-out',
+        'fade-in': 'fade-in 0.15s ease-out',
         'slide-in': 'slide-in 0.2s ease-out',
         'slide-up': 'slide-up 0.2s ease-out',
+        'skeleton': 'skeleton 1.5s ease-in-out infinite',
       },
+
       keyframes: {
         'fade-in': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
         'slide-in': {
-          '0%': { transform: 'translateX(-10px)', opacity: '0' },
+          '0%': { transform: 'translateX(-8px)', opacity: '0' },
           '100%': { transform: 'translateX(0)', opacity: '1' },
         },
         'slide-up': {
-          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '0%': { transform: 'translateY(8px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        'skeleton': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
+        },
+      },
+
+      height: {
+        'screen-safe': '100dvh',
       },
     },
   },

@@ -1,17 +1,18 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Button, TaskDetailView } from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
+import { ArrowLeft, Edit, Loader2, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { use, useEffect, useState } from 'react';
 
 // Mock data - Replace with actual API calls
 const mockTask: Task = {
   id: '1' as any,
   title: 'Review Q1 Financial Reports',
-  description: 'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities. This includes reviewing all departmental budgets, identifying areas of overspending, and preparing recommendations for the executive team.',
+  description:
+    'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities. This includes reviewing all departmental budgets, identifying areas of overspending, and preparing recommendations for the executive team.',
   priority: 'high',
   status: 'in_progress',
   category: 'Finance',
@@ -43,12 +44,13 @@ const mockTask: Task = {
 };
 
 interface TaskDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNode {
+  const { id } = use(params);
   const router = useRouter();
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,9 +71,9 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
     };
 
     fetchTask();
-  }, [params.id]);
+  }, [id]);
 
-  const handleStatusChange = async (status: TaskStatus, note?: string): Promise<void> => {
+  const handleStatusChange = async (status: TaskStatus, _note?: string): Promise<void> => {
     setIsUpdating(true);
     try {
       // TODO: Replace with actual API call
@@ -84,8 +86,6 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           updatedAt: new Date().toISOString(),
         });
       }
-
-      console.log('Status updated:', status, note);
     } catch (error) {
       console.error('Failed to update task status:', error);
     } finally {
@@ -93,10 +93,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
     }
   };
 
-  const handleEdit = (): void => {
-    // TODO: Implement edit functionality
-    console.log('Edit task:', task?.id);
-  };
+  const handleEdit = (): void => {};
 
   const handleDelete = (): void => {
     if (confirm('Are you sure you want to delete this task?')) {
@@ -137,11 +134,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
     <div className="space-y-6">
       {/* Header with Actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/super-admin/tasks')}
-          className="w-fit"
-        >
+        <Button variant="ghost" onClick={() => router.push('/super-admin/tasks')} className="w-fit">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Tasks
         </Button>

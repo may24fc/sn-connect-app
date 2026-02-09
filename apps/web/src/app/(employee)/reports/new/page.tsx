@@ -1,28 +1,25 @@
 'use client';
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import {
   Button,
-  ReportForm,
-  WeekSelector,
   type ReportContent,
+  ReportForm,
   type WeekPeriod,
+  WeekSelector,
   getCurrentWeekPeriod,
 } from '@hr-portal/ui';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
 export default function NewReportPage(): React.ReactNode {
   const router = useRouter();
   const [weekPeriod, setWeekPeriod] = React.useState<WeekPeriod>(getCurrentWeekPeriod());
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const handleSaveDraft = async (content: ReportContent): Promise<void> => {
+  const handleSaveDraft = async (_content: ReportContent): Promise<void> => {
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to save draft
-      console.log('Saving draft:', { weekPeriod, content });
-
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -35,12 +32,9 @@ export default function NewReportPage(): React.ReactNode {
     }
   };
 
-  const handleSubmit = async (content: ReportContent): Promise<void> => {
+  const handleSubmit = async (_content: ReportContent): Promise<void> => {
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to submit report
-      console.log('Submitting report:', { weekPeriod, content });
-
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -67,9 +61,7 @@ export default function NewReportPage(): React.ReactNode {
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold">Create Weekly Report</h1>
-          <p className="text-muted-foreground">
-            Complete your report for the selected week period
-          </p>
+          <p className="text-muted-foreground">Complete your report for the selected week period</p>
         </div>
       </div>
 

@@ -1,42 +1,32 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft,
-  Plus,
-  Filter,
-  Target,
-} from 'lucide-react';
-import {
+  Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  Button,
-  Badge,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  type OKR,
+  OKRList,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  Input,
   Textarea,
-  Label,
-  OKRList,
-  type OKR,
-  type OKRStatus,
 } from '@hr-portal/ui';
+import { ArrowLeft, Filter, Plus, Target } from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, useState } from 'react';
 
 // Mock data
-const mockOKRs: OKR[] = [
+const mockOKRs: Array<OKR> = [
   {
     id: 'okr-1' as OKR['id'],
     employeeId: 'emp-1' as OKR['employeeId'],
@@ -195,14 +185,9 @@ export default function OKRsPage(): ReactNode {
     ),
   };
 
-  const handleUpdateKeyResult = (okrId: string, keyResultId: string, value: number): void => {
-    // TODO: Implement API call to update key result
-    console.log('Update key result:', { okrId, keyResultId, value });
-  };
+  const handleUpdateKeyResult = (_okrId: string, _keyResultId: string, _value: number): void => {};
 
   const handleCreateOKR = (): void => {
-    // TODO: Implement API call to create OKR
-    console.log('Create OKR:', newOKR);
     setCreateDialogOpen(false);
     setNewOKR({ objective: '', description: '' });
   };
@@ -219,9 +204,7 @@ export default function OKRsPage(): ReactNode {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">My OKRs</h1>
-            <p className="text-muted-foreground">
-              Manage your objectives and key results
-            </p>
+            <p className="text-muted-foreground">Manage your objectives and key results</p>
           </div>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
@@ -333,7 +316,8 @@ export default function OKRsPage(): ReactNode {
               Create New Objective
             </DialogTitle>
             <DialogDescription>
-              Define a new objective for this performance cycle. You can add key results after creating the objective.
+              Define a new objective for this performance cycle. You can add key results after
+              creating the objective.
             </DialogDescription>
           </DialogHeader>
 
@@ -362,10 +346,7 @@ export default function OKRsPage(): ReactNode {
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleCreateOKR}
-              disabled={!newOKR.objective.trim()}
-            >
+            <Button onClick={handleCreateOKR} disabled={!newOKR.objective.trim()}>
               Create Objective
             </Button>
           </DialogFooter>

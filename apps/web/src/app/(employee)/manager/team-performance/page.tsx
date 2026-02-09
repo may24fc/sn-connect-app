@@ -1,31 +1,22 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  Users,
-  Target,
-  BarChart3,
-  FileText,
-  Search,
-  Filter,
-  ChevronRight,
-  TrendingUp,
-  AlertTriangle,
-} from 'lucide-react';
-import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  Button,
-  Badge,
+  type CycleId,
+  type EmployeeId,
+  type EmployeePerformanceSummary,
   Input,
   Progress,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
+  ProgressGauge,
+  ReviewStatusBadge,
   Select,
   SelectContent,
   SelectItem,
@@ -37,16 +28,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  ReviewStatusBadge,
-  ProgressGauge,
-  type ReviewStatus,
-  type EmployeePerformanceSummary,
-  type EmployeeId,
-  type CycleId,
 } from '@hr-portal/ui';
+import {
+  AlertTriangle,
+  BarChart3,
+  ChevronRight,
+  FileText,
+  Filter,
+  Search,
+  Target,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, useState } from 'react';
 
 // Mock data for team members
-const mockTeamMembers: EmployeePerformanceSummary[] = [
+const mockTeamMembers: Array<EmployeePerformanceSummary> = [
   {
     employeeId: 'emp-1' as EmployeeId,
     employeeName: 'John Doe',
@@ -55,8 +52,7 @@ const mockTeamMembers: EmployeePerformanceSummary[] = [
     position: 'Senior Developer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-    avatarUrl: undefined,
-    currentCycle: {
+        currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',
@@ -80,8 +76,7 @@ const mockTeamMembers: EmployeePerformanceSummary[] = [
     position: 'Developer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-    avatarUrl: undefined,
-    currentCycle: {
+        currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',
@@ -93,8 +88,7 @@ const mockTeamMembers: EmployeePerformanceSummary[] = [
     okrProgress: 65,
     kpiProgress: 78,
     reviewStatus: 'pending_self',
-    overallScore: undefined,
-    okrCount: 2,
+        okrCount: 2,
     kpiCount: 4,
   },
   {
@@ -105,8 +99,7 @@ const mockTeamMembers: EmployeePerformanceSummary[] = [
     position: 'Junior Developer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-    avatarUrl: undefined,
-    currentCycle: {
+        currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',
@@ -118,8 +111,7 @@ const mockTeamMembers: EmployeePerformanceSummary[] = [
     okrProgress: 45,
     kpiProgress: 55,
     reviewStatus: 'pending_self',
-    overallScore: undefined,
-    okrCount: 2,
+        okrCount: 2,
     kpiCount: 3,
   },
   {
@@ -130,8 +122,7 @@ const mockTeamMembers: EmployeePerformanceSummary[] = [
     position: 'QA Engineer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-    avatarUrl: undefined,
-    currentCycle: {
+        currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',
@@ -172,8 +163,7 @@ export default function TeamPerformancePage(): ReactNode {
     const matchesSearch =
       member.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.position.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || member.reviewStatus === statusFilter;
+    const matchesStatus = statusFilter === 'all' || member.reviewStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -195,9 +185,7 @@ export default function TeamPerformancePage(): ReactNode {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Team Performance</h1>
-          <p className="text-muted-foreground">
-            Monitor and manage your team's performance
-          </p>
+          <p className="text-muted-foreground">Monitor and manage your team's performance</p>
         </div>
         <Link href="/manager/reviews">
           <Button>
@@ -271,16 +259,8 @@ export default function TeamPerformancePage(): ReactNode {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap justify-center gap-8">
-            <ProgressGauge
-              value={stats.avgOkrProgress}
-              label="OKR Progress"
-              size="lg"
-            />
-            <ProgressGauge
-              value={stats.avgKpiProgress}
-              label="KPI Score"
-              size="lg"
-            />
+            <ProgressGauge value={stats.avgOkrProgress} label="OKR Progress" size="lg" />
+            <ProgressGauge value={stats.avgKpiProgress} label="KPI Score" size="lg" />
           </div>
         </CardContent>
       </Card>
@@ -331,18 +311,14 @@ export default function TeamPerformancePage(): ReactNode {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
-                        {member.avatarUrl && (
-                          <AvatarImage src={member.avatarUrl} />
-                        )}
+                        {member.avatarUrl && <AvatarImage src={member.avatarUrl} />}
                         <AvatarFallback className="text-xs">
                           {getInitials(member.employeeName)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium">{member.employeeName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {member.position}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{member.position}</p>
                       </div>
                     </div>
                   </TableCell>
@@ -353,9 +329,7 @@ export default function TeamPerformancePage(): ReactNode {
                         className="h-2 w-20"
                         indicatorClassName={getProgressColor(member.okrProgress)}
                       />
-                      <span className="text-sm font-medium w-10">
-                        {member.okrProgress}%
-                      </span>
+                      <span className="text-sm font-medium w-10">{member.okrProgress}%</span>
                       {member.okrProgress < 60 && (
                         <AlertTriangle className="h-4 w-4 text-warning" />
                       )}
@@ -368,9 +342,7 @@ export default function TeamPerformancePage(): ReactNode {
                         className="h-2 w-20"
                         indicatorClassName={getProgressColor(member.kpiProgress)}
                       />
-                      <span className="text-sm font-medium w-10">
-                        {member.kpiProgress}%
-                      </span>
+                      <span className="text-sm font-medium w-10">{member.kpiProgress}%</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -416,8 +388,8 @@ export default function TeamPerformancePage(): ReactNode {
               <div>
                 <h3 className="font-semibold text-warning">Action Required</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  You have {stats.pendingReview} team member{stats.pendingReview > 1 ? 's' : ''} waiting
-                  for your review. Complete these reviews before the cycle deadline.
+                  You have {stats.pendingReview} team member{stats.pendingReview > 1 ? 's' : ''}{' '}
+                  waiting for your review. Complete these reviews before the cycle deadline.
                 </p>
                 <Link href="/manager/reviews" className="inline-block mt-2">
                   <Button size="sm" variant="outline">

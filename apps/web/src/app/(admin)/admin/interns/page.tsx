@@ -1,38 +1,28 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 import {
-  GraduationCap,
-  Search,
-  Filter,
-  Download,
-  Plus,
-  TrendingUp,
-  FileText,
-  Clock,
-} from 'lucide-react';
-import {
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
-  Button,
   Input,
+  type InternDashboardStats,
+  type InternId,
+  InternList,
+  InternRow,
+  type InternSummary,
+  InternshipSummaryCards,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  InternshipSummaryCards,
-  InternList,
-  InternRow,
-  type InternDashboardStats,
-  type InternSummary,
-  type InternId,
   type SupervisorId,
 } from '@hr-portal/ui';
+import { Download, FileText, Filter, GraduationCap, Plus, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useState } from 'react';
 
 // Mock data
 const mockStats: InternDashboardStats = {
@@ -45,7 +35,7 @@ const mockStats: InternDashboardStats = {
   reportsThisWeek: 45,
 };
 
-const mockInterns: InternSummary[] = [
+const mockInterns: Array<InternSummary> = [
   {
     id: 'intern-1' as InternId,
     name: 'John Doe',
@@ -227,7 +217,9 @@ export default function AdminInternsPage(): ReactNode {
               <SelectContent>
                 <SelectItem value="all">All Schools</SelectItem>
                 {schools.map((school) => (
-                  <SelectItem key={school} value={school}>{school}</SelectItem>
+                  <SelectItem key={school} value={school}>
+                    {school}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -238,12 +230,17 @@ export default function AdminInternsPage(): ReactNode {
               <SelectContent>
                 <SelectItem value="all">All Supervisors</SelectItem>
                 {supervisors.map((sup) => (
-                  <SelectItem key={sup} value={sup}>{sup}</SelectItem>
+                  <SelectItem key={sup} value={sup}>
+                    {sup}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          {(statusFilter !== 'all' || schoolFilter !== 'all' || supervisorFilter !== 'all' || searchQuery) && (
+          {(statusFilter !== 'all' ||
+            schoolFilter !== 'all' ||
+            supervisorFilter !== 'all' ||
+            searchQuery) && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">
                 Showing {filteredInterns.length} of {mockInterns.length} interns
@@ -293,7 +290,10 @@ export default function AdminInternsPage(): ReactNode {
           onView={handleViewIntern}
           layout="grid"
           emptyMessage={
-            searchQuery || statusFilter !== 'all' || schoolFilter !== 'all' || supervisorFilter !== 'all'
+            searchQuery ||
+            statusFilter !== 'all' ||
+            schoolFilter !== 'all' ||
+            supervisorFilter !== 'all'
               ? 'No interns match the selected filters'
               : 'No interns found'
           }
@@ -309,7 +309,10 @@ export default function AdminInternsPage(): ReactNode {
               <div className="text-center py-8 text-muted-foreground">
                 <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>
-                  {searchQuery || statusFilter !== 'all' || schoolFilter !== 'all' || supervisorFilter !== 'all'
+                  {searchQuery ||
+                  statusFilter !== 'all' ||
+                  schoolFilter !== 'all' ||
+                  supervisorFilter !== 'all'
                     ? 'No interns match the selected filters'
                     : 'No interns found'}
                 </p>

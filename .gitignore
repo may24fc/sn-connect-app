@@ -50,6 +50,10 @@ n8n/data/
 .turbo/
 *.local
 
+# Vercel
+.vercel
+.vercel-ids.txt
+
 # Windows reserved device names (cannot be indexed by Git)
 nul
 con

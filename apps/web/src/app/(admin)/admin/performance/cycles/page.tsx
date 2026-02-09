@@ -1,53 +1,49 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeft,
-  Plus,
-  Calendar,
-  Edit2,
-  Trash2,
-  MoreVertical,
-  CheckCircle2,
-  Clock,
-  Play,
-  Pause,
-} from 'lucide-react';
-import {
+  Badge,
+  Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardFooter,
-  Button,
-  Badge,
-  Input,
-  Label,
+  type CycleId,
+  type CycleStatus,
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Input,
+  Label,
+  type PerformanceCycle,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-  type PerformanceCycle,
-  type CycleId,
-  type CycleStatus,
 } from '@hr-portal/ui';
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Edit2,
+  MoreVertical,
+  Pause,
+  Play,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, useState } from 'react';
 
 // Mock data
-const mockCycles: PerformanceCycle[] = [
+const mockCycles: Array<PerformanceCycle> = [
   {
     id: 'cycle-2024-q1' as CycleId,
     name: 'Q1 2024 Performance Review',
@@ -109,7 +105,10 @@ const emptyFormData: CycleFormData = {
   managerReviewDeadline: '',
 };
 
-const statusConfig: Record<CycleStatus, { label: string; variant: 'success' | 'warning' | 'secondary'; icon: typeof CheckCircle2 }> = {
+const statusConfig: Record<
+  CycleStatus,
+  { label: string; variant: 'success' | 'warning' | 'secondary'; icon: typeof CheckCircle2 }
+> = {
   active: { label: 'Active', variant: 'success', icon: Play },
   draft: { label: 'Draft', variant: 'secondary', icon: Clock },
   closed: { label: 'Closed', variant: 'warning', icon: Pause },
@@ -124,7 +123,7 @@ function formatDate(dateString: string): string {
 }
 
 export default function CyclesPage(): ReactNode {
-  const [cycles, setCycles] = useState<PerformanceCycle[]>(mockCycles);
+  const [cycles, setCycles] = useState<Array<PerformanceCycle>>(mockCycles);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<PerformanceCycle | null>(null);
@@ -205,9 +204,7 @@ export default function CyclesPage(): ReactNode {
   const handleClose = (cycle: PerformanceCycle): void => {
     setCycles(
       cycles.map((c) =>
-        c.id === cycle.id
-          ? { ...c, status: 'closed', updatedAt: new Date().toISOString() }
-          : c
+        c.id === cycle.id ? { ...c, status: 'closed', updatedAt: new Date().toISOString() } : c
       )
     );
   };
@@ -233,9 +230,7 @@ export default function CyclesPage(): ReactNode {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Performance Cycles</h1>
-            <p className="text-muted-foreground">
-              Manage performance review cycles and deadlines
-            </p>
+            <p className="text-muted-foreground">Manage performance review cycles and deadlines</p>
           </div>
         </div>
         <Button onClick={handleOpenCreate}>
@@ -465,8 +460,8 @@ export default function CyclesPage(): ReactNode {
               Delete Cycle
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deletingCycle?.name}"? This action cannot
-              be undone and will remove all associated data.
+              Are you sure you want to delete "{deletingCycle?.name}"? This action cannot be undone
+              and will remove all associated data.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

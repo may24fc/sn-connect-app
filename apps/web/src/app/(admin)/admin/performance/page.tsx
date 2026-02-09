@@ -1,27 +1,29 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
-  Users,
-  Target,
-  BarChart3,
-  FileText,
-  Search,
-  Filter,
-  Calendar,
-  Settings,
-  Download,
-} from 'lucide-react';
-import {
+  Avatar,
+  AvatarFallback,
+  Badge,
+  Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  Button,
-  Badge,
+  CompletionTrendChart,
+  type CompletionTrendData,
+  CycleProgressCards,
+  DepartmentPerformanceChart,
+  type DepartmentPerformanceData,
+  type EmployeeId,
   Input,
+  type PerformanceDashboardStats,
+  PerformanceSummaryCards,
+  Progress,
+  RatingDistributionChart,
+  type RatingDistributionData,
+  type ReviewStatus,
+  ReviewStatusBadge,
   Select,
   SelectContent,
   SelectItem,
@@ -33,23 +35,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  Progress,
-  PerformanceSummaryCards,
-  CycleProgressCards,
-  CompletionTrendChart,
-  DepartmentPerformanceChart,
-  RatingDistributionChart,
-  ReviewStatusBadge,
-  type PerformanceDashboardStats,
-  type CompletionTrendData,
-  type DepartmentPerformanceData,
-  type RatingDistributionData,
-  type ReviewStatus,
-  type EmployeeId,
 } from '@hr-portal/ui';
+import { Calendar, Download, Search, Settings } from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, useState } from 'react';
 
 // Mock data
 const mockStats: PerformanceDashboardStats = {
@@ -65,14 +54,14 @@ const mockStats: PerformanceDashboardStats = {
   averageKpiScore: 85,
 };
 
-const mockTrendData: CompletionTrendData[] = [
+const mockTrendData: Array<CompletionTrendData> = [
   { month: 'Oct', okrsCompleted: 20, kpisCompleted: 80, reviewsCompleted: 15 },
   { month: 'Nov', okrsCompleted: 35, kpisCompleted: 85, reviewsCompleted: 45 },
   { month: 'Dec', okrsCompleted: 40, kpisCompleted: 90, reviewsCompleted: 75 },
   { month: 'Jan', okrsCompleted: 45, kpisCompleted: 95, reviewsCompleted: 107 },
 ];
 
-const mockDepartmentData: DepartmentPerformanceData[] = [
+const mockDepartmentData: Array<DepartmentPerformanceData> = [
   { department: 'Engineering', averageOkrProgress: 78, averageKpiScore: 88, employeeCount: 45 },
   { department: 'Marketing', averageOkrProgress: 65, averageKpiScore: 75, employeeCount: 20 },
   { department: 'Sales', averageOkrProgress: 82, averageKpiScore: 92, employeeCount: 35 },
@@ -80,7 +69,7 @@ const mockDepartmentData: DepartmentPerformanceData[] = [
   { department: 'Finance', averageOkrProgress: 75, averageKpiScore: 90, employeeCount: 12 },
 ];
 
-const mockRatingData: RatingDistributionData[] = [
+const mockRatingData: Array<RatingDistributionData> = [
   { rating: 'exceptional', count: 15, percentage: 14 },
   { rating: 'exceeds', count: 35, percentage: 33 },
   { rating: 'meets', count: 42, percentage: 39 },
@@ -99,7 +88,7 @@ interface EmployeeReviewSummary {
   reviewStatus: ReviewStatus;
 }
 
-const mockEmployees: EmployeeReviewSummary[] = [
+const mockEmployees: Array<EmployeeReviewSummary> = [
   {
     id: 'emp-1' as EmployeeId,
     name: 'John Doe',
@@ -163,9 +152,7 @@ export default function AdminPerformancePage(): ReactNode {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Performance Dashboard</h1>
-          <p className="text-muted-foreground">
-            Organization-wide performance metrics and reviews
-          </p>
+          <p className="text-muted-foreground">Organization-wide performance metrics and reviews</p>
         </div>
         <div className="flex gap-2">
           <Link href="/admin/performance/cycles">
@@ -191,9 +178,7 @@ export default function AdminPerformancePage(): ReactNode {
               </div>
               <div>
                 <h2 className="font-semibold">Q1 2024 Performance Review</h2>
-                <p className="text-sm text-muted-foreground">
-                  Jan 1, 2024 - Mar 31, 2024
-                </p>
+                <p className="text-sm text-muted-foreground">Jan 1, 2024 - Mar 31, 2024</p>
               </div>
             </div>
             <Badge variant="success">Active Cycle</Badge>
@@ -228,9 +213,7 @@ export default function AdminPerformancePage(): ReactNode {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle>Employee Reviews</CardTitle>
-              <CardDescription>
-                Monitor review progress across the organization
-              </CardDescription>
+              <CardDescription>Monitor review progress across the organization</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -253,7 +236,9 @@ export default function AdminPerformancePage(): ReactNode {
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
                 {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -289,9 +274,7 @@ export default function AdminPerformancePage(): ReactNode {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs">
-                          {getInitials(emp.name)}
-                        </AvatarFallback>
+                        <AvatarFallback className="text-xs">{getInitials(emp.name)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium">{emp.name}</p>
@@ -313,7 +296,11 @@ export default function AdminPerformancePage(): ReactNode {
                         value={emp.kpiScore}
                         className="h-2 w-16"
                         indicatorClassName={
-                          emp.kpiScore >= 80 ? 'bg-success' : emp.kpiScore >= 60 ? 'bg-warning' : 'bg-error'
+                          emp.kpiScore >= 80
+                            ? 'bg-success'
+                            : emp.kpiScore >= 60
+                              ? 'bg-warning'
+                              : 'bg-error'
                         }
                       />
                       <span className="text-sm">{emp.kpiScore}%</span>

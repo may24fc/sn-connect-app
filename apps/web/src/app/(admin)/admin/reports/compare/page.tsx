@@ -1,21 +1,21 @@
 'use client';
 
-import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Download } from 'lucide-react';
 import {
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  WeekDropdownSelector,
-  WeekComparisonTable,
   InsightsSummary,
-  type WeekPeriod,
   type WeekComparison,
+  WeekComparisonTable,
+  WeekDropdownSelector,
+  type WeekPeriod,
   getCurrentWeekPeriod,
 } from '@hr-portal/ui';
+import { ArrowLeft, Download } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
 // Mock data - replace with actual API calls
 const getMockComparison = (currentWeek: WeekPeriod, previousWeek: WeekPeriod): WeekComparison => {
@@ -144,10 +144,7 @@ export default function ComparePage(): React.ReactNode {
     router.push('/admin/reports');
   };
 
-  const handleExport = (): void => {
-    // TODO: Implement export functionality
-    console.log('Exporting comparison data');
-  };
+  const handleExport = (): void => {};
 
   return (
     <div className="space-y-6">
@@ -159,9 +156,7 @@ export default function ComparePage(): React.ReactNode {
         </Button>
         <div className="flex-1">
           <h1 className="text-headline">Week-over-Week Comparison</h1>
-          <p className="text-muted-foreground">
-            Compare metrics between consecutive weeks
-          </p>
+          <p className="text-muted-foreground">Compare metrics between consecutive weeks</p>
         </div>
         <Button variant="outline" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
@@ -205,7 +200,8 @@ export default function ComparePage(): React.ReactNode {
         keyFindings={[
           {
             metric: 'Lead Generation',
-            insight: 'Leads increased by 36.1% (65 additional leads), driven by improved Facebook ad targeting',
+            insight:
+              'Leads increased by 36.1% (65 additional leads), driven by improved Facebook ad targeting',
             highlight: true,
           },
           {
@@ -224,7 +220,7 @@ export default function ComparePage(): React.ReactNode {
           },
         ]}
         recommendations={[
-          'Follow up with the 4 team members who didn\'t submit reports this week',
+          "Follow up with the 4 team members who didn't submit reports this week",
           'Increase Facebook Ads budget given the 36% improvement in lead generation',
           'Analyze what changed in social media strategy to replicate the follower growth',
         ]}
