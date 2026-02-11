@@ -25,14 +25,17 @@ export default function LoginPage(): ReactNode {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
+  const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
 
     try {
-      await login(email, password);
+      await login(normalizedEmail, normalizedPassword);
       // Router navigation is handled by the auth context
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -160,62 +163,75 @@ export default function LoginPage(): ReactNode {
             </Button>
           </form>
 
-          {/* Quick Login for Testing */}
-          <div className="mt-6 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-            <p className="mb-3 text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              Quick Test Login
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => quickLogin('employee@test.com')}
-                disabled={isLoading}
-                className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-              >
-                <Badge variant="secondary" className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                  Employee
-                </Badge>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => quickLogin('intern@test.com')}
-                disabled={isLoading}
-                className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-              >
-                <Badge variant="secondary" className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                  Intern
-                </Badge>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => quickLogin('admin@test.com')}
-                disabled={isLoading}
-                className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-              >
-                <Badge variant="secondary" className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                  Admin
-                </Badge>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => quickLogin('superadmin@test.com')}
-                disabled={isLoading}
-                className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
-              >
-                <Badge variant="secondary" className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300">
-                  Super Admin
-                </Badge>
-              </Button>
+          {enableMockAuth ? (
+            <div className="mt-6 border-t border-zinc-200 dark:border-zinc-800 pt-6">
+              <p className="mb-3 text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                Quick Test Login
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('employee@test.com')}
+                  disabled={isLoading}
+                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  <Badge
+                    variant="secondary"
+                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  >
+                    Employee
+                  </Badge>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('intern@test.com')}
+                  disabled={isLoading}
+                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  <Badge
+                    variant="secondary"
+                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  >
+                    Intern
+                  </Badge>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('admin@test.com')}
+                  disabled={isLoading}
+                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  <Badge
+                    variant="secondary"
+                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  >
+                    Admin
+                  </Badge>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => quickLogin('superadmin@test.com')}
+                  disabled={isLoading}
+                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  <Badge
+                    variant="secondary"
+                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  >
+                    Super Admin
+                  </Badge>
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : null}
 
           <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
             <p>

@@ -10,62 +10,39 @@ import {
   Input,
   Label,
 } from '@hr-portal/ui';
-import { ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, type ReactNode, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
+
+import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export default function ForgotPasswordPage(): ReactNode {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
+  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
-    // Simulated API call - replace with actual password reset logic
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const redirectTo = new URL('/reset-password', window.location.origin).toString();
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
 
-    setIsSubmitted(true);
+    if (resetError) {
+      setError(resetError.message);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(false);
+    router.push(`/forgot-password/confirmation?email=${encodeURIComponent(email)}`);
   };
-
-  if (isSubmitted) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-8">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle2 className="h-8 w-8 text-success" />
-            </div>
-            <CardTitle className="text-2xl">Check your email</CardTitle>
-            <CardDescription className="mt-2">
-              We have sent a password reset link to{' '}
-              <span className="font-medium text-foreground">{email}</span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-center text-sm text-muted-foreground">
-              Did not receive the email? Check your spam folder, or{' '}
-              <button
-                type="button"
-                onClick={() => setIsSubmitted(false)}
-                className="text-primary hover:underline"
-              >
-                try another email address
-              </button>
-            </p>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/login">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to login
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-8">
@@ -81,6 +58,11 @@ export default function ForgotPasswordPage(): ReactNode {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error ? (
+              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-600 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-400">
+                {error}
+              </div>
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
