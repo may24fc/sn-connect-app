@@ -6,18 +6,20 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import {
+  brandEmployeeId,
+  brandUserId,
+  UserRole,
+} from './database.types';
 import type {
   Database,
   Employee,
   EmployeeInsert,
   EmployeeUpdate,
   User,
-  UserRole,
   EmploymentType,
   WorkArrangement,
   DocumentType,
-  brandEmployeeId,
-  brandUserId,
 } from './database.types';
 
 // ============================================
@@ -138,12 +140,16 @@ async function updateEmployeeContact(
   }
 ) {
   const updateData: EmployeeUpdate = {
-    phone: updates.phone,
-    personal_email: updates.personalEmail,
-    address: updates.address,
-    city: updates.city,
-    province: updates.province,
-    postal_code: updates.postalCode,
+    ...(updates.phone !== undefined ? { phone: updates.phone } : {}),
+    ...(updates.personalEmail !== undefined
+      ? { personal_email: updates.personalEmail }
+      : {}),
+    ...(updates.address !== undefined ? { address: updates.address } : {}),
+    ...(updates.city !== undefined ? { city: updates.city } : {}),
+    ...(updates.province !== undefined ? { province: updates.province } : {}),
+    ...(updates.postalCode !== undefined
+      ? { postal_code: updates.postalCode }
+      : {}),
   };
 
   const { data, error } = await supabase
