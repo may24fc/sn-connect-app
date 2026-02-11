@@ -1,9 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Bot, Loader2, Send } from 'lucide-react';
 import { Button } from '../../primitives/button';
 import { Textarea } from '../../primitives/textarea';
+import { Avatar, AvatarFallback } from '../../primitives/avatar';
 import { cn } from '../../utils/cn';
 import { ChatMessage } from './ChatMessage';
 import type { ChatMessage as ChatMessageType, SourceAttribution } from '../../types/ai-knowledge.types';
@@ -233,7 +234,7 @@ export function ChatInterface({
         </p>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
@@ -253,5 +254,3 @@ export function ChatInterface({
 }
 
 // Missing imports for Avatar fallback in loading state
-import { Avatar, AvatarFallback } from '../../primitives/avatar';
-import { Bot } from 'lucide-react';

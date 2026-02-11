@@ -24,52 +24,102 @@ import {
   TabsTrigger,
 } from '@hr-portal/ui';
 import { AlertCircle, Camera, Edit2, Phone, Shield, User } from 'lucide-react';
-import { type FormEvent, type ReactNode, useState } from 'react';
-
-// Mock user data
-const userData = {
-  personal: {
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@company.com',
-    phone: '+63 912 345 6789',
-    dateOfBirth: '1990-05-15',
-    address: '123 Main Street, Makati City, Metro Manila',
-    gender: 'male',
-    civilStatus: 'single',
-  },
-  emergency: {
-    contactName: 'Jane Doe',
-    relationship: 'Spouse',
-    phone: '+63 912 987 6543',
-    email: 'jane.doe@email.com',
-    address: '123 Main Street, Makati City, Metro Manila',
-  },
-  employment: {
-    employeeId: 'EMP-2024-001',
-    department: 'Engineering',
-    position: 'Software Developer',
-    startDate: '2024-01-02',
-    employmentType: 'Full-time',
-    manager: 'Sarah Johnson',
-  },
-};
+import { type FormEvent, type ReactNode, useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEmployees, useUpdateEmployee } from '@/hooks/useEmployees';
+import type { Employee } from '@repo/database';
 
 export default function ProfilePage(): ReactNode {
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
-  const [formData, setFormData] = useState(userData);
+  
+  // Fetch current user's employee record
+  const { data: employeesData, isLoading } = useEmployees({
+    search: user?.email || '',
+    pageSize: 1,
+  });
+  
+  const employee = employeesData?.data?.[0];
+  const updateEmployee = employee ? useUpdateEmployee(employee.id) : null;
+  
+  const [formData, setFormData] = useState({
+    phone: '',
+    emergency_contact_name: '',
+    emergency_contact_number: '',
+    address: '',
+    city: '',
+    province: '',
+    postal_code: '',
+  });
 
-  const handleSave = (e: FormEvent): void => {
+  // Update form data when employee data loads
+  useEffect(() => {
+    if (employee) {
+      setFormData({
+        phone: employee.phone || '',
+        emergency_contact_name: employee.emergency_contact_name || '',
+        emergency_contact_number: employee.emergency_contact_number || '',
+        address: employee.address || '',
+        city: employee.city || '',
+        province: employee.province || '',
+        postal_code: employee.postal_code || '',
+      });
+    }
+  }, [employee]);
+
+  const handleSave = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    // TODO: Implement actual save logic
-    setIsEditing(false);
+    if (!updateEmployee || !employee) return;
+
+    try {
+      await updateEmployee.mutateAsync(formData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
   };
 
   const handleCancel = (): void => {
-    setFormData(userData);
+    if (employee) {
+      setFormData({
+        phone: employee.phone || '',
+        emergency_contact_name: employee.emergency_contact_name || '',
+        emergency_contact_number: employee.emergency_contact_number || '',
+        address: employee.address || '',
+        city: employee.city || '',
+        province: employee.province || '',
+        postal_code: employee.postal_code || '',
+      });
+    }
     setIsEditing(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse space-y-4">
+              <div className="h-24 w-24 rounded-full bg-muted" />
+              <diemployee.first_name} {employee.last_name}
+              </h1>
+              <p className="text-muted-foreground">{employee.position}</p>
+              <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
+                <Badge variant="secondary">{employee.department}</Badge>
+                <Badge variant="outline">{employee.employee_number
+    );
+  }
+
+  if (!employee) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground">Employee profile not found</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -145,41 +195,25 @@ export default function ProfilePage(): ReactNode {
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      value={formData.personal.firstName}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          personal: {
-                            ...formData.personal,
-                            firstName: e.target.value,
-                          },
-                        })
-                      }
-                      disabled={!isEditing}
+                      value={employee.first_name}
+                      disabled
                     />
+                    <p className="text-xs text-muted-foreground">Contact HR to change your name</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      value={formData.personal.lastName}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          personal: {
-                            ...formData.personal,
-                            lastName: e.target.value,
-                          },
-                        })
-                      }
-                      disabled={!isEditing}
+                      value={employee.last_name}
+                      disabled
                     />
+                    <p className="text-xs text-muted-foreground">Contact HR to change your name</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" value={formData.personal.email} disabled />
+                    <Label htmlFor="email">Company Email</Label>
+                    <Input id="email" type="email" value={employee.company_email || ''} disabled />
                     <p className="text-xs text-muted-foreground">Contact IT to change your email</p>
                   </div>
 
@@ -187,14 +221,11 @@ export default function ProfilePage(): ReactNode {
                     <Label htmlFor="phone">Phone Number</Label>
                     <Input
                       id="phone"
-                      value={formData.personal.phone}
+                      value={formData.phone}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          personal: {
-                            ...formData.personal,
-                            phone: e.target.value,
-                          },
+                          phone: e.target.value,
                         })
                       }
                       disabled={!isEditing}

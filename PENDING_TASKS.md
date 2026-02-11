@@ -34,6 +34,201 @@ This document tracks all pending tasks and recommendations for completing the HR
 
 ---
 
+### 1.A Install Testing Dependencies & Run Unit Tests
+**Status:** ✅ Tests Written, ⏳ Dependencies Need Installing  
+**Estimated Effort:** 5 minutes  
+**Assigned to:** Developer
+
+**What's Completed:**
+- ✅ Created comprehensive unit tests for all employee hooks
+- ✅ Test file: [tests/hooks/useEmployees.test.ts](tests/hooks/useEmployees.test.ts)
+- ✅ 35+ test cases covering:
+  - `useEmployees` with filters (search, department, status, pagination)
+  - `useEmployee` with valid/invalid IDs and enabled flag behavior
+  - `useCreateEmployee` with validation and permission checks
+  - `useUpdateEmployee` with partial updates and error handling
+  - `useDeleteEmployee` with soft delete and permission checks
+- ✅ Updated `vitest.config.ts` to support React component testing
+- ✅ Added required dependencies to `package.json`
+
+**What's Missing:**
+- Dependencies need to be installed via `pnpm install`
+- Tests need to be run to verify they pass
+
+**Action Items:**
+```bash
+# 1. Install dependencies
+pnpm install
+
+# 2. Run the employee hooks tests
+pnpm test tests/hooks/useEmployees.test.ts
+
+# 3. Verify all tests pass (expected: 35 passed)
+```
+
+**Dependencies Added:**
+- `jsdom@^26.0.0` - DOM implementation for React testing
+- `@vitejs/plugin-react@^4.3.4` - Vite plugin for JSX transformation
+- `@testing-library/react@^16.1.0` - React testing utilities
+- `@testing-library/jest-dom@^6.6.3` - Custom DOM matchers
+
+**Expected Output:**
+```
+✓ tests/hooks/useEmployees.test.ts (35)
+  ✓ useEmployees (7)
+  ✓ useEmployee (5)
+  ✓ useCreateEmployee (3)
+  ✓ useUpdateEmployee (4)
+  ✓ useDeleteEmployee (4)
+
+Test Files  1 passed (1)
+     Tests  35 passed (35)
+```
+
+**Files Modified:**
+- [package.json](package.json) - Added 4 devDependencies
+- [vitest.config.ts](vitest.config.ts) - Updated environment to jsdom, added React plugin
+- [tests/setup.ts](tests/setup.ts) - Created test setup file
+
+---
+
+### 1.B Testing Storage Bucket RLS Policies
+**Status:** ⏳ Follows Configuration  
+**Estimated Effort:** 30 minutes  
+**Assigned to:** QA Engineer / DevOps
+
+**What This Is:**
+RLS (Row-Level Security) policies are database rules that control who can access what files in Supabase Storage. Testing policies means verifying that these security rules work correctly by simulating different users trying to access files. This ensures that:
+- Employees can only access their own documents
+- Managers can access their team's documents
+- Admins have full access
+- Unauthorized users are blocked (403 errors)
+
+**Why It Matters:**
+Without proper testing, security vulnerabilities could exist where employees see other employees' sensitive documents, or unauthorized users download confidential files.
+
+**Test Scenarios:**
+
+#### Scenario 1: Employee Uploads Their Own Document ✓ (Should Succeed)
+**What to test:** Can an employee upload a file to their own employee folder?
+```bash
+# As Employee A (user_id: emp-a-uuid)
+curl -X POST https://your-project.supabase.co/storage/v1/object/employee-documents/emp-a-uuid/contract/document.pdf \
+  -H "Authorization: Bearer emp-a-token" \
+  -H "Content-Type: application/pdf" \
+  --data-binary "@document.pdf"
+```
+**Expected Result:** ✅ 200 OK - File uploaded successfully  
+**Actual Result:** _______________
+
+---
+
+#### Scenario 2: Employee Downloads Their Own Document ✓ (Should Succeed)
+**What to test:** Can an employee download a file they uploaded?
+```bash
+# As Employee A (user_id: emp-a-uuid)
+curl -X GET https://your-project.supabase.co/storage/v1/object/employee-documents/emp-a-uuid/contract/document.pdf \
+  -H "Authorization: Bearer emp-a-token"
+```
+**Expected Result:** ✅ 200 OK - File contents returned  
+**Actual Result:** _______________
+
+---
+
+#### Scenario 3: Employee Tries to Access Another Employee's Document ✗ (Should Fail)
+**What to test:** Can Employee A access a document uploaded by Employee B?
+```bash
+# As Employee A (user_id: emp-a-uuid)
+# Trying to access Employee B's file (emp-b-uuid)
+curl -X GET https://your-project.supabase.co/storage/v1/object/employee-documents/emp-b-uuid/contract/document.pdf \
+  -H "Authorization: Bearer emp-a-token"
+```
+**Expected Result:** ❌ 403 Forbidden - Access denied  
+**Actual Result:** _______________
+
+---
+
+#### Scenario 4: Manager Accesses Direct Report's Document ✓ (Should Succeed)
+**What to test:** Can a manager download documents of their team members?
+```bash
+# As Manager (user_id: mgr-uuid, manages emp-a-uuid)
+curl -X GET https://your-project.supabase.co/storage/v1/object/employee-documents/emp-a-uuid/contract/document.pdf \
+  -H "Authorization: Bearer mgr-token"
+```
+**Expected Result:** ✅ 200 OK - File contents returned  
+**Actual Result:** _______________
+
+---
+
+#### Scenario 5: Manager Tries to Access Non-Report's Document ✗ (Should Fail)
+**What to test:** Can a manager access documents of employees they don't manage?
+```bash
+# As Manager (user_id: mgr-uuid, manages emp-a-uuid)
+# Trying to access Employee C's file (emp-c-uuid, not direct report)
+curl -X GET https://your-project.supabase.co/storage/v1/object/employee-documents/emp-c-uuid/contract/document.pdf \
+  -H "Authorization: Bearer mgr-token"
+```
+**Expected Result:** ❌ 403 Forbidden - Access denied  
+**Actual Result:** _______________
+
+---
+
+#### Scenario 6: Admin Can Access Any Document ✓ (Should Succeed)
+**What to test:** Can an admin access any employee's document?
+```bash
+# As Admin (user_id: admin-uuid, role: admin)
+curl -X GET https://your-project.supabase.co/storage/v1/object/employee-documents/emp-a-uuid/contract/document.pdf \
+  -H "Authorization: Bearer admin-token"
+```
+**Expected Result:** ✅ 200 OK - File contents returned  
+**Actual Result:** _______________
+
+---
+
+#### Scenario 7: Unauthenticated User Tries to Access ✗ (Should Fail)
+**What to test:** Can someone without authentication access files?
+```bash
+# No Authorization header
+curl -X GET https://your-project.supabase.co/storage/v1/object/employee-documents/emp-a-uuid/contract/document.pdf
+```
+**Expected Result:** ❌ 401 Unauthorized  
+**Actual Result:** _______________
+
+---
+
+#### Scenario 8: HR Staff Can Upload on Behalf of Employee ✓ (Should Succeed)
+**What to test:** Can HR staff upload documents for any employee?
+```bash
+# As HR (user_id: hr-uuid, role: hr)
+curl -X POST https://your-project.supabase.co/storage/v1/object/employee-documents/emp-a-uuid/contract/document.pdf \
+  -H "Authorization: Bearer hr-token" \
+  -H "Content-Type: application/pdf" \
+  --data-binary "@document.pdf"
+```
+**Expected Result:** ✅ 200 OK - File uploaded successfully  
+**Actual Result:** _______________
+
+---
+
+**Verification Checklist:**
+- [ ] Scenario 1: Employee self-upload works
+- [ ] Scenario 2: Employee self-download works
+- [ ] Scenario 3: Employee can't access others' files
+- [ ] Scenario 4: Manager can access reports' files
+- [ ] Scenario 5: Manager can't access non-reports' files
+- [ ] Scenario 6: Admin can access any file
+- [ ] Scenario 7: Unauthenticated access is blocked
+- [ ] Scenario 8: HR staff can upload for employees
+
+**How to Debug if Tests Fail:**
+1. Check that storage bucket is named exactly `employee-documents`
+2. Verify all RLS policies are enabled (toggle on/off)
+3. Ensure user tokens have correct `auth.uid()` and `role` claims
+4. Check Supabase logs for specific policy rejection reasons
+5. Verify employee records exist and `user_id` matches auth users
+
+---
+
 ### 2. Profile Page Emergency Contact Tab
 **Status:** ⏳ IN PROGRESS  
 **Estimated Effort:** 1-2 hours  
