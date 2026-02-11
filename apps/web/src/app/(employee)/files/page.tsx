@@ -20,6 +20,12 @@ import {
   DropdownMenuTrigger,
   Input,
   Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Label,
 } from '@hr-portal/ui';
 import {
   AlertCircle,
@@ -34,125 +40,83 @@ import {
   Upload,
 } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
-
-type DocumentStatus = 'approved' | 'pending' | 'missing' | 'rejected';
-
-interface Document {
-  id: string;
-  name: string;
-  category: string;
-  status: DocumentStatus;
-  uploadedAt?: string;
-  reviewedAt?: string;
-  required: boolean;
-}
-
-// Mock data - replace with actual data fetching
-const documents: Array<Document> = [
-  {
-    id: '1',
-    name: 'Government ID (Front & Back)',
-    category: 'Identity',
-    status: 'approved',
-    uploadedAt: '2024-01-05',
-    reviewedAt: '2024-01-06',
-    required: true,
-  },
-  {
-    id: '2',
-    name: 'Birth Certificate',
-    category: 'Identity',
-    status: 'approved',
-    uploadedAt: '2024-01-05',
-    reviewedAt: '2024-01-06',
-    required: true,
-  },
-  {
-    id: '3',
-    name: 'NBI Clearance',
-    category: 'Clearances',
-    status: 'pending',
-    uploadedAt: '2024-01-10',
-    required: true,
-  },
-  {
-    id: '4',
-    name: 'SSS E1 Form',
-    category: 'Government',
-    status: 'missing',
-    required: true,
-  },
-  {
-    id: '5',
-    name: 'PhilHealth MDR',
-    category: 'Government',
-    status: 'missing',
-    required: true,
-  },
-  {
-    id: '6',
-    name: 'Pag-IBIG MID',
-    category: 'Government',
-    status: 'rejected',
-    uploadedAt: '2024-01-08',
-    reviewedAt: '2024-01-09',
-    required: true,
-  },
-  {
-    id: '7',
-    name: 'TIN Certificate',
-    category: 'Government',
-    status: 'approved',
-    uploadedAt: '2024-01-05',
-    reviewedAt: '2024-01-06',
-    required: true,
-  },
-  {
-    id: '8',
-    name: 'Diploma / TOR',
-    category: 'Education',
-    status: 'pending',
-    uploadedAt: '2024-01-07',
-    required: true,
-  },
-];
-
-const statusConfig: Record<
-  DocumentStatus,
-  {
-    label: string;
-    variant: 'approved' | 'pending' | 'error' | 'secondary';
-    icon: typeof CheckCircle2;
-  }
-> = {
-  approved: { label: 'Approved', variant: 'approved', icon: CheckCircle2 },
-  pending: { label: 'Pending Review', variant: 'pending', icon: Clock },
-  missing: { label: 'Not Uploaded', variant: 'secondary', icon: AlertCircle },
-  rejected: { label: 'Rejected', variant: 'error', icon: AlertCircle },
-};
+import { useAuth } from '@/contexts/AuthContext';
+import { useDocuments, useUploadDocument, useDownloadDocument } from '@/hooks/useDocuments';
+import { useEmployees } from '@/hooks/useEmployees';
+import type { DocumentType } from '@repo/database';
 
 export default function FilesPage(): ReactNode {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState<string>('contract');
+  const [isConfidential, setIsConfidential] = useState(false);
+  const [notes, setNotes] = useState('');
+  
+  // Fetch current user's employee record
+  const { data: employeesData } = useEmployees({
+    search: user?.email || '',
+    pageSize: 1,
+  });
+  const employeeId = employeesData?.data?.[0]?.id;
 
-  const filteredDocuments = documents.filter((doc) =>
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fetch documents for current employee
+  const { data: documentsData, isLoading } = useDocuments({
+    employeeId,
+    search: searchQuery,
+  });
+
+  const uploadDocument = useUploadDocument();
+  const downloadDocument = useDownloadDocument();
+
+  const documents = documentsData?.data || [];
 
   const stats = {
     total: documents.length,
-    approved: documents.filter((d) => d.status === 'approved').length,
-    pending: documents.filter((d) => d.status === 'pending').length,
-    missing: documents.filter((d) => d.status === 'missing').length,
-    rejected: documents.filter((d) => d.status === 'rejected').length,
+    uploaded: documents.length,
+    pending: 0,
+    missing: 8 - documents.length, // Assume 8 required documents
   };
 
-  const completionPercentage = Math.round((stats.approved / stats.total) * 100);
+  const completionPercentage = documents.length > 0 ? Math.round((documents.length / 8) * 100) : 0;
 
-  const handleUpload = (doc: Document): void => {
-    setSelectedDocument(doc);
+  const handleUpload = (): void => {
     setUploadDialogOpen(true);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleSubmitUpload = async (): Promise<void> => {
+    if (!selectedFile || !employeeId) return;
+
+    try {
+      await uploadDocument.mutateAsync({
+        file: selectedFile,
+        employeeId,
+        documentType,
+        isConfidential,
+        notes: notes || undefined,
+      });
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      setNotes('');
+    } catch (error) {
+      console.error('Failed to upload document:', error);
+    }uploaded} documents upload
+  };
+
+  const handleDownload = async (docId: string): Promise<void> => {
+    try {
+      await downloadDocument.mutateAsync(docId);
+    } catch (error) {
+      console.error('Failed to download document:', error);
+    }
   };
 
   return (
@@ -181,19 +145,11 @@ export default function FilesPage(): ReactNode {
             <div className="flex flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-success" />
-                <span className="text-sm">Approved ({stats.approved})</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-warning" />
-                <span className="text-sm">Pending ({stats.pending})</span>
+                <span className="text-sm">Uploaded ({stats.uploaded})</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded-full bg-muted" />
                 <span className="text-sm">Missing ({stats.missing})</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-error" />
-                <span className="text-sm">Rejected ({stats.rejected})</span>
               </div>
             </div>
           </div>
@@ -226,14 +182,49 @@ export default function FilesPage(): ReactNode {
           return (
             <Card key={doc.id} className="relative">
               <CardHeader className="pb-2">
+      {isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-muted rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : documents.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold">No documents yet</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Upload your first document to get started
+            </p>
+            <Button className="mt-4" onClick={handleUpload}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Document
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {documents.map((doc) => (
+            <Card key={doc.id}>
+              <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                       <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-sm font-medium truncate">{doc.name}</CardTitle>
-                      <CardDescription className="text-xs">{doc.category}</CardDescription>
+                      <CardTitle className="text-sm font-medium truncate">
+                        {doc.file_name}
+                      </CardTitle>
+                      <CardDescription className="text-xs">{doc.document_type}</CardDescription>
                     </div>
                   </div>
                   <DropdownMenu>
@@ -243,21 +234,9 @@ export default function FilesPage(): ReactNode {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {doc.status !== 'missing' && (
-                        <>
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      <DropdownMenuItem onClick={() => handleUpload(doc)}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        {doc.status === 'missing' ? 'Upload' : 'Replace'}
+                      <DropdownMenuItem onClick={() => handleDownload(doc.id)}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -265,37 +244,100 @@ export default function FilesPage(): ReactNode {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <Badge variant={config.variant} className="gap-1">
-                    <StatusIcon className="h-3 w-3" />
-                    {config.label}
+                  <Badge variant="secondary" className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Uploaded
                   </Badge>
-
-                  {doc.uploadedAt && (
-                    <p className="text-xs text-muted-foreground">Uploaded: {doc.uploadedAt}</p>
+                  {doc.uploaded_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
+                    </p>
                   )}
-
-                  {doc.status === 'missing' || doc.status === 'rejected' ? (
-                    <Button size="sm" className="w-full" onClick={() => handleUpload(doc)}>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Document
-                    </Button>
-                  ) : null}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Upload Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
-            <DialogDescription>{selectedDocument?.name}</DialogDescription>
+                  {doc.is_confidential && (
+                    <Badge variant="outline" className="text-xs">
+                      Confidential
+                    </Badge>
+              Upload a document to your 201 file
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="rounded-lg border-2 border-dashed border-border p-8 text-center">
+            <div className="space-y-2">
+              <Label htmlFor="documentType">Document Type</Label>
+              <Select value={documentType} onValueChange={setDocumentType}>
+                <SelectTrigger id="documentType">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="contract">Contract</SelectItem>
+                  <SelectItem value="id">ID</SelectItem>
+                  <SelectItem value="certificate">Certificate</SelectItem>
+                  <SelectItem value="resume">Resume</SelectItem>
+                  <SelectItem value="tax_document">Tax Document</SelectItem>
+                  <SelectItem value="nda">NDA</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="file">File</Label>
+              <Input
+                id="file"
+                type="file"
+                onChange={handleFileSelect}
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+              />
+              {selectedFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {selectedFile.name}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add any additional notes..."
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="confidential"
+                checked={isConfidential}
+                onChange={(e) => setIsConfidential(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="confidential" className="text-sm">
+                Mark as confidential
+              </Label>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Accepted formats: PDF, JPG, PNG, DOC, DOCX, XLS, XLSX (max 10MB)
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setUploadDialogOpen(false);
+                setSelectedFile(null);
+                setNotes('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitUpload}
+              disabled={!selectedFile || uploadDocument.isPending}
+            >
+              {uploadDocument.isPending ? 'Uploading...' : 'Upload'}
+            border p-8 text-center">
               <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="mt-2 text-sm font-medium">Drag and drop your file here</p>
               <p className="text-xs text-muted-foreground">or click to browse from your computer</p>

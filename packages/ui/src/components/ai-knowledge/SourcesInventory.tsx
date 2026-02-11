@@ -90,7 +90,7 @@ export function SourcesInventory({
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }

@@ -1,11 +1,15 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+import path from 'node:path';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom',
     include: ['**/*.{test,spec}.{ts,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/e2e/**', '**/playwright/**'],
+    setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -23,10 +27,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@hr-portal/ui': './packages/ui/src',
-      '@hr-portal/database': './packages/database/src',
-      '@hr-portal/auth': './packages/auth/src',
-      '@hr-portal/ai': './packages/ai/src',
+      '@': path.resolve(__dirname, './apps/web/src'),
+      '@hr-portal/ui': path.resolve(__dirname, './packages/ui/src'),
+      '@hr-portal/database': path.resolve(__dirname, './packages/database/src'),
+      '@hr-portal/auth': path.resolve(__dirname, './packages/auth/src'),
+      '@hr-portal/ai': path.resolve(__dirname, './packages/ai/src'),
     },
   },
 });

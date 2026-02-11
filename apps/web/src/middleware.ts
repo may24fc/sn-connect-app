@@ -1,37 +1,63 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import { createSupabaseMiddlewareClient } from '@/lib/supabase/middleware';
+
+const publicPaths = new Set<string>([
+  '/login',
+  '/forgot-password',
+  '/forgot-password/confirmation',
+  '/reset-password',
+]);
+
+const publicPrefixes = ['/api/auth'];
+const protectedPrefixes = ['/dashboard', '/admin', '/super-admin'];
+
 /**
- * Next.js Middleware for route protection and redirection.
+ * Next.js Middleware for Supabase session refresh + route protection.
  *
- * Since authentication is handled client-side via localStorage,
- * this middleware primarily handles route-based redirects.
- *
- * Security Rules (enforced client-side via useRequireAuth):
- * 1. Interns cannot access /payroll routes
- * 2. Regular Admins cannot access /admin/payroll-approvals
- * 3. Only super_admin can access super-admin routes
- *
- * @note In production, replace localStorage auth with JWT validation
- *
- * @security
- * - This is a client-side auth system (not production-ready)
- * - Implement server-side JWT validation for production
- * - Use HttpOnly cookies for token storage
- * - Add CSRF protection
+ * - Refreshes session tokens on every request.
+ * - Guards protected routes with server-side session checks.
  */
-
-export function middleware(_request: NextRequest): NextResponse {
-  // Allow all requests to pass through
-  // Auth guards are handled by useRequireAuth hook in layouts
-  // This middleware will be enhanced with JWT validation in production
-
-  // Optional: Add security headers
+export async function middleware(request: NextRequest): Promise<NextResponse> {
   const response = NextResponse.next();
+  const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
+  const supabase = createSupabaseMiddlewareClient(request, response);
+  let data: { user?: unknown } | null = null;
 
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (supabase) {
+    try {
+      const result = await supabase.auth.getUser();
+      data = result.data ?? null;
+    } catch (err) {
+      // If server-side Supabase call fails, fall back to client-side auth
+      // and continue without blocking the request.
+      console.error('Supabase middleware getUser failed:', err);
+      data = null;
+    }
+  }
+
+  const pathname = request.nextUrl.pathname;
+  const isPublicPath = publicPaths.has(pathname) || publicPrefixes.some((prefix) => pathname.startsWith(prefix));
+  const isProtectedPath = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
+
+  if (isProtectedPath && !(data && (data as any).user)) {
+    // If mock auth is enabled for local development, allow the request
+    // to proceed so client-side mock auth can handle authentication.
+    if (enableMockAuth) {
+      return response;
+    }
+
+    const redirectUrl = new URL('/login', request.url);
+    redirectUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (!isPublicPath) {
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  }
 
   return response;
 }
@@ -48,8 +74,7 @@ export const config = {
      * - _next/image (image optimization)
      * - favicon.ico (favicon file)
      * - public assets (images, etc.)
-     * - API routes
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

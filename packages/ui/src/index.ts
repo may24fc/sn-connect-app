@@ -84,6 +84,21 @@ export { Header } from './layout/Header';
 
 // Components
 export { AIChatbot, type ChatMessage, type AIChatbotProps } from './components/AIChatbot';
+export {
+  Form,
+  FormField,
+  FormInput,
+  FormSelect,
+  FormTextarea,
+} from './components/forms';
+export type {
+  FormProps,
+  FormFieldProps,
+  FormInputProps,
+  FormSelectOption,
+  FormSelectProps,
+  FormTextareaProps,
+} from './components/forms';
 
 // AI Knowledge Components
 export {

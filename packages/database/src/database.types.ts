@@ -33,6 +33,7 @@ export enum UserRole {
   HR = 'hr',
   COS = 'cos',
   CEO = 'ceo',
+  SuperAdmin = 'super_admin',
   Employee = 'employee',
   Intern = 'intern',
 }
