@@ -273,28 +273,34 @@ export interface Database {
         Row: AuditLog;
         Insert: Omit<AuditLog, 'id' | 'performed_at'>;
         Update: never; // Audit logs should not be updated
+        Relationships: [];
       };
       departments: {
         Row: Department;
         Insert: DepartmentInsert;
         Update: DepartmentUpdate;
+        Relationships: [];
       };
       users: {
         Row: User;
         Insert: UserInsert;
         Update: UserUpdate;
+        Relationships: [];
       };
       employees: {
         Row: Employee;
         Insert: EmployeeInsert;
         Update: EmployeeUpdate;
+        Relationships: [];
       };
       documents: {
         Row: Document;
         Insert: DocumentInsert;
         Update: DocumentUpdate;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
     Functions: {
       user_has_role: {
         Args: { user_id: UserId; required_role: UserRole };
@@ -337,6 +343,8 @@ export interface Database {
         Returns: EmployeeByDepartment[];
       };
     };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 

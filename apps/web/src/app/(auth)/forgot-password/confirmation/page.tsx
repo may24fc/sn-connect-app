@@ -1,5 +1,3 @@
-'use client';
-
 import {
   Button,
   Card,
@@ -10,12 +8,11 @@ import {
 } from '@hr-portal/ui';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode } from 'react';
 
-export default function ForgotPasswordConfirmationPage(): ReactNode {
-  const searchParams = useSearchParams();
-  const email = useMemo(() => searchParams.get('email') ?? 'your email', [searchParams]);
+export default function ForgotPasswordConfirmationPage({ searchParams }: { searchParams?: any }): ReactNode {
+  const raw = searchParams?.email;
+  const email = Array.isArray(raw) ? raw[0] : raw ?? 'your email';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-8">
