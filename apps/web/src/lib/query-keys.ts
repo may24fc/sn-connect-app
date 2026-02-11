@@ -22,11 +22,26 @@ export interface EmployeeFilters {
   pageSize?: number;
 }
 
+export interface DepartmentFilters {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface TaskFilters {
   search?: string;
   status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   assigneeId?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface DocumentFilters {
+  search?: string;
+  employeeId?: string;
+  documentType?: string;
+  isConfidential?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -47,6 +62,24 @@ export const queryKeys = {
       [...queryKeys.employees.lists(), filters] as const,
     details: () => [...queryKeys.employees.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.employees.details(), id] as const,
+  },
+
+  // Departments
+  departments: {
+    all: ['departments'] as const,
+    lists: () => [...queryKeys.departments.all, 'list'] as const,
+    list: (filters: DepartmentFilters) =>
+      [...queryKeys.departments.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.departments.all, 'detail', id] as const,
+  },
+
+  // Documents
+  documents: {
+    all: ['documents'] as const,
+    lists: () => [...queryKeys.documents.all, 'list'] as const,
+    list: (filters: DocumentFilters) =>
+      [...queryKeys.documents.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.documents.all, 'detail', id] as const,
   },
 
   // Tasks

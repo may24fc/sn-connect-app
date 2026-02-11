@@ -157,19 +157,19 @@ This document provides a comprehensive, actionable checklist for implementing th
 
 ### 1.3 Add Form Validation Dependencies
 
-- [ ] **Install form libraries**
+- [x] **Install form libraries**
   ```bash
   cd apps/web && pnpm add react-hook-form @hookform/resolvers zod
   ```
 
-- [ ] **Create Zod schemas for all entities**
+- [x] **Create Zod schemas for all entities**
   - File: `apps/web/src/lib/schemas/auth.schema.ts`
   - File: `apps/web/src/lib/schemas/employee.schema.ts`
   - File: `apps/web/src/lib/schemas/document.schema.ts`
   - File: `apps/web/src/lib/schemas/report.schema.ts`
   - File: `apps/web/src/lib/schemas/task.schema.ts`
 
-- [ ] **Create reusable form components with React Hook Form**
+- [x] **Create reusable form components with React Hook Form**
   - File: `packages/ui/src/components/forms/Form.tsx`
   - File: `packages/ui/src/components/forms/FormField.tsx`
   - File: `packages/ui/src/components/forms/FormInput.tsx`
@@ -178,7 +178,7 @@ This document provides a comprehensive, actionable checklist for implementing th
 
 ### 1.4 Query Keys Factory
 
-- [ ] **Create centralized query key factory**
+- [x] **Create centralized query key factory**
   - File: `apps/web/src/lib/query-keys.ts`
   ```typescript
   export const queryKeys = {
@@ -198,7 +198,7 @@ This document provides a comprehensive, actionable checklist for implementing th
 - [ ] **Create employees API route**
   - File: `apps/web/src/app/api/employees/route.ts`
   - GET: List employees with pagination, search, filters
-  - POST: Create new employee (HR/Admin only)
+  - POST: Create new employee (HR/Admin/Super Admin only)
   - Validate JWT, apply RLS through Supabase client
 
 - [ ] **Create employee detail API route**
@@ -753,6 +753,75 @@ CREATE TABLE public.onboarding_documents (
 - [ ] **Write E2E tests for onboarding flow**
   - File: `e2e/onboarding.spec.ts`
   - Tests: redirect on first login, complete full wizard, save draft and resume, validation errors
+
+### 3.3.2 Onboarding Data Viewer (Admin/Super-Admin Read-Only Interface)
+
+A read-only database viewer for HR and admins to see all onboarding submissions from employees and interns. No editing or approval — just visibility into what was filled out during onboarding.
+
+**Features:**
+- List page with grid/card view of all onboarding submissions
+- Search by name or email
+- Filter by status (completed/in_progress), role (employee/intern), department, date range
+- Summary stat cards (total, completed, in-progress counts)
+- Detail page with tabbed view: Personal Info, Payment Info, Documents
+- Document preview/download via Supabase Storage signed URLs
+- Payment account numbers masked in list view (last 4 digits only)
+
+**Implementation Checklist:**
+
+- [ ] **Create view-only Zod schemas**
+  - File: `apps/web/src/lib/schemas/onboarding-view.schema.ts`
+  - Schemas: `onboardingProfileViewSchema`, `onboardingDocumentViewSchema`, `onboardingProfileFiltersSchema`
+
+- [ ] **Add onboarding query keys to factory**
+  - File: `apps/web/src/lib/query-keys.ts`
+  - Add `queryKeys.onboarding` with `profiles` and `documents` sub-keys
+
+- [ ] **Create TanStack Query hooks for admin data fetching**
+  - File: `apps/web/src/hooks/useOnboardingProfiles.ts` (list with filters)
+  - File: `apps/web/src/hooks/useOnboardingProfile.ts` (single profile detail)
+  - File: `apps/web/src/hooks/useOnboardingDocuments.ts` (documents for a profile)
+
+- [ ] **Create read-only API routes (admin/super_admin role-gated)**
+  - File: `apps/web/src/app/api/onboarding/profiles/route.ts` (GET list with search, filters, pagination)
+  - File: `apps/web/src/app/api/onboarding/profiles/[id]/route.ts` (GET single profile with joined user/department data)
+  - File: `apps/web/src/app/api/onboarding/profiles/[id]/documents/route.ts` (GET documents for a profile)
+  - File: `apps/web/src/app/api/onboarding/documents/[id]/preview/route.ts` (GET signed URL for document preview)
+
+- [ ] **Create admin onboarding list page**
+  - File: `apps/web/src/app/(admin)/admin/onboarding/page.tsx`
+  - Grid/card view with search, filters (status, role, department, date range)
+  - Summary stat cards (total submissions, completed, in-progress)
+  - Follows pattern from `/admin/interns/page.tsx`
+
+- [ ] **Create admin onboarding detail page**
+  - File: `apps/web/src/app/(admin)/admin/onboarding/[id]/page.tsx`
+  - Tabbed layout: Personal Info | Payment Info | Documents
+  - All fields read-only, document preview via signed URLs
+  - Back button, profile header with avatar/name/status badge
+  - Follows pattern from `/admin/interns/[id]/page.tsx`
+
+- [ ] **Create super-admin redirect pages**
+  - File: `apps/web/src/app/(super-admin)/super-admin/onboarding/page.tsx` (redirects to `/admin/onboarding`)
+  - File: `apps/web/src/app/(super-admin)/super-admin/onboarding/[id]/page.tsx` (redirects to `/admin/onboarding/[id]`)
+
+- [ ] **Update Sidebar navigation**
+  - File: `packages/ui/src/layout/Sidebar.tsx`
+  - Add "Onboarding Data" item to `adminNavItems` and `superAdminNavItems`
+  - Icon: `ClipboardList` from lucide-react
+
+- [ ] **Ensure RLS policies allow admin read access**
+  - Verify SELECT policies on `onboarding_profiles` and `onboarding_documents` allow admin/hr/cos/ceo/super_admin roles
+  - These should already exist from section 3.3.1 migration
+
+- [ ] **Write unit tests for admin hooks**
+  - File: `tests/hooks/useOnboardingProfiles.test.ts`
+  - File: `tests/hooks/useOnboardingProfile.test.ts`
+
+- [ ] **Write E2E tests for onboarding data viewer**
+  - File: `e2e/admin-onboarding-viewer.spec.ts`
+  - Tests: admin can view list, filters work, detail page renders all tabs, document preview loads
+  - Tests: employee/intern roles get 403 forbidden
 
 ### 3.4 Offboarding/Exit Automation
 
