@@ -1,0 +1,6 @@
+{
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm --filter @hr-portal/web build",
+  "framework": "nextjs",
+  "outputDirectory": ".next"
+}
