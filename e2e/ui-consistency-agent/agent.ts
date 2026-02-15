@@ -18,24 +18,30 @@
  * - Generate a comprehensive report
  */
 
+import { runAllChecks } from './checks';
+import {
+  adminRoutes,
+  defaultConfig,
+  employeeRoutes,
+  internRoutes,
+  publicRoutes,
+  superAdminRoutes,
+} from './routes.config';
 import type {
+  AgentConfig,
+  AgentReport,
+  ConsoleMessage,
+  IssueSeverity,
+  NetworkRequest,
+  PageSnapshot,
   RouteConfig,
   UICheckResult,
-  AgentReport,
-  UIIssue,
-  PageSnapshot,
-  ConsoleMessage,
-  NetworkRequest,
-  AgentConfig,
   UICheckType,
-  IssueSeverity,
 } from './types';
-import { defaultConfig, publicRoutes, employeeRoutes, adminRoutes, superAdminRoutes, internRoutes } from './routes.config';
-import { runAllChecks } from './checks';
 
 export class UIConsistencyAgent {
   private config: AgentConfig;
-  private results: UICheckResult[] = [];
+  private results: Array<UICheckResult> = [];
   private startTime: Date = new Date();
 
   constructor(config: Partial<AgentConfig> = {}) {
@@ -81,7 +87,7 @@ Look for:
   /**
    * Get all routes to check, optionally filtered by role
    */
-  getRoutesToCheck(role?: string): RouteConfig[] {
+  getRoutesToCheck(role?: string): Array<RouteConfig> {
     if (!role) {
       return this.config.routes;
     }
@@ -105,8 +111,8 @@ Look for:
   /**
    * Parse console messages from Playwright MCP output
    */
-  parseConsoleMessages(rawOutput: string): ConsoleMessage[] {
-    const messages: ConsoleMessage[] = [];
+  parseConsoleMessages(rawOutput: string): Array<ConsoleMessage> {
+    const messages: Array<ConsoleMessage> = [];
     const lines = rawOutput.split('\n');
 
     for (const line of lines) {
@@ -125,8 +131,8 @@ Look for:
   /**
    * Parse network requests from Playwright MCP output
    */
-  parseNetworkRequests(rawOutput: string): NetworkRequest[] {
-    const requests: NetworkRequest[] = [];
+  parseNetworkRequests(rawOutput: string): Array<NetworkRequest> {
+    const requests: Array<NetworkRequest> = [];
     const lines = rawOutput.split('\n');
 
     for (const line of lines) {
@@ -137,10 +143,10 @@ Look for:
         requests.push({
           url,
           method,
-          status: parseInt(status),
+          status: Number.parseInt(status),
           statusText: statusText || '',
           resourceType: 'xhr',
-          failed: parseInt(status) >= 400,
+          failed: Number.parseInt(status) >= 400,
         });
       }
     }
@@ -180,7 +186,7 @@ Look for:
 
     const result: UICheckResult = {
       route,
-      passed: issues.filter(i => i.severity === 'critical').length === 0,
+      passed: issues.filter((i) => i.severity === 'critical').length === 0,
       issues,
       snapshot,
       duration: Date.now() - startTime,
@@ -195,17 +201,17 @@ Look for:
    */
   generateReport(): AgentReport {
     const endTime = new Date();
-    const allIssues = this.results.flatMap(r => r.issues);
+    const allIssues = this.results.flatMap((r) => r.issues);
 
     const issuesByType: Record<UICheckType, number> = {
       'console-errors': 0,
       'network-errors': 0,
-      'accessibility': 0,
-      'layout': 0,
-      'responsive': 0,
+      accessibility: 0,
+      layout: 0,
+      responsive: 0,
       'interactive-elements': 0,
-      'images': 0,
-      'typography': 0,
+      images: 0,
+      typography: 0,
     };
 
     const issuesBySeverity: Record<IssueSeverity, number> = {
@@ -223,8 +229,8 @@ Look for:
       startTime: this.startTime,
       endTime,
       totalRoutes: this.results.length,
-      passedRoutes: this.results.filter(r => r.passed).length,
-      failedRoutes: this.results.filter(r => !r.passed).length,
+      passedRoutes: this.results.filter((r) => r.passed).length,
+      failedRoutes: this.results.filter((r) => !r.passed).length,
       totalIssues: allIssues.length,
       issuesByType,
       issuesBySeverity,
@@ -236,7 +242,7 @@ Look for:
    * Format the report as markdown
    */
   formatReportAsMarkdown(report: AgentReport): string {
-    const lines: string[] = [
+    const lines: Array<string> = [
       '# UI Consistency Check Report',
       '',
       `**Generated:** ${report.endTime.toISOString()}`,
@@ -244,8 +250,8 @@ Look for:
       '',
       '## Summary',
       '',
-      `| Metric | Value |`,
-      `|--------|-------|`,
+      '| Metric | Value |',
+      '|--------|-------|',
       `| Total Routes Checked | ${report.totalRoutes} |`,
       `| Passed | ${report.passedRoutes} |`,
       `| Failed | ${report.failedRoutes} |`,
@@ -281,10 +287,13 @@ Look for:
         lines.push('');
 
         for (const issue of result.issues) {
-          const severityIcon = issue.severity === 'critical' ? '🔴' : issue.severity === 'warning' ? '🟡' : '🔵';
+          const severityIcon =
+            issue.severity === 'critical' ? '🔴' : issue.severity === 'warning' ? '🟡' : '🔵';
           lines.push(`${severityIcon} **[${issue.type}]** ${issue.message}`);
           if (issue.details) {
-            lines.push(`  - ${issue.details.substring(0, 200)}${issue.details.length > 200 ? '...' : ''}`);
+            lines.push(
+              `  - ${issue.details.substring(0, 200)}${issue.details.length > 200 ? '...' : ''}`
+            );
           }
         }
       }

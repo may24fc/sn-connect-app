@@ -15,7 +15,7 @@ export interface ReportType {
   frequency: ReportFrequency;
   deadlineDay: number; // 1-7 (Monday-Sunday)
   deadlineTime: string; // HH:MM format
-  requiredRoles: string[];
+  requiredRoles: Array<string>;
 }
 
 export interface ReportSubmission {
@@ -28,7 +28,7 @@ export interface ReportSubmission {
   periodStart: string; // ISO date
   periodEnd: string; // ISO date
   content: ReportContent;
-  filePaths: string[];
+  filePaths: Array<string>;
   status: ReportStatus;
   submittedAt: string | null;
   reviewedBy: string | null;
@@ -39,10 +39,10 @@ export interface ReportSubmission {
 
 export interface ReportContent {
   summary: string;
-  accomplishments: string[];
-  challenges: string[];
-  nextWeekPlans: string[];
-  metrics: ReportMetric[];
+  accomplishments: Array<string>;
+  challenges: Array<string>;
+  nextWeekPlans: Array<string>;
+  metrics: Array<ReportMetric>;
   notes?: string;
 }
 
@@ -66,7 +66,7 @@ export interface WeekPeriod {
 export interface WeekComparison {
   currentWeek: WeekPeriod;
   previousWeek: WeekPeriod;
-  metrics: MetricComparison[];
+  metrics: Array<MetricComparison>;
 }
 
 export interface MetricComparison {
@@ -85,7 +85,7 @@ export interface AnalyticsSummary {
   totalExpenditure: number;
   totalResults: number;
   averageROI: number;
-  byDepartment: DepartmentMetrics[];
+  byDepartment: Array<DepartmentMetrics>;
 }
 
 export interface DepartmentMetrics {
@@ -160,13 +160,11 @@ export function formatPeriodLabel(startDate: string, endDate: string): string {
   return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
 }
 
-export function calculateTotalExpenditure(metrics: ReportMetric[]): number {
-  return metrics
-    .filter((m) => m.type === 'expenditure')
-    .reduce((sum, m) => sum + m.value, 0);
+export function calculateTotalExpenditure(metrics: Array<ReportMetric>): number {
+  return metrics.filter((m) => m.type === 'expenditure').reduce((sum, m) => sum + m.value, 0);
 }
 
-export function calculateTotalResults(metrics: ReportMetric[]): number {
+export function calculateTotalResults(metrics: Array<ReportMetric>): number {
   return metrics
     .filter((m) => m.type === 'result' && m.unit === 'PHP')
     .reduce((sum, m) => sum + m.value, 0);

@@ -94,7 +94,9 @@ export default function ResetPasswordPage(): ReactNode {
               <CheckCircle2 className="h-8 w-8 text-success" />
             </div>
             <CardTitle className="text-2xl">Password updated</CardTitle>
-            <CardDescription className="mt-2">You can now sign in with your new password.</CardDescription>
+            <CardDescription className="mt-2">
+              You can now sign in with your new password.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild className="w-full">
@@ -114,7 +116,9 @@ export default function ResetPasswordPage(): ReactNode {
             <Lock className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-2xl">Set a new password</CardTitle>
-          <CardDescription className="mt-2">Choose a strong password to secure your account.</CardDescription>
+          <CardDescription className="mt-2">
+            Choose a strong password to secure your account.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,13 +1,13 @@
 'use client';
 
+import { ChevronDown, ChevronUp, Edit2, Target } from 'lucide-react';
 import * as React from 'react';
-import { Target, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../primitives/card';
 import { Button } from '../../primitives/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
 import { Progress } from '../../primitives/progress';
-import { OKRStatusBadge } from './PerformanceStatusBadge';
+import type { KeyResult, OKR } from '../../types/performance.types';
 import { cn } from '../../utils/cn';
-import type { OKR, KeyResult } from '../../types/performance.types';
+import { OKRStatusBadge } from './PerformanceStatusBadge';
 
 interface KeyResultItemProps {
   keyResult: KeyResult;
@@ -20,13 +20,14 @@ function KeyResultItem({
   onUpdateProgress,
   readonly = true,
 }: KeyResultItemProps): React.ReactNode {
-  const progressColor = keyResult.progressPercentage >= 100
-    ? 'bg-success'
-    : keyResult.progressPercentage >= 70
-    ? 'bg-primary'
-    : keyResult.progressPercentage >= 40
-    ? 'bg-warning'
-    : 'bg-error';
+  const progressColor =
+    keyResult.progressPercentage >= 100
+      ? 'bg-success'
+      : keyResult.progressPercentage >= 70
+        ? 'bg-primary'
+        : keyResult.progressPercentage >= 40
+          ? 'bg-warning'
+          : 'bg-error';
 
   return (
     <div className="rounded-lg border border-border p-3 space-y-2">
@@ -94,13 +95,14 @@ export function OKRCard({
     }
   };
 
-  const overallProgressColor = okr.progressPercentage >= 100
-    ? 'bg-success'
-    : okr.progressPercentage >= 70
-    ? 'bg-primary'
-    : okr.progressPercentage >= 40
-    ? 'bg-warning'
-    : 'bg-error';
+  const overallProgressColor =
+    okr.progressPercentage >= 100
+      ? 'bg-success'
+      : okr.progressPercentage >= 70
+        ? 'bg-primary'
+        : okr.progressPercentage >= 40
+          ? 'bg-warning'
+          : 'bg-error';
 
   return (
     <Card className={cn('transition-shadow hover:shadow-md', className)}>
@@ -113,9 +115,7 @@ export function OKRCard({
             <div className="flex-1 min-w-0">
               <CardTitle className="text-base line-clamp-2">{okr.objective}</CardTitle>
               {okr.description && (
-                <CardDescription className="mt-1 line-clamp-2">
-                  {okr.description}
-                </CardDescription>
+                <CardDescription className="mt-1 line-clamp-2">{okr.description}</CardDescription>
               )}
             </div>
           </div>
@@ -149,11 +149,7 @@ export function OKRCard({
           onClick={() => setExpanded(!expanded)}
           className="flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors w-full"
         >
-          {expanded ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
-          )}
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           {okr.keyResults.length} Key Result{okr.keyResults.length !== 1 ? 's' : ''}
         </button>
 
@@ -176,7 +172,7 @@ export function OKRCard({
 }
 
 interface OKRListProps {
-  okrs: OKR[];
+  okrs: Array<OKR>;
   onEdit?: (okr: OKR) => void;
   onUpdateKeyResult?: (okrId: string, keyResultId: string, value: number) => void;
   readonly?: boolean;

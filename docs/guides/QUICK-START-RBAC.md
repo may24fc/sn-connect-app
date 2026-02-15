@@ -27,7 +27,7 @@ Click any of the quick login buttons or manually enter:
 
 #### Employee Role
 - Dashboard: `/dashboard`
-- View personal profile, files, leave requests
+- View personal profile, files
 - Access performance reviews
 - View company announcements
 
@@ -35,7 +35,6 @@ Click any of the quick login buttons or manually enter:
 - Dashboard
 - My Profile
 - My 201 Files
-- Leave Requests
 - Documents
 - Performance Reviews
 - Announcements
@@ -59,7 +58,6 @@ Click any of the quick login buttons or manually enter:
 #### Admin Role
 - Dashboard: `/admin/dashboard`
 - Manage employees and teams
-- Approve leave requests
 - Access HR reports
 - Manage performance reviews
 - Handle recruitment
@@ -68,7 +66,6 @@ Click any of the quick login buttons or manually enter:
 - Dashboard
 - Employee Management
 - Team Management
-- Leave Approvals
 - Reports
 - Performance Management
 - Recruitment
@@ -281,7 +278,6 @@ The manager role has been deprecated. Manager-specific features now live under a
 
 - `/manager/team-performance` → `/admin/teams`
 - `/manager/reviews` → `/admin/performance`
-- Manager leave approvals → `/admin/leave-approvals`
 
 Update any hardcoded references to manager routes.
 

@@ -1,13 +1,8 @@
 'use client';
 
-import * as React from 'react';
-import { FileText, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '../../primitives/card';
+import { CheckCircle2, Clock, FileText, TrendingUp } from 'lucide-react';
+import type * as React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 
 interface SummaryCardProps {
@@ -38,9 +33,7 @@ function SummaryCard({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
-        {description && (
-          <p className="text-xs text-muted-foreground mt-1">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
         {trend && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
             <TrendingUp
@@ -51,10 +44,7 @@ function SummaryCard({
               )}
             />
             <span
-              className={cn(
-                trend.value > 0 && 'text-green-600',
-                trend.value < 0 && 'text-red-600'
-              )}
+              className={cn(trend.value > 0 && 'text-green-600', trend.value < 0 && 'text-red-600')}
             >
               {trend.value > 0 ? '+' : ''}
               {trend.value}%

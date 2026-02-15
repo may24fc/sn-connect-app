@@ -22,7 +22,7 @@ export interface FormSelectProps<TFieldValues extends FieldValues> {
   description?: string;
   required?: boolean;
   placeholder?: string;
-  options: FormSelectOption[];
+  options: Array<FormSelectOption>;
   triggerClassName?: string;
 }
 
@@ -35,12 +35,7 @@ export const FormSelect = <TFieldValues extends FieldValues>({
   options,
   triggerClassName,
 }: FormSelectProps<TFieldValues>) => (
-  <FormField
-    name={name}
-    label={label}
-    description={description}
-    required={required}
-  >
+  <FormField name={name} label={label} description={description} required={required}>
     {({ field, fieldState, id }) => (
       <Select value={field.value ?? ''} onValueChange={field.onChange}>
         <SelectTrigger
@@ -57,9 +52,7 @@ export const FormSelect = <TFieldValues extends FieldValues>({
             <SelectItem
               key={option.value}
               value={option.value}
-              {...(option.disabled !== undefined
-                ? { disabled: option.disabled }
-                : {})}
+              {...(option.disabled !== undefined ? { disabled: option.disabled } : {})}
             >
               {option.label}
             </SelectItem>

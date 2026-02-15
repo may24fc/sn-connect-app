@@ -1,20 +1,16 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
 import {
-  BentoGrid,
   BentoCard,
+  BentoCardContent,
   BentoCardHeader,
   BentoCardTitle,
-  BentoCardContent,
+  BentoGrid,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
-import {
-  Badge,
-  Button,
-  Progress,
-} from '@hr-portal/ui';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge, Button, Progress } from '@hr-portal/ui';
 import {
   Activity,
   AlertTriangle,
@@ -340,7 +336,10 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                 >
                   <div className="flex items-start gap-3">
-                    <Lock className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <Lock
+                      className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
+                      strokeWidth={1.5}
+                    />
                     <div>
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         {log.action}
@@ -373,9 +372,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {action.title}
                 </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {action.description}
-                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{action.description}</p>
               </div>
               <ChevronRight className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
             </div>

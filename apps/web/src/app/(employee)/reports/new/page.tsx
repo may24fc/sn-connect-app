@@ -1,88 +1,166 @@
 'use client';
 
+import { useCreateReport } from '@/hooks/useCreateReport';
 import {
   Button,
-  type ReportContent,
-  ReportForm,
-  type WeekPeriod,
-  WeekSelector,
-  getCurrentWeekPeriod,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
 } from '@hr-portal/ui';
 import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { useMemo, useState } from 'react';
 
-export default function NewReportPage(): React.ReactNode {
+export default function NewReportPage() {
   const router = useRouter();
-  const [weekPeriod, setWeekPeriod] = React.useState<WeekPeriod>(getCurrentWeekPeriod());
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const createReport = useCreateReport();
 
-  const handleSaveDraft = async (_content: ReportContent): Promise<void> => {
-    setIsSubmitting(true);
+  const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'marketing'>('weekly');
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+  const [metricName, setMetricName] = useState('');
+  const [metricValue, setMetricValue] = useState('0');
+  const [notes, setNotes] = useState('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const metricNumericValue = useMemo(() => Number(metricValue || 0), [metricValue]);
+
+  const handleSubmit = async (asDraft: boolean) => {
+    setErrorMessage(null);
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await createReport.mutateAsync({
+        reportType,
+        periodStart,
+        periodEnd,
+        status: asDraft ? 'draft' : 'submitted',
+        notes: notes || undefined,
+        metrics:
+          metricName.trim().length > 0
+            ? [
+                {
+                  metricName,
+                  metricValue: Number.isFinite(metricNumericValue) ? metricNumericValue : 0,
+                  metricUnit: 'PHP',
+                },
+              ]
+            : [],
+      });
 
-      // Redirect back to reports list
-      router.push('/reports');
+      router.push(`/reports/${response.data.id}`);
     } catch (error) {
-      console.error('Failed to save draft:', error);
-    } finally {
-      setIsSubmitting(false);
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to save report');
     }
-  };
-
-  const handleSubmit = async (_content: ReportContent): Promise<void> => {
-    setIsSubmitting(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Redirect back to reports list
-      router.push('/reports');
-    } catch (error) {
-      console.error('Failed to submit report:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancel = (): void => {
-    router.push('/reports');
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={handleCancel}>
-          <ArrowLeft className="h-4 w-4" />
-          <span className="sr-only">Back to reports</span>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/reports">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">Create Weekly Report</h1>
-          <p className="text-muted-foreground">Complete your report for the selected week period</p>
+        <div>
+          <h1 className="text-headline">Create Report</h1>
+          <p className="text-muted-foreground">Submit a weekly, monthly, or marketing report</p>
         </div>
       </div>
 
-      {/* Week Selector */}
-      <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-        <span className="text-sm font-medium">Reporting Period:</span>
-        <WeekSelector
-          selectedWeek={weekPeriod}
-          onWeekChange={setWeekPeriod}
-          showNavigation={true}
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Report Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void handleSubmit(false);
+            }}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Report Type</Label>
+                <Select value={reportType} onValueChange={(value) => setReportType(value as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Metric Name (optional)</Label>
+                <Input value={metricName} onChange={(event) => setMetricName(event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Period Start</Label>
+                <Input
+                  type="date"
+                  value={periodStart}
+                  onChange={(event) => setPeriodStart(event.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Period End</Label>
+                <Input
+                  type="date"
+                  value={periodEnd}
+                  onChange={(event) => setPeriodEnd(event.target.value)}
+                  required
+                />
+              </div>
+            </div>
 
-      {/* Report Form */}
-      <ReportForm
-        weekPeriod={weekPeriod}
-        onSaveDraft={handleSaveDraft}
-        onSubmit={handleSubmit}
-        onCancel={handleCancel}
-        isSubmitting={isSubmitting}
-      />
+            <div className="space-y-2">
+              <Label>Metric Value</Label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={metricValue}
+                onChange={(event) => setMetricValue(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={5} />
+            </div>
+
+            {errorMessage && <p className="text-sm text-error">{errorMessage}</p>}
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={createReport.isPending}
+                onClick={() => void handleSubmit(true)}
+              >
+                Save Draft
+              </Button>
+              <Button type="submit" disabled={createReport.isPending}>
+                Submit Report
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

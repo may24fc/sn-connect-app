@@ -12,9 +12,9 @@ import type {
  */
 export interface DataTableProps<TData> {
   /** Column definitions for the table */
-  columns: ColumnDef<TData>[];
+  columns: Array<ColumnDef<TData>>;
   /** Data to display in the table */
-  data: TData[];
+  data: Array<TData>;
   /** Whether the table is in a loading state */
   isLoading?: boolean;
   /** Callback when a row is clicked */
@@ -22,11 +22,11 @@ export interface DataTableProps<TData> {
   /** Enable row selection with checkboxes */
   enableRowSelection?: boolean;
   /** Callback when selection changes */
-  onSelectionChange?: (rows: TData[]) => void;
+  onSelectionChange?: (rows: Array<TData>) => void;
   /** Enable pagination */
   enablePagination?: boolean;
   /** Page size options for pagination */
-  pageSizeOptions?: number[];
+  pageSizeOptions?: Array<number>;
   /** Total row count for server-side pagination */
   totalRows?: number;
   /** Callback for pagination changes (server-side) */
@@ -66,7 +66,7 @@ export interface DataTablePaginationProps<TData> {
   /** The table instance */
   table: Table<TData>;
   /** Page size options */
-  pageSizeOptions?: number[];
+  pageSizeOptions?: Array<number>;
 }
 
 /**

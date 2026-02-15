@@ -1,11 +1,11 @@
 'use client';
 
-import * as React from 'react';
-import { CheckCircle2, Clock, XCircle, Pause, FileText, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, FileText, Pause, XCircle } from 'lucide-react';
+import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
-import { cn } from '../../utils/cn';
 import type { InternshipStatus, ReportStatus } from '../../types/internship.types';
 import { INTERNSHIP_STATUS_CONFIG, REPORT_STATUS_CONFIG } from '../../types/internship.types';
+import { cn } from '../../utils/cn';
 
 interface InternshipStatusBadgeProps {
   status: InternshipStatus;

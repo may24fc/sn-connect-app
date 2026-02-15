@@ -1,10 +1,10 @@
 'use client';
 
+import { Bell, LogOut, Menu, Search, Settings, User } from 'lucide-react';
 import * as React from 'react';
-import { Bell, Search, Menu, Settings, LogOut, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
+import { Badge } from '../primitives/badge';
 import { Button } from '../primitives/button';
-import { Input } from '../primitives/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../primitives/dropdown-menu';
-import { Badge } from '../primitives/badge';
+import { Input } from '../primitives/input';
 
 export interface HeaderUser {
   name: string;
@@ -80,17 +80,19 @@ export function Header({
         )}
 
         {title && (
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">{title}</h1>
+          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            {title}
+          </h1>
         )}
 
         {/* Search Bar */}
         {onSearch && (
-          <form
-            onSubmit={handleSearchSubmit}
-            className="hidden md:flex md:w-80"
-          >
+          <form onSubmit={handleSearchSubmit} className="hidden md:flex md:w-80">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" strokeWidth={1.5} />
+              <Search
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                strokeWidth={1.5}
+              />
               <Input
                 type="search"
                 placeholder="Search..."
@@ -131,22 +133,28 @@ export function Header({
               className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
               <Avatar className="h-8 w-8">
-                {user.avatarUrl && (
-                  <AvatarImage src={user.avatarUrl} alt={user.name} />
-                )}
+                {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
                 <AvatarFallback className="bg-indigo-600 text-white text-xs">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden flex-col items-start text-left md:flex">
-                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</span>
-                <Badge variant="secondary" className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize">
+                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                  {user.name}
+                </span>
+                <Badge
+                  variant="secondary"
+                  className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize"
+                >
                   {user.role}
                 </Badge>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+          <DropdownMenuContent
+            align="end"
+            className="w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+          >
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{user.name}</p>
@@ -154,12 +162,18 @@ export function Header({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />
-            <DropdownMenuItem onClick={onProfileClick} className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+            <DropdownMenuItem
+              onClick={onProfileClick}
+              className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
               <User className="mr-2 h-4 w-4 text-zinc-400" strokeWidth={1.5} />
               Profile
             </DropdownMenuItem>
             {onSettingsClick && (
-              <DropdownMenuItem onClick={onSettingsClick} className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+              <DropdownMenuItem
+                onClick={onSettingsClick}
+                className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
                 <Settings className="mr-2 h-4 w-4 text-zinc-400" strokeWidth={1.5} />
                 Settings
               </DropdownMenuItem>

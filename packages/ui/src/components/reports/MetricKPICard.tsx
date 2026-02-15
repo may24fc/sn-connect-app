@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
-import { ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import type * as React from 'react';
 import { Card, CardContent } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 
@@ -99,11 +99,7 @@ export function MetricKPICard({
 
   return (
     <Card
-      className={cn(
-        'border-l-4 transition-all hover:shadow-md',
-        colorVariant.border,
-        className
-      )}
+      className={cn('border-l-4 transition-all hover:shadow-md', colorVariant.border, className)}
     >
       <CardContent className="pt-6">
         <div className="space-y-2">
@@ -114,12 +110,7 @@ export function MetricKPICard({
 
           {/* Primary Value */}
           <div className="space-y-1">
-            <p
-              className={cn(
-                'text-4xl font-bold tracking-tight font-mono',
-                colorVariant.value
-              )}
-            >
+            <p className={cn('text-4xl font-bold tracking-tight font-mono', colorVariant.value)}>
               {value}
             </p>
 
@@ -166,13 +157,6 @@ export function MetricKPICardGrid({
   className?: string;
 }): React.ReactElement {
   return (
-    <div
-      className={cn(
-        'grid gap-4 md:grid-cols-2 lg:grid-cols-4',
-        className
-      )}
-    >
-      {children}
-    </div>
+    <div className={cn('grid gap-4 md:grid-cols-2 lg:grid-cols-4', className)}>{children}</div>
   );
 }

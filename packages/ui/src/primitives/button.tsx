@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { cva, type VariantProps } from 'class-variance-authority';
+import { type VariantProps, cva } from 'class-variance-authority';
+import * as React from 'react';
 import { cn } from '../utils/cn';
 
 const buttonVariants = cva(
@@ -10,20 +10,17 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'bg-indigo-600 text-white shadow hover:bg-indigo-700 active:bg-indigo-800',
-        destructive:
-          'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800',
+        default: 'bg-indigo-600 text-white shadow hover:bg-indigo-700 active:bg-indigo-800',
+        destructive: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800',
         outline:
           'border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
         secondary:
           'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-700',
-        ghost: 'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
+        ghost:
+          'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
         link: 'text-indigo-600 dark:text-indigo-400 underline-offset-4 hover:underline',
-        success:
-          'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800',
-        warning:
-          'bg-amber-500 text-white shadow-sm hover:bg-amber-600 active:bg-amber-700',
+        success: 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800',
+        warning: 'bg-amber-500 text-white shadow-sm hover:bg-amber-600 active:bg-amber-700',
       },
       size: {
         default: 'h-10 px-4 py-2',
@@ -49,11 +46,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     );
   }
 );

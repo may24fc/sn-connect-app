@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
-  pageSizeOptions?: number[];
+  pageSizeOptions?: Array<number>;
 }
 
 /**
@@ -28,7 +28,8 @@ export function DataTablePagination<TData>({
       {/* Row count info */}
       <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
         <span>
-          Showing {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, totalRows)} of {totalRows}
+          Showing {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, totalRows)} of{' '}
+          {totalRows}
         </span>
       </div>
 
@@ -101,7 +102,12 @@ interface PaginationButtonProps {
   'aria-label': string;
 }
 
-function PaginationButton({ onClick, disabled, children, 'aria-label': ariaLabel }: PaginationButtonProps): ReactNode {
+function PaginationButton({
+  onClick,
+  disabled,
+  children,
+  'aria-label': ariaLabel,
+}: PaginationButtonProps): ReactNode {
   return (
     <button
       type="button"

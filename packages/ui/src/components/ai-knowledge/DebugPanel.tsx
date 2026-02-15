@@ -1,13 +1,13 @@
 'use client';
 
-import * as React from 'react';
-import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import type * as React from 'react';
 import { Button } from '../../primitives/button';
-import { cn } from '../../utils/cn';
 import type { SourceAttribution } from '../../types/ai-knowledge.types';
+import { cn } from '../../utils/cn';
 
 export interface DebugPanelProps {
-  sources: SourceAttribution[];
+  sources: Array<SourceAttribution>;
   isExpanded: boolean;
   onToggle: () => void;
   className?: string;
@@ -56,9 +56,7 @@ export function DebugPanel({
                   <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-xs font-medium text-foreground truncate">
-                    {source.fileName}
-                  </p>
+                  <p className="text-xs font-medium text-foreground truncate">{source.fileName}</p>
                   {source.pageNumber && (
                     <p className="text-xs text-muted-foreground">Page {source.pageNumber}</p>
                   )}

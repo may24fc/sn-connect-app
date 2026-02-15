@@ -1,30 +1,25 @@
 'use client';
 
-import * as React from 'react';
 import {
-  Home,
-  FolderOpen,
-  ClipboardList,
-  Receipt,
-  Megaphone,
-  User,
-  FileCheck,
+  Brain,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
-  Target,
-  GraduationCap,
+  ClipboardList,
+  FileCheck,
   FileText,
-  CheckSquare,
-  Brain,
+  FolderOpen,
+  GraduationCap,
+  Home,
   type LucideIcon,
+  Megaphone,
+  Receipt,
+  Target,
+  User,
 } from 'lucide-react';
+import type * as React from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../primitives/tooltip';
 import { cn } from '../utils/cn';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../primitives/tooltip';
 
 export interface NavItem {
   label: string;
@@ -45,7 +40,7 @@ export interface SidebarProps {
 }
 
 // Employee navigation
-const employeeNavItems: NavItem[] = [
+const employeeNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
   { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'My Profile', href: '/profile', icon: User },
@@ -57,7 +52,7 @@ const employeeNavItems: NavItem[] = [
 ];
 
 // Intern navigation - same as employee except different dashboard and no payroll
-const internNavItems: NavItem[] = [
+const internNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
   { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'My Profile', href: '/profile', icon: User },
@@ -67,9 +62,11 @@ const internNavItems: NavItem[] = [
 ];
 
 // Admin (HR) navigation - includes team management features
-const adminNavItems: NavItem[] = [
+const adminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Onboarding Data', href: '/admin/onboarding', icon: ClipboardList },
+  { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
@@ -77,9 +74,11 @@ const adminNavItems: NavItem[] = [
 ];
 
 // Super Admin navigation - same as admin plus payroll approvals
-const superAdminNavItems: NavItem[] = [
+const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
+  { label: 'Onboarding Data', href: '/super-admin/onboarding', icon: ClipboardList },
+  { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },
@@ -100,10 +99,10 @@ export function Sidebar({
     variant === 'employee'
       ? employeeNavItems
       : variant === 'intern'
-      ? internNavItems
-      : variant === 'super_admin'
-      ? superAdminNavItems
-      : adminNavItems;
+        ? internNavItems
+        : variant === 'super_admin'
+          ? superAdminNavItems
+          : adminNavItems;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -121,11 +120,7 @@ export function Sidebar({
           )}
         >
           {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt="Logo"
-              className={cn('h-8 w-auto', collapsed && 'h-6')}
-            />
+            <img src={logoUrl} alt="Logo" className={cn('h-8 w-auto', collapsed && 'h-6')} />
           ) : (
             <>
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white text-sm">
@@ -145,8 +140,11 @@ export function Sidebar({
           <ul className="space-y-1">
             {navItems.map((item) => {
               // Check if current path matches or is a child of the nav item
-              const isActive = currentPath === item.href ||
-                (item.href !== '/dashboard' && item.href !== '/' && currentPath.startsWith(item.href));
+              const isActive =
+                currentPath === item.href ||
+                (item.href !== '/dashboard' &&
+                  item.href !== '/' &&
+                  currentPath.startsWith(item.href));
               const Icon = item.icon;
 
               const navButton = (
@@ -164,7 +162,9 @@ export function Sidebar({
                   <Icon
                     className={cn(
                       'h-5 w-5 flex-shrink-0',
-                      isActive ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'
+                      isActive
+                        ? 'text-zinc-900 dark:text-zinc-100'
+                        : 'text-zinc-400 dark:text-zinc-500'
                     )}
                     strokeWidth={1.5}
                   />
@@ -223,12 +223,7 @@ export function Sidebar({
             collapsed && 'p-2'
           )}
         >
-          <p
-            className={cn(
-              'text-xs text-zinc-500 dark:text-zinc-400',
-              collapsed && 'text-center'
-            )}
-          >
+          <p className={cn('text-xs text-zinc-500 dark:text-zinc-400', collapsed && 'text-center')}>
             {collapsed ? 'SN' : 'Where Policy Meets Productivity'}
           </p>
         </div>

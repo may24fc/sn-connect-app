@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys, type EmployeeFilters } from '@/lib/query-keys';
+import { type EmployeeFilters, queryKeys } from '@/lib/query-keys';
 import type { Employee, EmployeeInsert } from '@hr-portal/database';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface EmployeeListResponse {
-  data: Employee[];
+  data: Array<Employee>;
   pagination: {
     page: number;
     pageSize: number;

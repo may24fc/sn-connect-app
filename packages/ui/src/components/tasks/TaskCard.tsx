@@ -1,16 +1,11 @@
 'use client';
 
-import * as React from 'react';
-import {
-  Calendar,
-  User,
-  Users,
-  ChevronRight,
-  AlertCircle,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader } from '../../primitives/card';
+import { AlertCircle, Calendar, ChevronRight, User, Users } from 'lucide-react';
+import type * as React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
+import { Card, CardContent, CardHeader } from '../../primitives/card';
 import {
   Select,
   SelectContent,
@@ -18,12 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
-import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
-import { TaskPriorityBadge } from './TaskPriorityBadge';
-import { TaskStatusBadge } from './TaskStatusBadge';
-import { cn } from '../../utils/cn';
 import type { Task, TaskId, TaskStatus } from '../../types/task.types';
 import { formatDueDate, isTaskOverdue } from '../../types/task.types';
+import { cn } from '../../utils/cn';
+import { TaskPriorityBadge } from './TaskPriorityBadge';
+import { TaskStatusBadge } from './TaskStatusBadge';
 
 export interface TaskCardProps {
   task: Task;
@@ -103,11 +97,7 @@ export function TaskCard({
   // Default variant for full task lists
   return (
     <Card
-      className={cn(
-        'transition-shadow hover:shadow-md',
-        isCompleted && 'opacity-75',
-        className
-      )}
+      className={cn('transition-shadow hover:shadow-md', isCompleted && 'opacity-75', className)}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
@@ -151,9 +141,7 @@ export function TaskCard({
 
       <CardContent className="space-y-4">
         {/* Description Preview */}
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {task.description}
-        </p>
+        <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
 
         {/* Metadata Grid */}
         <div className="grid gap-3 text-sm">
@@ -161,12 +149,7 @@ export function TaskCard({
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Due:</span>
-            <span
-              className={cn(
-                'font-medium',
-                isOverdue && 'text-error'
-              )}
-            >
+            <span className={cn('font-medium', isOverdue && 'text-error')}>
               {formatDueDate(task.dueDate)}
             </span>
           </div>

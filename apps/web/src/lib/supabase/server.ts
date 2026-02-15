@@ -10,10 +10,8 @@ type CookieStore = Awaited<ReturnType<typeof cookies>> & {
   set: (options: { name: string; value: string } & CookieOptions) => void;
 };
 
-export async function createSupabaseServerClient(): Promise<
-  ReturnType<typeof createServerClient>
-> {
-  if (!supabaseUrl || !supabaseAnonKey) {
+export async function createSupabaseServerClient(): Promise<ReturnType<typeof createServerClient>> {
+  if (!(supabaseUrl && supabaseAnonKey)) {
     throw new Error('Supabase environment variables are not configured.');
   }
 

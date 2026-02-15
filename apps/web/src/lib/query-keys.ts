@@ -37,11 +37,90 @@ export interface TaskFilters {
   pageSize?: number;
 }
 
+export interface ReportFilters {
+  search?: string;
+  status?: 'draft' | 'submitted' | 'approved' | 'rejected';
+  reportType?: string;
+  employeeId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface InvoiceFilters {
+  status?: 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
+  employeeId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface DocumentFilters {
   search?: string;
   employeeId?: string;
   documentType?: string;
   isConfidential?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AnnouncementFilters {
+  search?: string;
+  status?: 'draft' | 'scheduled' | 'published' | 'expired' | 'archived';
+  category?:
+    | 'hr_updates'
+    | 'benefits'
+    | 'events'
+    | 'performance'
+    | 'training'
+    | 'policy'
+    | 'general'
+    | 'emergency';
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  readStatus?: 'all' | 'read' | 'unread';
+  authorId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ResourceFilters {
+  search?: string;
+  status?: 'draft' | 'published' | 'archived';
+  category?:
+    | 'onboarding'
+    | 'training'
+    | 'policies'
+    | 'benefits'
+    | 'tools'
+    | 'culture'
+    | 'department_specific'
+    | 'forms_templates'
+    | 'performance'
+    | 'emergency';
+  resourceType?: 'video' | 'document' | 'image' | 'link' | 'presentation' | 'interactive';
+  tags?: Array<string>;
+  authorId?: string;
+  isFeatured?: boolean;
+  isPinned?: boolean;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'created_at' | 'published_at' | 'view_count' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ResourceFeedFilters {
+  search?: string;
+  category?: string;
+  resourceType?: string;
+  tags?: Array<string>;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CollectionFilters {
+  search?: string;
   page?: number;
   pageSize?: number;
 }
@@ -53,13 +132,23 @@ export interface AnalyticsParams {
   metric?: string;
 }
 
+export interface OnboardingProfileFilters {
+  search?: string;
+  status?: 'completed' | 'in_progress';
+  role?: 'employee' | 'intern';
+  departmentId?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export const queryKeys = {
   // Employees
   employees: {
     all: ['employees'] as const,
     lists: () => [...queryKeys.employees.all, 'list'] as const,
-    list: (filters: EmployeeFilters) =>
-      [...queryKeys.employees.lists(), filters] as const,
+    list: (filters: EmployeeFilters) => [...queryKeys.employees.lists(), filters] as const,
     details: () => [...queryKeys.employees.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.employees.details(), id] as const,
   },
@@ -68,8 +157,7 @@ export const queryKeys = {
   departments: {
     all: ['departments'] as const,
     lists: () => [...queryKeys.departments.all, 'list'] as const,
-    list: (filters: DepartmentFilters) =>
-      [...queryKeys.departments.lists(), filters] as const,
+    list: (filters: DepartmentFilters) => [...queryKeys.departments.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.departments.all, 'detail', id] as const,
   },
 
@@ -77,8 +165,7 @@ export const queryKeys = {
   documents: {
     all: ['documents'] as const,
     lists: () => [...queryKeys.documents.all, 'list'] as const,
-    list: (filters: DocumentFilters) =>
-      [...queryKeys.documents.lists(), filters] as const,
+    list: (filters: DocumentFilters) => [...queryKeys.documents.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.documents.all, 'detail', id] as const,
   },
 
@@ -86,16 +173,18 @@ export const queryKeys = {
   tasks: {
     all: ['tasks'] as const,
     lists: () => [...queryKeys.tasks.all, 'list'] as const,
-    list: (filters: TaskFilters) =>
-      [...queryKeys.tasks.lists(), filters] as const,
+    list: (filters: TaskFilters) => [...queryKeys.tasks.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.tasks.all, 'detail', id] as const,
   },
 
   // Reports
   reports: {
     all: ['reports'] as const,
-    weekly: (weekId: string) =>
-      [...queryKeys.reports.all, 'weekly', weekId] as const,
+    lists: () => [...queryKeys.reports.all, 'list'] as const,
+    list: (filters: ReportFilters) => [...queryKeys.reports.lists(), filters] as const,
+    details: () => [...queryKeys.reports.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.reports.details(), id] as const,
+    weekly: (weekId: string) => [...queryKeys.reports.all, 'weekly', weekId] as const,
     analytics: (params: AnalyticsParams) =>
       [...queryKeys.reports.all, 'analytics', params] as const,
   },
@@ -128,6 +217,10 @@ export const queryKeys = {
   // Payroll
   payroll: {
     all: ['payroll'] as const,
+    lists: () => [...queryKeys.payroll.all, 'list'] as const,
+    list: (filters: InvoiceFilters) => [...queryKeys.payroll.lists(), filters] as const,
+    details: () => [...queryKeys.payroll.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.payroll.details(), id] as const,
     approvals: () => [...queryKeys.payroll.all, 'approvals'] as const,
     approval: (id: string) => [...queryKeys.payroll.approvals(), id] as const,
     history: () => [...queryKeys.payroll.all, 'history'] as const,
@@ -138,14 +231,60 @@ export const queryKeys = {
     all: ['onboarding'] as const,
     progress: () => [...queryKeys.onboarding.all, 'progress'] as const,
     tasks: () => [...queryKeys.onboarding.all, 'tasks'] as const,
+    profile: () => [...queryKeys.onboarding.all, 'profile'] as const,
+    profiles: {
+      all: () => [...queryKeys.onboarding.all, 'profiles'] as const,
+      list: (filters: OnboardingProfileFilters) =>
+        [...queryKeys.onboarding.profiles.all(), 'list', filters] as const,
+      detail: (id: string) => [...queryKeys.onboarding.profiles.all(), 'detail', id] as const,
+    },
+    documents: {
+      all: () => [...queryKeys.onboarding.all, 'documents'] as const,
+      list: (profileId?: string) =>
+        [...queryKeys.onboarding.documents.all(), 'list', profileId ?? 'self'] as const,
+    },
+    wizard: () => [...queryKeys.onboarding.all, 'wizard'] as const,
   },
 
   // Announcements
   announcements: {
     all: ['announcements'] as const,
-    list: () => [...queryKeys.announcements.all, 'list'] as const,
-    detail: (id: string) =>
-      [...queryKeys.announcements.all, 'detail', id] as const,
+    lists: () => [...queryKeys.announcements.all, 'list'] as const,
+    list: (filters: AnnouncementFilters) => [...queryKeys.announcements.lists(), filters] as const,
+    details: () => [...queryKeys.announcements.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.announcements.details(), id] as const,
+    drafts: () => [...queryKeys.announcements.all, 'drafts'] as const,
+    scheduled: () => [...queryKeys.announcements.all, 'scheduled'] as const,
+    feed: (filters: AnnouncementFilters) =>
+      [...queryKeys.announcements.all, 'feed', filters] as const,
+    analytics: (id: string) => [...queryKeys.announcements.all, 'analytics', id] as const,
+    attachments: (id: string) => [...queryKeys.announcements.all, 'attachments', id] as const,
+    comments: (id: string) => [...queryKeys.announcements.all, 'comments', id] as const,
+  },
+
+  resources: {
+    all: ['resources'] as const,
+    lists: () => [...queryKeys.resources.all, 'list'] as const,
+    list: (filters: ResourceFilters) => [...queryKeys.resources.lists(), filters] as const,
+    details: () => [...queryKeys.resources.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.resources.details(), id] as const,
+    feed: (filters: ResourceFeedFilters) => [...queryKeys.resources.all, 'feed', filters] as const,
+    featured: () => [...queryKeys.resources.all, 'featured'] as const,
+    recent: () => [...queryKeys.resources.all, 'recent'] as const,
+    bookmarks: () => [...queryKeys.resources.all, 'bookmarks'] as const,
+    search: (query: string, filters?: Record<string, unknown>) =>
+      [...queryKeys.resources.all, 'search', query, filters] as const,
+    category: (category: string) => [...queryKeys.resources.all, 'category', category] as const,
+    analytics: (id: string) => [...queryKeys.resources.all, 'analytics', id] as const,
+  },
+
+  collections: {
+    all: ['collections'] as const,
+    lists: () => [...queryKeys.collections.all, 'list'] as const,
+    list: (filters: CollectionFilters) => [...queryKeys.collections.lists(), filters] as const,
+    details: () => [...queryKeys.collections.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.collections.details(), id] as const,
+    resources: (id: string) => [...queryKeys.collections.all, 'resources', id] as const,
   },
 } as const;
 

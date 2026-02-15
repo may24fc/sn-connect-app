@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys, type DocumentFilters } from '@/lib/query-keys';
+import { type DocumentFilters, queryKeys } from '@/lib/query-keys';
 import type { Document } from '@hr-portal/database';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface DocumentListResponse {
-  data: Document[];
+  data: Array<Document>;
   pagination: {
     page: number;
     pageSize: number;

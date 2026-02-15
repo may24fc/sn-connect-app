@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Filter, Search } from 'lucide-react';
+import type * as React from 'react';
 import { Input } from '../../primitives/input';
 import {
   Select,
@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
-import { cn } from '../../utils/cn';
 import type { FilterOption } from '../../types/ai-knowledge.types';
+import { cn } from '../../utils/cn';
 
 export interface SourceFiltersProps {
   searchQuery: string;

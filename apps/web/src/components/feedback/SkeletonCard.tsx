@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@/lib/utils';
+import type * as React from 'react';
 
 interface SkeletonCardProps {
   className?: string;
@@ -93,11 +93,7 @@ export function SkeletonCardGrid({
 }: SkeletonCardGridProps): React.ReactNode {
   return (
     <div
-      className={cn(
-        'grid grid-cols-1 sm:grid-cols-2 gap-4',
-        gridColumnClasses[columns],
-        className
-      )}
+      className={cn('grid grid-cols-1 sm:grid-cols-2 gap-4', gridColumnClasses[columns], className)}
     >
       {Array.from({ length: count }).map((_, i) => (
         <SkeletonCard key={i} hasIcon={hasIcon} hasTrend={hasTrend} />
@@ -150,7 +146,10 @@ export function SkeletonBentoCard({
       {variant === 'list' && (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
+            <div
+              key={i}
+              className="flex items-center gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
+            >
               <div className="h-10 w-10 bg-zinc-200 dark:bg-zinc-700 rounded-lg animate-pulse" />
               <div className="flex-1 space-y-2">
                 <div className="h-4 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse" />

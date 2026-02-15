@@ -1,13 +1,16 @@
 'use client';
 
-import * as React from 'react';
 import { Bot, Loader2, Send } from 'lucide-react';
+import * as React from 'react';
+import { Avatar, AvatarFallback } from '../../primitives/avatar';
 import { Button } from '../../primitives/button';
 import { Textarea } from '../../primitives/textarea';
-import { Avatar, AvatarFallback } from '../../primitives/avatar';
+import type {
+  ChatMessage as ChatMessageType,
+  SourceAttribution,
+} from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { ChatMessage } from './ChatMessage';
-import type { ChatMessage as ChatMessageType, SourceAttribution } from '../../types/ai-knowledge.types';
 
 export interface ChatInterfaceProps {
   debugMode: boolean;
@@ -17,7 +20,7 @@ export interface ChatInterfaceProps {
 // Mock chat responses
 function getMockResponse(userMessage: string): {
   content: string;
-  sources: SourceAttribution[];
+  sources: Array<SourceAttribution>;
 } {
   const lowerMessage = userMessage.toLowerCase();
 
@@ -36,19 +39,25 @@ Would you like more specific information about requesting time off?`,
           sourceId: '1',
           fileName: 'Employee_Handbook_2024.pdf',
           pageNumber: 23,
-          chunkPreview: 'Employees are entitled to fifteen (15) days of paid vacation per calendar year...',
+          chunkPreview:
+            'Employees are entitled to fifteen (15) days of paid vacation per calendar year...',
         },
         {
           sourceId: '4',
           fileName: 'PTO_Policy_Updates.pdf',
           pageNumber: 2,
-          chunkPreview: 'Recent updates: Maximum carryover increased from 3 to 5 days effective Q1 2024...',
+          chunkPreview:
+            'Recent updates: Maximum carryover increased from 3 to 5 days effective Q1 2024...',
         },
       ],
     };
   }
 
-  if (lowerMessage.includes('remote') || lowerMessage.includes('work from home') || lowerMessage.includes('wfh')) {
+  if (
+    lowerMessage.includes('remote') ||
+    lowerMessage.includes('work from home') ||
+    lowerMessage.includes('wfh')
+  ) {
     return {
       content: `Our remote work policy includes:
 
@@ -64,19 +73,25 @@ Need help setting up remote work arrangements?`,
           sourceId: '5',
           fileName: 'Remote_Work_Guidelines.pdf',
           pageNumber: 4,
-          chunkPreview: 'All remote employees must maintain a dedicated workspace with reliable internet connectivity...',
+          chunkPreview:
+            'All remote employees must maintain a dedicated workspace with reliable internet connectivity...',
         },
         {
           sourceId: '5',
           fileName: 'Remote_Work_Guidelines.pdf',
           pageNumber: 7,
-          chunkPreview: 'The company provides an annual home office stipend of $500 to cover equipment and supplies...',
+          chunkPreview:
+            'The company provides an annual home office stipend of $500 to cover equipment and supplies...',
         },
       ],
     };
   }
 
-  if (lowerMessage.includes('benefit') || lowerMessage.includes('insurance') || lowerMessage.includes('health')) {
+  if (
+    lowerMessage.includes('benefit') ||
+    lowerMessage.includes('insurance') ||
+    lowerMessage.includes('health')
+  ) {
     return {
       content: `Our comprehensive benefits package includes:
 
@@ -92,7 +107,8 @@ Which benefit would you like to learn more about?`,
           sourceId: '2',
           fileName: 'Benefits_Overview_Q1.docx',
           pageNumber: 1,
-          chunkPreview: 'Our benefits package is designed to support your health, financial security, and professional growth...',
+          chunkPreview:
+            'Our benefits package is designed to support your health, financial security, and professional growth...',
         },
       ],
     };
@@ -112,15 +128,13 @@ What specific information are you looking for?`,
   };
 }
 
-export function ChatInterface({
-  debugMode,
-  className,
-}: ChatInterfaceProps): React.ReactNode {
-  const [messages, setMessages] = React.useState<ChatMessageType[]>([
+export function ChatInterface({ debugMode, className }: ChatInterfaceProps): React.ReactNode {
+  const [messages, setMessages] = React.useState<Array<ChatMessageType>>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m the HR Agent simulator. Ask me anything about HR policies, and I\'ll respond using the knowledge base documents you\'ve uploaded.',
+      content:
+        "Hello! I'm the HR Agent simulator. Ask me anything about HR policies, and I'll respond using the knowledge base documents you've uploaded.",
       timestamp: new Date(),
     },
   ]);
@@ -180,11 +194,7 @@ export function ChatInterface({
       {/* Messages Area - Scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5 custom-scrollbar">
         {messages.map((message) => (
-          <ChatMessage
-            key={message.id}
-            message={message}
-            showDebug={debugMode}
-          />
+          <ChatMessage key={message.id} message={message} showDebug={debugMode} />
         ))}
 
         {isLoading && (
@@ -229,8 +239,15 @@ export function ChatInterface({
           </Button>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground/70 text-center">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground font-mono text-[10px]">Enter</kbd> to send,{' '}
-          <kbd className="px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground font-mono text-[10px]">Shift + Enter</kbd> for new line
+          Press{' '}
+          <kbd className="px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground font-mono text-[10px]">
+            Enter
+          </kbd>{' '}
+          to send,{' '}
+          <kbd className="px-1.5 py-0.5 rounded bg-muted/80 text-muted-foreground font-mono text-[10px]">
+            Shift + Enter
+          </kbd>{' '}
+          for new line
         </p>
       </div>
 

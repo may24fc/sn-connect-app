@@ -255,7 +255,6 @@ SELECT * FROM pg_trigger WHERE tgname LIKE '%audit%';
 
 Planned for Phase 2:
 - Salary and compensation tables
-- Leave management tables
 - Performance review tables
 - Training and certification tables
 - Attendance tracking tables

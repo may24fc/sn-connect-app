@@ -3,7 +3,7 @@
  * Individual check functions for detecting UI issues
  */
 
-import type { UIIssue, ConsoleMessage, NetworkRequest, UICheckType } from './types';
+import type { ConsoleMessage, NetworkRequest, UICheckType, UIIssue } from './types';
 
 let issueCounter = 0;
 
@@ -16,9 +16,9 @@ function generateIssueId(): string {
  */
 export function checkConsoleErrors(
   route: string,
-  consoleMessages: ConsoleMessage[]
-): UIIssue[] {
-  const issues: UIIssue[] = [];
+  consoleMessages: Array<ConsoleMessage>
+): Array<UIIssue> {
+  const issues: Array<UIIssue> = [];
 
   for (const msg of consoleMessages) {
     if (msg.type === 'error') {
@@ -58,9 +58,9 @@ export function checkConsoleErrors(
  */
 export function checkNetworkErrors(
   route: string,
-  networkRequests: NetworkRequest[]
-): UIIssue[] {
-  const issues: UIIssue[] = [];
+  networkRequests: Array<NetworkRequest>
+): Array<UIIssue> {
+  const issues: Array<UIIssue> = [];
 
   for (const request of networkRequests) {
     // Check for failed requests
@@ -96,11 +96,8 @@ export function checkNetworkErrors(
 /**
  * Check accessibility tree for common issues
  */
-export function checkAccessibility(
-  route: string,
-  accessibilityTree: string
-): UIIssue[] {
-  const issues: UIIssue[] = [];
+export function checkAccessibility(route: string, accessibilityTree: string): Array<UIIssue> {
+  const issues: Array<UIIssue> = [];
 
   // Check for images without alt text
   const imgWithoutAlt = accessibilityTree.match(/img(?!\s+alt=)/gi);
@@ -149,9 +146,9 @@ export function checkAccessibility(
   // Check for missing heading hierarchy
   const headings = accessibilityTree.match(/heading\s+"[^"]+"\s+\[level=(\d)\]/gi);
   if (headings) {
-    const levels = headings.map(h => {
+    const levels = headings.map((h) => {
       const match = h.match(/level=(\d)/);
-      return match ? parseInt(match[1]) : 0;
+      return match ? Number.parseInt(match[1]) : 0;
     });
 
     // Check if h1 exists
@@ -191,11 +188,8 @@ export function checkAccessibility(
 /**
  * Check for layout issues in the accessibility tree
  */
-export function checkLayout(
-  route: string,
-  accessibilityTree: string
-): UIIssue[] {
-  const issues: UIIssue[] = [];
+export function checkLayout(route: string, accessibilityTree: string): Array<UIIssue> {
+  const issues: Array<UIIssue> = [];
 
   // Check for potential overflow (very long text without breaks)
   const longTextPattern = /"[^"]{500,}"/g;
@@ -232,11 +226,8 @@ export function checkLayout(
 /**
  * Check for interactive element issues
  */
-export function checkInteractiveElements(
-  route: string,
-  accessibilityTree: string
-): UIIssue[] {
-  const issues: UIIssue[] = [];
+export function checkInteractiveElements(route: string, accessibilityTree: string): Array<UIIssue> {
+  const issues: Array<UIIssue> = [];
 
   // Check for disabled buttons
   const disabledButtons = accessibilityTree.match(/button.*disabled/gi);
@@ -274,14 +265,14 @@ export function checkInteractiveElements(
  */
 export function checkImages(
   route: string,
-  accessibilityTree: string,
-  networkRequests: NetworkRequest[]
-): UIIssue[] {
-  const issues: UIIssue[] = [];
+  _accessibilityTree: string,
+  networkRequests: Array<NetworkRequest>
+): Array<UIIssue> {
+  const issues: Array<UIIssue> = [];
 
   // Check for broken images
   const imageRequests = networkRequests.filter(
-    r => r.resourceType === 'image' && (r.failed || r.status >= 400)
+    (r) => r.resourceType === 'image' && (r.failed || r.status >= 400)
   );
 
   if (imageRequests.length > 0) {
@@ -291,7 +282,7 @@ export function checkImages(
       type: 'images',
       severity: 'warning',
       message: `${imageRequests.length} image(s) failed to load`,
-      details: imageRequests.map(r => r.url).join('\n'),
+      details: imageRequests.map((r) => r.url).join('\n'),
       timestamp: new Date(),
     });
   }
@@ -308,7 +299,7 @@ function isKnownBenignError(message: string): boolean {
     /Warning: ReactDOM.render/i,
     /favicon\.ico.*404/i,
   ];
-  return benignPatterns.some(pattern => pattern.test(message));
+  return benignPatterns.some((pattern) => pattern.test(message));
 }
 
 function isKnownBenignWarning(message: string): boolean {
@@ -318,7 +309,7 @@ function isKnownBenignWarning(message: string): boolean {
     /Warning: componentWillMount/i,
     /Warning: componentWillUpdate/i,
   ];
-  return benignPatterns.some(pattern => pattern.test(message));
+  return benignPatterns.some((pattern) => pattern.test(message));
 }
 
 function isExpectedErrorStatus(request: NetworkRequest): boolean {
@@ -339,11 +330,11 @@ function isExpectedErrorStatus(request: NetworkRequest): boolean {
 export function runAllChecks(
   route: string,
   accessibilityTree: string,
-  consoleMessages: ConsoleMessage[],
-  networkRequests: NetworkRequest[],
-  enabledChecks: UICheckType[]
-): UIIssue[] {
-  const issues: UIIssue[] = [];
+  consoleMessages: Array<ConsoleMessage>,
+  networkRequests: Array<NetworkRequest>,
+  enabledChecks: Array<UICheckType>
+): Array<UIIssue> {
+  const issues: Array<UIIssue> = [];
 
   if (enabledChecks.includes('console-errors')) {
     issues.push(...checkConsoleErrors(route, consoleMessages));

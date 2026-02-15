@@ -1,11 +1,11 @@
 'use client';
 
-import * as React from 'react';
-import { CheckCircle2, Clock, AlertTriangle, FileText } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, FileText } from 'lucide-react';
+import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
+import type { OKRStatus, ReviewStatus } from '../../types/performance.types';
+import { OKR_STATUS_CONFIG, REVIEW_STATUS_CONFIG } from '../../types/performance.types';
 import { cn } from '../../utils/cn';
-import type { ReviewStatus, OKRStatus } from '../../types/performance.types';
-import { REVIEW_STATUS_CONFIG, OKR_STATUS_CONFIG } from '../../types/performance.types';
 
 interface ReviewStatusBadgeProps {
   status: ReviewStatus;
@@ -41,10 +41,7 @@ interface OKRStatusBadgeProps {
   className?: string;
 }
 
-export function OKRStatusBadge({
-  status,
-  className,
-}: OKRStatusBadgeProps): React.ReactNode {
+export function OKRStatusBadge({ status, className }: OKRStatusBadgeProps): React.ReactNode {
   const config = OKR_STATUS_CONFIG[status];
 
   return (

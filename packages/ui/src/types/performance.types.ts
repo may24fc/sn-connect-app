@@ -47,7 +47,7 @@ export interface OKR {
   description?: string;
   status: OKRStatus;
   progressPercentage: number;
-  keyResults: KeyResult[];
+  keyResults: Array<KeyResult>;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,7 +70,12 @@ export interface KPI {
 
 // Performance Review Types
 export type ReviewStatus = 'pending_self' | 'pending_manager' | 'pending_hr' | 'completed';
-export type PerformanceRating = 'exceptional' | 'exceeds' | 'meets' | 'needs_improvement' | 'unsatisfactory';
+export type PerformanceRating =
+  | 'exceptional'
+  | 'exceeds'
+  | 'meets'
+  | 'needs_improvement'
+  | 'unsatisfactory';
 
 export interface PerformanceReview {
   id: ReviewId;
@@ -154,14 +159,20 @@ export interface PerformanceFilters {
 }
 
 // Status Configuration
-export const REVIEW_STATUS_CONFIG: Record<ReviewStatus, { label: string; variant: 'warning' | 'secondary' | 'success' | 'error' }> = {
+export const REVIEW_STATUS_CONFIG: Record<
+  ReviewStatus,
+  { label: string; variant: 'warning' | 'secondary' | 'success' | 'error' }
+> = {
   pending_self: { label: 'Pending Self-Assessment', variant: 'warning' },
   pending_manager: { label: 'Pending Manager Review', variant: 'secondary' },
   pending_hr: { label: 'Pending HR Review', variant: 'secondary' },
   completed: { label: 'Completed', variant: 'success' },
 };
 
-export const OKR_STATUS_CONFIG: Record<OKRStatus, { label: string; variant: 'secondary' | 'warning' | 'success' }> = {
+export const OKR_STATUS_CONFIG: Record<
+  OKRStatus,
+  { label: string; variant: 'secondary' | 'warning' | 'success' }
+> = {
   draft: { label: 'Draft', variant: 'secondary' },
   submitted: { label: 'Submitted', variant: 'warning' },
   approved: { label: 'Approved', variant: 'success' },
@@ -169,7 +180,10 @@ export const OKR_STATUS_CONFIG: Record<OKRStatus, { label: string; variant: 'sec
   completed: { label: 'Completed', variant: 'success' },
 };
 
-export const RATING_CONFIG: Record<PerformanceRating, { label: string; description: string; color: string; score: number }> = {
+export const RATING_CONFIG: Record<
+  PerformanceRating,
+  { label: string; description: string; color: string; score: number }
+> = {
   exceptional: {
     label: 'Exceptional',
     description: 'Consistently exceeds all expectations and delivers outstanding results',

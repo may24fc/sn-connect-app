@@ -1,333 +1,241 @@
 'use client';
-// Task management page for super admin
-import { useAuth } from '@/contexts/AuthContext';
+
+import { useCreateTask } from '@/hooks/useCreateTask';
+import { useEmployees } from '@/hooks/useEmployees';
+import { useTasks } from '@/hooks/useTasks';
+import type { TaskFilters } from '@/lib/query-keys';
 import {
+  Badge,
   Button,
+  Card,
+  CardContent,
   Dialog,
   DialogContent,
-  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  TaskFilters,
-  TaskForm,
-  TaskList,
-  TaskSummaryCards,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Textarea,
 } from '@hr-portal/ui';
-import type {
-  Task,
-  TaskAssignee,
-  TaskDashboardStats,
-  TaskFormData,
-  TaskId,
-  TaskStatus,
-} from '@hr-portal/ui';
-import { Plus, Trash2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import { type FormEvent, useState } from 'react';
 
-// Mock data - Replace with actual API calls
-const mockEmployees: Array<TaskAssignee> = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john.smith@company.com',
-    role: 'employee',
-    department: 'Engineering',
-    avatarUrl: '',
-    assignedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'sarah.johnson@company.com',
-    role: 'employee',
-    department: 'Marketing',
-    avatarUrl: '',
-    assignedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Mike Chen',
-    email: 'mike.chen@company.com',
-    role: 'employee',
-    department: 'Finance',
-    avatarUrl: '',
-    assignedAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    name: 'Emily Davis',
-    email: 'emily.davis@company.com',
-    role: 'intern',
-    department: 'HR',
-    avatarUrl: '',
-    assignedAt: new Date().toISOString(),
-  },
-];
+const statusVariant: Record<
+  'pending' | 'in_progress' | 'completed' | 'cancelled',
+  'secondary' | 'pending' | 'approved' | 'error'
+> = {
+  pending: 'secondary',
+  in_progress: 'pending',
+  completed: 'approved',
+  cancelled: 'error',
+};
 
-const mockTasks: Array<Task> = [
-  {
-    id: '1' as TaskId,
-    title: 'Review Q1 Financial Reports',
-    description:
-      'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities.',
-    priority: 'high',
-    status: 'in_progress',
-    category: 'Finance',
-    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'admin-1',
-    createdByName: 'Admin User',
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[2]!],
-  },
-  {
-    id: '2' as TaskId,
-    title: 'Update Employee Handbook',
-    description:
-      'Review and update the employee handbook with new policies and procedures for remote work.',
-    priority: 'medium',
-    status: 'pending',
-    category: 'HR',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'admin-1',
-    createdByName: 'Admin User',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[3]!],
-  },
-  {
-    id: '3' as TaskId,
-    title: 'Prepare Marketing Campaign Analysis',
-    description:
-      'Compile data and insights from recent marketing campaigns to present to the executive team.',
-    priority: 'urgent',
-    status: 'blocked',
-    category: 'Marketing',
-    dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'admin-1',
-    createdByName: 'Admin User',
-    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[1]!],
-  },
-  {
-    id: '4' as TaskId,
-    title: 'Code Review for Authentication Module',
-    description:
-      'Review the new authentication module implementation and provide feedback on security and best practices.',
-    priority: 'high',
-    status: 'completed',
-    category: 'Engineering',
-    dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'admin-1',
-    createdByName: 'Admin User',
-    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [mockEmployees[0]!],
-  },
-];
+export default function TaskManagementPage() {
+  const [search, setSearch] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
 
-export default function TaskManagementPage(): ReactNode {
-  const { user } = useAuth();
-  const router = useRouter();
-  const [tasks, setTasks] = useState<Array<Task>>(mockTasks);
-  const [filters, setFilters] = useState<{
-    status?: TaskStatus | 'all';
-    priority?: 'low' | 'medium' | 'high' | 'urgent' | 'all';
-    assigneeId?: string;
-    search?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }>({});
-  const [selectedIds, setSelectedIds] = useState<Array<TaskId>>([]);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [assignedTo, setAssignedTo] = useState<string>('');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [dueDate, setDueDate] = useState('');
 
-  // Calculate dashboard stats
-  const stats: TaskDashboardStats = useMemo(() => {
-    const now = new Date();
-    return {
-      total: tasks.length,
-      pending: tasks.filter((t) => t.status === 'pending').length,
-      inProgress: tasks.filter((t) => t.status === 'in_progress').length,
-      completed: tasks.filter((t) => t.status === 'completed').length,
-      overdue: tasks.filter((t) => t.status !== 'completed' && new Date(t.dueDate) < now).length,
-    };
-  }, [tasks]);
+  const taskFilters: TaskFilters = {
+    page: 1,
+    pageSize: 100,
+  };
 
-  // Filter tasks
-  const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        const matchesSearch =
-          task.title.toLowerCase().includes(searchLower) ||
-          task.description.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
+  if (search) {
+    taskFilters.search = search;
+  }
 
-      if (filters.status && filters.status !== 'all') {
-        if (task.status !== filters.status) return false;
-      }
+  const { data: tasksData, isLoading, error } = useTasks(taskFilters);
+  const { data: employeesData } = useEmployees({ page: 1, pageSize: 100 });
+  const createTask = useCreateTask();
 
-      if (filters.priority && filters.priority !== 'all') {
-        if (task.priority !== filters.priority) return false;
-      }
+  const tasks = tasksData?.data || [];
+  const employees = employeesData?.data || [];
 
-      if (filters.assigneeId) {
-        const hasAssignee = task.assignees.some((a) => a.id === filters.assigneeId);
-        if (!hasAssignee) return false;
-      }
+  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-      if (filters.dateFrom) {
-        if (new Date(task.dueDate) < new Date(filters.dateFrom)) return false;
-      }
-
-      if (filters.dateTo) {
-        if (new Date(task.dueDate) > new Date(filters.dateTo)) return false;
-      }
-
-      return true;
+    await createTask.mutateAsync({
+      title,
+      description: description || undefined,
+      assignedTo: assignedTo || undefined,
+      priority,
+      status: 'pending',
+      dueDate: dueDate || undefined,
     });
-  }, [tasks, filters]);
 
-  // Get assignee options for filter
-  const assigneeOptions = useMemo(() => {
-    const uniqueAssignees = new Map<string, { id: string; name: string }>();
-    tasks.forEach((task) => {
-      task.assignees.forEach((assignee) => {
-        if (!uniqueAssignees.has(assignee.id)) {
-          uniqueAssignees.set(assignee.id, {
-            id: assignee.id,
-            name: assignee.name,
-          });
-        }
-      });
-    });
-    return Array.from(uniqueAssignees.values());
-  }, [tasks]);
-
-  const handleCreateTask = async (data: TaskFormData): Promise<void> => {
-    setIsSubmitting(true);
-    try {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const newTask: Task = {
-        id: `${tasks.length + 1}` as TaskId,
-        title: data.title,
-        description: data.description,
-        priority: data.priority,
-        status: 'pending',
-        ...(data.category && { category: data.category }),
-        dueDate: data.dueDate,
-        createdBy: user?.id || 'admin-1',
-        createdByName: user?.name || 'Admin User',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        assignees: mockEmployees.filter((emp) => data.assigneeIds.includes(emp.id)),
-      };
-
-      setTasks([newTask, ...tasks]);
-      setIsCreateDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to create task:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleStatusChange = (taskId: TaskId, status: TaskStatus): void => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, status, updatedAt: new Date().toISOString() } : task
-      )
-    );
-  };
-
-  const handleViewDetails = (taskId: TaskId): void => {
-    router.push(`/super-admin/tasks/${taskId}`);
-  };
-
-  const handleEdit = (_taskId: TaskId): void => {};
-
-  const handleDelete = (taskId: TaskId): void => {
-    // TODO: Implement delete confirmation dialog
-    if (confirm('Are you sure you want to delete this task?')) {
-      setTasks(tasks.filter((task) => task.id !== taskId));
-    }
-  };
-
-  const handleBulkDelete = (): void => {
-    if (confirm(`Are you sure you want to delete ${selectedIds.length} tasks?`)) {
-      setTasks(tasks.filter((task) => !selectedIds.includes(task.id)));
-      setSelectedIds([]);
-    }
+    setCreateOpen(false);
+    setTitle('');
+    setDescription('');
+    setAssignedTo('');
+    setPriority('medium');
+    setDueDate('');
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Task Management</h1>
-          <p className="text-muted-foreground">Create and assign tasks to team members</p>
+          <h1 className="text-headline">Task Management</h1>
+          <p className="text-muted-foreground">Create and assign tasks to employees and interns</p>
         </div>
-        <div className="flex gap-2">
-          {selectedIds.length > 0 && (
-            <Button variant="destructive" onClick={handleBulkDelete}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete ({selectedIds.length})
-            </Button>
-          )}
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Task
-          </Button>
-        </div>
+        <Button onClick={() => setCreateOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Task
+        </Button>
       </div>
 
-      {/* Summary Cards */}
-      <TaskSummaryCards stats={stats} />
-
-      {/* Filters */}
-      <TaskFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        assigneeOptions={assigneeOptions}
-        showAssigneeFilter={true}
+      <Input
+        placeholder="Search tasks"
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
       />
 
-      {/* Task List */}
-      <TaskList
-        tasks={filteredTasks}
-        variant="table"
-        onStatusChange={handleStatusChange}
-        onViewDetails={handleViewDetails}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        selectable={true}
-        selectedIds={selectedIds}
-        onSelectionChange={setSelectedIds}
-      />
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">Loading tasks...</CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="p-6 text-sm text-error">Failed to load tasks.</CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Assignee</TableHead>
+                  <TableHead>Priority</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tasks.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No tasks found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  tasks.map((task) => (
+                    <TableRow key={task.id}>
+                      <TableCell>
+                        <p className="font-medium">{task.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {task.description || '-'}
+                        </p>
+                      </TableCell>
+                      <TableCell>{task.assignee_name || '-'}</TableCell>
+                      <TableCell className="uppercase text-xs">{task.priority}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusVariant[task.status]}>{task.status}</Badge>
+                      </TableCell>
+                      <TableCell>{task.due_date ? task.due_date.slice(0, 10) : '-'}</TableCell>
+                      <TableCell className="text-right">
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/super-admin/tasks/${task.id}`}>View</Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Create Task Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
-            <DialogDescription>
-              Assign a new task to team members with clear priorities and deadlines
-            </DialogDescription>
+            <DialogTitle>Create Task</DialogTitle>
           </DialogHeader>
-          <TaskForm
-            onSubmit={handleCreateTask}
-            employees={mockEmployees}
-            isSubmitting={isSubmitting}
-            mode="create"
-          />
+          <form className="space-y-4" onSubmit={handleCreate}>
+            <div className="space-y-2">
+              <Label>Title</Label>
+              <Input value={title} onChange={(event) => setTitle(event.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label>Assignee</Label>
+                <Select
+                  value={assignedTo || 'unassigned'}
+                  onValueChange={(value) => setAssignedTo(value === 'unassigned' ? '' : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.user_id} value={employee.user_id}>
+                        {employee.first_name} {employee.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={priority} onValueChange={(value) => setPriority(value as any)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Due Date</Label>
+                <Input
+                  type="datetime-local"
+                  value={dueDate}
+                  onChange={(event) => setDueDate(event.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createTask.isPending}>
+                Create
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

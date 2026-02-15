@@ -1,15 +1,8 @@
 import { z } from 'zod';
 
-const dateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
-export const reportStatusSchema = z.enum([
-  'draft',
-  'submitted',
-  'approved',
-  'rejected',
-]);
+export const reportStatusSchema = z.enum(['draft', 'submitted', 'approved', 'rejected']);
 
 export const reportTypeSchema = z.enum(['weekly', 'monthly', 'marketing']);
 

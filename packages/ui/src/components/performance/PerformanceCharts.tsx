@@ -1,27 +1,27 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 import {
-  LineChart,
-  Line,
-  BarChart,
   Bar,
-  PieChart,
-  Pie,
+  BarChart,
+  CartesianGrid,
   Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../primitives/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
 import type {
   CompletionTrendData,
   DepartmentPerformanceData,
-  RatingDistributionData,
   PerformanceRating,
+  RatingDistributionData,
 } from '../../types/performance.types';
 import { RATING_CONFIG } from '../../types/performance.types';
 
@@ -43,7 +43,7 @@ const RATING_COLORS: Record<PerformanceRating, string> = {
 };
 
 interface CompletionTrendChartProps {
-  data: CompletionTrendData[];
+  data: Array<CompletionTrendData>;
   className?: string;
 }
 
@@ -55,9 +55,7 @@ export function CompletionTrendChart({
     <Card className={className}>
       <CardHeader>
         <CardTitle>Completion Trends</CardTitle>
-        <CardDescription>
-          Track OKRs, KPIs, and reviews completed over time
-        </CardDescription>
+        <CardDescription>Track OKRs, KPIs, and reviews completed over time</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -69,10 +67,7 @@ export function CompletionTrendChart({
                 className="text-xs fill-muted-foreground"
                 tick={{ fill: 'currentColor' }}
               />
-              <YAxis
-                className="text-xs fill-muted-foreground"
-                tick={{ fill: 'currentColor' }}
-              />
+              <YAxis className="text-xs fill-muted-foreground" tick={{ fill: 'currentColor' }} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
@@ -114,7 +109,7 @@ export function CompletionTrendChart({
 }
 
 interface DepartmentPerformanceChartProps {
-  data: DepartmentPerformanceData[];
+  data: Array<DepartmentPerformanceData>;
   className?: string;
 }
 
@@ -126,9 +121,7 @@ export function DepartmentPerformanceChart({
     <Card className={className}>
       <CardHeader>
         <CardTitle>Department Performance</CardTitle>
-        <CardDescription>
-          Compare performance metrics across departments
-        </CardDescription>
+        <CardDescription>Compare performance metrics across departments</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -174,7 +167,7 @@ export function DepartmentPerformanceChart({
 }
 
 interface RatingDistributionChartProps {
-  data: RatingDistributionData[];
+  data: Array<RatingDistributionData>;
   className?: string;
 }
 
@@ -257,8 +250,7 @@ export function ProgressGauge({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
 
-  const color =
-    value >= 80 ? COLORS.success : value >= 50 ? COLORS.warning : COLORS.error;
+  const color = value >= 80 ? COLORS.success : value >= 50 ? COLORS.warning : COLORS.error;
 
   return (
     <div className={`flex flex-col items-center ${className}`}>

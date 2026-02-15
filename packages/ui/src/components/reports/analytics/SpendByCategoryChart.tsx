@@ -1,14 +1,7 @@
 'use client';
 
-import * as React from 'react';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from 'recharts';
+import type * as React from 'react';
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   Card,
   CardContent,
@@ -25,7 +18,7 @@ interface CategoryData {
 }
 
 interface SpendByCategoryChartProps {
-  data: CategoryData[];
+  data: Array<CategoryData>;
   className?: string;
 }
 
@@ -90,11 +83,7 @@ export function SpendByCategoryChart({
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="bottom"
-              height={36}
-              iconType="circle"
-            />
+            <Legend verticalAlign="bottom" height={36} iconType="circle" />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>

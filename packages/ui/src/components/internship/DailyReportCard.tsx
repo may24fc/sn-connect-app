@@ -1,13 +1,21 @@
 'use client';
 
+import {
+  AlertCircle,
+  BookOpen,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  MessageSquare,
+} from 'lucide-react';
 import * as React from 'react';
-import { Calendar, Clock, BookOpen, AlertCircle, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
-import { ReportStatusBadge } from './InternStatusBadge';
-import { cn } from '../../utils/cn';
+import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import type { DailyReport } from '../../types/internship.types';
+import { cn } from '../../utils/cn';
+import { ReportStatusBadge } from './InternStatusBadge';
 
 interface DailyReportCardProps {
   report: DailyReport;
@@ -48,16 +56,8 @@ export function DailyReportCard({
               </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-          >
-            {expanded ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
+          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
       </CardHeader>
@@ -112,7 +112,7 @@ export function DailyReportCard({
 }
 
 interface DailyReportListProps {
-  reports: DailyReport[];
+  reports: Array<DailyReport>;
   emptyMessage?: string;
   className?: string;
 }
@@ -179,16 +179,12 @@ export function DailyReportSummary({
             {report.tasksCompleted.length > 60 ? '...' : ''}
           </p>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-muted-foreground">
-              {report.hoursLogged} hrs
-            </span>
+            <span className="text-xs text-muted-foreground">{report.hoursLogged} hrs</span>
             <ReportStatusBadge status={report.status} />
           </div>
         </div>
       </div>
-      {report.supervisorFeedback && (
-        <MessageSquare className="h-4 w-4 text-success shrink-0" />
-      )}
+      {report.supervisorFeedback && <MessageSquare className="h-4 w-4 text-success shrink-0" />}
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = [
@@ -46,25 +46,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: 'File size exceeds 10MB limit' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'File size exceeds 10MB limit' }, { status: 400 });
     }
 
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'File type not allowed' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'File type not allowed' }, { status: 400 });
     }
 
     // Validate required fields
-    if (!employeeId || !documentType) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    if (!(employeeId && documentType)) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Generate unique file path
@@ -83,10 +74,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Error uploading file to storage:', uploadError);
-      return NextResponse.json(
-        { error: 'Failed to upload file' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
     }
 
     // Create document record in database
@@ -112,18 +100,12 @@ export async function POST(request: NextRequest) {
       await supabase.storage.from('employee-documents').remove([filePath]);
 
       console.error('Error creating document record:', documentError);
-      return NextResponse.json(
-        { error: 'Failed to create document record' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create document record' }, { status: 500 });
     }
 
     return NextResponse.json({ data: documentData }, { status: 201 });
   } catch (error) {
     console.error('Unexpected error in POST /api/documents/upload:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

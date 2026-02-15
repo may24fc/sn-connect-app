@@ -1,18 +1,13 @@
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@hr-portal/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hr-portal/ui';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
-export default function ForgotPasswordConfirmationPage({ searchParams }: { searchParams?: any }): ReactNode {
+export default function ForgotPasswordConfirmationPage({
+  searchParams,
+}: { searchParams?: any }): ReactNode {
   const raw = searchParams?.email;
-  const email = Array.isArray(raw) ? raw[0] : raw ?? 'your email';
+  const email = Array.isArray(raw) ? raw[0] : (raw ?? 'your email');
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-8">
@@ -23,7 +18,8 @@ export default function ForgotPasswordConfirmationPage({ searchParams }: { searc
           </div>
           <CardTitle className="text-2xl">Check your email</CardTitle>
           <CardDescription className="mt-2">
-            We have sent a password reset link to <span className="font-medium text-foreground">{email}</span>.
+            We have sent a password reset link to{' '}
+            <span className="font-medium text-foreground">{email}</span>.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

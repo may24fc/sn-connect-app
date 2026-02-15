@@ -1,14 +1,21 @@
 'use client';
 
+import { AlertCircle, BookOpen, Calendar, Clock, Send } from 'lucide-react';
 import * as React from 'react';
-import { Calendar, Clock, BookOpen, AlertCircle, Send } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../../primitives/card';
 import { Button } from '../../primitives/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../../primitives/card';
 import { Input } from '../../primitives/input';
-import { Textarea } from '../../primitives/textarea';
 import { Label } from '../../primitives/label';
-import { cn } from '../../utils/cn';
+import { Textarea } from '../../primitives/textarea';
 import type { EODReportFormData } from '../../types/internship.types';
+import { cn } from '../../utils/cn';
 
 interface EODReportFormProps {
   onSubmit: (data: EODReportFormData) => void | Promise<void>;
@@ -72,10 +79,7 @@ export function EODReportForm({
     }
   };
 
-  const handleChange = (
-    field: keyof EODReportFormData,
-    value: string | number
-  ): void => {
+  const handleChange = (field: keyof EODReportFormData, value: string | number): void => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -92,9 +96,7 @@ export function EODReportForm({
           </div>
           <div>
             <CardTitle>End of Day Report</CardTitle>
-            <CardDescription>
-              Submit your daily progress report
-            </CardDescription>
+            <CardDescription>Submit your daily progress report</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -116,9 +118,7 @@ export function EODReportForm({
                 max={new Date().toISOString().split('T')[0]}
                 className={errors.date ? 'border-error' : ''}
               />
-              {errors.date && (
-                <p className="text-xs text-error">{errors.date}</p>
-              )}
+              {errors.date && <p className="text-xs text-error">{errors.date}</p>}
             </div>
 
             <div className="space-y-2">
@@ -133,12 +133,12 @@ export function EODReportForm({
                 max={maxHoursPerDay}
                 step="0.5"
                 value={formData.hoursLogged}
-                onChange={(e) => handleChange('hoursLogged', parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleChange('hoursLogged', Number.parseFloat(e.target.value) || 0)
+                }
                 className={errors.hoursLogged ? 'border-error' : ''}
               />
-              {errors.hoursLogged && (
-                <p className="text-xs text-error">{errors.hoursLogged}</p>
-              )}
+              {errors.hoursLogged && <p className="text-xs text-error">{errors.hoursLogged}</p>}
             </div>
           </div>
 
@@ -155,9 +155,7 @@ export function EODReportForm({
               onChange={(e) => handleChange('tasksCompleted', e.target.value)}
               className={cn('min-h-[100px]', errors.tasksCompleted ? 'border-error' : '')}
             />
-            {errors.tasksCompleted && (
-              <p className="text-xs text-error">{errors.tasksCompleted}</p>
-            )}
+            {errors.tasksCompleted && <p className="text-xs text-error">{errors.tasksCompleted}</p>}
           </div>
 
           {/* Key Learnings */}
@@ -173,9 +171,7 @@ export function EODReportForm({
               onChange={(e) => handleChange('learnings', e.target.value)}
               className={cn('min-h-[80px]', errors.learnings ? 'border-error' : '')}
             />
-            {errors.learnings && (
-              <p className="text-xs text-error">{errors.learnings}</p>
-            )}
+            {errors.learnings && <p className="text-xs text-error">{errors.learnings}</p>}
           </div>
 
           {/* Challenges (Optional) */}

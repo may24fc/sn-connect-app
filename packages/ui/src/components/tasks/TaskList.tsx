@@ -1,14 +1,17 @@
 'use client';
 
-import * as React from 'react';
+import { ClipboardList, Edit, Eye, Loader2, MoreVertical, Trash2 } from 'lucide-react';
+import type * as React from 'react';
+import { Button } from '../../primitives/button';
+import { Card, CardContent } from '../../primitives/card';
+import { Checkbox } from '../../primitives/checkbox';
 import {
-  ClipboardList,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Eye,
-  Loader2,
-} from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../../primitives/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -17,33 +20,23 @@ import {
   TableHeader,
   TableRow,
 } from '../../primitives/table';
-import { Card, CardContent } from '../../primitives/card';
-import { Checkbox } from '../../primitives/checkbox';
-import { Button } from '../../primitives/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '../../primitives/dropdown-menu';
+import type { Task, TaskId, TaskStatus } from '../../types/task.types';
+import { formatDueDate, isTaskOverdue } from '../../types/task.types';
+import { cn } from '../../utils/cn';
 import { TaskCard } from './TaskCard';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
-import { cn } from '../../utils/cn';
-import type { Task, TaskId, TaskStatus } from '../../types/task.types';
-import { formatDueDate, isTaskOverdue } from '../../types/task.types';
 
 export interface TaskListProps {
-  tasks: Task[];
+  tasks: Array<Task>;
   variant?: 'table' | 'cards';
   onStatusChange?: (taskId: TaskId, status: TaskStatus) => void;
   onViewDetails?: (taskId: TaskId) => void;
   onEdit?: (taskId: TaskId) => void;
   onDelete?: (taskId: TaskId) => void;
   selectable?: boolean;
-  selectedIds?: TaskId[];
-  onSelectionChange?: (ids: TaskId[]) => void;
+  selectedIds?: Array<TaskId>;
+  onSelectionChange?: (ids: Array<TaskId>) => void;
   isLoading?: boolean;
   emptyMessage?: string;
   className?: string;
@@ -186,9 +179,7 @@ export function TaskList({
                           {task.description}
                         </p>
                         {task.category && (
-                          <p className="text-xs text-muted-foreground">
-                            {task.category}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{task.category}</p>
                         )}
                       </div>
                     </TableCell>
@@ -199,12 +190,7 @@ export function TaskList({
                       <TaskStatusBadge status={task.status} />
                     </TableCell>
                     <TableCell>
-                      <span
-                        className={cn(
-                          'text-sm',
-                          isOverdue && 'text-error font-medium'
-                        )}
-                      >
+                      <span className={cn('text-sm', isOverdue && 'text-error font-medium')}>
                         {formatDueDate(task.dueDate)}
                       </span>
                     </TableCell>

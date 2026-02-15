@@ -1,0 +1,379 @@
+{
+  "name": "Resources New Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "resources/published",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "Webhook_Trigger",
+      "name": "Webhook - Resource Published",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 280],
+      "webhookId": "resource-published-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resource = $input.first().json.resources || $input.first().json;\nconst resourceId = Array.isArray(resource) ? resource[0].id : resource.id;\nreturn [{ json: { resourceId } }];"
+      },
+      "id": "Extract_Resource",
+      "name": "Extract Resource ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 280]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.id, r.title, r.description, r.excerpt, r.resource_type, r.category, r.subcategory, r.tags, r.is_public, r.target_roles, r.target_departments, r.target_employees, r.published_at, r.external_url, r.file_path, u.full_name as author_name FROM public.resources r LEFT JOIN public.users u ON r.author_id = u.id WHERE r.id = '{{ $json.resourceId }}' AND r.status = 'published' AND r.deleted_at IS NULL LIMIT 1;"
+      },
+      "id": "Get_Resource",
+      "name": "Get Resource Details",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 280],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "Check_Found",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "Check_Resource_Exists",
+      "name": "Check Resource Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [940, 280]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH targeted_users AS (\n  SELECT DISTINCT u.id, u.email, u.full_name, u.role\n  FROM public.users u\n  WHERE u.deleted_at IS NULL\n    AND u.status = 'active'\n    AND (\n      -- Public resources: all users\n      '{{ $json.is_public }}' = 'true' OR\n      -- Role targeting: user's role matches\n      (cardinality(ARRAY[{{ $json.target_roles }}]::user_role[]) = 0 OR u.role = ANY(ARRAY[{{ $json.target_roles }}]::user_role[])) OR\n      -- Department targeting: user's department matches\n      (cardinality(ARRAY[{{ $json.target_departments }}]::uuid[]) = 0 OR u.department_id = ANY(ARRAY[{{ $json.target_departments }}]::uuid[])) OR\n      -- Employee targeting: user is specifically targeted\n      (cardinality(ARRAY[{{ $json.target_employees }}]::uuid[]) = 0 OR u.id = ANY(ARRAY[{{ $json.target_employees }}]::uuid[]))\n    )\n)\nSELECT json_agg(json_build_object('id', id, 'email', email, 'full_name', full_name, 'role', role)) as users FROM targeted_users;"
+      },
+      "id": "Get_Targeted_Users",
+      "name": "Get Targeted Users",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1180, 160],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const resource = $input.first().json;\nconst users = $input.last().json.users || [];\n\nconst notifications = users.map(user => ({\n  user_id: user.id,\n  user_email: user.email,\n  user_name: user.full_name,\n  resource_id: resource.id,\n  resource_title: resource.title,\n  resource_category: resource.category,\n  resource_type: resource.resource_type,\n  resource_url: resource.external_url || `/resources/${resource.id}`,\n  author_name: resource.author_name\n}));\n\nreturn [{ json: { notifications, count: notifications.length } }];"
+      },
+      "id": "Build_Notifications",
+      "name": "Build Notification Payloads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1420, 160]
+    },
+    {
+      "parameters": {
+        "batchSize": 50,
+        "options": {}
+      },
+      "id": "Split_Batch",
+      "name": "Split Into Batches (50 users)",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1660, 160]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $json.user_email }}",
+        "subject": "New Resource Available: {{ $json.resource_title }}",
+        "emailType": "html",
+        "message": "<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }\n    .container { max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }\n    .content { padding: 20px; background: #f9f9f9; }\n    .button { display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 4px; margin-top: 16px; }\n    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>New Resource Available</h1>\n    </div>\n    <div class=\"content\">\n      <p>Hi {{ $json.user_name }},</p>\n      <p>A new resource has been published in the Information Hub:</p>\n      <h2>{{ $json.resource_title }}</h2>\n      <p><strong>Category:</strong> {{ $json.resource_category }}</p>\n      <p><strong>Type:</strong> {{ $json.resource_type }}</p>\n      <p><strong>Published by:</strong> {{ $json.author_name }}</p>\n      <a href=\"{{ $json.resource_url }}\" class=\"button\">View Resource</a>\n    </div>\n    <div class=\"footer\">\n      <p>SN Connect HR Portal - Where Policy Meets Productivity</p>\n      <p>You received this email because this resource is relevant to your role or department.</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "Send_Email",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1900, 160]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"New Resource Published: {{ $json.resource_title }}\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"New Resource Available\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Title:*\\n{{ $json.resource_title }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Category:*\\n{{ $json.resource_category }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Type:*\\n{{ $json.resource_type }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Author:*\\n{{ $json.author_name }}\"\n        }\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"Notifying {{ $json.count }} users\"\n      }\n    },\n    {\n      \"type\": \"actions\",\n      \"elements\": [\n        {\n          \"type\": \"button\",\n          \"text\": {\n            \"type\": \"plain_text\",\n            \"text\": \"View Resource\"\n          },\n          \"url\": \"{{ $json.resource_url }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "Slack_Notification",
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2140, 160]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, record_id, action, performed_by, metadata) VALUES ('resources', '{{ $json.resource_id }}', 'notification_sent', (SELECT author_id FROM public.resources WHERE id = '{{ $json.resource_id }}'), jsonb_build_object('workflow', 'resources-new-notification', 'notification_count', {{ $json.count }}, 'sent_at', now()));"
+      },
+      "id": "Audit_Log",
+      "name": "Create Audit Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2380, 160],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, action, metadata) VALUES ('resources', 'notification_skipped', jsonb_build_object('workflow', 'resources-new-notification', 'reason', 'resource_not_found', 'resource_id', '{{ $json.resourceId }}', 'checked_at', now()));"
+      },
+      "id": "Log_Not_Found",
+      "name": "Log Resource Not Found",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1180, 400],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "Resource not found or not published",
+        "options": {}
+      },
+      "id": "Stop_Not_Found",
+      "name": "Stop - Resource Not Found",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [1420, 400]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, action, metadata) VALUES ('resources', 'notification_error', jsonb_build_object('workflow', 'resources-new-notification', 'error', '{{ $json.message }}', 'stack', '{{ $json.stack }}', 'error_at', now()));"
+      },
+      "id": "Log_Error",
+      "name": "Log Error To Audit",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1660, 540],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "subject": "Resources Notification - Error Alert",
+        "message": "Error in resources notification workflow:\n\n{{ $json.message }}\n\nResource ID: {{ $json.resourceId }}\nTime: {{ new Date().toISOString() }}\n\nPlease check the audit logs for more details.",
+        "options": {}
+      },
+      "id": "Alert_Email",
+      "name": "Send Error Alert Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1900, 540]
+    }
+  ],
+  "connections": {
+    "Webhook - Resource Published": {
+      "main": [
+        [
+          {
+            "node": "Extract Resource ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Resource ID": {
+      "main": [
+        [
+          {
+            "node": "Get Resource Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Resource Details": {
+      "main": [
+        [
+          {
+            "node": "Check Resource Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Resource Exists": {
+      "main": [
+        [
+          {
+            "node": "Get Targeted Users",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Resource Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Targeted Users": {
+      "main": [
+        [
+          {
+            "node": "Build Notification Payloads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Notification Payloads": {
+      "main": [
+        [
+          {
+            "node": "Split Into Batches (50 users)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Batches (50 users)": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Notification": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Create Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Resource Not Found": {
+      "main": [
+        [
+          {
+            "node": "Stop - Resource Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop - Resource Not Found": {
+      "main": [
+        [
+          {
+            "node": "Log Error To Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error To Audit": {
+      "main": [
+        [
+          {
+            "node": "Send Error Alert Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "sn-hr-portal"
+  },
+  "tags": [
+    {
+      "name": "resources",
+      "id": "resources-automation"
+    },
+    {
+      "name": "notifications",
+      "id": "notification-workflows"
+    },
+    {
+      "name": "webhook",
+      "id": "webhook-triggered"
+    }
+  ]
+}

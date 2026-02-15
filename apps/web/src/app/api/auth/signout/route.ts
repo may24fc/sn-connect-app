@@ -6,5 +6,13 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL('/login', request.url));
+
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+
+  if (forwardedProto && forwardedHost) {
+    return NextResponse.redirect(new URL('/login', `${forwardedProto}://${forwardedHost}`));
+  }
+
+  return NextResponse.redirect(new URL('/login', request.nextUrl.origin));
 }

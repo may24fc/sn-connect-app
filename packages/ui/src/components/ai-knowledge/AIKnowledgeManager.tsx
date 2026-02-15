@@ -1,11 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import type { KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { KnowledgeBasePanel } from './KnowledgeBasePanel';
 import { PlaygroundPanel } from './PlaygroundPanel';
 import { mockSources } from './mockData';
-import type { KnowledgeSource } from '../../types/ai-knowledge.types';
 
 export interface AIKnowledgeManagerProps {
   className?: string;
@@ -13,10 +13,8 @@ export interface AIKnowledgeManagerProps {
 
 type PanelState = 'both' | 'knowledge' | 'playground';
 
-export function AIKnowledgeManager({
-  className,
-}: AIKnowledgeManagerProps): React.ReactNode {
-  const [sources, setSources] = React.useState<KnowledgeSource[]>(mockSources);
+export function AIKnowledgeManager({ className }: AIKnowledgeManagerProps): React.ReactNode {
+  const [sources, setSources] = React.useState<Array<KnowledgeSource>>(mockSources);
   const [debugMode, setDebugMode] = React.useState(false);
   const [panelState] = React.useState<PanelState>('both');
 
@@ -35,12 +33,7 @@ export function AIKnowledgeManager({
               panelState === 'knowledge' && 'w-full'
             )}
           >
-            <KnowledgeBasePanel
-              sources={sources}
-              onSourcesChange={setSources}
-              className="flex-1"
-            />
-
+            <KnowledgeBasePanel sources={sources} onSourcesChange={setSources} className="flex-1" />
           </div>
         )}
 

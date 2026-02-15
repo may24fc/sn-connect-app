@@ -19,7 +19,7 @@ export interface Task {
   createdByName: string;
   createdAt: string;
   updatedAt: string;
-  assignees: TaskAssignee[];
+  assignees: Array<TaskAssignee>;
 }
 
 export interface TaskAssignee {
@@ -39,7 +39,7 @@ export interface TaskFormData {
   priority: TaskPriority;
   dueDate: string;
   category?: string;
-  assigneeIds: string[];
+  assigneeIds: Array<string>;
 }
 
 export interface TaskFilters {
@@ -112,17 +112,19 @@ export function formatDueDate(dueDate: string): string {
 
   if (days < 0) {
     return `${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'} overdue`;
-  } else if (days === 0) {
-    return 'Due today';
-  } else if (days === 1) {
-    return 'Due tomorrow';
-  } else if (days <= 7) {
-    return `Due in ${days} days`;
-  } else {
-    return new Date(dueDate).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
   }
+  if (days === 0) {
+    return 'Due today';
+  }
+  if (days === 1) {
+    return 'Due tomorrow';
+  }
+  if (days <= 7) {
+    return `Due in ${days} days`;
+  }
+  return new Date(dueDate).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }

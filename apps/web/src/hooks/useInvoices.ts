@@ -1,0 +1,193 @@
+import { type InvoiceFilters, queryKeys } from '@/lib/query-keys';
+import type {
+  InvoiceApprovalInput,
+  InvoiceCreateInput,
+  InvoiceUpdateInput,
+} from '@/lib/schemas/invoice.schema';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+export interface InvoiceRecord {
+  id: string;
+  employee_id: string;
+  invoice_number: string;
+  period_start: string;
+  period_end: string;
+  gross_amount: number;
+  deductions: number;
+  net_amount: number;
+  status: 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
+  submitted_at: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  paid_at: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  employees?: {
+    id: string;
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    department: string;
+  };
+  invoice_line_items?: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    total: number;
+  }>;
+}
+
+interface InvoiceListResponse {
+  data: Array<InvoiceRecord>;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export function useInvoices(filters: InvoiceFilters = {}) {
+  return useQuery({
+    queryKey: queryKeys.payroll.list(filters),
+    queryFn: async (): Promise<InvoiceListResponse> => {
+      const params = new URLSearchParams();
+
+      if (filters.status) params.append('status', filters.status);
+      if (filters.employeeId) params.append('employeeId', filters.employeeId);
+      if (filters.page) params.append('page', String(filters.page));
+      if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
+
+      const response = await fetch(`/api/invoices?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoices');
+      }
+
+      return response.json();
+    },
+  });
+}
+
+export function useInvoice(id: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.payroll.detail(id || ''),
+    queryFn: async (): Promise<{ data: InvoiceRecord }> => {
+      if (!id) throw new Error('Invoice ID is required');
+
+      const response = await fetch(`/api/invoices/${id}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoice');
+      }
+
+      return response.json();
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: InvoiceCreateInput): Promise<{ data: InvoiceRecord }> => {
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create invoice');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
+    },
+  });
+}
+
+export function useUpdateInvoice(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: InvoiceUpdateInput): Promise<{ data: InvoiceRecord }> => {
+      const response = await fetch(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update invoice');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.detail(id) });
+    },
+  });
+}
+
+export function useSubmitInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<{ data: InvoiceRecord }> => {
+      const response = await fetch(`/api/invoices/${id}/submit`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to submit invoice');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.detail(id) });
+    },
+  });
+}
+
+export function useApproveInvoice() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: InvoiceApprovalInput;
+    }): Promise<{ data: InvoiceRecord }> => {
+      const response = await fetch(`/api/invoices/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update approval status');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.payroll.detail(variables.id) });
+    },
+  });
+}

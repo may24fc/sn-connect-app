@@ -1,9 +1,9 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@hr-portal/ui';
 import { FileQuestion } from 'lucide-react';
+import type * as React from 'react';
 
 interface EmptyStateProps {
   /** Icon to display (defaults to FileQuestion) - should use strokeWidth={1.5} */
@@ -89,23 +89,13 @@ export function EmptyState({
       </div>
 
       {/* Title */}
-      <h3
-        className={cn(
-          'font-medium text-zinc-900 dark:text-zinc-100 mb-1',
-          sizes.title
-        )}
-      >
+      <h3 className={cn('font-medium text-zinc-900 dark:text-zinc-100 mb-1', sizes.title)}>
         {title}
       </h3>
 
       {/* Description */}
       {description && (
-        <p
-          className={cn(
-            'text-zinc-500 dark:text-zinc-400 max-w-sm mb-4',
-            sizes.description
-          )}
-        >
+        <p className={cn('text-zinc-500 dark:text-zinc-400 max-w-sm mb-4', sizes.description)}>
           {description}
         </p>
       )}
@@ -142,10 +132,7 @@ interface EmptyStateCardProps extends EmptyStateProps {
   cardClassName?: string;
 }
 
-export function EmptyStateCard({
-  cardClassName,
-  ...props
-}: EmptyStateCardProps): React.ReactNode {
+export function EmptyStateCard({ cardClassName, ...props }: EmptyStateCardProps): React.ReactNode {
   return (
     <div
       className={cn(

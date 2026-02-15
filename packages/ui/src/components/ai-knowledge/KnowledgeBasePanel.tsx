@@ -1,15 +1,15 @@
 'use client';
 
 import * as React from 'react';
+import type { AccessLevel, FileStatus, KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
-import { UploadZone } from './UploadZone';
-import { UploadProgress } from './UploadProgress';
 import { SourcesInventory } from './SourcesInventory';
-import type { KnowledgeSource, FileStatus, AccessLevel } from '../../types/ai-knowledge.types';
+import { UploadProgress } from './UploadProgress';
+import { UploadZone } from './UploadZone';
 
 export interface KnowledgeBasePanelProps {
-  sources: KnowledgeSource[];
-  onSourcesChange: (sources: KnowledgeSource[]) => void;
+  sources: Array<KnowledgeSource>;
+  onSourcesChange: (sources: Array<KnowledgeSource>) => void;
   className?: string;
 }
 
@@ -24,10 +24,10 @@ export function KnowledgeBasePanel({
   onSourcesChange,
   className,
 }: KnowledgeBasePanelProps): React.ReactNode {
-  const [uploadingFiles, setUploadingFiles] = React.useState<UploadingFile[]>([]);
+  const [uploadingFiles, setUploadingFiles] = React.useState<Array<UploadingFile>>([]);
 
-  const handleFileSelect = (files: File[]): void => {
-    const newUploads: UploadingFile[] = files.map((file) => ({
+  const handleFileSelect = (files: Array<File>): void => {
+    const newUploads: Array<UploadingFile> = files.map((file) => ({
       id: `upload-${Date.now()}-${Math.random()}`,
       fileName: file.name,
       stage: 'scanning' as FileStatus,
@@ -42,7 +42,7 @@ export function KnowledgeBasePanel({
   };
 
   const simulateUpload = async (upload: UploadingFile): Promise<void> => {
-    const stages: FileStatus[] = ['scanning', 'chunking', 'indexing', 'ready'];
+    const stages: Array<FileStatus> = ['scanning', 'chunking', 'indexing', 'ready'];
 
     for (let i = 0; i < stages.length; i++) {
       const stage = stages[i];
@@ -64,9 +64,9 @@ export function KnowledgeBasePanel({
     // After reaching 'ready', add to sources and remove from uploading
     setTimeout(() => {
       const fileExtension = upload.fileName.split('.').pop()?.toLowerCase() || 'txt';
-      const fileType = (['pdf', 'docx', 'txt', 'xlsx'].includes(fileExtension)
-        ? fileExtension
-        : 'txt') as KnowledgeSource['fileType'];
+      const fileType = (
+        ['pdf', 'docx', 'txt', 'xlsx'].includes(fileExtension) ? fileExtension : 'txt'
+      ) as KnowledgeSource['fileType'];
 
       const newSource: KnowledgeSource = {
         id: `source-${Date.now()}`,
@@ -100,10 +100,7 @@ export function KnowledgeBasePanel({
 
       {/* Upload Zone - Fixed, not scrollable */}
       <div className="flex-shrink-0 px-6 py-5">
-        <UploadZone
-          onFileSelect={handleFileSelect}
-          disabled={uploadingFiles.length > 0}
-        />
+        <UploadZone onFileSelect={handleFileSelect} disabled={uploadingFiles.length > 0} />
 
         {/* Upload Progress */}
         {uploadingFiles.length > 0 && (

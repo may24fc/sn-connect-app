@@ -1,0 +1,257 @@
+{
+  "name": "Onboarding New Employee",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "onboarding-new-employee",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "Webhook_Trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 260]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.employeeId }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "rightValue": ""
+            }
+          ]
+        }
+      },
+      "id": "Validate_Input",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 260]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.onboarding_checklists (employee_id, status, started_at) VALUES ('{{ $json.body.employeeId }}', 'not_started', now()) RETURNING id;"
+      },
+      "id": "Create_Checklist",
+      "name": "Create Onboarding Checklist",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 180],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const checklistId = $input.first().json.id;\nconst defaultTasks = [\n  { title: 'Submit Required Documents', description: 'Upload government IDs and supporting documents', category: 'documents', due_days_from_start: 3 },\n  { title: 'Complete Orientation Training', description: 'Attend HR orientation and company culture briefing', category: 'training', due_days_from_start: 5 },\n  { title: 'Prepare Equipment', description: 'Coordinate laptop and account setup with IT', category: 'equipment', due_days_from_start: 2 },\n  { title: 'Grant System Access', description: 'Provision required portal and tools access', category: 'access', due_days_from_start: 2 }\n];\n\nreturn defaultTasks.map((task) => ({\n  json: {\n    checklist_id: checklistId,\n    ...task,\n    is_required: true\n  }\n}));"
+      },
+      "id": "Build_Default_Tasks",
+      "name": "Build Default Tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 180]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.onboarding_tasks (checklist_id, title, description, category, is_required, due_days_from_start) VALUES ('{{ $json.checklist_id }}', '{{ $json.title }}', '{{ $json.description }}', '{{ $json.category }}', {{ $json.is_required }}, {{ $json.due_days_from_start }});"
+      },
+      "id": "Create_Tasks",
+      "name": "Create Default Tasks",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1160, 180],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $env.HR_NOTIFICATION_EMAIL || 'hr@snconnect.local' }}",
+        "subject": "New Employee Onboarding Started",
+        "emailType": "text",
+        "message": "A new onboarding checklist has been created for employee ID: {{ $('Webhook Trigger').item.json.body.employeeId }}. Please prepare equipment and initial requirements.",
+        "options": {}
+      },
+      "id": "Notify_HR",
+      "name": "Notify HR",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1380, 180]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $('Webhook Trigger').item.json.body.employeeEmail || 'new.employee@snconnect.local' }}",
+        "subject": "Welcome to SN Connect",
+        "emailType": "text",
+        "message": "Welcome to SN Connect! Your onboarding checklist has been initialized. Please complete your onboarding steps in the portal.",
+        "options": {}
+      },
+      "id": "Welcome_Email",
+      "name": "Schedule Welcome Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1600, 180]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, record_id, operation, new_values, performed_by) VALUES ('onboarding_checklists', '{{ $('Create Onboarding Checklist').item.json.id }}', 'INSERT', jsonb_build_object('workflow', 'onboarding-new-employee', 'employee_id', '{{ $('Webhook Trigger').item.json.body.employeeId }}', 'created_at', now()), null);"
+      },
+      "id": "Audit_Log",
+      "name": "Write Audit Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1820, 180],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Onboarding workflow executed\",\n  \"employeeId\": \"{{ $('Webhook Trigger').item.json.body.employeeId }}\"\n}",
+        "options": {}
+      },
+      "id": "Response_Success",
+      "name": "Response Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [2040, 180]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"employeeId is required\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "Response_Invalid",
+      "name": "Response Invalid Input",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [700, 360]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Create Onboarding Checklist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Response Invalid Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Onboarding Checklist": {
+      "main": [
+        [
+          {
+            "node": "Build Default Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Default Tasks": {
+      "main": [
+        [
+          {
+            "node": "Create Default Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Default Tasks": {
+      "main": [
+        [
+          {
+            "node": "Notify HR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify HR": {
+      "main": [
+        [
+          {
+            "node": "Schedule Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Write Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Audit Log": {
+      "main": [
+        [
+          {
+            "node": "Response Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}

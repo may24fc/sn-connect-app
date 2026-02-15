@@ -1,15 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { Eye, Mail, Search } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../primitives/table';
+import * as React from 'react';
 import { Button } from '../../primitives/button';
 import { Input } from '../../primitives/input';
 import {
@@ -19,12 +11,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../primitives/table';
 import { cn } from '../../utils/cn';
 import { ReportStatusBadge } from './ReportStatusBadge';
 import type { ReportSubmission } from './types';
 
 interface ReportSubmissionListProps {
-  submissions: ReportSubmission[];
+  submissions: Array<ReportSubmission>;
   onView?: (submission: ReportSubmission) => void;
   onSendReminder?: (submitterId: string) => void;
   className?: string;
@@ -144,31 +144,29 @@ export function ReportSubmissionList({
                   <TableCell>{formatDate(submission.submittedAt)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      {submission.status === 'submitted' || submission.status === 'reviewed' ? (
-                        onView && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onView(submission)}
-                            title="View report"
-                          >
-                            <Eye className="h-4 w-4" />
-                            <span className="sr-only">View</span>
-                          </Button>
-                        )
-                      ) : (
-                        onSendReminder && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onSendReminder(submission.submitterId)}
-                            title="Send reminder"
-                          >
-                            <Mail className="h-4 w-4" />
-                            <span className="sr-only">Send Reminder</span>
-                          </Button>
-                        )
-                      )}
+                      {submission.status === 'submitted' || submission.status === 'reviewed'
+                        ? onView && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onView(submission)}
+                              title="View report"
+                            >
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">View</span>
+                            </Button>
+                          )
+                        : onSendReminder && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onSendReminder(submission.submitterId)}
+                              title="Send reminder"
+                            >
+                              <Mail className="h-4 w-4" />
+                              <span className="sr-only">Send Reminder</span>
+                            </Button>
+                          )}
                     </div>
                   </TableCell>
                 </TableRow>

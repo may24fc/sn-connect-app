@@ -1,19 +1,13 @@
 'use client';
 
-import * as React from 'react';
 import { Save, Send, Upload, X } from 'lucide-react';
+import * as React from 'react';
 import { Button } from '../../primitives/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
 import { Input } from '../../primitives/input';
-import { Textarea } from '../../primitives/textarea';
 import { Label } from '../../primitives/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../../primitives/card';
 import { Separator } from '../../primitives/separator';
+import { Textarea } from '../../primitives/textarea';
 import { cn } from '../../utils/cn';
 import { MetricInputGroup } from './MetricInput';
 import type { ReportContent, ReportMetric, WeekPeriod } from './types';
@@ -38,20 +32,18 @@ export function ReportForm({
   className,
 }: ReportFormProps): React.ReactNode {
   const [summary, setSummary] = React.useState(initialContent?.summary || '');
-  const [accomplishments, setAccomplishments] = React.useState<string[]>(
+  const [accomplishments, setAccomplishments] = React.useState<Array<string>>(
     initialContent?.accomplishments || ['']
   );
-  const [challenges, setChallenges] = React.useState<string[]>(
+  const [challenges, setChallenges] = React.useState<Array<string>>(
     initialContent?.challenges || ['']
   );
-  const [nextWeekPlans, setNextWeekPlans] = React.useState<string[]>(
+  const [nextWeekPlans, setNextWeekPlans] = React.useState<Array<string>>(
     initialContent?.nextWeekPlans || ['']
   );
   const [notes, setNotes] = React.useState(initialContent?.notes || '');
-  const [metrics, setMetrics] = React.useState<ReportMetric[]>(
-    initialContent?.metrics || []
-  );
-  const [attachments, setAttachments] = React.useState<File[]>([]);
+  const [metrics, setMetrics] = React.useState<Array<ReportMetric>>(initialContent?.metrics || []);
+  const [attachments, setAttachments] = React.useState<Array<File>>([]);
 
   const expenditures = metrics.filter((m) => m.type === 'expenditure');
   const results = metrics.filter((m) => m.type === 'result');
@@ -59,8 +51,8 @@ export function ReportForm({
   const handleStringArrayChange = (
     index: number,
     value: string,
-    array: string[],
-    setter: React.Dispatch<React.SetStateAction<string[]>>
+    array: Array<string>,
+    setter: React.Dispatch<React.SetStateAction<Array<string>>>
   ): void => {
     const updated = [...array];
     updated[index] = value;
@@ -68,23 +60,23 @@ export function ReportForm({
   };
 
   const handleAddStringItem = (
-    array: string[],
-    setter: React.Dispatch<React.SetStateAction<string[]>>
+    array: Array<string>,
+    setter: React.Dispatch<React.SetStateAction<Array<string>>>
   ): void => {
     setter([...array, '']);
   };
 
   const handleRemoveStringItem = (
     index: number,
-    array: string[],
-    setter: React.Dispatch<React.SetStateAction<string[]>>
+    array: Array<string>,
+    setter: React.Dispatch<React.SetStateAction<Array<string>>>
   ): void => {
     if (array.length > 1) {
       setter(array.filter((_, i) => i !== index));
     }
   };
 
-  const handleMetricsChange = (updatedMetrics: ReportMetric[]): void => {
+  const handleMetricsChange = (updatedMetrics: Array<ReportMetric>): void => {
     setMetrics(updatedMetrics);
   };
 
@@ -119,9 +111,7 @@ export function ReportForm({
 
   const isValid = (): boolean => {
     return (
-      summary.trim() !== '' &&
-      accomplishments.some((a) => a.trim() !== '') &&
-      metrics.length > 0
+      summary.trim() !== '' && accomplishments.some((a) => a.trim() !== '') && metrics.length > 0
     );
   };
 
@@ -130,9 +120,7 @@ export function ReportForm({
       <Card>
         <CardHeader>
           <CardTitle>Report Details</CardTitle>
-          <CardDescription>
-            Complete your weekly report for {weekPeriod.label}
-          </CardDescription>
+          <CardDescription>Complete your weekly report for {weekPeriod.label}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Summary */}
@@ -168,7 +156,12 @@ export function ReportForm({
                   placeholder={`Accomplishment ${index + 1}`}
                   value={item}
                   onChange={(e) =>
-                    handleStringArrayChange(index, e.target.value, accomplishments, setAccomplishments)
+                    handleStringArrayChange(
+                      index,
+                      e.target.value,
+                      accomplishments,
+                      setAccomplishments
+                    )
                   }
                   className="flex-1"
                 />
@@ -176,7 +169,9 @@ export function ReportForm({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleRemoveStringItem(index, accomplishments, setAccomplishments)}
+                    onClick={() =>
+                      handleRemoveStringItem(index, accomplishments, setAccomplishments)
+                    }
                   >
                     <X className="h-4 w-4" />
                   </Button>

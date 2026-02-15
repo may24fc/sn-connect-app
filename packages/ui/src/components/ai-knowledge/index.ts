@@ -12,39 +12,15 @@ export { DebugPanel } from './DebugPanel';
 export { AccessToggle } from './AccessToggle';
 export { mockSources } from './mockData';
 
-export type {
-  AIKnowledgeManagerProps,
-} from './AIKnowledgeManager';
-export type {
-  KnowledgeBasePanelProps,
-} from './KnowledgeBasePanel';
-export type {
-  PlaygroundPanelProps,
-} from './PlaygroundPanel';
-export type {
-  UploadZoneProps,
-} from './UploadZone';
-export type {
-  UploadProgressProps,
-} from './UploadProgress';
-export type {
-  SourcesInventoryProps,
-} from './SourcesInventory';
-export type {
-  SourceRowProps,
-} from './SourceRow';
-export type {
-  SourceFiltersProps,
-} from './SourceFilters';
-export type {
-  ChatInterfaceProps,
-} from './ChatInterface';
-export type {
-  ChatMessageProps,
-} from './ChatMessage';
-export type {
-  DebugPanelProps,
-} from './DebugPanel';
-export type {
-  AccessToggleProps,
-} from './AccessToggle';
+export type { AIKnowledgeManagerProps } from './AIKnowledgeManager';
+export type { KnowledgeBasePanelProps } from './KnowledgeBasePanel';
+export type { PlaygroundPanelProps } from './PlaygroundPanel';
+export type { UploadZoneProps } from './UploadZone';
+export type { UploadProgressProps } from './UploadProgress';
+export type { SourcesInventoryProps } from './SourcesInventory';
+export type { SourceRowProps } from './SourceRow';
+export type { SourceFiltersProps } from './SourceFilters';
+export type { ChatInterfaceProps } from './ChatInterface';
+export type { ChatMessageProps } from './ChatMessage';
+export type { DebugPanelProps } from './DebugPanel';
+export type { AccessToggleProps } from './AccessToggle';

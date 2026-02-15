@@ -1,15 +1,15 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
 } from 'recharts';
 import {
   Card,
@@ -28,7 +28,7 @@ interface DepartmentROIData {
 }
 
 interface ROIByDepartmentChartProps {
-  data: DepartmentROIData[];
+  data: Array<DepartmentROIData>;
   className?: string;
 }
 

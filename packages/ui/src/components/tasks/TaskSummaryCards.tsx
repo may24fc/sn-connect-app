@@ -1,31 +1,17 @@
 'use client';
 
-import * as React from 'react';
-import {
-  ClipboardList,
-  Clock,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-} from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '../../primitives/card';
-import { cn } from '../../utils/cn';
+import { AlertCircle, ArrowRight, CheckCircle2, ClipboardList, Clock } from 'lucide-react';
+import type * as React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import type { TaskDashboardStats } from '../../types/task.types';
+import { cn } from '../../utils/cn';
 
 export interface TaskSummaryCardsProps {
   stats: TaskDashboardStats;
   className?: string;
 }
 
-export function TaskSummaryCards({
-  stats,
-  className,
-}: TaskSummaryCardsProps): React.ReactNode {
+export function TaskSummaryCards({ stats, className }: TaskSummaryCardsProps): React.ReactNode {
   const cards = [
     {
       title: 'Total Tasks',
@@ -65,12 +51,7 @@ export function TaskSummaryCards({
   ];
 
   return (
-    <div
-      className={cn(
-        'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
-        className
-      )}
-    >
+    <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5', className)}>
       {cards.map((card) => {
         const Icon = card.icon;
         return (
@@ -79,7 +60,9 @@ export function TaskSummaryCards({
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {card.title}
               </CardTitle>
-              <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', card.iconBg)}>
+              <div
+                className={cn('flex h-8 w-8 items-center justify-center rounded-lg', card.iconBg)}
+              >
                 <Icon className={cn('h-4 w-4', card.iconColor)} />
               </div>
             </CardHeader>

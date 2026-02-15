@@ -1,9 +1,10 @@
 'use client';
 
-import * as React from 'react';
-import { Search, X, Calendar } from 'lucide-react';
-import { Input } from '../../primitives/input';
+import { Calendar, Search, X } from 'lucide-react';
+import type * as React from 'react';
 import { Button } from '../../primitives/button';
+import { Input } from '../../primitives/input';
+import { Label } from '../../primitives/label';
 import {
   Select,
   SelectContent,
@@ -11,14 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
-import { Label } from '../../primitives/label';
-import { cn } from '../../utils/cn';
 import type { TaskFilters } from '../../types/task.types';
+import { cn } from '../../utils/cn';
 
 export interface TaskFiltersProps {
   filters: TaskFilters;
   onFiltersChange: (filters: TaskFilters) => void;
-  assigneeOptions?: { id: string; name: string }[];
+  assigneeOptions?: Array<{ id: string; name: string }>;
   showAssigneeFilter?: boolean;
   className?: string;
 }
@@ -141,12 +141,7 @@ export function TaskFilters({
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
-          <Button
-            variant="outline"
-            size="default"
-            onClick={handleClearFilters}
-            className="gap-2"
-          >
+          <Button variant="outline" size="default" onClick={handleClearFilters} className="gap-2">
             <X className="h-4 w-4" />
             Clear Filters
           </Button>

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { EmployeeInsert } from '@hr-portal/database';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/employees
@@ -60,10 +60,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching employees:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch employees' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to fetch employees' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -77,10 +74,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Unexpected error in GET /api/employees:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -134,18 +128,12 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating employee:', error);
-      return NextResponse.json(
-        { error: 'Failed to create employee' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create employee' }, { status: 500 });
     }
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     console.error('Unexpected error in POST /api/employees:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

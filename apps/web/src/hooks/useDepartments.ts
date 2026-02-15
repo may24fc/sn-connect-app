@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys, type DepartmentFilters } from '@/lib/query-keys';
+import { type DepartmentFilters, queryKeys } from '@/lib/query-keys';
 import type { Department, DepartmentInsert } from '@hr-portal/database';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface DepartmentListResponse {
-  data: Department[];
+  data: Array<Department>;
   pagination: {
     page: number;
     pageSize: number;
@@ -43,9 +43,7 @@ export function useCreateDepartment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      department: DepartmentInsert
-    ): Promise<{ data: Department }> => {
+    mutationFn: async (department: DepartmentInsert): Promise<{ data: Department }> => {
       const response = await fetch('/api/departments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

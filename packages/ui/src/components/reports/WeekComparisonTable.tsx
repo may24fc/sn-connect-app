@@ -1,14 +1,9 @@
 'use client';
 
-import * as React from 'react';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../../primitives/card';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import type * as React from 'react';
+import { Badge } from '../../primitives/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
 import {
   Table,
   TableBody,
@@ -17,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from '../../primitives/table';
-import { Badge } from '../../primitives/badge';
 import { cn } from '../../utils/cn';
 import type { WeekComparison } from './types';
 import { formatPeriodLabel } from './types';
@@ -71,7 +65,9 @@ export function WeekComparisonTable({
             {comparison.metrics.slice(0, 4).map((metric) => (
               <div key={metric.name} className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">{metric.name}</span>
-                <span className="font-semibold">{formatValue(metric.currentValue, metric.category)}</span>
+                <span className="font-semibold">
+                  {formatValue(metric.currentValue, metric.category)}
+                </span>
               </div>
             ))}
           </CardContent>
@@ -82,14 +78,19 @@ export function WeekComparisonTable({
           <CardHeader className="bg-muted/50">
             <CardTitle className="text-base">{comparison.previousWeek.label}</CardTitle>
             <CardDescription>
-              {formatPeriodLabel(comparison.previousWeek.startDate, comparison.previousWeek.endDate)}
+              {formatPeriodLabel(
+                comparison.previousWeek.startDate,
+                comparison.previousWeek.endDate
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             {comparison.metrics.slice(0, 4).map((metric) => (
               <div key={metric.name} className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">{metric.name}</span>
-                <span className="font-semibold">{formatValue(metric.previousValue, metric.category)}</span>
+                <span className="font-semibold">
+                  {formatValue(metric.previousValue, metric.category)}
+                </span>
               </div>
             ))}
           </CardContent>
@@ -123,8 +124,10 @@ export function WeekComparisonTable({
                   </TableRow>
                 ) : (
                   comparison.metrics.map((metric) => {
-                    const isRevenueMetric = metric.category === 'Revenue' || metric.name.includes('Revenue');
-                    const isPositiveTrend = metric.trend === 'up' ? isRevenueMetric : !isRevenueMetric;
+                    const isRevenueMetric =
+                      metric.category === 'Revenue' || metric.name.includes('Revenue');
+                    const isPositiveTrend =
+                      metric.trend === 'up' ? isRevenueMetric : !isRevenueMetric;
 
                     return (
                       <TableRow key={metric.name}>
@@ -140,7 +143,12 @@ export function WeekComparisonTable({
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <span className={cn('flex items-center gap-1', getTrendColor(metric.trend, isPositiveTrend))}>
+                            <span
+                              className={cn(
+                                'flex items-center gap-1',
+                                getTrendColor(metric.trend, isPositiveTrend)
+                              )}
+                            >
                               {getTrendIcon(metric.trend)}
                               <span className="font-semibold">
                                 {metric.changePercent > 0 ? '+' : ''}

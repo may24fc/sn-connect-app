@@ -1,5 +1,7 @@
 'use client';
 
+import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
+import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
 import {
   Badge,
   Button,
@@ -8,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
   Progress,
   Tabs,
   TabsContent,
@@ -18,23 +21,13 @@ import {
   ArrowRight,
   Award,
   BookOpen,
-  Calendar,
-  ChevronRight,
   Megaphone,
+  Search,
   Star,
   Target,
   TrendingUp,
 } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  date: string;
-  isNew: boolean;
-}
+import { useMemo, useState } from 'react';
 
 interface GrowthItem {
   id: string;
@@ -45,63 +38,13 @@ interface GrowthItem {
   type: 'course' | 'goal' | 'achievement';
 }
 
-// Mock announcements data
-const announcements: Array<Announcement> = [
-  {
-    id: '1',
-    title: 'Company Holiday Schedule 2024',
-    content:
-      'Please review the updated holiday schedule for 2024. All regular holidays and special non-working days have been updated in the HR system.',
-    category: 'HR Updates',
-    date: '2 hours ago',
-    isNew: true,
-  },
-  {
-    id: '2',
-    title: 'New Health Benefits Package',
-    content:
-      'We are excited to announce enhanced health benefits starting February 2024. This includes increased coverage for dental and vision care.',
-    category: 'Benefits',
-    date: '1 day ago',
-    isNew: true,
-  },
-  {
-    id: '3',
-    title: 'Q4 Town Hall Meeting Recap',
-    content:
-      'Thank you to everyone who attended the Q4 Town Hall. For those who missed it, the recording is now available on the company intranet.',
-    category: 'Events',
-    date: '2 days ago',
-    isNew: false,
-  },
-  {
-    id: '4',
-    title: 'Performance Review Period',
-    content:
-      'Annual performance reviews will begin on January 15. Please ensure all self-assessments are completed by January 20.',
-    category: 'Performance',
-    date: '3 days ago',
-    isNew: false,
-  },
-  {
-    id: '5',
-    title: 'New Learning Platform Launch',
-    content:
-      'We are launching a new learning management system next week. Stay tuned for training sessions on how to use the new platform.',
-    category: 'Training',
-    date: '1 week ago',
-    isNew: false,
-  },
-];
-
-// Mock growth data
 const growthItems: Array<GrowthItem> = [
   {
     id: '1',
     title: 'Leadership Fundamentals',
     description: 'Complete the leadership training course',
     progress: 75,
-    dueDate: 'Feb 28, 2024',
+    dueDate: 'Feb 28, 2026',
     type: 'course',
   },
   {
@@ -109,7 +52,7 @@ const growthItems: Array<GrowthItem> = [
     title: 'Q1 Performance Goals',
     description: 'Achieve quarterly performance targets',
     progress: 40,
-    dueDate: 'Mar 31, 2024',
+    dueDate: 'Mar 31, 2026',
     type: 'goal',
   },
   {
@@ -119,23 +62,7 @@ const growthItems: Array<GrowthItem> = [
     progress: 100,
     type: 'course',
   },
-  {
-    id: '4',
-    title: 'Project Management Certification',
-    description: 'Obtain PMP certification',
-    progress: 20,
-    dueDate: 'Jun 30, 2024',
-    type: 'goal',
-  },
 ];
-
-const categoryColors: Record<string, string> = {
-  'HR Updates': 'bg-primary/10 text-primary',
-  Benefits: 'bg-success/10 text-success',
-  Events: 'bg-warning/10 text-warning',
-  Performance: 'bg-error/10 text-error',
-  Training: 'bg-purple-100 text-purple-600',
-};
 
 const typeIcons: Record<GrowthItem['type'], typeof BookOpen> = {
   course: BookOpen,
@@ -143,20 +70,35 @@ const typeIcons: Record<GrowthItem['type'], typeof BookOpen> = {
   achievement: Award,
 };
 
-export default function AnnouncementsPage(): ReactNode {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+export default function AnnouncementsPage() {
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [readStatus, setReadStatus] = useState<'all' | 'read' | 'unread'>('all');
+  const [page, setPage] = useState(1);
 
-  const categories = [...new Set(announcements.map((a) => a.category))];
+  const { data, isLoading, error } = useAnnouncementFeed({
+    ...(search ? { search } : {}),
+    ...(category !== 'all' ? { category: category as any } : {}),
+    readStatus,
+    page,
+    pageSize: 10,
+  });
+  const markRead = useMarkAnnouncementRead();
 
-  const filteredAnnouncements = selectedCategory
-    ? announcements.filter((a) => a.category === selectedCategory)
-    : announcements;
+  const announcements = data?.data || [];
+  const categories = useMemo(
+    () => ['all', ...new Set(announcements.map((announcement) => announcement.category))],
+    [announcements]
+  );
+  const pinnedAnnouncements = announcements.filter((announcement) => announcement.is_pinned);
+  const urgentAnnouncements = announcements.filter(
+    (announcement) => announcement.priority === 'urgent'
+  );
 
   const completedCourses = growthItems.filter((item) => item.progress === 100).length;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Information Hub</h1>
         <p className="text-muted-foreground">
@@ -176,70 +118,164 @@ export default function AnnouncementsPage(): ReactNode {
           </TabsTrigger>
         </TabsList>
 
-        {/* Announcements Tab */}
-        <TabsContent value="announcements" className="space-y-6">
-          {/* Category Filters */}
-          <div className="flex flex-wrap gap-2">
+        <TabsContent value="announcements" className="space-y-4">
+          <div className="flex flex-wrap gap-2 items-center">
+            <div className="relative max-w-sm flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+              <Input
+                className="pl-9"
+                placeholder="Search announcements"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            {categories.map((item) => (
+              <Button
+                key={item}
+                variant={category === item ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setCategory(item);
+                  setPage(1);
+                }}
+              >
+                {item}
+              </Button>
+            ))}
             <Button
-              variant={selectedCategory === null ? 'default' : 'outline'}
+              variant={readStatus === 'all' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setSelectedCategory(null)}
+              onClick={() => setReadStatus('all')}
             >
               All
             </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-              >
-                {category}
-              </Button>
-            ))}
+            <Button
+              variant={readStatus === 'unread' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setReadStatus('unread')}
+            >
+              Unread
+            </Button>
+            <Button
+              variant={readStatus === 'read' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setReadStatus('read')}
+            >
+              Read
+            </Button>
           </div>
 
-          {/* Announcements List */}
-          <div className="space-y-4">
-            {filteredAnnouncements.map((announcement) => (
-              <Card
-                key={announcement.id}
-                className="cursor-pointer hover:shadow-card-hover transition-shadow"
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className={categoryColors[announcement.category]}
-                        >
-                          {announcement.category}
-                        </Badge>
-                        {announcement.isNew && (
-                          <Badge variant="default" className="bg-primary">
-                            New
-                          </Badge>
-                        )}
-                      </div>
-                      <h3 className="text-lg font-semibold">{announcement.title}</h3>
-                      <p className="text-muted-foreground line-clamp-2">{announcement.content}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        {announcement.date}
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+          {urgentAnnouncements.map((announcement) => (
+            <div
+              key={`urgent-${announcement.id}`}
+              className="bg-rose-50 dark:bg-rose-950/30 border-l-4 border-rose-600 rounded-lg p-4 mb-4"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  {announcement.title}
+                </h3>
+                <Badge variant="destructive">Urgent</Badge>
+              </div>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1">
+                {announcement.excerpt || announcement.content.slice(0, 200)}
+              </p>
+            </div>
+          ))}
+
+          {pinnedAnnouncements.map((announcement) => (
+            <div
+              key={`pinned-${announcement.id}`}
+              className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 border-l-4 border-indigo-600 rounded-lg p-4 mb-4"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  {announcement.title}
+                </h3>
+                <Badge>Pinned</Badge>
+              </div>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1">
+                {announcement.excerpt || announcement.content.slice(0, 200)}
+              </p>
+            </div>
+          ))}
+
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-6 text-sm text-zinc-600 dark:text-zinc-400">
+                Loading announcements...
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card>
+              <CardContent className="p-6 text-sm text-rose-600 dark:text-rose-400">
+                Failed to load announcements.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {announcements.map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className={
+                    announcement.is_read
+                      ? 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 opacity-75'
+                      : 'bg-white dark:bg-zinc-900 border-l-4 border-indigo-600 border-r border-t border-b border-zinc-200 dark:border-zinc-800 rounded-lg p-4'
+                  }
+                  onClick={() => {
+                    if (!announcement.is_read) {
+                      markRead.mutate(announcement.id);
+                    }
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                      {announcement.title}
+                    </h3>
+                    {!announcement.is_read ? (
+                      <Badge>Unread</Badge>
+                    ) : (
+                      <Badge variant="secondary">Read</Badge>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-3">
+                    {announcement.excerpt || announcement.content.slice(0, 200)}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    <span>{announcement.category}</span>
+                    <span>•</span>
+                    <span>{announcement.priority}</span>
+                    <span>•</span>
+                    <span>
+                      {(announcement.published_at || announcement.created_at).slice(0, 10)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-between">
+            <Button
+              variant="outline"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setPage((value) => value + 1)}
+              disabled={announcements.length < 10}
+            >
+              Next
+            </Button>
           </div>
         </TabsContent>
 
-        {/* My Growth Tab */}
         <TabsContent value="growth" className="space-y-6">
-          {/* Growth Stats */}
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="p-4">
@@ -254,7 +290,6 @@ export default function AnnouncementsPage(): ReactNode {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -268,7 +303,6 @@ export default function AnnouncementsPage(): ReactNode {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -284,7 +318,6 @@ export default function AnnouncementsPage(): ReactNode {
             </Card>
           </div>
 
-          {/* Growth Items */}
           <Card>
             <CardHeader>
               <CardTitle>Learning & Development</CardTitle>
@@ -315,22 +348,15 @@ export default function AnnouncementsPage(): ReactNode {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium truncate">{item.title}</h4>
-                        {isCompleted && (
-                          <Badge variant="success" className="flex-shrink-0">
-                            Completed
-                          </Badge>
-                        )}
+                        {isCompleted ? <Badge variant="success">Completed</Badge> : null}
                       </div>
                       <p className="text-sm text-muted-foreground">{item.description}</p>
-                      {!isCompleted && (
+                      {!isCompleted ? (
                         <div className="mt-2 flex items-center gap-3">
                           <Progress value={item.progress} className="h-2 flex-1" />
                           <span className="text-sm font-medium">{item.progress}%</span>
                         </div>
-                      )}
-                      {item.dueDate && !isCompleted && (
-                        <p className="mt-1 text-xs text-muted-foreground">Due: {item.dueDate}</p>
-                      )}
+                      ) : null}
                     </div>
 
                     <Button variant="ghost" size="sm">

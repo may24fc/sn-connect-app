@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Employee } from '@hr-portal/database';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/employees/[id]
  * Get single employee details
  * Permissions: Employees can view their own, managers can view their reports, admins can view all
  */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
@@ -40,10 +37,7 @@ export async function GET(
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in GET /api/employees/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -52,10 +46,7 @@ export async function GET(
  * Update employee
  * Permissions: Employees can update their own basic info, admins can update all fields
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
@@ -84,10 +75,7 @@ export async function PATCH(
 
     if (error) {
       console.error('Error updating employee:', error);
-      return NextResponse.json(
-        { error: 'Failed to update employee' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update employee' }, { status: 500 });
     }
 
     if (!data) {
@@ -97,10 +85,7 @@ export async function PATCH(
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/employees/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -151,18 +136,12 @@ export async function DELETE(
 
     if (error) {
       console.error('Error deleting employee:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete employee' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to delete employee' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Unexpected error in DELETE /api/employees/[id]:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

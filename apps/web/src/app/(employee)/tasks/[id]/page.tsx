@@ -1,156 +1,117 @@
 'use client';
 
-import { Button, TaskDetailView } from '@hr-portal/ui';
-import type { Task, TaskStatus } from '@hr-portal/ui';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
-import { use, useEffect, useState } from 'react';
+import { useTask } from '@/hooks/useTask';
+import { useUpdateTask } from '@/hooks/useUpdateTask';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { use } from 'react';
 
-// Mock data - Replace with actual API calls
-const mockTask: Task = {
-  id: '1' as any,
-  title: 'Review Q1 Financial Reports',
-  description:
-    'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities. This includes reviewing all departmental budgets, identifying areas of overspending, and preparing recommendations for the executive team.\n\nPlease ensure that:\n- All departmental reports are reviewed\n- Budget variance analysis is completed\n- Recommendations are documented\n- Final report is submitted by the due date',
-  priority: 'high',
-  status: 'in_progress',
-  category: 'Finance',
-  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-  createdBy: 'admin-1',
-  createdByName: 'Admin User',
-  createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  assignees: [
-    {
-      id: 'current-user',
-      name: 'Current User',
-      email: 'user@company.com',
-      role: 'employee',
-      department: 'Finance',
-      avatarUrl: '',
-      assignedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '5',
-      name: 'Anna Lee',
-      email: 'anna.lee@company.com',
-      role: 'employee',
-      department: 'Finance',
-      avatarUrl: '',
-      assignedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
+const statusVariant: Record<
+  'pending' | 'in_progress' | 'completed' | 'cancelled',
+  'secondary' | 'pending' | 'approved' | 'error'
+> = {
+  pending: 'secondary',
+  in_progress: 'pending',
+  completed: 'approved',
+  cancelled: 'error',
 };
 
-interface TaskDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
-
-export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNode {
+export default function TaskDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
-  const router = useRouter();
-  const [task, setTask] = useState<Task | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  useEffect(() => {
-    // TODO: Replace with actual API call
-    const fetchTask = async (): Promise<void> => {
-      setIsLoading(true);
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setTask(mockTask);
-      } catch (error) {
-        console.error('Failed to fetch task:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { data, isLoading, error } = useTask(id);
+  const updateTask = useUpdateTask(id);
 
-    fetchTask();
-  }, [id]);
-
-  const handleStatusChange = async (status: TaskStatus, _note?: string): Promise<void> => {
-    setIsUpdating(true);
-    try {
-      // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      if (task) {
-        const updatedAssignees = task.assignees.map((assignee) => {
-          if (assignee.id === 'current-user' && status === 'completed') {
-            return {
-              ...assignee,
-              completedAt: new Date().toISOString(),
-            };
-          }
-          return assignee;
-        });
-
-        setTask({
-          ...task,
-          status,
-          updatedAt: new Date().toISOString(),
-          assignees: updatedAssignees,
-        });
-      }
-
-      // Show success message (you can use a toast notification library)
-      alert('Task status updated successfully!');
-    } catch (error) {
-      console.error('Failed to update task status:', error);
-      alert('Failed to update task status. Please try again.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const task = data?.data;
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">Loading task details...</p>
-        </div>
-      </div>
-    );
+    return <div className="text-sm text-muted-foreground">Loading task...</div>;
   }
 
-  if (!task) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-lg font-medium mb-2">Task not found</p>
-          <p className="text-sm text-muted-foreground mb-4">
-            The task you are looking for does not exist.
-          </p>
-          <Button onClick={() => router.push('/tasks')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to My Tasks
-          </Button>
-        </div>
-      </div>
-    );
+  if (error || !task) {
+    return <div className="text-sm text-error">Failed to load task.</div>;
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <Button variant="ghost" onClick={() => router.push('/tasks')} className="w-fit">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to My Tasks
+    <div className="mx-auto max-w-3xl space-y-6">
+      <Button variant="ghost" asChild>
+        <Link href="/tasks">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Tasks
+        </Link>
       </Button>
 
-      {/* Task Details */}
-      <TaskDetailView
-        task={task}
-        onStatusChange={handleStatusChange}
-        isUpdating={isUpdating}
-        canUpdateStatus={true}
-      />
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-3">
+            <CardTitle>{task.title}</CardTitle>
+            <Badge variant={statusVariant[task.status]}>{task.status}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {task.description || 'No description provided.'}
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 text-sm">
+            <p>
+              <span className="text-muted-foreground">Priority:</span> {task.priority}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Due Date:</span>{' '}
+              {task.due_date ? task.due_date.slice(0, 10) : '-'}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Assigned To:</span>{' '}
+              {task.assignee_name || '-'}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Assigned By:</span>{' '}
+              {task.assigner_name || '-'}
+            </p>
+          </div>
+
+          <div className="space-y-2 max-w-xs">
+            <Label>Update Status</Label>
+            <Select
+              value={task.status}
+              onValueChange={(value) =>
+                updateTask.mutate({
+                  status: value as 'pending' | 'in_progress' | 'completed' | 'cancelled',
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -30,11 +30,5 @@
     "sourceMap": true,
     "incremental": true
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".next",
-    "coverage",
-    "playwright-report"
-  ]
+  "exclude": ["node_modules", "dist", ".next", "coverage", "playwright-report"]
 }

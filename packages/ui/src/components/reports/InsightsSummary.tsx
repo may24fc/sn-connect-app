@@ -1,9 +1,9 @@
 'use client';
 
-import * as React from 'react';
-import { Lightbulb, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
+import { AlertCircle, CheckCircle2, Lightbulb, TrendingUp } from 'lucide-react';
+import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 
 export interface KeyFinding {
@@ -15,8 +15,8 @@ export interface KeyFinding {
 export interface InsightsSummaryProps {
   title: string;
   summary: string;
-  keyFindings: KeyFinding[];
-  recommendations?: string[];
+  keyFindings: Array<KeyFinding>;
+  recommendations?: Array<string>;
   className?: string;
 }
 
@@ -69,9 +69,7 @@ export function InsightsSummary({
           </div>
           <div className="flex-1 space-y-1">
             <CardTitle className="text-xl">{title}</CardTitle>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {summary}
-            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{summary}</p>
           </div>
         </div>
       </CardHeader>
@@ -123,9 +121,7 @@ export function InsightsSummary({
                         {finding.metric}
                       </Badge>
                     </div>
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {finding.insight}
-                    </p>
+                    <p className="text-sm text-foreground leading-relaxed">{finding.insight}</p>
                   </div>
                 </div>
               ))}
@@ -145,14 +141,8 @@ export function InsightsSummary({
 
             <ul className="space-y-2">
               {recommendations.map((recommendation, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 text-sm text-foreground"
-                >
-                  <span
-                    className="text-blue-600 font-bold mt-0.5 flex-shrink-0"
-                    aria-hidden="true"
-                  >
+                <li key={index} className="flex items-start gap-2 text-sm text-foreground">
+                  <span className="text-blue-600 font-bold mt-0.5 flex-shrink-0" aria-hidden="true">
                     →
                   </span>
                   <span className="leading-relaxed">{recommendation}</span>
@@ -184,9 +174,5 @@ export function InsightsSummaryList({
   children: React.ReactNode;
   className?: string;
 }): React.ReactElement {
-  return (
-    <div className={cn('space-y-4', className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn('space-y-4', className)}>{children}</div>;
 }

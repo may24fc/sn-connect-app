@@ -1,9 +1,9 @@
 'use client';
 
-import * as React from 'react';
-import { Loader2, Check } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { Check, Loader2 } from 'lucide-react';
+import type * as React from 'react';
 import type { FileStatus } from '../../types/ai-knowledge.types';
+import { cn } from '../../utils/cn';
 
 export interface UploadProgressProps {
   fileName: string;
@@ -11,7 +11,7 @@ export interface UploadProgressProps {
   className?: string;
 }
 
-const STAGES: { stage: FileStatus; label: string }[] = [
+const STAGES: Array<{ stage: FileStatus; label: string }> = [
   { stage: 'scanning', label: 'Scanning' },
   { stage: 'chunking', label: 'Chunking' },
   { stage: 'indexing', label: 'Indexing' },
@@ -26,7 +26,9 @@ export function UploadProgress({
   const currentStageIndex = STAGES.findIndex((s) => s.stage === currentStage);
 
   return (
-    <div className={cn('rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm', className)}>
+    <div
+      className={cn('rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm', className)}
+    >
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-foreground truncate pr-2">{fileName}</p>
         <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />

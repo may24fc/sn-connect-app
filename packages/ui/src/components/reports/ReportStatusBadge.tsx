@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
-import { FileText, CheckCircle2, Eye } from 'lucide-react';
+import { CheckCircle2, Eye, FileText } from 'lucide-react';
+import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
 import { cn } from '../../utils/cn';
 import type { ReportStatus } from './types';

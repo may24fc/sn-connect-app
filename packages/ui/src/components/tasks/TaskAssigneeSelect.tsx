@@ -1,19 +1,13 @@
 'use client';
 
+import { Loader2, Search, User, X } from 'lucide-react';
 import * as React from 'react';
-import { Search, X, User, Loader2 } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '../../primitives/card';
-import { Input } from '../../primitives/input';
-import { Button } from '../../primitives/button';
-import { Checkbox } from '../../primitives/checkbox';
-import { Badge } from '../../primitives/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
+import { Badge } from '../../primitives/badge';
+import { Button } from '../../primitives/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
+import { Checkbox } from '../../primitives/checkbox';
+import { Input } from '../../primitives/input';
 import { Label } from '../../primitives/label';
 import {
   Select,
@@ -22,13 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
-import { cn } from '../../utils/cn';
 import type { TaskAssignee } from '../../types/task.types';
+import { cn } from '../../utils/cn';
 
 export interface TaskAssigneeSelectProps {
-  selectedIds: string[];
-  onSelectionChange: (ids: string[]) => void;
-  employees: TaskAssignee[];
+  selectedIds: Array<string>;
+  onSelectionChange: (ids: Array<string>) => void;
+  employees: Array<TaskAssignee>;
   isLoading?: boolean;
   className?: string;
 }
@@ -60,8 +54,7 @@ export function TaskAssigneeSelect({
 
       const matchesRole = roleFilter === 'all' || emp.role === roleFilter;
 
-      const matchesDepartment =
-        departmentFilter === 'all' || emp.department === departmentFilter;
+      const matchesDepartment = departmentFilter === 'all' || emp.department === departmentFilter;
 
       return matchesSearch && matchesRole && matchesDepartment;
     });
@@ -95,9 +88,7 @@ export function TaskAssigneeSelect({
           <User className="h-5 w-5" />
           Assign To
         </CardTitle>
-        <CardDescription>
-          Select employees or interns to assign this task to
-        </CardDescription>
+        <CardDescription>Select employees or interns to assign this task to</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Search and Filters */}
@@ -120,7 +111,10 @@ export function TaskAssigneeSelect({
               <Label htmlFor="roleFilter" className="text-xs text-muted-foreground">
                 Role
               </Label>
-              <Select value={roleFilter} onValueChange={(value: 'all' | 'employee' | 'intern') => setRoleFilter(value)}>
+              <Select
+                value={roleFilter}
+                onValueChange={(value: 'all' | 'employee' | 'intern') => setRoleFilter(value)}
+              >
                 <SelectTrigger id="roleFilter">
                   <SelectValue />
                 </SelectTrigger>
@@ -157,9 +151,7 @@ export function TaskAssigneeSelect({
         {selectedEmployees.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">
-                Selected ({selectedEmployees.length})
-              </Label>
+              <Label className="text-sm font-medium">Selected ({selectedEmployees.length})</Label>
               <Button
                 variant="ghost"
                 size="sm"
@@ -171,11 +163,7 @@ export function TaskAssigneeSelect({
             </div>
             <div className="flex flex-wrap gap-2">
               {selectedEmployees.map((emp) => (
-                <Badge
-                  key={emp.id}
-                  variant="secondary"
-                  className="gap-1.5 pr-1 py-1"
-                >
+                <Badge key={emp.id} variant="secondary" className="gap-1.5 pr-1 py-1">
                   <span>{emp.name}</span>
                   <button
                     type="button"

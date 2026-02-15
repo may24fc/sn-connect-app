@@ -1,11 +1,11 @@
 'use client';
 
+import { FileUp, Upload } from 'lucide-react';
 import * as React from 'react';
-import { Upload, FileUp } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 export interface UploadZoneProps {
-  onFileSelect: (files: File[]) => void;
+  onFileSelect: (files: Array<File>) => void;
   disabled?: boolean;
   acceptedFileTypes?: string;
   className?: string;
@@ -79,7 +79,7 @@ export function UploadZone({
       className={cn(
         'relative rounded-xl border-2 border-dashed transition-all',
         isDragging && !disabled && 'border-primary bg-primary/5 scale-[1.02]',
-        !isDragging && !disabled && 'border-border/60 hover:border-primary/40 hover:bg-muted/20',
+        !(isDragging || disabled) && 'border-border/60 hover:border-primary/40 hover:bg-muted/20',
         disabled && 'border-muted bg-muted/30 cursor-not-allowed opacity-50',
         !disabled && 'cursor-pointer',
         className
@@ -103,7 +103,6 @@ export function UploadZone({
         onChange={handleFileInputChange}
         disabled={disabled}
         className="sr-only"
-        aria-hidden="true"
       />
 
       <div className="flex flex-col items-center justify-center px-6 py-4 gap-4">
@@ -116,11 +115,7 @@ export function UploadZone({
               : 'bg-muted/80 text-muted-foreground'
           )}
         >
-          {isDragging ? (
-            <FileUp className="h-4 w-4" />
-          ) : (
-            <Upload className="h-4 w-4" />
-          )}
+          {isDragging ? <FileUp className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
         </div>
 
         {/* Text Content */}
@@ -128,9 +123,7 @@ export function UploadZone({
           <p className="text-sm font-medium text-foreground">
             {isDragging ? 'Drop files to upload' : 'Drag & drop files here'}
           </p>
-          <p className="text-xs text-muted-foreground">
-            or click to browse from your computer
-          </p>
+          <p className="text-xs text-muted-foreground">or click to browse from your computer</p>
         </div>
 
         {/* Supported Formats */}

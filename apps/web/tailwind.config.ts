@@ -2,22 +2,19 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   darkMode: 'class',
-  content: [
-    './src/**/*.{js,ts,jsx,tsx,mdx}',
-    '../../packages/ui/src/**/*.{js,ts,jsx,tsx}',
-  ],
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}', '../../packages/ui/src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         // Sidebar - Light theme (White/Zinc)
         sidebar: {
           DEFAULT: '#FFFFFF',
-          foreground: '#18181B',      // Zinc 900
-          hover: '#F4F4F5',            // Zinc 100
-          accent: '#EEF2FF',           // Indigo 50
+          foreground: '#18181B', // Zinc 900
+          hover: '#F4F4F5', // Zinc 100
+          accent: '#EEF2FF', // Indigo 50
           'accent-foreground': '#4F46E5', // Indigo 600
-          muted: '#71717A',            // Zinc 500
-          border: '#E4E4E7',           // Zinc 200
+          muted: '#71717A', // Zinc 500
+          border: '#E4E4E7', // Zinc 200
         },
 
         // Primary - Indigo (NOT Blue)
@@ -82,11 +79,11 @@ const config: Config = {
       },
 
       fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.8125rem', { lineHeight: '1.25rem' }],     // 13px
-        'base': ['0.875rem', { lineHeight: '1.5rem' }],     // 14px (Dense)
-        'lg': ['1rem', { lineHeight: '1.5rem' }],           // 16px
-        'xl': ['1.125rem', { lineHeight: '1.75rem' }],
+        xs: ['0.75rem', { lineHeight: '1rem' }],
+        sm: ['0.8125rem', { lineHeight: '1.25rem' }], // 13px
+        base: ['0.875rem', { lineHeight: '1.5rem' }], // 14px (Dense)
+        lg: ['1rem', { lineHeight: '1.5rem' }], // 16px
+        xl: ['1.125rem', { lineHeight: '1.75rem' }],
         '2xl': ['1.25rem', { lineHeight: '1.75rem' }],
         '3xl': ['1.5rem', { lineHeight: '2rem' }],
         '4xl': ['1.875rem', { lineHeight: '2.25rem' }],
@@ -100,9 +97,9 @@ const config: Config = {
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
-        'sidebar': '16rem',
+        sidebar: '16rem',
         'sidebar-collapsed': '4rem',
-        'header': '4rem',
+        header: '4rem',
       },
 
       borderRadius: {
@@ -112,17 +109,17 @@ const config: Config = {
       },
 
       boxShadow: {
-        'card': '0 1px 2px 0 rgb(0 0 0 / 0.03)',
+        card: '0 1px 2px 0 rgb(0 0 0 / 0.03)',
         'card-hover': '0 2px 4px 0 rgb(0 0 0 / 0.05)',
-        'dropdown': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'sheet': '-4px 0 15px -3px rgb(0 0 0 / 0.1)',
+        dropdown: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        sheet: '-4px 0 15px -3px rgb(0 0 0 / 0.1)',
       },
 
       animation: {
         'fade-in': 'fade-in 0.15s ease-out',
         'slide-in': 'slide-in 0.2s ease-out',
         'slide-up': 'slide-up 0.2s ease-out',
-        'skeleton': 'skeleton 1.5s ease-in-out infinite',
+        skeleton: 'skeleton 1.5s ease-in-out infinite',
       },
 
       keyframes: {
@@ -138,7 +135,7 @@ const config: Config = {
           '0%': { transform: 'translateY(8px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
-        'skeleton': {
+        skeleton: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.5' },
         },

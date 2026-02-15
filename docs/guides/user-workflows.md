@@ -112,7 +112,6 @@ The dashboard serves as the central hub displaying personalized information.
    - Upload Files (links to `/files`)
    - Submit Report (links to `/reports/new`)
    - View Calendar (links to `/calendar`)
-   - Request Leave (links to `/leave`)
 
 4. **Onboarding Progress Card**
    - Visual progress bar with percentage
@@ -557,7 +556,6 @@ HR overview and quick actions hub.
 
 3. **Pending Approvals Card**
    - List of items requiring approval:
-     - Leave Requests
      - Performance Reviews
    - Priority indicators (urgent, high, medium)
    - Quick "Review" action buttons
@@ -572,7 +570,6 @@ HR overview and quick actions hub.
    - Timeline of recent HR actions:
      - New employee onboarded
      - Performance review completed
-     - Leave request approved
    - Timestamp for each activity
 
 6. **Quick Actions Card**
@@ -1030,7 +1027,6 @@ Click the floating chat button (message icon) in the bottom-left corner of any p
 ### Supported Topics
 
 The AI Assistant can help with:
-- Leave requests and balances
 - Document submissions (201 files)
 - Payroll and invoice questions
 - Onboarding tasks

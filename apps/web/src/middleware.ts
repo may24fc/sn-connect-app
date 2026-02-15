@@ -11,7 +11,7 @@ const publicPaths = new Set<string>([
 ]);
 
 const publicPrefixes = ['/api/auth'];
-const protectedPrefixes = ['/dashboard', '/admin', '/super-admin'];
+const protectedPrefixes = ['/dashboard', '/intern', '/admin', '/super-admin'];
 
 /**
  * Next.js Middleware for Supabase session refresh + route protection.
@@ -38,7 +38,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   const pathname = request.nextUrl.pathname;
-  const isPublicPath = publicPaths.has(pathname) || publicPrefixes.some((prefix) => pathname.startsWith(prefix));
+  const isPublicPath =
+    publicPaths.has(pathname) || publicPrefixes.some((prefix) => pathname.startsWith(prefix));
   const isProtectedPath = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
 
   if (isProtectedPath && !(data && (data as any).user)) {
@@ -51,6 +52,50 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  const onboardingExemptPaths = ['/onboarding/setup', '/onboarding/complete'];
+
+  const isOnboardingExempt =
+    onboardingExemptPaths.some((path) => pathname.startsWith(path)) ||
+    pathname.startsWith('/api/onboarding');
+
+  if (supabase && data && (data as any).user && !isOnboardingExempt) {
+    const authUser = (data as any).user as {
+      id: string;
+      app_metadata?: Record<string, unknown>;
+    };
+
+    let role: string | null = null;
+    if (typeof authUser.app_metadata?.db_role === 'string') {
+      role = authUser.app_metadata.db_role;
+    }
+
+    if (!role) {
+      const { data: roleData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', authUser.id)
+        .is('deleted_at', null)
+        .maybeSingle();
+      role = roleData?.role ?? null;
+    }
+
+    if (role === 'employee' || role === 'intern') {
+      const { data: onboardingProfile } = await supabase
+        .from('onboarding_profiles')
+        .select('is_completed')
+        .eq('user_id', authUser.id)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      const isOnboardingComplete = onboardingProfile?.is_completed ?? false;
+
+      if (!isOnboardingComplete) {
+        const redirectUrl = new URL('/onboarding/setup', request.url);
+        return NextResponse.redirect(redirectUrl);
+      }
+    }
   }
 
   if (!isPublicPath) {

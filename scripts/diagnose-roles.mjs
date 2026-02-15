@@ -29,12 +29,11 @@ const anon = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 async function main() {
   // 1. List all public.users via service role
-  const res1 = await fetch(url + '/rest/v1/users?select=id,role,status,deleted_at', {
-    headers: { apikey: srk, Authorization: 'Bearer ' + srk },
+  const res1 = await fetch(`${url}/rest/v1/users?select=id,role,status,deleted_at`, {
+    headers: { apikey: srk, Authorization: `Bearer ${srk}` },
   });
   const users = await res1.json();
-  console.log('=== public.users rows ===');
-  for (const u of users) console.log(JSON.stringify(u));
+  for (const _u of users) 
 
   // 2. For each sample account, sign in and query using the access token (like browser)
   const emails = [
@@ -43,13 +42,12 @@ async function main() {
     'admin@example.com',
     'super-admin@example.com',
   ];
-  console.log('\n=== Browser-equivalent role queries ===');
   for (const email of emails) {
-    const tokenRes = await fetch(url + '/auth/v1/token?grant_type=password', {
+    const tokenRes = await fetch(`${url}/auth/v1/token?grant_type=password`, {
       method: 'POST',
       headers: {
         apikey: anon,
-        Authorization: 'Bearer ' + anon,
+        Authorization: `Bearer ${anon}`,
         'Content-Type': 'application/json',
         'X-Supabase-Api-Version': '2024-01-01',
       },
@@ -57,7 +55,6 @@ async function main() {
     });
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok) {
-      console.log(email, 'LOGIN FAIL', tokenData.message);
       continue;
     }
     const accessToken = tokenData.access_token;
@@ -65,27 +62,25 @@ async function main() {
 
     // Query public.users using the access token (like the browser would)
     const roleRes = await fetch(
-      url + '/rest/v1/users?select=role&id=eq.' + uid,
+      `${url}/rest/v1/users?select=role&id=eq.${uid}`,
       {
-        headers: { apikey: anon, Authorization: 'Bearer ' + accessToken },
+        headers: { apikey: anon, Authorization: `Bearer ${accessToken}` },
       },
     );
-    const roleData = await roleRes.json();
-    console.log(email, '-> uid:', uid, 'query:', JSON.stringify(roleData));
+    const _roleData = await roleRes.json();
 
     // Also try maybeSingle equivalent
     const singleRes = await fetch(
-      url + '/rest/v1/users?select=role&id=eq.' + uid,
+      `${url}/rest/v1/users?select=role&id=eq.${uid}`,
       {
         headers: {
           apikey: anon,
-          Authorization: 'Bearer ' + accessToken,
+          Authorization: `Bearer ${accessToken}`,
           Accept: 'application/vnd.pgrst.object+json',
         },
       },
     );
-    const singleData = singleRes.ok ? await singleRes.json() : null;
-    console.log('  maybeSingle:', singleRes.status, JSON.stringify(singleData));
+    const _singleData = singleRes.ok ? await singleRes.json() : null;
   }
 }
 

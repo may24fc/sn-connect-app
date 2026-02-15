@@ -6,20 +6,16 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import {
-  brandEmployeeId,
-  brandUserId,
-  UserRole,
-} from './database.types';
+import { UserRole, brandEmployeeId, brandUserId } from './database.types';
 import type {
   Database,
+  DocumentType,
   Employee,
   EmployeeInsert,
   EmployeeUpdate,
-  User,
   EmploymentType,
+  User,
   WorkArrangement,
-  DocumentType,
 } from './database.types';
 
 // ============================================
@@ -92,9 +88,7 @@ async function createEmployee(employeeData: {
     work_arrangement: employeeData.workArrangement,
     position: employeeData.position,
     department: employeeData.department,
-    immediate_head: employeeData.immediateHead
-      ? brandUserId(employeeData.immediateHead)
-      : null,
+    immediate_head: employeeData.immediateHead ? brandUserId(employeeData.immediateHead) : null,
     birthday: null,
     probation_end_date: null,
     payroll_account_name: null,
@@ -112,11 +106,7 @@ async function createEmployee(employeeData: {
     deleted_at: null,
   };
 
-  const { data, error } = await supabase
-    .from('employees')
-    .insert(newEmployee)
-    .select()
-    .single();
+  const { data, error } = await supabase.from('employees').insert(newEmployee).select().single();
 
   if (error) {
     throw new Error(`Failed to create employee: ${error.message}`);
@@ -141,15 +131,11 @@ async function updateEmployeeContact(
 ) {
   const updateData: EmployeeUpdate = {
     ...(updates.phone !== undefined ? { phone: updates.phone } : {}),
-    ...(updates.personalEmail !== undefined
-      ? { personal_email: updates.personalEmail }
-      : {}),
+    ...(updates.personalEmail !== undefined ? { personal_email: updates.personalEmail } : {}),
     ...(updates.address !== undefined ? { address: updates.address } : {}),
     ...(updates.city !== undefined ? { city: updates.city } : {}),
     ...(updates.province !== undefined ? { province: updates.province } : {}),
-    ...(updates.postalCode !== undefined
-      ? { postal_code: updates.postalCode }
-      : {}),
+    ...(updates.postalCode !== undefined ? { postal_code: updates.postalCode } : {}),
   };
 
   const { data, error } = await supabase
@@ -304,12 +290,9 @@ async function checkProbationStatus(employeeId: string) {
  * Example 10: Calculate employee tenure
  */
 async function getEmployeeTenure(employeeId: string) {
-  const { data: tenureDays, error } = await supabase.rpc(
-    'calculate_tenure_days',
-    {
-      employee_id: brandEmployeeId(employeeId),
-    }
-  );
+  const { data: tenureDays, error } = await supabase.rpc('calculate_tenure_days', {
+    employee_id: brandEmployeeId(employeeId),
+  });
 
   if (error) {
     throw new Error(`Failed to calculate tenure: ${error.message}`);
@@ -322,9 +305,7 @@ async function getEmployeeTenure(employeeId: string) {
     days: tenureDays,
     years,
     months,
-    formatted: `${years} year${years !== 1 ? 's' : ''}, ${months} month${
-      months !== 1 ? 's' : ''
-    }`,
+    formatted: `${years} year${years !== 1 ? 's' : ''}, ${months} month${months !== 1 ? 's' : ''}`,
   };
 }
 
@@ -360,9 +341,7 @@ async function searchEmployees(searchTerm: string) {
   return data.map((emp) => ({
     id: brandEmployeeId(emp.id),
     employeeNumber: emp.employee_number,
-    fullName: `${emp.first_name} ${emp.middle_name || ''} ${
-      emp.last_name
-    }`.trim(),
+    fullName: `${emp.first_name} ${emp.middle_name || ''} ${emp.last_name}`.trim(),
     position: emp.position,
     department: emp.department,
   }));

@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import type * as React from 'react';
 
 interface StatCardProps {
   /** Label for the stat (e.g., "Total Employees") */
@@ -55,9 +55,7 @@ export function StatCard({
     >
       {/* Icon - positioned top-right, no background */}
       {icon && (
-        <div className="absolute top-4 right-4 text-zinc-400 dark:text-zinc-500">
-          {icon}
-        </div>
+        <div className="absolute top-4 right-4 text-zinc-400 dark:text-zinc-500">{icon}</div>
       )}
 
       <div className="space-y-1">
@@ -69,10 +67,12 @@ export function StatCard({
         </div>
 
         {/* Value */}
-        <div className={cn(
-          'font-bold text-zinc-900 dark:text-zinc-50 tabular-nums',
-          compact ? 'text-xl' : 'text-2xl'
-        )}>
+        <div
+          className={cn(
+            'font-bold text-zinc-900 dark:text-zinc-50 tabular-nums',
+            compact ? 'text-xl' : 'text-2xl'
+          )}
+        >
           {value}
         </div>
 
@@ -100,9 +100,16 @@ export function StatCard({
 function TrendIndicator({ direction }: { direction: 'up' | 'down' | 'stable' }): React.ReactNode {
   switch (direction) {
     case 'up':
-      return <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />;
+      return (
+        <TrendingUp
+          className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+          strokeWidth={1.5}
+        />
+      );
     case 'down':
-      return <TrendingDown className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" strokeWidth={1.5} />;
+      return (
+        <TrendingDown className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" strokeWidth={1.5} />
+      );
     case 'stable':
       return <Minus className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />;
   }
@@ -133,11 +140,7 @@ export function StatCardGrid({
 }: StatCardGridProps): React.ReactNode {
   return (
     <div
-      className={cn(
-        'grid grid-cols-1 sm:grid-cols-2 gap-4',
-        gridColumnClasses[columns],
-        className
-      )}
+      className={cn('grid grid-cols-1 sm:grid-cols-2 gap-4', gridColumnClasses[columns], className)}
     >
       {children}
     </div>

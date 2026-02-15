@@ -80,8 +80,7 @@ async function fetchJson(url, options) {
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
   if (!response.ok) {
-    const message =
-      data?.message || data?.msg || data?.error_description || response.statusText;
+    const message = data?.message || data?.msg || data?.error_description || response.statusText;
     const error = new Error(message);
     error.status = response.status;
     error.payload = data;
@@ -136,9 +135,7 @@ async function createUserWithIdentity(baseUrl, headers, { email, password, fullN
       }),
     });
     user = linkRes; // generate_link returns the user object directly
-  } catch (err) {
-    // If generate_link fails (e.g. user already exists), fall back
-    console.log(`  generate_link failed (${err.message}), trying admin create…`);
+  } catch (_err) {
     const createUrl = new URL('/auth/v1/admin/users', baseUrl);
     user = await fetchJson(createUrl.toString(), {
       method: 'POST',
@@ -193,7 +190,6 @@ async function upsertPublicUser(baseUrl, headers, payload) {
 
 async function validatePasswordLogin(baseUrl, anonKey, email, password) {
   if (!anonKey) {
-    console.log(`  ⏭  Skipped login check (missing anon key)`);
     return;
   }
 
@@ -218,12 +214,10 @@ async function validatePasswordLogin(baseUrl, anonKey, email, password) {
         gotrue_meta_security: {},
       }),
     });
-    console.log(`  ✅ Login verified (browser-equivalent headers)`);
   } catch (error) {
     const reason = error?.message || 'Unknown error';
     throw new Error(
-      `Login check FAILED for ${email}: ${reason}\n` +
-        `  This means the browser will also fail. Check auth.identities.`,
+      `Login check FAILED for ${email}: ${reason}\n  This means the browser will also fail. Check auth.identities.`
     );
   }
 }
@@ -240,7 +234,7 @@ async function main() {
   const password = env.SAMPLE_USER_PASSWORD || DEFAULT_PASSWORD;
   const domain = env.SAMPLE_USER_DOMAIN || DEFAULT_DOMAIN;
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!(supabaseUrl && serviceRoleKey)) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY.');
   }
 
@@ -250,21 +244,13 @@ async function main() {
     Authorization: `Bearer ${serviceRoleKey}`,
   };
 
-  console.log('Supabase URL :', baseUrl);
-  console.log('Service key  :', redact(serviceRoleKey));
-  console.log('Password     :', password === DEFAULT_PASSWORD ? DEFAULT_PASSWORD : '[custom]');
-  console.log('Domain       :', domain);
-  console.log('');
-
   for (const user of sampleUsers) {
     const email = `${user.emailLocalPart}@${domain}`;
-    console.log(`▸ ${email} (role: ${user.role})`);
 
     // Delete any existing user so we get a clean slate
     const existing = await getAuthUserByEmail(baseUrl, adminHeaders, email);
     if (existing) {
       await deleteAuthUser(baseUrl, adminHeaders, existing.id);
-      console.log('  Deleted existing auth user');
       // Small delay so GoTrue fully removes the row
       await new Promise((r) => setTimeout(r, 500));
     }
@@ -279,13 +265,10 @@ async function main() {
 
     const identities = created?.identities || [];
     const hasEmail = identities.some((i) => i.provider === 'email');
-    console.log(
-      `  Created auth user (id: ${created.id}, identities: ${identities.length}, email-identity: ${hasEmail})`,
-    );
 
     if (!hasEmail) {
       console.warn(
-        `  ⚠  No email identity found – login may fail. Will attempt generate_link fix…`,
+        '  ⚠  No email identity found – login may fail. Will attempt generate_link fix…'
       );
       // Try generate_link as a last-resort fix
       const linkUrl = new URL('/auth/v1/admin/generate_link', baseUrl);
@@ -295,7 +278,6 @@ async function main() {
           headers: { ...adminHeaders, 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'signup', email, password }),
         });
-        console.log('  Applied generate_link fix');
       } catch (e) {
         console.warn(`  generate_link fix failed: ${e.message}`);
       }
@@ -307,18 +289,11 @@ async function main() {
       role: user.role,
       status: 'active',
     });
-    console.log(`  Upserted public.users (role: ${user.role})`);
 
     // Validate login using browser-equivalent headers
     await validatePasswordLogin(baseUrl, anonKey, email, password);
-    console.log('');
   }
-
-  console.log('✅ All sample accounts created and verified.');
-  console.log('');
-  console.log('Credentials:');
-  for (const user of sampleUsers) {
-    console.log(`  ${user.emailLocalPart}@${domain} / ${password}  (${user.role})`);
+  for (const _user of sampleUsers) {
   }
 }
 

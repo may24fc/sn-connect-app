@@ -4,7 +4,10 @@ const authEmail = process.env.E2E_AUTH_EMAIL;
 const authPassword = process.env.E2E_AUTH_PASSWORD;
 
 test.describe('Authentication', () => {
-  test.skip(!authEmail || !authPassword, 'Set E2E_AUTH_EMAIL and E2E_AUTH_PASSWORD to run auth tests.');
+  test.skip(
+    !(authEmail && authPassword),
+    'Set E2E_AUTH_EMAIL and E2E_AUTH_PASSWORD to run auth tests.'
+  );
 
   test('login success', async ({ page }) => {
     await page.goto('/login');

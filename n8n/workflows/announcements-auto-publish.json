@@ -1,0 +1,98 @@
+{
+  "name": "Announcements Auto Publish",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "Cron_Trigger",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 280]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE public.announcements SET status = 'published', read_count = 0 WHERE status = 'scheduled' AND published_at <= now() AND deleted_at IS NULL RETURNING id, title;"
+      },
+      "id": "Publish_Scheduled",
+      "name": "Publish Scheduled Announcements",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [500, 280],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((i) => i.json);\nreturn [{ json: { count: rows.length, rows } }];"
+      },
+      "id": "Summarize",
+      "name": "Summarize Updates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 280]
+    },
+    {
+      "parameters": {
+        "subject": "Announcements Auto Publish Report",
+        "message": "Published {{$json.count}} announcements."
+      },
+      "id": "Notify_Email",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1020, 280]
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Publish Scheduled Announcements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Scheduled Announcements": {
+      "main": [
+        [
+          {
+            "node": "Summarize Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Updates": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}

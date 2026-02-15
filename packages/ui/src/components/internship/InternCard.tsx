@@ -1,21 +1,31 @@
 'use client';
 
-import * as React from 'react';
-import { GraduationCap, Building2, User, Calendar, ChevronRight, MoreVertical, FileText, Eye, Mail } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
-import { Avatar, AvatarImage, AvatarFallback } from '../../primitives/avatar';
+import {
+  Building2,
+  Calendar,
+  ChevronRight,
+  Eye,
+  FileText,
+  GraduationCap,
+  Mail,
+  MoreVertical,
+  User,
+} from 'lucide-react';
+import type * as React from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Button } from '../../primitives/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../../primitives/dropdown-menu';
-import { InternshipStatusBadge } from './InternStatusBadge';
-import { HoursProgressMini } from './HoursProgressCard';
-import { cn } from '../../utils/cn';
 import type { InternSummary } from '../../types/internship.types';
 import { getDaysRemaining } from '../../types/internship.types';
+import { cn } from '../../utils/cn';
+import { HoursProgressMini } from './HoursProgressCard';
+import { InternshipStatusBadge } from './InternStatusBadge';
 
 interface InternCardProps {
   intern: InternSummary;
@@ -50,9 +60,7 @@ export function InternCard({
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
               {intern.avatarUrl && <AvatarImage src={intern.avatarUrl} />}
-              <AvatarFallback className="text-sm">
-                {getInitials(intern.name)}
-              </AvatarFallback>
+              <AvatarFallback className="text-sm">{getInitials(intern.name)}</AvatarFallback>
             </Avatar>
             <div>
               <CardTitle className="text-base">{intern.name}</CardTitle>
@@ -123,23 +131,15 @@ export function InternCard({
         {/* Last Report */}
         {intern.lastReportDate && (
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
-            <span>
-              Last report: {new Date(intern.lastReportDate).toLocaleDateString()}
-            </span>
+            <span>Last report: {new Date(intern.lastReportDate).toLocaleDateString()}</span>
             {intern.pendingReports > 0 && (
-              <span className="text-warning">
-                {intern.pendingReports} pending review
-              </span>
+              <span className="text-warning">{intern.pendingReports} pending review</span>
             )}
           </div>
         )}
 
         {onView && (
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => onView(intern)}
-          >
+          <Button variant="outline" className="w-full" onClick={() => onView(intern)}>
             View Profile
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
@@ -150,7 +150,7 @@ export function InternCard({
 }
 
 interface InternListProps {
-  interns: InternSummary[];
+  interns: Array<InternSummary>;
   onView?: (intern: InternSummary) => void;
   onViewReports?: (intern: InternSummary) => void;
   onContact?: (intern: InternSummary) => void;
@@ -182,9 +182,7 @@ export function InternList({
   return (
     <div
       className={cn(
-        layout === 'grid'
-          ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
-          : 'space-y-4',
+        layout === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-4',
         className
       )}
     >
@@ -207,11 +205,7 @@ interface InternRowProps {
   className?: string;
 }
 
-export function InternRow({
-  intern,
-  onView,
-  className,
-}: InternRowProps): React.ReactNode {
+export function InternRow({ intern, onView, className }: InternRowProps): React.ReactNode {
   const daysRemaining = getDaysRemaining(intern.endDate);
 
   return (
@@ -228,9 +222,7 @@ export function InternRow({
       <div className="flex items-center gap-4">
         <Avatar className="h-10 w-10">
           {intern.avatarUrl && <AvatarImage src={intern.avatarUrl} />}
-          <AvatarFallback className="text-xs">
-            {getInitials(intern.name)}
-          </AvatarFallback>
+          <AvatarFallback className="text-xs">{getInitials(intern.name)}</AvatarFallback>
         </Avatar>
         <div>
           <p className="font-medium">{intern.name}</p>

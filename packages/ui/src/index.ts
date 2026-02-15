@@ -311,6 +311,28 @@ export {
   formatDueDate,
 } from './types/task.types';
 
+// Announcements Components
+export {
+  AnnouncementCard,
+  AnnouncementFilters,
+  AnnouncementEditor,
+  TargetingSelector,
+  AnnouncementPreview,
+  AttachmentUploader,
+  AnnouncementAnalytics,
+} from './components/announcements';
+export type {
+  AnnouncementCardProps,
+  AnnouncementFiltersProps,
+  AnnouncementFiltersValue,
+  AnnouncementEditorProps,
+  TargetingSelectorProps,
+  TargetingSelectorValue,
+  AnnouncementPreviewProps,
+  AttachmentUploaderProps,
+  AnnouncementAnalyticsProps,
+} from './components/announcements';
+
 export type {
   FileStatus,
   AccessLevel,

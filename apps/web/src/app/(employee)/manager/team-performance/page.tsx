@@ -52,7 +52,7 @@ const mockTeamMembers: Array<EmployeePerformanceSummary> = [
     position: 'Senior Developer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-        currentCycle: {
+    currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',
@@ -76,7 +76,7 @@ const mockTeamMembers: Array<EmployeePerformanceSummary> = [
     position: 'Developer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-        currentCycle: {
+    currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',
@@ -88,7 +88,7 @@ const mockTeamMembers: Array<EmployeePerformanceSummary> = [
     okrProgress: 65,
     kpiProgress: 78,
     reviewStatus: 'pending_self',
-        okrCount: 2,
+    okrCount: 2,
     kpiCount: 4,
   },
   {
@@ -99,7 +99,7 @@ const mockTeamMembers: Array<EmployeePerformanceSummary> = [
     position: 'Junior Developer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-        currentCycle: {
+    currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',
@@ -111,7 +111,7 @@ const mockTeamMembers: Array<EmployeePerformanceSummary> = [
     okrProgress: 45,
     kpiProgress: 55,
     reviewStatus: 'pending_self',
-        okrCount: 2,
+    okrCount: 2,
     kpiCount: 3,
   },
   {
@@ -122,7 +122,7 @@ const mockTeamMembers: Array<EmployeePerformanceSummary> = [
     position: 'QA Engineer',
     manager: 'You',
     managerId: 'mgr-1' as EmployeeId,
-        currentCycle: {
+    currentCycle: {
       id: 'cycle-2024-q1' as CycleId,
       name: 'Q1 2024',
       startDate: '2024-01-01',

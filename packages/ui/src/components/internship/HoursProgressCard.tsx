@@ -1,12 +1,12 @@
 'use client';
 
-import * as React from 'react';
-import { Clock, Target, TrendingUp, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../primitives/card';
-import { Progress } from '../../primitives/progress';
+import { Calendar, Clock, Target, TrendingUp } from 'lucide-react';
+import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
-import { cn } from '../../utils/cn';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
+import { Progress } from '../../primitives/progress';
 import { calculateHoursProgress, getDaysRemaining, isOnTrack } from '../../types/internship.types';
+import { cn } from '../../utils/cn';
 
 interface HoursProgressCardProps {
   completedHours: number;
@@ -30,11 +30,7 @@ export function HoursProgressCard({
   const onTrack = isOnTrack(completedHours, requiredHours, startDate, endDate);
   const remainingHours = Math.max(0, requiredHours - completedHours);
 
-  const progressColor = progress >= 100
-    ? 'bg-success'
-    : onTrack
-    ? 'bg-primary'
-    : 'bg-warning';
+  const progressColor = progress >= 100 ? 'bg-success' : onTrack ? 'bg-primary' : 'bg-warning';
 
   return (
     <Card className={cn('overflow-hidden', className)}>
@@ -61,14 +57,8 @@ export function HoursProgressCard({
             <span className="text-3xl font-bold">{completedHours}</span>
             <span className="text-muted-foreground">/ {requiredHours} hours</span>
           </div>
-          <Progress
-            value={progress}
-            className="h-4"
-            indicatorClassName={progressColor}
-          />
-          <p className="text-sm text-muted-foreground text-right">
-            {progress}% complete
-          </p>
+          <Progress value={progress} className="h-4" indicatorClassName={progressColor} />
+          <p className="text-sm text-muted-foreground text-right">{progress}% complete</p>
         </div>
 
         {showDetails && (
@@ -92,7 +82,7 @@ export function HoursProgressCard({
                 <TrendingUp className="h-4 w-4" />
               </div>
               <p className="text-lg font-semibold">
-                {daysRemaining > 0 ? Math.ceil(remainingHours / daysRemaining * 5) : 0}
+                {daysRemaining > 0 ? Math.ceil((remainingHours / daysRemaining) * 5) : 0}
               </p>
               <p className="text-xs text-muted-foreground">Hrs/Week Needed</p>
             </div>
@@ -121,28 +111,19 @@ export function HoursProgressMini({
   const progress = calculateHoursProgress(completedHours, requiredHours);
   const onTrack = isOnTrack(completedHours, requiredHours, startDate, endDate);
 
-  const progressColor = progress >= 100
-    ? 'bg-success'
-    : onTrack
-    ? 'bg-primary'
-    : 'bg-warning';
+  const progressColor = progress >= 100 ? 'bg-success' : onTrack ? 'bg-primary' : 'bg-warning';
 
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">{completedHours} / {requiredHours} hrs</span>
-        <span className={cn(
-          'text-xs',
-          onTrack ? 'text-success' : 'text-warning'
-        )}>
+        <span className="font-medium">
+          {completedHours} / {requiredHours} hrs
+        </span>
+        <span className={cn('text-xs', onTrack ? 'text-success' : 'text-warning')}>
           {progress}%
         </span>
       </div>
-      <Progress
-        value={progress}
-        className="h-2"
-        indicatorClassName={progressColor}
-      />
+      <Progress value={progress} className="h-2" indicatorClassName={progressColor} />
     </div>
   );
 }

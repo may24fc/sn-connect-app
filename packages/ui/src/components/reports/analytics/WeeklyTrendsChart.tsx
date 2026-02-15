@@ -1,15 +1,15 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
 import {
   Card,
@@ -27,14 +27,11 @@ interface TrendData {
 }
 
 interface WeeklyTrendsChartProps {
-  data: TrendData[];
+  data: Array<TrendData>;
   className?: string;
 }
 
-export function WeeklyTrendsChart({
-  data,
-  className,
-}: WeeklyTrendsChartProps): React.ReactNode {
+export function WeeklyTrendsChart({ data, className }: WeeklyTrendsChartProps): React.ReactNode {
   const CustomTooltip = ({ active, payload, label }: any): React.ReactNode => {
     if (active && payload && payload.length) {
       return (
@@ -42,7 +39,8 @@ export function WeeklyTrendsChart({
           <p className="font-semibold mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: {entry.name === 'Average ROI' ? `${entry.value.toFixed(1)}%` : entry.value}
+              {entry.name}:{' '}
+              {entry.name === 'Average ROI' ? `${entry.value.toFixed(1)}%` : entry.value}
             </p>
           ))}
         </div>
@@ -59,10 +57,7 @@ export function WeeklyTrendsChart({
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
-          <LineChart
-            data={data}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
+          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
               dataKey="week"
@@ -82,10 +77,7 @@ export function WeeklyTrendsChart({
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend
-              wrapperStyle={{ paddingTop: '20px' }}
-              iconType="line"
-            />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="line" />
             <Line
               yAxisId="left"
               type="monotone"

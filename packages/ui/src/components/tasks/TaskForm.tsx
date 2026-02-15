@@ -1,25 +1,17 @@
 'use client';
 
+import { AlertCircle, Calendar, ClipboardList, FileText, Loader2, Tag } from 'lucide-react';
 import * as React from 'react';
-import {
-  ClipboardList,
-  Calendar,
-  AlertCircle,
-  Loader2,
-  Tag,
-  FileText,
-} from 'lucide-react';
+import { Button } from '../../primitives/button';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from '../../primitives/card';
-import { Button } from '../../primitives/button';
 import { Input } from '../../primitives/input';
-import { Textarea } from '../../primitives/textarea';
 import { Label } from '../../primitives/label';
 import {
   Select,
@@ -28,13 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
-import { TaskAssigneeSelect } from './TaskAssigneeSelect';
+import { Textarea } from '../../primitives/textarea';
+import type { TaskAssignee, TaskFormData, TaskPriority } from '../../types/task.types';
 import { cn } from '../../utils/cn';
-import type { TaskFormData, TaskAssignee, TaskPriority } from '../../types/task.types';
+import { TaskAssigneeSelect } from './TaskAssigneeSelect';
 
 export interface TaskFormProps {
   onSubmit: (data: TaskFormData) => Promise<void>;
-  employees: TaskAssignee[];
+  employees: Array<TaskAssignee>;
   isSubmitting?: boolean;
   initialData?: Partial<TaskFormData>;
   mode?: 'create' | 'edit';
@@ -111,7 +104,7 @@ export function TaskForm({
 
   const handleChange = (
     field: keyof TaskFormData,
-    value: string | string[] | TaskPriority
+    value: string | Array<string> | TaskPriority
   ): void => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
@@ -143,9 +136,7 @@ export function TaskForm({
             <ClipboardList className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle>
-              {mode === 'create' ? 'Create New Task' : 'Edit Task'}
-            </CardTitle>
+            <CardTitle>{mode === 'create' ? 'Create New Task' : 'Edit Task'}</CardTitle>
             <CardDescription>
               {mode === 'create'
                 ? 'Assign tasks to team members with clear priorities and deadlines'
@@ -287,12 +278,7 @@ export function TaskForm({
         </CardContent>
 
         <CardFooter className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleReset}
-            disabled={isSubmitting}
-          >
+          <Button type="button" variant="outline" onClick={handleReset} disabled={isSubmitting}>
             Clear
           </Button>
           <Button type="submit" disabled={isSubmitting}>

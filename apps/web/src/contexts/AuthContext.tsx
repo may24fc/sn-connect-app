@@ -16,6 +16,7 @@ export interface User {
   email: string;
   role: UserRoleType;
   avatarUrl?: string;
+  isOnboardingComplete?: boolean;
 }
 
 interface AuthContextValue {
@@ -28,7 +29,8 @@ interface AuthContextValue {
 
 type RoleMappingMode = 'option-a' | 'option-b';
 
-const ROLE_MAPPING_MODE = (process.env.NEXT_PUBLIC_ROLE_MAPPING_MODE ?? 'option-a') as RoleMappingMode;
+const ROLE_MAPPING_MODE = (process.env.NEXT_PUBLIC_ROLE_MAPPING_MODE ??
+  'option-a') as RoleMappingMode;
 
 const optionARoleMap: Record<DbUserRole, UserRoleType> = {
   [UserRole.Admin]: 'admin',
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           name: 'John Doe',
           email: 'employee@test.com',
           role: 'employee',
+          isOnboardingComplete: true,
         },
       },
       'intern@test.com': {
@@ -86,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           name: 'Jane Smith',
           email: 'intern@test.com',
           role: 'intern',
+          isOnboardingComplete: true,
         },
       },
       'admin@test.com': {
@@ -95,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           name: 'Admin User',
           email: 'admin@test.com',
           role: 'admin',
+          isOnboardingComplete: true,
         },
       },
       'superadmin@test.com': {
@@ -104,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           name: 'Super Admin',
           email: 'superadmin@test.com',
           role: 'super_admin',
+          isOnboardingComplete: true,
         },
       },
     }),
@@ -111,11 +117,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   );
 
   const buildUserFromSession = React.useCallback(
-    async (authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> } | null): Promise<User | null> => {
+    async (
+      authUser: {
+        id: string;
+        email?: string | null;
+        user_metadata?: Record<string, unknown>;
+        app_metadata?: Record<string, unknown>;
+      } | null
+    ): Promise<User | null> => {
       if (!authUser) {
         return null;
       }
-
 
       // If mock auth is enabled (or supabase client missing), use mock mapping
       if (useMock) {
@@ -155,18 +167,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           ? authUser.user_metadata.full_name
           : typeof authUser.user_metadata?.name === 'string'
             ? authUser.user_metadata.name
-            : authUser.email ?? 'User';
+            : (authUser.email ?? 'User');
 
       const avatarUrlFromMetadata =
         typeof authUser.user_metadata?.avatar_url === 'string'
           ? authUser.user_metadata.avatar_url
           : undefined;
 
+      const resolvedRole = resolveUiRole(dbRole);
+
+      let isOnboardingComplete = true;
+      if (resolvedRole === 'employee' || resolvedRole === 'intern') {
+        const { data: onboardingData } = await supabase
+          .from('onboarding_profiles')
+          .select('is_completed')
+          .eq('user_id', authUser.id)
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        isOnboardingComplete = onboardingData?.is_completed ?? false;
+      }
+
       return {
         id: authUser.id,
         name: nameFromMetadata,
         email: authUser.email ?? '',
-        role: resolveUiRole(dbRole),
+        role: resolvedRole,
+        isOnboardingComplete,
         ...(avatarUrlFromMetadata ? { avatarUrl: avatarUrlFromMetadata } : {}),
       } satisfies User;
     },
@@ -174,7 +201,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   );
 
   const syncAuthState = React.useCallback(
-    async (authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> } | null): Promise<User | null> => {
+    async (
+      authUser: {
+        id: string;
+        email?: string | null;
+        user_metadata?: Record<string, unknown>;
+        app_metadata?: Record<string, unknown>;
+      } | null
+    ): Promise<User | null> => {
       const nextUser = await buildUserFromSession(authUser);
       setUser(nextUser);
       return nextUser;
@@ -219,9 +253,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
     let subscription: { subscription: { unsubscribe: () => void } } | null = null;
     if (!useMock) {
-      const result = supabase!.auth.onAuthStateChange(async (_event: string, session: { user?: { id: string; email?: string | null; user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> } } | null) => {
-        await syncAuthState(session?.user ?? null);
-      });
+      const result = supabase?.auth.onAuthStateChange(
+        async (
+          _event: string,
+          session: {
+            user?: {
+              id: string;
+              email?: string | null;
+              user_metadata?: Record<string, unknown>;
+              app_metadata?: Record<string, unknown>;
+            };
+          } | null
+        ) => {
+          await syncAuthState(session?.user ?? null);
+        }
+      );
       subscription = result.data;
     }
 
@@ -258,10 +304,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         setIsLoading(false);
         switch (mock.user.role) {
           case 'employee':
-            router.push('/dashboard');
+            router.push(mock.user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
             break;
           case 'intern':
-            router.push('/intern/dashboard');
+            router.push(mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
             break;
           case 'admin':
             router.push('/admin/dashboard');
@@ -294,10 +340,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
       switch (nextUser.role) {
         case 'employee':
-          router.push('/dashboard');
+          router.push(nextUser.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
           break;
         case 'intern':
-          router.push('/intern/dashboard');
+          router.push(nextUser.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
           break;
         case 'admin':
           router.push('/admin/dashboard');

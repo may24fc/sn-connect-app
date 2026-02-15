@@ -1,21 +1,21 @@
 'use client';
 
-import * as React from 'react';
 import {
-  MessageCircle,
-  X,
-  Send,
-  Minimize2,
-  Maximize2,
   Bot,
-  User,
   Loader2,
+  Maximize2,
+  MessageCircle,
+  Minimize2,
+  Send,
   Sparkles,
+  User,
+  X,
 } from 'lucide-react';
-import { cn } from '../utils/cn';
+import * as React from 'react';
+import { Avatar, AvatarFallback } from '../primitives/avatar';
 import { Button } from '../primitives/button';
 import { Input } from '../primitives/input';
-import { Avatar, AvatarFallback } from '../primitives/avatar';
+import { cn } from '../utils/cn';
 
 export interface ChatMessage {
   id: string;
@@ -49,7 +49,7 @@ export function AIChatbot({
 }: AIChatbotProps): React.ReactNode {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isExpanded, setIsExpanded] = React.useState(false);
-  const [messages, setMessages] = React.useState<ChatMessage[]>([
+  const [messages, setMessages] = React.useState<Array<ChatMessage>>([
     {
       id: '1',
       role: 'assistant',
@@ -109,7 +109,7 @@ export function AIChatbot({
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
+    } catch (_error) {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -145,9 +145,7 @@ export function AIChatbot({
         <div
           className={cn(
             'mb-4 flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg transition-all duration-300',
-            isExpanded
-              ? 'h-[600px] w-[450px]'
-              : 'h-[500px] w-[380px]'
+            isExpanded ? 'h-[600px] w-[450px]' : 'h-[500px] w-[380px]'
           )}
         >
           {/* Header */}
@@ -222,9 +220,7 @@ export function AIChatbot({
                   <p
                     className={cn(
                       'mt-1 text-xs',
-                      message.role === 'user'
-                        ? 'text-white/70'
-                        : 'text-zinc-500 dark:text-zinc-400'
+                      message.role === 'user' ? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'
                     )}
                   >
                     {formatTime(message.timestamp)}
@@ -242,9 +238,7 @@ export function AIChatbot({
                 </Avatar>
                 <div className="flex items-center gap-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 px-4 py-3">
                   <Loader2 className="h-4 w-4 animate-spin text-zinc-400" strokeWidth={1.5} />
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                    Thinking...
-                  </span>
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Thinking...</span>
                 </div>
               </div>
             )}
@@ -323,7 +317,11 @@ Would you like me to help you with a specific leave request?`;
 Is there a specific document you need help with?`;
   }
 
-  if (lowerMessage.includes('payroll') || lowerMessage.includes('salary') || lowerMessage.includes('invoice')) {
+  if (
+    lowerMessage.includes('payroll') ||
+    lowerMessage.includes('salary') ||
+    lowerMessage.includes('invoice')
+  ) {
     return `For payroll-related queries:
 
 - Submit invoices through the Payroll section

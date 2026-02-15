@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@/lib/utils';
+import * as React from 'react';
 
 interface SkeletonTableProps {
   /** Number of columns */
@@ -156,11 +156,7 @@ export function SkeletonList({
   return (
     <div className={cn('space-y-2', className)}>
       {Array.from({ length: count }).map((_, i) => (
-        <SkeletonListItem
-          key={i}
-          hasAvatar={hasAvatar}
-          hasAction={hasAction}
-        />
+        <SkeletonListItem key={i} hasAvatar={hasAvatar} hasAction={hasAction} />
       ))}
     </div>
   );

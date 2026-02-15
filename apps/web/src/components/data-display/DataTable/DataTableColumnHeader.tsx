@@ -25,7 +25,12 @@ export function DataTableColumnHeader({
 }: DataTableColumnHeaderProps): ReactNode {
   if (!column.getCanSort()) {
     return (
-      <span className={cn('text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400', className)}>
+      <span
+        className={cn(
+          'text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400',
+          className
+        )}
+      >
         {title}
       </span>
     );

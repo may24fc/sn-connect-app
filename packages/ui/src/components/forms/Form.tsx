@@ -1,9 +1,9 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 import {
-  FormProvider,
   type FieldValues,
+  FormProvider,
   type SubmitHandler,
   type UseFormReturn,
 } from 'react-hook-form';
@@ -23,11 +23,7 @@ export const Form = <TFieldValues extends FieldValues>({
   ...props
 }: FormProps<TFieldValues>) => (
   <FormProvider {...form}>
-    <form
-      className={cn('space-y-6', className)}
-      onSubmit={form.handleSubmit(onSubmit)}
-      {...props}
-    >
+    <form className={cn('space-y-6', className)} onSubmit={form.handleSubmit(onSubmit)} {...props}>
       {children}
     </form>
   </FormProvider>

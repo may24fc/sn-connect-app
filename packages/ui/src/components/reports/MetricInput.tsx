@@ -1,9 +1,9 @@
 'use client';
 
-import * as React from 'react';
-import { X, Plus } from 'lucide-react';
-import { Input } from '../../primitives/input';
+import { Plus, X } from 'lucide-react';
+import type * as React from 'react';
 import { Button } from '../../primitives/button';
+import { Input } from '../../primitives/input';
 import {
   Select,
   SelectContent,
@@ -12,14 +12,14 @@ import {
   SelectValue,
 } from '../../primitives/select';
 import { cn } from '../../utils/cn';
-import type { ReportMetric, MetricType } from './types';
+import type { MetricType, ReportMetric } from './types';
 
 interface MetricInputProps {
   metric: ReportMetric;
   onChange: (metric: ReportMetric) => void;
   onRemove: () => void;
   className?: string;
-  categories?: string[];
+  categories?: Array<string>;
 }
 
 export function MetricInput({
@@ -63,10 +63,7 @@ export function MetricInput({
         </Select>
 
         <div className="flex gap-2 col-span-1 md:col-span-2">
-          <Select
-            value={metric.unit}
-            onValueChange={(value) => handleFieldChange('unit', value)}
-          >
+          <Select value={metric.unit} onValueChange={(value) => handleFieldChange('unit', value)}>
             <SelectTrigger className="w-[100px]">
               <SelectValue placeholder="Unit" />
             </SelectTrigger>
@@ -82,7 +79,7 @@ export function MetricInput({
             type="number"
             placeholder="0"
             value={metric.value || ''}
-            onChange={(e) => handleFieldChange('value', parseFloat(e.target.value) || 0)}
+            onChange={(e) => handleFieldChange('value', Number.parseFloat(e.target.value) || 0)}
             className="flex-1"
           />
         </div>
@@ -102,12 +99,12 @@ export function MetricInput({
 }
 
 interface MetricInputGroupProps {
-  metrics: ReportMetric[];
-  onChange: (metrics: ReportMetric[]) => void;
+  metrics: Array<ReportMetric>;
+  onChange: (metrics: Array<ReportMetric>) => void;
   type: MetricType;
   title: string;
   className?: string;
-  categories?: string[];
+  categories?: Array<string>;
 }
 
 export function MetricInputGroup({

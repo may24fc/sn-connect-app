@@ -1,15 +1,15 @@
 'use client';
 
-import * as React from 'react';
+import type * as React from 'react';
 import {
-  BarChart,
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
   Legend,
   ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import {
   Card,
@@ -27,7 +27,7 @@ interface WeeklyData {
 }
 
 interface ExpenditureVsResultsChartProps {
-  data: WeeklyData[];
+  data: Array<WeeklyData>;
   className?: string;
 }
 
@@ -63,10 +63,7 @@ export function ExpenditureVsResultsChart({
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
-          <BarChart
-            data={data}
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-          >
+          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
               dataKey="week"
@@ -79,22 +76,14 @@ export function ExpenditureVsResultsChart({
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend
-              wrapperStyle={{ paddingTop: '20px' }}
-              iconType="rect"
-            />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="rect" />
             <Bar
               dataKey="expenditure"
               name="Expenditure"
               fill="hsl(24 95% 53%)"
               radius={[4, 4, 0, 0]}
             />
-            <Bar
-              dataKey="results"
-              name="Results"
-              fill="hsl(142 71% 45%)"
-              radius={[4, 4, 0, 0]}
-            />
+            <Bar dataKey="results" name="Results" fill="hsl(142 71% 45%)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

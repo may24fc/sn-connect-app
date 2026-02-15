@@ -18,18 +18,9 @@ export const FormTextarea = <TFieldValues extends FieldValues>({
   required,
   ...props
 }: FormTextareaProps<TFieldValues>) => (
-  <FormField
-    name={name}
-    label={label}
-    description={description}
-    required={required}
-  >
+  <FormField name={name} label={label} description={description} required={required}>
     {({ field, fieldState }) => (
-      <Textarea
-        {...props}
-        {...field}
-        error={Boolean(fieldState.error)}
-      />
+      <Textarea {...props} {...field} error={Boolean(fieldState.error)} />
     )}
   </FormField>
 );

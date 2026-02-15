@@ -55,7 +55,7 @@ export interface Intern {
   supervisor: string;
   supervisorId: SupervisorId;
   internshipPeriod: InternshipPeriod;
-  recentReports: DailyReport[];
+  recentReports: Array<DailyReport>;
 }
 
 // Intern Summary for Lists
@@ -116,14 +116,20 @@ export interface EODReportFormData {
 }
 
 // Status Configuration
-export const INTERNSHIP_STATUS_CONFIG: Record<InternshipStatus, { label: string; variant: 'success' | 'secondary' | 'error' | 'warning' }> = {
+export const INTERNSHIP_STATUS_CONFIG: Record<
+  InternshipStatus,
+  { label: string; variant: 'success' | 'secondary' | 'error' | 'warning' }
+> = {
   active: { label: 'Active', variant: 'success' },
   completed: { label: 'Completed', variant: 'secondary' },
   terminated: { label: 'Terminated', variant: 'error' },
   on_hold: { label: 'On Hold', variant: 'warning' },
 };
 
-export const REPORT_STATUS_CONFIG: Record<ReportStatus, { label: string; variant: 'success' | 'warning' | 'error' }> = {
+export const REPORT_STATUS_CONFIG: Record<
+  ReportStatus,
+  { label: string; variant: 'success' | 'warning' | 'error' }
+> = {
   submitted: { label: 'Submitted', variant: 'warning' },
   reviewed: { label: 'Reviewed', variant: 'success' },
   needs_revision: { label: 'Needs Revision', variant: 'error' },

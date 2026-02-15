@@ -1,10 +1,17 @@
 'use client';
 
-import * as React from 'react';
-import { GraduationCap, Clock, FileText, CheckCircle2, TrendingUp, AlertTriangle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  FileText,
+  GraduationCap,
+  TrendingUp,
+} from 'lucide-react';
+import type * as React from 'react';
 import { Card, CardContent } from '../../primitives/card';
-import { cn } from '../../utils/cn';
 import type { InternDashboardStats } from '../../types/internship.types';
+import { cn } from '../../utils/cn';
 
 interface StatCardProps {
   title: string;
@@ -57,9 +64,7 @@ function StatCard({
                 </span>
               )}
             </div>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
           </div>
         </div>
       </CardContent>
@@ -144,7 +149,11 @@ export function InternPersonalStats({
       <StatCard
         title="Hours Remaining"
         value={remainingHours}
-        subtitle={daysRemaining > 0 ? `~${Math.ceil(remainingHours / daysRemaining * 5)} hrs/week needed` : 'Complete!'}
+        subtitle={
+          daysRemaining > 0
+            ? `~${Math.ceil((remainingHours / daysRemaining) * 5)} hrs/week needed`
+            : 'Complete!'
+        }
         icon={Clock}
         iconBgColor="bg-warning/10"
         iconColor="text-warning"

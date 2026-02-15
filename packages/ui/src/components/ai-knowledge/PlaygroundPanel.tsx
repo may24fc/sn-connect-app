@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
-import { cn } from '../../utils/cn';
+import type * as React from 'react';
 import { Label } from '../../primitives/label';
+import { cn } from '../../utils/cn';
 import { ChatInterface } from './ChatInterface';
 
 export interface PlaygroundPanelProps {
@@ -27,10 +27,7 @@ export function PlaygroundPanel({
 
           {/* Debug Mode Toggle */}
           <div className="flex items-center gap-3">
-            <Label
-              htmlFor="debug-mode"
-              className="text-sm text-muted-foreground cursor-pointer"
-            >
+            <Label htmlFor="debug-mode" className="text-sm text-muted-foreground cursor-pointer">
               Debug Mode
             </Label>
             <button

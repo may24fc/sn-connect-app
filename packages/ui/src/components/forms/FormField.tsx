@@ -31,15 +31,10 @@ export interface FormFieldProps<
   required?: boolean | undefined;
   className?: string | undefined;
   id?: string | undefined;
-  children: (
-    props: FormFieldRenderProps<TFieldValues, TName>
-  ) => React.ReactNode;
+  children: (props: FormFieldRenderProps<TFieldValues, TName>) => React.ReactNode;
 }
 
-export const FormField = <
-  TFieldValues extends FieldValues,
-  TName extends FieldPath<TFieldValues>,
->({
+export const FormField = <TFieldValues extends FieldValues, TName extends FieldPath<TFieldValues>>({
   name,
   label,
   description,
@@ -69,14 +64,10 @@ export const FormField = <
             id: fieldId,
           })}
           {description ? (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {description}
-            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
           ) : null}
           {fieldState.error?.message ? (
-            <p className="text-xs text-rose-600">
-              {fieldState.error.message}
-            </p>
+            <p className="text-xs text-rose-600">{fieldState.error.message}</p>
           ) : null}
         </div>
       )}

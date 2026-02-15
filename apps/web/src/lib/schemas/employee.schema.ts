@@ -1,9 +1,7 @@
 import { EmploymentType, UserStatus, WorkArrangement } from '@hr-portal/database';
 import { z } from 'zod';
 
-const dateSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
 export const employeeBaseSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),

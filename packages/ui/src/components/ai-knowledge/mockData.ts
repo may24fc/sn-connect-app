@@ -1,6 +1,6 @@
 import type { KnowledgeSource } from '../../types/ai-knowledge.types';
 
-export const mockSources: KnowledgeSource[] = [
+export const mockSources: Array<KnowledgeSource> = [
   {
     id: '1',
     fileName: 'Employee_Handbook_2024.pdf',
@@ -31,5 +31,4 @@ export const mockSources: KnowledgeSource[] = [
     accessLevel: 'all',
     pageCount: 8,
   },
-  
 ];

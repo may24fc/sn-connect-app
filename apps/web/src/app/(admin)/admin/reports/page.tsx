@@ -1,265 +1,229 @@
 'use client';
 
+import { useReports } from '@/hooks/useReports';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  InsightsSummary,
-  MetricKPICard,
-  MetricKPICardGrid,
-  type ReportSubmission,
-  ReportSubmissionList,
-  SubmissionRateCard,
-  type SubmissionTracking,
-  WeekDropdownSelector,
-  type WeekPeriod,
-  getCurrentWeekPeriod,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Textarea,
 } from '@hr-portal/ui';
-import { BarChart3, Download, GitCompare } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { useMemo, useState } from 'react';
 
-// Mock data - replace with actual API calls
-const MOCK_TRACKING: SubmissionTracking = {
-  totalStaff: 24,
-  submitted: 18,
-  pending: 6,
-  submissionRate: 75,
-  weekPeriod: getCurrentWeekPeriod(),
+const statusVariant: Record<
+  'draft' | 'submitted' | 'approved' | 'rejected',
+  'secondary' | 'pending' | 'approved' | 'error'
+> = {
+  draft: 'secondary',
+  submitted: 'pending',
+  approved: 'approved',
+  rejected: 'error',
 };
 
-const MOCK_SUBMISSIONS: Array<ReportSubmission> = [
-  {
-    id: '1' as any,
-    reportTypeId: 'rt-1' as any,
-    reportTypeName: 'Marketing Spend Report',
-    submitterId: 'user-1',
-    submitterName: 'John Doe',
-    submitterDepartment: 'Marketing',
-    periodStart: '2026-02-03T00:00:00.000Z',
-    periodEnd: '2026-02-09T23:59:59.999Z',
-    content: {
-      summary: 'Weekly marketing activities',
-      accomplishments: [],
-      challenges: [],
-      nextWeekPlans: [],
-      metrics: [],
-    },
-    filePaths: [],
-    status: 'submitted',
-    submittedAt: '2026-02-09T15:00:00.000Z',
-    reviewedBy: null,
-    reviewedAt: null,
-    createdAt: '2026-02-03T10:00:00.000Z',
-    updatedAt: '2026-02-09T15:00:00.000Z',
-  },
-  {
-    id: '2' as any,
-    reportTypeId: 'rt-1' as any,
-    reportTypeName: 'Sales Report',
-    submitterId: 'user-2',
-    submitterName: 'Jane Smith',
-    submitterDepartment: 'Sales',
-    periodStart: '2026-02-03T00:00:00.000Z',
-    periodEnd: '2026-02-09T23:59:59.999Z',
-    content: {
-      summary: 'Weekly sales activities',
-      accomplishments: [],
-      challenges: [],
-      nextWeekPlans: [],
-      metrics: [],
-    },
-    filePaths: [],
-    status: 'submitted',
-    submittedAt: '2026-02-09T14:30:00.000Z',
-    reviewedBy: null,
-    reviewedAt: null,
-    createdAt: '2026-02-03T10:00:00.000Z',
-    updatedAt: '2026-02-09T14:30:00.000Z',
-  },
-  {
-    id: '3' as any,
-    reportTypeId: 'rt-1' as any,
-    reportTypeName: 'Operations Report',
-    submitterId: 'user-3',
-    submitterName: 'Bob Wilson',
-    submitterDepartment: 'Operations',
-    periodStart: '2026-02-03T00:00:00.000Z',
-    periodEnd: '2026-02-09T23:59:59.999Z',
-    content: {
-      summary: 'Pending submission',
-      accomplishments: [],
-      challenges: [],
-      nextWeekPlans: [],
-      metrics: [],
-    },
-    filePaths: [],
-    status: 'draft',
-    submittedAt: null,
-    reviewedBy: null,
-    reviewedAt: null,
-    createdAt: '2026-02-03T10:00:00.000Z',
-    updatedAt: '2026-02-10T09:00:00.000Z',
-  },
-];
+export default function AdminReportsPage() {
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<string>('all');
+  const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
+  const [workingId, setWorkingId] = useState<string | null>(null);
 
-export default function AdminReportsPage(): React.ReactNode {
-  const router = useRouter();
-  const [selectedWeek, setSelectedWeek] = React.useState<WeekPeriod>(getCurrentWeekPeriod());
-  const [tracking] = React.useState<SubmissionTracking>(MOCK_TRACKING);
-  const [submissions] = React.useState<Array<ReportSubmission>>(MOCK_SUBMISSIONS);
-
-  const handleViewSubmission = (_submission: ReportSubmission): void => {};
-
-  const handleSendReminder = (_submitterId: string): void => {};
-
-  const handleNavigateToAnalytics = (): void => {
-    router.push('/admin/reports/analytics');
+  const filters = {
+    ...(search ? { search } : {}),
+    ...(status !== 'all'
+      ? { status: status as 'draft' | 'submitted' | 'approved' | 'rejected' }
+      : {}),
+    page: 1,
+    pageSize: 100,
   };
 
-  const handleNavigateToCompare = (): void => {
-    router.push('/admin/reports/compare');
-  };
+  const { data, isLoading, error, refetch } = useReports(filters);
 
-  const handleExport = (): void => {};
+  const reports = data?.data || [];
+
+  const stats = useMemo(() => {
+    const submitted = reports.filter((report) => report.status === 'submitted').length;
+    const approved = reports.filter((report) => report.status === 'approved').length;
+    const rejected = reports.filter((report) => report.status === 'rejected').length;
+    return { submitted, approved, rejected, total: reports.length };
+  }, [reports]);
+
+  const handleAction = async (id: string, action: 'approved' | 'rejected') => {
+    setWorkingId(id);
+    try {
+      await fetch(`/api/reports/${id}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, notes: actionNotes[id] || undefined }),
+      });
+      await refetch();
+    } finally {
+      setWorkingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-headline">Weekly Reports Tracking</h1>
-          <p className="text-muted-foreground">
-            Monitor staff report submissions and completion rates
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleNavigateToAnalytics}>
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Analytics
-          </Button>
-          <Button variant="outline" onClick={handleNavigateToCompare}>
-            <GitCompare className="h-4 w-4 mr-2" />
-            Compare
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-headline">Reports Management</h1>
+        <p className="text-muted-foreground">Review and approve staff report submissions</p>
       </div>
 
-      {/* Week Selector */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Week Period</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <WeekDropdownSelector
-            selectedWeek={selectedWeek}
-            onWeekChange={setSelectedWeek}
-            weeksToShow={12}
-          />
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Total</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Submitted</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.submitted}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Approved</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.approved}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Rejected</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.rejected}</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* KPI Cards */}
-      <MetricKPICardGrid>
-        <MetricKPICard
-          label="Total Staff"
-          value={tracking.totalStaff}
-          change={{
-            absolute: '+2',
-            percent: 9.1,
-            trend: 'up',
-          }}
-          color="blue"
+      <div className="flex gap-3">
+        <Input
+          placeholder="Search report type or notes"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
         />
-        <MetricKPICard
-          label="Submitted"
-          value={tracking.submitted}
-          change={{
-            absolute: '+3',
-            percent: 20,
-            trend: 'up',
-          }}
-          color="green"
-        />
-        <MetricKPICard
-          label="Pending"
-          value={tracking.pending}
-          change={{
-            absolute: '-2',
-            percent: -25,
-            trend: 'down',
-          }}
-          color={tracking.pending > 8 ? 'red' : 'orange'}
-        />
-        <MetricKPICard
-          label="Completion Rate"
-          value={`${tracking.submissionRate}%`}
-          change={{
-            absolute: '+5%',
-            percent: 7.1,
-            trend: 'up',
-          }}
-          color={
-            tracking.submissionRate >= 80
-              ? 'green'
-              : tracking.submissionRate >= 60
-                ? 'orange'
-                : 'red'
-          }
-        />
-      </MetricKPICardGrid>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      {/* Insights Summary */}
-      <InsightsSummary
-        title="Team Reporting Insights"
-        summary="Submission rates improved by 7% this week. Marketing and Sales teams showing strong engagement, while Operations needs follow-up."
-        keyFindings={[
-          {
-            metric: 'Best Performers',
-            insight: 'Marketing team achieved 100% submission rate for 3 consecutive weeks',
-            highlight: true,
-          },
-          {
-            metric: 'Needs Attention',
-            insight: 'Operations team at 50% submission rate, down from 67% last week',
-            highlight: true,
-          },
-          {
-            metric: 'Overall Trend',
-            insight: 'Team-wide submission rate trending upward with 75% average',
-          },
-        ]}
-        recommendations={[
-          "Send reminder to Operations team members who haven't submitted",
-          "Consider recognizing Marketing team's consistency in next meeting",
-          'Set up automated reminders for Friday afternoon to improve submission rates',
-        ]}
-      />
-
-      {/* Submission Rate Card */}
-      <SubmissionRateCard tracking={tracking} />
-
-      {/* Submissions List */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Submission Status</CardTitle>
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ReportSubmissionList
-            submissions={submissions}
-            onView={handleViewSubmission}
-            onSendReminder={handleSendReminder}
-          />
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Loading reports...
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="p-6 text-sm text-error">Failed to load reports.</CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Period</TableHead>
+                  <TableHead>Action Notes</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reports.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                      No reports found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  reports.map((report) => (
+                    <TableRow key={report.id}>
+                      <TableCell>
+                        {report.employees
+                          ? `${report.employees.first_name} ${report.employees.last_name}`
+                          : '-'}
+                      </TableCell>
+                      <TableCell>{report.employees?.department || '-'}</TableCell>
+                      <TableCell>{report.report_type}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {report.period_start} to {report.period_end}
+                      </TableCell>
+                      <TableCell className="min-w-[220px]">
+                        <Textarea
+                          rows={2}
+                          value={actionNotes[report.id] || ''}
+                          onChange={(event) =>
+                            setActionNotes((prev) => ({
+                              ...prev,
+                              [report.id]: event.target.value,
+                            }))
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={workingId === report.id || report.status !== 'submitted'}
+                            onClick={() => handleAction(report.id, 'approved')}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={workingId === report.id || report.status !== 'submitted'}
+                            onClick={() => handleAction(report.id, 'rejected')}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

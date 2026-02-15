@@ -1,19 +1,19 @@
 'use client';
 
-import * as React from 'react';
 import {
-  Target,
+  AlertTriangle,
   BarChart3,
-  FileText,
-  Users,
   CheckCircle2,
   Clock,
+  FileText,
+  Target,
   TrendingUp,
-  AlertTriangle,
+  Users,
 } from 'lucide-react';
+import type * as React from 'react';
 import { Card, CardContent } from '../../primitives/card';
-import { cn } from '../../utils/cn';
 import type { PerformanceDashboardStats } from '../../types/performance.types';
+import { cn } from '../../utils/cn';
 
 interface StatCardProps {
   title: string;
@@ -66,9 +66,7 @@ function StatCard({
                 </span>
               )}
             </div>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
           </div>
         </div>
       </CardContent>
@@ -141,15 +139,11 @@ export function CycleProgressCards({
   hrReviewTotal,
   className,
 }: CycleProgressCardsProps): React.ReactNode {
-  const selfPercent = selfAssessmentTotal > 0
-    ? Math.round((selfAssessmentComplete / selfAssessmentTotal) * 100)
-    : 0;
-  const managerPercent = managerReviewTotal > 0
-    ? Math.round((managerReviewComplete / managerReviewTotal) * 100)
-    : 0;
-  const hrPercent = hrReviewTotal > 0
-    ? Math.round((hrReviewComplete / hrReviewTotal) * 100)
-    : 0;
+  const selfPercent =
+    selfAssessmentTotal > 0 ? Math.round((selfAssessmentComplete / selfAssessmentTotal) * 100) : 0;
+  const managerPercent =
+    managerReviewTotal > 0 ? Math.round((managerReviewComplete / managerReviewTotal) * 100) : 0;
+  const hrPercent = hrReviewTotal > 0 ? Math.round((hrReviewComplete / hrReviewTotal) * 100) : 0;
 
   return (
     <div className={cn('grid gap-4 sm:grid-cols-3', className)}>
@@ -166,10 +160,16 @@ export function CycleProgressCards({
               </p>
             </div>
             <div className="text-right">
-              <span className={cn(
-                'text-lg font-semibold',
-                selfPercent >= 80 ? 'text-success' : selfPercent >= 50 ? 'text-warning' : 'text-error'
-              )}>
+              <span
+                className={cn(
+                  'text-lg font-semibold',
+                  selfPercent >= 80
+                    ? 'text-success'
+                    : selfPercent >= 50
+                      ? 'text-warning'
+                      : 'text-error'
+                )}
+              >
                 {selfPercent}%
               </span>
             </div>
@@ -190,10 +190,16 @@ export function CycleProgressCards({
               </p>
             </div>
             <div className="text-right">
-              <span className={cn(
-                'text-lg font-semibold',
-                managerPercent >= 80 ? 'text-success' : managerPercent >= 50 ? 'text-warning' : 'text-error'
-              )}>
+              <span
+                className={cn(
+                  'text-lg font-semibold',
+                  managerPercent >= 80
+                    ? 'text-success'
+                    : managerPercent >= 50
+                      ? 'text-warning'
+                      : 'text-error'
+                )}
+              >
                 {managerPercent}%
               </span>
             </div>
@@ -214,10 +220,12 @@ export function CycleProgressCards({
               </p>
             </div>
             <div className="text-right">
-              <span className={cn(
-                'text-lg font-semibold',
-                hrPercent >= 80 ? 'text-success' : hrPercent >= 50 ? 'text-warning' : 'text-error'
-              )}>
+              <span
+                className={cn(
+                  'text-lg font-semibold',
+                  hrPercent >= 80 ? 'text-success' : hrPercent >= 50 ? 'text-warning' : 'text-error'
+                )}
+              >
                 {hrPercent}%
               </span>
             </div>

@@ -11,7 +11,7 @@ The system now supports four distinct user roles:
 3. **admin** - HR administrators
 4. **super_admin** - System administrators
 
-**Note:** The "manager" role has been removed. Manager-specific features (team management, leave approvals) have been moved to the admin role.
+**Note:** The "manager" role has been removed. Manager-specific features (team management) have been moved to the admin role.
 
 ## Mock Authentication Credentials
 
@@ -60,9 +60,9 @@ For testing purposes, use these credentials:
    - Updated role type from 'employee' | 'admin' | 'cos' | 'manager' | 'intern' to 'employee' | 'intern' | 'admin' | 'super_admin'
    - Removed manager navigation items
    - Updated navigation items for all roles:
-     - **Employee**: Dashboard, Profile, Files, Leave Requests, Documents, Performance Reviews, Announcements
+     - **Employee**: Dashboard, Profile, Files, Documents, Performance Reviews, Announcements
      - **Intern**: Dashboard, Tasks, Learning Resources, Timesheet, Mentor Connect, Documents, Profile
-     - **Admin**: Dashboard, Employee Management, Team Management, Leave Approvals, Reports, Performance Management, Recruitment
+     - **Admin**: Dashboard, Employee Management, Team Management, Reports, Performance Management, Recruitment
      - **Super Admin**: Dashboard, User Management, System Settings, Audit Logs, Role Management, plus admin features
 
 2. **apps/web/src/app/layout.tsx**
@@ -93,7 +93,6 @@ For testing purposes, use these credentials:
   - `/dashboard` - Employee dashboard
   - `/profile` - User profile
   - `/files` - 201 files
-  - `/leave` - Leave requests
   - `/documents` - Documents
   - `/performance` - Performance reviews
   - `/announcements` - Company announcements
@@ -119,7 +118,6 @@ For testing purposes, use these credentials:
   - `/admin/dashboard` - Admin dashboard (newly created)
   - `/admin/employees` - Employee management
   - `/admin/teams` - Team management (migrated from manager role)
-  - `/admin/leave-approvals` - Leave approvals (migrated from manager role)
   - `/admin/reports` - Reports
   - `/admin/performance` - Performance management
   - `/admin/recruitment` - Recruitment
@@ -200,7 +198,6 @@ If a user tries to access a route they're not authorized for, they're automatica
 All manager-specific features have been moved to the admin role:
 
 - **Team Performance** → `/admin/teams`
-- **Leave Approvals** → `/admin/leave-approvals`
 - **Employee Reviews** → `/admin/performance`
 
 Admins now have full access to team management capabilities.

@@ -1,0 +1,210 @@
+{
+  "name": "Notifications Birthday Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "Cron_Daily_8AM",
+      "name": "Daily 8AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 280]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT e.id, e.first_name, e.last_name, e.birthday, e.department, u.email AS employee_email FROM public.employees e JOIN public.users u ON u.id = e.user_id WHERE e.deleted_at IS NULL AND u.deleted_at IS NULL AND u.status = 'active' AND e.birthday IS NOT NULL AND EXTRACT(MONTH FROM e.birthday::date) = EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(DAY FROM e.birthday::date) = EXTRACT(DAY FROM CURRENT_DATE) ORDER BY e.last_name, e.first_name;"
+      },
+      "id": "Query_Birthdays",
+      "name": "Query Today's Birthdays",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [480, 280],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((i) => i.json);\nconst names = rows.map((r) => `${r.first_name} ${r.last_name}`).join(', ');\nreturn [{ json: { count: rows.length, names, employees: rows } }];"
+      },
+      "id": "Summarize_Birthdays",
+      "name": "Summarize Birthdays",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, 280]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "Has_Birthdays",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "If_Birthdays_Found",
+      "name": "If Birthdays Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [980, 280]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $env.HR_NOTIFICATION_EMAIL || 'hr@snconnect.local' }}",
+        "subject": "Birthday Reminder - {{ new Date().toISOString().split('T')[0] }}",
+        "emailType": "text",
+        "message": "Today's birthdays ({{ $json.count }}):\n\n{{ $json.names }}\n\nPlease coordinate greetings and celebrations.",
+        "options": {}
+      },
+      "id": "Email_HR",
+      "name": "Send Email to HR",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1240, 180]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"Birthday reminders for today\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🎂 Birthday Reminder\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Count:* {{ $json.count }}\\n*Employees:* {{ $json.names || 'None' }}\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "Slack_Notify",
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1240, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, action, metadata) VALUES ('employees', 'birthday_notification_sent', jsonb_build_object('workflow', 'notifications-birthday-reminder', 'birthday_count', {{ $json.count }}, 'employees', '{{ $json.names }}', 'sent_at', now()));"
+      },
+      "id": "Audit_Log",
+      "name": "Create Audit Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1500, 280],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, action, metadata) VALUES ('employees', 'birthday_notification_skipped', jsonb_build_object('workflow', 'notifications-birthday-reminder', 'reason', 'no_birthdays_today', 'checked_at', now()));"
+      },
+      "id": "Log_No_Birthdays",
+      "name": "Log No Birthdays",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1240, 540],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 8AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query Today's Birthdays",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Today's Birthdays": {
+      "main": [
+        [
+          {
+            "node": "Summarize Birthdays",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Birthdays": {
+      "main": [
+        [
+          {
+            "node": "If Birthdays Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Birthdays Found": {
+      "main": [
+        [
+          {
+            "node": "Send Email to HR",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log No Birthdays",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Create Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}

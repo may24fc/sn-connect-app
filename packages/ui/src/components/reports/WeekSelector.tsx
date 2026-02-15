@@ -1,7 +1,7 @@
 'use client';
 
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { Button } from '../../primitives/button';
 import {
   Select,
@@ -12,7 +12,7 @@ import {
 } from '../../primitives/select';
 import { cn } from '../../utils/cn';
 import type { WeekPeriod } from './types';
-import { getCurrentWeekPeriod, getWeekNumber, formatPeriodLabel } from './types';
+import { formatPeriodLabel, getCurrentWeekPeriod, getWeekNumber } from './types';
 
 interface WeekSelectorProps {
   selectedWeek: WeekPeriod;
@@ -126,7 +126,7 @@ export function WeekDropdownSelector({
   className,
 }: WeekDropdownSelectorProps): React.ReactNode {
   const weeks = React.useMemo(() => {
-    const result: WeekPeriod[] = [];
+    const result: Array<WeekPeriod> = [];
     const current = getCurrentWeekPeriod();
 
     for (let i = 0; i < weeksToShow; i++) {
@@ -168,7 +168,10 @@ export function WeekDropdownSelector({
         {weeks.map((week) => {
           const label = formatPeriodLabel(week.startDate, week.endDate);
           return (
-            <SelectItem key={`${week.weekNumber}-${week.year}`} value={`${week.weekNumber}-${week.year}`}>
+            <SelectItem
+              key={`${week.weekNumber}-${week.year}`}
+              value={`${week.weekNumber}-${week.year}`}
+            >
               {week.label} ({label})
             </SelectItem>
           );

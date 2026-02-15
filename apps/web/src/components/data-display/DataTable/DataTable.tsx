@@ -1,23 +1,23 @@
 'use client';
 
-import * as React from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  flexRender,
-  type ColumnDef,
-  type SortingState,
-  type ColumnFiltersState,
-  type RowSelectionState,
-  type PaginationState,
-} from '@tanstack/react-table';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@hr-portal/ui';
-import { DataTablePagination } from './DataTablePagination';
+import {
+  type ColumnDef,
+  type ColumnFiltersState,
+  type PaginationState,
+  type RowSelectionState,
+  type SortingState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import * as React from 'react';
 import type { DataTableProps } from './DataTable.types';
+import { DataTablePagination } from './DataTablePagination';
 
 /**
  * A professional-grade data table built on TanStack Table v8.
@@ -107,9 +107,7 @@ export function DataTable<TData>({
   };
 
   // Calculate page count for server-side pagination
-  const calculatedPageCount = totalRows
-    ? Math.ceil(totalRows / pagination.pageSize)
-    : -1; // -1 means unknown total (TanStack Table convention)
+  const calculatedPageCount = totalRows ? Math.ceil(totalRows / pagination.pageSize) : -1; // -1 means unknown total (TanStack Table convention)
 
   const table = useReactTable({
     data,
@@ -124,9 +122,7 @@ export function DataTable<TData>({
     onColumnFiltersChange: handleColumnFiltersChange,
     onRowSelectionChange: setRowSelection,
     onPaginationChange: (updater) => {
-      const newPagination = typeof updater === 'function'
-        ? updater(pagination)
-        : updater;
+      const newPagination = typeof updater === 'function' ? updater(pagination) : updater;
       setPagination(newPagination);
       onPaginationChange?.(newPagination);
     },
@@ -195,10 +191,7 @@ export function DataTable<TData>({
                 )}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className="px-4 text-sm text-zinc-900 dark:text-zinc-100"
-                  >
+                  <td key={cell.id} className="px-4 text-sm text-zinc-900 dark:text-zinc-100">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
@@ -208,9 +201,7 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      {enablePagination && (
-        <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
-      )}
+      {enablePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
     </div>
   );
 }
@@ -221,7 +212,7 @@ export function DataTable<TData>({
  */
 function DataTableSkeleton({
   columns,
-  rows = 5
+  rows = 5,
 }: {
   columns: number;
   rows?: number;

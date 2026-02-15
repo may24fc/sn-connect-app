@@ -1,7 +1,8 @@
 'use client';
 
-import * as React from 'react';
-import { Calendar, Paperclip, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar, Paperclip, TrendingDown, TrendingUp } from 'lucide-react';
+import type * as React from 'react';
+import { Button } from '../../primitives/button';
 import {
   Card,
   CardContent,
@@ -10,11 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from '../../primitives/card';
-import { Button } from '../../primitives/button';
 import { cn } from '../../utils/cn';
 import { ReportStatusBadge } from './ReportStatusBadge';
 import type { ReportSubmission } from './types';
-import { formatPeriodLabel, calculateTotalExpenditure, calculateTotalResults, calculateROI } from './types';
+import {
+  calculateROI,
+  calculateTotalExpenditure,
+  calculateTotalResults,
+  formatPeriodLabel,
+} from './types';
 
 interface ReportCardProps {
   report: ReportSubmission;
@@ -68,9 +73,7 @@ export function ReportCard({
 
       <CardContent className="space-y-4">
         {report.content.summary && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {report.content.summary}
-          </p>
+          <p className="text-sm text-muted-foreground line-clamp-2">{report.content.summary}</p>
         )}
 
         <div className="grid grid-cols-3 gap-4">
@@ -119,9 +122,7 @@ export function ReportCard({
 
       <CardFooter className="flex items-center justify-between border-t pt-4">
         <div className="text-xs text-muted-foreground">
-          {report.status === 'draft' && (
-            <span>Last edited: {formatDate(report.updatedAt)}</span>
-          )}
+          {report.status === 'draft' && <span>Last edited: {formatDate(report.updatedAt)}</span>}
           {report.status === 'submitted' && report.submittedAt && (
             <span>Submitted: {formatDate(report.submittedAt)}</span>
           )}
@@ -157,7 +158,7 @@ export function ReportCard({
 }
 
 interface ReportListProps {
-  reports: ReportSubmission[];
+  reports: Array<ReportSubmission>;
   onView?: (report: ReportSubmission) => void;
   onEdit?: (report: ReportSubmission) => void;
   onSubmit?: (report: ReportSubmission) => void;

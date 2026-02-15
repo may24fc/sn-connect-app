@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { ReactNode } from 'react';
 import {
-  useEmployees,
-  useEmployee,
   useCreateEmployee,
-  useUpdateEmployee,
   useDeleteEmployee,
+  useEmployee,
+  useEmployees,
+  useUpdateEmployee,
 } from '@/hooks/useEmployees';
 import type { Employee, EmployeeInsert } from '@hr-portal/database';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock fetch globally
 global.fetch = vi.fn();
@@ -103,10 +103,9 @@ describe('useEmployees', () => {
       json: async () => mockEmployeeListResponse,
     });
 
-    const { result } = renderHook(
-      () => useEmployees({ search: 'John' }),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useEmployees({ search: 'John' }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -119,16 +118,13 @@ describe('useEmployees', () => {
       json: async () => mockEmployeeListResponse,
     });
 
-    const { result } = renderHook(
-      () => useEmployees({ department: 'Engineering' }),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useEmployees({ department: 'Engineering' }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/employees?department=Engineering'
-    );
+    expect(global.fetch).toHaveBeenCalledWith('/api/employees?department=Engineering');
   });
 
   it('should apply status filter', async () => {
@@ -137,10 +133,9 @@ describe('useEmployees', () => {
       json: async () => mockEmployeeListResponse,
     });
 
-    const { result } = renderHook(
-      () => useEmployees({ status: 'active' }),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useEmployees({ status: 'active' }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -153,16 +148,13 @@ describe('useEmployees', () => {
       json: async () => mockEmployeeListResponse,
     });
 
-    const { result } = renderHook(
-      () => useEmployees({ page: 2, pageSize: 20 }),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useEmployees({ page: 2, pageSize: 20 }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/employees?page=2&pageSize=20'
-    );
+    expect(global.fetch).toHaveBeenCalledWith('/api/employees?page=2&pageSize=20');
   });
 
   it('should apply multiple filters', async () => {
@@ -275,13 +267,10 @@ describe('useEmployee', () => {
         )
     );
 
-    const { result, rerender } = renderHook(
-      ({ id }: { id: string | null }) => useEmployee(id),
-      {
-        wrapper: createWrapper(),
-        initialProps: { id: 'emp-123' },
-      }
-    );
+    const { result, rerender } = renderHook(({ id }: { id: string | null }) => useEmployee(id), {
+      wrapper: createWrapper(),
+      initialProps: { id: 'emp-123' },
+    });
 
     // Query starts
     await waitFor(() => expect(result.current.isFetching).toBe(true));

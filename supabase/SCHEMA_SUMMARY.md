@@ -307,7 +307,6 @@ Recommended testing:
 
 Planned enhancements:
 - Salary and compensation tables
-- Leave management system
 - Performance review tracking
 - Training and certifications
 - Attendance and time tracking

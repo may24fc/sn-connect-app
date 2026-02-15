@@ -1,13 +1,8 @@
 'use client';
 
-import * as React from 'react';
-import { Users, CheckCircle2, Clock } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '../../primitives/card';
+import { CheckCircle2, Clock, Users } from 'lucide-react';
+import type * as React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import { Progress } from '../../primitives/progress';
 import { cn } from '../../utils/cn';
 import type { SubmissionTracking } from './types';

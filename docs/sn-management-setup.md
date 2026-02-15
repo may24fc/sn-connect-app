@@ -305,24 +305,43 @@ CREATE TABLE public.report_metrics (
 - [ ] **Create migration for reports tables**
   - File: `supabase/migrations/20260210000002_create_reports_tables.sql`
   - Include RLS policies for employee self-access, manager access, admin access
-
 - [ ] **Create reports API routes**
   - File: `apps/web/src/app/api/reports/route.ts`
   - File: `apps/web/src/app/api/reports/[id]/route.ts`
   - File: `apps/web/src/app/api/reports/[id]/submit/route.ts`
   - File: `apps/web/src/app/api/reports/[id]/approve/route.ts`
-
 - [ ] **Create reports hooks**
   - File: `apps/web/src/hooks/useReports.ts`
   - File: `apps/web/src/hooks/useReport.ts`
   - File: `apps/web/src/hooks/useCreateReport.ts`
   - File: `apps/web/src/hooks/useSubmitReport.ts`
-
 - [ ] **Connect reports pages to real data**
   - Update `apps/web/src/app/(employee)/reports/page.tsx`
   - Update `apps/web/src/app/(employee)/reports/new/page.tsx`
   - Update `apps/web/src/app/(employee)/reports/[id]/page.tsx`
   - Update `apps/web/src/app/(admin)/admin/reports/page.tsx`
+
+ - [x] **Create migration for reports tables**
+   - File: `supabase/migrations/20260210000002_create_reports_tables.sql`
+   - Include RLS policies for employee self-access, manager access, admin access
+
+ - [x] **Create reports API routes**
+   - File: `apps/web/src/app/api/reports/route.ts`
+   - File: `apps/web/src/app/api/reports/[id]/route.ts`
+   - File: `apps/web/src/app/api/reports/[id]/submit/route.ts`
+   - File: `apps/web/src/app/api/reports/[id]/approve/route.ts`
+
+ - [x] **Create reports hooks**
+   - File: `apps/web/src/hooks/useReports.ts`
+   - File: `apps/web/src/hooks/useReport.ts`
+   - File: `apps/web/src/hooks/useCreateReport.ts`
+   - File: `apps/web/src/hooks/useSubmitReport.ts`
+
+ - [x] **Connect reports pages to real data**
+   - Update `apps/web/src/app/(employee)/reports/page.tsx`
+   - Update `apps/web/src/app/(employee)/reports/new/page.tsx`
+   - Update `apps/web/src/app/(employee)/reports/[id]/page.tsx`
+   - Update `apps/web/src/app/(admin)/admin/reports/page.tsx`
 
 ### 2.2 Tasks System
 
@@ -359,28 +378,51 @@ CREATE TABLE public.task_comments (
 - [ ] **Create migration for tasks tables**
   - File: `supabase/migrations/20260210000003_create_tasks_tables.sql`
   - Include RLS policies
-
 - [ ] **Create tasks API routes**
   - File: `apps/web/src/app/api/tasks/route.ts`
   - File: `apps/web/src/app/api/tasks/[id]/route.ts`
   - File: `apps/web/src/app/api/tasks/[id]/comments/route.ts`
-
 - [ ] **Create tasks hooks**
   - File: `apps/web/src/hooks/useTasks.ts`
   - File: `apps/web/src/hooks/useTask.ts`
   - File: `apps/web/src/hooks/useCreateTask.ts`
   - File: `apps/web/src/hooks/useUpdateTask.ts`
-
 - [ ] **Connect tasks pages to real data**
   - Update `apps/web/src/app/(employee)/tasks/page.tsx`
   - Update `apps/web/src/app/(employee)/tasks/[id]/page.tsx`
   - Update `apps/web/src/app/(admin)/super-admin/tasks/page.tsx`
 
+ - [x] **Create migration for tasks tables**
+   - File: `supabase/migrations/20260210000003_create_tasks_tables.sql`
+   - Include RLS policies
+
+ - [x] **Create tasks API routes**
+   - File: `apps/web/src/app/api/tasks/route.ts`
+   - File: `apps/web/src/app/api/tasks/[id]/route.ts`
+   - File: `apps/web/src/app/api/tasks/[id]/comments/route.ts`
+
+ - [x] **Create tasks hooks**
+   - File: `apps/web/src/hooks/useTasks.ts`
+   - File: `apps/web/src/hooks/useTask.ts`
+   - File: `apps/web/src/hooks/useCreateTask.ts`
+   - File: `apps/web/src/hooks/useUpdateTask.ts`
+
+ - [x] **Connect tasks pages to real data**
+   - Update `apps/web/src/app/(employee)/tasks/page.tsx`
+   - Update `apps/web/src/app/(employee)/tasks/[id]/page.tsx`
+   - Update `apps/web/src/app/(admin)/super-admin/tasks/page.tsx`
+
 ### 2.3 Payroll/Invoice System
+
+**Overview:** Manages employee invoicing and payroll processing with WISE integration for international money transfers. This system handles invoice creation, approval workflows, and automated payment processing via the WISE API.
+
+**WISE Integration:** This system will integrate with WISE (formerly TransferWise) for secure, cost-effective international money transfers. WISE API enables automated batch payments to employees across multiple currencies with competitive exchange rates.
 
 **Database Schema Required:**
 ```sql
 CREATE TYPE invoice_status AS ENUM ('draft', 'submitted', 'approved', 'paid', 'rejected');
+CREATE TYPE payment_method AS ENUM ('wise', 'bank_transfer', 'check', 'other');
+CREATE TYPE payment_status AS ENUM ('pending', 'processing', 'completed', 'failed', 'cancelled');
 
 CREATE TABLE public.invoices (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -391,7 +433,9 @@ CREATE TABLE public.invoices (
   gross_amount numeric(12,2) NOT NULL,
   deductions numeric(12,2) DEFAULT 0,
   net_amount numeric(12,2) NOT NULL,
+  currency text NOT NULL DEFAULT 'USD',
   status invoice_status NOT NULL DEFAULT 'draft',
+  payment_method payment_method DEFAULT 'wise',
   submitted_at timestamptz,
   approved_by uuid REFERENCES public.users(id),
   approved_at timestamptz,
@@ -412,51 +456,44 @@ CREATE TABLE public.invoice_line_items (
   total numeric(12,2) NOT NULL,
   created_at timestamptz DEFAULT now() NOT NULL
 );
-```
 
-- [ ] **Create migration for invoices tables**
-  - File: `supabase/migrations/20260210000004_create_invoices_tables.sql`
-
-- [ ] **Create payroll API routes**
-  - File: `apps/web/src/app/api/invoices/route.ts`
-  - File: `apps/web/src/app/api/invoices/[id]/route.ts`
-  - File: `apps/web/src/app/api/invoices/[id]/submit/route.ts`
-  - File: `apps/web/src/app/api/invoices/[id]/approve/route.ts`
-
-- [ ] **Connect payroll pages to real data**
-  - Update `apps/web/src/app/(employee)/payroll/page.tsx`
-  - Update `apps/web/src/app/(admin)/super-admin/payroll-approvals/page.tsx`
-
-### 2.4 Announcements/Resources Hub
-
-**Database Schema Required:**
-```sql
-CREATE TYPE announcement_priority AS ENUM ('low', 'normal', 'high', 'urgent');
-
-CREATE TABLE public.announcements (
+-- WISE payments tracking table
+CREATE TABLE public.wise_payments (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  title text NOT NULL,
-  content text NOT NULL,
-  priority announcement_priority NOT NULL DEFAULT 'normal',
-  published_at timestamptz,
-  expires_at timestamptz,
-  target_roles user_role[] DEFAULT '{}',
-  target_departments text[] DEFAULT '{}',
-  is_pinned boolean DEFAULT false,
-  author_id uuid NOT NULL REFERENCES public.users(id),
+  invoice_id uuid NOT NULL REFERENCES public.invoices(id),
+  wise_transfer_id text NOT NULL UNIQUE,
+  wise_quote_id text NOT NULL,
+  recipient_id text NOT NULL,
+  source_currency text NOT NULL,
+  target_currency text NOT NULL,
+  source_amount numeric(12,2) NOT NULL,
+  target_amount numeric(12,2) NOT NULL,
+  fee numeric(12,2) NOT NULL,
+  payment_status payment_status NOT NULL DEFAULT 'pending',
+  wise_status text,
+  error_message text,
+  initiated_at timestamptz DEFAULT now() NOT NULL,
+  completed_at timestamptz,
   created_at timestamptz DEFAULT now() NOT NULL,
-  updated_at timestamptz DEFAULT now() NOT NULL,
-  deleted_at timestamptz
+  updated_at timestamptz DEFAULT now() NOT NULL
 );
 
-CREATE TABLE public.resources (
+-- Employee banking information for WISE
+CREATE TABLE public.employee_banking_info (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  title text NOT NULL,
-  description text,
-  category text NOT NULL,
-  file_path text,
-  external_url text,
-  is_public boolean DEFAULT false,
+  employee_id uuid NOT NULL REFERENCES public.employees(id) UNIQUE,
+  wise_recipient_id text,
+  account_holder_name text NOT NULL,
+  bank_name text,
+  account_number text, -- Encrypted in production
+  routing_number text,
+  swift_code text,
+  iban text,
+  account_type text,
+  currency text NOT NULL DEFAULT 'USD',
+  country_code text NOT NULL,
+  is_verified boolean DEFAULT false,
+  verified_at timestamptz,
   created_at timestamptz DEFAULT now() NOT NULL,
   updated_at timestamptz DEFAULT now() NOT NULL,
   created_by uuid REFERENCES auth.users(id),
@@ -464,15 +501,1484 @@ CREATE TABLE public.resources (
 );
 ```
 
-- [ ] **Create migration for announcements tables**
+- [x] **Create migration for invoices tables**
+  - File: `supabase/migrations/20260210000004_create_invoices_tables.sql`
+  - Updated to include WISE-related tables and enums
+
+- [x] **Create payroll API routes**
+  - File: `apps/web/src/app/api/invoices/route.ts`
+  - File: `apps/web/src/app/api/invoices/[id]/route.ts`
+  - File: `apps/web/src/app/api/invoices/[id]/submit/route.ts`
+  - File: `apps/web/src/app/api/invoices/[id]/approve/route.ts`
+
+- [x] **Connect payroll pages to real data**
+  - Update `apps/web/src/app/(employee)/payroll/page.tsx`
+  - Update `apps/web/src/app/(admin)/super-admin/payroll-approvals/page.tsx`
+
+#### WISE Integration Implementation (To Be Done)
+
+**Prerequisites:**
+- [ ] Create WISE Business Account at business.wise.com
+- [ ] Complete business verification (KYC/AML compliance)
+- [ ] Generate API keys from WISE dashboard (use Sandbox for testing)
+- [ ] Add environment variables:
+  - `WISE_API_KEY` - API authentication token
+  - `WISE_PROFILE_ID` - Business profile ID
+  - `WISE_WEBHOOK_SECRET` - For webhook verification
+  - `WISE_ENVIRONMENT` - 'sandbox' or 'production'
+
+**WISE SDK Setup:**
+- [ ] **Install WISE dependencies**
+  ```bash
+  cd apps/web && pnpm add @wise/api-client
+  cd packages/ai && pnpm add @wise/api-client
+  ```
+
+- [ ] **Create WISE client utility**
+  - File: `apps/web/src/lib/wise/client.ts`
+  - Initialize WISE API client with credentials
+  - Implement error handling and retry logic
+  - Add rate limiting compliance (5 requests/second)
+
+- [ ] **Create WISE service layer**
+  - File: `apps/web/src/lib/wise/service.ts`
+  - Functions:
+    - `createRecipient(employeeData)` - Create WISE recipient account
+    - `createQuote(amount, sourceCurrency, targetCurrency)` - Get transfer quote
+    - `createTransfer(quoteId, recipientId)` - Initiate transfer
+    - `fundTransfer(transferId)` - Fund approved transfer
+    - `getTransferStatus(transferId)` - Check transfer status
+    - `cancelTransfer(transferId)` - Cancel pending transfer
+
+**API Routes for WISE Integration:**
+- [ ] **Create employee banking info API routes**
+  - File: `apps/web/src/app/api/employees/[id]/banking/route.ts`
+  - GET: Retrieve employee banking info (masked for security)
+  - POST: Create/update banking info
+  - POST: Verify banking info with WISE
+  - DELETE: Remove banking info
+
+- [ ] **Create WISE payment API routes**
+  - File: `apps/web/src/app/api/wise/quote/route.ts`
+  - POST: Generate transfer quote for invoice amount
+  
+  - File: `apps/web/src/app/api/wise/recipients/route.ts`
+  - POST: Create WISE recipient from employee banking info
+  - GET: List all WISE recipients
+  
+  - File: `apps/web/src/app/api/wise/transfers/route.ts`
+  - POST: Create transfer for approved invoice
+  - GET: List transfers with status
+  
+  - File: `apps/web/src/app/api/wise/transfers/[id]/route.ts`
+  - GET: Get transfer details and status
+  - POST: Fund transfer (execute payment)
+  - DELETE: Cancel transfer
+  
+  - File: `apps/web/src/app/api/wise/webhook/route.ts`
+  - POST: Handle WISE webhook events (transfer status updates)
+  - Verify webhook signature
+  - Update payment status in database
+
+**Hooks for WISE Integration:**
+- [ ] **Create banking hooks**
+  - File: `apps/web/src/hooks/useBankingInfo.ts`
+  - `useBankingInfo(employeeId)` - Fetch banking info
+  - `useCreateBankingInfo()` - Add banking details
+  - `useVerifyBankingInfo()` - Verify with WISE
+  
+- [ ] **Create WISE payment hooks**
+  - File: `apps/web/src/hooks/useWisePayments.ts`
+  - `useWiseQuote(amount, currencies)` - Get transfer quote
+  - `useCreateWiseTransfer()` - Initiate WISE transfer
+  - `useFundWiseTransfer()` - Execute payment
+  - `useWiseTransferStatus(transferId)` - Poll transfer status
+
+**UI Components:**
+- [ ] **Create BankingInfoForm component**
+  - File: `packages/ui/src/components/payroll/BankingInfoForm.tsx`
+  - Form for employee to enter banking details
+  - Support multiple account types (ACH, SWIFT, IBAN)
+  - Real-time validation with WISE API
+  
+- [ ] **Create WiseTransferCard component**
+  - File: `packages/ui/src/components/payroll/WiseTransferCard.tsx`
+  - Display transfer details (amount, fees, exchange rate)
+  - Show transfer status with progress indicator
+  - Estimated arrival time
+  
+- [ ] **Create PaymentApprovalPanel component**
+  - File: `packages/ui/src/components/payroll/PaymentApprovalPanel.tsx`
+  - Batch approval interface for multiple invoices
+  - Generate WISE quotes for selected invoices
+  - Execute bulk payments
+
+**n8n Workflows for WISE Automation:**
+- [ ] **Create automated payment workflow**
+  - File: `n8n/workflows/payroll-wise-auto-payment.json`
+  - Trigger: Invoice approved in database
+  - Steps:
+    1. Fetch employee banking info
+    2. Generate WISE quote
+    3. Create transfer
+    4. Fund transfer (if auto-payment enabled)
+    5. Update invoice status
+    6. Send notification to employee
+  
+- [ ] **Create payment status monitoring workflow**
+  - File: `n8n/workflows/payroll-wise-status-monitor.json`
+  - Trigger: Schedule (every 30 minutes)
+  - Steps:
+    1. Fetch pending/processing WISE transfers
+    2. Check status via WISE API
+    3. Update database
+    4. Notify on completion or failure
+  
+- [ ] **Create failed payment handling workflow**
+  - File: `n8n/workflows/payroll-wise-failure-handler.json`
+  - Trigger: WISE webhook (transfer failed)
+  - Steps:
+    1. Log failure reason
+    2. Notify finance team
+    3. Create remediation task
+    4. Send employee notification
+
+**Security & Compliance:**
+- [ ] **Implement encryption for sensitive banking data**
+  - Use Supabase Vault or AWS KMS for encryption at rest
+  - Never log or expose full account numbers
+  - Mask account numbers in UI (show only last 4 digits)
+  
+- [ ] **Add audit logging for all WISE operations**
+  - Log all payment initiations, approvals, and status changes
+  - Track API calls and responses (without sensitive data)
+  - Maintain immutable audit trail
+  
+- [ ] **Implement rate limiting**
+  - Comply with WISE API rate limits (5 req/sec)
+  - Add exponential backoff for retries
+  - Queue batch payments to avoid throttling
+  
+- [ ] **Add fraud detection**
+  - Verify invoice amount matches WISE transfer amount
+  - Flag suspicious patterns (duplicate payments, unusual amounts)
+  - Require MFA for payment approval above threshold
+
+**Testing:**
+- [ ] **Test with WISE Sandbox environment**
+  - Create test recipients
+  - Simulate transfers with test funds
+  - Test webhook event handling
+  - Verify error scenarios (insufficient funds, invalid recipient)
+  
+- [ ] **Create unit tests for WISE service**
+  - File: `tests/lib/wise/service.test.ts`
+  - Test all WISE API wrapper functions
+  - Mock API responses
+  
+- [ ] **Create E2E tests for payment flow**
+  - File: `e2e/payroll-wise-payment.spec.ts`
+  - Test: Create invoice → Approve → Generate quote → Execute transfer
+  - Test: Payment status updates
+  - Test: Failed payment handling
+
+**Documentation:**
+- [ ] **Create WISE integration guide**
+  - File: `docs/wise-integration.md`
+  - Setup instructions
+  - API reference
+  - Troubleshooting guide
+  - Currency support matrix
+  
+- [ ] **Create employee banking setup guide**
+  - File: `docs/guides/employee-banking-setup.md`
+  - How to add banking information
+  - Supported countries and account types
+  - Security best practices
+
+**Notes:**
+- WISE supports 160+ countries and 50+ currencies
+- Standard transfer time: 1-2 business days
+- Fees: ~0.5-1% of transfer amount (significantly lower than traditional banks)
+- Requires business verification (can take 1-3 business days)
+- Consider multi-currency holding accounts for cost optimization
+- Implement currency conversion strategy (lock rates vs. spot rates)
+
+### 2.4 Announcements System
+**Status:** ✅ Implemented — backend migration, API routes, hooks, UI components, tests, and automation workflows added.
+
+**Key files added/updated:**
+- `supabase/migrations/20260210000005_create_announcements_tables.sql`
+- `apps/web/src/app/api/announcements/**` (list, detail, publish, archive, pin, feed, read, comments, attachments, analytics)
+- `apps/web/src/lib/schemas/announcement.schema.ts`
+- `apps/web/src/lib/query-keys.ts` (announcements/resources keys)
+- `apps/web/src/hooks/*` (useAnnouncements, useAnnouncementFeed, useAnnouncement, useCreateAnnouncement, useUpdateAnnouncement, useDeleteAnnouncement, usePublishAnnouncement, useArchiveAnnouncement, useToggleAnnouncementPin, useMarkAnnouncementRead, useUploadAnnouncementAttachment)
+- `packages/ui/src/components/announcements/*` (AnnouncementCard, AnnouncementEditor, AnnouncementFilters, AttachmentUploader, TargetingSelector, AnnouncementAnalytics, etc.)
+- `apps/web/src/app/(admin)/admin/announcements/*` and `apps/web/src/app/(employee)/announcements/page.tsx`
+- `tests/hooks/useAnnouncements.test.tsx`, `tests/hooks/useAnnouncementFeed.test.tsx`, `tests/hooks/useCreateAnnouncement.test.tsx`
+- `n8n/workflows/announcements-auto-publish.json`, `n8n/workflows/announcements-auto-expire.json`
+
+**Notes:** Editor diagnostics/type-check were run and are clean; runtime smoke tests (API + storage/RLS + uploads) recommended next.
+
+This feature provides a comprehensive announcement management system for HR/Admin/Super Admin to create, schedule, and distribute company-wide communications. Employees see a curated feed of relevant announcements based on their role, department, and other targeting criteria.
+
+#### Feature Overview
+
+**Admin/Super Admin Capabilities:**
+- Create, edit, delete, and schedule announcements
+- Target specific audiences (roles, departments, individual employees)
+- Set priority levels (low, normal, high, urgent)
+- Pin important announcements to the top
+- Schedule publish/expiration dates for automatic visibility control
+- Attach files (PDFs, images) to announcements
+- Categorize announcements (HR Updates, Benefits, Events, Performance, Training, Policy, General, Emergency)
+- View analytics (read counts, engagement metrics)
+- Preview announcements before publishing
+
+**Employee/Intern Experience:**
+- View announcements filtered by relevance (role, department)
+- Filter by category and read/unread status
+- Search announcements
+- Mark announcements as read
+- Access announcement attachments
+- View announcement history
+
+**Supported Announcement Types:**
+1. **Company-Wide Announcements** - All employees
+2. **Department-Specific** - Engineering, HR, Marketing, Sales, etc.
+3. **Role-Based** - Interns, employees, managers, admins
+4. **Urgent/Emergency Alerts** - High-priority system-wide notifications
+5. **Policy Updates** - Changes to company policies, handbooks
+6. **Event Announcements** - Town halls, team events, celebrations
+7. **Training/Learning** - Course launches, workshops, certifications
+8. **Benefits Updates** - Health insurance, perks, compensation changes
+9. **Performance Cycles** - Review periods, deadlines
+10. **Scheduled Announcements** - Published at a future date/time
+
+**Database Schema Required:**
+```sql
+-- Migration: supabase/migrations/20260210000005_create_announcements_tables.sql
+
+CREATE TYPE announcement_priority AS ENUM ('low', 'normal', 'high', 'urgent');
+CREATE TYPE announcement_status AS ENUM ('draft', 'scheduled', 'published', 'expired', 'archived');
+CREATE TYPE announcement_category AS ENUM (
+  'hr_updates',
+  'benefits',
+  'events',
+  'performance',
+  'training',
+  'policy',
+  'general',
+  'emergency'
+);
+
+CREATE TABLE public.announcements (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text NOT NULL,
+  content text NOT NULL,
+  excerpt text, -- Short summary for list view (auto-generated from first 200 chars if null)
+
+  -- Classification
+  category announcement_category NOT NULL DEFAULT 'general',
+  priority announcement_priority NOT NULL DEFAULT 'normal',
+  status announcement_status NOT NULL DEFAULT 'draft',
+
+  -- Scheduling
+  published_at timestamptz, -- Null = draft, future = scheduled, past = published
+  expires_at timestamptz,   -- Null = never expires
+
+  -- Targeting
+  target_roles user_role[] DEFAULT '{}', -- Empty array = all roles
+  target_departments uuid[] DEFAULT '{}', -- Empty array = all departments
+  target_employees uuid[] DEFAULT '{}',   -- Specific employees (overrides role/dept)
+
+  -- Display Options
+  is_pinned boolean DEFAULT false,
+  allow_comments boolean DEFAULT false,
+
+  -- Attachments
+  has_attachments boolean DEFAULT false,
+
+  -- Metadata
+  author_id uuid NOT NULL REFERENCES public.users(id),
+  read_count integer DEFAULT 0,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL,
+  created_by uuid REFERENCES auth.users(id),
+  deleted_at timestamptz
+);
+
+-- Announcement attachments (files, images, PDFs)
+CREATE TABLE public.announcement_attachments (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  announcement_id uuid NOT NULL REFERENCES public.announcements(id) ON DELETE CASCADE,
+  file_name text NOT NULL,
+  file_path text NOT NULL, -- Supabase Storage path
+  file_size bigint NOT NULL,
+  mime_type text NOT NULL,
+  uploaded_at timestamptz DEFAULT now() NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Track which employees have read announcements
+CREATE TABLE public.announcement_reads (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  announcement_id uuid NOT NULL REFERENCES public.announcements(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  read_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE(announcement_id, user_id)
+);
+
+-- Optional: Announcement comments (if allow_comments = true)
+CREATE TABLE public.announcement_comments (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  announcement_id uuid NOT NULL REFERENCES public.announcements(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.users(id),
+  content text NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL,
+  deleted_at timestamptz
+);
+
+-- Resources library (handbooks, forms, templates, guides)
+CREATE TABLE public.resources (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text NOT NULL,
+  description text,
+  category text NOT NULL, -- 'handbook', 'form', 'template', 'guide', 'policy'
+  file_path text,
+  external_url text,
+  is_public boolean DEFAULT false, -- If true, visible to all roles
+  target_roles user_role[] DEFAULT '{}',
+  downloads_count integer DEFAULT 0,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL,
+  created_by uuid REFERENCES auth.users(id),
+  deleted_at timestamptz
+);
+
+-- Indexes for performance
+CREATE INDEX idx_announcements_status ON public.announcements(status);
+CREATE INDEX idx_announcements_published_at ON public.announcements(published_at);
+CREATE INDEX idx_announcements_category ON public.announcements(category);
+CREATE INDEX idx_announcements_priority ON public.announcements(priority);
+CREATE INDEX idx_announcements_is_pinned ON public.announcements(is_pinned);
+CREATE INDEX idx_announcement_reads_user_id ON public.announcement_reads(user_id);
+CREATE INDEX idx_announcement_reads_announcement_id ON public.announcement_reads(announcement_id);
+
+-- RLS Policies
+
+-- Announcements: Employees can only see published, non-expired announcements targeted to them
+ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.announcements FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY announcements_employee_select_policy ON public.announcements
+  FOR SELECT
+  USING (
+    -- Must be published and not expired
+    status = 'published'
+    AND (published_at IS NULL OR published_at <= now())
+    AND (expires_at IS NULL OR expires_at > now())
+    AND deleted_at IS NULL
+    AND (
+      -- Targeted to user's role (or no role targeting)
+      (cardinality(target_roles) = 0) OR
+      (get_user_role(auth.uid()) = ANY(target_roles))
+    )
+    AND (
+      -- Targeted to user's department (or no department targeting)
+      (cardinality(target_departments) = 0) OR
+      EXISTS (
+        SELECT 1 FROM public.users u
+        WHERE u.id = auth.uid() AND u.department_id = ANY(target_departments)
+      )
+    )
+    AND (
+      -- Targeted to specific employees (or no employee targeting)
+      (cardinality(target_employees) = 0) OR
+      (auth.uid() = ANY(target_employees))
+    )
+  );
+
+-- Announcements: Admin/HR/Super Admin can see all announcements
+CREATE POLICY announcements_admin_all_policy ON public.announcements
+  FOR ALL
+  USING (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  )
+  WITH CHECK (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  );
+
+-- Announcement Attachments: Follow announcement access
+ALTER TABLE public.announcement_attachments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY announcement_attachments_select_policy ON public.announcement_attachments
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.announcements a
+      WHERE a.id = announcement_id
+      -- Employee can see attachment if they can see the announcement
+      AND (
+        (
+          a.status = 'published'
+          AND (a.published_at IS NULL OR a.published_at <= now())
+          AND (a.expires_at IS NULL OR a.expires_at > now())
+          AND a.deleted_at IS NULL
+        ) OR
+        user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+      )
+    )
+  );
+
+-- Announcement Reads: Users can only insert/select their own reads
+ALTER TABLE public.announcement_reads ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY announcement_reads_self_policy ON public.announcement_reads
+  FOR ALL
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Announcement Reads: Admins can see all reads (for analytics)
+CREATE POLICY announcement_reads_admin_select_policy ON public.announcement_reads
+  FOR SELECT
+  USING (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  );
+
+-- Resources: Similar targeting logic
+ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY resources_employee_select_policy ON public.resources
+  FOR SELECT
+  USING (
+    deleted_at IS NULL
+    AND (
+      is_public = true OR
+      (cardinality(target_roles) = 0) OR
+      (get_user_role(auth.uid()) = ANY(target_roles)) OR
+      user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+    )
+  );
+
+CREATE POLICY resources_admin_all_policy ON public.resources
+  FOR ALL
+  USING (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  )
+  WITH CHECK (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  );
+```
+
+**Implementation Checklist:**
+
+ - [x] **Create migration for announcements tables**
   - File: `supabase/migrations/20260210000005_create_announcements_tables.sql`
+  - Include all tables: announcements, announcement_attachments, announcement_reads, announcement_comments, resources
+  - Include all RLS policies for employee read access and admin full access
+  - Include indexes for performance
 
-- [ ] **Create announcements API routes**
-  - File: `apps/web/src/app/api/announcements/route.ts`
-  - File: `apps/web/src/app/api/resources/route.ts`
+ - [x] **Create Supabase Storage bucket `announcement-attachments`**
+  - Private bucket, 10MB file limit per file
+  - Allowed MIME types: image/jpeg, image/png, image/gif, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document
+  - RLS policy: users can only access attachments for announcements they can view
 
-- [ ] **Connect announcements page to real data**
-  - Update `apps/web/src/app/(employee)/announcements/page.tsx`
+ - [x] **Create Zod validation schemas**
+  - File: `apps/web/src/lib/schemas/announcement.schema.ts`
+  - Schemas: `createAnnouncementSchema`, `updateAnnouncementSchema`, `announcementFiltersSchema`, `announcementAttachmentSchema`
+
+ - [x] **Update query keys factory**
+  - File: `apps/web/src/lib/query-keys.ts`
+  - Add comprehensive announcement query keys (list, detail, drafts, scheduled, analytics)
+
+ - [x] **Create announcements API routes (Admin/Super Admin)**
+  - File: `apps/web/src/app/api/announcements/route.ts` (GET list with filters, POST create)
+  - File: `apps/web/src/app/api/announcements/[id]/route.ts` (GET detail, PATCH update, DELETE soft delete)
+  - File: `apps/web/src/app/api/announcements/[id]/publish/route.ts` (POST publish announcement)
+  - File: `apps/web/src/app/api/announcements/[id]/archive/route.ts` (POST archive announcement)
+  - File: `apps/web/src/app/api/announcements/[id]/pin/route.ts` (POST/DELETE toggle pin)
+  - File: `apps/web/src/app/api/announcements/[id]/attachments/route.ts` (GET list, POST upload)
+  - File: `apps/web/src/app/api/announcements/[id]/attachments/[attachmentId]/route.ts` (DELETE)
+  - File: `apps/web/src/app/api/announcements/[id]/analytics/route.ts` (GET read counts, engagement)
+
+ - [x] **Create announcements API routes (Employee/Intern)**
+  - File: `apps/web/src/app/api/announcements/feed/route.ts` (GET targeted announcements for current user)
+  - File: `apps/web/src/app/api/announcements/[id]/read/route.ts` (POST mark as read)
+  - File: `apps/web/src/app/api/announcements/[id]/comments/route.ts` (GET, POST comments if enabled)
+
+ - [x] **Create resources API routes**
+  - File: `apps/web/src/app/api/resources/route.ts` (GET list, POST create - admin only)
+  - File: `apps/web/src/app/api/resources/[id]/route.ts` (GET, PATCH, DELETE - admin only)
+  - File: `apps/web/src/app/api/resources/[id]/download/route.ts` (GET signed URL)
+
+ - [x] **Create TanStack Query hooks**
+  - File: `apps/web/src/hooks/useAnnouncements.ts` (list with filters for admin)
+  - File: `apps/web/src/hooks/useAnnouncement.ts` (single announcement detail)
+  - File: `apps/web/src/hooks/useCreateAnnouncement.ts` (create announcement)
+  - File: `apps/web/src/hooks/useUpdateAnnouncement.ts` (update announcement)
+  - File: `apps/web/src/hooks/useDeleteAnnouncement.ts` (soft delete)
+  - File: `apps/web/src/hooks/usePublishAnnouncement.ts` (publish/unpublish)
+  - File: `apps/web/src/hooks/useAnnouncementFeed.ts` (employee feed)
+  - File: `apps/web/src/hooks/useMarkAnnouncementRead.ts` (mark as read)
+  - File: `apps/web/src/hooks/useUploadAnnouncementAttachment.ts` (file upload)
+  - File: `apps/web/src/hooks/useResources.ts` (resources library)
+
+ - [x] **Create admin announcements management pages**
+  - File: `apps/web/src/app/(admin)/admin/announcements/page.tsx`
+    - Grid/card view of all announcements (drafts, scheduled, published, expired)
+    - Filters: status, category, priority, date range, author
+    - Search by title/content
+    - Summary stat cards (total, drafts, scheduled, published, read count)
+    - Quick actions: Create New, Bulk Archive, Bulk Delete
+    - Table columns: Title, Category, Priority, Status, Published Date, Expires, Read Count, Actions
+  - File: `apps/web/src/app/(admin)/admin/announcements/new/page.tsx`
+    - Multi-step form: Basic Info → Targeting → Attachments → Preview → Publish
+    - Rich text editor for announcement content
+    - Category/priority selection
+    - Audience targeting (roles, departments, specific employees)
+    - Schedule publish/expiration dates
+    - File attachment upload
+    - Preview mode
+    - Save as draft or publish immediately
+  - File: `apps/web/src/app/(admin)/admin/announcements/[id]/page.tsx`
+    - View/edit existing announcement
+    - Tabbed layout: Details | Targeting | Attachments | Analytics
+    - Analytics tab: read count, read rate, user breakdown, time-series chart
+    - Quick actions: Publish/Unpublish, Pin/Unpin, Archive, Delete, Duplicate
+
+- [x] **Create super-admin redirect pages**
+  - File: `apps/web/src/app/(admin)/super-admin/announcements/page.tsx` (redirects to `/admin/announcements`)
+  - File: `apps/web/src/app/(admin)/super-admin/announcements/new/page.tsx` (redirects to `/admin/announcements/new`)
+  - File: `apps/web/src/app/(admin)/super-admin/announcements/[id]/page.tsx` (redirects to `/admin/announcements/[id]`)
+
+- [x] **Update employee announcements page to use real data**
+  - File: `apps/web/src/app/(employee)/announcements/page.tsx`
+  - Replace mock data with `useAnnouncementFeed` hook
+  - Add read/unread filtering
+  - Implement mark-as-read on announcement click
+  - Add search functionality
+  - Keep "My Growth" tab separate (learning/development resources)
+  - Add infinite scroll or pagination
+  - Show pinned announcements at top
+
+- [x] **Update Sidebar navigation**
+  - File: `packages/ui/src/layout/Sidebar.tsx`
+  - Add "Announcements" item to `adminNavItems` and `superAdminNavItems`
+  - Icon: `Megaphone` from lucide-react (already used for employee sidebar)
+  - Path: `/admin/announcements` for admin, `/super-admin/announcements` for super_admin
+
+- [x] **Create reusable announcement components**
+  - File: `packages/ui/src/components/announcements/AnnouncementCard.tsx`
+    - Card display for announcement (title, excerpt, category badge, priority indicator, date, read status)
+  - File: `packages/ui/src/components/announcements/AnnouncementFilters.tsx`
+    - Filter controls for status, category, priority, date range
+  - File: `packages/ui/src/components/announcements/AnnouncementEditor.tsx`
+    - Rich text editor wrapper (use Tiptap or similar)
+  - File: `packages/ui/src/components/announcements/TargetingSelector.tsx`
+    - Multi-select for roles, departments, employees
+  - File: `packages/ui/src/components/announcements/AnnouncementPreview.tsx`
+    - Preview how announcement will appear to employees
+  - File: `packages/ui/src/components/announcements/AttachmentUploader.tsx`
+    - Drag-and-drop file upload with progress
+  - File: `packages/ui/src/components/announcements/AnnouncementAnalytics.tsx`
+    - Charts and metrics for read counts, engagement
+
+- [x] **Write unit tests for announcement hooks**
+  - File: `tests/hooks/useAnnouncements.test.ts`
+  - File: `tests/hooks/useAnnouncementFeed.test.ts`
+  - File: `tests/hooks/useCreateAnnouncement.test.ts`
+
+- [x] **Write E2E tests for announcement management**
+  - File: `e2e/admin-announcements.spec.ts`
+  - Tests: create draft, schedule announcement, publish immediately, edit, delete
+  - Tests: target specific roles/departments, attach files, pin/unpin
+  - Tests: employee sees targeted announcements only
+  - Tests: mark as read functionality
+  - Tests: analytics dashboard renders correctly
+
+- [x] **Create n8n workflow for scheduled announcements**
+  - File: `n8n/workflows/announcements-auto-publish.json`
+  - Trigger: Every 15 minutes (cron schedule)
+  - Logic: Query announcements with status='scheduled' and published_at <= now()
+  - Action: Update status to 'published', increment read_count to 0
+  - Notification: Send Slack/email to all targeted users
+
+- [x] **Create n8n workflow for expiring announcements**
+  - File: `n8n/workflows/announcements-auto-expire.json`
+  - Trigger: Daily at midnight
+  - Logic: Query announcements with status='published' and expires_at <= now()
+  - Action: Update status to 'expired'
+
+- [x] **Update database types**
+  - File: `packages/database/src/database.types.ts`
+  - Add types: `Announcement`, `AnnouncementAttachment`, `AnnouncementRead`, `AnnouncementComment`, `Resource`
+  - Add enums: `AnnouncementPriority`, `AnnouncementStatus`, `AnnouncementCategory`
+
+**Visual Specifications (Titanium & Indigo Design System):**
+
+**Admin Announcements List Page:**
+```typescript
+// Container
+className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden"
+
+// Header Section
+className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6"
+
+// Title
+className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
+
+// Summary Stats Grid
+className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+
+// Stat Card
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
+
+// Filters Row
+className="flex flex-wrap items-center gap-3 mb-4"
+
+// Filter Button
+className="border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+
+// Content Area (scrollable)
+className="flex-1 overflow-y-auto p-6"
+
+// Announcements Grid
+className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+
+// Announcement Card
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
+
+// Priority Badge (Urgent)
+className="bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 px-2 py-1 rounded text-xs font-medium"
+
+// Priority Badge (High)
+className="bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-xs font-medium"
+
+// Category Badge
+className="bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded text-xs font-medium"
+
+// Status Badge (Published)
+className="bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded text-xs font-medium"
+
+// Status Badge (Draft)
+className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded text-xs font-medium"
+
+// Create Button (Primary Action)
+className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
+```
+
+**Admin Announcement Editor:**
+```typescript
+// Form Container
+className="h-screen bg-zinc-50 dark:bg-zinc-950 flex overflow-hidden"
+
+// Sidebar (Steps Navigation)
+className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 overflow-y-auto"
+
+// Main Editor Area
+className="flex-1 flex flex-col overflow-hidden"
+
+// Editor Toolbar
+className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-center gap-2"
+
+// Editor Content (scrollable)
+className="flex-1 overflow-y-auto p-6"
+
+// Rich Text Editor Wrapper
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 min-h-[400px]"
+
+// Footer Actions
+className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-center justify-between"
+
+// Secondary Button
+className="border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 px-4 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
+```
+
+**Employee Announcements Feed:**
+```typescript
+// Pinned Announcement
+className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 border-l-4 border-indigo-600 rounded-lg p-4 mb-4"
+
+// Unread Announcement Card
+className="bg-white dark:bg-zinc-900 border-l-4 border-indigo-600 border-r border-t border-b border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
+
+// Read Announcement Card
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 opacity-75"
+
+// Urgent Announcement Banner
+className="bg-rose-50 dark:bg-rose-950/30 border-l-4 border-rose-600 rounded-lg p-4 mb-4"
+```
+
+---
+
+### 2.5 Resources / Information Hub
+
+The **Resources / Information Hub** is a centralized repository where employees and interns can access video recordings, training materials, onboarding documents, policy handbooks, forms, templates, how-to guides, and other useful resources. This feature complements the Announcements system by providing persistent, searchable, categorized content rather than time-sensitive communications.
+
+The Information Hub unifies both Announcements (Section 2.4) and Resources under one conceptual umbrella, making it the single source of truth for all company information and learning materials.
+
+#### Feature Overview
+
+**Admin/HR/Super Admin Capabilities:**
+- Upload and manage resources (videos, PDFs, documents, links)
+- Organize resources into categories and subcategories
+- Tag resources with keywords for improved searchability
+- Target resources to specific roles, departments, or individuals
+- Pin/feature important resources
+- Track resource views and downloads
+- Set publish/expiration dates
+- Add rich descriptions with markdown support
+- Create resource collections (playlists/bundles)
+- Bulk upload and import
+- Version control for document updates
+
+**Employee/Intern Experience:**
+- Browse resources by category
+- Search by title, description, tags, or content
+- Filter by resource type, category, department, role
+- Bookmark/save favorite resources
+- View recently accessed resources
+- Access featured/recommended resources
+- Download documents or view embedded content
+- See resource popularity (view counts, ratings)
+- Receive notifications for new resources in followed categories
+- Track learning progress (for course materials)
+
+**Resource Types Supported:**
+1. **Video** - Embedded YouTube/Vimeo links, or uploaded MP4 files
+2. **Documents** - PDF, Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx)
+3. **Images** - JPG, PNG, GIF (infographics, diagrams, posters)
+4. **Links** - External URLs (articles, web apps, forms)
+5. **Presentations** - SlideShare embeds, Google Slides links
+6. **Interactive Content** - Embedded forms, quizzes, surveys
+
+**Resource Categories:**
+- **Onboarding** - Welcome videos, first-week checklists, company intro materials
+- **Training & Development** - Courses, workshops, skill-building resources
+- **Policies & Procedures** - Employee handbook, code of conduct, compliance docs
+- **Benefits & Perks** - Health insurance guides, retirement plans, gym memberships
+- **Tools & Systems** - Software tutorials, system access guides, IT help
+- **Company Culture** - Mission/vision, values, team photos, culture videos
+- **Department-Specific** - Engineering, Marketing, Sales, HR, Finance resources
+- **Forms & Templates** - Expense reports, templates
+- **Performance Management** - Review templates, goal-setting guides, OKR resources
+- **Emergency & Safety** - Evacuation plans, first aid, contact lists
+
+#### Database Schema Required
+
+```sql
+-- Migration: supabase/migrations/20260211000002_create_resources_tables.sql
+
+CREATE TYPE resource_type AS ENUM (
+  'video',
+  'document',
+  'image',
+  'link',
+  'presentation',
+  'interactive'
+);
+
+CREATE TYPE resource_category AS ENUM (
+  'onboarding',
+  'training',
+  'policies',
+  'benefits',
+  'tools',
+  'culture',
+  'department_specific',
+  'forms_templates',
+  'performance',
+  'emergency'
+);
+
+CREATE TYPE resource_status AS ENUM ('draft', 'published', 'archived');
+
+CREATE TABLE public.resources (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+
+  -- Basic Information
+  title text NOT NULL,
+  description text,
+  excerpt text, -- Short summary (auto-generated from first 200 chars if null)
+
+  -- Classification
+  resource_type resource_type NOT NULL,
+  category resource_category NOT NULL,
+  subcategory text, -- Freeform subcategory within main category
+  tags text[] DEFAULT '{}', -- Searchable tags (e.g., ['remote-work', 'productivity', 'tips'])
+
+  -- Content Location
+  file_path text, -- Supabase Storage path for uploaded files
+  external_url text, -- External link (YouTube, Vimeo, Google Docs, etc.)
+  thumbnail_path text, -- Thumbnail image for videos/documents
+
+  -- Metadata
+  file_size bigint, -- Size in bytes (for uploaded files)
+  mime_type text, -- MIME type (e.g., 'video/mp4', 'application/pdf')
+  duration_seconds integer, -- Video/audio duration
+
+  -- Publishing
+  status resource_status NOT NULL DEFAULT 'draft',
+  published_at timestamptz, -- Null = draft, future = scheduled, past = published
+  expires_at timestamptz, -- Null = never expires
+
+  -- Targeting (similar to announcements)
+  is_public boolean DEFAULT false, -- If true, visible to all roles
+  target_roles user_role[] DEFAULT '{}', -- Empty array = all roles
+  target_departments uuid[] DEFAULT '{}', -- Empty array = all departments
+  target_employees uuid[] DEFAULT '{}', -- Specific employees (overrides role/dept)
+
+  -- Display Options
+  is_featured boolean DEFAULT false, -- Show in featured section
+  is_pinned boolean DEFAULT false, -- Pin to top of category
+  display_order integer DEFAULT 0, -- Custom ordering within category
+
+  -- Engagement Metrics
+  view_count integer DEFAULT 0,
+  download_count integer DEFAULT 0,
+  bookmark_count integer DEFAULT 0,
+
+  -- Versioning
+  version integer DEFAULT 1,
+  previous_version_id uuid REFERENCES public.resources(id), -- Link to previous version
+
+  -- Audit
+  author_id uuid NOT NULL REFERENCES public.users(id),
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL,
+  created_by uuid REFERENCES auth.users(id),
+  deleted_at timestamptz
+);
+
+-- Resource collections (playlists/bundles)
+CREATE TABLE public.resource_collections (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text NOT NULL,
+  description text,
+  thumbnail_path text,
+  is_public boolean DEFAULT false,
+  target_roles user_role[] DEFAULT '{}',
+  target_departments uuid[] DEFAULT '{}',
+  author_id uuid NOT NULL REFERENCES public.users(id),
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL,
+  deleted_at timestamptz
+);
+
+-- Junction table for collection items
+CREATE TABLE public.collection_resources (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  collection_id uuid NOT NULL REFERENCES public.resource_collections(id) ON DELETE CASCADE,
+  resource_id uuid NOT NULL REFERENCES public.resources(id) ON DELETE CASCADE,
+  display_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE(collection_id, resource_id)
+);
+
+-- User bookmarks
+CREATE TABLE public.resource_bookmarks (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  resource_id uuid NOT NULL REFERENCES public.resources(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  notes text, -- Personal notes about the resource
+  created_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE(resource_id, user_id)
+);
+
+-- Track resource views
+CREATE TABLE public.resource_views (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  resource_id uuid NOT NULL REFERENCES public.resources(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  viewed_at timestamptz DEFAULT now() NOT NULL,
+  duration_seconds integer, -- How long they watched/read (if trackable)
+  completed boolean DEFAULT false -- Did they complete the resource (video, course, etc.)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_resources_status ON public.resources(status);
+CREATE INDEX idx_resources_category ON public.resources(category);
+CREATE INDEX idx_resources_type ON public.resources(resource_type);
+CREATE INDEX idx_resources_is_featured ON public.resources(is_featured);
+CREATE INDEX idx_resources_is_pinned ON public.resources(is_pinned);
+CREATE INDEX idx_resources_tags ON public.resources USING GIN(tags);
+CREATE INDEX idx_resources_published_at ON public.resources(published_at);
+CREATE INDEX idx_resource_views_user_id ON public.resource_views(user_id);
+CREATE INDEX idx_resource_views_resource_id ON public.resource_views(resource_id);
+CREATE INDEX idx_resource_bookmarks_user_id ON public.resource_bookmarks(user_id);
+
+-- Full-text search index (for title, description, tags)
+CREATE INDEX idx_resources_search ON public.resources USING GIN(
+  to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '') || ' ' || array_to_string(tags, ' '))
+);
+
+-- RLS Policies
+
+-- Resources: Employees can only see published, non-expired resources targeted to them
+ALTER TABLE public.resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.resources FORCE ROW LEVEL SECURITY;
+
+CREATE POLICY resources_employee_select_policy ON public.resources
+  FOR SELECT
+  USING (
+    -- Must be published and not expired
+    status = 'published'
+    AND (published_at IS NULL OR published_at <= now())
+    AND (expires_at IS NULL OR expires_at > now())
+    AND deleted_at IS NULL
+    AND (
+      -- Public resources visible to all
+      is_public = true OR
+      -- Targeted to user's role (or no role targeting)
+      (cardinality(target_roles) = 0) OR
+      (get_user_role(auth.uid()) = ANY(target_roles))
+    )
+    AND (
+      -- Targeted to user's department (or no department targeting)
+      (cardinality(target_departments) = 0) OR
+      EXISTS (
+        SELECT 1 FROM public.users u
+        WHERE u.id = auth.uid() AND u.department_id = ANY(target_departments)
+      )
+    )
+    AND (
+      -- Targeted to specific employees (or no employee targeting)
+      (cardinality(target_employees) = 0) OR
+      (auth.uid() = ANY(target_employees))
+    )
+  );
+
+-- Resources: Admin/HR/Super Admin can see and manage all resources
+CREATE POLICY resources_admin_all_policy ON public.resources
+  FOR ALL
+  USING (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  )
+  WITH CHECK (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  );
+
+-- Resource Collections: Follow same access pattern
+ALTER TABLE public.resource_collections ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY collections_employee_select_policy ON public.resource_collections
+  FOR SELECT
+  USING (
+    deleted_at IS NULL
+    AND (
+      is_public = true OR
+      (cardinality(target_roles) = 0) OR
+      (get_user_role(auth.uid()) = ANY(target_roles)) OR
+      user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+    )
+  );
+
+CREATE POLICY collections_admin_all_policy ON public.resource_collections
+  FOR ALL
+  USING (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  )
+  WITH CHECK (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  );
+
+-- Resource Bookmarks: Users can only manage their own bookmarks
+ALTER TABLE public.resource_bookmarks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY bookmarks_self_policy ON public.resource_bookmarks
+  FOR ALL
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Resource Bookmarks: Admins can see all bookmarks (for analytics)
+CREATE POLICY bookmarks_admin_select_policy ON public.resource_bookmarks
+  FOR SELECT
+  USING (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  );
+
+-- Resource Views: Users can only insert/select their own views
+ALTER TABLE public.resource_views ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY views_self_policy ON public.resource_views
+  FOR ALL
+  USING (user_id = auth.uid())
+  WITH CHECK (user_id = auth.uid());
+
+-- Resource Views: Admins can see all views (for analytics)
+CREATE POLICY views_admin_select_policy ON public.resource_views
+  FOR SELECT
+  USING (
+    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin', 'ceo', 'cos'])
+  );
+
+-- Trigger to increment view_count on resource_views insert
+CREATE OR REPLACE FUNCTION increment_resource_view_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.resources
+  SET view_count = view_count + 1
+  WHERE id = NEW.resource_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER resource_view_count_trigger
+  AFTER INSERT ON public.resource_views
+  FOR EACH ROW
+  EXECUTE FUNCTION increment_resource_view_count();
+
+-- Trigger to increment bookmark_count on bookmark insert/delete
+CREATE OR REPLACE FUNCTION update_resource_bookmark_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.resources
+    SET bookmark_count = bookmark_count + 1
+    WHERE id = NEW.resource_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE public.resources
+    SET bookmark_count = bookmark_count - 1
+    WHERE id = OLD.resource_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER resource_bookmark_count_trigger
+  AFTER INSERT OR DELETE ON public.resource_bookmarks
+  FOR EACH ROW
+  EXECUTE FUNCTION update_resource_bookmark_count();
+```
+
+#### Implementation Checklist
+
+**Database & Storage:**
+
+- [ ] **Create migration for resources tables**
+  - File: `supabase/migrations/20260211000002_create_resources_tables.sql`
+  - Include all tables: resources, resource_collections, collection_resources, resource_bookmarks, resource_views
+  - Include all RLS policies for employee read access and admin full access
+  - Include indexes for performance and full-text search
+  - Include triggers for view_count and bookmark_count
+
+- [ ] **Create Supabase Storage bucket `resources-library`**
+  - Private bucket, 100MB file limit per file
+  - Allowed MIME types: video/mp4, video/webm, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-powerpoint, application/vnd.openxmlformats-officedocument.presentationml.presentation, image/jpeg, image/png, image/gif
+  - RLS policy: users can only access resources they are authorized to view
+  - Organize with folder structure: `{category}/{resource_id}/{filename}`
+
+- [ ] **Create Supabase Storage bucket `resource-thumbnails`**
+  - Public bucket for thumbnail images
+  - 5MB file limit per file
+  - Allowed MIME types: image/jpeg, image/png, image/webp
+
+**API & Backend:**
+
+- [ ] **Create Zod validation schemas**
+  - File: `apps/web/src/lib/schemas/resource.schema.ts`
+  - Schemas: `createResourceSchema`, `updateResourceSchema`, `resourceFiltersSchema`, `createCollectionSchema`, `bookmarkResourceSchema`
+
+- [ ] **Update query keys factory**
+  - File: `apps/web/src/lib/query-keys.ts`
+  - Add comprehensive resource query keys (list, detail, featured, category, search, bookmarks, collections)
+
+- [ ] **Create resources API routes (Admin/Super Admin)**
+  - File: `apps/web/src/app/api/resources/route.ts` (GET list with filters, POST create)
+  - File: `apps/web/src/app/api/resources/[id]/route.ts` (GET detail, PATCH update, DELETE soft delete)
+  - File: `apps/web/src/app/api/resources/[id]/publish/route.ts` (POST publish resource)
+  - File: `apps/web/src/app/api/resources/[id]/archive/route.ts` (POST archive resource)
+  - File: `apps/web/src/app/api/resources/[id]/featured/route.ts` (POST/DELETE toggle featured)
+  - File: `apps/web/src/app/api/resources/upload/route.ts` (POST upload file with metadata)
+  - File: `apps/web/src/app/api/resources/[id]/download/route.ts` (GET signed URL for download)
+  - File: `apps/web/src/app/api/resources/[id]/analytics/route.ts` (GET view counts, downloads, engagement)
+  - File: `apps/web/src/app/api/resources/bulk-upload/route.ts` (POST bulk upload multiple files)
+
+- [ ] **Create resources API routes (Employee/Intern)**
+  - File: `apps/web/src/app/api/resources/feed/route.ts` (GET targeted resources for current user)
+  - File: `apps/web/src/app/api/resources/search/route.ts` (GET full-text search)
+  - File: `apps/web/src/app/api/resources/[id]/view/route.ts` (POST track view)
+  - File: `apps/web/src/app/api/resources/[id]/bookmark/route.ts` (POST/DELETE bookmark)
+  - File: `apps/web/src/app/api/resources/featured/route.ts` (GET featured resources)
+  - File: `apps/web/src/app/api/resources/recent/route.ts` (GET recently viewed)
+  - File: `apps/web/src/app/api/resources/bookmarks/route.ts` (GET user's bookmarks)
+
+- [ ] **Create collections API routes**
+  - File: `apps/web/src/app/api/collections/route.ts` (GET list, POST create - admin only)
+  - File: `apps/web/src/app/api/collections/[id]/route.ts` (GET, PATCH, DELETE - admin only)
+  - File: `apps/web/src/app/api/collections/[id]/resources/route.ts` (GET resources in collection, POST add resource, DELETE remove resource)
+
+**TanStack Query Hooks:**
+
+- [ ] **Create TanStack Query hooks**
+  - File: `apps/web/src/hooks/useResources.ts` (list with filters for admin)
+  - File: `apps/web/src/hooks/useResource.ts` (single resource detail)
+  - File: `apps/web/src/hooks/useCreateResource.ts` (create resource)
+  - File: `apps/web/src/hooks/useUpdateResource.ts` (update resource)
+  - File: `apps/web/src/hooks/useDeleteResource.ts` (soft delete)
+  - File: `apps/web/src/hooks/usePublishResource.ts` (publish/unpublish)
+  - File: `apps/web/src/hooks/useUploadResource.ts` (file upload with progress)
+  - File: `apps/web/src/hooks/useResourceFeed.ts` (employee feed)
+  - File: `apps/web/src/hooks/useSearchResources.ts` (full-text search)
+  - File: `apps/web/src/hooks/useBookmarkResource.ts` (bookmark/unbookmark)
+  - File: `apps/web/src/hooks/useTrackResourceView.ts` (track view)
+  - File: `apps/web/src/hooks/useResourceCollections.ts` (collections list)
+  - File: `apps/web/src/hooks/useResourceCollection.ts` (single collection detail)
+
+**Admin Pages:**
+
+- [ ] **Create admin resources management pages**
+  - File: `apps/web/src/app/(admin)/admin/resources/page.tsx`
+    - Grid/card view of all resources (drafts, published, archived)
+    - Filters: status, category, type, date range, author, tags
+    - Search by title/description/tags
+    - Summary stat cards (total, published, drafts, view count, download count)
+    - Quick actions: Create New, Bulk Upload, Bulk Archive, Bulk Delete
+    - Table columns: Title, Type, Category, Status, Published Date, Views, Downloads, Actions
+  - File: `apps/web/src/app/(admin)/admin/resources/new/page.tsx`
+    - Multi-step form: Basic Info → Content Upload/Link → Targeting → Preview → Publish
+    - Rich text editor for description
+    - Category/type selection
+    - Tag input (multi-select or freeform chips)
+    - Audience targeting (roles, departments, specific employees)
+    - Schedule publish/expiration dates
+    - File upload with drag-and-drop or external URL input
+    - Thumbnail upload or auto-generate
+    - Save as draft or publish immediately
+  - File: `apps/web/src/app/(admin)/admin/resources/[id]/page.tsx`
+    - View/edit existing resource
+    - Tabbed layout: Details | Targeting | Analytics | Version History
+    - Analytics tab: view count, download count, bookmark count, user breakdown, time-series chart
+    - Version history: list previous versions with restore option
+    - Quick actions: Publish/Unpublish, Feature/Unfeature, Archive, Delete, Duplicate, Update Version
+
+- [ ] **Create admin collections management pages**
+  - File: `apps/web/src/app/(admin)/admin/resources/collections/page.tsx`
+    - List of all collections with create/edit/delete
+  - File: `apps/web/src/app/(admin)/admin/resources/collections/new/page.tsx`
+    - Create collection form
+  - File: `apps/web/src/app/(admin)/admin/resources/collections/[id]/page.tsx`
+    - Edit collection, add/remove/reorder resources
+
+- [ ] **Create super-admin redirect pages**
+  - File: `apps/web/src/app/(admin)/super-admin/resources/page.tsx` (redirects to `/admin/resources`)
+  - File: `apps/web/src/app/(admin)/super-admin/resources/new/page.tsx` (redirects to `/admin/resources/new`)
+  - File: `apps/web/src/app/(admin)/super-admin/resources/[id]/page.tsx` (redirects to `/admin/resources/[id]`)
+
+**Employee Pages:**
+
+- [ ] **Update employee Information Hub page to include Resources**
+  - File: `apps/web/src/app/(employee)/information-hub/page.tsx` (rename from `/announcements`)
+  - Three tabs: Announcements | Resources | My Growth
+  - Announcements tab: use existing announcements feed from Section 2.4
+  - Resources tab: new resource browser
+  - My Growth tab: existing learning/development section
+  - Shared search bar across all tabs
+  - Featured/pinned items at top of Resources tab
+  - Category filters, type filters, tag filters
+  - Grid view with thumbnails
+  - Bookmark button, view tracking on click
+  - Recently viewed resources section
+
+- [ ] **Create resource detail page**
+  - File: `apps/web/src/app/(employee)/information-hub/resources/[id]/page.tsx`
+    - Full resource view (embedded video player, PDF viewer, or download button)
+    - Breadcrumb navigation (category → resource)
+    - Bookmark button, download button (if applicable)
+    - Related resources section
+    - "Mark as completed" button for training resources
+    - Track view duration for analytics
+
+- [ ] **Create resource category page**
+  - File: `apps/web/src/app/(employee)/information-hub/resources/category/[category]/page.tsx`
+    - All resources in a specific category
+    - Subcategory filters
+    - Sort by: newest, most viewed, most downloaded, title
+
+- [ ] **Create bookmarks page**
+  - File: `apps/web/src/app/(employee)/information-hub/resources/bookmarks/page.tsx`
+    - All user's bookmarked resources
+    - Personal notes display
+    - Remove bookmark option
+
+**UI Components:**
+
+- [ ] **Create reusable resource components**
+  - File: `packages/ui/src/components/resources/ResourceCard.tsx`
+    - Card display for resource (thumbnail, title, type badge, category badge, view count, bookmark button)
+  - File: `packages/ui/src/components/resources/ResourceGrid.tsx`
+    - Responsive grid layout for resource cards
+  - File: `packages/ui/src/components/resources/ResourceFilters.tsx`
+    - Filter controls for status, category, type, tags, date range
+  - File: `packages/ui/src/components/resources/ResourceUploader.tsx`
+    - Drag-and-drop file upload with progress, or URL input
+  - File: `packages/ui/src/components/resources/ResourcePreview.tsx`
+    - Preview how resource will appear to employees
+  - File: `packages/ui/src/components/resources/VideoPlayer.tsx`
+    - Embedded video player (YouTube, Vimeo, or native HTML5)
+  - File: `packages/ui/src/components/resources/DocumentViewer.tsx`
+    - PDF viewer or document download button
+  - File: `packages/ui/src/components/resources/ResourceAnalytics.tsx`
+    - Charts and metrics for views, downloads, engagement
+  - File: `packages/ui/src/components/resources/TargetingSelector.tsx`
+    - Multi-select for roles, departments, employees (reuse from announcements)
+  - File: `packages/ui/src/components/resources/TagInput.tsx`
+    - Chip-style tag input component
+  - File: `packages/ui/src/components/resources/CategoryBrowser.tsx`
+    - Visual category browser with icons
+
+**Navigation Updates:**
+
+- [ ] **Update Sidebar navigation**
+  - File: `packages/ui/src/layout/Sidebar.tsx`
+  - Rename "Announcements" to "Information Hub" for employee/intern roles
+  - Add "Resources" item to `adminNavItems` and `superAdminNavItems`
+  - Icon for employee/intern: Keep `Megaphone` for Information Hub
+  - Icon for admin: `Library` from lucide-react for Resources
+  - Path: `/information-hub` for employee/intern, `/admin/resources` for admin, `/super-admin/resources` for super_admin
+
+**Testing:**
+
+- [ ] **Write unit tests for resource hooks**
+  - File: `tests/hooks/useResources.test.ts`
+  - File: `tests/hooks/useResourceFeed.test.ts`
+  - File: `tests/hooks/useCreateResource.test.ts`
+  - File: `tests/hooks/useSearchResources.test.ts`
+
+- [ ] **Write E2E tests for resource management**
+  - File: `e2e/admin-resources.spec.ts`
+  - Tests: create draft, upload file, publish resource, edit, delete
+  - Tests: target specific roles/departments, add tags, feature/unfeature
+  - Tests: employee sees targeted resources only
+  - Tests: bookmark functionality
+  - Tests: search functionality
+  - Tests: analytics dashboard renders correctly
+
+**Workflows (n8n):**
+
+- [ ] **Create n8n workflow for scheduled resources**
+  - File: `n8n/workflows/resources-auto-publish.json`
+  - Trigger: Every 15 minutes (cron schedule)
+  - Logic: Query resources with status='draft' and published_at <= now()
+  - Action: Update status to 'published'
+
+- [ ] **Create n8n workflow for expiring resources**
+  - File: `n8n/workflows/resources-auto-expire.json`
+  - Trigger: Daily at midnight
+  - Logic: Query resources with status='published' and expires_at <= now()
+  - Action: Update status to 'archived'
+
+- [ ] **Create n8n workflow for new resource notifications**
+  - File: `n8n/workflows/resources-new-notification.json`
+  - Trigger: Webhook when resource published
+  - Logic: Identify targeted users (roles, departments, employees)
+  - Action: Send email/Slack notification to targeted users
+
+**Database Types:**
+
+- [ ] **Update database types**
+  - File: `packages/database/src/database.types.ts`
+  - Add types: `Resource`, `ResourceCollection`, `CollectionResource`, `ResourceBookmark`, `ResourceView`
+  - Add enums: `ResourceType`, `ResourceCategory`, `ResourceStatus`
+
+#### Visual Specifications (Titanium & Indigo Design System)
+
+**Admin Resources List Page:**
+```typescript
+// Container
+className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden"
+
+// Header Section
+className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6"
+
+// Title
+className="text-2xl font-bold text-zinc-900 dark:text-zinc-50"
+
+// Summary Stats Grid
+className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+
+// Stat Card
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
+
+// Filters Row
+className="flex flex-wrap items-center gap-3 mb-4"
+
+// Filter Button
+className="border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+
+// Content Area (scrollable)
+className="flex-1 overflow-y-auto p-6"
+
+// Resources Grid
+className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+
+// Resource Card
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+
+// Card Thumbnail
+className="w-full h-40 object-cover bg-zinc-100 dark:bg-zinc-800"
+
+// Card Content
+className="p-4 space-y-2"
+
+// Resource Type Badge (Video)
+className="bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 px-2 py-1 rounded text-xs font-medium"
+
+// Resource Type Badge (Document)
+className="bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 px-2 py-1 rounded text-xs font-medium"
+
+// Category Badge
+className="bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded text-xs font-medium"
+
+// Status Badge (Published)
+className="bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded text-xs font-medium"
+
+// Status Badge (Draft)
+className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded text-xs font-medium"
+
+// Featured Badge
+className="bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-xs font-medium flex items-center gap-1"
+
+// Create Button (Primary Action)
+className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
+```
+
+**Admin Resource Editor:**
+```typescript
+// Form Container
+className="h-screen bg-zinc-50 dark:bg-zinc-950 flex overflow-hidden"
+
+// Sidebar (Steps Navigation)
+className="w-64 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 overflow-y-auto"
+
+// Main Editor Area
+className="flex-1 flex flex-col overflow-hidden"
+
+// Editor Toolbar
+className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-center gap-2"
+
+// Editor Content (scrollable)
+className="flex-1 overflow-y-auto p-6"
+
+// Upload Zone
+className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg p-8 text-center hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors cursor-pointer"
+
+// Tag Chip
+className="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2 py-1 rounded-full text-sm flex items-center gap-1"
+
+// Footer Actions
+className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-center justify-between"
+
+// Secondary Button
+className="border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 px-4 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
+```
+
+**Employee Information Hub / Resources Tab:**
+```typescript
+// Tab Container
+className="space-y-6"
+
+// Search Bar
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 flex items-center gap-3"
+
+// Featured Section
+className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800"
+
+// Category Browser
+className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"
+
+// Category Card
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 flex flex-col items-center gap-2 hover:shadow-lg transition-shadow cursor-pointer"
+
+// Category Icon Wrapper
+className="w-12 h-12 rounded-lg bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center"
+
+// Resources Grid
+className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+
+// Resource Card (Employee View)
+className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden hover:shadow-lg transition-all cursor-pointer group"
+
+// Thumbnail with Play Icon (for videos)
+className="relative w-full h-40"
+
+// Play Button Overlay
+className="absolute inset-0 flex items-center justify-center bg-zinc-900/50 opacity-0 group-hover:opacity-100 transition-opacity"
+
+// Bookmark Button
+className="absolute top-2 right-2 bg-white dark:bg-zinc-900 rounded-full p-2 shadow-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+
+// Bookmarked State
+className="text-indigo-600 dark:text-indigo-400"
+
+// View Count / Download Count
+className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400"
+```
+
+**Resource Detail Page (Employee):**
+```typescript
+// Page Container
+className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden"
+
+// Breadcrumb
+className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-3"
+
+// Content Area
+className="flex-1 overflow-y-auto"
+
+// Video Player / Document Viewer Container
+className="bg-zinc-900 aspect-video w-full"
+
+// Resource Info Section
+className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6"
+
+// Action Buttons Row
+className="flex items-center gap-3"
+
+// Bookmark Button (Active)
+className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
+
+// Download Button
+className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 px-4 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
+
+// Mark as Completed Button
+className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md"
+
+// Related Resources Section
+className="p-6"
+
+// Related Resources Grid
+className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+```
+
+#### Integration Points
+
+**Unified Information Hub Navigation:**
+- The employee/intern sidebar shows a single "Information Hub" menu item that routes to `/information-hub`
+- The Information Hub page has three tabs: Announcements (from Section 2.4), Resources (this section), and My Growth (existing learning/development)
+- Admins have separate menu items: "Announcements" (`/admin/announcements`) and "Resources" (`/admin/resources`)
+
+**Search Integration:**
+- Global search bar on Information Hub searches across both announcements and resources
+- Full-text search uses PostgreSQL `to_tsvector` on title, description, and tags
+- Results grouped by type (Announcements vs Resources)
+
+**Notification Integration:**
+- New resource published: send notification to targeted users (via n8n workflow)
+- Resource expiring soon: notify users who bookmarked it
+- New resources in followed categories: weekly digest email
+
+**Analytics Integration:**
+- Admin dashboard shows resource engagement metrics
+- Track most viewed, most downloaded, most bookmarked resources
+- Identify content gaps (categories with low resource count)
+
+**AI Integration (Future):**
+- AI can recommend resources based on user role, recent activity, and questions asked
+- AI can summarize long documents or transcribe videos
+- AI can suggest tags and categories for new uploads
 
 ---
 
@@ -480,38 +1986,38 @@ CREATE TABLE public.resources (
 
 ### 3.1 n8n Setup
 
-- [ ] **Create n8n Docker configuration**
+- [x] **Create n8n Docker configuration**
   - File: `n8n/docker-compose.yml`
   - Configure with PostgreSQL backend
   - Set environment variables for Supabase connection
 
-- [ ] **Create n8n webhook configuration**
+- [x] **Create n8n webhook configuration**
   - Document webhook URLs for each workflow
   - Create API route for webhook validation
   - File: `apps/web/src/app/api/webhooks/n8n/route.ts`
 
 ### 3.2 Notification Workflows
 
-- [ ] **Birthday reminder workflow**
+- [x] **Birthday reminder workflow**
   - File: `n8n/workflows/notifications-birthday-reminder.json`
   - Trigger: Daily schedule (8 AM)
   - Logic: Query employees with birthday = today
   - Action: Send email to HR + Slack notification
   - Audit: Log notification sent
 
-- [ ] **Work anniversary reminder workflow**
+- [x] **Work anniversary reminder workflow**
   - File: `n8n/workflows/notifications-anniversary-reminder.json`
   - Trigger: Daily schedule (8 AM)
   - Logic: Query employees with date_hired anniversary = today
   - Action: Send email to employee + manager
 
-- [ ] **Payroll deadline reminder workflow**
+- [x] **Payroll deadline reminder workflow**
   - File: `n8n/workflows/notifications-payroll-reminder.json`
   - Trigger: 3 days before payroll deadline
   - Logic: Query employees with pending invoices
   - Action: Send email reminder
 
-- [ ] **Probation ending reminder workflow**
+- [x] **Probation ending reminder workflow**
   - File: `n8n/workflows/notifications-probation-ending.json`
   - Trigger: Daily schedule
   - Logic: Query employees with probation_end_date in next 14 days
@@ -548,7 +2054,7 @@ CREATE TABLE public.onboarding_tasks (
 );
 ```
 
-- [ ] **Create migration for onboarding tables**
+- [x] **Create migration for onboarding tables**
   - File: `supabase/migrations/20260210000006_create_onboarding_tables.sql`
 
 - [ ] **Create onboarding workflow**
@@ -561,7 +2067,7 @@ CREATE TABLE public.onboarding_tasks (
     - Schedule welcome email
     - Create calendar events for orientation
 
-- [ ] **Create onboarding API routes**
+- [x] **Create onboarding API routes**
   - File: `apps/web/src/app/api/onboarding/route.ts`
   - File: `apps/web/src/app/api/onboarding/[id]/tasks/route.ts`
 
@@ -682,21 +2188,21 @@ CREATE TABLE public.onboarding_documents (
 
 **Implementation Checklist:**
 
-- [ ] **Create migration for onboarding profiles and documents tables**
+- [x] **Create migration for onboarding profiles and documents tables**
   - File: `supabase/migrations/20260211000001_create_onboarding_profiles.sql`
   - Include RLS policies (self-access for users, read-all for HR/Admin)
   - Include indexes on user_id, is_completed, current_step
 
-- [ ] **Create Supabase Storage bucket `onboarding-documents`**
+- [x] **Create Supabase Storage bucket `onboarding-documents`**
   - Private bucket, 10MB file limit
   - Allowed MIME types: image/jpeg, image/png, image/gif, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document
   - RLS policy: users can only access their own folder `{user_id}/`
 
-- [ ] **Create Zod validation schemas**
+- [x] **Create Zod validation schemas**
   - File: `apps/web/src/lib/schemas/onboarding.schema.ts`
   - Schemas: `personalInfoSchema`, `paymentInfoSchema`, `documentsSchema`, `completeOnboardingSchema`
 
-- [ ] **Create onboarding API routes**
+- [x] **Create onboarding API routes**
   - File: `apps/web/src/app/api/onboarding/profile/route.ts` (GET, POST)
   - File: `apps/web/src/app/api/onboarding/profile/step/route.ts` (PATCH - update specific step data)
   - File: `apps/web/src/app/api/onboarding/profile/complete/route.ts` (POST - finalize and migrate to employees table)
@@ -704,17 +2210,17 @@ CREATE TABLE public.onboarding_documents (
   - File: `apps/web/src/app/api/onboarding/documents/[id]/route.ts` (DELETE)
   - File: `apps/web/src/app/api/onboarding/documents/[id]/preview/route.ts` (GET signed URL)
 
-- [ ] **Create TanStack Query hooks**
+- [x] **Create TanStack Query hooks**
   - File: `apps/web/src/hooks/useOnboardingProfile.ts`
   - File: `apps/web/src/hooks/useCreateOnboardingProfile.ts`
   - File: `apps/web/src/hooks/useUpdateOnboardingProfile.ts`
   - File: `apps/web/src/hooks/useUploadOnboardingDocument.ts`
   - File: `apps/web/src/hooks/useOnboardingWizard.ts` (state management with sessionStorage draft persistence)
 
-- [ ] **Add onboarding query keys**
+- [x] **Add onboarding query keys**
   - File: `apps/web/src/lib/query-keys.ts`
 
-- [ ] **Create onboarding setup UI components**
+- [x] **Create onboarding setup UI components**
   - File: `apps/web/src/app/(employee)/onboarding/setup/components/OnboardingWizard.tsx`
   - File: `apps/web/src/app/(employee)/onboarding/setup/components/ProgressStepper.tsx`
   - File: `apps/web/src/app/(employee)/onboarding/setup/components/StepPersonalInfo.tsx`
@@ -724,31 +2230,33 @@ CREATE TABLE public.onboarding_documents (
   - File: `apps/web/src/app/(employee)/onboarding/setup/components/NavigationControls.tsx`
   - File: `apps/web/src/app/(employee)/onboarding/setup/components/DocumentUploadCard.tsx`
 
-- [ ] **Create onboarding setup pages**
+- [x] **Create onboarding setup pages**
   - File: `apps/web/src/app/(employee)/onboarding/setup/layout.tsx` (full-screen centered layout, no sidebar/header)
   - File: `apps/web/src/app/(employee)/onboarding/setup/page.tsx` (wizard container)
   - File: `apps/web/src/app/(employee)/onboarding/complete/page.tsx` (success/confirmation page)
 
-- [ ] **Update middleware for onboarding redirect**
+- [x] **Update middleware for onboarding redirect**
   - File: `apps/web/src/middleware.ts`
   - Check `onboarding_profiles.is_completed` for authenticated users
   - Redirect to `/onboarding/setup` if onboarding incomplete
   - Exempt paths: `/onboarding/setup`, `/onboarding/complete`, `/api/onboarding/*`
 
-- [ ] **Update AuthContext with onboarding status**
+- [x] **Update AuthContext with onboarding status**
   - File: `apps/web/src/contexts/AuthContext.tsx`
   - Add `isOnboardingComplete` flag to User interface
   - Query `onboarding_profiles` during session build
 
-- [ ] **Update database types**
+- [x] **Update database types**
   - File: `packages/database/src/database.types.ts`
   - Add `OnboardingProfile`, `OnboardingDocument`, `OnboardingStep`, `OnboardingDocumentType` types
 
-- [ ] **Write unit tests for onboarding schemas**
+- [x] **Write unit tests for onboarding schemas**
   - File: `tests/schemas/onboarding.test.ts`
+  - 4 tests passing: personalInfoSchema, paymentInfoSchema, documentsSchema, completeOnboardingSchema
 
-- [ ] **Write unit tests for onboarding wizard hook**
+- [x] **Write unit tests for onboarding wizard hook**
   - File: `tests/hooks/useOnboardingWizard.test.ts`
+  - 3 tests passing: initialization, navigation, draft persistence
 
 - [ ] **Write E2E tests for onboarding flow**
   - File: `e2e/onboarding.spec.ts`
@@ -769,54 +2277,54 @@ A read-only database viewer for HR and admins to see all onboarding submissions 
 
 **Implementation Checklist:**
 
-- [ ] **Create view-only Zod schemas**
+- [x] **Create view-only Zod schemas**
   - File: `apps/web/src/lib/schemas/onboarding-view.schema.ts`
   - Schemas: `onboardingProfileViewSchema`, `onboardingDocumentViewSchema`, `onboardingProfileFiltersSchema`
 
-- [ ] **Add onboarding query keys to factory**
+- [x] **Add onboarding query keys to factory**
   - File: `apps/web/src/lib/query-keys.ts`
   - Add `queryKeys.onboarding` with `profiles` and `documents` sub-keys
 
-- [ ] **Create TanStack Query hooks for admin data fetching**
+- [x] **Create TanStack Query hooks for admin data fetching**
   - File: `apps/web/src/hooks/useOnboardingProfiles.ts` (list with filters)
   - File: `apps/web/src/hooks/useOnboardingProfile.ts` (single profile detail)
   - File: `apps/web/src/hooks/useOnboardingDocuments.ts` (documents for a profile)
 
-- [ ] **Create read-only API routes (admin/super_admin role-gated)**
+- [x] **Create read-only API routes (admin/super_admin role-gated)**
   - File: `apps/web/src/app/api/onboarding/profiles/route.ts` (GET list with search, filters, pagination)
   - File: `apps/web/src/app/api/onboarding/profiles/[id]/route.ts` (GET single profile with joined user/department data)
   - File: `apps/web/src/app/api/onboarding/profiles/[id]/documents/route.ts` (GET documents for a profile)
   - File: `apps/web/src/app/api/onboarding/documents/[id]/preview/route.ts` (GET signed URL for document preview)
 
-- [ ] **Create admin onboarding list page**
+- [x] **Create admin onboarding list page**
   - File: `apps/web/src/app/(admin)/admin/onboarding/page.tsx`
   - Grid/card view with search, filters (status, role, department, date range)
   - Summary stat cards (total submissions, completed, in-progress)
   - Follows pattern from `/admin/interns/page.tsx`
 
-- [ ] **Create admin onboarding detail page**
+- [x] **Create admin onboarding detail page**
   - File: `apps/web/src/app/(admin)/admin/onboarding/[id]/page.tsx`
   - Tabbed layout: Personal Info | Payment Info | Documents
   - All fields read-only, document preview via signed URLs
   - Back button, profile header with avatar/name/status badge
   - Follows pattern from `/admin/interns/[id]/page.tsx`
 
-- [ ] **Create super-admin redirect pages**
+- [x] **Create super-admin redirect pages**
   - File: `apps/web/src/app/(super-admin)/super-admin/onboarding/page.tsx` (redirects to `/admin/onboarding`)
   - File: `apps/web/src/app/(super-admin)/super-admin/onboarding/[id]/page.tsx` (redirects to `/admin/onboarding/[id]`)
 
-- [ ] **Update Sidebar navigation**
+- [x] **Update Sidebar navigation**
   - File: `packages/ui/src/layout/Sidebar.tsx`
   - Add "Onboarding Data" item to `adminNavItems` and `superAdminNavItems`
   - Icon: `ClipboardList` from lucide-react
 
-- [ ] **Ensure RLS policies allow admin read access**
+- [x] **Ensure RLS policies allow admin read access**
   - Verify SELECT policies on `onboarding_profiles` and `onboarding_documents` allow admin/hr/cos/ceo/super_admin roles
   - These should already exist from section 3.3.1 migration
 
-- [ ] **Write unit tests for admin hooks**
-  - File: `tests/hooks/useOnboardingProfiles.test.ts`
-  - File: `tests/hooks/useOnboardingProfile.test.ts`
+- [x] **Write unit tests for admin hooks**
+  - File: `tests/hooks/useOnboardingProfiles.test.tsx` (2 tests passing)
+  - File: `tests/hooks/useOnboardingProfile.test.tsx` (2 tests passing)
 
 - [ ] **Write E2E tests for onboarding data viewer**
   - File: `e2e/admin-onboarding-viewer.spec.ts`
@@ -867,58 +2375,6 @@ CREATE TABLE public.offboarding_tasks (
     - Schedule exit interview
     - Generate clearance document
     - Archive employee documents
-
-### 3.5 Leave Management
-
-**Database Schema Required:**
-```sql
-CREATE TYPE leave_type AS ENUM ('vacation', 'sick', 'personal', 'maternity', 'paternity', 'bereavement', 'unpaid');
-CREATE TYPE leave_status AS ENUM ('pending', 'approved', 'rejected', 'cancelled');
-
-CREATE TABLE public.leave_balances (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  employee_id uuid NOT NULL REFERENCES public.employees(id),
-  leave_type leave_type NOT NULL,
-  year integer NOT NULL,
-  total_days numeric(5,2) NOT NULL,
-  used_days numeric(5,2) DEFAULT 0,
-  pending_days numeric(5,2) DEFAULT 0,
-  created_at timestamptz DEFAULT now() NOT NULL,
-  updated_at timestamptz DEFAULT now() NOT NULL,
-  UNIQUE(employee_id, leave_type, year)
-);
-
-CREATE TABLE public.leave_requests (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  employee_id uuid NOT NULL REFERENCES public.employees(id),
-  leave_type leave_type NOT NULL,
-  start_date date NOT NULL,
-  end_date date NOT NULL,
-  days_requested numeric(5,2) NOT NULL,
-  reason text,
-  status leave_status NOT NULL DEFAULT 'pending',
-  approved_by uuid REFERENCES public.users(id),
-  approved_at timestamptz,
-  rejection_reason text,
-  created_at timestamptz DEFAULT now() NOT NULL,
-  updated_at timestamptz DEFAULT now() NOT NULL
-);
-```
-
-- [ ] **Create migration for leave tables**
-  - File: `supabase/migrations/20260210000008_create_leave_tables.sql`
-
-- [ ] **Create leave request workflow**
-  - File: `n8n/workflows/leave-request-approval.json`
-  - Trigger: Webhook when leave request created
-  - Actions:
-    - Notify manager for approval
-    - On approval: Update balance, notify employee
-    - On rejection: Notify employee with reason
-
-- [ ] **Create leave API routes**
-  - File: `apps/web/src/app/api/leave/requests/route.ts`
-  - File: `apps/web/src/app/api/leave/balance/route.ts`
 
 ---
 
@@ -1293,7 +2749,6 @@ CREATE TABLE public.standup_topics (
   - Document upload/download
   - Report submission and approval
   - Task assignment and completion
-  - Leave request flow
   - Performance review cycle
 
 ### 8.4 Documentation

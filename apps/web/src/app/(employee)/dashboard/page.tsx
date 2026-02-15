@@ -1,20 +1,16 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
 import {
-  BentoGrid,
   BentoCard,
+  BentoCardContent,
   BentoCardHeader,
   BentoCardTitle,
-  BentoCardContent,
+  BentoGrid,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
-import {
-  Badge,
-  Button,
-  Progress,
-} from '@hr-portal/ui';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge, Button, Progress } from '@hr-portal/ui';
 import {
   Bell,
   Calendar,
@@ -195,9 +191,7 @@ export default function DashboardPage(): ReactNode {
                 <Progress value={onboardingProgress} className="h-2" />
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  3 tasks remaining
-                </span>
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">3 tasks remaining</span>
                 <Link
                   href="/onboarding"
                   className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
@@ -278,7 +272,10 @@ export default function DashboardPage(): ReactNode {
                       </span>
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-1" strokeWidth={1.5} />
+                  <ChevronRight
+                    className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-1"
+                    strokeWidth={1.5}
+                  />
                 </div>
               ))}
             </div>

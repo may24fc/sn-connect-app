@@ -93,7 +93,10 @@ export default function LoginPage(): ReactNode {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 Email
               </Label>
               <Input
@@ -110,7 +113,10 @@ export default function LoginPage(): ReactNode {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                >
                   Password
                 </Label>
                 <Link
@@ -148,7 +154,10 @@ export default function LoginPage(): ReactNode {
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
               />
-              <Label htmlFor="remember" className="text-sm font-normal text-zinc-600 dark:text-zinc-400">
+              <Label
+                htmlFor="remember"
+                className="text-sm font-normal text-zinc-600 dark:text-zinc-400"
+              >
                 Remember me for 30 days
               </Label>
             </div>
@@ -236,7 +245,10 @@ export default function LoginPage(): ReactNode {
           <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
             <p>
               Need help?{' '}
-              <a href="mailto:support@company.com" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300">
+              <a
+                href="mailto:support@company.com"
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+              >
                 Contact IT Support
               </a>
             </p>

@@ -1,20 +1,16 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
 import {
-  BentoGrid,
   BentoCard,
+  BentoCardContent,
   BentoCardHeader,
   BentoCardTitle,
-  BentoCardContent,
+  BentoGrid,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
-import {
-  Badge,
-  Button,
-  Progress,
-} from '@hr-portal/ui';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge, Button, Progress } from '@hr-portal/ui';
 import {
   AlertCircle,
   BarChart3,
@@ -289,7 +285,10 @@ export default function AdminDashboardPage(): ReactNode {
                   className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                 >
                   <div className="flex items-start gap-3">
-                    <CheckCircle className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                    <CheckCircle
+                      className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
+                      strokeWidth={1.5}
+                    />
                     <div>
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         {activity.action}
@@ -320,7 +319,10 @@ export default function AdminDashboardPage(): ReactNode {
               {quickActions.map((action) => (
                 <Link key={action.title} href={action.href}>
                   <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                    <action.icon className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                    <action.icon
+                      className="h-4 w-4 text-zinc-400 flex-shrink-0"
+                      strokeWidth={1.5}
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
                         {action.title}
@@ -329,7 +331,10 @@ export default function AdminDashboardPage(): ReactNode {
                         {action.description}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                    <ChevronRight
+                      className="h-4 w-4 text-zinc-400 flex-shrink-0"
+                      strokeWidth={1.5}
+                    />
                   </div>
                 </Link>
               ))}

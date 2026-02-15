@@ -1,10 +1,10 @@
 'use client';
 
-import * as React from 'react';
-import { FileText, FileSpreadsheet, File, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, File, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
+import type * as React from 'react';
+import type { AccessLevel, KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { AccessToggle } from './AccessToggle';
-import type { KnowledgeSource, AccessLevel } from '../../types/ai-knowledge.types';
 
 export interface SourceRowProps {
   source: KnowledgeSource;
@@ -64,20 +64,17 @@ function formatDate(date: Date): string {
 
   if (days === 0) {
     return 'Today';
-  } else if (days === 1) {
-    return 'Yesterday';
-  } else if (days < 7) {
-    return `${days}d ago`;
-  } else {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
+  if (days === 1) {
+    return 'Yesterday';
+  }
+  if (days < 7) {
+    return `${days}d ago`;
+  }
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function SourceRow({
-  source,
-  onAccessChange,
-  className,
-}: SourceRowProps): React.ReactNode {
+export function SourceRow({ source, onAccessChange, className }: SourceRowProps): React.ReactNode {
   const handleAccessChange = (newAccessLevel: AccessLevel): void => {
     onAccessChange(source.id, newAccessLevel);
   };
@@ -99,15 +96,10 @@ export function SourceRow({
 
       {/* File Info */}
       <div className="flex-1 min-w-0">
-        <p
-          className="text-sm font-medium text-foreground truncate"
-          title={source.fileName}
-        >
+        <p className="text-sm font-medium text-foreground truncate" title={source.fileName}>
           {source.fileName}
         </p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {formatDate(source.uploadedAt)}
-        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">{formatDate(source.uploadedAt)}</p>
       </div>
 
       {/* Status Indicator */}

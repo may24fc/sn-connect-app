@@ -1,26 +1,18 @@
 'use client';
 
+import { AlertCircle, Calendar, Clock, FileText, Loader2, Tag, User, Users } from 'lucide-react';
 import * as React from 'react';
-import {
-  Calendar,
-  User,
-  Users,
-  Tag,
-  Clock,
-  FileText,
-  Loader2,
-  AlertCircle,
-} from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
+import { Badge } from '../../primitives/badge';
+import { Button } from '../../primitives/button';
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardDescription,
   CardFooter,
+  CardHeader,
+  CardTitle,
 } from '../../primitives/card';
-import { Button } from '../../primitives/button';
-import { Textarea } from '../../primitives/textarea';
 import { Label } from '../../primitives/label';
 import {
   Select,
@@ -30,13 +22,12 @@ import {
   SelectValue,
 } from '../../primitives/select';
 import { Separator } from '../../primitives/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
-import { Badge } from '../../primitives/badge';
-import { TaskPriorityBadge } from './TaskPriorityBadge';
-import { TaskStatusBadge } from './TaskStatusBadge';
-import { cn } from '../../utils/cn';
+import { Textarea } from '../../primitives/textarea';
 import type { Task, TaskStatus } from '../../types/task.types';
 import { formatDueDate, isTaskOverdue } from '../../types/task.types';
+import { cn } from '../../utils/cn';
+import { TaskPriorityBadge } from './TaskPriorityBadge';
+import { TaskStatusBadge } from './TaskStatusBadge';
 
 export interface TaskDetailViewProps {
   task: Task;
@@ -110,19 +101,13 @@ export function TaskDetailView({
                 Overdue
               </Badge>
             )}
-            {task.category && (
-              <Badge variant="outline">
-                {task.category}
-              </Badge>
-            )}
+            {task.category && <Badge variant="outline">{task.category}</Badge>}
           </div>
 
           {/* Title */}
           <div>
             <CardTitle className="text-2xl">{task.title}</CardTitle>
-            <CardDescription className="mt-2 text-base">
-              Task ID: {task.id}
-            </CardDescription>
+            <CardDescription className="mt-2 text-base">Task ID: {task.id}</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -147,12 +132,7 @@ export function TaskDetailView({
               <Calendar className="h-4 w-4" />
               Due Date
             </div>
-            <p
-              className={cn(
-                'text-sm font-medium pl-6',
-                isOverdue && 'text-error'
-              )}
-            >
+            <p className={cn('text-sm font-medium pl-6', isOverdue && 'text-error')}>
               {formatDate(task.dueDate)}
               <span className="block text-xs text-muted-foreground mt-1">
                 {formatDueDate(task.dueDate)}
@@ -191,9 +171,7 @@ export function TaskDetailView({
               <Clock className="h-4 w-4" />
               Last Updated
             </div>
-            <p className="text-sm font-medium pl-6">
-              {formatDateTime(task.updatedAt)}
-            </p>
+            <p className="text-sm font-medium pl-6">{formatDateTime(task.updatedAt)}</p>
           </div>
         </div>
 

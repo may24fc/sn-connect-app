@@ -19,7 +19,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  sources?: SourceAttribution[];
+  sources?: Array<SourceAttribution>;
 }
 
 export interface SourceAttribution {

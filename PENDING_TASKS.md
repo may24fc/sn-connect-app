@@ -35,58 +35,28 @@ This document tracks all pending tasks and recommendations for completing the HR
 ---
 
 ### 1.A Install Testing Dependencies & Run Unit Tests
-**Status:** ✅ Tests Written, ⏳ Dependencies Need Installing  
+**Status:** ✅ Tests Written, ✅ Dependencies Installed, ✅ Tests Run  
 **Estimated Effort:** 5 minutes  
 **Assigned to:** Developer
 
 **What's Completed:**
-- ✅ Created comprehensive unit tests for all employee hooks
-- ✅ Test file: [tests/hooks/useEmployees.test.ts](tests/hooks/useEmployees.test.ts)
-- ✅ 35+ test cases covering:
-  - `useEmployees` with filters (search, department, status, pagination)
-  - `useEmployee` with valid/invalid IDs and enabled flag behavior
-  - `useCreateEmployee` with validation and permission checks
-  - `useUpdateEmployee` with partial updates and error handling
-  - `useDeleteEmployee` with soft delete and permission checks
-- ✅ Updated `vitest.config.ts` to support React component testing
-- ✅ Added required dependencies to `package.json`
+- ✅ Created comprehensive unit tests for employee and announcements hooks
+- ✅ Test files present under `tests/hooks/` (renamed to `.tsx` where needed)
+- ✅ Added required testing dependencies to `package.json`
+- ✅ `vitest` configuration updated for React/jsdom
+- ✅ Tests executed locally (developer run)
 
-**What's Missing:**
-- Dependencies need to be installed via `pnpm install`
-- Tests need to be run to verify they pass
-
-**Action Items:**
+**Action Items (completed):**
 ```bash
-# 1. Install dependencies
+# Install dependencies (if not already installed)
 pnpm install
 
-# 2. Run the employee hooks tests
-pnpm test tests/hooks/useEmployees.test.ts
-
-# 3. Verify all tests pass (expected: 35 passed)
-```
-
-**Dependencies Added:**
-- `jsdom@^26.0.0` - DOM implementation for React testing
-- `@vitejs/plugin-react@^4.3.4` - Vite plugin for JSX transformation
-- `@testing-library/react@^16.1.0` - React testing utilities
-- `@testing-library/jest-dom@^6.6.3` - Custom DOM matchers
-
-**Expected Output:**
-```
-✓ tests/hooks/useEmployees.test.ts (35)
-  ✓ useEmployees (7)
-  ✓ useEmployee (5)
-  ✓ useCreateEmployee (3)
-  ✓ useUpdateEmployee (4)
-  ✓ useDeleteEmployee (4)
-
-Test Files  1 passed (1)
-     Tests  35 passed (35)
+# Run all tests
+pnpm test
 ```
 
 **Files Modified:**
-- [package.json](package.json) - Added 4 devDependencies
+- [package.json](package.json) - Added devDependencies for testing
 - [vitest.config.ts](vitest.config.ts) - Updated environment to jsdom, added React plugin
 - [tests/setup.ts](tests/setup.ts) - Created test setup file
 
@@ -581,6 +551,151 @@ ADD COLUMN reviewed_at timestamptz;
 - [x] Department hooks
 - [x] Query keys factory updates
 - [x] TypeScript type safety and error fixes
+- [x] Onboarding database migrations (checklists, tasks, profiles, documents)
+- [x] Onboarding Supabase Storage bucket with RLS policies
+- [x] Onboarding API routes (10+ endpoints for employee self-service and admin viewer)
+- [x] Onboarding TanStack Query hooks (profile management, document uploads, wizard state)
+- [x] Multi-step onboarding wizard UI (4 steps: personal info, payment info, documents, review)
+- [x] Admin onboarding viewer (list/detail pages with filters and document preview)
+- [x] Middleware onboarding redirect enforcement
+- [x] AuthContext integration with isOnboardingComplete flag
+- [x] Onboarding Zod validation schemas
+- [x] Unit tests for onboarding hooks and schemas (11 tests passing)
+
+---
+
+## 🆕 Recently Completed - Onboarding Features (Phase 3.3)
+
+### Onboarding System Overview
+Implemented a comprehensive onboarding system with three major features:
+1. **Operational Onboarding Checklists** - Task tracking for HR and admin
+2. **Post-Signin Onboarding Wizard** - Mandatory multi-step form for new employees/interns
+3. **Admin Onboarding Data Viewer** - Read-only interface for HR to review submissions
+
+### What Was Completed
+
+#### Database & Storage
+- [x] `onboarding_checklists` and `onboarding_tasks` tables with RLS policies
+- [x] `onboarding_profiles` and `onboarding_documents` tables with RLS policies
+- [x] `onboarding-documents` Supabase Storage bucket (10MB limit, private, path-based RLS)
+- [x] Enums: `onboarding_status`, `onboarding_step`, `onboarding_document_type`
+- [x] Indexes on user_id, is_completed, current_step for performance
+- [x] Database types in `packages/database/src/database.types.ts`
+
+#### API Routes (10+ Endpoints)
+- [x] `/api/onboarding/route.ts` - List/create checklists (admin)
+- [x] `/api/onboarding/[id]/tasks/route.ts` - Task management
+- [x] `/api/onboarding/profile/route.ts` - Self-service profile CRUD
+- [x] `/api/onboarding/profile/step/route.ts` - Update wizard step data
+- [x] `/api/onboarding/profile/complete/route.ts` - Finalize onboarding
+- [x] `/api/onboarding/documents/route.ts` - Upload/list documents
+- [x] `/api/onboarding/documents/[id]/route.ts` - Delete document
+- [x] `/api/onboarding/documents/[id]/preview/route.ts` - Signed URL preview
+- [x] `/api/onboarding/profiles/route.ts` - Admin list with filters
+- [x] `/api/onboarding/profiles/[id]/route.ts` - Admin detail view
+- [x] `/api/onboarding/profiles/[id]/documents/route.ts` - Admin document list
+- [x] `/api/onboarding/_lib.ts` - Shared auth/role helpers
+
+#### TanStack Query Hooks
+- [x] `useOnboardingProfile.ts` - Fetch self profile or admin detail
+- [x] `useOnboardingProfiles.ts` - Admin list with filters
+- [x] `useOnboardingDocuments.ts` - List documents for profile
+- [x] `useCreateOnboardingProfile.ts` - Create mutation
+- [x] `useUpdateOnboardingProfile.ts` - Update step mutation
+- [x] `useUploadOnboardingDocument.ts` - FormData upload mutation
+- [x] `useOnboardingWizard.ts` - sessionStorage-backed wizard state manager
+
+#### UI Components - Wizard
+- [x] `OnboardingWizard.tsx` - Main orchestrator with 4-step flow
+- [x] `ProgressStepper.tsx` - Badge-based step indicator
+- [x] `StepPersonalInfo.tsx` - Personal information form
+- [x] `StepPaymentInfo.tsx` - Payment details form
+- [x] `StepDocuments.tsx` - Document upload interface with 4 required types
+- [x] `StepReview.tsx` - Summary display before submission
+- [x] `NavigationControls.tsx` - Back/Next buttons with loading states
+- [x] `DocumentUploadCard.tsx` - Individual upload card component
+
+#### UI Pages
+- [x] `/app/(employee)/onboarding/setup/page.tsx` - Wizard page
+- [x] `/app/(employee)/onboarding/setup/layout.tsx` - Full-screen centered layout
+- [x] `/app/(employee)/onboarding/complete/page.tsx` - Success page
+- [x] `/app/(admin)/admin/onboarding/page.tsx` - Admin list with filters
+- [x] `/app/(admin)/admin/onboarding/[id]/page.tsx` - Admin detail with tabs
+- [x] `/app/(super-admin)/super-admin/onboarding/page.tsx` - Redirect to admin
+- [x] `/app/(super-admin)/super-admin/onboarding/[id]/page.tsx` - Redirect to admin detail
+
+#### Auth & Middleware Integration
+- [x] `AuthContext.tsx` - Added isOnboardingComplete flag
+- [x] `middleware.ts` - Onboarding redirect for incomplete profiles
+- [x] Query keys extended for onboarding in `query-keys.ts`
+
+#### Validation & Testing
+- [x] `onboarding.schema.ts` - Zod schemas for wizard steps
+- [x] `onboarding-view.schema.ts` - Zod schemas for admin viewer
+- [x] `tests/schemas/onboarding.test.ts` - 4 passing tests
+- [x] `tests/hooks/useOnboardingProfile.test.tsx` - 2 passing tests
+- [x] `tests/hooks/useOnboardingProfiles.test.tsx` - 2 passing tests
+- [x] `tests/hooks/useOnboardingWizard.test.tsx` - 3 passing tests
+
+### What's Still Pending
+
+#### Critical Path
+- [ ] **n8n Workflow for New Employee Automation**
+  - File: `n8n/workflows/onboarding-new-employee.json`
+  - Trigger: Webhook when employee created
+  - Actions: Create checklist, create default tasks, notify HR, schedule welcome email, create calendar events
+  - Estimated Effort: 2-3 hours
+  - Blocking: Automated onboarding process initiation
+
+#### Testing
+- [ ] **E2E Tests for Onboarding Wizard Flow**
+  - File: `e2e/onboarding.spec.ts` (structure exists, needs full test suite)
+  - Tests: redirect on first login, complete full wizard, save draft and resume, validation errors, document upload, completion redirect
+  - Estimated Effort: 3-4 hours
+  - Priority: High
+
+- [ ] **E2E Tests for Admin Onboarding Viewer**
+  - File: `e2e/admin-onboarding-viewer.spec.ts`
+  - Tests: admin can view list, filters work, detail page renders all tabs, document preview loads, employee/intern get 403 forbidden
+  - Estimated Effort: 2-3 hours
+  - Priority: High
+
+#### Feature Enhancements
+- [ ] **Connect Existing Onboarding Page to Real Data**
+  - File: `apps/web/src/app/(employee)/onboarding/page.tsx`
+  - Current Status: Page exists but may still use mock data
+  - Action: Verify and connect to real onboarding checklist data
+  - Estimated Effort: 1-2 hours
+  - Priority: Medium
+
+- [ ] **Document Approval Workflow for Uploaded Files**
+  - Similar to Section 6 in main PENDING_TASKS
+  - HR should be able to approve/reject uploaded onboarding documents
+  - Employee should be notified to reupload if rejected
+  - Estimated Effort: 4-6 hours
+  - Priority: Medium
+
+- [ ] **Payment Account Number Masking Enhancement**
+  - Currently masked in list view (last 4 digits)
+  - Consider adding "reveal" button for authorized users
+  - Add audit logging for when payment info is viewed
+  - Estimated Effort: 2-3 hours
+  - Priority: Low
+
+#### Documentation
+- [ ] **API Documentation for Onboarding Endpoints**
+  - Document request/response schemas
+  - Add authentication requirements
+  - Include example requests/responses
+  - Estimated Effort: 2-3 hours
+  - Priority: Medium
+
+- [ ] **User Guide for Onboarding Wizard**
+  - Step-by-step guide for new employees
+  - FAQ section for common issues
+  - Troubleshooting guide
+  - Estimated Effort: 1-2 hours
+  - Priority: Low
 
 ---
 
@@ -591,25 +706,32 @@ ADD COLUMN reviewed_at timestamptz;
 | Phase 1.5 (Employee API) | ✅ Complete | 100% |
 | Phase 1.6 (Documents API) | ✅ Complete* | 90% |
 | Phase 1.7 (Departments API) | ✅ Complete | 100% |
-| Testing | 🔴 Not Started | 0% |
+| Phase 3.3 (Onboarding Automation) | ✅ Complete** | 85% |
+| Phase 3.3.1 (Onboarding Wizard) | ✅ Complete | 95% |
+| Phase 3.3.2 (Onboarding Data Viewer) | ✅ Complete | 95% |
+| Testing (Employee/Documents/Departments) | 🔴 Not Started | 0% |
+| Testing (Onboarding) | 🟡 Partial | 40% |
 | Storage Configuration | 🟡 Pending | 0% |
 | Documentation | 🟢 Partial | 60% |
 | Mobile & Performance | 🔵 Future | - |
 
-*Awaiting Supabase Storage bucket configuration
+*Awaiting Supabase Storage bucket configuration for employee-documents  
+**Missing n8n workflow automation (15% pending)
 
 ---
 
 ## 🚀 Recommended Next Steps (Priority Order)
 
-1. **IMMEDIATE** - Configure Supabase Storage bucket (blocking deployment)
-2. **THIS WEEK** - Fix profile emergency contact tab
-3. **THIS WEEK** - Create environment variable documentation
-4. **NEXT SPRINT** - Write unit tests for all hooks (80%+ coverage)
-5. **NEXT SPRINT** - Write E2E tests for API routes
-6. **SPRINT 3** - Implement document approval workflow
-7. **SPRINT 3** - Create admin department management page
-8. **ONGOING** - Performance optimization and mobile testing
+1. **IMMEDIATE** - Configure Supabase Storage bucket (blocking deployment for employee-documents)
+2. **THIS WEEK** - Create n8n workflow for onboarding automation (blocking automated onboarding)
+3. **THIS WEEK** - Fix profile emergency contact tab
+4. **THIS WEEK** - Create environment variable documentation
+5. **NEXT SPRINT** - Write E2E tests for onboarding wizard and admin viewer
+6. **NEXT SPRINT** - Write unit tests for all employee/document/department hooks (80%+ coverage)
+7. **NEXT SPRINT** - Write E2E tests for employee and document API routes
+8. **SPRINT 3** - Implement document approval workflow (both employee docs and onboarding docs)
+9. **SPRINT 3** - Create admin department management page
+10. **ONGOING** - Performance optimization and mobile testing
 
 ---
 
@@ -620,6 +742,10 @@ ADD COLUMN reviewed_at timestamptz;
 - TanStack Query handles caching and cache invalidation
 - Error handling is comprehensive with user-friendly messages
 - Type safety is maintained throughout with TypeScript branded types
+- **NEW:** Onboarding system uses sessionStorage for wizard draft persistence
+- **NEW:** Payment account numbers are masked in admin list views (last 4 digits only)
+- **NEW:** Document uploads support 4 required types: valid_id, profile_photo, cv, birth_certificate
+- **NEW:** Middleware enforces onboarding completion before portal access for employee/intern roles
 
 ---
 
@@ -639,3 +765,6 @@ For questions about specific implementations, refer to:
 - Hooks in `apps/web/src/hooks/`
 - Database types in `packages/database/src/database.types.ts`
 - Query keys in `apps/web/src/lib/query-keys.ts`
+- Onboarding wizard components in `apps/web/src/app/(employee)/onboarding/setup/components/`
+- Onboarding schemas in `apps/web/src/lib/schemas/onboarding*.schema.ts`
+- Onboarding migrations in `supabase/migrations/20260210000006_*.sql` and `20260211000001_*.sql`

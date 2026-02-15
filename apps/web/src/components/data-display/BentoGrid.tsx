@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { cn } from '@/lib/utils';
+import type * as React from 'react';
 
 /**
  * BentoGrid - A flexible grid layout for dashboard cards.
@@ -22,19 +22,9 @@ const columnClasses = {
   6: 'lg:grid-cols-6',
 } as const;
 
-export function BentoGrid({
-  children,
-  className,
-  columns = 4,
-}: BentoGridProps): React.ReactNode {
+export function BentoGrid({ children, className, columns = 4 }: BentoGridProps): React.ReactNode {
   return (
-    <div
-      className={cn(
-        'grid grid-cols-1 md:grid-cols-2 gap-4',
-        columnClasses[columns],
-        className
-      )}
-    >
+    <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-4', columnClasses[columns], className)}>
       {children}
     </div>
   );
@@ -82,7 +72,8 @@ export function BentoCard({
         'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5',
         colSpanClasses[colSpan],
         rowSpanClasses[rowSpan],
-        interactive && 'transition-all hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-card-hover cursor-pointer',
+        interactive &&
+          'transition-all hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-card-hover cursor-pointer',
         onClick && 'text-left w-full',
         className
       )}
@@ -99,15 +90,8 @@ interface BentoCardHeaderProps {
   className?: string;
 }
 
-export function BentoCardHeader({
-  children,
-  className,
-}: BentoCardHeaderProps): React.ReactNode {
-  return (
-    <div className={cn('flex items-center justify-between mb-4', className)}>
-      {children}
-    </div>
-  );
+export function BentoCardHeader({ children, className }: BentoCardHeaderProps): React.ReactNode {
+  return <div className={cn('flex items-center justify-between mb-4', className)}>{children}</div>;
 }
 
 interface BentoCardTitleProps {
@@ -122,7 +106,12 @@ export function BentoCardTitle({
   icon,
 }: BentoCardTitleProps): React.ReactNode {
   return (
-    <h3 className={cn('flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100', className)}>
+    <h3
+      className={cn(
+        'flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100',
+        className
+      )}
+    >
       {icon && <span className="text-zinc-400 dark:text-zinc-500">{icon}</span>}
       {children}
     </h3>
@@ -134,10 +123,7 @@ interface BentoCardContentProps {
   className?: string;
 }
 
-export function BentoCardContent({
-  children,
-  className,
-}: BentoCardContentProps): React.ReactNode {
+export function BentoCardContent({ children, className }: BentoCardContentProps): React.ReactNode {
   return <div className={cn('', className)}>{children}</div>;
 }
 

@@ -1,7 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useAuth } from '@/contexts/AuthContext';
+import { useDocuments, useDownloadDocument, useUploadDocument } from '@/hooks/useDocuments';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -14,11 +16,9 @@ import {
   DialogTitle,
   Input,
   Label,
-  Badge,
-} from "@hr-portal/ui";
-import { Upload, FileText, Download } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useDocuments, useUploadDocument, useDownloadDocument } from "@/hooks/useDocuments";
+} from '@hr-portal/ui';
+import { Download, FileText, Upload } from 'lucide-react';
+import { useState } from 'react';
 
 export default function FilesPage() {
   const { user } = useAuth();
@@ -26,7 +26,7 @@ export default function FilesPage() {
   const [fileInput, setFileInput] = useState<File | null>(null);
 
   const { data: docsData, isLoading } = useDocuments({
-    search: user?.email || "",
+    search: user?.email || '',
   });
 
   const upload = useUploadDocument();
@@ -42,7 +42,12 @@ export default function FilesPage() {
   const handleUpload = async () => {
     if (!fileInput) return;
     try {
-      await upload.mutateAsync({ file: fileInput, employeeId: "", documentType: "other", isConfidential: false });
+      await upload.mutateAsync({
+        file: fileInput,
+        employeeId: '',
+        documentType: 'other',
+        isConfidential: false,
+      });
       setUploadOpen(false);
       setFileInput(null);
     } catch (e) {
@@ -118,8 +123,12 @@ export default function FilesPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadOpen(false)}>Cancel</Button>
-            <Button onClick={handleUpload} disabled={!fileInput}>Upload</Button>
+            <Button variant="outline" onClick={() => setUploadOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpload} disabled={!fileInput}>
+              Upload
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

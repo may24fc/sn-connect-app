@@ -1,11 +1,11 @@
 'use client';
 
 import {
-  BentoGrid,
   BentoCard,
+  BentoCardContent,
   BentoCardHeader,
   BentoCardTitle,
-  BentoCardContent,
+  BentoGrid,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
@@ -295,7 +295,8 @@ export default function InternDashboardPage(): ReactNode {
                       className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
                       style={{
                         width: `${Math.min(
-                          ((new Date().getTime() - new Date(mockInternProfile.startDate).getTime()) /
+                          ((new Date().getTime() -
+                            new Date(mockInternProfile.startDate).getTime()) /
                             (new Date(mockInternProfile.endDate).getTime() -
                               new Date(mockInternProfile.startDate).getTime())) *
                             100,

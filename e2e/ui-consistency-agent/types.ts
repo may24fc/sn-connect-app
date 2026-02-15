@@ -10,7 +10,7 @@ export interface RouteConfig {
   name: string;
   requiresAuth: boolean;
   authRole?: UserRole;
-  skipChecks?: UICheckType[];
+  skipChecks?: Array<UICheckType>;
 }
 
 export type UICheckType =
@@ -57,15 +57,15 @@ export interface PageSnapshot {
   route: string;
   timestamp: Date;
   accessibilityTree: string;
-  consoleMessages: ConsoleMessage[];
-  networkRequests: NetworkRequest[];
+  consoleMessages: Array<ConsoleMessage>;
+  networkRequests: Array<NetworkRequest>;
   screenshot?: string;
 }
 
 export interface UICheckResult {
   route: RouteConfig;
   passed: boolean;
-  issues: UIIssue[];
+  issues: Array<UIIssue>;
   snapshot: PageSnapshot;
   duration: number;
 }
@@ -79,12 +79,12 @@ export interface AgentReport {
   totalIssues: number;
   issuesByType: Record<UICheckType, number>;
   issuesBySeverity: Record<IssueSeverity, number>;
-  results: UICheckResult[];
+  results: Array<UICheckResult>;
 }
 
 export interface AgentConfig {
   baseUrl: string;
-  routes: RouteConfig[];
+  routes: Array<RouteConfig>;
   screenshotsDir: string;
   reportsDir: string;
   viewport: {
@@ -99,5 +99,5 @@ export interface AgentConfig {
     navigation: number;
     elementWait: number;
   };
-  checks: UICheckType[];
+  checks: Array<UICheckType>;
 }

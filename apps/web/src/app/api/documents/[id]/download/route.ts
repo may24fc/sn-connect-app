@@ -1,15 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/documents/[id]/download
  * Generate signed URL for document download
  * Permissions: Document owner and admins (via RLS)
  */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
@@ -33,10 +30,7 @@ export async function GET(
       .single();
 
     if (docError || !document) {
-      return NextResponse.json(
-        { error: 'Document not found or access denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Document not found or access denied' }, { status: 404 });
     }
 
     // Generate signed URL (valid for 60 seconds)
@@ -46,10 +40,7 @@ export async function GET(
 
     if (signedUrlError || !signedUrlData) {
       console.error('Error generating signed URL:', signedUrlError);
-      return NextResponse.json(
-        { error: 'Failed to generate download URL' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to generate download URL' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -59,9 +50,6 @@ export async function GET(
     });
   } catch (error) {
     console.error('Unexpected error in GET /api/documents/[id]/download:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

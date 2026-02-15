@@ -2,13 +2,13 @@
 
 import * as React from 'react';
 import { Badge } from '../../primitives/badge';
+import type { AccessLevel, FilterOption, KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
-import { SourceRow } from './SourceRow';
 import { SourceFilters } from './SourceFilters';
-import type { KnowledgeSource, FilterOption, AccessLevel } from '../../types/ai-knowledge.types';
+import { SourceRow } from './SourceRow';
 
 export interface SourcesInventoryProps {
-  sources: KnowledgeSource[];
+  sources: Array<KnowledgeSource>;
   onAccessChange: (sourceId: string, accessLevel: AccessLevel) => void;
   className?: string;
 }
@@ -27,9 +27,7 @@ export function SourcesInventory({
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((source) =>
-        source.fileName.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter((source) => source.fileName.toLowerCase().includes(query));
     }
 
     // Apply status filter
@@ -67,11 +65,7 @@ export function SourcesInventory({
         <div className="space-y-1">
           {filteredSources.length > 0 ? (
             filteredSources.map((source) => (
-              <SourceRow
-                key={source.id}
-                source={source}
-                onAccessChange={onAccessChange}
-              />
+              <SourceRow key={source.id} source={source} onAccessChange={onAccessChange} />
             ))
           ) : (
             <div className="text-center py-12 text-muted-foreground">
