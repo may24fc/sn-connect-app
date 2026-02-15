@@ -43,7 +43,8 @@ export async function GET(_: NextRequest) {
 
     // Filter out bookmarks where resource is deleted or not published
     const validBookmarks = (bookmarks || []).filter(
-      (b: { resource?: Record<string, unknown> }) => b.resource && (b.resource as Record<string, unknown>).status === 'published'
+      (b: { resource?: Record<string, unknown> }) =>
+        b.resource && (b.resource as Record<string, unknown>).status === 'published'
     );
 
     return NextResponse.json({ data: validBookmarks });

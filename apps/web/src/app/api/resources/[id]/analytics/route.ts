@@ -82,11 +82,15 @@ export async function GET(_: NextRequest, context: RouteContext) {
     const uniqueViewers = new Set((views || []).map((v: { user_id: string }) => v.user_id)).size;
 
     // Calculate average view duration
-    const viewsWithDuration = (views || []).filter((v: { duration_seconds?: number }) => v.duration_seconds);
+    const viewsWithDuration = (views || []).filter(
+      (v: { duration_seconds?: number }) => v.duration_seconds
+    );
     const avgDuration =
       viewsWithDuration.length > 0
-        ? viewsWithDuration.reduce((sum: number, v: { duration_seconds?: number }) => sum + (v.duration_seconds || 0), 0) /
-          viewsWithDuration.length
+        ? viewsWithDuration.reduce(
+            (sum: number, v: { duration_seconds?: number }) => sum + (v.duration_seconds || 0),
+            0
+          ) / viewsWithDuration.length
         : 0;
 
     // Calculate completion rate
