@@ -27,7 +27,7 @@ export async function GET(_: NextRequest) {
     }
 
     // Get unique resource IDs in order
-    const resourceIds = [...new Set(views.map((v) => v.resource_id))].slice(0, 10);
+    const resourceIds = [...new Set(views.map((v: { resource_id: string }) => v.resource_id))].slice(0, 10);
 
     // Fetch the resources
     const { data: resources, error: resourcesError } = await supabase
@@ -44,7 +44,7 @@ export async function GET(_: NextRequest) {
 
     // Sort resources by the order of resourceIds
     const sortedResources = resourceIds
-      .map((id) => (resources || []).find((r) => r.id === id))
+      .map((id) => (resources || []).find((r: { id: string }) => r.id === id))
       .filter(Boolean);
 
     return NextResponse.json({ data: sortedResources });

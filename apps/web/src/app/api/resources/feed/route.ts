@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter by targeting (RLS should handle this, but double-check)
-    const filteredData = (data || []).filter((resource) => {
+    const filteredData = (data || []).filter((resource: { is_public?: boolean; target_roles: string[]; target_departments?: string[]; target_employees?: string[] }) => {
       // Public resources are visible to all
       if (resource.is_public) return true;
 
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       if (resource.target_roles.length > 0 && role) {
         if (!resource.target_roles.includes(role)) {
           // Check if other criteria match
-          if (resource.target_departments.length === 0 && resource.target_employees.length === 0) {
+          if ((resource.target_departments?.length || 0) === 0 && (resource.target_employees?.length || 0) === 0) {
             return false;
           }
         } else {
@@ -101,15 +101,15 @@ export async function GET(request: NextRequest) {
       }
 
       // Check department targeting
-      if (resource.target_departments.length > 0 && userDepartmentId) {
-        if (resource.target_departments.includes(userDepartmentId)) {
+      if ((resource.target_departments?.length || 0) > 0 && userDepartmentId) {
+        if (resource.target_departments?.includes(userDepartmentId)) {
           return true;
         }
       }
 
       // Check employee targeting
-      if (resource.target_employees.length > 0) {
-        if (resource.target_employees.includes(user.id)) {
+      if ((resource.target_employees?.length || 0) > 0) {
+        if (resource.target_employees?.includes(user.id)) {
           return true;
         }
       }
@@ -117,8 +117,8 @@ export async function GET(request: NextRequest) {
       // If no targeting, visible to all
       if (
         resource.target_roles.length === 0 &&
-        resource.target_departments.length === 0 &&
-        resource.target_employees.length === 0
+        (resource.target_departments?.length || 0) === 0 &&
+        (resource.target_employees?.length || 0) === 0
       ) {
         return true;
       }

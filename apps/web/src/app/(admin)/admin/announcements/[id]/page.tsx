@@ -25,10 +25,14 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-export default function AnnouncementDetailPage({ params }: { params: { id: string } }) {
-  const announcementId = params.id;
-  const { data, isLoading, error } = useAnnouncement(announcementId);
-  const updateAnnouncement = useUpdateAnnouncement(announcementId);
+export default function AnnouncementDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const [announcementId, setAnnouncementId] = useState<string | null>(null);
+
+  useEffect(() => {
+    params.then((p) => setAnnouncementId(p.id));
+  }, [params]);
+  const { data, isLoading, error } = useAnnouncement(announcementId || '');
+  const updateAnnouncement = useUpdateAnnouncement(announcementId || '');
   const publishAnnouncement = usePublishAnnouncement();
   const archiveAnnouncement = useArchiveAnnouncement();
   const pinAnnouncement = useToggleAnnouncementPin();

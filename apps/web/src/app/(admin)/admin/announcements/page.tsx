@@ -23,9 +23,9 @@ export default function AdminAnnouncementsPage() {
 
   const queryFilters = {
     ...(filters.search ? { search: filters.search } : {}),
-    ...(filters.status !== 'all' ? { status: filters.status as string } : {}),
-    ...(filters.category !== 'all' ? { category: filters.category as string } : {}),
-    ...(filters.priority !== 'all' ? { priority: filters.priority as string } : {}),
+    ...(filters.status !== 'all' ? { status: filters.status as 'draft' | 'scheduled' | 'published' | 'expired' | 'archived' } : {}),
+    ...(filters.category !== 'all' ? { category: filters.category as 'hr_updates' | 'benefits' | 'events' | 'performance' | 'training' | 'policy' | 'general' } : {}),
+    ...(filters.priority !== 'all' ? { priority: filters.priority as 'low' | 'normal' | 'high' | 'urgent' } : {}),
     page: 1,
     pageSize: 100,
   };

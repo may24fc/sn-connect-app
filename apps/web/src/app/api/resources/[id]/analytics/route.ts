@@ -54,14 +54,19 @@ export async function GET(_: NextRequest, context: RouteContext) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
-      dateMap.set(dateStr, 0);
+      if (dateStr) {
+        dateMap.set(dateStr, 0);
+      }
     }
 
     // Count views per day
     for (const view of views || []) {
       const dateStr = new Date(view.viewed_at).toISOString().split('T')[0];
-      if (dateMap.has(dateStr)) {
-        dateMap.set(dateStr, (dateMap.get(dateStr) || 0) + 1);
+      if (dateStr && dateMap.has(dateStr)) {
+        const currentCount = dateMap.get(dateStr);
+        if (currentCount !== undefined) {
+          dateMap.set(dateStr, currentCount + 1);
+        }
       }
     }
 
@@ -74,18 +79,18 @@ export async function GET(_: NextRequest, context: RouteContext) {
     timeSeries.sort((a, b) => a.date.localeCompare(b.date));
 
     // Calculate unique viewers
-    const uniqueViewers = new Set((views || []).map((v) => v.user_id)).size;
+    const uniqueViewers = new Set((views || []).map((v: { user_id: string }) => v.user_id)).size;
 
     // Calculate average view duration
-    const viewsWithDuration = (views || []).filter((v) => v.duration_seconds);
+    const viewsWithDuration = (views || []).filter((v: { duration_seconds?: number }) => v.duration_seconds);
     const avgDuration =
       viewsWithDuration.length > 0
-        ? viewsWithDuration.reduce((sum, v) => sum + (v.duration_seconds || 0), 0) /
+        ? viewsWithDuration.reduce((sum: number, v: { duration_seconds?: number }) => sum + (v.duration_seconds || 0), 0) /
           viewsWithDuration.length
         : 0;
 
     // Calculate completion rate
-    const completedViews = (views || []).filter((v) => v.completed).length;
+    const completedViews = (views || []).filter((v: { completed?: boolean }) => v.completed).length;
     const completionRate =
       (views || []).length > 0 ? (completedViews / (views || []).length) * 100 : 0;
 

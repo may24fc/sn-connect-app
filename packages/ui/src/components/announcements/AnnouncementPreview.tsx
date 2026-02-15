@@ -27,7 +27,7 @@ export function AnnouncementPreview({
       priority={priority}
       status={status}
       dateLabel={dateLabel}
-      isPinned={isPinned}
+      {...(isPinned !== undefined && { isPinned })}
     />
   );
 }
