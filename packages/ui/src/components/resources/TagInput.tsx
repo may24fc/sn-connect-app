@@ -1,3 +1,5 @@
+'use client';
+
 import { X } from 'lucide-react';
 import { type KeyboardEvent, useCallback, useState } from 'react';
 import { Badge } from '../../primitives/badge';
