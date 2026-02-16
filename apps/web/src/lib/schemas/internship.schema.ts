@@ -1,0 +1,59 @@
+import { z } from 'zod';
+
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+
+export const internshipStatusSchema = z.enum(['active', 'completed', 'terminated', 'converted']);
+
+export const internshipFiltersSchema = z.object({
+  search: z.string().trim().min(1).optional(),
+  status: internshipStatusSchema.optional(),
+  school: z.string().trim().min(1).optional(),
+  supervisorId: z.string().uuid().optional(),
+  employeeId: z.string().uuid().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(10),
+});
+
+export const createInternshipSchema = z.object({
+  employeeId: z.string().uuid(),
+  startDate: isoDateSchema,
+  endDate: isoDateSchema,
+  requiredHours: z.coerce.number().int().min(1).max(20000).default(480),
+  completedHours: z.coerce.number().min(0).max(20000).default(0),
+  status: internshipStatusSchema.default('active'),
+  supervisorId: z.string().uuid().nullable().optional(),
+  department: z.string().trim().min(1),
+  school: z.string().trim().min(1).nullable().optional(),
+  program: z.string().trim().min(1).nullable().optional(),
+});
+
+export const updateInternshipSchema = createInternshipSchema
+  .omit({ employeeId: true })
+  .partial()
+  .refine((payload) => Object.keys(payload).length > 0, {
+    message: 'At least one field is required',
+  });
+
+export const createInternDailyLogSchema = z.object({
+  logDate: isoDateSchema,
+  hoursWorked: z.coerce.number().min(0.25).max(24),
+  tasksCompleted: z.string().trim().min(1),
+  learnings: z.string().trim().nullable().optional(),
+  challenges: z.string().trim().nullable().optional(),
+});
+
+export const updateInternDailyLogSchema = z
+  .object({
+    logId: z.string().uuid(),
+    supervisorNotes: z.string().trim().nullable().optional(),
+    isApproved: z.boolean().optional(),
+  })
+  .refine((payload) => payload.supervisorNotes !== undefined || payload.isApproved !== undefined, {
+    message: 'At least one field is required',
+  });
+
+export type InternshipFiltersInput = z.infer<typeof internshipFiltersSchema>;
+export type CreateInternshipInput = z.infer<typeof createInternshipSchema>;
+export type UpdateInternshipInput = z.infer<typeof updateInternshipSchema>;
+export type CreateInternDailyLogInput = z.infer<typeof createInternDailyLogSchema>;
+export type UpdateInternDailyLogInput = z.infer<typeof updateInternDailyLogSchema>;

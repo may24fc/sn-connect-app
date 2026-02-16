@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist .turbo",
     "generate": "supabase gen types typescript --local > src/types/database.types.ts",
-    "migrate": "supabase db push",
+    "migrate": "supabase db push --workdir ../..",
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {

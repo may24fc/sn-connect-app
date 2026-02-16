@@ -40,6 +40,7 @@ import {
   TabsTrigger,
   Textarea,
 } from '@hr-portal/ui';
+import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -434,6 +435,12 @@ function StarRating({
 }
 
 export default function ProbationPage(): ReactNode {
+  const { data: probationPayload } = useProbation();
+  const completeProbation = useCompleteProbation();
+  const extendProbation = useExtendProbation();
+
+  const employeeRecords = probationPayload?.data?.length ? probationPayload.data : employees;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
@@ -445,7 +452,7 @@ export default function ProbationPage(): ReactNode {
   const [okrRatings, setOkrRatings] = useState<Record<string, number>>({});
   const [kpiRatings, setKpiRatings] = useState<Record<string, number>>({});
 
-  const filteredEmployees = employees.filter((emp) => {
+  const filteredEmployees = employeeRecords.filter((emp) => {
     const matchesSearch =
       emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -455,13 +462,13 @@ export default function ProbationPage(): ReactNode {
   });
 
   const stats = {
-    total: employees.length,
-    onTrack: employees.filter((e) => e.status === 'on-track').length,
-    atRisk: employees.filter((e) => e.status === 'at-risk').length,
-    completed: employees.filter((e) => e.status === 'completed').length,
+    total: employeeRecords.length,
+    onTrack: employeeRecords.filter((e) => e.status === 'on-track').length,
+    atRisk: employeeRecords.filter((e) => e.status === 'at-risk').length,
+    completed: employeeRecords.filter((e) => e.status === 'completed').length,
   };
 
-  const departments = [...new Set(employees.map((e) => e.department))];
+  const departments = [...new Set(employeeRecords.map((e) => e.department))];
 
   const getInitials = (name: string): string => {
     return name
@@ -483,9 +490,29 @@ export default function ProbationPage(): ReactNode {
     setKpiRatings({});
   };
 
-  const handleSubmitAppraisal = (): void => {
+  const handleSubmitAppraisal = async (): Promise<void> => {
+    if (selectedEmployee) {
+      await completeProbation.mutateAsync({
+        employeeId: selectedEmployee.id,
+        finalRating: starRating,
+        comments: feedback,
+      });
+    }
+
     setAppraisalDialogOpen(false);
     setSelectedEmployee(null);
+  };
+
+  const handleExtendProbation = async (employeeId: string): Promise<void> => {
+    const today = new Date();
+    today.setDate(today.getDate() + 14);
+    const newEndDate = today.toISOString().slice(0, 10);
+
+    await extendProbation.mutateAsync({
+      employeeId,
+      newProbationEndDate: newEndDate,
+      reason: 'Extended from probation tracker dashboard',
+    });
   };
 
   return (
@@ -691,7 +718,11 @@ export default function ProbationPage(): ReactNode {
                             <MessageSquare className="mr-2 h-4 w-4" />
                             Add Note
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              void handleExtendProbation(employee.id);
+                            }}
+                          >
                             <ChevronRight className="mr-2 h-4 w-4" />
                             Advance Stage
                           </DropdownMenuItem>
@@ -938,7 +969,12 @@ export default function ProbationPage(): ReactNode {
               <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button onClick={handleSubmitAppraisal}>
+            <Button
+              onClick={() => {
+                void handleSubmitAppraisal();
+              }}
+              disabled={completeProbation.isPending}
+            >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Submit Appraisal
             </Button>

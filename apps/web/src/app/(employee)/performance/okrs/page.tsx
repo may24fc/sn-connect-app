@@ -21,6 +21,7 @@ import {
   SelectValue,
   Textarea,
 } from '@hr-portal/ui';
+import { useCreateOKR, usePerformanceCycles, usePerformanceOKRs } from '@/hooks/usePerformance';
 import { ArrowLeft, Filter, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
@@ -164,6 +165,13 @@ const mockOKRs: Array<OKR> = [
 ];
 
 export default function OKRsPage(): ReactNode {
+  const { data: cycles = [] } = usePerformanceCycles();
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
+  const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
+  const createOKR = useCreateOKR();
+
+  const currentOKRs = okrs.length > 0 ? okrs : mockOKRs;
+
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newOKR, setNewOKR] = useState({
@@ -171,23 +179,42 @@ export default function OKRsPage(): ReactNode {
     description: '',
   });
 
-  const filteredOKRs = mockOKRs.filter((okr) => {
+  const filteredOKRs = currentOKRs.filter((okr) => {
     if (statusFilter === 'all') return true;
     return okr.status === statusFilter;
   });
 
   const stats = {
-    total: mockOKRs.length,
-    inProgress: mockOKRs.filter((o) => o.status === 'in_progress').length,
-    completed: mockOKRs.filter((o) => o.status === 'completed').length,
+    total: currentOKRs.length,
+    inProgress: currentOKRs.filter((o) => o.status === 'in_progress').length,
+    completed: currentOKRs.filter((o) => o.status === 'completed').length,
     avgProgress: Math.round(
-      mockOKRs.reduce((sum, o) => sum + o.progressPercentage, 0) / mockOKRs.length
+      currentOKRs.reduce((sum, o) => sum + o.progressPercentage, 0) /
+        Math.max(currentOKRs.length, 1)
     ),
   };
 
   const handleUpdateKeyResult = (_okrId: string, _keyResultId: string, _value: number): void => {};
 
-  const handleCreateOKR = (): void => {
+  const handleCreateOKR = async (): Promise<void> => {
+    if (!newOKR.objective.trim()) return;
+
+    const payload: {
+      objective: string;
+      keyResults: Array<Record<string, unknown>>;
+      progress: number;
+      status: string;
+      cycleId?: string;
+    } = {
+      objective: newOKR.objective,
+      keyResults: [],
+      progress: 0,
+      status: 'in_progress',
+      ...(activeCycle?.id ? { cycleId: activeCycle.id } : {}),
+    };
+
+    await createOKR.mutateAsync(payload);
+
     setCreateDialogOpen(false);
     setNewOKR({ objective: '', description: '' });
   };
@@ -346,7 +373,12 @@ export default function OKRsPage(): ReactNode {
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateOKR} disabled={!newOKR.objective.trim()}>
+            <Button
+              onClick={() => {
+                void handleCreateOKR();
+              }}
+              disabled={!newOKR.objective.trim() || createOKR.isPending}
+            >
               Create Objective
             </Button>
           </DialogFooter>

@@ -1,6 +1,11 @@
 'use client';
 
 import {
+  useInternship,
+  useUpdateInternDailyLog,
+  useUpdateInternship,
+} from '@/hooks/useInternships';
+import {
   Avatar,
   AvatarFallback,
   Badge,
@@ -29,7 +34,6 @@ import {
   type InternshipPeriodId,
   InternshipStatusBadge,
   Progress,
-  type SupervisorId,
   Tabs,
   TabsContent,
   TabsList,
@@ -57,83 +61,6 @@ import {
 import Link from 'next/link';
 import { type ReactNode, use, useState } from 'react';
 
-// Mock data
-const mockIntern = {
-  id: 'intern-1' as InternId,
-  name: 'John Doe',
-  email: 'john.doe@university.edu',
-  phone: '+1 (555) 123-4567',
-  school: 'State University',
-  program: 'Computer Science',
-  department: 'Engineering',
-  supervisor: 'Sarah Johnson',
-  supervisorId: 'sup-1' as SupervisorId,
-  supervisorEmail: 'sarah.johnson@company.com',
-  startDate: '2024-01-15',
-  endDate: '2024-04-15',
-  requiredHours: 480,
-  completedHours: 245,
-  status: 'active' as const,
-  notes: 'Excellent progress. Shows great initiative and is quick to learn new technologies.',
-};
-
-const mockReports: Array<DailyReport> = [
-  {
-    id: 'report-1' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-15',
-    tasksCompleted:
-      'Worked on implementing the dashboard UI components. Fixed several bugs in the navigation system. Participated in code review session.',
-    hoursLogged: 8,
-    learnings: 'Learned about React Server Components and how to optimize performance.',
-    challenges: 'Had some issues with TypeScript types but resolved with help from mentor.',
-    supervisorFeedback: 'Great progress on the dashboard. Keep up the good work!',
-    status: 'reviewed',
-    submittedAt: '2024-02-15T17:00:00Z',
-    reviewedAt: '2024-02-16T09:00:00Z',
-    createdAt: '2024-02-15T17:00:00Z',
-    updatedAt: '2024-02-16T09:00:00Z',
-  },
-  {
-    id: 'report-2' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-14',
-    tasksCompleted: 'Completed the employee profile page. Added validation for form inputs.',
-    hoursLogged: 7.5,
-    learnings: 'Learned about form validation patterns and error handling.',
-    status: 'submitted',
-    submittedAt: '2024-02-14T17:30:00Z',
-    createdAt: '2024-02-14T17:30:00Z',
-    updatedAt: '2024-02-14T17:30:00Z',
-  },
-  {
-    id: 'report-3' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-13',
-    tasksCompleted: 'Started working on the performance module. Set up the basic structure.',
-    hoursLogged: 8,
-    learnings: 'Learned about performance management workflows.',
-    status: 'reviewed',
-    submittedAt: '2024-02-13T17:00:00Z',
-    reviewedAt: '2024-02-14T10:00:00Z',
-    createdAt: '2024-02-13T17:00:00Z',
-    updatedAt: '2024-02-14T10:00:00Z',
-  },
-];
-
-// Weekly hours data for timeline
-const mockWeeklyHours = [
-  { week: 'Week 1', hours: 40, target: 40 },
-  { week: 'Week 2', hours: 38, target: 40 },
-  { week: 'Week 3', hours: 42, target: 40 },
-  { week: 'Week 4', hours: 40, target: 40 },
-  { week: 'Week 5', hours: 45, target: 40 },
-  { week: 'Week 6', hours: 40, target: 40 },
-];
-
 function getInitials(name: string): string {
   return name
     .split(' ')
@@ -146,18 +73,48 @@ function getInitials(name: string): string {
 export default function InternDetailPage({
   params,
 }: { params: Promise<{ id: string }> }): ReactNode {
-  const { id: _id } = use(params);
+  const { id } = use(params);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [feedback, setFeedback] = useState('');
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
 
-  const daysRemaining = getDaysRemaining(mockIntern.endDate);
+  const internshipQuery = useInternship(id);
+  const updateLogMutation = useUpdateInternDailyLog();
+  const updateInternshipMutation = useUpdateInternship();
+
+  const intern = internshipQuery.data?.data;
+  const reports = intern?.recentReports || [];
+  const uiReports: Array<DailyReport> = reports.map((report) => ({
+    ...report,
+    id: report.id as DailyReportId,
+    internId: report.internId as InternId,
+    internshipPeriodId: report.internshipPeriodId as InternshipPeriodId,
+  }));
+  const weeklyHours = intern?.weeklyHours || [];
+
+  if (internshipQuery.isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+        Loading intern profile...
+      </div>
+    );
+  }
+
+  if (internshipQuery.error || !intern) {
+    return (
+      <div className="h-full flex items-center justify-center text-sm text-destructive">
+        Failed to load intern profile.
+      </div>
+    );
+  }
+
+  const daysRemaining = getDaysRemaining(intern.endDate);
   const progressPercentage = calculateHoursProgress(
-    mockIntern.completedHours,
-    mockIntern.requiredHours
+    intern.completedHours,
+    intern.requiredHours
   );
-  const pendingReports = mockReports.filter((r) => r.status === 'submitted').length;
+  const pendingReports = uiReports.filter((r) => r.status === 'submitted').length;
 
   const handleProvideFeedback = (report: DailyReport): void => {
     setSelectedReport(report);
@@ -165,12 +122,29 @@ export default function InternDetailPage({
     setFeedbackDialogOpen(true);
   };
 
-  const handleSubmitFeedback = (): void => {
+  const handleSubmitFeedback = async (): Promise<void> => {
+    if (!(selectedReport && feedback.trim())) {
+      return;
+    }
+
+    await updateLogMutation.mutateAsync({
+      internshipId: id,
+      logId: selectedReport.id,
+      supervisorNotes: feedback.trim(),
+      isApproved: true,
+    });
+
     setFeedbackDialogOpen(false);
     setSelectedReport(null);
+    setFeedback('');
   };
 
-  const handleCompleteInternship = (): void => {
+  const handleCompleteInternship = async (): Promise<void> => {
+    await updateInternshipMutation.mutateAsync({
+      internshipId: id,
+      updates: { status: 'completed' },
+    });
+
     setCompleteDialogOpen(false);
   };
 
@@ -210,7 +184,7 @@ export default function InternDetailPage({
                 <Award className="mr-2 h-4 w-4" />
                 Generate Certificate
               </DropdownMenuItem>
-              {mockIntern.status === 'active' && progressPercentage >= 100 && (
+              {intern.status === 'active' && progressPercentage >= 100 && (
                 <DropdownMenuItem onClick={() => setCompleteDialogOpen(true)}>
                   <CheckCircle2 className="mr-2 h-4 w-4" />
                   Complete Internship
@@ -228,22 +202,22 @@ export default function InternDetailPage({
             {/* Avatar and Basic Info */}
             <div className="flex items-start gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl">{getInitials(mockIntern.name)}</AvatarFallback>
+                <AvatarFallback className="text-2xl">{getInitials(intern.name)}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-bold">{mockIntern.name}</h2>
-                  <InternshipStatusBadge status={mockIntern.status} />
+                  <h2 className="text-xl font-bold">{intern.name}</h2>
+                  <InternshipStatusBadge status={intern.status} />
                 </div>
-                <p className="text-muted-foreground">{mockIntern.program}</p>
+                <p className="text-muted-foreground">{intern.program}</p>
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Mail className="h-4 w-4" />
-                    {mockIntern.email}
+                    {intern.email}
                   </span>
                   <span className="flex items-center gap-1">
                     <Phone className="h-4 w-4" />
-                    {mockIntern.phone}
+                    {intern.phone || 'N/A'}
                   </span>
                 </div>
               </div>
@@ -256,21 +230,21 @@ export default function InternDetailPage({
                   <GraduationCap className="h-4 w-4" />
                   <span className="text-xs">School</span>
                 </div>
-                <p className="font-medium text-sm">{mockIntern.school}</p>
+                <p className="font-medium text-sm">{intern.school}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Building2 className="h-4 w-4" />
                   <span className="text-xs">Department</span>
                 </div>
-                <p className="font-medium text-sm">{mockIntern.department}</p>
+                <p className="font-medium text-sm">{intern.department}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <User className="h-4 w-4" />
                   <span className="text-xs">Supervisor</span>
                 </div>
-                <p className="font-medium text-sm">{mockIntern.supervisor}</p>
+                <p className="font-medium text-sm">{intern.supervisor}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -303,10 +277,10 @@ export default function InternDetailPage({
         <TabsContent value="overview" className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             <HoursProgressCard
-              completedHours={mockIntern.completedHours}
-              requiredHours={mockIntern.requiredHours}
-              startDate={mockIntern.startDate}
-              endDate={mockIntern.endDate}
+              completedHours={intern.completedHours}
+              requiredHours={intern.requiredHours}
+              startDate={intern.startDate}
+              endDate={intern.endDate}
             />
 
             {/* Internship Period Card */}
@@ -322,7 +296,7 @@ export default function InternDetailPage({
                   <div>
                     <p className="text-sm text-muted-foreground">Start Date</p>
                     <p className="font-medium">
-                      {new Date(mockIntern.startDate).toLocaleDateString('en-US', {
+                      {new Date(intern.startDate).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric',
@@ -332,7 +306,7 @@ export default function InternDetailPage({
                   <div>
                     <p className="text-sm text-muted-foreground">End Date</p>
                     <p className="font-medium">
-                      {new Date(mockIntern.endDate).toLocaleDateString('en-US', {
+                      {new Date(intern.endDate).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric',
@@ -352,9 +326,8 @@ export default function InternDetailPage({
                         className="h-full bg-primary rounded-full"
                         style={{
                           width: `${Math.min(
-                            ((new Date().getTime() - new Date(mockIntern.startDate).getTime()) /
-                              (new Date(mockIntern.endDate).getTime() -
-                                new Date(mockIntern.startDate).getTime())) *
+                            ((new Date().getTime() - new Date(intern.startDate).getTime()) /
+                              (new Date(intern.endDate).getTime() - new Date(intern.startDate).getTime())) *
                               100,
                             100
                           )}%`,
@@ -374,7 +347,7 @@ export default function InternDetailPage({
               <CardDescription>Internal notes about this intern</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm">{mockIntern.notes || 'No notes added yet.'}</p>
+              <p className="text-sm">No notes added yet.</p>
             </CardContent>
             <CardFooter>
               <Button variant="outline" size="sm">
@@ -407,10 +380,10 @@ export default function InternDetailPage({
             </Card>
           )}
 
-          <DailyReportList reports={mockReports} />
+          <DailyReportList reports={uiReports} />
 
           {/* Add feedback button for pending reports */}
-          {mockReports
+          {uiReports
             .filter((r) => r.status === 'submitted')
             .map((report) => (
               <Card key={report.id} className="border-warning/50">
@@ -441,8 +414,8 @@ export default function InternDetailPage({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockWeeklyHours.map((week, index) => (
-                  <div key={index} className="space-y-2">
+                {weeklyHours.map((week) => (
+                  <div key={week.week} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{week.week}</span>
                       <span className="text-muted-foreground">
@@ -487,7 +460,7 @@ export default function InternDetailPage({
             <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmitFeedback} disabled={!feedback.trim()}>
+            <Button onClick={handleSubmitFeedback} disabled={!feedback.trim() || updateLogMutation.isPending}>
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Submit Feedback
             </Button>
@@ -504,7 +477,7 @@ export default function InternDetailPage({
               Complete Internship
             </DialogTitle>
             <DialogDescription>
-              Mark {mockIntern.name}'s internship as complete. This will:
+              Mark {intern.name}'s internship as complete. This will:
               <ul className="list-disc list-inside mt-2 space-y-1">
                 <li>Change the intern's status to "Completed"</li>
                 <li>Generate a completion certificate</li>
@@ -516,7 +489,7 @@ export default function InternDetailPage({
             <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCompleteInternship}>
+            <Button onClick={handleCompleteInternship} disabled={updateInternshipMutation.isPending}>
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Complete Internship
             </Button>
