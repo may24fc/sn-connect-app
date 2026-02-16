@@ -23,7 +23,8 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.10"
+    "@supabase/supabase-js": "^2.47.10",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "supabase": "^1.226.4",

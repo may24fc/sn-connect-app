@@ -9,22 +9,15 @@ interface RouteContext {
 export async function GET(_: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isResourceAdmin(role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const query = supabase.from('resources').select('*').eq('id', id).is('deleted_at', null);
 
-    const { data, error: fetchError } = await supabase
-      .from('resources')
-      .select('*')
-      .eq('id', id)
-      .is('deleted_at', null)
-      .single();
+    const { data, error: fetchError } = await query.single();
 
     if (fetchError || !data) {
       return NextResponse.json({ error: 'Resource not found' }, { status: 404 });

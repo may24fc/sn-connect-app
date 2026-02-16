@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase } from '../../../announcements/_lib';
+import { getAuthedSupabase } from '../../_lib';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -10,11 +10,13 @@ export async function GET(_: NextRequest, context: RouteContext) {
     const { id } = await context.params;
     const { supabase, user, error } = await getAuthedSupabase();
 
-    if (error || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { data: resource, error: resourceError } = await supabase
       .from('resources')
-      .select('id, file_path, external_url, downloads_count')
+      .select('id, file_path, external_url, download_count')
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -32,18 +34,15 @@ export async function GET(_: NextRequest, context: RouteContext) {
     }
 
     const { data: signed, error: signError } = await supabase.storage
-      .from('announcement-attachments')
+      .from('resources-library')
       .createSignedUrl(resource.file_path, 60 * 15);
 
     if (signError || !signed) {
       return NextResponse.json({ error: 'Failed to generate download URL' }, { status: 500 });
     }
 
-    await supabase
-      .from('resources')
-      .update({ downloads_count: (resource.downloads_count || 0) + 1 })
-      .eq('id', id)
-      .is('deleted_at', null);
+    // Use the database function to increment download count
+    await supabase.rpc('increment_resource_download_count', { resource_uuid: id });
 
     return NextResponse.json({ data: { url: signed.signedUrl } });
   } catch (error) {

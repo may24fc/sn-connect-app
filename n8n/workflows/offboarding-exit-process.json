@@ -1,0 +1,312 @@
+{
+  "name": "Offboarding Exit Process",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "offboarding-exit-process",
+        "options": {
+          "noResponseBody": false
+        }
+      },
+      "id": "Webhook_Trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [220, 320],
+      "webhookId": "offboarding-exit-process"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract offboarding data from webhook payload\nconst payload = $input.first().json;\nconst employeeId = payload.employee_id;\nconst exitType = payload.exit_type || 'resignation';\nconst lastWorkingDay = payload.last_working_day;\nconst initiatedBy = payload.initiated_by;\nconst firstName = payload.first_name;\nconst lastName = payload.last_name;\nconst email = payload.email;\nconst department = payload.department;\nconst position = payload.position;\n\nreturn [{ \n  json: { \n    employee_id: employeeId,\n    exit_type: exitType,\n    last_working_day: lastWorkingDay,\n    initiated_by: initiatedBy,\n    first_name: firstName,\n    last_name: lastName,\n    email: email,\n    department: department,\n    position: position,\n    full_name: `${firstName} ${lastName}`\n  } \n}];"
+      },
+      "id": "Parse_Offboarding_Data",
+      "name": "Parse Offboarding Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 320]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.offboarding (employee_id, exit_type, last_working_day, status, initiated_by) VALUES ('{{ $json.employee_id }}', '{{ $json.exit_type }}', '{{ $json.last_working_day }}', 'initiated', '{{ $json.initiated_by }}') RETURNING id;"
+      },
+      "id": "Create_Offboarding",
+      "name": "Create Offboarding Record",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 320],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Store offboarding ID for next steps\nconst offboardingId = $input.first().json.id;\nconst employeeData = $('Parse_Offboarding_Data').first().json;\n\nreturn [{ \n  json: { \n    ...employeeData,\n    offboarding_id: offboardingId\n  } \n}];"
+      },
+      "id": "Store_Offboarding_ID",
+      "name": "Store Offboarding ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 320]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.offboarding_tasks (offboarding_id, title, description, category, due_date, assigned_to) VALUES ('{{ $json.offboarding_id }}', 'Revoke System Access', 'Disable all system accounts and revoke access credentials', 'access', '{{ $json.last_working_day }}'::date, (SELECT id FROM public.users WHERE email = 'it@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Collect Company Equipment', 'Return laptop, phone, access cards, and other company property', 'equipment', '{{ $json.last_working_day }}'::date, (SELECT id FROM public.users WHERE email = 'it@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Archive Employee Documents', 'Archive all employee documents and 201 files', 'documents', ('{{ $json.last_working_day }}'::date + INTERVAL '3 days')::date, (SELECT id FROM public.users WHERE email = 'hr@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Complete Exit Interview', 'Conduct exit interview and document feedback', 'documents', ('{{ $json.last_working_day }}'::date - INTERVAL '1 day')::date, (SELECT id FROM public.users WHERE email = 'hr@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Close Payroll Account', 'Process final payroll and close employee payroll account', 'accounts', ('{{ $json.last_working_day }}'::date + INTERVAL '7 days')::date, (SELECT id FROM public.users WHERE email = 'finance@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Transfer Knowledge', 'Document processes and transfer critical knowledge to team', 'knowledge_transfer', ('{{ $json.last_working_day }}'::date - INTERVAL '3 days')::date, '{{ $json.employee_id }}'), ('{{ $json.offboarding_id }}', 'Close Email Account', 'Forward emails, setup auto-reply, and close email account', 'access', ('{{ $json.last_working_day }}'::date + INTERVAL '1 day')::date, (SELECT id FROM public.users WHERE email = 'it@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Issue Clearance Certificate', 'Generate and issue employment clearance certificate', 'documents', ('{{ $json.last_working_day }}'::date + INTERVAL '14 days')::date, (SELECT id FROM public.users WHERE email = 'hr@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Update Employee Status', 'Mark employee status as terminated in system', 'accounts', '{{ $json.last_working_day }}'::date, (SELECT id FROM public.users WHERE email = 'hr@snconnect.local' LIMIT 1)), ('{{ $json.offboarding_id }}', 'Remove from Communication Channels', 'Remove from Slack, email lists, and other communication platforms', 'access', ('{{ $json.last_working_day }}'::date + INTERVAL '1 day')::date, (SELECT id FROM public.users WHERE email = 'it@snconnect.local' LIMIT 1));"
+      },
+      "id": "Create_Tasks",
+      "name": "Create Default Offboarding Tasks",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1180, 320],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $env.HR_NOTIFICATION_EMAIL || 'hr@snconnect.local' }}",
+        "subject": "Offboarding Initiated - {{ $('Store_Offboarding_ID').first().json.full_name }}",
+        "emailType": "html",
+        "message": "<h2>Employee Offboarding Initiated</h2><p><strong>Name:</strong> {{ $('Store_Offboarding_ID').first().json.full_name }}</p><p><strong>Position:</strong> {{ $('Store_Offboarding_ID').first().json.position }}</p><p><strong>Department:</strong> {{ $('Store_Offboarding_ID').first().json.department }}</p><p><strong>Last Working Day:</strong> {{ $('Store_Offboarding_ID').first().json.last_working_day }}</p><p><strong>Exit Type:</strong> {{ $('Store_Offboarding_ID').first().json.exit_type }}</p><hr><p><strong>Action Required:</strong></p><ul><li>Schedule exit interview</li><li>Prepare equipment return checklist</li><li>Coordinate with IT for access revocation</li><li>Process final payroll</li><li>Archive employee documents</li></ul><p><a href=\"https://hr.snconnect.local/admin/offboarding/{{ $('Store_Offboarding_ID').first().json.offboarding_id }}\">View Offboarding Checklist</a></p>",
+        "options": {}
+      },
+      "id": "Notify_HR",
+      "name": "Notify HR Team",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1420, 200]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $env.IT_NOTIFICATION_EMAIL || 'it@snconnect.local' }}",
+        "subject": "IT Offboarding Tasks - {{ $('Store_Offboarding_ID').first().json.full_name }}",
+        "emailType": "html",
+        "message": "<h2>IT Offboarding Tasks Required</h2><p>Employee <strong>{{ $('Store_Offboarding_ID').first().json.full_name }}</strong> is leaving on <strong>{{ $('Store_Offboarding_ID').first().json.last_working_day }}</strong>.</p><p><strong>Tasks:</strong></p><ul><li>Revoke all system access on last working day</li><li>Collect company equipment (laptop, phone, access cards)</li><li>Close email account and setup auto-reply</li><li>Remove from Slack and communication channels</li></ul><p><a href=\"https://hr.snconnect.local/admin/offboarding/{{ $('Store_Offboarding_ID').first().json.offboarding_id }}\">View Full Checklist</a></p>",
+        "options": {}
+      },
+      "id": "Notify_IT",
+      "name": "Notify IT Team",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1420, 320]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"Employee offboarding initiated\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"👋 Employee Offboarding\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Name:* {{ $('Store_Offboarding_ID').first().json.full_name }}\\n*Position:* {{ $('Store_Offboarding_ID').first().json.position }}\\n*Department:* {{ $('Store_Offboarding_ID').first().json.department }}\\n*Last Working Day:* {{ $('Store_Offboarding_ID').first().json.last_working_day }}\\n*Exit Type:* {{ $('Store_Offboarding_ID').first().json.exit_type }}\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Action Items:*\\n• Schedule exit interview\\n• Revoke system access\\n• Collect equipment\\n• Archive documents\\n• Process final payroll\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "Slack_Notify",
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1420, 440]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $('Store_Offboarding_ID').first().json.email }}",
+        "subject": "Offboarding Process - Important Information",
+        "emailType": "html",
+        "message": "<h2>Dear {{ $('Store_Offboarding_ID').first().json.first_name }}</h2><p>We acknowledge your departure from SN Connect. Your last working day is scheduled for <strong>{{ $('Store_Offboarding_ID').first().json.last_working_day }}</strong>.</p><h3>Offboarding Checklist</h3><p>Please ensure the following tasks are completed before your last day:</p><ul><li>Return all company equipment (laptop, phone, access cards)</li><li>Complete knowledge transfer to your team</li><li>Attend exit interview</li><li>Update contact information for final payroll</li></ul><p>HR will reach out to schedule your exit interview. If you have any questions, please contact hr@snconnect.local</p><p>Thank you for your service to SN Connect.</p><p><em>Human Resources Team</em></p>",
+        "options": {}
+      },
+      "id": "Notify_Employee",
+      "name": "Notify Employee",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1420, 560]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, record_id, action, metadata) VALUES ('offboarding', '{{ $('Store_Offboarding_ID').first().json.offboarding_id }}', 'offboarding_initiated', jsonb_build_object('workflow', 'offboarding-exit-process', 'employee_id', '{{ $('Store_Offboarding_ID').first().json.employee_id }}', 'employee_name', '{{ $('Store_Offboarding_ID').first().json.full_name }}', 'position', '{{ $('Store_Offboarding_ID').first().json.position }}', 'department', '{{ $('Store_Offboarding_ID').first().json.department }}', 'exit_type', '{{ $('Store_Offboarding_ID').first().json.exit_type }}', 'last_working_day', '{{ $('Store_Offboarding_ID').first().json.last_working_day }}', 'tasks_created', 10, 'initiated_at', now()));"
+      },
+      "id": "Audit_Log",
+      "name": "Create Audit Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1660, 320],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ \n  json: { \n    success: true,\n    message: 'Offboarding workflow completed successfully',\n    offboarding_id: $('Store_Offboarding_ID').first().json.offboarding_id,\n    employee_id: $('Store_Offboarding_ID').first().json.employee_id,\n    tasks_created: 10,\n    last_working_day: $('Store_Offboarding_ID').first().json.last_working_day\n  } \n}];"
+      },
+      "id": "Return_Success",
+      "name": "Return Success Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1900, 320]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Offboarding Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Offboarding Data": {
+      "main": [
+        [
+          {
+            "node": "Create Offboarding Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Offboarding Record": {
+      "main": [
+        [
+          {
+            "node": "Store Offboarding ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Offboarding ID": {
+      "main": [
+        [
+          {
+            "node": "Create Default Offboarding Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Default Offboarding Tasks": {
+      "main": [
+        [
+          {
+            "node": "Notify HR Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify IT Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Slack Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Employee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify HR Team": {
+      "main": [
+        [
+          {
+            "node": "Create Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify IT Team": {
+      "main": [
+        [
+          {
+            "node": "Create Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Create Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Employee": {
+      "main": [
+        [
+          {
+            "node": "Create Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Audit Log": {
+      "main": [
+        [
+          {
+            "node": "Return Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "offboarding",
+      "id": "offboarding"
+    },
+    {
+      "name": "automation",
+      "id": "automation"
+    },
+    {
+      "name": "hr",
+      "id": "hr"
+    }
+  ],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "sn-hr-portal"
+  },
+  "id": "offboarding-exit-process",
+  "versionId": "1"
+}

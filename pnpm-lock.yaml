@@ -238,6 +238,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.47.10
         version: 2.93.3
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       supabase:
         specifier: ^1.226.4
