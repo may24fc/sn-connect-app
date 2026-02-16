@@ -17,94 +17,12 @@ import { ArrowLeft, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-// Mock data - replace with actual API calls
-const getMockComparison = (currentWeek: WeekPeriod, previousWeek: WeekPeriod): WeekComparison => {
+// TODO: Replace with actual API calls
+const getComparison = (currentWeek: WeekPeriod, previousWeek: WeekPeriod): WeekComparison => {
   return {
     currentWeek,
     previousWeek,
-    metrics: [
-      {
-        name: 'Total Expenditure',
-        category: 'Expenditure',
-        currentValue: 142000,
-        previousValue: 125000,
-        change: 17000,
-        changePercent: 13.6,
-        trend: 'up',
-      },
-      {
-        name: 'Total Results',
-        category: 'Revenue',
-        currentValue: 340000,
-        previousValue: 288000,
-        change: 52000,
-        changePercent: 18.1,
-        trend: 'up',
-      },
-      {
-        name: 'ROI',
-        category: 'Performance',
-        currentValue: 239,
-        previousValue: 230,
-        change: 9,
-        changePercent: 3.9,
-        trend: 'up',
-      },
-      {
-        name: 'Submissions',
-        category: 'Operations',
-        currentValue: 18,
-        previousValue: 22,
-        change: -4,
-        changePercent: -18.2,
-        trend: 'down',
-      },
-      {
-        name: 'Facebook Ads',
-        category: 'Expenditure',
-        currentValue: 52000,
-        previousValue: 45000,
-        change: 7000,
-        changePercent: 15.6,
-        trend: 'up',
-      },
-      {
-        name: 'Google Ads',
-        category: 'Expenditure',
-        currentValue: 42000,
-        previousValue: 38000,
-        change: 4000,
-        changePercent: 10.5,
-        trend: 'up',
-      },
-      {
-        name: 'Leads Generated',
-        category: 'Results',
-        currentValue: 245,
-        previousValue: 180,
-        change: 65,
-        changePercent: 36.1,
-        trend: 'up',
-      },
-      {
-        name: 'Revenue',
-        category: 'Revenue',
-        currentValue: 340000,
-        previousValue: 288000,
-        change: 52000,
-        changePercent: 18.1,
-        trend: 'up',
-      },
-      {
-        name: 'New Followers',
-        category: 'Marketing',
-        currentValue: 1200,
-        previousValue: 850,
-        change: 350,
-        changePercent: 41.2,
-        trend: 'up',
-      },
-    ],
+    metrics: [],
   };
 };
 
@@ -133,7 +51,7 @@ export default function ComparePage(): React.ReactNode {
     getPreviousWeek(currentWeekInit)
   );
 
-  const comparison = getMockComparison(currentWeek, previousWeek);
+  const comparison = getComparison(currentWeek, previousWeek);
 
   const handleCurrentWeekChange = (week: WeekPeriod): void => {
     setCurrentWeek(week);
@@ -196,34 +114,9 @@ export default function ComparePage(): React.ReactNode {
       {/* Insights Summary */}
       <InsightsSummary
         title="Week-over-Week Analysis"
-        summary="Strong growth across most metrics with notable improvements in lead generation and revenue. Submission rate declined but remains acceptable."
-        keyFindings={[
-          {
-            metric: 'Lead Generation',
-            insight:
-              'Leads increased by 36.1% (65 additional leads), driven by improved Facebook ad targeting',
-            highlight: true,
-          },
-          {
-            metric: 'Revenue Growth',
-            insight: 'Revenue grew 18.1% (PHP 52k increase) while spend only increased 13.6%',
-            highlight: true,
-          },
-          {
-            metric: 'Submission Rate',
-            insight: 'Submissions dropped from 22 to 18, investigate with team leads',
-            highlight: true,
-          },
-          {
-            metric: 'Social Media',
-            insight: 'New followers surged by 41.2%, indicating strong brand awareness campaign',
-          },
-        ]}
-        recommendations={[
-          "Follow up with the 4 team members who didn't submit reports this week",
-          'Increase Facebook Ads budget given the 36% improvement in lead generation',
-          'Analyze what changed in social media strategy to replicate the follower growth',
-        ]}
+        summary="No comparison data available yet. Select weeks and load data to see insights."
+        keyFindings={[]}
+        recommendations={[]}
       />
 
       {/* Comparison Table */}

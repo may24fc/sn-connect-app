@@ -7,42 +7,6 @@ import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { use, useEffect, useState } from 'react';
 
-// Mock data - Replace with actual API calls
-const mockTask: Task = {
-  id: '1' as any,
-  title: 'Review Q1 Financial Reports',
-  description:
-    'Analyze and review all financial reports from Q1, focusing on budget variances and cost optimization opportunities. This includes reviewing all departmental budgets, identifying areas of overspending, and preparing recommendations for the executive team.',
-  priority: 'high',
-  status: 'in_progress',
-  category: 'Finance',
-  dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-  createdBy: 'admin-1',
-  createdByName: 'Admin User',
-  createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  assignees: [
-    {
-      id: '3',
-      name: 'Mike Chen',
-      email: 'mike.chen@company.com',
-      role: 'employee',
-      department: 'Finance',
-      avatarUrl: '',
-      assignedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: '5',
-      name: 'Anna Lee',
-      email: 'anna.lee@company.com',
-      role: 'employee',
-      department: 'Finance',
-      avatarUrl: '',
-      assignedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ],
-};
-
 interface TaskDetailPageProps {
   params: Promise<{
     id: string;
@@ -61,8 +25,11 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
     const fetchTask = async (): Promise<void> => {
       setIsLoading(true);
       try {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        setTask(mockTask);
+        const response = await fetch(`/api/tasks/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTask(data);
+        }
       } catch (error) {
         console.error('Failed to fetch task:', error);
       } finally {
@@ -77,8 +44,6 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
     setIsUpdating(true);
     try {
       // TODO: Replace with actual API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       if (task) {
         setTask({
           ...task,

@@ -6,80 +6,6 @@ import { ArrowLeft, BarChart3, Minus, TrendingDown, TrendingUp } from 'lucide-re
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// Mock data
-const mockKPIs: Array<KPI> = [
-  {
-    id: 'kpi-1' as KPI['id'],
-    employeeId: 'emp-1' as KPI['employeeId'],
-    cycleId: 'cycle-2024-q1' as KPI['cycleId'],
-    name: 'Project Delivery Rate',
-    description: 'Percentage of projects delivered on time and within budget',
-    target: 90,
-    actual: 85,
-    unit: '%',
-    weight: 30,
-    score: 94,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'kpi-2' as KPI['id'],
-    employeeId: 'emp-1' as KPI['employeeId'],
-    cycleId: 'cycle-2024-q1' as KPI['cycleId'],
-    name: 'Code Quality Score',
-    description: 'Weighted average of code review scores and test coverage',
-    target: 80,
-    actual: 88,
-    unit: '%',
-    weight: 25,
-    score: 110,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'kpi-3' as KPI['id'],
-    employeeId: 'emp-1' as KPI['employeeId'],
-    cycleId: 'cycle-2024-q1' as KPI['cycleId'],
-    name: 'Customer Response Time',
-    description: 'Average time to respond to customer inquiries',
-    target: 2,
-    actual: 1.8,
-    unit: 'hours',
-    weight: 20,
-    score: 111,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'kpi-4' as KPI['id'],
-    employeeId: 'emp-1' as KPI['employeeId'],
-    cycleId: 'cycle-2024-q1' as KPI['cycleId'],
-    name: 'Team Collaboration Index',
-    description: 'Score based on peer feedback and cross-team projects',
-    target: 85,
-    actual: 78,
-    unit: '%',
-    weight: 15,
-    score: 92,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'kpi-5' as KPI['id'],
-    employeeId: 'emp-1' as KPI['employeeId'],
-    cycleId: 'cycle-2024-q1' as KPI['cycleId'],
-    name: 'Documentation Coverage',
-    description: 'Percentage of features with complete documentation',
-    target: 90,
-    actual: 72,
-    unit: '%',
-    weight: 10,
-    score: 80,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-];
-
 function getWeightedScore(kpis: Array<KPI>): number {
   const totalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
   if (totalWeight === 0) return 0;
@@ -96,7 +22,7 @@ export default function KPIsPage(): ReactNode {
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
 
-  const currentKPIs = kpis.length > 0 ? kpis : mockKPIs;
+  const currentKPIs = kpis;
 
   const weightedScore = getWeightedScore(currentKPIs);
   const onTargetCount = currentKPIs.filter((kpi) => kpi.score >= 100).length;

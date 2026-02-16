@@ -268,11 +268,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
             const stored = localStorage.getItem('auth_user');
             if (stored) {
               const parsed = JSON.parse(stored) as User;
-              setUser(parsed);
+              if (isMounted) {
+                setUser(parsed);
+              }
             }
           } catch (err) {
             console.error('Failed to parse stored mock user:', err);
             localStorage.removeItem('auth_user');
+          } finally {
+            if (isMounted) {
+              setIsLoading(false);
+            }
           }
           return;
         }

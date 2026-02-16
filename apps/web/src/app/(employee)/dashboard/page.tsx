@@ -6,6 +6,7 @@ import {
   BentoCardHeader,
   BentoCardTitle,
   BentoGrid,
+  EmptyState,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
@@ -26,14 +27,7 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// Mock data - replace with actual data fetching
-const onboardingProgress = 75;
-const probationData = {
-  stage: 'Stage 2',
-  daysRemaining: 45,
-  status: 'on-track' as const,
-};
-
+// Quick actions configuration
 const quickActions = [
   {
     title: 'Upload Files',
@@ -57,33 +51,6 @@ const quickActions = [
   },
 ];
 
-const announcements = [
-  {
-    id: '1',
-    title: 'Company Holiday Schedule 2026',
-    date: '2 hours ago',
-    category: 'HR Updates',
-  },
-  {
-    id: '2',
-    title: 'New Health Benefits Package',
-    date: '1 day ago',
-    category: 'Benefits',
-  },
-  {
-    id: '3',
-    title: 'Q1 Town Hall Meeting',
-    date: '2 days ago',
-    category: 'Events',
-  },
-];
-
-const upcomingEvents = [
-  { title: 'Performance Review', date: 'Feb 15, 2026', time: '2:00 PM' },
-  { title: 'Team Building', date: 'Feb 20, 2026', time: '10:00 AM' },
-  { title: 'Training Workshop', date: 'Feb 25, 2026', time: '9:00 AM' },
-];
-
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -95,6 +62,12 @@ export default function DashboardPage(): ReactNode {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] ?? 'there';
   const greeting = getGreeting();
+
+  // Data would come from API hooks - showing UI structure without data
+  const onboardingProgress = 0;
+  const hasOnboardingData = false;
+  const announcements: Array<{ id: string; title: string; date: string; category: string }> = [];
+  const upcomingEvents: Array<{ title: string; date: string; time: string }> = [];
 
   return (
     <div className="h-full space-y-6">
@@ -120,26 +93,26 @@ export default function DashboardPage(): ReactNode {
       <StatCardGrid columns={4}>
         <StatCard
           label="Onboarding"
-          value={`${onboardingProgress}%`}
-          trend={{ direction: 'up', value: '+15% this week' }}
+          value={hasOnboardingData ? `${onboardingProgress}%` : '0%'}
+          trend={{ direction: 'stable', value: 'Not started' }}
           icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Probation"
-          value={probationData.stage}
-          trend={{ direction: 'stable', value: `${probationData.daysRemaining} days left` }}
+          value="N/A"
+          trend={{ direction: 'stable', value: 'No active period' }}
           icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Tasks Due"
-          value="3"
-          trend={{ direction: 'down', value: '2 completed' }}
+          value="0"
+          trend={{ direction: 'stable', value: 'No pending tasks' }}
           icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Notifications"
-          value="5"
-          trend={{ direction: 'up', value: '2 new' }}
+          value="0"
+          trend={{ direction: 'stable', value: 'No new notifications' }}
           icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
         />
       </StatCardGrid>
@@ -175,32 +148,39 @@ export default function DashboardPage(): ReactNode {
             <BentoCardTitle icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}>
               Onboarding Progress
             </BentoCardTitle>
-            <Badge variant={probationData.status === 'on-track' ? 'success' : 'warning'}>
-              {probationData.status === 'on-track' ? 'On Track' : 'At Risk'}
-            </Badge>
+            <Badge variant="secondary">Not Started</Badge>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-zinc-500 dark:text-zinc-400">Overall completion</span>
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                    {onboardingProgress}%
-                  </span>
+            {hasOnboardingData ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-zinc-500 dark:text-zinc-400">Overall completion</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
+                      {onboardingProgress}%
+                    </span>
+                  </div>
+                  <Progress value={onboardingProgress} className="h-2" />
                 </div>
-                <Progress value={onboardingProgress} className="h-2" />
+                <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Tasks remaining</span>
+                  <Link
+                    href="/onboarding"
+                    className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                  >
+                    View checklist
+                    <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
+                  </Link>
+                </div>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">3 tasks remaining</span>
-                <Link
-                  href="/onboarding"
-                  className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-                >
-                  View checklist
-                  <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
-                </Link>
-              </div>
-            </div>
+            ) : (
+              <EmptyState
+                icon={ClipboardCheck}
+                title="No onboarding in progress"
+                description="Your onboarding tasks will appear here when available"
+                action={{ label: 'View Onboarding', href: '/onboarding' }}
+              />
+            )}
           </BentoCardContent>
         </BentoCard>
 
@@ -217,26 +197,34 @@ export default function DashboardPage(): ReactNode {
             </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-3">
-              {upcomingEvents.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {event.title}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {event.date} at {event.time}
-                      </p>
+            {upcomingEvents.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingEvents.map((event, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {event.title}
+                        </p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {event.date} at {event.time}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Calendar}
+                title="No upcoming events"
+                description="Your scheduled events will appear here"
+              />
+            )}
           </BentoCardContent>
         </BentoCard>
 
@@ -253,32 +241,40 @@ export default function DashboardPage(): ReactNode {
             </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-3">
-              {announcements.map((announcement) => (
-                <div
-                  key={announcement.id}
-                  className="flex items-start justify-between p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                >
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {announcement.title}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-xs h-5">
-                        {announcement.category}
-                      </Badge>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {announcement.date}
-                      </span>
+            {announcements.length > 0 ? (
+              <div className="space-y-3">
+                {announcements.map((announcement) => (
+                  <div
+                    key={announcement.id}
+                    className="flex items-start justify-between p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {announcement.title}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs h-5">
+                          {announcement.category}
+                        </Badge>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {announcement.date}
+                        </span>
+                      </div>
                     </div>
+                    <ChevronRight
+                      className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-1"
+                      strokeWidth={1.5}
+                    />
                   </div>
-                  <ChevronRight
-                    className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-1"
-                    strokeWidth={1.5}
-                  />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Bell}
+                title="No announcements"
+                description="Company announcements will appear here"
+              />
+            )}
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>

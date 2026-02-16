@@ -12,7 +12,7 @@ import {
   Progress,
   TaskCard,
 } from '@hr-portal/ui';
-import type { Task, TaskId } from '@hr-portal/ui';
+import type { Task } from '@hr-portal/ui';
 import {
   Bell,
   Calendar,
@@ -27,109 +27,53 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// Mock data - replace with actual data fetching
-const onboardingProgress = 75;
+// TODO: Replace with actual data fetching
+const onboardingProgress = 0;
 const probationData = {
-  stage: 'Stage 2',
-  daysRemaining: 45,
+  stage: '—',
+  daysRemaining: 0,
   status: 'on-track' as const,
 };
 
 const actionCards = [
   {
     title: 'Upload Documents',
-    description: '2 documents pending',
+    description: 'Upload your documents',
     icon: FolderOpen,
     href: '/files',
-    variant: 'warning' as const,
+    variant: 'default' as const,
   },
   {
     title: 'Complete Checklist',
-    description: '3 tasks remaining',
+    description: 'View onboarding checklist',
     icon: ClipboardCheck,
     href: '/onboarding',
     variant: 'default' as const,
   },
   {
     title: 'Submit Invoice',
-    description: 'Due in 5 days',
+    description: 'Go to payroll',
     icon: FileText,
     href: '/payroll',
     variant: 'default' as const,
   },
 ];
 
-const announcements = [
-  {
-    id: '1',
-    title: 'Company Holiday Schedule 2024',
-    date: '2 hours ago',
-    category: 'HR Updates',
-  },
-  {
-    id: '2',
-    title: 'New Health Benefits Package',
-    date: '1 day ago',
-    category: 'Benefits',
-  },
-  {
-    id: '3',
-    title: 'Q4 Town Hall Meeting',
-    date: '2 days ago',
-    category: 'Events',
-  },
-];
+const announcements: Array<{
+  id: string;
+  title: string;
+  date: string;
+  category: string;
+}> = [];
 
-const upcomingEvents = [
-  { title: 'Performance Review', date: 'Jan 15, 2024', time: '2:00 PM' },
-  { title: 'Team Building', date: 'Jan 20, 2024', time: '10:00 AM' },
-];
+const upcomingEvents: Array<{
+  title: string;
+  date: string;
+  time: string;
+}> = [];
 
-// Mock tasks - replace with actual data fetching
-const recentTasks: Array<Task> = [
-  {
-    id: '1' as TaskId,
-    title: 'Review Q1 Financial Reports',
-    description: 'Analyze and review all financial reports from Q1.',
-    priority: 'high',
-    status: 'in_progress',
-    category: 'Finance',
-    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'admin-1',
-    createdByName: 'Admin User',
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [],
-  },
-  {
-    id: '2' as TaskId,
-    title: 'Prepare Monthly Report',
-    description: 'Compile and prepare the monthly departmental report.',
-    priority: 'medium',
-    status: 'pending',
-    category: 'Reports',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'admin-1',
-    createdByName: 'Admin User',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [],
-  },
-  {
-    id: '3' as TaskId,
-    title: 'Update Documentation',
-    description: 'Update the project documentation with recent changes.',
-    priority: 'urgent',
-    status: 'pending',
-    category: 'Documentation',
-    dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'admin-1',
-    createdByName: 'Admin User',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [],
-  },
-];
+// TODO: Replace with actual data fetching
+const recentTasks: Array<Task> = [];
 
 export default function EmployeeDashboard(): ReactNode {
   const { user } = useAuth();
@@ -213,12 +157,16 @@ export default function EmployeeDashboard(): ReactNode {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingEvents.map((event, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{event.title}</span>
-                  <span className="text-muted-foreground text-xs">{event.date}</span>
-                </div>
-              ))}
+              {upcomingEvents.length > 0 ? (
+                upcomingEvents.map((event, index) => (
+                  <div key={index} className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{event.title}</span>
+                    <span className="text-muted-foreground text-xs">{event.date}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-2">No upcoming events</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -297,25 +245,32 @@ export default function EmployeeDashboard(): ReactNode {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {announcements.map((announcement) => (
-              <div
-                key={announcement.id}
-                className="flex items-start justify-between border-b border-border pb-4 last:border-0 last:pb-0"
-              >
-                <div className="space-y-1">
-                  <h4 className="font-medium">{announcement.title}</h4>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Badge variant="secondary" className="text-xs">
-                      {announcement.category}
-                    </Badge>
-                    <span>{announcement.date}</span>
+            {announcements.length > 0 ? (
+              announcements.map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className="flex items-start justify-between border-b border-border pb-4 last:border-0 last:pb-0"
+                >
+                  <div className="space-y-1">
+                    <h4 className="font-medium">{announcement.title}</h4>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge variant="secondary" className="text-xs">
+                        {announcement.category}
+                      </Badge>
+                      <span>{announcement.date}</span>
+                    </div>
                   </div>
+                  <Button variant="ghost" size="sm">
+                    Read
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm">
-                  Read
-                </Button>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Bell className="h-5 w-5 mx-auto mb-3 text-zinc-400" strokeWidth={1.5} />
+                <p>No announcements yet</p>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>

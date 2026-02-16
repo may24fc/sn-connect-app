@@ -114,7 +114,6 @@ export {
   ChatMessage as AIKnowledgeChatMessage,
   DebugPanel,
   AccessToggle,
-  mockSources,
 } from './components/ai-knowledge';
 export type {
   AIKnowledgeManagerProps,

@@ -107,228 +107,8 @@ interface Employee {
   kpis: Array<KPI>;
 }
 
-// Mock data with OKRs and KPIs
-const employees: Array<Employee> = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john.doe@company.com',
-    department: 'Engineering',
-    position: 'Software Developer',
-    startDate: '2024-01-02',
-    stage: 2,
-    status: 'on-track',
-    daysRemaining: 45,
-    manager: 'Sarah Johnson',
-    documentsComplete: 6,
-    totalDocuments: 8,
-    okrs: [
-      {
-        id: 'okr1',
-        objective: 'Build HR Portal Prototype',
-        keyResults: [
-          {
-            id: 'kr1',
-            description: 'Complete the dashboard UI with all components',
-            target: '100%',
-            current: '75%',
-            progress: 75,
-          },
-          {
-            id: 'kr2',
-            description: 'Implement user authentication flow',
-            target: '100%',
-            current: '100%',
-            progress: 100,
-          },
-          {
-            id: 'kr3',
-            description: 'Create API integration for employee data',
-            target: '100%',
-            current: '50%',
-            progress: 50,
-          },
-        ],
-        status: 'in_progress',
-      },
-    ],
-    kpis: [
-      {
-        id: 'kpi1',
-        name: 'Code Quality',
-        description: 'Maintain code coverage above target',
-        target: '80%',
-        actual: '85%',
-        score: 106,
-      },
-      {
-        id: 'kpi2',
-        name: 'Task Completion',
-        description: 'Complete assigned tasks within sprint',
-        target: '90%',
-        actual: '88%',
-        score: 98,
-      },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane.smith@company.com',
-    department: 'Marketing',
-    position: 'Marketing Specialist',
-    startDate: '2024-01-10',
-    stage: 1,
-    status: 'at-risk',
-    daysRemaining: 60,
-    manager: 'Mike Brown',
-    documentsComplete: 3,
-    totalDocuments: 8,
-    okrs: [
-      {
-        id: 'okr2',
-        objective: 'Launch Social Media Campaign',
-        keyResults: [
-          {
-            id: 'kr4',
-            description: 'Increase Instagram followers by 20%',
-            target: '20%',
-            current: '8%',
-            progress: 40,
-          },
-          {
-            id: 'kr5',
-            description: 'Create 15 content pieces per month',
-            target: '15',
-            current: '6',
-            progress: 40,
-          },
-        ],
-        status: 'in_progress',
-      },
-    ],
-    kpis: [
-      {
-        id: 'kpi3',
-        name: 'Campaign ROI',
-        description: 'Return on marketing investment',
-        target: '150%',
-        actual: '90%',
-        score: 60,
-      },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Alex Johnson',
-    email: 'alex.johnson@company.com',
-    department: 'Finance',
-    position: 'Financial Analyst',
-    startDate: '2023-11-15',
-    stage: 3,
-    status: 'on-track',
-    daysRemaining: 15,
-    manager: 'Emily Davis',
-    documentsComplete: 8,
-    totalDocuments: 8,
-    okrs: [
-      {
-        id: 'okr3',
-        objective: 'Streamline Monthly Reporting Process',
-        keyResults: [
-          {
-            id: 'kr6',
-            description: 'Reduce report generation time by 30%',
-            target: '30%',
-            current: '35%',
-            progress: 100,
-          },
-          {
-            id: 'kr7',
-            description: 'Automate 5 recurring reports',
-            target: '5',
-            current: '5',
-            progress: 100,
-          },
-        ],
-        status: 'completed',
-      },
-    ],
-    kpis: [
-      {
-        id: 'kpi4',
-        name: 'Report Accuracy',
-        description: 'Financial report error rate',
-        target: '99%',
-        actual: '99.5%',
-        score: 100,
-      },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Maria Garcia',
-    email: 'maria.garcia@company.com',
-    department: 'HR',
-    position: 'HR Coordinator',
-    startDate: '2023-10-01',
-    stage: 4,
-    status: 'completed',
-    daysRemaining: 0,
-    manager: 'Tom Wilson',
-    documentsComplete: 8,
-    totalDocuments: 8,
-    okrs: [],
-    kpis: [],
-  },
-  {
-    id: '5',
-    name: 'Robert Lee',
-    email: 'robert.lee@company.com',
-    department: 'Engineering',
-    position: 'QA Engineer',
-    startDate: '2023-12-01',
-    stage: 2,
-    status: 'extended',
-    daysRemaining: 30,
-    manager: 'Sarah Johnson',
-    documentsComplete: 5,
-    totalDocuments: 8,
-    okrs: [
-      {
-        id: 'okr4',
-        objective: 'Implement Automated Testing Framework',
-        keyResults: [
-          {
-            id: 'kr8',
-            description: 'Write 100 automated test cases',
-            target: '100',
-            current: '45',
-            progress: 45,
-          },
-          {
-            id: 'kr9',
-            description: 'Achieve 70% test coverage',
-            target: '70%',
-            current: '40%',
-            progress: 57,
-          },
-        ],
-        status: 'in_progress',
-      },
-    ],
-    kpis: [
-      {
-        id: 'kpi5',
-        name: 'Bug Detection Rate',
-        description: 'Bugs found before production',
-        target: '95%',
-        actual: '78%',
-        score: 82,
-      },
-    ],
-  },
-];
+// TODO: Replace with actual API data
+const employees: Array<Employee> = [];
 
 const statusConfig: Record<
   ProbationStatus,
@@ -639,7 +419,8 @@ export default function ProbationPage(): ReactNode {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEmployees.map((employee) => {
+              {filteredEmployees.length > 0 ? (
+                filteredEmployees.map((employee) => {
                 const config = statusConfig[employee.status];
                 const StatusIcon = config.icon;
                 const docProgress = Math.round(
@@ -731,7 +512,14 @@ export default function ProbationPage(): ReactNode {
                     </TableCell>
                   </TableRow>
                 );
-              })}
+              })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    No probationary employees found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

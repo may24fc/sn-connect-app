@@ -29,10 +29,12 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
-    // Build query
+    // Build query with explicit foreign key relationships
+    // employees_user_id_fkey: employee's user account
+    // employees_immediate_head_fkey: employee's manager (optional)
     let query = supabase
       .from('employees')
-      .select('*, users!inner(*)', { count: 'exact' })
+      .select('*, users!employees_user_id_fkey(*), manager:users!employees_immediate_head_fkey(*)', { count: 'exact' })
       .is('deleted_at', null);
 
     // Apply filters
@@ -47,7 +49,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      query = query.eq('users.status', status);
+      // Use the disambiguated relationship name
+      query = query.eq('users!employees_user_id_fkey.status', status);
     }
 
     // Apply pagination

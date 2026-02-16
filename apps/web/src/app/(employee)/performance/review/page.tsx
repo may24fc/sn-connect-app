@@ -39,8 +39,8 @@ import {
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
-// Mock data
-const mockReviewStatus: ReviewStatus = 'pending_self';
+// No data yet - show empty form state
+const initialReviewStatus: ReviewStatus = 'pending_self';
 
 interface SelfAssessmentForm {
   accomplishments: string;
@@ -154,7 +154,7 @@ export default function ReviewPage(): ReactNode {
             <p className="text-muted-foreground">Complete your performance self-review</p>
           </div>
         </div>
-        <ReviewStatusBadge status={mockReviewStatus} />
+        <ReviewStatusBadge status={initialReviewStatus} />
       </div>
 
       {/* Progress Card */}
@@ -178,7 +178,7 @@ export default function ReviewPage(): ReactNode {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">OKR Progress</p>
-                <p className="text-xl font-bold">75%</p>
+                <p className="text-xl font-bold">—</p>
               </div>
             </div>
           </CardContent>
@@ -191,7 +191,7 @@ export default function ReviewPage(): ReactNode {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">KPI Score</p>
-                <p className="text-xl font-bold">98%</p>
+                <p className="text-xl font-bold">—</p>
               </div>
             </div>
           </CardContent>

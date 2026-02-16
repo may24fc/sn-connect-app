@@ -23,3 +23,6 @@ export {
 
 // StatCard exports
 export { StatCard, StatCardGrid } from './StatCard';
+
+// EmptyState exports
+export { EmptyState } from './EmptyState';
