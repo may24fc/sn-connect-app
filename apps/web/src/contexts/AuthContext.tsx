@@ -24,6 +24,7 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -435,6 +436,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     [MOCK_USERS, router, supabase, syncAuthState, useMock]
   );
 
+  const signup = React.useCallback(
+    async (email: string, password: string, fullName: string): Promise<void> => {
+      if (useMock) {
+        throw new Error('Signup is not available in mock auth mode.');
+      }
+
+      if (!supabase) {
+        throw new Error('Authentication service is not configured.');
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      // After signup, the user must confirm their email. The caller is responsible
+      // for redirecting to the confirmation page.
+    },
+    [supabase, useMock]
+  );
+
   const logout = React.useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
@@ -467,10 +499,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       user,
       isLoading,
       login,
+      signup,
       logout,
       isAuthenticated: !!user,
     }),
-    [user, isLoading, login, logout]
+    [user, isLoading, login, signup, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
