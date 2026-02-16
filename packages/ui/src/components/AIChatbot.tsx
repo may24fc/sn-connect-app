@@ -308,7 +308,7 @@ Would you like me to help you with a specific leave request?`;
   }
 
   if (lowerMessage.includes('document') || lowerMessage.includes('201')) {
-    return `Your 201 files can be managed in the "My 201 Files" section. There you can:
+    return `Your 201 files can be managed in the "My Documents" section. There you can:
 
 - Upload required documents
 - Track document approval status

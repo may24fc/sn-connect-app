@@ -45,7 +45,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
   { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'My Profile', href: '/profile', icon: User },
-  { label: 'My 201 Files', href: '/files', icon: FolderOpen },
+  { label: 'My Documents', href: '/files', icon: FolderOpen },
   { label: 'Payroll', href: '/payroll', icon: Receipt },
   { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
@@ -57,7 +57,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
   { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'My Profile', href: '/profile', icon: User },
-  { label: 'My 201 Files', href: '/files', icon: FolderOpen },
+  { label: 'My Documents', href: '/files', icon: FolderOpen },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
   { label: 'Information Hub', href: '/information-hub', icon: Megaphone },
 ];
