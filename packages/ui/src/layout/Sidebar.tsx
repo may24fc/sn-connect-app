@@ -11,6 +11,7 @@ import {
   FolderOpen,
   GraduationCap,
   Home,
+  Library,
   type LucideIcon,
   Megaphone,
   Receipt,
@@ -48,7 +49,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Payroll', href: '/payroll', icon: Receipt },
   { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
-  { label: 'Announcements', href: '/announcements', icon: Megaphone },
+  { label: 'Information Hub', href: '/information-hub', icon: Megaphone },
 ];
 
 // Intern navigation - same as employee except different dashboard and no payroll
@@ -58,7 +59,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'My Profile', href: '/profile', icon: User },
   { label: 'My 201 Files', href: '/files', icon: FolderOpen },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
-  { label: 'Announcements', href: '/announcements', icon: Megaphone },
+  { label: 'Information Hub', href: '/information-hub', icon: Megaphone },
 ];
 
 // Admin (HR) navigation - includes team management features
@@ -67,6 +68,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Onboarding Data', href: '/admin/onboarding', icon: ClipboardList },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
+  { label: 'Resources', href: '/admin/resources', icon: Library },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
@@ -79,6 +81,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Onboarding Data', href: '/super-admin/onboarding', icon: ClipboardList },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
+  { label: 'Resources', href: '/super-admin/resources', icon: Library },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Performance', href: '/admin/performance', icon: Target },

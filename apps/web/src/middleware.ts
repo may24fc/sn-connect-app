@@ -11,7 +11,7 @@ const publicPaths = new Set<string>([
 ]);
 
 const publicPrefixes = ['/api/auth'];
-const protectedPrefixes = ['/dashboard', '/intern', '/admin', '/super-admin'];
+const protectedPrefixes = ['/dashboard', '/intern', '/admin', '/super-admin', '/information-hub'];
 
 /**
  * Next.js Middleware for Supabase session refresh + route protection.

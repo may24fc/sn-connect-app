@@ -2,11 +2,18 @@
 
 This document describes all environment variables required by the HR Portal application.
 
-## Setup
+## Quick Setup
 
-1. Copy `.env.example` to `.env` in the project root
-2. Fill in all required values
+1. Copy `.env.example` to `.env.local` in the project root:
+   ```bash
+   cp .env.example .env.local
+   ```
+2. Fill in all required values (see variable descriptions below)
 3. The application validates environment variables at startup using Zod
+
+**For local development:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to use mock authentication without needing a real Supabase project. Test accounts: employee@test.com, intern@test.com, admin@test.com, superadmin@test.com (all with password: `password`)
+
+**For production:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false` and provide real Supabase credentials.
 
 ## Variables
 
@@ -36,6 +43,38 @@ This document describes all environment variables required by the HR Portal appl
 |----------|-------------|----------|
 | `N8N_WEBHOOK_URL` | The base URL for n8n webhooks. Used to trigger automated workflows. | Yes |
 | `N8N_API_KEY` | API key for authenticating with n8n. Used for secure communication with n8n workflows. | Yes |
+| `N8N_WEBHOOK_SECRET` | Secret key for verifying n8n webhook requests. Used to validate incoming webhook calls. | Yes |
+
+### Application
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `NEXT_PUBLIC_ENABLE_MOCK_AUTH` | Enable mock authentication for local development. Set to `true` to bypass Supabase Auth and use test accounts. Set to `false` for production. | No | `false` |
+| `NEXT_PUBLIC_ROLE_MAPPING_MODE` | Role mapping strategy for UI roles. Options: `option-a`, `option-b`, or `option-c`. See [ADR-001-role-mapping.md](adr/ADR-001-role-mapping.md) for details. | No | `option-a` |
+
+## Local Development with Mock Auth
+
+For local development without a Supabase project:
+
+1. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` in your `.env.local`
+2. You can skip setting Supabase keys (they won't be used)
+3. Use these test accounts:
+   - `employee@test.com` / `password` (Employee role)
+   - `intern@test.com` / `password` (Intern role)
+   - `admin@test.com` / `password` (Admin role - maps to hr/cos/ceo)
+   - `superadmin@test.com` / `password` (Super Admin role)
+
+## Local Development with Supabase
+
+For local development with a real Supabase project:
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Run migrations: `pnpm db:migrate`
+3. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false`
+4. Configure all Supabase environment variables with your project values
+5. Create test users in Supabase Auth dashboard
+
+**Note:** Local Supabase development using Docker is supported but requires additional configuration. See `supabase/SETUP.md` for details.
 
 ## Usage
 

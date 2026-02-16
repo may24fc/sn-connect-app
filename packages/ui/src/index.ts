@@ -333,6 +333,40 @@ export type {
   AnnouncementAnalyticsProps,
 } from './components/announcements';
 
+// Resources Components
+export {
+  ResourceCard,
+  ResourceGrid,
+  ResourceFilters,
+  ResourceUploader,
+  ResourcePreview,
+  VideoPlayer,
+  DocumentViewer,
+  ResourceAnalytics,
+  ResourceTargetingSelector,
+  TagInput,
+  CategoryBrowser,
+} from './components/resources';
+export type {
+  ResourceCardProps,
+  ResourceType,
+  ResourceStatus,
+  ResourceCategory,
+  ResourceGridProps,
+  ResourceFiltersProps,
+  ResourceFiltersValue,
+  ResourceUploaderProps,
+  ResourcePreviewProps,
+  VideoPlayerProps,
+  DocumentViewerProps,
+  ResourceAnalyticsProps,
+  ResourceTargetingSelectorProps,
+  ResourceTargetingSelectorValue,
+  TagInputProps,
+  CategoryBrowserProps,
+  CategoryItem,
+} from './components/resources';
+
 export type {
   FileStatus,
   AccessLevel,
