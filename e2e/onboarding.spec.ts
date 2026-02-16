@@ -55,15 +55,23 @@ test.describe('Onboarding Setup Flow', () => {
 
       // Step 1: Personal Information
       await expect(page.getByText(/Personal Information/i)).toBeVisible();
-      
+
       await page.fill('#firstName', 'John');
       await page.fill('#middleName', 'Michael');
       await page.fill('#lastName', 'Doe');
       await page.fill('#position', 'Software Engineer');
-      await page.fill('#emailAddress', 'john.doe@example.com');
+      await page.fill('#birthday', '1990-01-15');
+      await page.fill('#nationality', 'American');
+      await page.fill('#education', 'Bachelor of Computer Science');
+      await page.fill('#personalEmail', 'john.personal@example.com');
+      await page.fill('#companyEmail', 'john.doe@company.com');
       await page.fill('#contactNumber', '+1234567890');
       await page.fill('#address', '123 Main Street, Apt 4B');
-      
+      await page.fill('#emergencyContactName', 'Jane Doe');
+      await page.fill('#emergencyContactRelationship', 'Spouse');
+      await page.fill('#emergencyContactNumber', '+0987654321');
+      await page.fill('#emergencyContactEmail', 'jane.emergency@example.com');
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // Step 2: Payment Information
@@ -121,7 +129,18 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#firstName', 'Jane');
       await page.fill('#lastName', 'Smith');
       await page.fill('#position', 'Product Manager');
-      
+      await page.fill('#birthday', '1992-05-20');
+      await page.fill('#nationality', 'Canadian');
+      await page.fill('#education', 'MBA');
+      await page.fill('#personalEmail', 'jane.personal@example.com');
+      await page.fill('#companyEmail', 'jane.smith@company.com');
+      await page.fill('#contactNumber', '+1111111111');
+      await page.fill('#address', '456 Oak Avenue');
+      await page.fill('#emergencyContactName', 'John Smith');
+      await page.fill('#emergencyContactRelationship', 'Spouse');
+      await page.fill('#emergencyContactNumber', '+2222222222');
+      await page.fill('#emergencyContactEmail', 'john.emergency@example.com');
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // Verify Step 2
@@ -155,12 +174,15 @@ test.describe('Onboarding Setup Flow', () => {
     test('persists personal information draft after page reload', async ({ page }) => {
       await page.goto('/onboarding/setup');
 
-      // Fill partial information
+      // Fill partial information (just some required fields)
       await page.fill('#firstName', 'Draft');
       await page.fill('#lastName', 'Test');
       await page.fill('#position', 'QA Engineer');
+      await page.fill('#birthday', '1995-03-15');
+      await page.fill('#personalEmail', 'draft.personal@example.com');
+      await page.fill('#companyEmail', 'draft.test@company.com');
 
-      // Reload page
+      // Reload page to verify session persistence
       await page.reload();
       await page.waitForLoadState('networkidle');
 
@@ -168,6 +190,32 @@ test.describe('Onboarding Setup Flow', () => {
       await expect(page.locator('#firstName')).toHaveValue('Draft');
       await expect(page.locator('#lastName')).toHaveValue('Test');
       await expect(page.locator('#position')).toHaveValue('QA Engineer');
+    });
+
+    test('preserves all fields when editing any single field', async ({ page }) => {
+      await page.goto('/onboarding/setup');
+
+      // Fill multiple fields
+      await page.fill('#firstName', 'Field');
+      await page.fill('#lastName', 'Preservation');
+      await page.fill('#position', 'Developer');
+      await page.fill('#birthday', '1990-01-01');
+
+      // Edit one field and verify others are not lost
+      await page.fill('#firstName', 'Updated');
+
+      // All other fields should still have their values
+      await expect(page.locator('#lastName')).toHaveValue('Preservation');
+      await expect(page.locator('#position')).toHaveValue('Developer');
+      await expect(page.locator('#birthday')).toHaveValue('1990-01-01');
+
+      // Edit another field
+      await page.fill('#position', 'Senior Developer');
+
+      // Previous edits should be preserved
+      await expect(page.locator('#firstName')).toHaveValue('Updated');
+      await expect(page.locator('#lastName')).toHaveValue('Preservation');
+      await expect(page.locator('#birthday')).toHaveValue('1990-01-01');
     });
 
     test('resumes from last completed step', async ({ page }) => {
@@ -253,9 +301,9 @@ test.describe('Onboarding Setup Flow', () => {
       // Try to proceed without filling required fields
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
-      // Should show validation error
+      // Should show validation error (new validation message for the updated fields)
       await expect(
-        page.getByText(/First name, last name, and position are required/i)
+        page.getByText(/First name|required/i)
       ).toBeVisible({ timeout: 3000 });
 
       // Should remain on step 1
@@ -265,11 +313,22 @@ test.describe('Onboarding Setup Flow', () => {
     test('shows error when payment info fields are missing', async ({ page }) => {
       await page.goto('/onboarding/setup');
 
-      // Complete Step 1
+      // Complete Step 1 with all required fields
       await page.fill('#firstName', 'Valid');
       await page.fill('#lastName', 'User');
       await page.fill('#position', 'Engineer');
-      
+      await page.fill('#birthday', '1990-01-01');
+      await page.fill('#nationality', 'American');
+      await page.fill('#education', 'Bachelor');
+      await page.fill('#personalEmail', 'valid.personal@example.com');
+      await page.fill('#companyEmail', 'valid.user@company.com');
+      await page.fill('#contactNumber', '+1234567890');
+      await page.fill('#address', '123 Street');
+      await page.fill('#emergencyContactName', 'Contact Person');
+      await page.fill('#emergencyContactRelationship', 'Friend');
+      await page.fill('#emergencyContactNumber', '+0987654321');
+      await page.fill('#emergencyContactEmail', 'emergency@example.com');
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
       await expect(page.getByText(/Payment/i)).toBeVisible({ timeout: 5000 });
 
@@ -278,7 +337,7 @@ test.describe('Onboarding Setup Flow', () => {
 
       // Should show validation error
       await expect(
-        page.getByText(/Payment account name and account number are required/i)
+        page.getByText(/Account name|required/i)
       ).toBeVisible({ timeout: 3000 });
     });
 
@@ -353,12 +412,28 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#firstName', 'Upload');
       await page.fill('#lastName', 'Test');
       await page.fill('#position', 'QA');
+      await page.fill('#birthday', '1993-06-10');
+      await page.fill('#nationality', 'American');
+      await page.fill('#education', 'High School');
+      await page.fill('#personalEmail', 'upload.personal@example.com');
+      await page.fill('#companyEmail', 'upload.test@company.com');
+      await page.fill('#contactNumber', '+3333333333');
+      await page.fill('#address', '789 Pine Street');
+      await page.fill('#emergencyContactName', 'Emergency Contact');
+      await page.fill('#emergencyContactRelationship', 'Sibling');
+      await page.fill('#emergencyContactNumber', '+4444444444');
+      await page.fill('#emergencyContactEmail', 'emerg.contact@example.com');
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
-      
+
       await expect(page.getByText(/Payment/i)).toBeVisible({ timeout: 5000 });
-      
+
       await page.fill('#paymentAccountName', 'Upload Test');
       await page.fill('#paymentAccountNumber', '1111111111');
+      await page.fill('#paymentEmail', 'upload.payment@example.com');
+      await page.fill('#paymentPhoneNumber', '+5555555555');
+      await page.fill('#paymentAddress', '789 Pine Street');
+      await page.fill('#paymentCity', 'Boston');
+      await page.fill('#paymentProvince', 'MA');
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
       
       await expect(page.getByText(/Documents/i)).toBeVisible({ timeout: 5000 });

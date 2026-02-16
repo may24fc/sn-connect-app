@@ -1,7 +1,8 @@
 'use client';
 
-import type { UserRole as DbUserRole } from '@hr-portal/database';
 import { UserRole } from '@hr-portal/database';
+
+type DbUserRole = (typeof UserRole)[keyof typeof UserRole];
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
@@ -61,9 +62,28 @@ const resolveUiRole = (role: string | null | undefined): UserRoleType => {
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
+const AUTH_TIMEOUT_MS = 12000;
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [user, setUser] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const userRef = React.useRef<User | null>(null);
   const router = useRouter();
   const supabase = React.useMemo(() => createSupabaseBrowserClient(), []);
   const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
@@ -178,14 +198,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
       let isOnboardingComplete = true;
       if (resolvedRole === 'employee' || resolvedRole === 'intern') {
-        const { data: onboardingData } = await supabase
+        const { data: onboardingData, error: onboardingError } = await supabase
           .from('onboarding_profiles')
           .select('is_completed')
           .eq('user_id', authUser.id)
           .is('deleted_at', null)
           .maybeSingle();
 
-        isOnboardingComplete = onboardingData?.is_completed ?? false;
+        if (onboardingError) {
+          console.warn(
+            'Failed to fetch onboarding status; treating onboarding as non-blocking:',
+            onboardingError.message
+          );
+          isOnboardingComplete = true;
+        } else {
+          isOnboardingComplete = onboardingData?.is_completed ?? false;
+        }
       }
 
       return {
@@ -209,44 +237,72 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         app_metadata?: Record<string, unknown>;
       } | null
     ): Promise<User | null> => {
-      const nextUser = await buildUserFromSession(authUser);
-      setUser(nextUser);
-      return nextUser;
+      try {
+        const nextUser = await withTimeout(
+          buildUserFromSession(authUser),
+          AUTH_TIMEOUT_MS,
+          'Timed out while resolving user profile.'
+        );
+        setUser(nextUser);
+        return nextUser;
+      } catch (err) {
+        // Timeout or other transient error while resolving the profile.
+        // Do not clear the existing user state; keep the current session active.
+        console.warn('syncAuthState: failed to resolve profile, keeping current user:', err);
+        return userRef.current ?? null;
+      }
     },
     [buildUserFromSession]
   );
 
   React.useEffect(() => {
+    // keep a ref of the latest user to allow syncAuthState to return previous value
+    userRef.current = user;
+
     let isMounted = true;
 
     const loadUser = async (): Promise<void> => {
-      if (useMock) {
-        try {
-          const stored = localStorage.getItem('auth_user');
-          if (stored) {
-            const parsed = JSON.parse(stored) as User;
-            setUser(parsed);
+      try {
+        if (useMock) {
+          try {
+            const stored = localStorage.getItem('auth_user');
+            if (stored) {
+              const parsed = JSON.parse(stored) as User;
+              setUser(parsed);
+            }
+          } catch (err) {
+            console.error('Failed to parse stored mock user:', err);
+            localStorage.removeItem('auth_user');
           }
-        } catch (err) {
-          console.error('Failed to parse stored mock user:', err);
-          localStorage.removeItem('auth_user');
+          return;
         }
-        setIsLoading(false);
-        return;
+
+        const result = await withTimeout(
+          supabase.auth.getUser(),
+          AUTH_TIMEOUT_MS,
+          'Timed out while loading session.'
+        );
+        const { data, error } = result as any;
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (error) {
+          console.error('Failed to load session user:', error.message);
+        }
+
+        await syncAuthState(data.user ?? null);
+      } catch (error) {
+        console.error('Failed to initialize auth state:', error);
+        if (isMounted) {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-
-      const { data, error } = await supabase.auth.getUser();
-
-      if (!isMounted) {
-        return;
-      }
-
-      if (error) {
-        console.error('Failed to load session user:', error.message);
-      }
-
-      await syncAuthState(data.user ?? null);
-      setIsLoading(false);
     };
 
     void loadUser();
@@ -265,7 +321,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
             };
           } | null
         ) => {
-          await syncAuthState(session?.user ?? null);
+          try {
+            await syncAuthState(session?.user ?? null);
+          } catch (err) {
+            // swallow transient errors to avoid accidental logout
+            console.warn('onAuthStateChange handler failed:', err);
+          }
         }
       );
       subscription = result.data;
@@ -281,33 +342,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         }
       }
     };
-  }, [supabase, syncAuthState]);
+  }, [supabase, syncAuthState, useMock]);
+
+  // keep the ref updated whenever `user` state changes
+  React.useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const login = React.useCallback(
     async (email: string, password: string): Promise<void> => {
       setIsLoading(true);
-      if (useMock) {
-        // Mock login
-        await new Promise((r) => setTimeout(r, 500));
-        const mock = MOCK_USERS[email.toLowerCase()];
-        if (!mock || mock.password !== password) {
-          setIsLoading(false);
-          throw new Error('Invalid email or password');
+      try {
+        if (useMock) {
+          await new Promise((r) => setTimeout(r, 500));
+          const mock = MOCK_USERS[email.toLowerCase()];
+          if (!mock || mock.password !== password) {
+            throw new Error('Invalid email or password');
+          }
+
+          setUser(mock.user);
+          try {
+            localStorage.setItem('auth_user', JSON.stringify(mock.user));
+          } catch (_) {
+            // ignore
+          }
+
+          switch (mock.user.role) {
+            case 'employee':
+              router.push(mock.user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
+              break;
+            case 'intern':
+              router.push(mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
+              break;
+            case 'admin':
+              router.push('/admin/dashboard');
+              break;
+            case 'super_admin':
+              router.push('/super-admin/dashboard');
+              break;
+            default:
+              router.push('/dashboard');
+          }
+          return;
         }
 
-        setUser(mock.user);
-        try {
-          localStorage.setItem('auth_user', JSON.stringify(mock.user));
-        } catch (_) {
-          // ignore
+        const result = await withTimeout(
+          supabase.auth.signInWithPassword({
+            email,
+            password,
+          }),
+          AUTH_TIMEOUT_MS,
+          'Timed out while signing in.'
+        );
+        const { data, error } = result as any;
+
+        if (error) {
+          throw new Error(error.message);
         }
-        setIsLoading(false);
-        switch (mock.user.role) {
+
+        const nextUser = await syncAuthState(data.user ?? null);
+
+        if (!nextUser) {
+          throw new Error('Unable to load user profile.');
+        }
+
+        switch (nextUser.role) {
           case 'employee':
-            router.push(mock.user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
+            router.push(nextUser.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
             break;
           case 'intern':
-            router.push(mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
+            router.push(nextUser.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
             break;
           case 'admin':
             router.push('/admin/dashboard');
@@ -318,70 +422,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           default:
             router.push('/dashboard');
         }
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
+      } finally {
         setIsLoading(false);
-        throw new Error(error.message);
-      }
-
-      const nextUser = await syncAuthState(data.user ?? null);
-      setIsLoading(false);
-
-      if (!nextUser) {
-        throw new Error('Unable to load user profile.');
-      }
-
-      switch (nextUser.role) {
-        case 'employee':
-          router.push(nextUser.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
-          break;
-        case 'intern':
-          router.push(nextUser.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
-          break;
-        case 'admin':
-          router.push('/admin/dashboard');
-          break;
-        case 'super_admin':
-          router.push('/super-admin/dashboard');
-          break;
-        default:
-          router.push('/dashboard');
       }
     },
-    [router, supabase, syncAuthState]
+    [MOCK_USERS, router, supabase, syncAuthState, useMock]
   );
 
   const logout = React.useCallback(async (): Promise<void> => {
     setIsLoading(true);
-    if (useMock) {
-      try {
-        localStorage.removeItem('auth_user');
-      } catch (_) {
-        // ignore
+    try {
+      if (useMock) {
+        try {
+          localStorage.removeItem('auth_user');
+        } catch (_) {
+          // ignore
+        }
+        setUser(null);
+        router.push('/login');
+        return;
       }
+
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error('Failed to sign out:', error.message);
+      }
+
       setUser(null);
-      setIsLoading(false);
       router.push('/login');
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      console.error('Failed to sign out:', error.message);
-    }
-
-    setUser(null);
-    setIsLoading(false);
-    router.push('/login');
-  }, [router, supabase]);
+  }, [router, supabase, useMock]);
 
   const value = React.useMemo(
     () => ({
@@ -406,7 +479,7 @@ export function useAuth(): AuthContextValue {
 }
 
 // Role-based route guards
-export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User {
+export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
@@ -432,15 +505,15 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User {
     }
   }, [user, isLoading, allowedRoles, router]);
 
-  // Wait for loading to complete before throwing error
+  // Wait for loading to complete before returning an auth result.
   if (isLoading) {
-    // Return a placeholder during loading to prevent crashes
-    // The component will re-render once loading completes
-    return null as unknown as User;
+    return null;
   }
 
+  // Return null and let route redirect effect handle navigation.
+  // Throwing during render causes Next.js error overlays and can break redirects.
   if (!user) {
-    throw new Error('User not authenticated');
+    return null;
   }
 
   return user;
