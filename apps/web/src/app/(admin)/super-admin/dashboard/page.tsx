@@ -25,75 +25,41 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// Mock data
+// TODO: Replace with actual API data
 const systemStats = {
-  totalUsers: 260,
-  activeUsers: 248,
-  systemUptime: 99.8,
-  auditLogs: 1247,
+  totalUsers: 0,
+  activeUsers: 0,
+  systemUptime: 0,
+  auditLogs: 0,
 };
 
-const securityAlerts = [
-  {
-    id: '1',
-    type: 'Login Attempt',
-    description: 'Multiple failed login attempts detected',
-    severity: 'high' as const,
-    timestamp: '10 minutes ago',
-  },
-  {
-    id: '2',
-    type: 'Permission Change',
-    description: 'User role updated: John Smith to Admin',
-    severity: 'medium' as const,
-    timestamp: '2 hours ago',
-  },
-  {
-    id: '3',
-    type: 'Data Access',
-    description: 'Sensitive data accessed by Finance team',
-    severity: 'low' as const,
-    timestamp: '5 hours ago',
-  },
-];
+const securityAlerts: Array<{
+  id: string;
+  type: string;
+  description: string;
+  severity: 'high' | 'medium' | 'low';
+  timestamp: string;
+}> = [];
 
-const userRoleDistribution = [
-  { role: 'Employees', count: 220, percentage: 84.6 },
-  { role: 'Admins', count: 15, percentage: 5.8 },
-  { role: 'Interns', count: 12, percentage: 4.6 },
-  { role: 'Super Admins', count: 3, percentage: 1.2 },
-];
+const userRoleDistribution: Array<{
+  role: string;
+  count: number;
+  percentage: number;
+}> = [];
 
-const recentAuditLogs = [
-  {
-    id: '1',
-    user: 'Admin User',
-    action: 'Created new user account',
-    details: 'emily.chen@company.com',
-    timestamp: '1 hour ago',
-  },
-  {
-    id: '2',
-    user: 'Super Admin',
-    action: 'Updated system settings',
-    details: 'Changed password policy',
-    timestamp: '3 hours ago',
-  },
-  {
-    id: '3',
-    user: 'Admin User',
-    action: 'Approved performance review',
-    details: 'Employee: David Wilson',
-    timestamp: '5 hours ago',
-  },
-];
+const recentAuditLogs: Array<{
+  id: string;
+  user: string;
+  action: string;
+  details: string;
+  timestamp: string;
+}> = [];
 
-const systemHealth = [
-  { component: 'Database', status: 'healthy' as const, uptime: 99.9 },
-  { component: 'API Services', status: 'healthy' as const, uptime: 99.8 },
-  { component: 'Authentication', status: 'healthy' as const, uptime: 100 },
-  { component: 'File Storage', status: 'degraded' as const, uptime: 98.5 },
-];
+const systemHealth: Array<{
+  component: string;
+  status: 'healthy' | 'degraded';
+  uptime: number;
+}> = [];
 
 const quickActions = [
   {
@@ -194,48 +160,52 @@ export default function SuperAdminDashboardPage(): ReactNode {
           </BentoCardHeader>
           <BentoCardContent>
             <div className="space-y-3">
-              {securityAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex items-start justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle
-                      className={`h-4 w-4 flex-shrink-0 mt-0.5 ${
-                        alert.severity === 'high'
-                          ? 'text-rose-500'
-                          : alert.severity === 'medium'
-                            ? 'text-amber-500'
-                            : 'text-zinc-400'
-                      }`}
-                      strokeWidth={1.5}
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {alert.type}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {alert.description}
-                      </p>
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-                        {alert.timestamp}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge
-                    variant={
-                      alert.severity === 'high'
-                        ? 'destructive'
-                        : alert.severity === 'medium'
-                          ? 'warning'
-                          : 'secondary'
-                    }
-                    className="text-xs h-5 flex-shrink-0"
+              {securityAlerts.length > 0 ? (
+                securityAlerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className="flex items-start justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                   >
-                    {alert.severity}
-                  </Badge>
-                </div>
-              ))}
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle
+                        className={`h-4 w-4 flex-shrink-0 mt-0.5 ${
+                          alert.severity === 'high'
+                            ? 'text-rose-500'
+                            : alert.severity === 'medium'
+                              ? 'text-amber-500'
+                              : 'text-zinc-400'
+                        }`}
+                        strokeWidth={1.5}
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {alert.type}
+                        </p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {alert.description}
+                        </p>
+                        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                          {alert.timestamp}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        alert.severity === 'high'
+                          ? 'destructive'
+                          : alert.severity === 'medium'
+                            ? 'warning'
+                            : 'secondary'
+                      }
+                      className="text-xs h-5 flex-shrink-0"
+                    >
+                      {alert.severity}
+                    </Badge>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No security alerts</p>
+              )}
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/super-admin/audit-logs">
                   View All Alerts
@@ -260,27 +230,31 @@ export default function SuperAdminDashboardPage(): ReactNode {
           </BentoCardHeader>
           <BentoCardContent>
             <div className="space-y-4">
-              {systemHealth.map((component) => (
-                <div key={component.component} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {component.component}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
-                        {component.uptime}% uptime
+              {systemHealth.length > 0 ? (
+                systemHealth.map((component) => (
+                  <div key={component.component} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {component.component}
                       </span>
-                      <Badge
-                        variant={component.status === 'healthy' ? 'success' : 'warning'}
-                        className="text-xs h-5"
-                      >
-                        {component.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                          {component.uptime}% uptime
+                        </span>
+                        <Badge
+                          variant={component.status === 'healthy' ? 'success' : 'warning'}
+                          className="text-xs h-5"
+                        >
+                          {component.status}
+                        </Badge>
+                      </div>
                     </div>
+                    <Progress value={component.uptime} className="h-1.5" />
                   </div>
-                  <Progress value={component.uptime} className="h-1.5" />
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No system health data available</p>
+              )}
             </div>
           </BentoCardContent>
         </BentoCard>
@@ -294,24 +268,28 @@ export default function SuperAdminDashboardPage(): ReactNode {
           </BentoCardHeader>
           <BentoCardContent>
             <div className="space-y-4">
-              {userRoleDistribution.map((roleData) => (
-                <div key={roleData.role} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {roleData.role}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
-                        {roleData.count} users
+              {userRoleDistribution.length > 0 ? (
+                userRoleDistribution.map((roleData) => (
+                  <div key={roleData.role} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {roleData.role}
                       </span>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                        {roleData.percentage}%
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
+                          {roleData.count} users
+                        </span>
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
+                          {roleData.percentage}%
+                        </span>
+                      </div>
                     </div>
+                    <Progress value={roleData.percentage} className="h-1.5" />
                   </div>
-                  <Progress value={roleData.percentage} className="h-1.5" />
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No role distribution data available</p>
+              )}
             </div>
           </BentoCardContent>
         </BentoCard>
@@ -330,30 +308,34 @@ export default function SuperAdminDashboardPage(): ReactNode {
           </BentoCardHeader>
           <BentoCardContent>
             <div className="space-y-3">
-              {recentAuditLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
-                >
-                  <div className="flex items-start gap-3">
-                    <Lock
-                      className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
-                      strokeWidth={1.5}
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {log.action}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        By: {log.user} - {log.details}
-                      </p>
+              {recentAuditLogs.length > 0 ? (
+                recentAuditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Lock
+                        className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
+                        strokeWidth={1.5}
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {log.action}
+                        </p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          By: {log.user} - {log.details}
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                      {log.timestamp}
+                    </span>
                   </div>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
-                    {log.timestamp}
-                  </span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No recent audit logs</p>
+              )}
             </div>
           </BentoCardContent>
         </BentoCard>

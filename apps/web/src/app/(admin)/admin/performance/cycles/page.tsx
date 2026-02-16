@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   CardContent,
-  type CycleId,
   type CycleStatus,
   Dialog,
   DialogContent,
@@ -47,49 +46,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useEffect, useState } from 'react';
-
-// Mock data
-const mockCycles: Array<PerformanceCycle> = [
-  {
-    id: 'cycle-2024-q1' as CycleId,
-    name: 'Q1 2024 Performance Review',
-    startDate: '2024-01-01',
-    endDate: '2024-03-31',
-    status: 'active',
-    okrSubmissionDeadline: '2024-01-15',
-    kpiSubmissionDeadline: '2024-01-15',
-    selfAssessmentDeadline: '2024-03-25',
-    managerReviewDeadline: '2024-03-31',
-    createdAt: '2023-12-15',
-    updatedAt: '2023-12-15',
-  },
-  {
-    id: 'cycle-2023-q4' as CycleId,
-    name: 'Q4 2023 Performance Review',
-    startDate: '2023-10-01',
-    endDate: '2023-12-31',
-    status: 'closed',
-    okrSubmissionDeadline: '2023-10-15',
-    kpiSubmissionDeadline: '2023-10-15',
-    selfAssessmentDeadline: '2023-12-20',
-    managerReviewDeadline: '2023-12-31',
-    createdAt: '2023-09-15',
-    updatedAt: '2024-01-05',
-  },
-  {
-    id: 'cycle-2024-q2' as CycleId,
-    name: 'Q2 2024 Performance Review',
-    startDate: '2024-04-01',
-    endDate: '2024-06-30',
-    status: 'draft',
-    okrSubmissionDeadline: '2024-04-15',
-    kpiSubmissionDeadline: '2024-04-15',
-    selfAssessmentDeadline: '2024-06-25',
-    managerReviewDeadline: '2024-06-30',
-    createdAt: '2024-01-20',
-    updatedAt: '2024-01-20',
-  },
-];
 
 interface CycleFormData {
   name: string;
@@ -134,7 +90,7 @@ export default function CyclesPage(): ReactNode {
   const updateCycle = useUpdatePerformanceCycle();
   const deleteCycle = useDeletePerformanceCycle();
 
-  const [cycles, setCycles] = useState<Array<PerformanceCycle>>(mockCycles);
+  const [cycles, setCycles] = useState<Array<PerformanceCycle>>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<PerformanceCycle | null>(null);
@@ -142,9 +98,7 @@ export default function CyclesPage(): ReactNode {
   const [formData, setFormData] = useState<CycleFormData>(emptyFormData);
 
   useEffect(() => {
-    if (cycleData.length > 0) {
-      setCycles(cycleData);
-    }
+    setCycles(cycleData);
   }, [cycleData]);
 
   const handleOpenCreate = (): void => {
@@ -268,7 +222,8 @@ export default function CyclesPage(): ReactNode {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cycles.map((cycle) => {
+              {cycles.length > 0 ? (
+                cycles.map((cycle) => {
                 const config = statusConfig[cycle.status];
                 const StatusIcon = config.icon;
                 return (
@@ -357,7 +312,14 @@ export default function CyclesPage(): ReactNode {
                     </TableCell>
                   </TableRow>
                 );
-              })}
+              })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No performance cycles found. Click "New Cycle" to create one.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

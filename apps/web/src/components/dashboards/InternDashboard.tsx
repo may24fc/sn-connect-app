@@ -9,17 +9,14 @@ import {
   CardHeader,
   CardTitle,
   type DailyReport,
-  type DailyReportId,
   DailyReportSummary,
   EODReportForm,
   type EODReportFormData,
   HoursProgressCard,
   type InternId,
   InternPersonalStats,
-  type InternshipPeriodId,
   type Task,
   TaskCard,
-  type TaskId,
   getDaysRemaining,
 } from '@hr-portal/ui';
 import {
@@ -35,100 +32,26 @@ import {
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
-// Mock data
+// TODO: Replace with actual data fetching
+const today = new Date().toISOString().slice(0, 10);
 const mockInternProfile = {
-  id: 'intern-1' as InternId,
-  name: 'John Doe',
-  email: 'john.doe@university.edu',
-  school: 'State University',
-  program: 'Computer Science',
-  department: 'Engineering',
-  supervisor: 'Sarah Johnson',
-  startDate: '2024-01-15',
-  endDate: '2024-04-15',
-  requiredHours: 480,
-  completedHours: 245,
+  id: '' as InternId,
+  name: '—',
+  email: '',
+  school: '—',
+  program: '—',
+  department: '—',
+  supervisor: '—',
+  startDate: today,
+  endDate: today,
+  requiredHours: 0,
+  completedHours: 0,
 };
 
-const mockRecentReports: Array<DailyReport> = [
-  {
-    id: 'report-1' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-15',
-    tasksCompleted:
-      'Worked on implementing the dashboard UI components. Fixed several bugs in the navigation system.',
-    hoursLogged: 8,
-    learnings: 'Learned about React Server Components and how to optimize performance.',
-    challenges: 'Had some issues with TypeScript types but resolved with help from mentor.',
-    supervisorFeedback: 'Great progress on the dashboard. Keep up the good work!',
-    status: 'reviewed',
-    submittedAt: '2024-02-15T17:00:00Z',
-    reviewedAt: '2024-02-16T09:00:00Z',
-    createdAt: '2024-02-15T17:00:00Z',
-    updatedAt: '2024-02-16T09:00:00Z',
-  },
-  {
-    id: 'report-2' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-14',
-    tasksCompleted: 'Completed the employee profile page. Added validation for form inputs.',
-    hoursLogged: 7.5,
-    learnings: 'Learned about form validation patterns and error handling.',
-    status: 'submitted',
-    submittedAt: '2024-02-14T17:30:00Z',
-    createdAt: '2024-02-14T17:30:00Z',
-    updatedAt: '2024-02-14T17:30:00Z',
-  },
-  {
-    id: 'report-3' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-13',
-    tasksCompleted: 'Started working on the performance module. Set up the basic structure.',
-    hoursLogged: 8,
-    learnings: 'Learned about performance management workflows.',
-    status: 'reviewed',
-    submittedAt: '2024-02-13T17:00:00Z',
-    reviewedAt: '2024-02-14T10:00:00Z',
-    createdAt: '2024-02-13T17:00:00Z',
-    updatedAt: '2024-02-14T10:00:00Z',
-  },
-];
+const mockRecentReports: Array<DailyReport> = [];
 
-// Mock tasks - replace with actual data fetching
-const mockTasks: Array<Task> = [
-  {
-    id: '1' as TaskId,
-    title: 'Complete Onboarding Documentation',
-    description: 'Review and complete all onboarding documentation for the internship program.',
-    priority: 'high',
-    status: 'in_progress',
-    category: 'Onboarding',
-    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'supervisor-1',
-    createdByName: 'Sarah Johnson',
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [],
-  },
-  {
-    id: '2' as TaskId,
-    title: 'Shadow Development Team',
-    description:
-      'Spend time shadowing the development team to learn about their workflows and processes.',
-    priority: 'medium',
-    status: 'pending',
-    category: 'Learning',
-    dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    createdBy: 'supervisor-1',
-    createdByName: 'Sarah Johnson',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    assignees: [],
-  },
-];
+// TODO: Replace with actual data fetching
+const mockTasks: Array<Task> = [];
 
 export default function InternDashboard(): ReactNode {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -339,7 +262,7 @@ export default function InternDashboard(): ReactNode {
               <CardTitle>Recent Reports</CardTitle>
               <CardDescription>Your latest daily report submissions</CardDescription>
             </div>
-            <Link href="/intern/reports">
+            <Link href="/reports">
               <Button variant="outline" size="sm">
                 View All
                 <ChevronRight className="ml-1 h-4 w-4" />
@@ -348,9 +271,16 @@ export default function InternDashboard(): ReactNode {
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          {mockRecentReports.slice(0, 5).map((report) => (
-            <DailyReportSummary key={report.id} report={report} />
-          ))}
+          {mockRecentReports.length > 0 ? (
+            mockRecentReports.slice(0, 5).map((report) => (
+              <DailyReportSummary key={report.id} report={report} />
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-5 w-5 mx-auto mb-3 opacity-50" />
+              <p>No reports submitted yet</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -21,38 +21,14 @@ import { ArrowLeft, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-// Mock data - replace with actual API calls
-const WEEKLY_DATA = [
-  { week: 'Week 1', expenditure: 125000, results: 288000 },
-  { week: 'Week 2', expenditure: 138000, results: 310000 },
-  { week: 'Week 3', expenditure: 142000, results: 340000 },
-  { week: 'Week 4', expenditure: 156000, results: 365000 },
-  { week: 'Week 5', expenditure: 148000, results: 352000 },
-  { week: 'Week 6', expenditure: 165000, results: 395000 },
-];
+// TODO: Replace with actual API calls
+const WEEKLY_DATA: Array<{ week: string; expenditure: number; results: number }> = [];
 
-const CATEGORY_DATA = [
-  { name: 'Marketing', value: 285000, percentage: 45 },
-  { name: 'Sales', value: 190000, percentage: 30 },
-  { name: 'Operations', value: 127000, percentage: 20 },
-  { name: 'HR', value: 31750, percentage: 5 },
-];
+const CATEGORY_DATA: Array<{ name: string; value: number; percentage: number }> = [];
 
-const DEPARTMENT_ROI_DATA = [
-  { department: 'Marketing', roi: 280, expenditure: 285000, results: 798000 },
-  { department: 'Sales', roi: 210, expenditure: 190000, results: 399000 },
-  { department: 'Operations', roi: 180, expenditure: 127000, results: 228600 },
-  { department: 'HR', roi: 150, expenditure: 31750, results: 47625 },
-];
+const DEPARTMENT_ROI_DATA: Array<{ department: string; roi: number; expenditure: number; results: number }> = [];
 
-const TRENDS_DATA = [
-  { week: 'Week 1', submissions: 22, averageROI: 230 },
-  { week: 'Week 2', submissions: 23, averageROI: 225 },
-  { week: 'Week 3', submissions: 24, averageROI: 239 },
-  { week: 'Week 4', submissions: 21, averageROI: 234 },
-  { week: 'Week 5', submissions: 23, averageROI: 238 },
-  { week: 'Week 6', submissions: 24, averageROI: 239 },
-];
+const TRENDS_DATA: Array<{ week: string; submissions: number; averageROI: number }> = [];
 
 export default function AnalyticsPage(): React.ReactNode {
   const router = useRouter();
@@ -68,7 +44,7 @@ export default function AnalyticsPage(): React.ReactNode {
   // Calculate summary metrics
   const totalExpenditure = WEEKLY_DATA.reduce((sum, w) => sum + w.expenditure, 0);
   const totalResults = WEEKLY_DATA.reduce((sum, w) => sum + w.results, 0);
-  const averageROI = ((totalResults - totalExpenditure) / totalExpenditure) * 100;
+  const averageROI = totalExpenditure > 0 ? ((totalResults - totalExpenditure) / totalExpenditure) * 100 : 0;
   const totalReports = TRENDS_DATA.reduce((sum, t) => sum + t.submissions, 0);
 
   return (
@@ -132,37 +108,37 @@ export default function AnalyticsPage(): React.ReactNode {
       <MetricKPICardGrid>
         <MetricKPICard
           label="Total Spend"
-          value={`PHP ${(totalExpenditure / 1000).toFixed(0)}k`}
+          value={totalExpenditure > 0 ? `PHP ${(totalExpenditure / 1000).toFixed(0)}k` : '—'}
           change={{
-            absolute: '+PHP 72k',
-            percent: 12,
-            trend: 'up',
+            absolute: '—',
+            percent: 0,
+            trend: 'stable',
           }}
           color="blue"
         />
         <MetricKPICard
           label="Total Results"
-          value={`PHP ${(totalResults / 1000).toFixed(0)}k`}
+          value={totalResults > 0 ? `PHP ${(totalResults / 1000).toFixed(0)}k` : '—'}
           change={{
-            absolute: '+PHP 335k',
-            percent: 18,
-            trend: 'up',
+            absolute: '—',
+            percent: 0,
+            trend: 'stable',
           }}
           color="green"
         />
         <MetricKPICard
           label="Average ROI"
-          value={`${averageROI.toFixed(1)}%`}
+          value={averageROI > 0 ? `${averageROI.toFixed(1)}%` : '—'}
           change={{
-            absolute: '+6%',
-            percent: 6,
-            trend: 'up',
+            absolute: '—',
+            percent: 0,
+            trend: 'stable',
           }}
           color="green"
         />
         <MetricKPICard
           label="Total Reports"
-          value={totalReports}
+          value={totalReports || '—'}
           change={{
             absolute: `${totalReports}`,
             trend: 'stable',
@@ -174,29 +150,9 @@ export default function AnalyticsPage(): React.ReactNode {
       {/* Insights Summary */}
       <InsightsSummary
         title="Analytics Insights"
-        summary="Strong performance across all departments with ROI trending upward. Marketing continues to drive the highest returns, while Operations shows steady improvement."
-        keyFindings={[
-          {
-            metric: 'Top Performer',
-            insight: 'Marketing department achieved 280% ROI, exceeding target by 40%',
-            highlight: true,
-          },
-          {
-            metric: 'Growth Trend',
-            insight:
-              'Overall expenditure increased 12% while results grew 18%, indicating improved efficiency',
-            highlight: true,
-          },
-          {
-            metric: 'Submission Rate',
-            insight: '100% report submission rate maintained for 6 consecutive weeks',
-          },
-        ]}
-        recommendations={[
-          'Increase marketing budget allocation given the 280% ROI performance',
-          "Share Marketing team's best practices with Operations to improve their ROI",
-          'Consider quarterly deep-dive analysis to identify long-term trends',
-        ]}
+        summary="No analytics data available yet. Data will appear here once reports are submitted."
+        keyFindings={[]}
+        recommendations={[]}
       />
 
       {/* Main Chart */}

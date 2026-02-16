@@ -12,7 +12,6 @@ import {
   DialogTitle,
   Input,
   Label,
-  type OKR,
   OKRList,
   Select,
   SelectContent,
@@ -26,151 +25,13 @@ import { ArrowLeft, Filter, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
-// Mock data
-const mockOKRs: Array<OKR> = [
-  {
-    id: 'okr-1' as OKR['id'],
-    employeeId: 'emp-1' as OKR['employeeId'],
-    cycleId: 'cycle-2024-q1' as OKR['cycleId'],
-    objective: 'Improve customer satisfaction rating',
-    description: 'Increase NPS score through better service delivery and faster response times',
-    status: 'in_progress',
-    progressPercentage: 75,
-    keyResults: [
-      {
-        id: 'kr-1' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-1' as OKR['keyResults'][0]['okrId'],
-        description: 'Achieve NPS score of 45+',
-        targetValue: 45,
-        currentValue: 38,
-        unit: 'points',
-        weight: 40,
-        progressPercentage: 84,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-      {
-        id: 'kr-2' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-1' as OKR['keyResults'][0]['okrId'],
-        description: 'Reduce average response time to under 2 hours',
-        targetValue: 2,
-        currentValue: 2.5,
-        unit: 'hours',
-        weight: 30,
-        progressPercentage: 60,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-      {
-        id: 'kr-3' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-1' as OKR['keyResults'][0]['okrId'],
-        description: 'Resolve 95% of tickets on first contact',
-        targetValue: 95,
-        currentValue: 88,
-        unit: '%',
-        weight: 30,
-        progressPercentage: 93,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-    ],
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'okr-2' as OKR['id'],
-    employeeId: 'emp-1' as OKR['employeeId'],
-    cycleId: 'cycle-2024-q1' as OKR['cycleId'],
-    objective: 'Complete professional development goals',
-    description: 'Enhance skills through certifications and training programs',
-    status: 'in_progress',
-    progressPercentage: 50,
-    keyResults: [
-      {
-        id: 'kr-4' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-2' as OKR['keyResults'][0]['okrId'],
-        description: 'Complete 3 certification courses',
-        targetValue: 3,
-        currentValue: 1,
-        unit: 'courses',
-        weight: 50,
-        progressPercentage: 33,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-      {
-        id: 'kr-5' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-2' as OKR['keyResults'][0]['okrId'],
-        description: 'Attend 5 industry webinars',
-        targetValue: 5,
-        currentValue: 4,
-        unit: 'webinars',
-        weight: 25,
-        progressPercentage: 80,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-      {
-        id: 'kr-6' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-2' as OKR['keyResults'][0]['okrId'],
-        description: 'Present learnings to team',
-        targetValue: 2,
-        currentValue: 1,
-        unit: 'presentations',
-        weight: 25,
-        progressPercentage: 50,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-    ],
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'okr-3' as OKR['id'],
-    employeeId: 'emp-1' as OKR['employeeId'],
-    cycleId: 'cycle-2024-q1' as OKR['cycleId'],
-    objective: 'Streamline internal documentation',
-    status: 'completed',
-    progressPercentage: 100,
-    keyResults: [
-      {
-        id: 'kr-7' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-3' as OKR['keyResults'][0]['okrId'],
-        description: 'Document 10 core processes',
-        targetValue: 10,
-        currentValue: 10,
-        unit: 'processes',
-        weight: 60,
-        progressPercentage: 100,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-      {
-        id: 'kr-8' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-3' as OKR['keyResults'][0]['okrId'],
-        description: 'Create video tutorials for top 5 FAQs',
-        targetValue: 5,
-        currentValue: 5,
-        unit: 'videos',
-        weight: 40,
-        progressPercentage: 100,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-    ],
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-];
-
 export default function OKRsPage(): ReactNode {
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
   const createOKR = useCreateOKR();
 
-  const currentOKRs = okrs.length > 0 ? okrs : mockOKRs;
+  const currentOKRs = okrs;
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);

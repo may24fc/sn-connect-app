@@ -8,9 +8,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  type KPI,
-  type OKR,
-  type PerformanceCycle,
   Progress,
   ProgressGauge,
   type ReviewStatus,
@@ -30,117 +27,7 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// Mock data - replace with actual API calls
-const mockCycle: PerformanceCycle = {
-  id: 'cycle-2024-q1' as PerformanceCycle['id'],
-  name: 'Q1 2024 Performance Review',
-  startDate: '2024-01-01',
-  endDate: '2024-03-31',
-  status: 'active',
-  okrSubmissionDeadline: '2024-01-15',
-  kpiSubmissionDeadline: '2024-01-15',
-  selfAssessmentDeadline: '2024-03-25',
-  managerReviewDeadline: '2024-03-31',
-  createdAt: '2023-12-15',
-  updatedAt: '2023-12-15',
-};
 
-const mockOKRs: Array<OKR> = [
-  {
-    id: 'okr-1' as OKR['id'],
-    employeeId: 'emp-1' as OKR['employeeId'],
-    cycleId: 'cycle-2024-q1' as OKR['cycleId'],
-    objective: 'Improve customer satisfaction rating',
-    description: 'Increase NPS score through better service delivery',
-    status: 'in_progress',
-    progressPercentage: 75,
-    keyResults: [
-      {
-        id: 'kr-1' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-1' as OKR['keyResults'][0]['okrId'],
-        description: 'Achieve NPS score of 45+',
-        targetValue: 45,
-        currentValue: 38,
-        unit: 'points',
-        weight: 40,
-        progressPercentage: 84,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-      {
-        id: 'kr-2' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-1' as OKR['keyResults'][0]['okrId'],
-        description: 'Reduce response time to under 2 hours',
-        targetValue: 2,
-        currentValue: 2.5,
-        unit: 'hours',
-        weight: 30,
-        progressPercentage: 60,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-    ],
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'okr-2' as OKR['id'],
-    employeeId: 'emp-1' as OKR['employeeId'],
-    cycleId: 'cycle-2024-q1' as OKR['cycleId'],
-    objective: 'Complete professional development goals',
-    status: 'in_progress',
-    progressPercentage: 50,
-    keyResults: [
-      {
-        id: 'kr-3' as OKR['keyResults'][0]['id'],
-        okrId: 'okr-2' as OKR['keyResults'][0]['okrId'],
-        description: 'Complete 3 certification courses',
-        targetValue: 3,
-        currentValue: 1,
-        unit: 'courses',
-        weight: 50,
-        progressPercentage: 33,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-02-15',
-      },
-    ],
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-];
-
-const mockKPIs: Array<KPI> = [
-  {
-    id: 'kpi-1' as KPI['id'],
-    employeeId: 'emp-1' as KPI['employeeId'],
-    cycleId: 'cycle-2024-q1' as KPI['cycleId'],
-    name: 'Project Delivery Rate',
-    description: 'Percentage of projects delivered on time',
-    target: 90,
-    actual: 85,
-    unit: '%',
-    weight: 30,
-    score: 94,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-  {
-    id: 'kpi-2' as KPI['id'],
-    employeeId: 'emp-1' as KPI['employeeId'],
-    cycleId: 'cycle-2024-q1' as KPI['cycleId'],
-    name: 'Code Quality Score',
-    description: 'Weighted average of code review scores',
-    target: 80,
-    actual: 88,
-    unit: '%',
-    weight: 25,
-    score: 110,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-02-15',
-  },
-];
-
-const mockReviewStatus: ReviewStatus = 'pending_self';
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -164,10 +51,10 @@ export default function PerformancePage(): ReactNode {
   const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
   const { data: reviews = [] } = usePerformanceReviews(activeCycle?.id);
 
-  const cycle = activeCycle || mockCycle;
-  const currentOkrs = okrs.length > 0 ? okrs : mockOKRs;
-  const currentKpis = kpis.length > 0 ? kpis : mockKPIs;
-  const reviewStatus = reviews[0]?.status || mockReviewStatus;
+  const cycle = activeCycle;
+  const currentOkrs = okrs;
+  const currentKpis = kpis;
+  const reviewStatus: ReviewStatus = reviews[0]?.status || 'pending_self';
 
   const avgOkrProgress =
     currentOkrs.length > 0
@@ -181,7 +68,7 @@ export default function PerformancePage(): ReactNode {
       ? Math.round(currentKpis.reduce((sum, kpi) => sum + kpi.score, 0) / currentKpis.length)
       : 0;
 
-  const selfAssessmentDays = cycle.selfAssessmentDeadline
+  const selfAssessmentDays = cycle?.selfAssessmentDeadline
     ? getDaysUntil(cycle.selfAssessmentDeadline)
     : null;
 
@@ -204,14 +91,18 @@ export default function PerformancePage(): ReactNode {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold">{cycle.name}</h2>
+                <h2 className="font-semibold">{cycle?.name || 'No Active Cycle'}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}
+                  {cycle ? `${formatDate(cycle.startDate)} - ${formatDate(cycle.endDate)}` : 'No performance cycle has been created yet'}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="success">Active Cycle</Badge>
+              {cycle ? (
+                <Badge variant="success">Active Cycle</Badge>
+              ) : (
+                <Badge variant="secondary">No Cycle</Badge>
+              )}
               {selfAssessmentDays !== null &&
                 selfAssessmentDays > 0 &&
                 selfAssessmentDays <= 14 && (
@@ -257,7 +148,7 @@ export default function PerformancePage(): ReactNode {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {cycle.selfAssessmentDeadline && (
+            {cycle?.selfAssessmentDeadline ? (
               <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                 <div>
                   <p className="text-sm font-medium">Self-Assessment</p>
@@ -271,8 +162,10 @@ export default function PerformancePage(): ReactNode {
                   </Badge>
                 )}
               </div>
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">No deadlines set</p>
             )}
-            {cycle.managerReviewDeadline && (
+            {cycle?.managerReviewDeadline && (
               <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                 <div>
                   <p className="text-sm font-medium">Manager Review</p>

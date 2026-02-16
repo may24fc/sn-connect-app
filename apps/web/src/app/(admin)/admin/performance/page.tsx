@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
   CompletionTrendChart,
-  type CompletionTrendData,
   CycleProgressCards,
   DepartmentPerformanceChart,
   type DepartmentPerformanceData,
@@ -43,43 +42,6 @@ import { Calendar, Download, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
-// Mock data
-const mockStats: PerformanceDashboardStats = {
-  totalEmployees: 150,
-  okrsCompleted: 45,
-  okrsInProgress: 85,
-  kpisOnTarget: 98,
-  kpisBelowTarget: 32,
-  reviewsPendingSelf: 25,
-  reviewsPendingManager: 18,
-  reviewsCompleted: 107,
-  averageOkrProgress: 72,
-  averageKpiScore: 85,
-};
-
-const mockTrendData: Array<CompletionTrendData> = [
-  { month: 'Oct', okrsCompleted: 20, kpisCompleted: 80, reviewsCompleted: 15 },
-  { month: 'Nov', okrsCompleted: 35, kpisCompleted: 85, reviewsCompleted: 45 },
-  { month: 'Dec', okrsCompleted: 40, kpisCompleted: 90, reviewsCompleted: 75 },
-  { month: 'Jan', okrsCompleted: 45, kpisCompleted: 95, reviewsCompleted: 107 },
-];
-
-const mockDepartmentData: Array<DepartmentPerformanceData> = [
-  { department: 'Engineering', averageOkrProgress: 78, averageKpiScore: 88, employeeCount: 45 },
-  { department: 'Marketing', averageOkrProgress: 65, averageKpiScore: 75, employeeCount: 20 },
-  { department: 'Sales', averageOkrProgress: 82, averageKpiScore: 92, employeeCount: 35 },
-  { department: 'HR', averageOkrProgress: 70, averageKpiScore: 85, employeeCount: 15 },
-  { department: 'Finance', averageOkrProgress: 75, averageKpiScore: 90, employeeCount: 12 },
-];
-
-const mockRatingData: Array<RatingDistributionData> = [
-  { rating: 'exceptional', count: 15, percentage: 14 },
-  { rating: 'exceeds', count: 35, percentage: 33 },
-  { rating: 'meets', count: 42, percentage: 39 },
-  { rating: 'needs_improvement', count: 12, percentage: 11 },
-  { rating: 'unsatisfactory', count: 3, percentage: 3 },
-];
-
 interface EmployeeReviewSummary {
   id: EmployeeId;
   name: string;
@@ -90,39 +52,6 @@ interface EmployeeReviewSummary {
   kpiScore: number;
   reviewStatus: ReviewStatus;
 }
-
-const mockEmployees: Array<EmployeeReviewSummary> = [
-  {
-    id: 'emp-1' as EmployeeId,
-    name: 'John Doe',
-    email: 'john.doe@company.com',
-    department: 'Engineering',
-    manager: 'Sarah Johnson',
-    okrProgress: 85,
-    kpiScore: 92,
-    reviewStatus: 'completed',
-  },
-  {
-    id: 'emp-2' as EmployeeId,
-    name: 'Jane Smith',
-    email: 'jane.smith@company.com',
-    department: 'Marketing',
-    manager: 'Mike Brown',
-    okrProgress: 65,
-    kpiScore: 78,
-    reviewStatus: 'pending_manager',
-  },
-  {
-    id: 'emp-3' as EmployeeId,
-    name: 'Alex Johnson',
-    email: 'alex.johnson@company.com',
-    department: 'Sales',
-    manager: 'Emily Davis',
-    okrProgress: 45,
-    kpiScore: 55,
-    reviewStatus: 'pending_self',
-  },
-];
 
 function getInitials(name: string): string {
   return name
@@ -194,7 +123,7 @@ export default function AdminPerformancePage(): ReactNode {
     new Map(liveEmployees.map((employee) => [employee.id, employee])).values()
   );
 
-  const employeesData = uniqueEmployees.length > 0 ? uniqueEmployees : mockEmployees;
+  const employeesData = uniqueEmployees;
 
   const liveStats: PerformanceDashboardStats = {
     totalEmployees: employeesData.length,
@@ -217,7 +146,7 @@ export default function AdminPerformancePage(): ReactNode {
       kpis.length > 0 ? Math.round(kpis.reduce((sum, kpi) => sum + kpi.score, 0) / kpis.length) : 0,
   };
 
-  const stats = employeesData.length > 0 ? liveStats : mockStats;
+  const stats = liveStats;
 
   const liveDepartmentData: Array<DepartmentPerformanceData> = Object.values(
     employeesData.reduce(
@@ -253,7 +182,7 @@ export default function AdminPerformancePage(): ReactNode {
     )
   ).map(({ okrSum: _okrSum, kpiSum: _kpiSum, ...value }) => value);
 
-  const departmentData = liveDepartmentData.length > 0 ? liveDepartmentData : mockDepartmentData;
+  const departmentData = liveDepartmentData;
 
   const statusToRating = (status: ReviewStatus): RatingDistributionData['rating'] => {
     if (status === 'completed') return 'meets';
@@ -271,8 +200,7 @@ export default function AdminPerformancePage(): ReactNode {
     }
   );
 
-  const ratingData =
-    liveRatingData.reduce((sum, item) => sum + item.count, 0) > 0 ? liveRatingData : mockRatingData;
+  const ratingData = liveRatingData;
 
   const currentCycleLabel = activeCycle?.name || 'Performance Cycle';
   const currentCycleRange =
@@ -348,7 +276,7 @@ export default function AdminPerformancePage(): ReactNode {
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <CompletionTrendChart data={mockTrendData} />
+        <CompletionTrendChart data={[]} />
         <DepartmentPerformanceChart data={departmentData} />
       </div>
 
@@ -416,48 +344,56 @@ export default function AdminPerformancePage(): ReactNode {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEmployees.map((emp) => (
-                <TableRow key={emp.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs">{getInitials(emp.name)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{emp.name}</p>
-                        <p className="text-xs text-muted-foreground">{emp.email}</p>
+              {filteredEmployees.length > 0 ? (
+                filteredEmployees.map((emp) => (
+                  <TableRow key={emp.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs">{getInitials(emp.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{emp.name}</p>
+                          <p className="text-xs text-muted-foreground">{emp.email}</p>
+                        </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{emp.department}</TableCell>
-                  <TableCell>{emp.manager}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={emp.okrProgress} className="h-2 w-16" />
-                      <span className="text-sm">{emp.okrProgress}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress
-                        value={emp.kpiScore}
-                        className="h-2 w-16"
-                        indicatorClassName={
-                          emp.kpiScore >= 80
-                            ? 'bg-success'
-                            : emp.kpiScore >= 60
-                              ? 'bg-warning'
-                              : 'bg-error'
-                        }
-                      />
-                      <span className="text-sm">{emp.kpiScore}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <ReviewStatusBadge status={emp.reviewStatus} />
+                    </TableCell>
+                    <TableCell>{emp.department}</TableCell>
+                    <TableCell>{emp.manager}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={emp.okrProgress} className="h-2 w-16" />
+                        <span className="text-sm">{emp.okrProgress}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={emp.kpiScore}
+                          className="h-2 w-16"
+                          indicatorClassName={
+                            emp.kpiScore >= 80
+                              ? 'bg-success'
+                              : emp.kpiScore >= 60
+                                ? 'bg-warning'
+                                : 'bg-error'
+                          }
+                        />
+                        <span className="text-sm">{emp.kpiScore}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <ReviewStatusBadge status={emp.reviewStatus} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No employee reviews found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

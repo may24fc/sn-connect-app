@@ -5,7 +5,6 @@ import type { KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { KnowledgeBasePanel } from './KnowledgeBasePanel';
 import { PlaygroundPanel } from './PlaygroundPanel';
-import { mockSources } from './mockData';
 
 export interface AIKnowledgeManagerProps {
   className?: string;
@@ -14,7 +13,7 @@ export interface AIKnowledgeManagerProps {
 type PanelState = 'both' | 'knowledge' | 'playground';
 
 export function AIKnowledgeManager({ className }: AIKnowledgeManagerProps): React.ReactNode {
-  const [sources, setSources] = React.useState<Array<KnowledgeSource>>(mockSources);
+  const [sources, setSources] = React.useState<Array<KnowledgeSource>>([]);
   const [debugMode, setDebugMode] = React.useState(false);
   const [panelState] = React.useState<PanelState>('both');
 

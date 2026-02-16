@@ -6,6 +6,7 @@ import {
   BentoCardHeader,
   BentoCardTitle,
   BentoGrid,
+  EmptyState,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
@@ -25,69 +26,7 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// Mock data
-const stats = {
-  totalEmployees: 248,
-  activeInterns: 12,
-  pendingLeaves: 8,
-  performanceReviews: 15,
-};
-
-const pendingApprovals = [
-  {
-    id: '1',
-    type: 'Leave Request',
-    employee: 'John Smith',
-    details: 'Vacation Leave - 3 days',
-    date: 'Feb 5-7, 2026',
-    priority: 'medium' as const,
-  },
-  {
-    id: '2',
-    type: 'Performance Review',
-    employee: 'Sarah Johnson',
-    details: 'Q1 2026 Review',
-    date: 'Due Feb 10, 2026',
-    priority: 'high' as const,
-  },
-  {
-    id: '3',
-    type: 'Leave Request',
-    employee: 'Mike Davis',
-    details: 'Sick Leave - 1 day',
-    date: 'Feb 3, 2026',
-    priority: 'urgent' as const,
-  },
-];
-
-const recentActivities = [
-  {
-    id: '1',
-    action: 'New employee onboarded',
-    employee: 'Emily Chen',
-    timestamp: '2 hours ago',
-  },
-  {
-    id: '2',
-    action: 'Performance review completed',
-    employee: 'David Wilson',
-    timestamp: '5 hours ago',
-  },
-  {
-    id: '3',
-    action: 'Leave request approved',
-    employee: 'Jessica Brown',
-    timestamp: '1 day ago',
-  },
-];
-
-const departmentStats = [
-  { name: 'Engineering', headcount: 85, openPositions: 3 },
-  { name: 'Sales', headcount: 42, openPositions: 2 },
-  { name: 'Marketing', headcount: 28, openPositions: 1 },
-  { name: 'Operations', headcount: 35, openPositions: 0 },
-];
-
+// Quick actions configuration
 const quickActions = [
   {
     title: 'Employee Management',
@@ -127,6 +66,17 @@ export default function AdminDashboardPage(): ReactNode {
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
 
+  // Data would come from API hooks - showing UI structure without data
+  const stats = {
+    totalEmployees: 0,
+    activeInterns: 0,
+    pendingLeaves: 0,
+    performanceReviews: 0,
+  };
+  const pendingApprovals: Array<{ id: string; type: string; employee: string; details: string; date: string; priority: 'low' | 'medium' | 'high' | 'urgent' }> = [];
+  const recentActivities: Array<{ id: string; action: string; employee: string; timestamp: string }> = [];
+  const departmentStats: Array<{ name: string; headcount: number; openPositions: number }> = [];
+
   return (
     <div className="h-full space-y-6">
       {/* Page Header */}
@@ -152,25 +102,25 @@ export default function AdminDashboardPage(): ReactNode {
         <StatCard
           label="Total Employees"
           value={stats.totalEmployees}
-          trend={{ direction: 'up', value: '+5 this month' }}
+          trend={{ direction: 'stable', value: 'No data available' }}
           icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Active Interns"
           value={stats.activeInterns}
-          trend={{ direction: 'stable', value: 'No change' }}
+          trend={{ direction: 'stable', value: 'No data available' }}
           icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Pending Leaves"
           value={stats.pendingLeaves}
-          trend={{ direction: 'down', value: '3 approved' }}
+          trend={{ direction: 'stable', value: 'No data available' }}
           icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Reviews Due"
           value={stats.performanceReviews}
-          trend={{ direction: 'up', value: '5 this week' }}
+          trend={{ direction: 'stable', value: 'No data available' }}
           icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
         />
       </StatCardGrid>
@@ -183,47 +133,57 @@ export default function AdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}>
               Pending Approvals
             </BentoCardTitle>
-            <Badge variant="warning">{pendingApprovals.length}</Badge>
+            <Badge variant={pendingApprovals.length > 0 ? 'warning' : 'secondary'}>
+              {pendingApprovals.length}
+            </Badge>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-3">
-              {pendingApprovals.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <AlertCircle
-                      className={`h-4 w-4 flex-shrink-0 ${
-                        item.priority === 'urgent'
-                          ? 'text-rose-500'
-                          : item.priority === 'high'
-                            ? 'text-amber-500'
-                            : 'text-zinc-400'
-                      }`}
-                      strokeWidth={1.5}
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {item.type}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {item.employee} - {item.details}
-                      </p>
+            {pendingApprovals.length > 0 ? (
+              <div className="space-y-3">
+                {pendingApprovals.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <AlertCircle
+                        className={`h-4 w-4 flex-shrink-0 ${
+                          item.priority === 'urgent'
+                            ? 'text-rose-500'
+                            : item.priority === 'high'
+                              ? 'text-amber-500'
+                              : 'text-zinc-400'
+                        }`}
+                        strokeWidth={1.5}
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {item.type}
+                        </p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {item.employee} - {item.details}
+                        </p>
+                      </div>
                     </div>
+                    <Button size="sm" variant="outline" className="h-8 text-xs">
+                      Review
+                    </Button>
                   </div>
-                  <Button size="sm" variant="outline" className="h-8 text-xs">
-                    Review
-                  </Button>
-                </div>
-              ))}
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/admin/leave-approvals">
-                  View All Approvals
-                  <ChevronRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
-                </Link>
-              </Button>
-            </div>
+                ))}
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/admin/leave-approvals">
+                    View All Approvals
+                    <ChevronRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <EmptyState
+                icon={CheckCircle}
+                title="No pending approvals"
+                description="All caught up! Approval requests will appear here"
+              />
+            )}
           </BentoCardContent>
         </BentoCard>
 
@@ -240,28 +200,37 @@ export default function AdminDashboardPage(): ReactNode {
             </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-4">
-              {departmentStats.map((dept) => (
-                <div key={dept.name} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {dept.name}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
-                        {dept.headcount} employees
+            {departmentStats.length > 0 ? (
+              <div className="space-y-4">
+                {departmentStats.map((dept) => (
+                  <div key={dept.name} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {dept.name}
                       </span>
-                      {dept.openPositions > 0 && (
-                        <Badge variant="secondary" className="text-xs h-5">
-                          {dept.openPositions} open
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
+                          {dept.headcount} employees
+                        </span>
+                        {dept.openPositions > 0 && (
+                          <Badge variant="secondary" className="text-xs h-5">
+                            {dept.openPositions} open
+                          </Badge>
+                        )}
+                      </div>
                     </div>
+                    <Progress value={(dept.headcount / 100) * 100} className="h-1.5" />
                   </div>
-                  <Progress value={(dept.headcount / 100) * 100} className="h-1.5" />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={BarChart3}
+                title="No department data"
+                description="Department statistics will appear here once data is available"
+                action={{ label: 'Manage Departments', href: '/admin/teams' }}
+              />
+            )}
           </BentoCardContent>
         </BentoCard>
 
@@ -278,32 +247,40 @@ export default function AdminDashboardPage(): ReactNode {
             </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-3">
-              {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
-                >
-                  <div className="flex items-start gap-3">
-                    <CheckCircle
-                      className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
-                      strokeWidth={1.5}
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {activity.action}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {activity.employee}
-                      </p>
+            {recentActivities.length > 0 ? (
+              <div className="space-y-3">
+                {recentActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <CheckCircle
+                        className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
+                        strokeWidth={1.5}
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {activity.action}
+                        </p>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          {activity.employee}
+                        </p>
+                      </div>
                     </div>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                      {activity.timestamp}
+                    </span>
                   </div>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
-                    {activity.timestamp}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={ClipboardList}
+                title="No recent activity"
+                description="Recent HR activities will appear here"
+              />
+            )}
           </BentoCardContent>
         </BentoCard>
 

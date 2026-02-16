@@ -22,10 +22,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch employee with user data
+    // Fetch employee with user data and manager info
+    // Explicitly specify foreign key relationships to avoid ambiguity
     const { data, error } = await supabase
       .from('employees')
-      .select('*, users!inner(*)')
+      .select('*, users!employees_user_id_fkey(*), manager:users!employees_immediate_head_fkey(*)')
       .eq('id', id)
       .is('deleted_at', null)
       .single();

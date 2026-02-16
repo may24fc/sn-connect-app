@@ -10,7 +10,6 @@ export { ChatInterface } from './ChatInterface';
 export { ChatMessage } from './ChatMessage';
 export { DebugPanel } from './DebugPanel';
 export { AccessToggle } from './AccessToggle';
-export { mockSources } from './mockData';
 
 export type { AIKnowledgeManagerProps } from './AIKnowledgeManager';
 export type { KnowledgeBasePanelProps } from './KnowledgeBasePanel';
