@@ -242,7 +242,16 @@ export default function LoginPage(): ReactNode {
             </div>
           ) : null}
 
-          <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400 space-y-2">
+            <p>
+              Don&apos;t have an account?{' '}
+              <Link
+                href="/signup"
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+              >
+                Sign up
+              </Link>
+            </p>
             <p>
               Need help?{' '}
               <a
