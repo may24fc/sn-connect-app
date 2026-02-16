@@ -1,3 +1,5 @@
+'use client';
+
 import { Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { Button } from '../../primitives/button';
