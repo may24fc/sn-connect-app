@@ -7,10 +7,7 @@
  * - file_size limits vary by resource_type (100MB video, 50MB others)
  */
 import { z } from 'zod';
-import {
-  type ResourceId,
-  type UserId,
-} from '../database.types';
+import type { ResourceId, UserId } from '../branded-types';
 
 // ============================================
 // Enum Schemas
@@ -75,10 +72,7 @@ export const MAX_DOCUMENT_FILE_SIZE = 52_428_800;
 
 const resourceBaseSchema = z.object({
   /** Resource title, required, 1-200 characters */
-  title: z
-    .string()
-    .min(1, 'Title is required')
-    .max(200, 'Title must be 200 characters or fewer'),
+  title: z.string().min(1, 'Title is required').max(200, 'Title must be 200 characters or fewer'),
 
   /** Optional description, max 5000 characters */
   description: z
@@ -88,11 +82,7 @@ const resourceBaseSchema = z.object({
     .default(null),
 
   /** Optional short excerpt for previews */
-  excerpt: z
-    .string()
-    .max(500, 'Excerpt must be 500 characters or fewer')
-    .nullish()
-    .default(null),
+  excerpt: z.string().max(500, 'Excerpt must be 500 characters or fewer').nullish().default(null),
 
   /** Resource type classification */
   resource_type: resourceTypeSchema,
@@ -109,12 +99,7 @@ const resourceBaseSchema = z.object({
 
   /** Tags for search and filtering, max 20 items, each 1-50 chars */
   tags: z
-    .array(
-      z
-        .string()
-        .min(1, 'Tag cannot be empty')
-        .max(50, 'Tag must be 50 characters or fewer')
-    )
+    .array(z.string().min(1, 'Tag cannot be empty').max(50, 'Tag must be 50 characters or fewer'))
     .max(20, 'Maximum 20 tags allowed')
     .default([]),
 
@@ -178,13 +163,10 @@ const resourceBaseSchema = z.object({
  * 3. File size must respect type-specific limits
  */
 export const resourceSchema = resourceBaseSchema
-  .refine(
-    (data) => data.file_path != null || data.external_url != null,
-    {
-      message: 'Either file_path or external_url must be provided',
-      path: ['file_path'],
-    }
-  )
+  .refine((data) => data.file_path != null || data.external_url != null, {
+    message: 'Either file_path or external_url must be provided',
+    path: ['file_path'],
+  })
   .refine(
     (data) => {
       if (data.published_at != null && data.expires_at != null) {
@@ -200,10 +182,7 @@ export const resourceSchema = resourceBaseSchema
   .refine(
     (data) => {
       if (data.file_size == null) return true;
-      const limit =
-        data.resource_type === 'video'
-          ? MAX_VIDEO_FILE_SIZE
-          : MAX_DOCUMENT_FILE_SIZE;
+      const limit = data.resource_type === 'video' ? MAX_VIDEO_FILE_SIZE : MAX_DOCUMENT_FILE_SIZE;
       return data.file_size <= limit;
     },
     {

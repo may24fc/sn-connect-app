@@ -11,7 +11,7 @@ const publicPaths = new Set<string>([
 ]);
 
 const publicPrefixes = ['/api/auth'];
-const protectedPrefixes = ['/dashboard', '/intern', '/admin', '/super-admin', '/information-hub'];
+const protectedPrefixes = ['/dashboard', '/intern', '/admin', '/super-admin', '/information-hub', '/onboarding'];
 
 /**
  * Next.js Middleware for Supabase session refresh + route protection.
@@ -55,6 +55,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   const onboardingExemptPaths = ['/onboarding/setup', '/onboarding/complete'];
+  const onboardingGatePaths = ['/dashboard', '/intern/dashboard'];
 
   const isOnboardingExempt =
     onboardingExemptPaths.some((path) => pathname.startsWith(path)) ||
@@ -82,16 +83,22 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     }
 
     if (role === 'employee' || role === 'intern') {
-      const { data: onboardingProfile } = await supabase
+      const { data: onboardingProfile, error: onboardingError } = await supabase
         .from('onboarding_profiles')
         .select('is_completed')
         .eq('user_id', authUser.id)
         .is('deleted_at', null)
         .maybeSingle();
 
-      const isOnboardingComplete = onboardingProfile?.is_completed ?? false;
+      if (onboardingError) {
+        console.warn('Skipping onboarding gate; failed to fetch onboarding status:', onboardingError);
+        return response;
+      }
 
-      if (!isOnboardingComplete) {
+      const isOnboardingComplete = onboardingProfile?.is_completed ?? false;
+      const shouldGateCurrentPath = onboardingGatePaths.some((path) => pathname.startsWith(path));
+
+      if (!isOnboardingComplete && shouldGateCurrentPath) {
         const redirectUrl = new URL('/onboarding/setup', request.url);
         return NextResponse.redirect(redirectUrl);
       }

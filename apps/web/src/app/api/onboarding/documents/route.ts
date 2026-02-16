@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
   try {
     const { supabase, user, error } = await getAuthedOnboardingContext();
     if (error || !user) {
+      console.error('POST /api/onboarding/documents auth error:', error);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -60,20 +61,26 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file');
     const documentTypeRaw = formData.get('documentType');
 
+    console.log('Upload request - documentType:', documentTypeRaw, 'file type:', file?.constructor.name);
+
     if (!(file instanceof File) || typeof documentTypeRaw !== 'string') {
+      console.error('Invalid request - file instanceof File:', file instanceof File, 'documentTypeRaw type:', typeof documentTypeRaw);
       return NextResponse.json({ error: 'file and documentType are required' }, { status: 400 });
     }
 
     const documentTypeParse = onboardingDocumentTypeSchema.safeParse(documentTypeRaw);
     if (!documentTypeParse.success) {
+      console.error('Document type validation failed:', documentTypeParse.error);
       return NextResponse.json({ error: 'Invalid document type' }, { status: 400 });
     }
 
     if (!ALLOWED_MIME.has(file.type)) {
+      console.error('Unsupported file type:', file.type);
       return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
+      console.error('File too large:', file.size);
       return NextResponse.json({ error: 'File exceeds 10MB limit' }, { status: 400 });
     }
 

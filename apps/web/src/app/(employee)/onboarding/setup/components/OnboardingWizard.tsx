@@ -6,7 +6,7 @@ import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { useUpdateOnboardingProfile } from '@/hooks/useUpdateOnboardingProfile';
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
 import { ProgressStepper } from './ProgressStepper';
 import { StepDocuments } from './StepDocuments';
@@ -28,6 +28,7 @@ export function OnboardingWizard(): ReactNode {
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const initialSyncDone = useRef(false);
 
   useEffect(() => {
     const profile = profileQuery.data?.data;
@@ -38,7 +39,8 @@ export function OnboardingWizard(): ReactNode {
       return;
     }
 
-    if (profile.current_step && profile.current_step !== draft.currentStep) {
+    // Only sync step from server on initial load to avoid race conditions
+    if (!initialSyncDone.current && profile.current_step && profile.current_step !== draft.currentStep) {
       setStep(profile.current_step);
     }
 
@@ -47,9 +49,19 @@ export function OnboardingWizard(): ReactNode {
       middleName: profile.middle_name ?? '',
       lastName: profile.last_name ?? '',
       position: profile.position ?? '',
+      personalEmail: profile.personal_email ?? '',
+      companyEmail: profile.company_email ?? '',
       emailAddress: profile.email_address ?? '',
       contactNumber: profile.contact_number ?? '',
       address: profile.address ?? '',
+      birthday: profile.birthday ?? '',
+      nationality: profile.nationality ?? '',
+      education: profile.education ?? '',
+      major: profile.major ?? '',
+      emergencyContactName: profile.emergency_contact_name ?? '',
+      emergencyContactNumber: profile.emergency_contact_number ?? '',
+      emergencyContactEmail: profile.emergency_contact_email ?? '',
+      emergencyContactRelationship: profile.emergency_contact_relationship ?? '',
     });
 
     updatePaymentInfo({
@@ -62,6 +74,8 @@ export function OnboardingWizard(): ReactNode {
       paymentProvince: profile.payment_province ?? '',
       paymentZipcode: profile.payment_zipcode ?? '',
     });
+
+    initialSyncDone.current = true;
   }, [
     draft.currentStep,
     profileQuery.data?.data,
@@ -97,23 +111,104 @@ export function OnboardingWizard(): ReactNode {
     }
   };
 
-  const validateStep = (step: Step): string | null => {
+  const validateStep = async (step: Step): Promise<string | null> => {
     if (step === 'personal_info') {
-      const firstName = String(draft.personalInfo.firstName ?? '').trim();
-      const lastName = String(draft.personalInfo.lastName ?? '').trim();
-      const position = String(draft.personalInfo.position ?? '').trim();
+      const requiredFields = {
+        firstName: 'First name',
+        lastName: 'Last name',
+        position: 'Position',
+        personalEmail: 'Personal email',
+        companyEmail: 'Company email',
+        contactNumber: 'Contact number',
+        address: 'Address',
+        birthday: 'Birthday',
+        nationality: 'Nationality',
+        education: 'Education',
+        emergencyContactName: 'Emergency contact name',
+        emergencyContactNumber: 'Emergency contact number',
+        emergencyContactRelationship: 'Emergency contact relationship',
+      };
 
-      if (!(firstName && lastName && position)) {
-        return 'First name, last name, and position are required.';
+      for (const [field, label] of Object.entries(requiredFields)) {
+        const value = String(draft.personalInfo[field] ?? '').trim();
+        if (!value) {
+          return `${label} is required.`;
+        }
+      }
+
+      // Email validation (required emails)
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const personalEmail = String(draft.personalInfo.personalEmail ?? '').trim();
+      const companyEmail = String(draft.personalInfo.companyEmail ?? '').trim();
+
+      if (!emailRegex.test(personalEmail)) {
+        return 'Please enter a valid personal email address.';
+      }
+      if (!emailRegex.test(companyEmail)) {
+        return 'Please enter a valid company email address.';
+      }
+
+      // Optional email validation - only validate if provided
+      const emergencyEmail = String(draft.personalInfo.emergencyContactEmail ?? '').trim();
+      if (emergencyEmail && !emailRegex.test(emergencyEmail)) {
+        return 'Please enter a valid emergency contact email address.';
+      }
+
+      // Phone number validation
+      const phoneRegex = /^(\+63|0)?9\d{9}$/;
+      const contactNumber = String(draft.personalInfo.contactNumber ?? '').trim();
+      const emergencyContactNumber = String(draft.personalInfo.emergencyContactNumber ?? '').trim();
+
+      if (!phoneRegex.test(contactNumber)) {
+        return 'Please enter a valid contact number (09XXXXXXXXX or +639XXXXXXXXX).';
+      }
+      if (!phoneRegex.test(emergencyContactNumber)) {
+        return 'Please enter a valid emergency contact number (09XXXXXXXXX or +639XXXXXXXXX).';
       }
     }
 
     if (step === 'payment_info') {
-      const accountName = String(draft.paymentInfo.paymentAccountName ?? '').trim();
-      const accountNumber = String(draft.paymentInfo.paymentAccountNumber ?? '').trim();
+      const requiredFields = {
+        paymentAccountName: 'Account name',
+        paymentAccountNumber: 'Account number',
+        paymentEmail: 'Payment email',
+        paymentPhoneNumber: 'Phone number',
+        paymentAddress: 'Address',
+        paymentCity: 'City',
+        paymentProvince: 'Province',
+      };
 
-      if (!(accountName && accountNumber)) {
-        return 'Payment account name and account number are required.';
+      for (const [field, label] of Object.entries(requiredFields)) {
+        const value = String(draft.paymentInfo[field] ?? '').trim();
+        if (!value) {
+          return `${label} is required.`;
+        }
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const paymentEmail = String(draft.paymentInfo.paymentEmail ?? '').trim();
+      if (!emailRegex.test(paymentEmail)) {
+        return 'Please enter a valid payment email address.';
+      }
+    }
+
+    if (step === 'documents') {
+      // Check if documents have been uploaded
+      try {
+        const response = await fetch('/api/onboarding/documents');
+        if (!response.ok) {
+          return 'Failed to verify documents. Please try again.';
+        }
+        const result = await response.json();
+        const documents = result.data ?? [];
+
+        if (documents.length === 0) {
+          return 'Please upload at least one required document before proceeding.';
+        }
+      } catch (error) {
+        console.error('Failed to check documents:', error);
+        return 'Failed to verify documents. Please try again.';
       }
     }
 
@@ -137,7 +232,7 @@ export function OnboardingWizard(): ReactNode {
         return;
       }
 
-      const validationError = validateStep(current);
+      const validationError = await validateStep(current);
       if (validationError) {
         setErrorMessage(validationError);
         return;
@@ -169,7 +264,18 @@ export function OnboardingWizard(): ReactNode {
         setStep(nextStep);
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Unable to continue onboarding.');
+      const raw = error instanceof Error ? error.message : 'Unable to continue onboarding.';
+      // Attempt to parse stringified JSON that may have leaked from an older code-path
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.error) {
+          setErrorMessage(parsed.error);
+        } else {
+          setErrorMessage(raw);
+        }
+      } catch {
+        setErrorMessage(raw);
+      }
     } finally {
       setSubmitting(false);
     }

@@ -14,10 +14,23 @@ export function useUpdateOnboardingProfile() {
       });
 
       if (!response.ok) {
-        const error = await response
+        const body = await response
           .json()
           .catch(() => ({ error: 'Failed to update onboarding profile' }));
-        throw new Error(error.error || 'Failed to update onboarding profile');
+        console.error('Update onboarding profile error:', body);
+
+        // Build a human-readable message from the Zod field errors when available
+        const fieldErrors = body?.details?.fieldErrors as
+          | Record<string, string[]>
+          | undefined;
+        if (fieldErrors) {
+          const messages = Object.entries(fieldErrors)
+            .map(([field, errs]) => `${field}: ${(errs as string[]).join(', ')}`)
+            .join('; ');
+          throw new Error(messages || body.error || 'Validation failed');
+        }
+
+        throw new Error(body.error || 'Failed to update onboarding profile');
       }
 
       return response.json();

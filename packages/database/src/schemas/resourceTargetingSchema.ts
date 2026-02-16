@@ -16,14 +16,7 @@ import { z } from 'zod';
 // ============================================
 
 /** Valid roles for resource targeting (matches user_role enum) */
-export const targetRoleSchema = z.enum([
-  'admin',
-  'hr',
-  'cos',
-  'ceo',
-  'employee',
-  'intern',
-]);
+export const targetRoleSchema = z.enum(['admin', 'hr', 'cos', 'ceo', 'employee', 'intern']);
 
 // ============================================
 // Targeting Schema
@@ -48,9 +41,7 @@ export const resourceTargetingSchema = z
       .default([]),
 
     /** Specific employee user UUIDs that can view this resource */
-    target_employees: z
-      .array(z.string().uuid('Each employee ID must be a valid UUID'))
-      .default([]),
+    target_employees: z.array(z.string().uuid('Each employee ID must be a valid UUID')).default([]),
   })
   .refine(
     (data) => {
