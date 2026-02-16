@@ -1,0 +1,209 @@
+{
+  "name": "Intern EOD Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 16 * * *"
+            }
+          ]
+        }
+      },
+      "id": "Schedule_Daily_4PM",
+      "name": "Daily 4PM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 260]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT i.id AS internship_id, i.supervisor_id, e.id AS employee_id, e.first_name, e.last_name, e.company_email AS intern_email, sup.company_email AS supervisor_email FROM public.internships i JOIN public.employees e ON e.id = i.employee_id AND e.deleted_at IS NULL LEFT JOIN public.employees sup ON sup.user_id = i.supervisor_id AND sup.deleted_at IS NULL WHERE i.status = 'active' AND NOT EXISTS ( SELECT 1 FROM public.intern_daily_logs l WHERE l.internship_id = i.id AND l.log_date = CURRENT_DATE );"
+      },
+      "id": "Query_Interns_Without_Log",
+      "name": "Query Missing EOD Logs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [460, 260],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "Has_Intern_Row",
+              "leftValue": "={{ $json.internship_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "If_Missing_Logs",
+      "name": "If Missing Logs Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nconst internName = `${row.first_name} ${row.last_name}`;\nconst reminders = [];\n\nif (row.intern_email) {\n  reminders.push({\n    recipient: row.intern_email,\n    kind: 'intern',\n    internship_id: row.internship_id,\n    employee_id: row.employee_id,\n    intern_name: internName\n  });\n}\n\nif (row.supervisor_email) {\n  reminders.push({\n    recipient: row.supervisor_email,\n    kind: 'supervisor',\n    internship_id: row.internship_id,\n    employee_id: row.employee_id,\n    intern_name: internName\n  });\n}\n\nreturn reminders.map((item) => ({ json: item }));"
+      },
+      "id": "Build_Recipients",
+      "name": "Build Reminder Recipients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 170]
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "email": "={{ $json.recipient }}",
+        "subject": "EOD Log Reminder: {{ $json.intern_name }}",
+        "emailType": "text",
+        "message": "This is an automated reminder that {{ $json.intern_name }} has not submitted today's internship EOD report yet.\n\nPlease submit/review the EOD log before the end of day."
+      },
+      "id": "Send_Email_Reminder",
+      "name": "Send Email Reminder",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [1180, 170]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"Intern EOD Reminder\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"⏰ Intern EOD Reminder\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Intern:* {{ $json.intern_name }}\\n*Type:* {{ $json.kind }}\\n*Date:* {{ new Date().toISOString().split('T')[0] }}\"\n      }\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "Slack_Reminder",
+      "name": "Send Slack Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1180, 350]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, record_id, operation, old_values, new_values, performed_by) VALUES ('internships', '{{ $json.internship_id }}', 'UPDATE', NULL, jsonb_build_object('workflow', 'intern-eod-reminder', 'recipient_type', '{{ $json.kind }}', 'recipient_email', '{{ $json.recipient }}', 'intern_name', '{{ $json.intern_name }}', 'reminded_at', now()), NULL);"
+      },
+      "id": "Audit_Log_Reminder",
+      "name": "Create Audit Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1420, 260],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO public.audit_logs (table_name, record_id, operation, old_values, new_values, performed_by) VALUES ('internships', gen_random_uuid(), 'INSERT', NULL, jsonb_build_object('workflow', 'intern-eod-reminder', 'message', 'No missing EOD logs for today', 'checked_at', now()), NULL);"
+      },
+      "id": "Audit_Log_None",
+      "name": "Log No Missing EOD",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [940, 420],
+      "credentials": {
+        "postgres": {
+          "id": "SUPABASE_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 4PM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query Missing EOD Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Missing EOD Logs": {
+      "main": [
+        [
+          {
+            "node": "If Missing Logs Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Missing Logs Found": {
+      "main": [
+        [
+          {
+            "node": "Build Reminder Recipients",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log No Missing EOD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reminder Recipients": {
+      "main": [
+        [
+          {
+            "node": "Send Email Reminder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Slack Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Reminder": {
+      "main": [
+        [
+          {
+            "node": "Create Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "1"
+}

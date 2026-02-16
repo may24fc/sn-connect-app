@@ -10,6 +10,11 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import {
+  useCreateInternDailyLog,
+  useInternship,
+  useInternships,
+} from '@/hooks/useInternships';
+import {
   Badge,
   Button,
   type DailyReport,
@@ -34,90 +39,84 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useState } from 'react';
-
-// Mock data
-const mockInternProfile = {
-  id: 'intern-1' as InternId,
-  name: 'John Doe',
-  email: 'john.doe@university.edu',
-  school: 'State University',
-  program: 'Computer Science',
-  department: 'Engineering',
-  supervisor: 'Sarah Johnson',
-  startDate: '2024-01-15',
-  endDate: '2024-04-15',
-  requiredHours: 480,
-  completedHours: 245,
-};
-
-const mockRecentReports: Array<DailyReport> = [
-  {
-    id: 'report-1' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-15',
-    tasksCompleted:
-      'Worked on implementing the dashboard UI components. Fixed several bugs in the navigation system.',
-    hoursLogged: 8,
-    learnings: 'Learned about React Server Components and how to optimize performance.',
-    challenges: 'Had some issues with TypeScript types but resolved with help from mentor.',
-    supervisorFeedback: 'Great progress on the dashboard. Keep up the good work!',
-    status: 'reviewed',
-    submittedAt: '2024-02-15T17:00:00Z',
-    reviewedAt: '2024-02-16T09:00:00Z',
-    createdAt: '2024-02-15T17:00:00Z',
-    updatedAt: '2024-02-16T09:00:00Z',
-  },
-  {
-    id: 'report-2' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-14',
-    tasksCompleted: 'Completed the employee profile page. Added validation for form inputs.',
-    hoursLogged: 7.5,
-    learnings: 'Learned about form validation patterns and error handling.',
-    status: 'submitted',
-    submittedAt: '2024-02-14T17:30:00Z',
-    createdAt: '2024-02-14T17:30:00Z',
-    updatedAt: '2024-02-14T17:30:00Z',
-  },
-  {
-    id: 'report-3' as DailyReportId,
-    internId: 'intern-1' as InternId,
-    internshipPeriodId: 'period-1' as InternshipPeriodId,
-    date: '2024-02-13',
-    tasksCompleted: 'Started working on the performance module. Set up the basic structure.',
-    hoursLogged: 8,
-    learnings: 'Learned about performance management workflows.',
-    status: 'reviewed',
-    submittedAt: '2024-02-13T17:00:00Z',
-    reviewedAt: '2024-02-14T10:00:00Z',
-    createdAt: '2024-02-13T17:00:00Z',
-    updatedAt: '2024-02-14T10:00:00Z',
-  },
-];
+import { type ReactNode, useMemo, useState } from 'react';
 
 export default function InternDashboardPage(): ReactNode {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  const daysRemaining = getDaysRemaining(mockInternProfile.endDate);
-  const todayReport = mockRecentReports.find(
-    (r) => r.date === new Date().toISOString().split('T')[0]
-  );
+  const listQuery = useInternships({ page: 1, pageSize: 1, status: 'active' });
+  const activeInternshipId = listQuery.data?.data?.[0]?.id || null;
+  const detailQuery = useInternship(activeInternshipId, !!activeInternshipId);
+  const createLogMutation = useCreateInternDailyLog();
 
-  const progressPercentage = Math.round(
-    (mockInternProfile.completedHours / mockInternProfile.requiredHours) * 100
-  );
+  const profile = detailQuery.data?.data;
+  const reports = profile?.recentReports || [];
+  const uiReports: Array<DailyReport> = reports.map((report) => ({
+    ...report,
+    id: report.id as DailyReportId,
+    internId: report.internId as InternId,
+    internshipPeriodId: report.internshipPeriodId as InternshipPeriodId,
+  }));
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayReport = uiReports.find((report) => report.date === today);
 
-  const handleSubmitReport = async (_data: EODReportFormData): Promise<void> => {
-    setIsSubmitting(true);
-    // TODO: Implement API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
+  const isLoading = listQuery.isLoading || detailQuery.isLoading;
+  const loadError = listQuery.error || detailQuery.error;
+
+  const daysRemaining = profile ? getDaysRemaining(profile.endDate) : 0;
+  const progressPercentage = profile
+    ? Math.round((profile.completedHours / Math.max(1, profile.requiredHours)) * 100)
+    : 0;
+
+  const handleSubmitReport = async (data: EODReportFormData): Promise<void> => {
+    if (!activeInternshipId) {
+      return;
+    }
+
+    const payload: {
+      internshipId: string;
+      logDate: string;
+      hoursWorked: number;
+      tasksCompleted: string;
+      learnings?: string;
+      challenges?: string;
+    } = {
+      internshipId: activeInternshipId,
+      logDate: data.date,
+      hoursWorked: data.hoursLogged,
+      tasksCompleted: data.tasksCompleted,
+      ...(data.learnings ? { learnings: data.learnings } : {}),
+      ...(data.challenges ? { challenges: data.challenges } : {}),
+    };
+
+    await createLogMutation.mutateAsync(payload);
+
     setShowForm(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center text-sm text-zinc-500 dark:text-zinc-400">
+        Loading internship dashboard...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="h-full flex items-center justify-center text-sm text-rose-600 dark:text-rose-400">
+        Failed to load internship data.
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="h-full flex items-center justify-center text-sm text-zinc-500 dark:text-zinc-400">
+        No active internship record found.
+      </div>
+    );
+  }
 
   return (
     <div className="h-full space-y-6">
@@ -149,19 +148,19 @@ export default function InternDashboardPage(): ReactNode {
             <GraduationCap className="h-5 w-5 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
             <div>
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                {mockInternProfile.name}
+                {profile.name}
               </h2>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {mockInternProfile.program} - {mockInternProfile.school}
+                {profile.program} - {profile.school}
               </p>
               <div className="flex items-center gap-4 mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                 <span className="flex items-center gap-1">
                   <Building2 className="h-3 w-3" strokeWidth={1.5} />
-                  {mockInternProfile.department}
+                  {profile.department}
                 </span>
                 <span className="flex items-center gap-1">
                   <User className="h-3 w-3" strokeWidth={1.5} />
-                  {mockInternProfile.supervisor}
+                  {profile.supervisor}
                 </span>
               </div>
             </div>
@@ -177,19 +176,19 @@ export default function InternDashboardPage(): ReactNode {
       <StatCardGrid columns={4}>
         <StatCard
           label="Hours Logged"
-          value={mockInternProfile.completedHours}
+          value={profile.completedHours}
           trend={{ direction: 'up', value: `${progressPercentage}% complete` }}
           icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Required Hours"
-          value={mockInternProfile.requiredHours}
+          value={profile.requiredHours}
           trend={{ direction: 'stable', value: 'Target' }}
           icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard
           label="Reports Submitted"
-          value={mockRecentReports.length}
+          value={uiReports.length}
           trend={{ direction: 'up', value: 'This period' }}
           icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
         />
@@ -222,7 +221,7 @@ export default function InternDashboardPage(): ReactNode {
                     Completed
                   </p>
                   <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                    {mockInternProfile.completedHours} hrs
+                    {profile.completedHours} hrs
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
@@ -230,7 +229,7 @@ export default function InternDashboardPage(): ReactNode {
                     Remaining
                   </p>
                   <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                    {mockInternProfile.requiredHours - mockInternProfile.completedHours} hrs
+                    {Math.max(0, profile.requiredHours - profile.completedHours)} hrs
                   </p>
                 </div>
               </div>
@@ -288,7 +287,7 @@ export default function InternDashboardPage(): ReactNode {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
-                    {new Date(mockInternProfile.startDate).toLocaleDateString()}
+                    {new Date(profile.startDate).toLocaleDateString()}
                   </span>
                   <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
@@ -296,9 +295,9 @@ export default function InternDashboardPage(): ReactNode {
                       style={{
                         width: `${Math.min(
                           ((new Date().getTime() -
-                            new Date(mockInternProfile.startDate).getTime()) /
-                            (new Date(mockInternProfile.endDate).getTime() -
-                              new Date(mockInternProfile.startDate).getTime())) *
+                            new Date(profile.startDate).getTime()) /
+                            (new Date(profile.endDate).getTime() -
+                              new Date(profile.startDate).getTime())) *
                             100,
                           100
                         )}%`,
@@ -306,7 +305,7 @@ export default function InternDashboardPage(): ReactNode {
                     />
                   </div>
                   <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
-                    {new Date(mockInternProfile.endDate).toLocaleDateString()}
+                    {new Date(profile.endDate).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -317,7 +316,7 @@ export default function InternDashboardPage(): ReactNode {
 
       {/* EOD Report Form */}
       {showForm && !todayReport && (
-        <EODReportForm onSubmit={handleSubmitReport} isSubmitting={isSubmitting} />
+        <EODReportForm onSubmit={handleSubmitReport} isSubmitting={createLogMutation.isPending} />
       )}
 
       {/* Recent Reports Card */}
@@ -335,7 +334,7 @@ export default function InternDashboardPage(): ReactNode {
         </BentoCardHeader>
         <BentoCardContent>
           <div className="space-y-2">
-            {mockRecentReports.slice(0, 5).map((report) => (
+            {uiReports.slice(0, 5).map((report) => (
               <DailyReportSummary key={report.id} report={report} />
             ))}
           </div>

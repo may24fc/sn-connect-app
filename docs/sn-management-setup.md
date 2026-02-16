@@ -2421,10 +2421,10 @@ CREATE TABLE public.performance_reviews (
 );
 ```
 
-- [ ] **Create migration for performance tables**
+- [x] **Create migration for performance tables**
   - File: `supabase/migrations/20260210000009_create_performance_tables.sql`
 
-- [ ] **Create OKRs table**
+- [x] **Create OKRs table**
   ```sql
   CREATE TABLE public.okrs (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -2439,7 +2439,7 @@ CREATE TABLE public.performance_reviews (
   );
   ```
 
-- [ ] **Create KPIs table**
+- [x] **Create KPIs table**
   ```sql
   CREATE TABLE public.kpis (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -2455,13 +2455,13 @@ CREATE TABLE public.performance_reviews (
   );
   ```
 
-- [ ] **Create performance API routes**
+- [x] **Create performance API routes**
   - File: `apps/web/src/app/api/performance/reviews/route.ts`
   - File: `apps/web/src/app/api/performance/okrs/route.ts`
   - File: `apps/web/src/app/api/performance/kpis/route.ts`
   - File: `apps/web/src/app/api/performance/cycles/route.ts`
 
-- [ ] **Connect performance pages to real data**
+- [x] **Connect performance pages to real data**
   - Update `apps/web/src/app/(employee)/performance/page.tsx`
   - Update `apps/web/src/app/(employee)/performance/kpis/page.tsx`
   - Update `apps/web/src/app/(employee)/performance/okrs/page.tsx`
@@ -2470,7 +2470,7 @@ CREATE TABLE public.performance_reviews (
 
 ### 4.2 Probation Tracking
 
-- [ ] **Create probation workflow**
+- [x] **Create probation workflow**
   - File: `n8n/workflows/probation-tracking.json`
   - Trigger: Daily schedule
   - Logic: Check employees approaching probation end
@@ -2480,11 +2480,11 @@ CREATE TABLE public.performance_reviews (
     - 7 days before: Escalate if no evaluation submitted
     - On end date: Auto-complete or extend based on evaluation
 
-- [ ] **Create probation API routes**
+- [x] **Create probation API routes**
   - File: `apps/web/src/app/api/probation/route.ts`
   - Includes endpoints for extending probation, completing evaluation
 
-- [ ] **Connect probation page to real data**
+- [x] **Connect probation page to real data**
   - Update `apps/web/src/app/(admin)/admin/probation/page.tsx`
 
 ---
@@ -2530,28 +2530,28 @@ CREATE TABLE public.intern_daily_logs (
 );
 ```
 
-- [ ] **Create migration for internship tables**
+- [x] **Create migration for internship tables**
   - File: `supabase/migrations/20260210000010_create_internship_tables.sql`
 
-- [ ] **Create internship API routes**
+- [x] **Create internship API routes**
   - File: `apps/web/src/app/api/internships/route.ts`
   - File: `apps/web/src/app/api/internships/[id]/route.ts`
   - File: `apps/web/src/app/api/internships/[id]/logs/route.ts`
 
-- [ ] **Connect internship pages to real data**
+- [x] **Connect internship pages to real data**
   - Update `apps/web/src/app/(employee)/intern/dashboard/page.tsx`
   - Update `apps/web/src/app/(admin)/admin/interns/page.tsx`
   - Update `apps/web/src/app/(admin)/admin/interns/[id]/page.tsx`
 
 ### 5.2 EOD Report System
 
-- [ ] **Create EOD reminder workflow**
+- [x] **Create EOD reminder workflow**
   - File: `n8n/workflows/intern-eod-reminder.json`
   - Trigger: Daily at 4 PM
   - Logic: Check active interns without today's log
   - Action: Send Slack/email reminder
 
-- [ ] **Create weekly hours summary workflow**
+- [x] **Create weekly hours summary workflow**
   - File: `n8n/workflows/intern-weekly-summary.json`
   - Trigger: Every Friday at 5 PM
   - Logic: Calculate weekly hours for each intern

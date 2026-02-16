@@ -36,6 +36,9 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
+import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs } from '@/hooks/usePerformance';
+import { queryKeys } from '@/lib/query-keys';
+import { useQuery } from '@tanstack/react-query';
 import { Calendar, Download, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
@@ -131,13 +134,157 @@ function getInitials(name: string): string {
 }
 
 export default function AdminPerformancePage(): ReactNode {
+  const { data: cycles = [] } = usePerformanceCycles();
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
+  const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
+  const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
+
+  const { data: reviewsPayload } = useQuery({
+    queryKey: [...queryKeys.performance.reviews(), activeCycle?.id || 'all', 'admin-dashboard'],
+    queryFn: async (): Promise<{ data: Array<any> }> => {
+      const params = new URLSearchParams();
+      if (activeCycle?.id) params.set('cycleId', activeCycle.id);
+      const response = await fetch(`/api/performance/reviews?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch reviews');
+      return response.json();
+    },
+  });
+
+  const reviewRows = reviewsPayload?.data || [];
+
+  const liveEmployees: Array<EmployeeReviewSummary> = reviewRows.map((review: any) => {
+    const employee = review.employees || {};
+    const employeeOkrs = okrs.filter((okr) => okr.employeeId === review.employee_id);
+    const employeeKpis = kpis.filter((kpi) => kpi.employeeId === review.employee_id);
+
+    const okrProgress =
+      employeeOkrs.length > 0
+        ? Math.round(
+            employeeOkrs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / employeeOkrs.length
+          )
+        : 0;
+
+    const kpiScore =
+      employeeKpis.length > 0
+        ? Math.round(employeeKpis.reduce((sum, kpi) => sum + kpi.score, 0) / employeeKpis.length)
+        : 0;
+
+    const reviewStatus: ReviewStatus =
+      review.status === 'pending'
+        ? 'pending_self'
+        : review.status === 'self_review'
+          ? 'pending_manager'
+          : review.status === 'manager_review'
+            ? 'pending_hr'
+            : 'completed';
+
+    return {
+      id: review.employee_id as EmployeeId,
+      name: `${employee.first_name || 'Employee'} ${employee.last_name || ''}`.trim(),
+      email: employee.company_email || employee.personal_email || 'n/a',
+      department: employee.department || 'Unassigned',
+      manager: 'N/A',
+      okrProgress,
+      kpiScore,
+      reviewStatus,
+    };
+  });
+
+  const uniqueEmployees = Array.from(
+    new Map(liveEmployees.map((employee) => [employee.id, employee])).values()
+  );
+
+  const employeesData = uniqueEmployees.length > 0 ? uniqueEmployees : mockEmployees;
+
+  const liveStats: PerformanceDashboardStats = {
+    totalEmployees: employeesData.length,
+    okrsCompleted: okrs.filter((okr) => okr.status === 'completed').length,
+    okrsInProgress: okrs.filter((okr) => okr.status !== 'completed').length,
+    kpisOnTarget: kpis.filter((kpi) => kpi.score >= 100).length,
+    kpisBelowTarget: kpis.filter((kpi) => kpi.score < 80).length,
+    reviewsPendingSelf: employeesData.filter((employee) => employee.reviewStatus === 'pending_self')
+      .length,
+    reviewsPendingManager: employeesData.filter(
+      (employee) => employee.reviewStatus === 'pending_manager' || employee.reviewStatus === 'pending_hr'
+    ).length,
+    reviewsCompleted: employeesData.filter((employee) => employee.reviewStatus === 'completed')
+      .length,
+    averageOkrProgress:
+      okrs.length > 0
+        ? Math.round(okrs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / okrs.length)
+        : 0,
+    averageKpiScore:
+      kpis.length > 0 ? Math.round(kpis.reduce((sum, kpi) => sum + kpi.score, 0) / kpis.length) : 0,
+  };
+
+  const stats = employeesData.length > 0 ? liveStats : mockStats;
+
+  const liveDepartmentData: Array<DepartmentPerformanceData> = Object.values(
+    employeesData.reduce(
+      (accumulator, employee) => {
+        const key = employee.department;
+        if (!accumulator[key]) {
+          accumulator[key] = {
+            department: key,
+            averageOkrProgress: 0,
+            averageKpiScore: 0,
+            employeeCount: 0,
+            okrSum: 0,
+            kpiSum: 0,
+          };
+        }
+
+        accumulator[key].employeeCount += 1;
+        accumulator[key].okrSum += employee.okrProgress;
+        accumulator[key].kpiSum += employee.kpiScore;
+        accumulator[key].averageOkrProgress = Math.round(
+          accumulator[key].okrSum / accumulator[key].employeeCount
+        );
+        accumulator[key].averageKpiScore = Math.round(
+          accumulator[key].kpiSum / accumulator[key].employeeCount
+        );
+
+        return accumulator;
+      },
+      {} as Record<
+        string,
+        DepartmentPerformanceData & { okrSum: number; kpiSum: number }
+      >
+    )
+  ).map(({ okrSum: _okrSum, kpiSum: _kpiSum, ...value }) => value);
+
+  const departmentData = liveDepartmentData.length > 0 ? liveDepartmentData : mockDepartmentData;
+
+  const statusToRating = (status: ReviewStatus): RatingDistributionData['rating'] => {
+    if (status === 'completed') return 'meets';
+    if (status === 'pending_hr') return 'needs_improvement';
+    if (status === 'pending_manager') return 'meets';
+    return 'needs_improvement';
+  };
+
+  const liveRatingData: Array<RatingDistributionData> = ['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'].map(
+    (rating) => {
+      const count = employeesData.filter((employee) => statusToRating(employee.reviewStatus) === rating)
+        .length;
+      const percentage = employeesData.length > 0 ? Math.round((count / employeesData.length) * 100) : 0;
+      return { rating: rating as RatingDistributionData['rating'], count, percentage };
+    }
+  );
+
+  const ratingData =
+    liveRatingData.reduce((sum, item) => sum + item.count, 0) > 0 ? liveRatingData : mockRatingData;
+
+  const currentCycleLabel = activeCycle?.name || 'Performance Cycle';
+  const currentCycleRange =
+    activeCycle && `${activeCycle.startDate} - ${activeCycle.endDate}`;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const departments = [...new Set(mockEmployees.map((e) => e.department))];
+  const departments = [...new Set(employeesData.map((e) => e.department))];
 
-  const filteredEmployees = mockEmployees.filter((emp) => {
+  const filteredEmployees = employeesData.filter((emp) => {
     const matchesSearch =
       emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -177,8 +324,8 @@ export default function AdminPerformancePage(): ReactNode {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold">Q1 2024 Performance Review</h2>
-                <p className="text-sm text-muted-foreground">Jan 1, 2024 - Mar 31, 2024</p>
+                <h2 className="font-semibold">{currentCycleLabel}</h2>
+                <p className="text-sm text-muted-foreground">{currentCycleRange || 'No cycle dates'}</p>
               </div>
             </div>
             <Badge variant="success">Active Cycle</Badge>
@@ -187,25 +334,25 @@ export default function AdminPerformancePage(): ReactNode {
       </Card>
 
       {/* Summary Cards */}
-      <PerformanceSummaryCards stats={mockStats} />
+      <PerformanceSummaryCards stats={stats} />
 
       {/* Cycle Progress */}
       <CycleProgressCards
-        selfAssessmentComplete={mockStats.reviewsCompleted}
-        selfAssessmentTotal={mockStats.totalEmployees}
-        managerReviewComplete={mockStats.reviewsCompleted - mockStats.reviewsPendingManager}
-        managerReviewTotal={mockStats.totalEmployees - mockStats.reviewsPendingSelf}
-        hrReviewComplete={mockStats.reviewsCompleted}
-        hrReviewTotal={mockStats.totalEmployees}
+        selfAssessmentComplete={stats.reviewsCompleted}
+        selfAssessmentTotal={Math.max(stats.totalEmployees, 1)}
+        managerReviewComplete={stats.reviewsCompleted - stats.reviewsPendingManager}
+        managerReviewTotal={Math.max(stats.totalEmployees - stats.reviewsPendingSelf, 1)}
+        hrReviewComplete={stats.reviewsCompleted}
+        hrReviewTotal={Math.max(stats.totalEmployees, 1)}
       />
 
       {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <CompletionTrendChart data={mockTrendData} />
-        <DepartmentPerformanceChart data={mockDepartmentData} />
+        <DepartmentPerformanceChart data={departmentData} />
       </div>
 
-      <RatingDistributionChart data={mockRatingData} />
+      <RatingDistributionChart data={ratingData} />
 
       {/* Employee List */}
       <Card>

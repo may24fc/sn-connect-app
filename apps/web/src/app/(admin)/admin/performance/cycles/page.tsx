@@ -28,6 +28,12 @@ import {
   TableRow,
 } from '@hr-portal/ui';
 import {
+  useCreatePerformanceCycle,
+  useDeletePerformanceCycle,
+  usePerformanceCycles,
+  useUpdatePerformanceCycle,
+} from '@/hooks/usePerformance';
+import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
@@ -40,7 +46,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 // Mock data
 const mockCycles: Array<PerformanceCycle> = [
@@ -123,12 +129,23 @@ function formatDate(dateString: string): string {
 }
 
 export default function CyclesPage(): ReactNode {
+  const { data: cycleData = [] } = usePerformanceCycles();
+  const createCycle = useCreatePerformanceCycle();
+  const updateCycle = useUpdatePerformanceCycle();
+  const deleteCycle = useDeletePerformanceCycle();
+
   const [cycles, setCycles] = useState<Array<PerformanceCycle>>(mockCycles);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<PerformanceCycle | null>(null);
   const [deletingCycle, setDeletingCycle] = useState<PerformanceCycle | null>(null);
   const [formData, setFormData] = useState<CycleFormData>(emptyFormData);
+
+  useEffect(() => {
+    if (cycleData.length > 0) {
+      setCycles(cycleData);
+    }
+  }, [cycleData]);
 
   const handleOpenCreate = (): void => {
     setEditingCycle(null);
@@ -155,58 +172,55 @@ export default function CyclesPage(): ReactNode {
     setDeleteDialogOpen(true);
   };
 
-  const handleSave = (): void => {
+  const handleSave = async (): Promise<void> => {
     if (editingCycle) {
-      setCycles(
-        cycles.map((c) =>
-          c.id === editingCycle.id
-            ? {
-                ...c,
-                ...formData,
-                updatedAt: new Date().toISOString(),
-              }
-            : c
-        )
-      );
+      await updateCycle.mutateAsync({
+        id: editingCycle.id,
+        name: formData.name,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        selfReviewDeadline: formData.selfAssessmentDeadline || null,
+        managerReviewDeadline: formData.managerReviewDeadline || null,
+      });
     } else {
-      const newCycle: PerformanceCycle = {
-        id: `cycle-${Date.now()}` as CycleId,
-        ...formData,
+      await createCycle.mutateAsync({
+        name: formData.name,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        selfReviewDeadline: formData.selfAssessmentDeadline || null,
+        managerReviewDeadline: formData.managerReviewDeadline || null,
         status: 'draft',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setCycles([newCycle, ...cycles]);
+        description: null,
+      });
     }
+
     setDialogOpen(false);
     setFormData(emptyFormData);
   };
 
-  const handleDelete = (): void => {
+  const handleDelete = async (): Promise<void> => {
     if (deletingCycle) {
-      setCycles(cycles.filter((c) => c.id !== deletingCycle.id));
+      await deleteCycle.mutateAsync(deletingCycle.id);
     }
     setDeleteDialogOpen(false);
     setDeletingCycle(null);
   };
 
-  const handleActivate = (cycle: PerformanceCycle): void => {
-    // Deactivate current active cycle
-    setCycles(
-      cycles.map((c) => ({
-        ...c,
-        status: c.id === cycle.id ? 'active' : c.status === 'active' ? 'closed' : c.status,
-        updatedAt: c.id === cycle.id ? new Date().toISOString() : c.updatedAt,
-      }))
-    );
+  const handleActivate = async (cycle: PerformanceCycle): Promise<void> => {
+    const currentActive = cycles.find((item) => item.status === 'active');
+
+    if (currentActive && currentActive.id !== cycle.id) {
+      await updateCycle.mutateAsync({
+        id: currentActive.id,
+        status: 'completed',
+      });
+    }
+
+    await updateCycle.mutateAsync({ id: cycle.id, status: 'active' });
   };
 
-  const handleClose = (cycle: PerformanceCycle): void => {
-    setCycles(
-      cycles.map((c) =>
-        c.id === cycle.id ? { ...c, status: 'closed', updatedAt: new Date().toISOString() } : c
-      )
-    );
+  const handleClose = async (cycle: PerformanceCycle): Promise<void> => {
+    await updateCycle.mutateAsync({ id: cycle.id, status: 'completed' });
   };
 
   const isFormValid = (): boolean => {
@@ -310,13 +324,21 @@ export default function CyclesPage(): ReactNode {
                             Edit
                           </DropdownMenuItem>
                           {cycle.status === 'draft' && (
-                            <DropdownMenuItem onClick={() => handleActivate(cycle)}>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                void handleActivate(cycle);
+                              }}
+                            >
                               <Play className="mr-2 h-4 w-4" />
                               Activate
                             </DropdownMenuItem>
                           )}
                           {cycle.status === 'active' && (
-                            <DropdownMenuItem onClick={() => handleClose(cycle)}>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                void handleClose(cycle);
+                              }}
+                            >
                               <Pause className="mr-2 h-4 w-4" />
                               Close Cycle
                             </DropdownMenuItem>
@@ -443,7 +465,12 @@ export default function CyclesPage(): ReactNode {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={!isFormValid()}>
+            <Button
+              onClick={() => {
+                void handleSave();
+              }}
+              disabled={!isFormValid() || createCycle.isPending || updateCycle.isPending}
+            >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               {editingCycle ? 'Save Changes' : 'Create Cycle'}
             </Button>
@@ -468,7 +495,13 @@ export default function CyclesPage(): ReactNode {
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                void handleDelete();
+              }}
+              disabled={deleteCycle.isPending}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete Cycle
             </Button>

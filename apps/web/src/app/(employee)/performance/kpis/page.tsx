@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Card, CardContent, type KPI, KPIList, KPISummary } from '@hr-portal/ui';
+import { usePerformanceCycles, usePerformanceKPIs } from '@/hooks/usePerformance';
 import { ArrowLeft, BarChart3, Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -91,10 +92,16 @@ function getWeightedScore(kpis: Array<KPI>): number {
 }
 
 export default function KPIsPage(): ReactNode {
-  const weightedScore = getWeightedScore(mockKPIs);
-  const onTargetCount = mockKPIs.filter((kpi) => kpi.score >= 100).length;
-  const nearTargetCount = mockKPIs.filter((kpi) => kpi.score >= 80 && kpi.score < 100).length;
-  const belowTargetCount = mockKPIs.filter((kpi) => kpi.score < 80).length;
+  const { data: cycles = [] } = usePerformanceCycles();
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
+  const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
+
+  const currentKPIs = kpis.length > 0 ? kpis : mockKPIs;
+
+  const weightedScore = getWeightedScore(currentKPIs);
+  const onTargetCount = currentKPIs.filter((kpi) => kpi.score >= 100).length;
+  const nearTargetCount = currentKPIs.filter((kpi) => kpi.score >= 80 && kpi.score < 100).length;
+  const belowTargetCount = currentKPIs.filter((kpi) => kpi.score < 80).length;
 
   return (
     <div className="space-y-6">
@@ -168,10 +175,10 @@ export default function KPIsPage(): ReactNode {
       </div>
 
       {/* KPI Summary Bar */}
-      <KPISummary kpis={mockKPIs} />
+      <KPISummary kpis={currentKPIs} />
 
       {/* KPI List */}
-      <KPIList kpis={mockKPIs} />
+      <KPIList kpis={currentKPIs} />
 
       {/* Performance Insight */}
       {weightedScore < 80 && (

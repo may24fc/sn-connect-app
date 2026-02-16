@@ -143,6 +143,16 @@ export interface OnboardingProfileFilters {
   pageSize?: number;
 }
 
+export interface InternshipFilters {
+  search?: string;
+  status?: 'active' | 'completed' | 'terminated' | 'converted';
+  school?: string;
+  supervisorId?: string;
+  employeeId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export const queryKeys = {
   // Employees
   employees: {
@@ -244,6 +254,21 @@ export const queryKeys = {
         [...queryKeys.onboarding.documents.all(), 'list', profileId ?? 'self'] as const,
     },
     wizard: () => [...queryKeys.onboarding.all, 'wizard'] as const,
+  },
+
+  // Probation
+  probation: {
+    all: ['probation'] as const,
+    list: () => [...queryKeys.probation.all, 'list'] as const,
+  },
+
+  internships: {
+    all: ['internships'] as const,
+    lists: () => [...queryKeys.internships.all, 'list'] as const,
+    list: (filters: InternshipFilters) => [...queryKeys.internships.lists(), filters] as const,
+    details: () => [...queryKeys.internships.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.internships.details(), id] as const,
+    logs: (id: string) => [...queryKeys.internships.all, 'logs', id] as const,
   },
 
   // Announcements

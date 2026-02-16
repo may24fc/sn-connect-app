@@ -16,6 +16,7 @@ import {
   type ReviewStatus,
   ReviewStatusBadge,
 } from '@hr-portal/ui';
+import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs, usePerformanceReviews } from '@/hooks/usePerformance';
 import {
   AlertCircle,
   BarChart3,
@@ -157,18 +158,31 @@ function getDaysUntil(dateString: string): number {
 }
 
 export default function PerformancePage(): ReactNode {
+  const { data: cycles = [] } = usePerformanceCycles();
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
+  const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
+  const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
+  const { data: reviews = [] } = usePerformanceReviews(activeCycle?.id);
+
+  const cycle = activeCycle || mockCycle;
+  const currentOkrs = okrs.length > 0 ? okrs : mockOKRs;
+  const currentKpis = kpis.length > 0 ? kpis : mockKPIs;
+  const reviewStatus = reviews[0]?.status || mockReviewStatus;
+
   const avgOkrProgress =
-    mockOKRs.length > 0
-      ? Math.round(mockOKRs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / mockOKRs.length)
+    currentOkrs.length > 0
+      ? Math.round(
+          currentOkrs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / currentOkrs.length
+        )
       : 0;
 
   const avgKpiScore =
-    mockKPIs.length > 0
-      ? Math.round(mockKPIs.reduce((sum, kpi) => sum + kpi.score, 0) / mockKPIs.length)
+    currentKpis.length > 0
+      ? Math.round(currentKpis.reduce((sum, kpi) => sum + kpi.score, 0) / currentKpis.length)
       : 0;
 
-  const selfAssessmentDays = mockCycle.selfAssessmentDeadline
-    ? getDaysUntil(mockCycle.selfAssessmentDeadline)
+  const selfAssessmentDays = cycle.selfAssessmentDeadline
+    ? getDaysUntil(cycle.selfAssessmentDeadline)
     : null;
 
   return (
@@ -190,9 +204,9 @@ export default function PerformancePage(): ReactNode {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold">{mockCycle.name}</h2>
+                <h2 className="font-semibold">{cycle.name}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {formatDate(mockCycle.startDate)} - {formatDate(mockCycle.endDate)}
+                  {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}
                 </p>
               </div>
             </div>
@@ -227,7 +241,7 @@ export default function PerformancePage(): ReactNode {
                 size="md"
               />
               <div className="flex flex-col items-center justify-center">
-                <ReviewStatusBadge status={mockReviewStatus} />
+                <ReviewStatusBadge status={reviewStatus} />
                 <p className="mt-2 text-sm text-muted-foreground text-center">Review Status</p>
               </div>
             </div>
@@ -243,12 +257,12 @@ export default function PerformancePage(): ReactNode {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {mockCycle.selfAssessmentDeadline && (
+            {cycle.selfAssessmentDeadline && (
               <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                 <div>
                   <p className="text-sm font-medium">Self-Assessment</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDate(mockCycle.selfAssessmentDeadline)}
+                    {formatDate(cycle.selfAssessmentDeadline)}
                   </p>
                 </div>
                 {selfAssessmentDays !== null && (
@@ -258,15 +272,15 @@ export default function PerformancePage(): ReactNode {
                 )}
               </div>
             )}
-            {mockCycle.managerReviewDeadline && (
+            {cycle.managerReviewDeadline && (
               <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
                 <div>
                   <p className="text-sm font-medium">Manager Review</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDate(mockCycle.managerReviewDeadline)}
+                    {formatDate(cycle.managerReviewDeadline)}
                   </p>
                 </div>
-                <Badge variant="secondary">{getDaysUntil(mockCycle.managerReviewDeadline)}d</Badge>
+                <Badge variant="secondary">{getDaysUntil(cycle.managerReviewDeadline)}d</Badge>
               </div>
             )}
           </CardContent>
@@ -287,8 +301,8 @@ export default function PerformancePage(): ReactNode {
               </div>
               <h3 className="font-semibold mb-1">OKRs</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {mockOKRs.length} objectives with{' '}
-                {mockOKRs.reduce((sum, okr) => sum + okr.keyResults.length, 0)} key results
+                {currentOkrs.length} objectives with{' '}
+                {currentOkrs.reduce((sum, okr) => sum + okr.keyResults.length, 0)} key results
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
@@ -313,7 +327,7 @@ export default function PerformancePage(): ReactNode {
               </div>
               <h3 className="font-semibold mb-1">KPIs</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {mockKPIs.length} key performance indicators
+                {currentKpis.length} key performance indicators
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
@@ -351,13 +365,13 @@ export default function PerformancePage(): ReactNode {
                 Complete your performance self-review
               </p>
               <div className="flex items-center gap-2">
-                <ReviewStatusBadge status={mockReviewStatus} />
-                {mockReviewStatus === 'pending_self' && (
+                <ReviewStatusBadge status={reviewStatus} />
+                {reviewStatus === 'pending_self' && (
                   <Button size="sm" className="ml-auto">
                     Start Review
                   </Button>
                 )}
-                {mockReviewStatus === 'completed' && (
+                {reviewStatus === 'completed' && (
                   <CheckCircle2 className="h-5 w-5 text-success ml-auto" />
                 )}
               </div>
@@ -384,7 +398,7 @@ export default function PerformancePage(): ReactNode {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockOKRs.slice(0, 2).map((okr) => (
+            {currentOkrs.slice(0, 2).map((okr) => (
               <div
                 key={okr.id}
                 className="flex items-center justify-between p-4 rounded-lg border border-border"

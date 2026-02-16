@@ -1,5 +1,7 @@
 'use client';
 
+import { useInternships } from '@/hooks/useInternships';
+import { type InternshipFilters } from '@/lib/query-keys';
 import {
   Button,
   Card,
@@ -22,111 +24,7 @@ import {
 } from '@hr-portal/ui';
 import { Download, FileText, Filter, GraduationCap, Plus, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useState } from 'react';
-
-// Mock data
-const mockStats: InternDashboardStats = {
-  totalInterns: 25,
-  activeInterns: 18,
-  completedInterns: 7,
-  averageProgress: 65,
-  totalHoursLogged: 4520,
-  pendingReports: 12,
-  reportsThisWeek: 45,
-};
-
-const mockInterns: Array<InternSummary> = [
-  {
-    id: 'intern-1' as InternId,
-    name: 'John Doe',
-    email: 'john.doe@university.edu',
-    school: 'State University',
-    program: 'Computer Science',
-    department: 'Engineering',
-    supervisor: 'Sarah Johnson',
-    supervisorId: 'sup-1' as SupervisorId,
-    startDate: '2024-01-15',
-    endDate: '2024-04-15',
-    requiredHours: 480,
-    completedHours: 245,
-    progressPercentage: 51,
-    status: 'active',
-    lastReportDate: '2024-02-15',
-    pendingReports: 0,
-  },
-  {
-    id: 'intern-2' as InternId,
-    name: 'Jane Smith',
-    email: 'jane.smith@techcollege.edu',
-    school: 'Tech College',
-    program: 'Information Technology',
-    department: 'Engineering',
-    supervisor: 'Mike Brown',
-    supervisorId: 'sup-2' as SupervisorId,
-    startDate: '2024-01-08',
-    endDate: '2024-04-08',
-    requiredHours: 400,
-    completedHours: 320,
-    progressPercentage: 80,
-    status: 'active',
-    lastReportDate: '2024-02-15',
-    pendingReports: 2,
-  },
-  {
-    id: 'intern-3' as InternId,
-    name: 'Alex Johnson',
-    email: 'alex.j@cityuniversity.edu',
-    school: 'City University',
-    program: 'Business Administration',
-    department: 'Marketing',
-    supervisor: 'Emily Davis',
-    supervisorId: 'sup-3' as SupervisorId,
-    startDate: '2024-02-01',
-    endDate: '2024-05-01',
-    requiredHours: 500,
-    completedHours: 120,
-    progressPercentage: 24,
-    status: 'active',
-    lastReportDate: '2024-02-14',
-    pendingReports: 1,
-  },
-  {
-    id: 'intern-4' as InternId,
-    name: 'Maria Garcia',
-    email: 'maria.g@stateu.edu',
-    school: 'State University',
-    program: 'Human Resources',
-    department: 'HR',
-    supervisor: 'Tom Wilson',
-    supervisorId: 'sup-4' as SupervisorId,
-    startDate: '2023-10-01',
-    endDate: '2024-01-31',
-    requiredHours: 480,
-    completedHours: 480,
-    progressPercentage: 100,
-    status: 'completed',
-    lastReportDate: '2024-01-31',
-    pendingReports: 0,
-  },
-  {
-    id: 'intern-5' as InternId,
-    name: 'Robert Lee',
-    email: 'robert.lee@techcollege.edu',
-    school: 'Tech College',
-    program: 'Software Engineering',
-    department: 'Engineering',
-    supervisor: 'Sarah Johnson',
-    supervisorId: 'sup-1' as SupervisorId,
-    startDate: '2024-01-22',
-    endDate: '2024-04-22',
-    requiredHours: 400,
-    completedHours: 180,
-    progressPercentage: 45,
-    status: 'active',
-    lastReportDate: '2024-02-13',
-    pendingReports: 3,
-  },
-];
+import { type ReactNode, useMemo, useState } from 'react';
 
 export default function AdminInternsPage(): ReactNode {
   const router = useRouter();
@@ -136,15 +34,69 @@ export default function AdminInternsPage(): ReactNode {
   const [supervisorFilter, setSupervisorFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const schools = [...new Set(mockInterns.map((i) => i.school))];
-  const supervisors = [...new Set(mockInterns.map((i) => i.supervisor))];
+  const internshipFilters: InternshipFilters = {
+    page: 1,
+    pageSize: 100,
+  };
 
-  const filteredInterns = mockInterns.filter((intern) => {
+  if (statusFilter !== 'all') {
+    internshipFilters.status = statusFilter as 'active' | 'completed' | 'terminated' | 'converted';
+  }
+  if (schoolFilter !== 'all') {
+    internshipFilters.school = schoolFilter;
+  }
+  if (searchQuery.trim()) {
+    internshipFilters.search = searchQuery.trim();
+  }
+
+  const internshipsQuery = useInternships(internshipFilters);
+
+  const interns = useMemo<Array<InternSummary>>(
+    () =>
+      (internshipsQuery.data?.data || []).map((internship) => ({
+        id: internship.id as InternId,
+        name: internship.name,
+        email: internship.email,
+        school: internship.school,
+        program: internship.program,
+        department: internship.department,
+        supervisor: internship.supervisor,
+        supervisorId: (internship.supervisorId || '') as SupervisorId,
+        startDate: internship.startDate,
+        endDate: internship.endDate,
+        requiredHours: internship.requiredHours,
+        completedHours: internship.completedHours,
+        progressPercentage: internship.progressPercentage,
+        status: internship.status === 'converted' ? 'completed' : internship.status,
+        ...(internship.lastReportDate ? { lastReportDate: internship.lastReportDate } : {}),
+        pendingReports: internship.pendingReports,
+      })),
+    [internshipsQuery.data]
+  );
+
+  const stats: InternDashboardStats = internshipsQuery.data?.summary || {
+    totalInterns: 0,
+    activeInterns: 0,
+    completedInterns: 0,
+    averageProgress: 0,
+    totalHoursLogged: 0,
+    pendingReports: 0,
+    reportsThisWeek: 0,
+  };
+
+  const schools = [...new Set(interns.map((i) => i.school))];
+  const supervisors = [...new Set(interns.map((i) => i.supervisor))];
+
+  const filteredInterns = interns.filter((intern) => {
     const matchesSearch =
       intern.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       intern.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       intern.program.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || intern.status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'converted'
+        ? intern.status === 'completed'
+        : intern.status === statusFilter);
     const matchesSchool = schoolFilter === 'all' || intern.school === schoolFilter;
     const matchesSupervisor = supervisorFilter === 'all' || intern.supervisor === supervisorFilter;
     return matchesSearch && matchesStatus && matchesSchool && matchesSupervisor;
@@ -177,7 +129,7 @@ export default function AdminInternsPage(): ReactNode {
       </div>
 
       {/* Summary Cards */}
-      <InternshipSummaryCards stats={mockStats} />
+      <InternshipSummaryCards stats={stats} />
 
       {/* Filters */}
       <Card>
@@ -207,7 +159,7 @@ export default function AdminInternsPage(): ReactNode {
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
                 <SelectItem value="terminated">Terminated</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="converted">Converted</SelectItem>
               </SelectContent>
             </Select>
             <Select value={schoolFilter} onValueChange={setSchoolFilter}>
@@ -243,7 +195,7 @@ export default function AdminInternsPage(): ReactNode {
             searchQuery) && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground">
-                Showing {filteredInterns.length} of {mockInterns.length} interns
+                Showing {filteredInterns.length} of {interns.length} interns
               </p>
               <Button
                 variant="ghost"
@@ -323,7 +275,7 @@ export default function AdminInternsPage(): ReactNode {
       )}
 
       {/* Pending Reports Alert */}
-      {mockStats.pendingReports > 0 && (
+      {stats.pendingReports > 0 && (
         <Card className="border-warning/50 bg-warning/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
@@ -333,12 +285,24 @@ export default function AdminInternsPage(): ReactNode {
               <div>
                 <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  There are {mockStats.pendingReports} daily reports waiting for supervisor review.
+                  There are {stats.pendingReports} daily reports waiting for supervisor review.
                   Timely feedback helps interns improve their performance.
                 </p>
               </div>
             </div>
           </CardContent>
+        </Card>
+      )}
+
+      {internshipsQuery.isLoading && (
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">Loading interns...</CardContent>
+        </Card>
+      )}
+
+      {internshipsQuery.error && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="p-6 text-sm text-destructive">Failed to load interns.</CardContent>
         </Card>
       )}
     </div>
