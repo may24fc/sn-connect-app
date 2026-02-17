@@ -1,8 +1,5 @@
 'use client';
 
-import { UserRole } from '@hr-portal/database';
-
-type DbUserRole = (typeof UserRole)[keyof typeof UserRole];
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
@@ -10,12 +7,19 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 // Type definitions
 export type UserRoleType = 'employee' | 'intern' | 'admin' | 'super_admin';
+export type UserStatusType =
+  | 'active'
+  | 'on_leave'
+  | 'terminated'
+  | 'pending_onboarding'
+  | 'awaiting_approval';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: UserRoleType;
+  status?: UserStatusType;
   avatarUrl?: string;
   isOnboardingComplete?: boolean;
 }
@@ -29,36 +33,17 @@ interface AuthContextValue {
   isAuthenticated: boolean;
 }
 
-type RoleMappingMode = 'option-a' | 'option-b';
-
-const ROLE_MAPPING_MODE = (process.env.NEXT_PUBLIC_ROLE_MAPPING_MODE ??
-  'option-a') as RoleMappingMode;
-
-const optionARoleMap: Record<DbUserRole, UserRoleType> = {
-  [UserRole.Admin]: 'admin',
-  [UserRole.HR]: 'admin',
-  [UserRole.COS]: 'admin',
-  [UserRole.CEO]: 'admin',
-  [UserRole.SuperAdmin]: 'super_admin',
-  [UserRole.Employee]: 'employee',
-  [UserRole.Intern]: 'intern',
-};
-
-const optionBRoleMap: Record<DbUserRole, UserRoleType> = {
-  [UserRole.Admin]: 'admin',
-  [UserRole.HR]: 'admin',
-  [UserRole.COS]: 'super_admin',
-  [UserRole.CEO]: 'admin',
-  [UserRole.SuperAdmin]: 'super_admin',
-  [UserRole.Employee]: 'employee',
-  [UserRole.Intern]: 'intern',
-};
-
+// Role mapping is now 1:1 since we simplified the DB roles
+// DB roles: employee, intern, admin, super_admin
+// UI roles: employee, intern, admin, super_admin
 const resolveUiRole = (role: string | null | undefined): UserRoleType => {
-  const isKnownRole = Object.values(UserRole).includes(role as DbUserRole);
-  const normalizedRole = (isKnownRole ? role : UserRole.Employee) as DbUserRole;
-  const roleMap = ROLE_MAPPING_MODE === 'option-b' ? optionBRoleMap : optionARoleMap;
-  return roleMap[normalizedRole] ?? 'employee';
+  // Direct mapping - DB roles match UI roles exactly
+  const validRoles: UserRoleType[] = ['employee', 'intern', 'admin', 'super_admin'];
+  if (role && validRoles.includes(role as UserRoleType)) {
+    return role as UserRoleType;
+  }
+  // Default to employee if role is invalid/missing
+  return 'employee';
 };
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
@@ -91,44 +76,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const useMock = enableMockAuth || !supabase;
 
   // Mock users for local/dev mode when Supabase is not configured
+  // These match the sample accounts created by scripts/setup-sample-accounts.mjs
   const MOCK_USERS: Record<string, { password: string; user: User }> = React.useMemo(
     () => ({
-      'employee@test.com': {
+      'employee@example.com': {
         password: 'password',
         user: {
           id: 'emp-1',
-          name: 'John Doe',
-          email: 'employee@test.com',
+          name: 'Sample Employee',
+          email: 'employee@example.com',
           role: 'employee',
           isOnboardingComplete: true,
         },
       },
-      'intern@test.com': {
+      'intern@example.com': {
         password: 'password',
         user: {
           id: 'int-1',
-          name: 'Jane Smith',
-          email: 'intern@test.com',
+          name: 'Sample Intern',
+          email: 'intern@example.com',
           role: 'intern',
           isOnboardingComplete: true,
         },
       },
-      'admin@test.com': {
+      'admin@example.com': {
         password: 'password',
         user: {
           id: 'adm-1',
           name: 'Admin User',
-          email: 'admin@test.com',
+          email: 'admin@example.com',
           role: 'admin',
           isOnboardingComplete: true,
         },
       },
-      'superadmin@test.com': {
+      'super-admin@example.com': {
         password: 'password',
         user: {
           id: 'sad-1',
           name: 'Super Admin',
-          email: 'superadmin@test.com',
+          email: 'super-admin@example.com',
           role: 'super_admin',
           isOnboardingComplete: true,
         },
@@ -169,10 +155,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       }
 
       // Fallback: query public.users directly (RLS allows own-row reads)
+      let userStatus: UserStatusType | null = null;
       if (!dbRole) {
         const { data, error } = await supabase
           .from('users')
-          .select('role')
+          .select('role, status')
           .eq('id', authUser.id)
           .maybeSingle();
 
@@ -180,6 +167,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           console.error('Failed to fetch user role:', error.message);
         } else {
           dbRole = data?.role ?? null;
+          userStatus = (data?.status as UserStatusType) ?? null;
+        }
+      } else {
+        // If we have role from app_metadata, still need to fetch status
+        const { data, error } = await supabase
+          .from('users')
+          .select('status')
+          .eq('id', authUser.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          userStatus = (data.status as UserStatusType) ?? null;
         }
       }
 
@@ -222,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         name: nameFromMetadata,
         email: authUser.email ?? '',
         role: resolvedRole,
+        status: userStatus ?? 'active',
         isOnboardingComplete,
         ...(avatarUrlFromMetadata ? { avatarUrl: avatarUrlFromMetadata } : {}),
       } satisfies User;
@@ -284,10 +284,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           return;
         }
 
+        // SECURITY: Use getUser() instead of getSession() to validate JWT with Supabase servers.
+        // getSession() only reads from local storage/cookies and can be spoofed.
         const result = await withTimeout(
           supabase.auth.getUser(),
           AUTH_TIMEOUT_MS,
-          'Timed out while loading session.'
+          'Timed out while loading user.'
         );
         const { data, error } = result as any;
 
@@ -411,6 +413,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
         if (!nextUser) {
           throw new Error('Unable to load user profile.');
+        }
+
+        // Handle pending_onboarding status - redirect to onboarding
+        if (nextUser.status === 'pending_onboarding') {
+          router.push('/onboarding/setup');
+          return;
+        }
+
+        // Handle awaiting_approval status - redirect to waiting page
+        if (nextUser.status === 'awaiting_approval') {
+          router.push('/onboarding/awaiting-approval');
+          return;
         }
 
         switch (nextUser.role) {

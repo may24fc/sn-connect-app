@@ -27,12 +27,21 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   if (supabase) {
     try {
-      const result = await supabase.auth.getUser();
-      data = result.data ?? null;
+      // Refresh the session to ensure cookies are up-to-date
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (!sessionError && sessionData.session) {
+        // Session exists and is valid
+        data = { user: sessionData.session.user };
+      } else {
+        // No valid session, try getUser as fallback
+        const result = await supabase.auth.getUser();
+        data = result.data ?? null;
+      }
     } catch (err) {
       // If server-side Supabase call fails, fall back to client-side auth
       // and continue without blocking the request.
-      console.error('Supabase middleware getUser failed:', err);
+      console.error('Supabase middleware session refresh failed:', err);
       data = null;
     }
   }
