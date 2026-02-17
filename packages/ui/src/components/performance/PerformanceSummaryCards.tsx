@@ -1,14 +1,10 @@
 'use client';
 
 import {
-  AlertTriangle,
   BarChart3,
-  CheckCircle2,
-  Clock,
-  FileText,
   Target,
   TrendingUp,
-  Users,
+  AlertTriangle,
 } from 'lucide-react';
 import type * as React from 'react';
 import { Card, CardContent } from '../../primitives/card';
@@ -84,14 +80,7 @@ export function PerformanceSummaryCards({
   className,
 }: PerformanceSummaryCardsProps): React.ReactNode {
   return (
-    <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-4', className)}>
-      <StatCard
-        title="Total Employees"
-        value={stats.totalEmployees}
-        icon={Users}
-        iconBgColor="bg-primary/10"
-        iconColor="text-primary"
-      />
+    <div className={cn('grid gap-4 sm:grid-cols-2', className)}>
       <StatCard
         title="OKR Progress"
         value={`${stats.averageOkrProgress}%`}
@@ -107,14 +96,6 @@ export function PerformanceSummaryCards({
         icon={BarChart3}
         iconBgColor="bg-warning/10"
         iconColor="text-warning"
-      />
-      <StatCard
-        title="Reviews Completed"
-        value={stats.reviewsCompleted}
-        subtitle={`${stats.reviewsPendingSelf + stats.reviewsPendingManager} pending`}
-        icon={FileText}
-        iconBgColor="bg-secondary/20"
-        iconColor="text-secondary-foreground"
       />
     </div>
   );
@@ -150,9 +131,6 @@ export function CycleProgressCards({
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <FileText className="h-5 w-5 text-primary" />
-            </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Self-Assessments</p>
               <p className="text-2xl font-bold">
@@ -180,9 +158,6 @@ export function CycleProgressCards({
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/10">
-              <Clock className="h-5 w-5 text-warning" />
-            </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Manager Reviews</p>
               <p className="text-2xl font-bold">
@@ -210,9 +185,6 @@ export function CycleProgressCards({
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle2 className="h-5 w-5 text-success" />
-            </div>
             <div className="flex-1">
               <p className="text-sm font-medium">HR Finalized</p>
               <p className="text-2xl font-bold">
