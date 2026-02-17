@@ -20,6 +20,7 @@ import {
   TabsTrigger,
   TargetingSelector,
 } from '@hr-portal/ui';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 function parseCsvList(value: string) {
@@ -30,6 +31,7 @@ function parseCsvList(value: string) {
 }
 
 export default function NewAnnouncementPage() {
+  const router = useRouter();
   const createAnnouncement = useCreateAnnouncement();
   const [createdId, setCreatedId] = useState<string | null>(null);
   const uploadAttachment = useUploadAnnouncementAttachment(createdId || '');
@@ -63,23 +65,31 @@ export default function NewAnnouncementPage() {
   const excerpt = useMemo(() => content.slice(0, 200), [content]);
 
   const save = async (nextStatus: 'draft' | 'scheduled' | 'published' | 'expired' | 'archived') => {
-    const response = await createAnnouncement.mutateAsync({
-      title,
-      content,
-      excerpt,
-      category,
-      priority,
-      status: nextStatus,
-      publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
-      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-      targetRoles: parseCsvList(targeting.rolesCsv),
-      targetDepartments: parseCsvList(targeting.departmentsCsv),
-      targetEmployees: parseCsvList(targeting.employeesCsv),
-      isPinned,
-      allowComments,
-    });
+    try {
+      const response = await createAnnouncement.mutateAsync({
+        title,
+        content,
+        excerpt,
+        category,
+        priority,
+        status: nextStatus,
+        publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        targetRoles: parseCsvList(targeting.rolesCsv),
+        targetDepartments: parseCsvList(targeting.departmentsCsv),
+        targetEmployees: parseCsvList(targeting.employeesCsv),
+        isPinned,
+        allowComments,
+      });
 
-    setCreatedId(response.data.id);
+      setCreatedId(response.data.id);
+      
+      // Redirect to announcements list after successful creation
+      router.push('/admin/announcements');
+    } catch (error) {
+      // Error is already logged by the mutation hook
+      console.error('Failed to save announcement:', error);
+    }
   };
 
   return (
@@ -277,6 +287,7 @@ export default function NewAnnouncementPage() {
         <div className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-center justify-between">
           <Button
             variant="outline"
+            onClick={() => router.push('/admin/announcements')}
             className="border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 px-4 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             Cancel

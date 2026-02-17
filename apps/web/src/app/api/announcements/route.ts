@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
     const parsed = createAnnouncementSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error('Announcement validation failed:', JSON.stringify(parsed.error.flatten()));
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
@@ -104,6 +105,11 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = parsed.data;
+
+    console.log('Creating announcement with payload:', {
+      ...payload,
+      content: payload.content.slice(0, 100) + '...' // truncate for logging
+    });
 
     const { data, error: createError } = await supabase
       .from('announcements')
@@ -129,7 +135,14 @@ export async function POST(request: NextRequest) {
 
     if (createError || !data) {
       console.error('Error creating announcement:', createError);
-      return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 });
+      console.error('Full error details:', JSON.stringify(createError, null, 2));
+      return NextResponse.json(
+        { 
+          error: 'Failed to create announcement',
+          details: createError?.message || 'Unknown database error'
+        }, 
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ data }, { status: 201 });
