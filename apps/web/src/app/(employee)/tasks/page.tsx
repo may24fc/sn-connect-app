@@ -1,6 +1,8 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { useTasks } from '@/hooks/useTasks';
+import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import {
   Badge,
   Button,
@@ -35,6 +37,7 @@ const statusVariant: Record<
 };
 
 export default function MyTasksPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
   const [priority, setPriority] = useState<string>('all');
@@ -45,11 +48,14 @@ export default function MyTasksPage() {
       ? { status: status as 'pending' | 'in_progress' | 'completed' | 'cancelled' }
       : {}),
     ...(priority !== 'all' ? { priority: priority as 'low' | 'medium' | 'high' | 'urgent' } : {}),
+    ...(user?.id ? { assigneeId: user.id } : {}),
     page: 1,
     pageSize: 50,
   };
 
-  const { data, isLoading, error } = useTasks(taskFilters);
+  const { data, isLoading, error } = useTasks(taskFilters, { enabled: Boolean(user?.id) });
+
+  useTasksRealtime({ scope: 'assigned', userId: user?.id, enabled: Boolean(user?.id) });
 
   const tasks = data?.data || [];
 

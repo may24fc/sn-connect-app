@@ -42,52 +42,52 @@ export interface SidebarProps {
 
 // Employee navigation
 const employeeNavItems: Array<NavItem> = [
+  { label: 'Profile', href: '/profile', icon: User },
   { label: 'Dashboard', href: '/dashboard', icon: Home },
-  { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
-  { label: 'My Profile', href: '/profile', icon: User },
-  { label: 'My Documents', href: '/files', icon: FolderOpen },
-  { label: 'Payroll', href: '/payroll', icon: Receipt },
-  { label: 'Reports', href: '/reports', icon: FileText },
+  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
+  { label: 'Reports', href: '/reports', icon: FileText },
+  { label: 'Invoice', href: '/invoice', icon: Receipt },
+  { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Information Hub', href: '/information-hub', icon: Megaphone },
 ];
 
 // Intern navigation - same as employee except different dashboard and no payroll
 const internNavItems: Array<NavItem> = [
+  { label: 'Profile', href: '/profile', icon: User },
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
-  { label: 'My Tasks', href: '/tasks', icon: CheckSquare },
-  { label: 'My Profile', href: '/profile', icon: User },
-  { label: 'My Documents', href: '/files', icon: FolderOpen },
+  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
+  { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Information Hub', href: '/information-hub', icon: Megaphone },
 ];
 
 // Admin (HR) navigation - includes team management features
 const adminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
+  { label: 'Employee Probation', href: '/admin/probation', icon: ClipboardList },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Performance', href: '/admin/performance', icon: Target },
+  { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Onboarding Data', href: '/admin/onboarding', icon: ClipboardList },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
-  { label: 'Resources', href: '/admin/resources', icon: Library },
-  { label: 'Reports', href: '/admin/reports', icon: FileText },
-  { label: 'Performance', href: '/admin/performance', icon: Target },
-  { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Brain },
+  { label: 'Resources', href: '/admin/resources', icon: Library },
 ];
 
 // Super Admin navigation - same as admin plus payroll approvals
 const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
+  { label: 'Employee Probation', href: '/admin/probation', icon: ClipboardList },
+  { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Performance', href: '/admin/performance', icon: Target },
+  { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
+  { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
   { label: 'Onboarding Data', href: '/super-admin/onboarding', icon: ClipboardList },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
-  { label: 'Resources', href: '/super-admin/resources', icon: Library },
-  { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
-  { label: 'Reports', href: '/admin/reports', icon: FileText },
-  { label: 'Performance', href: '/admin/performance', icon: Target },
-  { label: 'Probation', href: '/admin/probation', icon: ClipboardList },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Brain },
-  { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
+  { label: 'Resources', href: '/super-admin/resources', icon: Library },
 ];
 
 export function Sidebar({

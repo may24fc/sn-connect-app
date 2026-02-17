@@ -1,5 +1,10 @@
 import { taskUpdateSchema } from '@/lib/schemas/task.schema';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import {
+  TASK_ASSIGNER_ROLE,
+  getTaskAuthedContext,
+  getTaskWriteErrorMessage,
+  validateTaskAssignee,
+} from '../_lib';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface EmployeeNameRow {
@@ -15,16 +20,13 @@ interface EmployeeNameRow {
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const supabase = await createSupabaseServerClient();
+    const auth = await getTaskAuthedContext();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { supabase } = auth.context;
 
     const { data: task, error } = await supabase
       .from('tasks')
@@ -78,16 +80,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const supabase = await createSupabaseServerClient();
+    const auth = await getTaskAuthedContext();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { supabase, user, role } = auth.context;
 
     const body = await request.json();
     const parsed = taskUpdateSchema.safeParse(body);
@@ -106,7 +105,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updates.description = parsed.data.description || null;
     }
     if (parsed.data.assignedTo !== undefined) {
+      if (role !== TASK_ASSIGNER_ROLE) {
+        return NextResponse.json(
+          { error: 'Only super-admin can re-assign tasks' },
+          { status: 403 }
+        );
+      }
+
+      if (parsed.data.assignedTo) {
+        const assigneeValidation = await validateTaskAssignee(supabase, parsed.data.assignedTo);
+        if (!assigneeValidation.ok) {
+          return NextResponse.json(
+            { error: assigneeValidation.error },
+            { status: assigneeValidation.status }
+          );
+        }
+      }
+
       updates.assigned_to = parsed.data.assignedTo || null;
+      updates.assigned_by = user.id;
     }
     if (parsed.data.priority !== undefined) updates.priority = parsed.data.priority;
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
@@ -116,6 +133,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (parsed.data.status === 'completed') {
       updates.completed_at = new Date().toISOString();
+    } else if (parsed.data.status && parsed.data.status !== 'completed') {
+      updates.completed_at = null;
     }
 
     const { data, error } = await supabase
@@ -128,7 +147,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (error || !data) {
       console.error('Error updating task:', error);
-      return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
+      return NextResponse.json({ error: getTaskWriteErrorMessage(error) }, { status: 500 });
     }
 
     return NextResponse.json({ data });
@@ -148,16 +167,13 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createSupabaseServerClient();
+    const auth = await getTaskAuthedContext();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { supabase } = auth.context;
 
     const { error } = await supabase
       .from('tasks')

@@ -42,7 +42,7 @@ const formatCurrency = (value: number) =>
     currency: 'PHP',
   }).format(value || 0);
 
-export default function PayrollPage() {
+export default function InvoicePage() {
   const [open, setOpen] = useState(false);
 
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -104,7 +104,7 @@ export default function PayrollPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-headline">Payroll</h1>
+          <h1 className="text-headline">Invoice</h1>
           <p className="text-muted-foreground">Submit and monitor your invoices</p>
         </div>
         <Button onClick={() => setOpen(true)}>Create Invoice</Button>

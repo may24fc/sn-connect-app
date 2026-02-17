@@ -29,7 +29,11 @@ interface TaskListResponse {
   };
 }
 
-export function useTasks(filters: TaskFilters = {}) {
+interface UseTasksOptions {
+  enabled?: boolean;
+}
+
+export function useTasks(filters: TaskFilters = {}, options: UseTasksOptions = {}) {
   return useQuery({
     queryKey: queryKeys.tasks.list(filters),
     queryFn: async (): Promise<TaskListResponse> => {
@@ -50,5 +54,6 @@ export function useTasks(filters: TaskFilters = {}) {
 
       return response.json();
     },
+    enabled: options.enabled ?? true,
   });
 }
