@@ -94,6 +94,10 @@ export const updateOKRSchema = z.object({
   keyResults: z.array(keyResultSchema).optional(),
   progress: z.number().min(0).max(100).optional(),
   status: z.string().optional(),
+  adminRating: z.enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory']).optional(),
+  adminComments: z.string().optional(),
+  evaluatedBy: z.string().uuid().optional(),
+  evaluatedAt: z.string().datetime().optional(),
 });
 
 export const createKPISchema = z
@@ -120,6 +124,11 @@ export const updateKPISchema = z.object({
   unit: z.string().optional().nullable(),
   periodStart: dateSchema.optional(),
   periodEnd: dateSchema.optional(),
+  status: z.string().optional(),
+  adminRating: z.enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory']).optional(),
+  adminComments: z.string().optional(),
+  evaluatedBy: z.string().uuid().optional(),
+  evaluatedAt: z.string().datetime().optional(),
 });
 
 export const probationExtendSchema = z.object({

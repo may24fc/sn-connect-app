@@ -258,6 +258,105 @@ export function useDeletePerformanceCycle() {
   });
 }
 
+export function useUpdateOKR() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      objective?: string;
+      keyResults?: Array<Record<string, unknown>>;
+      progress?: number;
+      status?: string;
+      adminRating?: 'exceptional' | 'exceeds' | 'meets' | 'needs_improvement' | 'unsatisfactory';
+      adminComments?: string;
+      evaluatedBy?: string;
+      evaluatedAt?: string;
+    }) => {
+      const response = await fetch('/api/performance/okrs', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to update OKR');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
+export function useUpdateKPI() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      name?: string;
+      targetValue?: number;
+      currentValue?: number;
+      unit?: string;
+      status?: string;
+      adminRating?: 'exceptional' | 'exceeds' | 'meets' | 'needs_improvement' | 'unsatisfactory';
+      adminComments?: string;
+      evaluatedBy?: string;
+      evaluatedAt?: string;
+    }) => {
+      const response = await fetch('/api/performance/kpis', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to update KPI');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.kpis() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
+export function useCreateKPI() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      name: string;
+      targetValue: number;
+      currentValue?: number;
+      unit?: string;
+      cycleId?: string;
+      employeeId?: string;
+      periodStart?: string;
+      periodEnd?: string;
+    }) => {
+      const response = await fetch('/api/performance/kpis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to create KPI');
+      }
+
+      return response.json() as Promise<{ data: KpiRow }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.kpis() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
 export function useCreateOKR() {
   const queryClient = useQueryClient();
 

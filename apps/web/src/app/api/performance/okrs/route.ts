@@ -126,6 +126,10 @@ export async function PATCH(request: NextRequest) {
     if (parsed.data.keyResults !== undefined) payload.key_results = parsed.data.keyResults;
     if (parsed.data.progress !== undefined) payload.progress = parsed.data.progress;
     if (parsed.data.status !== undefined) payload.status = parsed.data.status;
+    if (parsed.data.adminRating !== undefined) payload.admin_rating = parsed.data.adminRating;
+    if (parsed.data.adminComments !== undefined) payload.admin_comments = parsed.data.adminComments;
+    if (parsed.data.evaluatedBy !== undefined) payload.evaluated_by = parsed.data.evaluatedBy;
+    if (parsed.data.evaluatedAt !== undefined) payload.evaluated_at = parsed.data.evaluatedAt;
 
     const { data, error: updateError } = await supabase
       .from('okrs')
