@@ -4,7 +4,16 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/invoices
- * List invoices with pagination and filters
+ * List invoices with pagination and filters.
+ *
+ * Role-based scoping:
+ * - Employees (Tier 1): only see their own invoices (RLS + employee_id filter)
+ * - Admin / Super Admin (Tier 2-3): see all invoices (RLS admin policy)
+ *
+ * The employees relation uses a LEFT JOIN (no `!inner`) so that admin users
+ * who may not own the employee record can still see the invoice row.
+ * RLS on the employees table may hide the joined employee data for non-admin
+ * users who are not the owner, but the invoice row itself will still be returned.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -25,10 +34,15 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
+    // Use a LEFT JOIN for employees (no !inner) so that admin/super_admin users
+    // can see invoice rows even when the employees relation goes through RLS.
+    // With !inner, if the employees row is filtered by RLS the entire invoice
+    // row would be excluded -- which is exactly the bug that prevented
+    // super_admin from seeing employee invoices.
     let query = supabase
       .from('invoices')
       .select(
-        '*, employees!inner(id, user_id, first_name, last_name, department), invoice_line_items(*)',
+        '*, employees(id, user_id, first_name, last_name, department), invoice_line_items(*)',
         {
           count: 'exact',
         }
@@ -42,6 +56,35 @@ export async function GET(request: NextRequest) {
 
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
+    }
+
+    // For non-admin users, scope to their own invoices as an extra guardrail.
+    // RLS already enforces this, but filtering server-side avoids returning
+    // rows where the employee relation is null (which would happen if the
+    // user somehow had a misconfigured RLS policy).
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    // Support both pre-consolidation (admin, hr, cos, ceo) and
+    // post-consolidation (admin, super_admin) role values.
+    const adminRoles = ['admin', 'hr', 'cos', 'ceo', 'super_admin'];
+    const isAdmin = adminRoles.includes(userData?.role ?? '');
+
+    if (!isAdmin && !employeeId) {
+      // Resolve the employee ID for the current user so we can filter
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (empData?.id) {
+        query = query.eq('employee_id', empData.id);
+      }
     }
 
     const from = (page - 1) * pageSize;
