@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (!['admin', 'hr', 'cos', 'ceo', 'super_admin'].includes(roleData.role)) {
+    if (!['admin', 'super_admin'].includes(roleData.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

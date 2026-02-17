@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const INTERNSHIP_ADMIN_ROLES = ['admin', 'hr', 'cos', 'ceo', 'super_admin'];
+export const INTERNSHIP_ADMIN_ROLES = ['admin', 'super_admin'];
 
 export function isInternshipAdmin(role: string | null): boolean {
   return role ? INTERNSHIP_ADMIN_ROLES.includes(role) : false;

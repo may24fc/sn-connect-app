@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const PERFORMANCE_ADMIN_ROLES = ['admin', 'hr', 'cos', 'ceo', 'super_admin'];
+export const PERFORMANCE_ADMIN_ROLES = ['admin', 'super_admin'];
 
 export function isPerformanceAdmin(role: string | null): boolean {
   return role ? PERFORMANCE_ADMIN_ROLES.includes(role) : false;

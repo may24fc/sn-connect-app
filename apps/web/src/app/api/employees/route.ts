@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const allowedRoles = ['hr', 'admin', 'super_admin'];
+    const allowedRoles = ['admin', 'super_admin'];
     if (!allowedRoles.includes(userData.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
