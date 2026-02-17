@@ -30,7 +30,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (!['admin', 'hr', 'cos', 'ceo', 'super_admin'].includes(roleData.role)) {
+    // Allow both pre-consolidation roles (admin, hr, cos, ceo) and
+    // post-consolidation roles (admin, super_admin) so this route works
+    // regardless of whether the role consolidation migration has been applied.
+    const approverRoles = ['admin', 'hr', 'cos', 'ceo', 'super_admin'];
+    if (!approverRoles.includes(roleData.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
