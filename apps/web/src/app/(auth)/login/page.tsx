@@ -12,14 +12,13 @@ import {
   Checkbox,
   Input,
   Label,
+  PasswordInput,
 } from '@hr-portal/ui';
-import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, type ReactNode, useState } from 'react';
 
 export default function LoginPage(): ReactNode {
   const { login } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -126,26 +125,15 @@ export default function LoginPage(): ReactNode {
                   Forgot password?
                 </Link>
               </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="h-10 w-full px-4 pr-10 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md placeholder:text-zinc-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className="h-10 w-full"
+              />
             </div>
 
             <div className="flex items-center space-x-2">
