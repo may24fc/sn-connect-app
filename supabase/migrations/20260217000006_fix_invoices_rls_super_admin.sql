@@ -29,7 +29,7 @@ CREATE POLICY "invoices_select_admin_policy" ON public.invoices
     EXISTS (
       SELECT 1 FROM public.users
       WHERE users.id = auth.uid()
-      AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+      AND users.role IN ('admin', 'super_admin')
       AND users.deleted_at IS NULL
     )
     AND invoices.deleted_at IS NULL
@@ -58,7 +58,7 @@ CREATE POLICY "invoices_insert_policy" ON public.invoices
       EXISTS (
         SELECT 1 FROM public.users
         WHERE users.id = auth.uid()
-        AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+        AND users.role IN ('admin', 'super_admin')
         AND users.deleted_at IS NULL
       )
     )
@@ -87,7 +87,7 @@ CREATE POLICY "invoices_update_policy" ON public.invoices
       EXISTS (
         SELECT 1 FROM public.users
         WHERE users.id = auth.uid()
-        AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+        AND users.role IN ('admin', 'super_admin')
         AND users.deleted_at IS NULL
       )
     )
@@ -106,7 +106,7 @@ CREATE POLICY "invoices_update_policy" ON public.invoices
       EXISTS (
         SELECT 1 FROM public.users
         WHERE users.id = auth.uid()
-        AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+        AND users.role IN ('admin', 'super_admin')
         AND users.deleted_at IS NULL
       )
     )
@@ -160,7 +160,7 @@ CREATE POLICY "invoice_line_items_select_policy" ON public.invoice_line_items
         OR EXISTS (
           SELECT 1 FROM public.users
           WHERE users.id = auth.uid()
-          AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+          AND users.role IN ('admin', 'super_admin')
           AND users.deleted_at IS NULL
         )
       )
@@ -191,7 +191,7 @@ CREATE POLICY "invoice_line_items_insert_policy" ON public.invoice_line_items
         OR EXISTS (
           SELECT 1 FROM public.users
           WHERE users.id = auth.uid()
-          AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+          AND users.role IN ('admin', 'super_admin')
           AND users.deleted_at IS NULL
         )
       )
@@ -222,7 +222,7 @@ CREATE POLICY "invoice_line_items_update_policy" ON public.invoice_line_items
         OR EXISTS (
           SELECT 1 FROM public.users
           WHERE users.id = auth.uid()
-          AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+          AND users.role IN ('admin', 'super_admin')
           AND users.deleted_at IS NULL
         )
       )
@@ -243,7 +243,7 @@ CREATE POLICY "invoice_line_items_update_policy" ON public.invoice_line_items
         OR EXISTS (
           SELECT 1 FROM public.users
           WHERE users.id = auth.uid()
-          AND users.role IN ('admin', 'hr', 'cos', 'ceo', 'super_admin')
+          AND users.role IN ('admin', 'super_admin')
           AND users.deleted_at IS NULL
         )
       )
