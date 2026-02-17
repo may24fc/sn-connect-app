@@ -120,6 +120,7 @@ const config: Config = {
         'slide-in': 'slide-in 0.2s ease-out',
         'slide-up': 'slide-up 0.2s ease-out',
         skeleton: 'skeleton 1.5s ease-in-out infinite',
+        shimmer: 'shimmer 2s infinite',
       },
 
       keyframes: {
@@ -138,6 +139,10 @@ const config: Config = {
         skeleton: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.5' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
       },
 
