@@ -207,6 +207,30 @@ export default function CyclesPage(): ReactNode {
         </Button>
       </div>
 
+      {/* Quarterly Reference Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { quarter: 'Q1', months: 'January - March', range: 'Jan 1 - Mar 31' },
+          { quarter: 'Q2', months: 'April - June', range: 'Apr 1 - Jun 30' },
+          { quarter: 'Q3', months: 'July - September', range: 'Jul 1 - Sep 30' },
+          { quarter: 'Q4', months: 'October - December', range: 'Oct 1 - Dec 31' },
+        ].map((q) => (
+          <Card key={q.quarter} className="border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <Calendar className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{q.quarter} 2026</p>
+                  <p className="text-xs text-muted-foreground">{q.months}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* Cycles Table */}
       <Card>
         <CardContent className="p-0">

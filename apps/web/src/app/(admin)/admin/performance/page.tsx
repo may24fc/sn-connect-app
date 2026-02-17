@@ -1,143 +1,44 @@
 'use client';
 
 import {
-  Avatar,
-  AvatarFallback,
   Badge,
   Button,
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CompletionTrendChart,
-  CycleProgressCards,
   DepartmentPerformanceChart,
   type DepartmentPerformanceData,
-  type EmployeeId,
-  Input,
   type PerformanceDashboardStats,
   PerformanceSummaryCards,
-  Progress,
-  RatingDistributionChart,
-  type RatingDistributionData,
-  type ReviewStatus,
-  ReviewStatusBadge,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
 } from '@hr-portal/ui';
 import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs } from '@/hooks/usePerformance';
-import { queryKeys } from '@/lib/query-keys';
-import { useQuery } from '@tanstack/react-query';
-import { Calendar, Download, Search, Settings } from 'lucide-react';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import { Calendar, ClipboardCheck, Download, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 
-interface EmployeeReviewSummary {
-  id: EmployeeId;
-  name: string;
-  email: string;
+interface EmployeePerformanceRow {
+  id: string;
   department: string;
-  manager: string;
   okrProgress: number;
   kpiScore: number;
-  reviewStatus: ReviewStatus;
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 export default function AdminPerformancePage(): ReactNode {
+  usePerformanceRealtime();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
   const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
 
-  const { data: reviewsPayload } = useQuery({
-    queryKey: [...queryKeys.performance.reviews(), activeCycle?.id || 'all', 'admin-dashboard'],
-    queryFn: async (): Promise<{ data: Array<any> }> => {
-      const params = new URLSearchParams();
-      if (activeCycle?.id) params.set('cycleId', activeCycle.id);
-      const response = await fetch(`/api/performance/reviews?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch reviews');
-      return response.json();
-    },
-  });
-
-  const reviewRows = reviewsPayload?.data || [];
-
-  const liveEmployees: Array<EmployeeReviewSummary> = reviewRows.map((review: any) => {
-    const employee = review.employees || {};
-    const employeeOkrs = okrs.filter((okr) => okr.employeeId === review.employee_id);
-    const employeeKpis = kpis.filter((kpi) => kpi.employeeId === review.employee_id);
-
-    const okrProgress =
-      employeeOkrs.length > 0
-        ? Math.round(
-            employeeOkrs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / employeeOkrs.length
-          )
-        : 0;
-
-    const kpiScore =
-      employeeKpis.length > 0
-        ? Math.round(employeeKpis.reduce((sum, kpi) => sum + kpi.score, 0) / employeeKpis.length)
-        : 0;
-
-    const reviewStatus: ReviewStatus =
-      review.status === 'pending'
-        ? 'pending_self'
-        : review.status === 'self_review'
-          ? 'pending_manager'
-          : review.status === 'manager_review'
-            ? 'pending_hr'
-            : 'completed';
-
-    return {
-      id: review.employee_id as EmployeeId,
-      name: `${employee.first_name || 'Employee'} ${employee.last_name || ''}`.trim(),
-      email: employee.company_email || employee.personal_email || 'n/a',
-      department: employee.department || 'Unassigned',
-      manager: 'N/A',
-      okrProgress,
-      kpiScore,
-      reviewStatus,
-    };
-  });
-
-  const uniqueEmployees = Array.from(
-    new Map(liveEmployees.map((employee) => [employee.id, employee])).values()
-  );
-
-  const employeesData = uniqueEmployees;
-
   const liveStats: PerformanceDashboardStats = {
-    totalEmployees: employeesData.length,
+    totalEmployees: 0,
     okrsCompleted: okrs.filter((okr) => okr.status === 'completed').length,
     okrsInProgress: okrs.filter((okr) => okr.status !== 'completed').length,
     kpisOnTarget: kpis.filter((kpi) => kpi.score >= 100).length,
     kpisBelowTarget: kpis.filter((kpi) => kpi.score < 80).length,
-    reviewsPendingSelf: employeesData.filter((employee) => employee.reviewStatus === 'pending_self')
-      .length,
-    reviewsPendingManager: employeesData.filter(
-      (employee) => employee.reviewStatus === 'pending_manager' || employee.reviewStatus === 'pending_hr'
-    ).length,
-    reviewsCompleted: employeesData.filter((employee) => employee.reviewStatus === 'completed')
-      .length,
+    reviewsPendingSelf: 0,
+    reviewsPendingManager: 0,
+    reviewsCompleted: 0,
     averageOkrProgress:
       okrs.length > 0
         ? Math.round(okrs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / okrs.length)
@@ -146,10 +47,39 @@ export default function AdminPerformancePage(): ReactNode {
       kpis.length > 0 ? Math.round(kpis.reduce((sum, kpi) => sum + kpi.score, 0) / kpis.length) : 0,
   };
 
-  const stats = liveStats;
+  // Build department performance data from OKRs and KPIs
+  const employeeRows: Array<EmployeePerformanceRow> = [];
+  const employeeIds = new Set<string>();
 
-  const liveDepartmentData: Array<DepartmentPerformanceData> = Object.values(
-    employeesData.reduce(
+  for (const okr of okrs) {
+    if (!employeeIds.has(okr.employeeId)) {
+      employeeIds.add(okr.employeeId);
+      const employeeOkrs = okrs.filter((o) => o.employeeId === okr.employeeId);
+      const employeeKpis = kpis.filter((k) => k.employeeId === okr.employeeId);
+
+      const okrProgress =
+        employeeOkrs.length > 0
+          ? Math.round(
+              employeeOkrs.reduce((sum, o) => sum + o.progressPercentage, 0) / employeeOkrs.length
+            )
+          : 0;
+
+      const kpiScore =
+        employeeKpis.length > 0
+          ? Math.round(employeeKpis.reduce((sum, k) => sum + k.score, 0) / employeeKpis.length)
+          : 0;
+
+      employeeRows.push({
+        id: okr.employeeId,
+        department: 'General',
+        okrProgress,
+        kpiScore,
+      });
+    }
+  }
+
+  const departmentData: Array<DepartmentPerformanceData> = Object.values(
+    employeeRows.reduce(
       (accumulator, employee) => {
         const key = employee.department;
         if (!accumulator[key]) {
@@ -182,44 +112,9 @@ export default function AdminPerformancePage(): ReactNode {
     )
   ).map(({ okrSum: _okrSum, kpiSum: _kpiSum, ...value }) => value);
 
-  const departmentData = liveDepartmentData;
-
-  const statusToRating = (status: ReviewStatus): RatingDistributionData['rating'] => {
-    if (status === 'completed') return 'meets';
-    if (status === 'pending_hr') return 'needs_improvement';
-    if (status === 'pending_manager') return 'meets';
-    return 'needs_improvement';
-  };
-
-  const liveRatingData: Array<RatingDistributionData> = ['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'].map(
-    (rating) => {
-      const count = employeesData.filter((employee) => statusToRating(employee.reviewStatus) === rating)
-        .length;
-      const percentage = employeesData.length > 0 ? Math.round((count / employeesData.length) * 100) : 0;
-      return { rating: rating as RatingDistributionData['rating'], count, percentage };
-    }
-  );
-
-  const ratingData = liveRatingData;
-
   const currentCycleLabel = activeCycle?.name || 'Performance Cycle';
   const currentCycleRange =
     activeCycle && `${activeCycle.startDate} - ${activeCycle.endDate}`;
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-
-  const departments = [...new Set(employeesData.map((e) => e.department))];
-
-  const filteredEmployees = employeesData.filter((emp) => {
-    const matchesSearch =
-      emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDept = departmentFilter === 'all' || emp.department === departmentFilter;
-    const matchesStatus = statusFilter === 'all' || emp.reviewStatus === statusFilter;
-    return matchesSearch && matchesDept && matchesStatus;
-  });
 
   return (
     <div className="space-y-6">
@@ -227,9 +122,15 @@ export default function AdminPerformancePage(): ReactNode {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Performance Dashboard</h1>
-          <p className="text-muted-foreground">Organization-wide performance metrics and reviews</p>
+          <p className="text-muted-foreground">Organization-wide performance metrics</p>
         </div>
         <div className="flex gap-2">
+          <Link href="/admin/performance/evaluations">
+            <Button variant="outline">
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              Evaluations
+            </Button>
+          </Link>
           <Link href="/admin/performance/cycles">
             <Button variant="outline">
               <Settings className="mr-2 h-4 w-4" />
@@ -262,142 +163,10 @@ export default function AdminPerformancePage(): ReactNode {
       </Card>
 
       {/* Summary Cards */}
-      <PerformanceSummaryCards stats={stats} />
+      <PerformanceSummaryCards stats={liveStats} />
 
-      {/* Cycle Progress */}
-      <CycleProgressCards
-        selfAssessmentComplete={stats.reviewsCompleted}
-        selfAssessmentTotal={Math.max(stats.totalEmployees, 1)}
-        managerReviewComplete={stats.reviewsCompleted - stats.reviewsPendingManager}
-        managerReviewTotal={Math.max(stats.totalEmployees - stats.reviewsPendingSelf, 1)}
-        hrReviewComplete={stats.reviewsCompleted}
-        hrReviewTotal={Math.max(stats.totalEmployees, 1)}
-      />
-
-      {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <CompletionTrendChart data={[]} />
-        <DepartmentPerformanceChart data={departmentData} />
-      </div>
-
-      <RatingDistributionChart data={ratingData} />
-
-      {/* Employee List */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle>Employee Reviews</CardTitle>
-              <CardDescription>Monitor review progress across the organization</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search employees..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending_self">Pending Self</SelectItem>
-                <SelectItem value="pending_manager">Pending Manager</SelectItem>
-                <SelectItem value="pending_hr">Pending HR</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Table */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Manager</TableHead>
-                <TableHead>OKR Progress</TableHead>
-                <TableHead>KPI Score</TableHead>
-                <TableHead>Review Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployees.length > 0 ? (
-                filteredEmployees.map((emp) => (
-                  <TableRow key={emp.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="text-xs">{getInitials(emp.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{emp.name}</p>
-                          <p className="text-xs text-muted-foreground">{emp.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{emp.department}</TableCell>
-                    <TableCell>{emp.manager}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={emp.okrProgress} className="h-2 w-16" />
-                        <span className="text-sm">{emp.okrProgress}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress
-                          value={emp.kpiScore}
-                          className="h-2 w-16"
-                          indicatorClassName={
-                            emp.kpiScore >= 80
-                              ? 'bg-success'
-                              : emp.kpiScore >= 60
-                                ? 'bg-warning'
-                                : 'bg-error'
-                          }
-                        />
-                        <span className="text-sm">{emp.kpiScore}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <ReviewStatusBadge status={emp.reviewStatus} />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No employee reviews found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Department Performance Chart */}
+      <DepartmentPerformanceChart data={departmentData} />
     </div>
   );
 }
