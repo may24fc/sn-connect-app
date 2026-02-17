@@ -255,7 +255,7 @@ export function OnboardingWizard(): ReactNode {
         }
 
         clearDraft();
-        router.push('/onboarding/complete');
+        router.push('/onboarding/awaiting-approval');
         return;
       }
 
