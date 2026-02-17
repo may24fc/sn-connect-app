@@ -1,229 +1,134 @@
 'use client';
 
-import { useReports } from '@/hooks/useReports';
+import { useReportsRealtime } from '@/hooks/useReportsRealtime';
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Textarea,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@hr-portal/ui';
-import { useMemo, useState } from 'react';
-
-const statusVariant: Record<
-  'draft' | 'submitted' | 'approved' | 'rejected',
-  'secondary' | 'pending' | 'approved' | 'error'
-> = {
-  draft: 'secondary',
-  submitted: 'pending',
-  approved: 'approved',
-  rejected: 'error',
-};
+import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { ReportsAnalyticsTab } from './components/ReportsAnalyticsTab';
+import { ReportsCompareTab } from './components/ReportsCompareTab';
+import { ReportsSubmissionsTab } from './components/ReportsSubmissionsTab';
 
 export default function AdminReportsPage() {
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<string>('all');
-  const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
-  const [workingId, setWorkingId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'submissions';
 
-  const filters = {
-    ...(search ? { search } : {}),
-    ...(status !== 'all'
-      ? { status: status as 'draft' | 'submitted' | 'approved' | 'rejected' }
-      : {}),
-    page: 1,
-    pageSize: 100,
-  };
+  // Activate real-time subscription for the reports and report_metrics tables.
+  // This ensures all three tabs (Submissions, Analytics, Compare) receive
+  // live updates when employees submit reports or when metrics change.
+  // The subscription is active for as long as this page is mounted.
+  useReportsRealtime();
 
-  const { data, isLoading, error, refetch } = useReports(filters);
-
-  const reports = data?.data || [];
-
-  const stats = useMemo(() => {
-    const submitted = reports.filter((report) => report.status === 'submitted').length;
-    const approved = reports.filter((report) => report.status === 'approved').length;
-    const rejected = reports.filter((report) => report.status === 'rejected').length;
-    return { submitted, approved, rejected, total: reports.length };
-  }, [reports]);
-
-  const handleAction = async (id: string, action: 'approved' | 'rejected') => {
-    setWorkingId(id);
-    try {
-      await fetch(`/api/reports/${id}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, notes: actionNotes[id] || undefined }),
-      });
-      await refetch();
-    } finally {
-      setWorkingId(null);
-    }
-  };
+  const [department, setDepartment] = useState('marketing');
+  const [timeRange, setTimeRange] = useState<'weekly' | 'monthly' | 'custom'>('weekly');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-headline">Reports Management</h1>
-        <p className="text-muted-foreground">Review and approve staff report submissions</p>
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-headline">Reports Management</h1>
+          <p className="text-muted-foreground">Review submissions, analytics, and comparisons</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Department filter */}
+          <Select value={department} onValueChange={setDepartment}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              <SelectItem value="marketing">Marketing</SelectItem>
+              <SelectItem value="sales">Sales</SelectItem>
+              <SelectItem value="operations">Operations</SelectItem>
+              <SelectItem value="hr">HR</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Time range selector */}
+          <Select
+            value={timeRange}
+            onValueChange={(value) => setTimeRange(value as 'weekly' | 'monthly' | 'custom')}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Time Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Custom date range inputs */}
+          {timeRange === 'custom' && (
+            <>
+              <Input
+                type="date"
+                className="w-[160px]"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                placeholder="Start date"
+              />
+              <Input
+                type="date"
+                className="w-[160px]"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                placeholder="End date"
+              />
+            </>
+          )}
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Submitted</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.submitted}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Approved</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.approved}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Rejected</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.rejected}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Tabbed Content */}
+      <Tabs defaultValue={initialTab}>
+        <TabsList>
+          <TabsTrigger value="submissions">Submissions</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="compare">Compare</TabsTrigger>
+        </TabsList>
 
-      <div className="flex gap-3">
-        <Input
-          placeholder="Search report type or notes"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        <TabsContent value="submissions">
+          <ReportsSubmissionsTab
+            department={department}
+            timeRange={timeRange}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+          />
+        </TabsContent>
 
-      {isLoading ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Loading reports...
-          </CardContent>
-        </Card>
-      ) : error ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-error">Failed to load reports.</CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Action Notes</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reports.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      No reports found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  reports.map((report) => (
-                    <TableRow key={report.id}>
-                      <TableCell>
-                        {report.employees
-                          ? `${report.employees.first_name} ${report.employees.last_name}`
-                          : '-'}
-                      </TableCell>
-                      <TableCell>{report.employees?.department || '-'}</TableCell>
-                      <TableCell>{report.report_type}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        {report.period_start} to {report.period_end}
-                      </TableCell>
-                      <TableCell className="min-w-[220px]">
-                        <Textarea
-                          rows={2}
-                          value={actionNotes[report.id] || ''}
-                          onChange={(event) =>
-                            setActionNotes((prev) => ({
-                              ...prev,
-                              [report.id]: event.target.value,
-                            }))
-                          }
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={workingId === report.id || report.status !== 'submitted'}
-                            onClick={() => handleAction(report.id, 'approved')}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={workingId === report.id || report.status !== 'submitted'}
-                            onClick={() => handleAction(report.id, 'rejected')}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="analytics">
+          <ReportsAnalyticsTab
+            department={department}
+            timeRange={timeRange}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+          />
+        </TabsContent>
+
+        <TabsContent value="compare">
+          <ReportsCompareTab
+            department={department}
+            timeRange={timeRange}
+            customStartDate={customStartDate}
+            customEndDate={customEndDate}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
