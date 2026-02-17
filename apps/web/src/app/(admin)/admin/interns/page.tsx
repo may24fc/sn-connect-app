@@ -2,6 +2,7 @@
 
 import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
+import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { type InternshipFilters } from '@/lib/query-keys';
 import {
   Avatar,
@@ -47,9 +48,24 @@ import {
   GraduationCap,
   Plus,
   Search,
+  UserPlus,
+  AlertCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
+import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
 
 export default function AdminInternsPage(): ReactNode {
   const router = useRouter();
@@ -58,6 +74,13 @@ export default function AdminInternsPage(): ReactNode {
   const [schoolFilter, setSchoolFilter] = useState<string>('all');
   const [supervisorFilter, setSupervisorFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // Modal states
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+
+  // Real-time approvals hook
+  const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
 
   const internshipFilters: InternshipFilters = {
     page: 1,
@@ -153,9 +176,9 @@ export default function AdminInternsPage(): ReactNode {
             <Download className="mr-2 h-4 w-4" />
             Export Report
           </Button>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Intern
+          <Button onClick={() => setInviteModalOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite Intern
           </Button>
         </div>
       </div>
@@ -347,13 +370,38 @@ export default function AdminInternsPage(): ReactNode {
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-6">
-          {/* Onboarding Stats */}
+          {/* Real-time Connection Status */}
+          {isSubscribed && (
+            <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                  <div className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
+                  Real-time monitoring active
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Approval Stats */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <FileText className="h-5 w-5 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Awaiting Approval</p>
+                    <p className="text-2xl font-bold">{pendingApprovals.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Total Submissions</p>
@@ -365,8 +413,8 @@ export default function AdminInternsPage(): ReactNode {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Completed</p>
@@ -375,26 +423,115 @@ export default function AdminInternsPage(): ReactNode {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+          </div>
+
+          {/* Pending Approvals Alert */}
+          {pendingApprovals.length > 0 && (
+            <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                    <Clock className="h-5 w-5 text-warning" />
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">In Progress</p>
-                    <p className="text-2xl font-bold">{onboardingData?.summary.inProgress ?? 0}</p>
+                    <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                      {pendingApprovals.length} Onboarding Submission{pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
+                    </h3>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                      Review and approve intern onboarding submissions to activate their accounts.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
+          )}
 
-          {/* Onboarding Profiles Table */}
+          {/* Pending Approvals Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Intern Onboarding Submissions</CardTitle>
-              <CardDescription>View onboarding data submitted by interns</CardDescription>
+              <CardTitle className="text-base">Pending Approvals</CardTitle>
+              <CardDescription>
+                Interns who have completed onboarding and are waiting for approval
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Intern</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingApprovals.length > 0 ? (
+                    pendingApprovals.map((approval) => (
+                      <TableRow key={approval.id} className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+                                {approval.full_name
+                                  ?.split(' ')
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2) || 'NA'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{approval.full_name || 'Unnamed'}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {approval.email_address || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {approval.position || 'Not specified'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDateTime(approval.completed_at)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => setSelectedApproval(approval)}
+                          >
+                            <CheckCircle2 className="mr-1 h-4 w-4" />
+                            Review & Approve
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No pending approvals</p>
+                        <p className="text-sm mt-1">
+                          All onboarding submissions have been processed
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* All Onboarding Submissions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">All Onboarding Submissions</CardTitle>
+              <CardDescription>Complete history of intern onboarding data</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -483,6 +620,19 @@ export default function AdminInternsPage(): ReactNode {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      <InviteUserModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
+        defaultRole="intern"
+      />
+      
+      <ApproveOnboardingModal
+        open={!!selectedApproval}
+        onOpenChange={(open) => !open && setSelectedApproval(null)}
+        onboarding={selectedApproval}
+      />
     </div>
   );
 }
