@@ -1,10 +1,45 @@
 'use client';
 
-import { Button, Card, CardContent, type KPI, KPIList, KPISummary } from '@hr-portal/ui';
-import { usePerformanceCycles, usePerformanceKPIs } from '@/hooks/usePerformance';
-import { ArrowLeft, BarChart3, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  type KPI,
+  KPIList,
+  KPISummary,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
+import { useCreateKPI, usePerformanceCycles, usePerformanceKPIs, useUpdateKPI } from '@/hooks/usePerformance';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import { ArrowLeft, BarChart3, Calendar, Minus, Pencil, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
+
+interface NewKPIFormState {
+  metric: string;
+  target: string;
+  unit: string;
+  cycleId: string;
+}
+
+const emptyKPIForm: NewKPIFormState = {
+  metric: '',
+  target: '',
+  unit: '',
+  cycleId: '',
+};
 
 function getWeightedScore(kpis: Array<KPI>): number {
   const totalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
@@ -18,9 +53,12 @@ function getWeightedScore(kpis: Array<KPI>): number {
 }
 
 export default function KPIsPage(): ReactNode {
+  usePerformanceRealtime();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
+  const createKPI = useCreateKPI();
+  const updateKPI = useUpdateKPI();
 
   const currentKPIs = kpis;
 
@@ -29,19 +67,79 @@ export default function KPIsPage(): ReactNode {
   const nearTargetCount = currentKPIs.filter((kpi) => kpi.score >= 80 && kpi.score < 100).length;
   const belowTargetCount = currentKPIs.filter((kpi) => kpi.score < 80).length;
 
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newKPI, setNewKPI] = useState<NewKPIFormState>(emptyKPIForm);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [selectedKPI, setSelectedKPI] = useState<KPI | null>(null);
+  const [updatedValue, setUpdatedValue] = useState('');
+
+  const selectedCycle = cycles.find((c) => c.id === newKPI.cycleId) || activeCycle;
+
+  const handleOpenCreate = (): void => {
+    setNewKPI({
+      ...emptyKPIForm,
+      cycleId: activeCycle?.id || '',
+    });
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateKPI = async (): Promise<void> => {
+    if (!newKPI.metric.trim() || !newKPI.target.trim()) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const periodStart = selectedCycle?.startDate ?? today;
+    const periodEnd = selectedCycle?.endDate ?? today;
+
+    await createKPI.mutateAsync({
+      name: newKPI.metric,
+      targetValue: Number(newKPI.target),
+      currentValue: 0,
+      ...(newKPI.unit ? { unit: newKPI.unit } : {}),
+      ...(newKPI.cycleId ? { cycleId: newKPI.cycleId } : {}),
+      periodStart,
+      periodEnd,
+    });
+
+    setCreateDialogOpen(false);
+    setNewKPI(emptyKPIForm);
+  };
+
+  const handleOpenUpdateDialog = (kpi: KPI): void => {
+    setSelectedKPI(kpi);
+    setUpdatedValue(String(kpi.actual));
+    setUpdateDialogOpen(true);
+  };
+
+  const handleUpdateKPI = async (): Promise<void> => {
+    if (!selectedKPI || !updatedValue) return;
+    await updateKPI.mutateAsync({
+      id: selectedKPI.id,
+      currentValue: Number(updatedValue),
+    });
+    setUpdateDialogOpen(false);
+    setSelectedKPI(null);
+    setUpdatedValue('');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/performance">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">My KPIs</h1>
-          <p className="text-muted-foreground">Track your key performance indicators</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/performance">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">My KPIs</h1>
+            <p className="text-muted-foreground">Track your key performance indicators</p>
+          </div>
         </div>
+        <Button onClick={handleOpenCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          New KPI
+        </Button>
       </div>
 
       {/* Summary Stats */}
@@ -106,6 +204,89 @@ export default function KPIsPage(): ReactNode {
       {/* KPI List */}
       <KPIList kpis={currentKPIs} />
 
+      {/* Update Progress Section */}
+      {currentKPIs.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="text-sm font-medium text-foreground mb-3">Update Progress</h3>
+            <div className="space-y-2">
+              {currentKPIs.map((kpi) => (
+                <div
+                  key={kpi.id}
+                  className="flex items-center justify-between gap-4 rounded-md border border-zinc-200 dark:border-zinc-800 p-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{kpi.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {kpi.actual} / {kpi.target} {kpi.unit}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenUpdateDialog(kpi)}
+                  >
+                    <Pencil className="mr-1.5 h-3 w-3" />
+                    Update
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Update KPI Dialog */}
+      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Update KPI Progress
+            </DialogTitle>
+            <DialogDescription>
+              Update the current value for this KPI.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedKPI && (
+            <div className="space-y-4 py-4">
+              <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-3">
+                <p className="text-sm font-medium">{selectedKPI.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Target: {selectedKPI.target} {selectedKPI.unit} | Current: {selectedKPI.actual} {selectedKPI.unit}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="kpi-update-value">New Current Value</Label>
+                <Input
+                  id="kpi-update-value"
+                  type="number"
+                  placeholder="Enter new value"
+                  value={updatedValue}
+                  onChange={(e) => setUpdatedValue(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleUpdateKPI();
+              }}
+              disabled={!updatedValue || updateKPI.isPending}
+            >
+              Save Progress
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Performance Insight */}
       {weightedScore < 80 && (
         <Card className="border-warning/50 bg-warning/5">
@@ -145,6 +326,97 @@ export default function KPIsPage(): ReactNode {
           </CardContent>
         </Card>
       )}
+
+      {/* Create KPI Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Create New KPI
+            </DialogTitle>
+            <DialogDescription>
+              Define a new key performance indicator to track your progress.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4">
+            {/* Performance Cycle */}
+            <div className="space-y-2">
+              <Label htmlFor="kpi-cycle">Performance Cycle</Label>
+              <Select
+                value={newKPI.cycleId}
+                onValueChange={(value) => setNewKPI({ ...newKPI, cycleId: value })}
+              >
+                <SelectTrigger id="kpi-cycle">
+                  <SelectValue placeholder="Select a cycle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cycles.map((cycle) => (
+                    <SelectItem key={cycle.id} value={cycle.id}>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>{cycle.name}</span>
+                        {cycle.status === 'active' && (
+                          <span className="text-xs text-success font-medium">(Active)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Metric */}
+            <div className="space-y-2">
+              <Label htmlFor="kpi-metric">Metric</Label>
+              <Input
+                id="kpi-metric"
+                placeholder="e.g., Customer Satisfaction Score"
+                value={newKPI.metric}
+                onChange={(e) => setNewKPI({ ...newKPI, metric: e.target.value })}
+              />
+            </div>
+
+            {/* Target */}
+            <div className="space-y-2">
+              <Label htmlFor="kpi-target">Target</Label>
+              <Input
+                id="kpi-target"
+                type="number"
+                placeholder="e.g., 95"
+                value={newKPI.target}
+                onChange={(e) => setNewKPI({ ...newKPI, target: e.target.value })}
+              />
+            </div>
+
+            {/* Unit */}
+            <div className="space-y-2">
+              <Label htmlFor="kpi-unit">Unit (Optional)</Label>
+              <Input
+                id="kpi-unit"
+                placeholder="e.g., %, count, hours"
+                value={newKPI.unit}
+                onChange={(e) => setNewKPI({ ...newKPI, unit: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleCreateKPI();
+              }}
+              disabled={!newKPI.metric.trim() || !newKPI.target.trim() || createKPI.isPending}
+            >
+              Create KPI
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -10,18 +10,14 @@ import {
   CardTitle,
   Progress,
   ProgressGauge,
-  type ReviewStatus,
-  ReviewStatusBadge,
 } from '@hr-portal/ui';
-import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs, usePerformanceReviews } from '@/hooks/usePerformance';
+import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs } from '@/hooks/usePerformance';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
   AlertCircle,
   BarChart3,
   Calendar,
-  CheckCircle2,
   ChevronRight,
-  Clock,
-  FileText,
   Target,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -44,17 +40,30 @@ function getDaysUntil(dateString: string): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+function getQuarterLabel(dateString: string): string {
+  const date = new Date(dateString);
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  const quarter = Math.floor(month / 3) + 1;
+  const quarterMonths: Record<number, string> = {
+    1: 'January - March',
+    2: 'April - June',
+    3: 'July - September',
+    4: 'October - December',
+  };
+  return `Q${quarter}: ${quarterMonths[quarter]} ${year}`;
+}
+
 export default function PerformancePage(): ReactNode {
+  usePerformanceRealtime();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
   const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
-  const { data: reviews = [] } = usePerformanceReviews(activeCycle?.id);
 
   const cycle = activeCycle;
   const currentOkrs = okrs;
   const currentKpis = kpis;
-  const reviewStatus: ReviewStatus = reviews[0]?.status || 'pending_self';
 
   const avgOkrProgress =
     currentOkrs.length > 0
@@ -68,9 +77,15 @@ export default function PerformancePage(): ReactNode {
       ? Math.round(currentKpis.reduce((sum, kpi) => sum + kpi.score, 0) / currentKpis.length)
       : 0;
 
-  const selfAssessmentDays = cycle?.selfAssessmentDeadline
-    ? getDaysUntil(cycle.selfAssessmentDeadline)
-    : null;
+  const okrDeadlines = currentOkrs
+    .filter((okr) => {
+      const record = okr as unknown as Record<string, unknown>;
+      return 'deadline' in record && typeof record.deadline === 'string';
+    })
+    .map((okr) => ({
+      objective: okr.objective,
+      deadline: (okr as unknown as Record<string, unknown>).deadline as string,
+    }));
 
   return (
     <div className="space-y-6">
@@ -78,7 +93,7 @@ export default function PerformancePage(): ReactNode {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Performance</h1>
         <p className="text-muted-foreground">
-          Track your objectives, KPIs, and performance reviews
+          Track your objectives and KPIs
         </p>
       </div>
 
@@ -95,6 +110,11 @@ export default function PerformancePage(): ReactNode {
                 <p className="text-sm text-muted-foreground">
                   {cycle ? `${formatDate(cycle.startDate)} - ${formatDate(cycle.endDate)}` : 'No performance cycle has been created yet'}
                 </p>
+                {cycle && (
+                  <p className="text-xs font-medium text-primary mt-0.5">
+                    {getQuarterLabel(cycle.startDate)}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -103,14 +123,6 @@ export default function PerformancePage(): ReactNode {
               ) : (
                 <Badge variant="secondary">No Cycle</Badge>
               )}
-              {selfAssessmentDays !== null &&
-                selfAssessmentDays > 0 &&
-                selfAssessmentDays <= 14 && (
-                  <Badge variant="warning" className="gap-1">
-                    <Clock className="h-3 w-3" />
-                    {selfAssessmentDays} days until self-assessment
-                  </Badge>
-                )}
             </div>
           </div>
         </CardContent>
@@ -124,17 +136,13 @@ export default function PerformancePage(): ReactNode {
             <CardDescription>Overview of your performance metrics for this cycle</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 sm:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2">
               <ProgressGauge value={avgOkrProgress} label="OKR Progress" size="md" />
               <ProgressGauge
                 value={avgKpiScore > 100 ? 100 : avgKpiScore}
                 label="KPI Score"
                 size="md"
               />
-              <div className="flex flex-col items-center justify-center">
-                <ReviewStatusBadge status={reviewStatus} />
-                <p className="mt-2 text-sm text-muted-foreground text-center">Review Status</p>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -148,22 +156,38 @@ export default function PerformancePage(): ReactNode {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {cycle?.selfAssessmentDeadline ? (
-              <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                <div>
-                  <p className="text-sm font-medium">Self-Assessment</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(cycle.selfAssessmentDeadline)}
-                  </p>
-                </div>
-                {selfAssessmentDays !== null && (
-                  <Badge variant={selfAssessmentDays <= 7 ? 'error' : 'warning'}>
-                    {selfAssessmentDays > 0 ? `${selfAssessmentDays}d` : 'Due'}
-                  </Badge>
-                )}
+            {cycle && (
+              <div className="p-2 rounded-lg bg-primary/5 border border-primary/10 mb-2">
+                <p className="text-xs font-medium text-primary">
+                  {getQuarterLabel(cycle.startDate)}
+                </p>
               </div>
+            )}
+            {okrDeadlines.length > 0 ? (
+              okrDeadlines.map((item) => {
+                const daysLeft = getDaysUntil(item.deadline);
+                return (
+                  <div
+                    key={item.objective}
+                    className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{item.objective}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(item.deadline)}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={daysLeft <= 7 ? 'error' : daysLeft <= 14 ? 'warning' : 'secondary'}
+                      className="ml-2 shrink-0"
+                    >
+                      {daysLeft > 0 ? `${daysLeft}d` : 'Due'}
+                    </Badge>
+                  </div>
+                );
+              })
             ) : (
-              <p className="text-sm text-muted-foreground py-2">No deadlines set</p>
+              <p className="text-sm text-muted-foreground py-2">No personal deadlines set</p>
             )}
             {cycle?.managerReviewDeadline && (
               <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
@@ -181,7 +205,7 @@ export default function PerformancePage(): ReactNode {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {/* OKRs Card */}
         <Link href="/performance/okrs" className="block">
           <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
@@ -238,35 +262,6 @@ export default function PerformancePage(): ReactNode {
                         : 'bg-error'
                   }
                 />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* Self-Assessment Card */}
-        <Link href="/performance/review" className="block">
-          <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold mb-1">Self-Assessment</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Complete your performance self-review
-              </p>
-              <div className="flex items-center gap-2">
-                <ReviewStatusBadge status={reviewStatus} />
-                {reviewStatus === 'pending_self' && (
-                  <Button size="sm" className="ml-auto">
-                    Start Review
-                  </Button>
-                )}
-                {reviewStatus === 'completed' && (
-                  <CheckCircle2 className="h-5 w-5 text-success ml-auto" />
-                )}
               </div>
             </CardContent>
           </Card>
