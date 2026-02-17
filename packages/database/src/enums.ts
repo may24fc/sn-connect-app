@@ -6,16 +6,18 @@
  */
 
 // ============================================
-// User Role Enum
+// User Role Enum (Simplified)
 // ============================================
+// Role consolidation:
+//   - admin: Admin + HR management (was: admin, hr)
+//   - super_admin: Executive/COS/CEO functions (was: cos, ceo, super_admin)
+//   - employee: Regular employee
+//   - intern: Intern-level access
 
 export const UserRole = {
-  Admin: 'admin',
-  HR: 'hr',
-  COS: 'cos',
-  CEO: 'ceo',
   Employee: 'employee',
   Intern: 'intern',
+  Admin: 'admin',
   SuperAdmin: 'super_admin',
 } as const;
 
