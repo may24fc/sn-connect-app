@@ -244,7 +244,49 @@ export function useToggleResourceFeatured() {
       }
       return response.json();
     },
-    onSuccess: (_, { id }) => {
+    // Optimistic update for instant UI feedback
+    onMutate: async ({ id, featured }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.resources.all });
+      await queryClient.cancelQueries({ queryKey: queryKeys.resources.detail(id) });
+
+      // Snapshot previous values
+      const previousResources = queryClient.getQueryData(queryKeys.resources.all);
+      const previousResource = queryClient.getQueryData(queryKeys.resources.detail(id));
+
+      // Optimistically update detail view
+      queryClient.setQueryData(queryKeys.resources.detail(id), (old: any) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: { ...old.data, is_featured: featured },
+        };
+      });
+
+      // Optimistically update list views
+      queryClient.setQueriesData({ queryKey: queryKeys.resources.all }, (old: any) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: old.data.map((resource: ResourceRecord) =>
+            resource.id === id ? { ...resource, is_featured: featured } : resource
+          ),
+        };
+      });
+
+      return { previousResources, previousResource };
+    },
+    onError: (err, { id }, context) => {
+      // Rollback on error
+      if (context?.previousResources) {
+        queryClient.setQueryData(queryKeys.resources.all, context.previousResources);
+      }
+      if (context?.previousResource) {
+        queryClient.setQueryData(queryKeys.resources.detail(id), context.previousResource);
+      }
+    },
+    onSettled: (_, __, { id }) => {
+      // Always refetch after mutation completes
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.detail(id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.featured() });
