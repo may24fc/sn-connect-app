@@ -19,18 +19,24 @@ export const announcementCategorySchema = z.enum([
   'emergency',
 ]);
 
+// Valid consolidated role names
+const validRoles = ['employee', 'intern', 'admin', 'super_admin'] as const;
+
+// Accepts ISO 8601 datetime strings or null/undefined
+const optionalDatetime = z.string().datetime({ offset: true }).nullable().optional();
+
 const announcementBaseSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   content: z.string().min(1, 'Content is required'),
-  excerpt: z.string().max(200).optional().nullable(),
+  excerpt: z.string().max(200).nullable().optional(),
   category: announcementCategorySchema.default('general'),
   priority: announcementPrioritySchema.default('normal'),
   status: announcementStatusSchema.default('draft'),
-  publishedAt: z.string().datetime().optional().nullable(),
-  expiresAt: z.string().datetime().optional().nullable(),
-  targetRoles: z.array(z.string()).default([]),
-  targetDepartments: z.array(z.string().uuid()).default([]),
-  targetEmployees: z.array(z.string().uuid()).default([]),
+  publishedAt: optionalDatetime,
+  expiresAt: optionalDatetime,
+  targetRoles: z.array(z.enum(validRoles)).default([]),
+  targetDepartments: z.array(z.string()).default([]),
+  targetEmployees: z.array(z.string()).default([]),
   isPinned: z.boolean().default(false),
   allowComments: z.boolean().default(false),
 });
@@ -47,12 +53,12 @@ export const updateAnnouncementSchema = z
   .object({
     title: z.string().min(1, 'Title is required').optional(),
     content: z.string().min(1, 'Content is required').optional(),
-    excerpt: z.string().max(200).optional().nullable(),
+    excerpt: z.string().max(200).nullable().optional(),
     category: announcementCategorySchema.optional(),
     priority: announcementPrioritySchema.optional(),
     status: announcementStatusSchema.optional(),
-    publishedAt: z.string().datetime().optional().nullable(),
-    expiresAt: z.string().datetime().optional().nullable(),
+    publishedAt: optionalDatetime,
+    expiresAt: optionalDatetime,
     targetRoles: z.array(z.string()).optional(),
     targetDepartments: z.array(z.string().uuid()).optional(),
     targetEmployees: z.array(z.string().uuid()).optional(),

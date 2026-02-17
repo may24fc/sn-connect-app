@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const ANNOUNCEMENT_ADMIN_ROLES = ['admin', 'hr', 'cos', 'ceo', 'super_admin'];
+export const ANNOUNCEMENT_ADMIN_ROLES = ['admin', 'super_admin'];
 
 export function normalizeExcerpt(content: string, excerpt?: string | null) {
   const value = excerpt?.trim();

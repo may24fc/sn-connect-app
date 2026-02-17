@@ -16,7 +16,12 @@ export function useCreateAnnouncement() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create announcement');
+        const details = error.details?.fieldErrors
+          ? Object.entries(error.details.fieldErrors)
+              .map(([field, msgs]) => `${field}: ${(msgs as string[]).join(', ')}`)
+              .join('; ')
+          : '';
+        throw new Error(details || error.error || 'Failed to create announcement');
       }
 
       return response.json();
