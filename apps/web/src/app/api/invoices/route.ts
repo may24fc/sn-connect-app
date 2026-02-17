@@ -68,9 +68,8 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    // Support both pre-consolidation (admin, hr, cos, ceo) and
-    // post-consolidation (admin, super_admin) role values.
-    const adminRoles = ['admin', 'hr', 'cos', 'ceo', 'super_admin'];
+    // After role consolidation, only admin and super_admin have admin privileges
+    const adminRoles = ['admin', 'super_admin'];
     const isAdmin = adminRoles.includes(userData?.role ?? '');
 
     if (!isAdmin && !employeeId) {

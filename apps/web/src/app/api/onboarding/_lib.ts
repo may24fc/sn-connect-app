@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const ONBOARDING_ADMIN_ROLES = ['admin', 'hr', 'cos', 'ceo', 'super_admin'];
+export const ONBOARDING_ADMIN_ROLES = ['admin', 'super_admin'];
 
 export function isOnboardingAdmin(role: string | null): boolean {
   return role ? ONBOARDING_ADMIN_ROLES.includes(role) : false;
