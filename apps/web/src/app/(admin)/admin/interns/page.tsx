@@ -1,11 +1,16 @@
 'use client';
 
 import { useInternships } from '@/hooks/useInternships';
+import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { type InternshipFilters } from '@/lib/query-keys';
 import {
+  Avatar,
+  AvatarFallback,
+  Badge,
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Input,
@@ -21,8 +26,28 @@ import {
   SelectTrigger,
   SelectValue,
   type SupervisorId,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@hr-portal/ui';
-import { Download, FileText, Filter, GraduationCap, Plus, Search } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  Download,
+  Eye,
+  FileText,
+  Filter,
+  GraduationCap,
+  Plus,
+  Search,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
 
@@ -50,6 +75,13 @@ export default function AdminInternsPage(): ReactNode {
   }
 
   const internshipsQuery = useInternships(internshipFilters);
+
+  // Fetch intern onboarding profiles
+  const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
+    role: 'intern',
+    page: 1,
+    pageSize: 50,
+  });
 
   const interns = useMemo<Array<InternSummary>>(
     () =>
@@ -113,7 +145,7 @@ export default function AdminInternsPage(): ReactNode {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Intern Management</h1>
           <p className="text-muted-foreground">
-            Monitor and manage all interns across the organization
+            Monitor interns and view their onboarding submissions
           </p>
         </div>
         <div className="flex gap-2">
@@ -128,8 +160,15 @@ export default function AdminInternsPage(): ReactNode {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <InternshipSummaryCards stats={stats} />
+      <Tabs defaultValue="internships" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="internships">Internships</TabsTrigger>
+          <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="internships" className="space-y-6">
+          {/* Summary Cards */}
+          <InternshipSummaryCards stats={stats} />
 
       {/* Filters */}
       <Card>
@@ -305,6 +344,145 @@ export default function AdminInternsPage(): ReactNode {
           <CardContent className="p-6 text-sm text-destructive">Failed to load interns.</CardContent>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="onboarding" className="space-y-6">
+          {/* Onboarding Stats */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Submissions</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.total ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.completed ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <Clock className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">In Progress</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.inProgress ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Onboarding Profiles Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Intern Onboarding Submissions</CardTitle>
+              <CardDescription>View onboarding data submitted by interns</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Intern</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Current Step</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {onboardingData?.data && onboardingData.data.length > 0 ? (
+                    onboardingData.data.map((profile) => {
+                      const department = Array.isArray(profile.departments)
+                        ? profile.departments[0]?.name
+                        : profile.departments?.name;
+
+                      return (
+                        <TableRow key={profile.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarFallback className="text-xs">
+                                  {profile.full_name
+                                    ?.split(' ')
+                                    .map((n) => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2) || 'NA'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{profile.full_name || 'Unnamed'}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {profile.email_address || 'N/A'}
+                          </TableCell>
+                          <TableCell>{department || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={profile.status === 'completed' ? 'success' : 'warning'}
+                            >
+                              {profile.status === 'completed' ? 'Completed' : 'In Progress'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {profile.current_step.replace('_', ' ')}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(profile.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        {onboardingLoading
+                          ? 'Loading onboarding data...'
+                          : 'No intern onboarding submissions found'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

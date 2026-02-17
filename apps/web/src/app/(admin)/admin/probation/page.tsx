@@ -41,12 +41,14 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
+import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
   Clock,
   Eye,
+  FileText,
   MessageSquare,
   MoreVertical,
   Search,
@@ -56,6 +58,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
 type ProbationStatus = 'on-track' | 'at-risk' | 'completed' | 'extended';
@@ -215,9 +218,17 @@ function StarRating({
 }
 
 export default function ProbationPage(): ReactNode {
+  const router = useRouter();
   const { data: probationPayload } = useProbation();
   const completeProbation = useCompleteProbation();
   const extendProbation = useExtendProbation();
+
+  // Fetch employee onboarding profiles
+  const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
+    role: 'employee',
+    page: 1,
+    pageSize: 50,
+  });
 
   const employeeRecords = probationPayload?.data?.length ? probationPayload.data : employees;
 
@@ -299,11 +310,18 @@ export default function ProbationPage(): ReactNode {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Probation Tracker</h1>
-        <p className="text-muted-foreground">Monitor and manage employee probation periods</p>
+        <h1 className="text-2xl font-bold text-foreground">Employee Probation</h1>
+        <p className="text-muted-foreground">Monitor employee probation periods and onboarding status</p>
       </div>
 
-      {/* Stats Cards */}
+      <Tabs defaultValue="probation" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="probation">Probation Tracker</TabsTrigger>
+          <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="probation" className="space-y-6">
+          {/* Probation Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-4">
@@ -769,6 +787,145 @@ export default function ProbationPage(): ReactNode {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+
+        <TabsContent value="onboarding" className="space-y-6">
+          {/* Onboarding Stats */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Submissions</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.total ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.completed ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <Clock className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">In Progress</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.inProgress ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Onboarding Profiles Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Employee Onboarding Submissions</CardTitle>
+              <CardDescription>View onboarding data submitted by employees</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Current Step</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {onboardingData?.data && onboardingData.data.length > 0 ? (
+                    onboardingData.data.map((profile) => {
+                      const department = Array.isArray(profile.departments)
+                        ? profile.departments[0]?.name
+                        : profile.departments?.name;
+
+                      return (
+                        <TableRow key={profile.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarFallback className="text-xs">
+                                  {profile.full_name
+                                    ?.split(' ')
+                                    .map((n) => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2) || 'NA'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{profile.full_name || 'Unnamed'}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {profile.email_address || 'N/A'}
+                          </TableCell>
+                          <TableCell>{department || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={profile.status === 'completed' ? 'success' : 'warning'}
+                            >
+                              {profile.status === 'completed' ? 'Completed' : 'In Progress'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {profile.current_step.replace('_', ' ')}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(profile.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        {onboardingLoading
+                          ? 'Loading onboarding data...'
+                          : 'No employee onboarding submissions found'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
