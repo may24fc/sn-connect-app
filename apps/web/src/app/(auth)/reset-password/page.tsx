@@ -27,6 +27,9 @@ export default function ResetPasswordPage(): ReactNode {
 
   useEffect(() => {
     const checkSession = async (): Promise<void> => {
+      // SECURITY NOTE: Using getSession() is acceptable here because we're only checking
+      // if a reset token session exists after following a magic link. This is not
+      // role-based logic. The actual password update uses updateUser() which is secure.
       const { data, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError) {
