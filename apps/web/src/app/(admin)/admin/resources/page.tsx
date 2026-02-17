@@ -1,7 +1,8 @@
 'use client';
 
 import { useArchiveResource, useResources, useToggleResourceFeatured } from '@/hooks/useResources';
-import { type ResourceFiltersValue, Button, Card, CardContent, ResourceCard, ResourceFilters, ResourceGrid } from '@hr-portal/ui';
+import { type ResourceFiltersValue, Button, Card, CardContent, EmptyState, ResourceCard, ResourceFilters, ResourceGrid, Skeleton } from '@hr-portal/ui';
+import { FileImage } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -99,11 +100,25 @@ export default function AdminResourcesPage() {
 
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
-          <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
-            <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400">
-              Loading resources...
-            </CardContent>
-          </Card>
+          <ResourceGrid
+            columns={4}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+                <Skeleton className="h-48 w-full rounded-none" />
+                <CardContent className="p-4 space-y-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <div className="flex gap-2 mt-2">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </ResourceGrid>
         ) : error ? (
           <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
             <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400">
@@ -111,11 +126,23 @@ export default function AdminResourcesPage() {
             </CardContent>
           </Card>
         ) : (
-          <ResourceGrid
-            columns={4}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-          >
-            {resources.map((resource) => (
+          <>
+            {resources.length === 0 ? (
+              <EmptyState
+                icon={FileImage}
+                title="No resources found"
+                description="No resources match your current filters. Try adjusting your search or create a new resource."
+                action={{
+                  label: 'Create Resource',
+                  onClick: () => window.location.href = '/admin/resources/new'
+                }}
+              />
+            ) : (
+              <ResourceGrid
+                columns={4}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              >
+                {resources.map((resource) => (
               <div key={resource.id} className="space-y-2">
                 <ResourceCard
                   id={resource.id}
@@ -155,7 +182,9 @@ export default function AdminResourcesPage() {
                 </div>
               </div>
             ))}
-          </ResourceGrid>
+              </ResourceGrid>
+            )}
+          </>
         )}
       </div>
     </div>
