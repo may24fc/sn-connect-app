@@ -1,5 +1,10 @@
 import { taskCreateSchema } from '@/lib/schemas/task.schema';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import {
+  TASK_ASSIGNER_ROLE,
+  getTaskAuthedContext,
+  getTaskWriteErrorMessage,
+  validateTaskAssignee,
+} from './_lib';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface TaskRow {
@@ -30,16 +35,13 @@ interface EmployeeNameRow {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const auth = await getTaskAuthedContext();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
+
+    const { supabase, user } = auth.context;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -141,15 +143,19 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServerClient();
+    const auth = await getTaskAuthedContext();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { supabase, user, role } = auth.context;
+
+    if (role !== TASK_ASSIGNER_ROLE) {
+      return NextResponse.json(
+        { error: 'Only super-admin can assign tasks to employee or intern accounts' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -160,6 +166,16 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
       );
+    }
+
+    if (parsed.data.assignedTo) {
+      const assigneeValidation = await validateTaskAssignee(supabase, parsed.data.assignedTo);
+      if (!assigneeValidation.ok) {
+        return NextResponse.json(
+          { error: assigneeValidation.error },
+          { status: assigneeValidation.status }
+        );
+      }
     }
 
     const { data, error } = await supabase
@@ -179,7 +195,7 @@ export async function POST(request: NextRequest) {
 
     if (error || !data) {
       console.error('Error creating task:', error);
-      return NextResponse.json({ error: 'Failed to create task' }, { status: 500 });
+      return NextResponse.json({ error: getTaskWriteErrorMessage(error) }, { status: 500 });
     }
 
     return NextResponse.json({ data }, { status: 201 });

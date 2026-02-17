@@ -49,6 +49,7 @@ export function TaskDetailView({
   const [showNoteInput, setShowNoteInput] = React.useState(false);
 
   const isOverdue = isTaskOverdue(task.dueDate, task.status);
+  const assignees = task.assignees || [];
 
   const handleStatusUpdate = (): void => {
     if (onStatusChange && selectedStatus !== task.status) {
@@ -181,10 +182,10 @@ export function TaskDetailView({
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <Users className="h-4 w-4" />
-            Assigned To ({task.assignees.length})
+            Assigned To ({assignees.length})
           </div>
           <div className="grid gap-3 sm:grid-cols-2 pl-6">
-            {task.assignees.map((assignee) => (
+            {assignees.map((assignee) => (
               <div
                 key={assignee.id}
                 className="flex items-center gap-3 rounded-lg border border-border p-3"

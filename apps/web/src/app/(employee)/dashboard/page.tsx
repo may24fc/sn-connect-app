@@ -11,6 +11,8 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTasks } from '@/hooks/useTasks';
+import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import { Badge, Button, Progress } from '@hr-portal/ui';
 import {
   Bell,
@@ -63,6 +65,20 @@ export default function DashboardPage(): ReactNode {
   const firstName = user?.name?.split(' ')[0] ?? 'there';
   const greeting = getGreeting();
 
+  const { data: tasksResponse } = useTasks(
+    {
+      assigneeId: user?.id,
+      page: 1,
+      pageSize: 100,
+    },
+    { enabled: Boolean(user?.id) }
+  );
+
+  useTasksRealtime({ scope: 'assigned', userId: user?.id, enabled: Boolean(user?.id) });
+
+  const assignedTasks = tasksResponse?.data || [];
+  const tasksDueCount = assignedTasks.filter((task) => task.status !== 'completed').length;
+
   // Data would come from API hooks - showing UI structure without data
   const onboardingProgress = 0;
   const hasOnboardingData = false;
@@ -105,8 +121,11 @@ export default function DashboardPage(): ReactNode {
         />
         <StatCard
           label="Tasks Due"
-          value="0"
-          trend={{ direction: 'stable', value: 'No pending tasks' }}
+          value={String(tasksDueCount)}
+          trend={{
+            direction: 'stable',
+            value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
+          }}
           icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
         />
         <StatCard

@@ -52,9 +52,9 @@ const actionCards = [
   },
   {
     title: 'Submit Invoice',
-    description: 'Go to payroll',
+    description: 'Go to invoice',
     icon: FileText,
-    href: '/payroll',
+    href: '/invoice',
     variant: 'default' as const,
   },
 ];

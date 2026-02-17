@@ -184,6 +184,48 @@ async function upsertPublicUser(baseUrl, headers, payload) {
   });
 }
 
+async function getEmployeeByUserId(baseUrl, headers, userId) {
+  const url = new URL('/rest/v1/employees', baseUrl);
+  url.searchParams.set('user_id', `eq.${userId}`);
+  url.searchParams.set('select', '*');
+  try {
+    const res = await fetchJson(url.toString(), { headers });
+    return Array.isArray(res) && res.length ? res[0] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function createEmployeeForUser(baseUrl, headers, { userId, email, fullName, role }) {
+  const url = new URL('/rest/v1/employees', baseUrl);
+  const names = (fullName || '').split(' ');
+  const firstName = names.shift() || 'Sample';
+  const lastName = names.join(' ') || (role === 'intern' ? 'Intern' : 'Employee');
+  const empNum = `EMP-DEV-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  const payload = {
+    user_id: userId,
+    employee_number: empNum,
+    first_name: firstName,
+    last_name: lastName,
+    date_hired: new Date().toISOString().slice(0, 10),
+    employment_type: role === 'intern' ? 'intern' : 'regular',
+    work_arrangement: role === 'intern' ? 'part_time' : 'full_time',
+    position: role === 'intern' ? 'Intern' : 'Employee',
+    department: role === 'intern' ? 'Marketing' : 'Engineering',
+    company_email: email,
+  };
+
+  return fetchJson(url.toString(), {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /*  Validation – matches what the browser's @supabase/ssr sends       */
 /* ------------------------------------------------------------------ */
@@ -247,21 +289,20 @@ async function main() {
   for (const user of sampleUsers) {
     const email = `${user.emailLocalPart}@${domain}`;
 
-    // Delete any existing user so we get a clean slate
+    // If an auth user already exists, reuse it instead of deleting (avoid FK issues)
     const existing = await getAuthUserByEmail(baseUrl, adminHeaders, email);
+    let created;
     if (existing) {
-      await deleteAuthUser(baseUrl, adminHeaders, existing.id);
-      // Small delay so GoTrue fully removes the row
-      await new Promise((r) => setTimeout(r, 500));
+      created = existing;
+    } else {
+      // Create with identity
+      created = await createUserWithIdentity(baseUrl, adminHeaders, {
+        email,
+        password,
+        fullName: user.fullName,
+        role: user.role,
+      });
     }
-
-    // Create with identity
-    const created = await createUserWithIdentity(baseUrl, adminHeaders, {
-      email,
-      password,
-      fullName: user.fullName,
-      role: user.role,
-    });
 
     const identities = created?.identities || [];
     const hasEmail = identities.some((i) => i.provider === 'email');
@@ -289,6 +330,23 @@ async function main() {
       role: user.role,
       status: 'active',
     });
+
+    // Ensure a minimal public.employees row exists for employee/intern accounts
+    if (user.role === 'employee' || user.role === 'intern') {
+      const existingEmp = await getEmployeeByUserId(baseUrl, adminHeaders, created.id);
+      if (!existingEmp) {
+        try {
+          await createEmployeeForUser(baseUrl, adminHeaders, {
+            userId: created.id,
+            email,
+            fullName: user.fullName,
+            role: user.role,
+          });
+        } catch (e) {
+          console.warn(`  ⚠ Failed creating employee record for ${email}: ${e.message}`);
+        }
+      }
+    }
 
     // Validate login using browser-equivalent headers
     await validatePasswordLogin(baseUrl, anonKey, email, password);
