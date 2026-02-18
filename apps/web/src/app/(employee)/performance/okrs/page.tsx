@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import { useCreateOKR, usePerformanceCycles, usePerformanceOKRs, useUpdateOKR } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
@@ -50,6 +51,7 @@ const emptyForm: NewOKRFormState = {
 
 export default function OKRsPage(): ReactNode {
   usePerformanceRealtime();
+  const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
@@ -94,11 +96,29 @@ export default function OKRsPage(): ReactNode {
         Math.max(updatedKeyResults.reduce((sum, kr) => sum + (kr.weight || 1), 0), 1)
     );
 
-    updateOKR.mutate({
-      id: okrId,
-      keyResults: updatedKeyResults as unknown as Array<Record<string, unknown>>,
-      progress: overallProgress,
-    });
+    updateOKR.mutate(
+      {
+        id: okrId,
+        keyResults: updatedKeyResults as unknown as Array<Record<string, unknown>>,
+        progress: overallProgress,
+      },
+      {
+        onSuccess: () => {
+          addToast({
+            title: 'Progress updated',
+            description: 'Key result progress has been saved',
+            variant: 'success',
+          });
+        },
+        onError: () => {
+          addToast({
+            title: 'Error',
+            description: 'Failed to update progress',
+            variant: 'error',
+          });
+        },
+      }
+    );
   };
 
   const handleAddSubtask = (): void => {
@@ -162,11 +182,25 @@ export default function OKRsPage(): ReactNode {
       ...(selectedCycleId ? { cycleId: selectedCycleId } : {}),
     };
 
-    await createOKR.mutateAsync(payload);
+    try {
+      await createOKR.mutateAsync(payload);
 
-    setCreateDialogOpen(false);
-    setNewOKR(emptyForm);
-    setSubtaskInput('');
+      addToast({
+        title: 'OKR created',
+        description: 'Your objective has been successfully created',
+        variant: 'success',
+      });
+
+      setCreateDialogOpen(false);
+      setNewOKR(emptyForm);
+      setSubtaskInput('');
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: 'Failed to create OKR',
+        variant: 'error',
+      });
+    }
   };
 
   const handleOpenCreate = (): void => {

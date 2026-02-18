@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
-import { AIChatbot, Header, Sidebar } from '@hr-portal/ui';
+import { AIChatbot, Header, Sidebar, ToastProvider } from '@hr-portal/ui';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
@@ -43,7 +43,8 @@ export default function EmployeeLayout({
   const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
 
   return (
-    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
+    <ToastProvider>
+      <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block flex-shrink-0">
         <Sidebar
@@ -84,6 +85,7 @@ export default function EmployeeLayout({
 
       {/* AI Chatbot */}
       <AIChatbot />
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

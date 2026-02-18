@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedPerformanceContext();
+    const { supabase, supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'employeeId is required for admin-created OKRs' }, { status: 400 });
     }
 
-    const { data, error: insertError } = await supabase
+    const { data, error: insertError } = await supabaseAdmin
       .from('okrs')
       .insert({
         employee_id: employeeId,

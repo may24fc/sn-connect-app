@@ -28,9 +28,11 @@ export async function GET(request: NextRequest) {
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '50', 10);
 
     // Build query
+    // Note: head_id references auth.users, not public.users
+    // So we fetch head_id directly and let the client expand if needed
     let query = supabase
       .from('departments')
-      .select('*, head:users!head_id(id, role)', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .is('deleted_at', null)
       .order('name');
 

@@ -21,6 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  useToast,
 } from '@hr-portal/ui';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -37,6 +38,7 @@ const statusVariant: Record<
 };
 
 export default function ReportsPage() {
+  const { addToast } = useToast();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
 
@@ -189,7 +191,24 @@ export default function ReportsPage() {
                           {report.status === 'draft' && (
                             <Button
                               size="sm"
-                              onClick={() => submitReport.mutate(report.id)}
+                              onClick={() =>
+                                submitReport.mutate(report.id, {
+                                  onSuccess: () => {
+                                    addToast({
+                                      title: 'Report submitted',
+                                      description: `${report.title} has been submitted for review`,
+                                      variant: 'success',
+                                    });
+                                  },
+                                  onError: () => {
+                                    addToast({
+                                      title: 'Error',
+                                      description: 'Failed to submit report',
+                                      variant: 'error',
+                                    });
+                                  },
+                                })
+                              }
                               disabled={submitReport.isPending}
                             >
                               Submit

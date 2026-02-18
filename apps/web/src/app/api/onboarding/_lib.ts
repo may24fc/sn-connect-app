@@ -19,7 +19,12 @@ export async function getAuthedOnboardingContext() {
     error,
   } = await supabase.auth.getUser();
 
-  if (error || !user) {
+  if (error) {
+    console.error('Auth error in getAuthedOnboardingContext:', error);
+    return { supabase, user: null, role: null, error: 'Unauthorized' as const };
+  }
+  
+  if (!user) {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
@@ -37,6 +42,7 @@ export async function getAuthedOnboardingContext() {
       .maybeSingle();
 
     if (roleError) {
+      console.error('Role fetch error in getAuthedOnboardingContext:', roleError);
       return {
         supabase,
         user,

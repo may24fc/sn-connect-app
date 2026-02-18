@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const PERFORMANCE_ADMIN_ROLES = ['admin', 'super_admin'];
 
@@ -38,13 +38,14 @@ export async function resolveEmployeeIdForUser(supabase: any, userId: string): P
 
 export async function getAuthedPerformanceContext() {
   const supabase = await createSupabaseServerClient();
+  const supabaseAdmin = createSupabaseAdminClient();
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return { supabase, user: null, role: null, error: 'Unauthorized' as const };
+    return { supabase, supabaseAdmin, user: null, role: null, error: 'Unauthorized' as const };
   }
 
   let role: string | null = null;
@@ -63,6 +64,7 @@ export async function getAuthedPerformanceContext() {
     if (roleError) {
       return {
         supabase,
+        supabaseAdmin,
         user,
         role: null,
         error: 'Failed to resolve user role' as const,
@@ -72,5 +74,5 @@ export async function getAuthedPerformanceContext() {
     role = roleData?.role ?? null;
   }
 
-  return { supabase, user, role, error: null };
+  return { supabase, supabaseAdmin, user, role, error: null };
 }

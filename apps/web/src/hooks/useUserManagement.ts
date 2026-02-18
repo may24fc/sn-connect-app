@@ -81,6 +81,10 @@ export function useApproveOnboarding() {
       // Invalidate onboarding queries to refresh the list
       queryClient.invalidateQueries({ queryKey: ['onboarding', 'profiles'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      // Refresh internship and probation tables so approved users appear immediately
+      queryClient.invalidateQueries({ queryKey: ['internships'] });
+      queryClient.invalidateQueries({ queryKey: ['probation'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 }

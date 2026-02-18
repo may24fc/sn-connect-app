@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isResourceAdmin } from '../_lib';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 const ALLOWED_MIME_TYPES = [
   'video/mp4',
@@ -54,9 +55,11 @@ export async function POST(request: NextRequest) {
     const folder = category || 'uncategorized';
     const filePath = `${folder}/${timestamp}_${sanitizedFileName}`;
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage using admin client to bypass storage RLS
+    // (user is already verified as admin above).
+    const adminClient = createSupabaseAdminClient();
     const arrayBuffer = await file.arrayBuffer();
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await adminClient.storage
       .from('resources-library')
       .upload(filePath, arrayBuffer, {
         contentType: file.type,

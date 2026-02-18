@@ -62,25 +62,26 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  // Create a response object that we can attach refreshed cookies to.
-  let response = NextResponse.next({ request });
+  // Create a SINGLE response object and accumulate all cookie changes on it.
+  // Previous implementation re-created NextResponse.next() on every set/remove
+  // call, which discarded cookies from earlier calls — causing session loss on
+  // chunked JWTs (Supabase splits large tokens across multiple cookies).
+  const response = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get(name: string) {
-        return request.cookies.get(name)?.value;
+      getAll() {
+        return request.cookies.getAll();
       },
-      set(name: string, value: string, options: Record<string, unknown>) {
-        // Update both the request cookie (for downstream code) and the response
-        // cookie (to send the refreshed token back to the browser).
-        request.cookies.set({ name, value, ...(options as Record<string, string>) });
-        response = NextResponse.next({ request });
-        response.cookies.set({ name, value, ...(options as Record<string, string>) });
-      },
-      remove(name: string, options: Record<string, unknown>) {
-        request.cookies.set({ name, value: '', ...(options as Record<string, string>) });
-        response = NextResponse.next({ request });
-        response.cookies.set({ name, value: '', ...(options as Record<string, string>) });
+      setAll(cookiesToSet) {
+        // Forward cookies to the request so downstream Server Components see them.
+        for (const { name, value } of cookiesToSet) {
+          request.cookies.set(name, value);
+        }
+        // Persist cookies on the response so the browser receives them.
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
       },
     },
   });

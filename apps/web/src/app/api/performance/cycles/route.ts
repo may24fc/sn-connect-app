@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedPerformanceContext();
+    const { supabase, supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error: insertError } = await supabase
+    const { data, error: insertError } = await supabaseAdmin
       .from('review_cycles')
       .insert({
         name: parsed.data.name,

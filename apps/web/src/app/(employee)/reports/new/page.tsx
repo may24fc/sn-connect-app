@@ -17,6 +17,7 @@ import {
   SelectValue,
   Separator,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import Link from 'next/link';
@@ -49,6 +50,7 @@ interface MetricEntry {
 export default function NewReportPage() {
   const router = useRouter();
   const createReport = useCreateReport();
+  const { addToast } = useToast();
 
   const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'marketing'>('weekly');
   const [periodStart, setPeriodStart] = useState('');
@@ -157,9 +159,21 @@ export default function NewReportPage() {
         metrics: validMetrics,
       });
 
+      addToast({
+        title: 'Report saved',
+        description: asDraft ? 'Draft saved successfully' : 'Report submitted for review',
+        variant: 'success',
+      });
+
       router.push(`/reports/${response.data.id}`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to save report');
+      const message = error instanceof Error ? error.message : 'Failed to save report';
+      setErrorMessage(message);
+      addToast({
+        title: 'Error',
+        description: message,
+        variant: 'error',
+      });
     }
   };
 

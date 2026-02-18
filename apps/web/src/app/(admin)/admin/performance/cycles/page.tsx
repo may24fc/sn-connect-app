@@ -25,6 +25,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  useToast,
 } from '@hr-portal/ui';
 import {
   useCreatePerformanceCycle,
@@ -85,6 +86,7 @@ function formatDate(dateString: string): string {
 }
 
 export default function CyclesPage(): ReactNode {
+  const { addToast } = useToast();
   const { data: cycleData = [] } = usePerformanceCycles();
   const createCycle = useCreatePerformanceCycle();
   const updateCycle = useUpdatePerformanceCycle();
@@ -127,54 +129,116 @@ export default function CyclesPage(): ReactNode {
   };
 
   const handleSave = async (): Promise<void> => {
-    if (editingCycle) {
-      await updateCycle.mutateAsync({
-        id: editingCycle.id,
-        name: formData.name,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        selfReviewDeadline: formData.selfAssessmentDeadline || null,
-        managerReviewDeadline: formData.managerReviewDeadline || null,
-      });
-    } else {
-      await createCycle.mutateAsync({
-        name: formData.name,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        selfReviewDeadline: formData.selfAssessmentDeadline || null,
-        managerReviewDeadline: formData.managerReviewDeadline || null,
-        status: 'draft',
-        description: null,
+    try {
+      if (editingCycle) {
+        await updateCycle.mutateAsync({
+          id: editingCycle.id,
+          name: formData.name,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          selfReviewDeadline: formData.selfAssessmentDeadline || null,
+          managerReviewDeadline: formData.managerReviewDeadline || null,
+        });
+
+        addToast({
+          title: 'Cycle updated',
+          description: `"${formData.name}" has been updated`,
+          variant: 'success',
+        });
+      } else {
+        await createCycle.mutateAsync({
+          name: formData.name,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          selfReviewDeadline: formData.selfAssessmentDeadline || null,
+          managerReviewDeadline: formData.managerReviewDeadline || null,
+          status: 'draft',
+          description: null,
+        });
+
+        addToast({
+          title: 'Cycle created',
+          description: `"${formData.name}" has been created as draft`,
+          variant: 'success',
+        });
+      }
+
+      setDialogOpen(false);
+      setFormData(emptyFormData);
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: `Failed to ${editingCycle ? 'update' : 'create'} cycle`,
+        variant: 'error',
       });
     }
-
-    setDialogOpen(false);
-    setFormData(emptyFormData);
   };
 
   const handleDelete = async (): Promise<void> => {
     if (deletingCycle) {
-      await deleteCycle.mutateAsync(deletingCycle.id);
+      try {
+        await deleteCycle.mutateAsync(deletingCycle.id);
+
+        addToast({
+          title: 'Cycle deleted',
+          description: `"${deletingCycle.name}" has been deleted`,
+          variant: 'success',
+        });
+      } catch (error) {
+        addToast({
+          title: 'Error',
+          description: 'Failed to delete cycle',
+          variant: 'error',
+        });
+      }
     }
     setDeleteDialogOpen(false);
     setDeletingCycle(null);
   };
 
   const handleActivate = async (cycle: PerformanceCycle): Promise<void> => {
-    const currentActive = cycles.find((item) => item.status === 'active');
+    try {
+      const currentActive = cycles.find((item) => item.status === 'active');
 
-    if (currentActive && currentActive.id !== cycle.id) {
-      await updateCycle.mutateAsync({
-        id: currentActive.id,
-        status: 'completed',
+      if (currentActive && currentActive.id !== cycle.id) {
+        await updateCycle.mutateAsync({
+          id: currentActive.id,
+          status: 'completed',
+        });
+      }
+
+      await updateCycle.mutateAsync({ id: cycle.id, status: 'active' });
+
+      addToast({
+        title: 'Cycle activated',
+        description: `"${cycle.name}" is now active`,
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: 'Failed to activate cycle',
+        variant: 'error',
       });
     }
-
-    await updateCycle.mutateAsync({ id: cycle.id, status: 'active' });
   };
 
   const handleClose = async (cycle: PerformanceCycle): Promise<void> => {
-    await updateCycle.mutateAsync({ id: cycle.id, status: 'completed' });
+    try {
+      await updateCycle.mutateAsync({ id: cycle.id, status: 'completed' });
+
+      addToast({
+        title: 'Cycle closed',
+        description: `"${cycle.name}" has been marked as completed`,
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: 'Failed to close cycle',
+        variant: 'error',
+      });
+    }
   };
 
   const isFormValid = (): boolean => {

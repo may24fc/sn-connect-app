@@ -20,6 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useToast,
 } from '@hr-portal/ui';
 import { useCreateKPI, usePerformanceCycles, usePerformanceKPIs, useUpdateKPI } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
@@ -54,6 +55,7 @@ function getWeightedScore(kpis: Array<KPI>): number {
 
 export default function KPIsPage(): ReactNode {
   usePerformanceRealtime();
+  const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
@@ -90,18 +92,32 @@ export default function KPIsPage(): ReactNode {
     const periodStart = selectedCycle?.startDate ?? today;
     const periodEnd = selectedCycle?.endDate ?? today;
 
-    await createKPI.mutateAsync({
-      name: newKPI.metric,
-      targetValue: Number(newKPI.target),
-      currentValue: 0,
-      ...(newKPI.unit ? { unit: newKPI.unit } : {}),
-      ...(newKPI.cycleId ? { cycleId: newKPI.cycleId } : {}),
-      periodStart,
-      periodEnd,
-    });
+    try {
+      await createKPI.mutateAsync({
+        name: newKPI.metric,
+        targetValue: Number(newKPI.target),
+        currentValue: 0,
+        ...(newKPI.unit ? { unit: newKPI.unit } : {}),
+        ...(newKPI.cycleId ? { cycleId: newKPI.cycleId } : {}),
+        periodStart,
+        periodEnd,
+      });
 
-    setCreateDialogOpen(false);
-    setNewKPI(emptyKPIForm);
+      addToast({
+        title: 'KPI created',
+        description: 'Your metric has been successfully created',
+        variant: 'success',
+      });
+
+      setCreateDialogOpen(false);
+      setNewKPI(emptyKPIForm);
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: 'Failed to create KPI',
+        variant: 'error',
+      });
+    }
   };
 
   const handleOpenUpdateDialog = (kpi: KPI): void => {
@@ -112,13 +128,28 @@ export default function KPIsPage(): ReactNode {
 
   const handleUpdateKPI = async (): Promise<void> => {
     if (!selectedKPI || !updatedValue) return;
-    await updateKPI.mutateAsync({
-      id: selectedKPI.id,
-      currentValue: Number(updatedValue),
-    });
-    setUpdateDialogOpen(false);
-    setSelectedKPI(null);
-    setUpdatedValue('');
+    try {
+      await updateKPI.mutateAsync({
+        id: selectedKPI.id,
+        currentValue: Number(updatedValue),
+      });
+
+      addToast({
+        title: 'KPI updated',
+        description: `Progress for "${selectedKPI.name}" has been updated`,
+        variant: 'success',
+      });
+
+      setUpdateDialogOpen(false);
+      setSelectedKPI(null);
+      setUpdatedValue('');
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: 'Failed to update KPI',
+        variant: 'error',
+      });
+    }
   };
 
   return (

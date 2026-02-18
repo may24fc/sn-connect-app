@@ -4,7 +4,9 @@ import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
 import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
 import { useBookmarkResource, useRemoveBookmark, useResourceBookmarks } from '@/hooks/useResourceBookmarks';
 import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
+import type { AnnouncementRecord } from '@/hooks/useAnnouncements';
 import {
+  AnnouncementDetailDialog,
   Badge,
   Button,
   Card,
@@ -96,6 +98,8 @@ export default function InformationHubPage() {
   const [announcementPage, setAnnouncementPage] = useState(1);
   const [resourcePage, setResourcePage] = useState(1);
   const [selectedResourceCategory, setSelectedResourceCategory] = useState<string>('');
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementRecord | null>(null);
+  const [isAnnouncementDialogOpen, setIsAnnouncementDialogOpen] = useState(false);
 
   const { data: announcementData, isLoading: isAnnouncementsLoading } = useAnnouncementFeed({
     ...(search ? { search } : {}),
@@ -172,6 +176,14 @@ export default function InformationHubPage() {
     }
 
     addBookmark.mutate({ resourceId });
+  };
+
+  const handleAnnouncementClick = (announcement: AnnouncementRecord): void => {
+    setSelectedAnnouncement(announcement);
+    setIsAnnouncementDialogOpen(true);
+    if (!announcement.is_read) {
+      markRead.mutate(announcement.id);
+    }
   };
 
   return (
@@ -253,7 +265,8 @@ export default function InformationHubPage() {
           {urgentAnnouncements.map((announcement) => (
             <div
               key={`urgent-${announcement.id}`}
-              className="bg-rose-50 dark:bg-rose-950/30 border-l-4 border-rose-600 rounded-lg p-4"
+              className="bg-rose-50 dark:bg-rose-950/30 border-l-4 border-rose-600 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleAnnouncementClick(announcement)}
             >
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
@@ -268,7 +281,8 @@ export default function InformationHubPage() {
           {pinnedAnnouncements.map((announcement) => (
             <div
               key={`pinned-${announcement.id}`}
-              className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 border-l-4 border-indigo-600 rounded-lg p-4"
+              className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 border-l-4 border-indigo-600 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleAnnouncementClick(announcement)}
             >
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
@@ -293,14 +307,10 @@ export default function InformationHubPage() {
                   key={announcement.id}
                   className={
                     announcement.is_read
-                      ? 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 opacity-75'
-                      : 'bg-white dark:bg-zinc-900 border-l-4 border-indigo-600 border-r border-t border-b border-zinc-200 dark:border-zinc-800 rounded-lg p-4'
+                      ? 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 opacity-75 cursor-pointer hover:shadow-md transition-shadow'
+                      : 'bg-white dark:bg-zinc-900 border-l-4 border-indigo-600 border-r border-t border-b border-zinc-200 dark:border-zinc-800 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow'
                   }
-                  onClick={() => {
-                    if (!announcement.is_read) {
-                      markRead.mutate(announcement.id);
-                    }
-                  }}
+                  onClick={() => handleAnnouncementClick(announcement)}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
@@ -520,6 +530,13 @@ export default function InformationHubPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Announcement Detail Dialog */}
+      <AnnouncementDetailDialog
+        open={isAnnouncementDialogOpen}
+        onOpenChange={setIsAnnouncementDialogOpen}
+        announcement={selectedAnnouncement}
+      />
     </div>
   );
 }

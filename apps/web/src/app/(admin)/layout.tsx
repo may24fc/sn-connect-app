@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
-import { AIChatbot, Header, Sidebar } from '@hr-portal/ui';
+import { AIChatbot, Header, Sidebar, ToastProvider } from '@hr-portal/ui';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
@@ -81,6 +81,7 @@ export default function AdminLayout({
 
       {/* AI Chatbot */}
       <AIChatbot />
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

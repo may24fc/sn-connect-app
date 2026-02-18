@@ -3,7 +3,10 @@
 import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
+import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
 import { type InternshipFilters } from '@/lib/query-keys';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Avatar,
   AvatarFallback,
@@ -14,6 +17,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Input,
   type InternDashboardStats,
   type InternId,
@@ -46,15 +53,20 @@ import {
   FileText,
   Filter,
   GraduationCap,
+  MoreVertical,
   Plus,
   Search,
   UserPlus,
   AlertCircle,
+  Calendar,
+  ThumbsUp,
+  MessageSquare,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -69,6 +81,7 @@ function formatDateTime(dateString: string): string {
 
 export default function AdminInternsPage(): ReactNode {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [schoolFilter, setSchoolFilter] = useState<string>('all');
@@ -78,9 +91,17 @@ export default function AdminInternsPage(): ReactNode {
   // Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentData, setAssignmentData] = useState<any | null>(null);
 
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
+  
+  // Real-time internships hook
+  const { internships: realtimeInternships, isSubscribed: isInternshipsSubscribed } = useRealtimeInternships();
+  
+  // Real-time daily logs hook
+  const { dailyLogs, isSubscribed: isDailyLogsSubscribed } = useRealtimeInternDailyLogs();
 
   const internshipFilters: InternshipFilters = {
     page: 1,
@@ -187,6 +208,14 @@ export default function AdminInternsPage(): ReactNode {
         <TabsList>
           <TabsTrigger value="internships">Internships</TabsTrigger>
           <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
+          <TabsTrigger value="eod-reports">
+            EOD Reports
+            {dailyLogs.filter(log => !log.is_approved).length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {dailyLogs.filter(log => !log.is_approved).length}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="internships" className="space-y-6">
@@ -619,6 +648,213 @@ export default function AdminInternsPage(): ReactNode {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        {/* EOD Reports Tab */}
+        <TabsContent value="eod-reports" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                End of Day Reports
+                {isDailyLogsSubscribed && (
+                  <Badge variant="outline" className="ml-2">
+                    ✅ Live
+                  </Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Monitor daily reports submitted by interns. Pending approvals require supervisor review.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Summary Stats */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{dailyLogs.length}</p>
+                          <p className="text-sm text-muted-foreground">Total Reports</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
+                          <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">
+                            {dailyLogs.filter(log => !log.is_approved).length}
+                          </p>
+                          <p className="text-sm text-muted-foreground">Pending Approval</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                          <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">
+                            {dailyLogs.filter(log => log.is_approved).length}
+                          </p>
+                          <p className="text-sm text-muted-foreground">Approved</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Reports Table */}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Intern</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>School</TableHead>
+                      <TableHead>Department</TableHead>
+                      <TableHead>Hours</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyLogs.length > 0 ? (
+                      dailyLogs.map((log) => {
+                        const internName = log.internship?.employee
+                          ? `${log.internship.employee.first_name} ${log.internship.employee.last_name}`
+                          : 'Unknown Intern';
+                        
+                        return (
+                          <TableRow key={log.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9">
+                                  <AvatarFallback className="text-xs">
+                                    {internName
+                                      .split(' ')
+                                      .map((n) => n[0])
+                                      .join('')
+                                      .toUpperCase()
+                                      .slice(0, 2)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{internName}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">
+                                  {new Date(log.log_date).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {log.internship?.school || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {log.internship?.department || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{log.hours_worked}h</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {log.is_approved ? (
+                                <Badge variant="success" className="flex items-center gap-1 w-fit">
+                                  <ThumbsUp className="h-3 w-3" />
+                                  Approved
+                                </Badge>
+                              ) : (
+                                <Badge variant="warning" className="flex items-center gap-1 w-fit">
+                                  <Clock className="h-3 w-3" />
+                                  Pending
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      // Navigate to detailed view with the log
+                                      router.push(`/admin/interns/${log.internship_id}#daily-logs`);
+                                    }}
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                  {!log.is_approved && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        // TODO: Quick approve action
+                                        console.log('Quick approve:', log.id);
+                                      }}
+                                    >
+                                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                                      Quick Approve
+                                    </DropdownMenuItem>
+                                  )}
+                                  {log.is_approved && log.supervisor_notes && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        alert(`Supervisor Notes: ${log.supervisor_notes}`);
+                                      }}
+                                    >
+                                      <MessageSquare className="mr-2 h-4 w-4" />
+                                      View Notes
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={7}
+                          className="text-center py-12 text-muted-foreground"
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <FileText className="h-12 w-12 text-muted-foreground/50" />
+                            <p>No daily reports found</p>
+                            <p className="text-sm">Reports will appear here when interns submit their EOD forms</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Modals */}
@@ -632,6 +868,24 @@ export default function AdminInternsPage(): ReactNode {
         open={!!selectedApproval}
         onOpenChange={(open) => !open && setSelectedApproval(null)}
         onboarding={selectedApproval}
+        onApprovalSuccess={(data) => {
+          setAssignmentData(data);
+          setAssignmentModalOpen(true);
+        }}
+      />
+      
+      <AssignEmployeeModal
+        open={assignmentModalOpen}
+        onOpenChange={setAssignmentModalOpen}
+        assignmentData={assignmentData}
+        onSuccess={() => {
+          // Invalidate queries to refresh the UI
+          queryClient.invalidateQueries({ queryKey: ['internships'] });
+          queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
+          queryClient.invalidateQueries({ queryKey: ['probation'] });
+          setAssignmentData(null);
+          setAssignmentModalOpen(false);
+        }}
       />
     </div>
   );

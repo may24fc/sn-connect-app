@@ -82,12 +82,20 @@ interface ApproverModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onboarding: OnboardingData | null;
+  onApprovalSuccess?: (data: {
+    userId: string;
+    fullName: string;
+    email: string;
+    role: 'employee' | 'intern';
+    position: string | null;
+  }) => void;
 }
 
 export function ApproveOnboardingModal({
   open,
   onOpenChange,
   onboarding,
+  onApprovalSuccess,
 }: ApproverModalProps) {
   const [action, setAction] = useState<'approve' | 'reject' | null>(null);
   const approveOnboarding = useApproveOnboarding();
@@ -101,15 +109,25 @@ export function ApproveOnboardingModal({
     resolver: zodResolver(approvalSchema),
   });
 
-  const onSubmit = async (data: ApprovalFormData) => {
-    if (!onboarding || !action) return;
+  const submitAction = async (data: ApprovalFormData, selectedAction: 'approve' | 'reject') => {
+    if (!onboarding) return;
 
     try {
       await approveOnboarding.mutateAsync({
         userId: onboarding.user_id,
-        approved: action === 'approve',
+        approved: selectedAction === 'approve',
         notes: data.notes || '',
       });
+
+      if (selectedAction === 'approve' && onApprovalSuccess) {
+        onApprovalSuccess({
+          userId: onboarding.user_id,
+          fullName: onboarding.full_name,
+          email: onboarding.email_address,
+          role: onboarding.role,
+          position: onboarding.position,
+        });
+      }
 
       handleClose();
     } catch (error) {
@@ -173,10 +191,9 @@ export function ApproveOnboardingModal({
 
           {/* Detailed Information Tabs */}
           <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="contact">Contact</TabsTrigger>
-              <TabsTrigger value="government">Government IDs</TabsTrigger>
               <TabsTrigger value="bank">Bank Details</TabsTrigger>
             </TabsList>
 
@@ -243,19 +260,6 @@ export function ApproveOnboardingModal({
               </div>
             </TabsContent>
 
-            <TabsContent value="government" className="space-y-4 mt-4">
-              <InfoField label="SSS Number" value={onboarding.sss_number || 'Not provided'} />
-              <InfoField label="TIN Number" value={onboarding.tin_number || 'Not provided'} />
-              <InfoField
-                label="PhilHealth Number"
-                value={onboarding.philhealth_number || 'Not provided'}
-              />
-              <InfoField
-                label="Pag-IBIG Number"
-                value={onboarding.pagibig_number || 'Not provided'}
-              />
-            </TabsContent>
-
             <TabsContent value="bank" className="space-y-4 mt-4">
               <InfoField label="Bank Name" value={'Not provided'} />
               <InfoField
@@ -270,10 +274,10 @@ export function ApproveOnboardingModal({
           </Tabs>
 
           {/* Action Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="notes">
-                Review Notes {action === 'reject' && '(required for rejection)'}
+                Review Notes {action === 'reject' && '(recommended for rejection)'}
               </Label>
               <Textarea
                 id="notes"
@@ -297,9 +301,12 @@ export function ApproveOnboardingModal({
                 Cancel
               </Button>
               <Button
-                type="submit"
+                type="button"
                 variant="outline"
-                onClick={() => setAction('reject')}
+                onClick={() => {
+                  setAction('reject');
+                  handleSubmit((data) => submitAction(data, 'reject'))();
+                }}
                 disabled={approveOnboarding.isPending}
                 className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
               >
@@ -316,8 +323,11 @@ export function ApproveOnboardingModal({
                 )}
               </Button>
               <Button
-                type="submit"
-                onClick={() => setAction('approve')}
+                type="button"
+                onClick={() => {
+                  setAction('approve');
+                  handleSubmit((data) => submitAction(data, 'approve'))();
+                }}
                 disabled={approveOnboarding.isPending}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
@@ -340,7 +350,7 @@ export function ApproveOnboardingModal({
                 Failed to process onboarding. Please try again.
               </p>
             )}
-          </form>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
