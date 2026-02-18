@@ -67,14 +67,14 @@ export default function DashboardPage(): ReactNode {
 
   const { data: tasksResponse } = useTasks(
     {
-      assigneeId: user?.id,
+      ...(user?.id ? { assigneeId: user.id } : {}),
       page: 1,
       pageSize: 100,
     },
     { enabled: Boolean(user?.id) }
   );
 
-  useTasksRealtime({ scope: 'assigned', userId: user?.id, enabled: Boolean(user?.id) });
+  useTasksRealtime({ scope: 'assigned', ...(user?.id ? { userId: user.id } : {}), enabled: Boolean(user?.id) });
 
   const assignedTasks = tasksResponse?.data || [];
   const tasksDueCount = assignedTasks.filter((task) => task.status !== 'completed').length;

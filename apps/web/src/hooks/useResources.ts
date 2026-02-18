@@ -276,7 +276,7 @@ export function useToggleResourceFeatured() {
 
       return { previousResources, previousResource };
     },
-    onError: (err, { id }, context) => {
+    onError: (_err, { id }, context) => {
       // Rollback on error
       if (context?.previousResources) {
         queryClient.setQueryData(queryKeys.resources.all, context.previousResources);

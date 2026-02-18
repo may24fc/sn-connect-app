@@ -133,7 +133,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (parsed.data.status === 'completed') {
       updates.completed_at = new Date().toISOString();
-    } else if (parsed.data.status && parsed.data.status !== 'completed') {
+    } else if (parsed.data.status) {
       updates.completed_at = null;
     }
 

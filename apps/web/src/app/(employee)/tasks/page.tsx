@@ -58,7 +58,7 @@ export default function MyTasksPage() {
 
   const { data, isLoading, error } = useTasks(taskFilters, { enabled: Boolean(user?.id) });
 
-  useTasksRealtime({ scope: 'assigned', userId: user?.id, enabled: Boolean(user?.id) });
+  useTasksRealtime({ scope: 'assigned', ...(user?.id ? { userId: user.id } : {}), enabled: Boolean(user?.id) });
 
   const tasks = data?.data || [];
 

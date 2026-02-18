@@ -81,8 +81,8 @@ export default function NewResourcePage() {
     const created = await createResource.mutateAsync({
       title,
       description,
-      resourceType,
-      category,
+      resourceType: resourceType as 'link' | 'video' | 'document' | 'image' | 'presentation' | 'interactive',
+      category: category as 'benefits' | 'performance' | 'training' | 'emergency' | 'onboarding' | 'policies' | 'tools' | 'culture' | 'department_specific' | 'forms_templates',
       tags,
       filePath: filePath || undefined,
       externalUrl: externalUrl || undefined,

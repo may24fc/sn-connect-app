@@ -21,7 +21,7 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { user, role, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

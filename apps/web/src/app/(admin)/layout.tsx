@@ -40,6 +40,7 @@ export default function AdminLayout({
   };
 
   return (
+    <ToastProvider>
     <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block flex-shrink-0">

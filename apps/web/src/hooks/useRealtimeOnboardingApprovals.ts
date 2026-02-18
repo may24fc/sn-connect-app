@@ -145,11 +145,11 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
           schema: 'public',
           table: 'users',
         },
-        (payload) => {
+        (payload: { new: Record<string, unknown> }) => {
           // Remove from local state immediately when status changes from awaiting_approval
-          if (payload.new && (payload.new as any).status !== 'awaiting_approval') {
+          if (payload.new && payload.new['status'] !== 'awaiting_approval') {
             setPendingApprovals((prev) =>
-              prev.filter((approval) => approval.user_id !== (payload.new as any).id)
+              prev.filter((approval) => approval.user_id !== payload.new['id'])
             );
           }
           // Also refetch to ensure consistency

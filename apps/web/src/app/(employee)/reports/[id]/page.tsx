@@ -106,7 +106,7 @@ export default function ReportDetailPage({
                   onSuccess: () => {
                     addToast({
                       title: 'Report submitted',
-                      description: `${report.title} has been submitted for review`,
+                      description: `${report.report_type} report has been submitted for review`,
                       variant: 'success',
                     });
                   },

@@ -53,8 +53,6 @@ import {
   FileText,
   Filter,
   GraduationCap,
-  MoreVertical,
-  Plus,
   Search,
   UserPlus,
   AlertCircle,
@@ -98,7 +96,7 @@ export default function AdminInternsPage(): ReactNode {
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
   
   // Real-time internships hook
-  const { internships: realtimeInternships, isSubscribed: isInternshipsSubscribed } = useRealtimeInternships();
+  const { internships: _realtimeInternships, isSubscribed: _isInternshipsSubscribed } = useRealtimeInternships();
   
   // Real-time daily logs hook
   const { dailyLogs, isSubscribed: isDailyLogsSubscribed } = useRealtimeInternDailyLogs();

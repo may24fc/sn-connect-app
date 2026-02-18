@@ -257,7 +257,7 @@ export default function ProbationPage(): ReactNode {
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('employee');
   
   // Real-time probation employees hook
-  const { employees: realtimeEmployees, isSubscribed: isProbationSubscribed } = useRealtimeProbationEmployees();
+  const { employees: _realtimeEmployees, isSubscribed: _isProbationSubscribed } = useRealtimeProbationEmployees();
 
   const employeeRecords = probationPayload?.data?.length ? probationPayload.data : employees;
 
@@ -326,7 +326,7 @@ export default function ProbationPage(): ReactNode {
         });
         addToast({
           title: 'Probation completed',
-          description: `${selectedEmployee.first_name} ${selectedEmployee.last_name} has successfully passed probation`,
+          description: `${selectedEmployee.name} has successfully passed probation`,
           variant: 'success',
         });
       } catch (error) {

@@ -38,9 +38,9 @@ export function useTasksRealtime({ scope, userId, enabled = true }: UseTasksReal
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'tasks' },
-        (payload) => {
+        (payload: { new: Record<string, unknown>; old: Record<string, unknown> }) => {
           if (scope === 'assigned' && userId) {
-            const row = payload.new as RealtimeTaskRow;
+            const row = payload.new as unknown as RealtimeTaskRow;
             if (row.assigned_to !== userId) {
               return;
             }
@@ -52,10 +52,10 @@ export function useTasksRealtime({ scope, userId, enabled = true }: UseTasksReal
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'tasks' },
-        (payload) => {
+        (payload: { new: Record<string, unknown>; old: Record<string, unknown> }) => {
           if (scope === 'assigned' && userId) {
-            const previousRow = payload.old as RealtimeTaskRow;
-            const nextRow = payload.new as RealtimeTaskRow;
+            const previousRow = payload.old as unknown as RealtimeTaskRow;
+            const nextRow = payload.new as unknown as RealtimeTaskRow;
 
             const affected = previousRow.assigned_to === userId || nextRow.assigned_to === userId;
 
