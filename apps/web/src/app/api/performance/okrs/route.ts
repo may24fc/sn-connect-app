@@ -8,7 +8,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
 
     let employeeId: string | null | undefined = explicitEmployeeId;
     if (!employeeId && !isPerformanceAdmin(role)) {
-      employeeId = await resolveEmployeeIdForUser(supabase, user.id);
+      // Use admin client for employee lookup to avoid RLS failures
+      employeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
       if (!employeeId) {
         return NextResponse.json({ data: [] });
       }
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
     const parsed = createOKRSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error('POST /api/performance/okrs validation error:', JSON.stringify(parsed.error.flatten()));
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
@@ -73,7 +75,8 @@ export async function POST(request: NextRequest) {
     let employeeId: string | null | undefined = parsed.data.employeeId;
 
     if (!isPerformanceAdmin(role)) {
-      const ownEmployeeId = await resolveEmployeeIdForUser(supabase, user.id);
+      // Use admin client—regular client's employee query may return null due to RLS
+      const ownEmployeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
       if (!ownEmployeeId) {
         return NextResponse.json({ error: 'No employee profile found' }, { status: 400 });
       }
