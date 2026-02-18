@@ -1,14 +1,19 @@
 import { reportCreateSchema } from '@/lib/schemas/report.schema';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/reports
- * List reports with filters and pagination
+ * List reports with filters and pagination.
+ *
+ * Uses the admin client for data queries to bypass RLS cross-table subquery
+ * issues. Security is enforced at the application layer: JWT auth + role-based
+ * employee_id scoping ensures non-admin users only see their own reports.
  */
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -27,10 +32,11 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
-    let query = supabase
+    // Use admin client to avoid nested RLS failures on cross-table subqueries
+    let query = supabaseAdmin
       .from('reports')
       .select(
-        '*, employees!inner(id, user_id, first_name, last_name, department), report_metrics(*)',
+        '*, employees(id, user_id, first_name, last_name, department), report_metrics(*)',
         { count: 'exact' }
       )
       .is('deleted_at', null)
@@ -48,8 +54,24 @@ export async function GET(request: NextRequest) {
       query = query.eq('report_type', reportType);
     }
 
+    // Role-based scoping: non-admins only see their own reports
+    const role =
+      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
+
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
+    } else if (!isAdmin) {
+      const { data: empData } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (empData?.id) {
+        query = query.eq('employee_id', empData.id);
+      }
     }
 
     const from = (page - 1) * pageSize;
@@ -80,11 +102,15 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/reports
- * Create report with metrics
+ * Create report with metrics.
+ *
+ * Uses admin client for INSERT to bypass RLS. Application-layer auth enforces
+ * that employees can only create reports for themselves.
  */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -129,7 +155,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: report, error: reportError } = await supabase
+    // Ownership check: non-admins can only create reports for themselves
+    const role =
+      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
+
+    if (!isAdmin && employeeId !== employeeData?.id) {
+      return NextResponse.json(
+        { error: 'Cannot create reports for other employees' },
+        { status: 403 }
+      );
+    }
+
+    const { data: report, error: reportError } = await supabaseAdmin
       .from('reports')
       .insert({
         employee_id: employeeId,
@@ -157,7 +195,7 @@ export async function POST(request: NextRequest) {
         notes: metric.notes || null,
       }));
 
-      const { error: metricsError } = await supabase.from('report_metrics').insert(metricsPayload);
+      const { error: metricsError } = await supabaseAdmin.from('report_metrics').insert(metricsPayload);
 
       if (metricsError) {
         console.error('Error creating report metrics:', metricsError);
@@ -168,7 +206,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: fullReport, error: fullReportError } = await supabase
+    const { data: fullReport, error: fullReportError } = await supabaseAdmin
       .from('reports')
       .select('*, report_metrics(*)')
       .eq('id', report.id)

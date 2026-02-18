@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const TASK_ASSIGNER_ROLE = 'super_admin';
 export const TASK_ASSIGNABLE_ROLES = ['employee', 'intern'] as const;
@@ -7,6 +7,7 @@ type TaskAssignableRole = (typeof TASK_ASSIGNABLE_ROLES)[number];
 
 export interface TaskAuthedContext {
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>;
   user: { id: string; app_metadata?: Record<string, unknown> };
   role: string | null;
 }
@@ -16,6 +17,7 @@ export async function getTaskAuthedContext(): Promise<
   | { ok: false; status: number; error: string }
 > {
   const supabase = await createSupabaseServerClient();
+  const supabaseAdmin = createSupabaseAdminClient();
   const {
     data: { user },
     error,
@@ -47,6 +49,7 @@ export async function getTaskAuthedContext(): Promise<
     ok: true,
     context: {
       supabase,
+      supabaseAdmin,
       user,
       role,
     },
