@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabase } = auth.context;
+    const { supabaseAdmin } = auth.context;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -51,7 +51,9 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
-    let query = supabase
+    // Use admin client to bypass RLS cross-table subquery failures.
+    // Auth is already validated above via getTaskAuthedContext().
+    let query = supabaseAdmin
       .from('tasks')
       .select('*', { count: 'exact' })
       .is('deleted_at', null)
@@ -97,7 +99,7 @@ export async function GET(request: NextRequest) {
     const namesByUserId = new Map<string, { first_name: string; last_name: string }>();
 
     if (userIds.length > 0) {
-      const { data: employees } = await supabase
+      const { data: employees } = await supabaseAdmin
         .from('employees')
         .select('user_id, first_name, last_name')
         .in('user_id', userIds)
@@ -149,7 +151,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabase, user, role } = auth.context;
+    const { supabaseAdmin, user, role } = auth.context;
 
     if (role !== TASK_ASSIGNER_ROLE) {
       return NextResponse.json(
@@ -169,7 +171,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (parsed.data.assignedTo) {
-      const assigneeValidation = await validateTaskAssignee(supabase, parsed.data.assignedTo);
+      // Use admin client for assignee validation too (users table may have RLS)
+      const assigneeValidation = await validateTaskAssignee(supabaseAdmin, parsed.data.assignedTo);
       if (!assigneeValidation.ok) {
         return NextResponse.json(
           { error: assigneeValidation.error },
@@ -178,7 +181,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data, error } = await supabase
+    // Use admin client for INSERT — RLS tasks_insert_policy fails for
+    // super_admin due to cross-table reference issues. Auth is enforced
+    // at the application layer above (only super_admin can reach here).
+    const { data, error } = await supabaseAdmin
       .from('tasks')
       .insert({
         title: parsed.data.title,

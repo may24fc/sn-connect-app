@@ -18,6 +18,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -34,12 +35,12 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
-    // Use a LEFT JOIN for employees (no !inner) so that admin/super_admin users
-    // can see invoice rows even when the employees relation goes through RLS.
-    // With !inner, if the employees row is filtered by RLS the entire invoice
-    // row would be excluded -- which is exactly the bug that prevented
-    // super_admin from seeing employee invoices.
-    let query = supabase
+    // Use admin client to bypass RLS for the main data query.
+    // RLS cross-table subqueries on the employees table silently return 0 rows
+    // due to nested RLS evaluation, preventing employees from seeing their own
+    // invoices. Security is enforced at the application layer via JWT validation
+    // and role-based employee_id scoping below.
+    let query = supabaseAdmin
       .from('invoices')
       .select(
         '*, employees(id, user_id, first_name, last_name, department), invoice_line_items(*)',
@@ -58,22 +59,14 @@ export async function GET(request: NextRequest) {
       query = query.eq('employee_id', employeeId);
     }
 
-    // For non-admin users, scope to their own invoices as an extra guardrail.
-    // RLS already enforces this, but filtering server-side avoids returning
-    // rows where the employee relation is null (which would happen if the
-    // user somehow had a misconfigured RLS policy).
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    // After role consolidation, only admin and super_admin have admin privileges
+    // Resolve user role for authorization scoping
+    const role =
+      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const adminRoles = ['admin', 'super_admin'];
-    const isAdmin = adminRoles.includes(userData?.role ?? '');
+    const isAdmin = adminRoles.includes(role ?? '');
 
     if (!isAdmin && !employeeId) {
-      // Resolve the employee ID for the current user so we can filter
+      // Non-admin users can only see their own invoices.
       const { data: empData } = await supabase
         .from('employees')
         .select('id')

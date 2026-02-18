@@ -8,7 +8,7 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedPerformanceContext();
+    const { supabase, supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    let query = supabase.from('kpis').select('*').order('created_at', { ascending: false });
+    // Use admin client to bypass RLS cross-table subquery failures.
+    let query = supabaseAdmin.from('kpis').select('*').order('created_at', { ascending: false });
 
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { supabase, user, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -130,7 +131,7 @@ export async function PATCH(request: NextRequest) {
     if (parsed.data.evaluatedBy !== undefined) payload.evaluated_by = parsed.data.evaluatedBy;
     if (parsed.data.evaluatedAt !== undefined) payload.evaluated_at = parsed.data.evaluatedAt;
 
-    const { data, error: updateError } = await supabase
+    const { data, error: updateError } = await supabaseAdmin
       .from('kpis')
       .update(payload)
       .eq('id', parsed.data.id)
