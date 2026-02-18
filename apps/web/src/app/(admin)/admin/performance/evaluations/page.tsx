@@ -25,6 +25,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs, useUpdateKPI, useUpdateOKR } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
@@ -295,6 +296,7 @@ function KPIEvaluationTable({
 
 export default function EvaluationsPage(): ReactNode {
   usePerformanceRealtime();
+  const { addToast } = useToast();
   const { user } = useAuth();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
@@ -359,6 +361,12 @@ export default function EvaluationsPage(): ReactNode {
           evaluatedBy: user.id,
           evaluatedAt: now,
         });
+
+        addToast({
+          title: 'OKR evaluated',
+          description: `Evaluation for "${selectedOKR.objective}" has been submitted`,
+          variant: 'success',
+        });
       } else if (evaluationType === 'kpi' && selectedKPI) {
         await updateKPI.mutateAsync({
           id: selectedKPI.id,
@@ -367,6 +375,12 @@ export default function EvaluationsPage(): ReactNode {
           adminComments: kpiEvalForm.comments || undefined,
           evaluatedBy: user.id,
           evaluatedAt: now,
+        });
+
+        addToast({
+          title: 'KPI evaluated',
+          description: `Evaluation for "${selectedKPI.name}" has been submitted`,
+          variant: 'success',
         });
       }
       
@@ -379,7 +393,11 @@ export default function EvaluationsPage(): ReactNode {
       setKpiEvalForm(emptyKPIEvaluation);
     } catch (error) {
       console.error('Failed to submit evaluation:', error);
-      // You might want to show a toast notification here
+      addToast({
+        title: 'Error',
+        description: 'Failed to submit evaluation',
+        variant: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }

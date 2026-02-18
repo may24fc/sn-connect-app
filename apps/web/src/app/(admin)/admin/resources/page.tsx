@@ -1,12 +1,13 @@
 'use client';
 
 import { useArchiveResource, useResources, useToggleResourceFeatured } from '@/hooks/useResources';
-import { type ResourceFiltersValue, Button, Card, CardContent, EmptyState, ResourceCard, ResourceFilters, ResourceGrid, Skeleton } from '@hr-portal/ui';
+import { type ResourceFiltersValue, Button, Card, CardContent, EmptyState, ResourceCard, ResourceFilters, ResourceGrid, Skeleton, useToast } from '@hr-portal/ui';
 import { FileImage } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 export default function AdminResourcesPage() {
+  const { addToast } = useToast();
   const [filters, setFilters] = useState<ResourceFiltersValue>({
     search: '',
     status: 'all',
@@ -134,7 +135,7 @@ export default function AdminResourcesPage() {
                 description="No resources match your current filters. Try adjusting your search or create a new resource."
                 action={{
                   label: 'Create Resource',
-                  onClick: () => window.location.href = '/admin/resources/new'
+                  onClick: () => window.location.assign('/admin/resources/new')
                 }}
               />
             ) : (
@@ -168,15 +169,54 @@ export default function AdminResourcesPage() {
                     size="sm"
                     variant="outline"
                     onClick={() =>
-                      toggleFeatured.mutate({
-                        id: resource.id,
-                        featured: !resource.is_featured,
-                      })
+                      toggleFeatured.mutate(
+                        {
+                          id: resource.id,
+                          featured: !resource.is_featured,
+                        },
+                        {
+                          onSuccess: () => {
+                            addToast({
+                              title: resource.is_featured ? 'Resource unfeatured' : 'Resource featured',
+                              description: 'Changes saved successfully',
+                              variant: 'success',
+                            });
+                          },
+                          onError: () => {
+                            addToast({
+                              title: 'Error',
+                              description: 'Failed to update resource',
+                              variant: 'error',
+                            });
+                          },
+                        }
+                      )
                     }
                   >
                     {resource.is_featured ? 'Unfeature' : 'Feature'}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => archiveResource.mutate(resource.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      archiveResource.mutate(resource.id, {
+                        onSuccess: () => {
+                          addToast({
+                            title: 'Resource archived',
+                            description: 'Resource moved to archive',
+                            variant: 'success',
+                          });
+                        },
+                        onError: () => {
+                          addToast({
+                            title: 'Error',
+                            description: 'Failed to archive resource',
+                            variant: 'error',
+                          });
+                        },
+                      })
+                    }
+                  >
                     Archive
                   </Button>
                 </div>

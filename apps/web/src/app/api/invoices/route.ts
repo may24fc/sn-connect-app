@@ -1,5 +1,5 @@
 import { invoiceCreateSchema } from '@/lib/schemas/invoice.schema';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -163,7 +163,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: invoice, error: invoiceError } = await supabase
+    // Verify the employee actually belongs to the authenticated user (unless admin)
+    const { data: userData } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    const isAdmin = ['admin', 'super_admin'].includes(userData?.role ?? '');
+
+    if (!isAdmin && resolvedEmployeeId !== employeeData?.id) {
+      return NextResponse.json(
+        { error: 'Cannot create invoices for other employees' },
+        { status: 403 }
+      );
+    }
+
+    // Use admin client for the insert to bypass RLS. Security is enforced
+    // at the application layer above (auth check + employee ownership check).
+    // This matches the established pattern used in other API routes (invite,
+    // assign-intern, approve-onboarding, resources/upload).
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
       .insert({
         employee_id: resolvedEmployeeId,
@@ -195,7 +216,7 @@ export async function POST(request: NextRequest) {
         total: lineItem.total,
       }));
 
-      const { error: lineItemsError } = await supabase
+      const { error: lineItemsError } = await supabaseAdmin
         .from('invoice_line_items')
         .insert(lineItemRows);
 
@@ -208,7 +229,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: fullInvoice } = await supabase
+    const { data: fullInvoice } = await supabaseAdmin
       .from('invoices')
       .select('*, invoice_line_items(*)')
       .eq('id', invoice.id)

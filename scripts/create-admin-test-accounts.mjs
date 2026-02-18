@@ -2,17 +2,18 @@
 /**
  * Create Admin Test Accounts
  * 
- * Creates test accounts with admin-level roles (admin, hr, cos, ceo) for testing
+ * Creates test accounts with admin-level roles for testing
  * the reports management and other admin features.
+ * 
+ * After role consolidation, the available roles are:
+ * - employee, intern, admin, super_admin
  * 
  * Usage:
  *   node scripts/create-admin-test-accounts.mjs
  * 
  * Creates the following accounts:
  * - admin@test.com (role: admin)
- * - hr@test.com (role: hr)
- * - ceo@test.com (role: ceo)
- * - cos@test.com (role: cos)
+ * - superadmin@test.com (role: super_admin)
  * 
  * All accounts use password: password
  */
@@ -30,36 +31,12 @@ const ADMIN_ACCOUNTS = [
     department: 'IT',
   },
   {
-    email: 'hr@test.com',
-    password: 'password',
-    fullName: 'HR Manager',
-    role: 'hr',
-    position: 'HR Manager',
-    department: 'Human Resources',
-  },
-  {
-    email: 'ceo@test.com',
-    password: 'password',
-    fullName: 'Chief Executive',
-    role: 'ceo',
-    position: 'Chief Executive Officer',
-    department: 'Executive',
-  },
-  {
-    email: 'cos@test.com',
-    password: 'password',
-    fullName: 'Chief of Staff',
-    role: 'cos',
-    position: 'Chief of Staff',
-    department: 'Executive',
-  },
-  {
     email: 'superadmin@test.com',
     password: 'password',
     fullName: 'Super Admin',
-    role: 'admin', // Maps to super_admin in UI via role resolution
+    role: 'super_admin',
     position: 'Super Administrator',
-    department: 'IT',
+    department: 'Executive',
   },
 ];
 

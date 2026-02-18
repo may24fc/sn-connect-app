@@ -15,6 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useToast,
 } from '@hr-portal/ui';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -36,6 +37,7 @@ export default function TaskDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { addToast } = useToast();
 
   const { data, isLoading, error } = useTask(id);
   const updateTask = useUpdateTask(id);
@@ -93,11 +95,28 @@ export default function TaskDetailPage({
             <Label>Update Status</Label>
             <Select
               value={task.status}
-              onValueChange={(value) =>
-                updateTask.mutate({
-                  status: value as 'pending' | 'in_progress' | 'completed' | 'cancelled',
-                })
-              }
+              onValueChange={(value) => {
+                const newStatus = value as 'pending' | 'in_progress' | 'completed' | 'cancelled';
+                updateTask.mutate(
+                  { status: newStatus },
+                  {
+                    onSuccess: () => {
+                      addToast({
+                        title: 'Task updated',
+                        description: `Status changed to ${newStatus.replace('_', ' ')}`,
+                        variant: 'success',
+                      });
+                    },
+                    onError: (error) => {
+                      addToast({
+                        title: 'Error',
+                        description: error instanceof Error ? error.message : 'Failed to update task',
+                        variant: 'error',
+                      });
+                    },
+                  }
+                );
+              }}
             >
               <SelectTrigger>
                 <SelectValue />

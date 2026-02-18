@@ -1,5 +1,9 @@
 export { AnnouncementCard, type AnnouncementCardProps } from './AnnouncementCard';
 export {
+  AnnouncementDetailDialog,
+  type AnnouncementDetailDialogProps,
+} from './AnnouncementDetailDialog';
+export {
   AnnouncementFilters,
   type AnnouncementFiltersProps,
   type AnnouncementFiltersValue,

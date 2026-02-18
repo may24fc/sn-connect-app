@@ -19,6 +19,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  useToast,
 } from '@hr-portal/ui';
 import { ArrowLeft, ListChecks } from 'lucide-react';
 import Link from 'next/link';
@@ -41,6 +42,7 @@ export default function ReportDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { addToast } = useToast();
   const { id } = use(params);
   const { data, isLoading, error } = useReport(id);
   const submitReport = useSubmitReport();
@@ -99,7 +101,24 @@ export default function ReportDetailPage({
           <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
           {report.status === 'draft' && (
             <Button
-              onClick={() => submitReport.mutate(report.id)}
+              onClick={() =>
+                submitReport.mutate(report.id, {
+                  onSuccess: () => {
+                    addToast({
+                      title: 'Report submitted',
+                      description: `${report.title} has been submitted for review`,
+                      variant: 'success',
+                    });
+                  },
+                  onError: () => {
+                    addToast({
+                      title: 'Error',
+                      description: 'Failed to submit report',
+                      variant: 'error',
+                    });
+                  },
+                })
+              }
               disabled={submitReport.isPending}
             >
               Submit

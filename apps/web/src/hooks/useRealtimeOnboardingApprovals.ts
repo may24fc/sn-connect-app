@@ -144,11 +144,17 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
           event: 'UPDATE',
           schema: 'public',
           table: 'users',
-          filter: 'status=eq.awaiting_approval',
         },
-        () => {
-          // Refetch when user status changes
+        (payload) => {
+          // Remove from local state immediately when status changes from awaiting_approval
+          if (payload.new && (payload.new as any).status !== 'awaiting_approval') {
+            setPendingApprovals((prev) =>
+              prev.filter((approval) => approval.user_id !== (payload.new as any).id)
+            );
+          }
+          // Also refetch to ensure consistency
           void fetchPendingApprovals();
+          queryClient.invalidateQueries({ queryKey: ['onboarding', 'profiles'] });
         }
       )
       .subscribe((status: string) => {

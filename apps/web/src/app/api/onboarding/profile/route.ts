@@ -16,7 +16,14 @@ export async function GET() {
       .maybeSingle();
 
     if (queryError) {
-      return NextResponse.json({ error: 'Failed to fetch onboarding profile' }, { status: 500 });
+      console.error('Failed to fetch onboarding profile:', queryError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch onboarding profile',
+          details: process.env.NODE_ENV === 'development' ? queryError.message : undefined
+        }, 
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ data: data ?? null });
@@ -60,7 +67,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      return NextResponse.json({ error: 'Failed to create onboarding profile' }, { status: 500 });
+      console.error('Failed to create onboarding profile:', insertError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to create onboarding profile',
+          details: process.env.NODE_ENV === 'development' ? insertError.message : undefined
+        }, 
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ data }, { status: 201 });

@@ -39,10 +39,13 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { useRealtimeProbationEmployees } from '@/hooks/useRealtimeProbationEmployees';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
   AlertCircle,
@@ -65,6 +68,7 @@ import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -236,6 +240,8 @@ function StarRating({
 
 export default function ProbationPage(): ReactNode {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { addToast } = useToast();
   const { data: probationPayload } = useProbation();
   const completeProbation = useCompleteProbation();
   const extendProbation = useExtendProbation();
@@ -249,6 +255,9 @@ export default function ProbationPage(): ReactNode {
 
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('employee');
+  
+  // Real-time probation employees hook
+  const { employees: realtimeEmployees, isSubscribed: isProbationSubscribed } = useRealtimeProbationEmployees();
 
   const employeeRecords = probationPayload?.data?.length ? probationPayload.data : employees;
 
@@ -266,6 +275,8 @@ export default function ProbationPage(): ReactNode {
   // Modal states for credentials-first flow
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentData, setAssignmentData] = useState<any | null>(null);
 
   const filteredEmployees = employeeRecords.filter((emp) => {
     const matchesSearch =
@@ -307,11 +318,24 @@ export default function ProbationPage(): ReactNode {
 
   const handleSubmitAppraisal = async (): Promise<void> => {
     if (selectedEmployee) {
-      await completeProbation.mutateAsync({
-        employeeId: selectedEmployee.id,
-        finalRating: starRating,
-        comments: feedback,
-      });
+      try {
+        await completeProbation.mutateAsync({
+          employeeId: selectedEmployee.id,
+          finalRating: starRating,
+          comments: feedback,
+        });
+        addToast({
+          title: 'Probation completed',
+          description: `${selectedEmployee.first_name} ${selectedEmployee.last_name} has successfully passed probation`,
+          variant: 'success',
+        });
+      } catch (error) {
+        addToast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to complete probation',
+          variant: 'error',
+        });
+      }
     }
 
     setAppraisalDialogOpen(false);
@@ -323,11 +347,24 @@ export default function ProbationPage(): ReactNode {
     today.setDate(today.getDate() + 14);
     const newEndDate = today.toISOString().slice(0, 10);
 
-    await extendProbation.mutateAsync({
-      employeeId,
-      newProbationEndDate: newEndDate,
-      reason: 'Extended from probation tracker dashboard',
-    });
+    try {
+      await extendProbation.mutateAsync({
+        employeeId,
+        newProbationEndDate: newEndDate,
+        reason: 'Extended from probation tracker dashboard',
+      });
+      addToast({
+        title: 'Probation extended',
+        description: `Probation period extended by 14 days`,
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to extend probation',
+        variant: 'error',
+      });
+    }
   };
 
   return (
@@ -1082,6 +1119,24 @@ export default function ProbationPage(): ReactNode {
         open={!!selectedApproval}
         onOpenChange={(open) => !open && setSelectedApproval(null)}
         onboarding={selectedApproval}
+        onApprovalSuccess={(data) => {
+          setAssignmentData(data);
+          setAssignmentModalOpen(true);
+        }}
+      />
+      
+      <AssignEmployeeModal
+        open={assignmentModalOpen}
+        onOpenChange={setAssignmentModalOpen}
+        assignmentData={assignmentData}
+        onSuccess={() => {
+          // Invalidate queries to refresh the UI
+          queryClient.invalidateQueries({ queryKey: ['probation'] });
+          queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
+          queryClient.invalidateQueries({ queryKey: ['internships'] });
+          setAssignmentData(null);
+          setAssignmentModalOpen(false);
+        }}
       />
 
       {/* Performance Appraisal Dialog (existing) */}

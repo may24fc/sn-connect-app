@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import { type FormEvent, useMemo, useState } from 'react';
 
@@ -43,6 +44,7 @@ const formatCurrency = (value: number) =>
   }).format(value || 0);
 
 export default function InvoicePage() {
+  const { addToast } = useToast();
   const [open, setOpen] = useState(false);
 
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -79,25 +81,39 @@ export default function InvoicePage() {
     const deductionValue = Number(deductions || 0);
     const net = gross - deductionValue;
 
-    await createInvoice.mutateAsync({
-      invoiceNumber,
-      periodStart,
-      periodEnd,
-      grossAmount: gross,
-      deductions: deductionValue,
-      netAmount: net,
-      status: 'draft',
-      notes: notes || undefined,
-      lineItems: [],
-    });
+    try {
+      await createInvoice.mutateAsync({
+        invoiceNumber,
+        periodStart,
+        periodEnd,
+        grossAmount: gross,
+        deductions: deductionValue,
+        netAmount: net,
+        status: 'draft',
+        notes: notes || undefined,
+        lineItems: [],
+      });
 
-    setOpen(false);
-    setInvoiceNumber('');
-    setPeriodStart('');
-    setPeriodEnd('');
-    setGrossAmount('0');
-    setDeductions('0');
-    setNotes('');
+      addToast({
+        title: 'Invoice created',
+        description: `Invoice ${invoiceNumber} has been saved as draft`,
+        variant: 'success',
+      });
+
+      setOpen(false);
+      setInvoiceNumber('');
+      setPeriodStart('');
+      setPeriodEnd('');
+      setGrossAmount('0');
+      setDeductions('0');
+      setNotes('');
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: 'Failed to create invoice',
+        variant: 'error',
+      });
+    }
   };
 
   return (
@@ -192,7 +208,24 @@ export default function InvoicePage() {
                         {invoice.status === 'draft' && (
                           <Button
                             size="sm"
-                            onClick={() => submitInvoice.mutate(invoice.id)}
+                            onClick={() =>
+                              submitInvoice.mutate(invoice.id, {
+                                onSuccess: () => {
+                                  addToast({
+                                    title: 'Invoice submitted',
+                                    description: `Invoice ${invoice.invoice_number} has been submitted for approval`,
+                                    variant: 'success',
+                                  });
+                                },
+                                onError: () => {
+                                  addToast({
+                                    title: 'Error',
+                                    description: 'Failed to submit invoice',
+                                    variant: 'error',
+                                  });
+                                },
+                              })
+                            }
                             disabled={submitInvoice.isPending}
                           >
                             Submit

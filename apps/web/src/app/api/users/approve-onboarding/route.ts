@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -33,7 +33,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (userRecord.role !== 'admin' && userRecord.role !== 'super_admin') {
+    // Check if user has admin privileges (admin or super_admin roles after consolidation)
+    const allowedRoles = ['admin', 'super_admin'];
+    if (!allowedRoles.includes(userRecord.role)) {
       return NextResponse.json(
         { error: 'Forbidden: Only admins can approve onboarding' },
         { status: 403 }
@@ -94,9 +96,13 @@ export async function POST(request: NextRequest) {
         .is('deleted_at', null)
         .single();
 
-      // Create employee record if not exists (for cases where it wasn't created on completion)
+      // Create employee record if not exists.
+      // Use admin client to bypass RLS — this is a trusted server-side operation
+      // performed by a verified admin user after explicit approval.
       if (profile) {
-        const { data: existingEmployee } = await supabase
+        const supabaseAdmin = createSupabaseAdminClient();
+
+        const { data: existingEmployee } = await supabaseAdmin
           .from('employees')
           .select('id')
           .eq('user_id', userId)
@@ -106,7 +112,7 @@ export async function POST(request: NextRequest) {
         if (!existingEmployee) {
           const employmentType = targetUser.role === 'intern' ? 'intern' : 'regular';
 
-          const { error: employeeError } = await supabase.from('employees').insert({
+          const { error: employeeError } = await supabaseAdmin.from('employees').insert({
             user_id: userId,
             employee_number: generateEmployeeNumber(),
             first_name: profile.first_name || 'N/A',
@@ -133,7 +139,11 @@ export async function POST(request: NextRequest) {
           });
 
           if (employeeError) {
-            console.warn('Failed to create employee record during approval:', employeeError);
+            console.error('Failed to create employee record during approval:', employeeError);
+            return NextResponse.json(
+              { error: 'Failed to create employee record', details: employeeError.message },
+              { status: 500 }
+            );
           }
         }
       }

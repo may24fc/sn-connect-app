@@ -323,6 +323,7 @@ export {
   AnnouncementPreview,
   AttachmentUploader,
   AnnouncementAnalytics,
+  AnnouncementDetailDialog,
 } from './components/announcements';
 export type {
   AnnouncementCardProps,
@@ -334,6 +335,7 @@ export type {
   AnnouncementPreviewProps,
   AttachmentUploaderProps,
   AnnouncementAnalyticsProps,
+  AnnouncementDetailDialogProps,
 } from './components/announcements';
 
 // Resources Components

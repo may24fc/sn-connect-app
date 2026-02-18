@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -49,6 +50,7 @@ export default function TaskManagementPage() {
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -130,6 +132,12 @@ export default function TaskManagementPage() {
         dueDate: dueDate || undefined,
       });
 
+      addToast({
+        title: 'Task created',
+        description: 'Task has been assigned successfully',
+        variant: 'success',
+      });
+
       setCreateOpen(false);
       setTitle('');
       setDescription('');
@@ -137,7 +145,13 @@ export default function TaskManagementPage() {
       setPriority('medium');
       setDueDate('');
     } catch (error) {
-      setAssignmentError(error instanceof Error ? error.message : 'Failed to create task');
+      const message = error instanceof Error ? error.message : 'Failed to create task';
+      setAssignmentError(message);
+      addToast({
+        title: 'Error',
+        description: message,
+        variant: 'error',
+      });
     }
   };
 

@@ -4,7 +4,7 @@ import { useCreateOnboardingProfile } from '@/hooks/useCreateOnboardingProfile';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { useUpdateOnboardingProfile } from '@/hooks/useUpdateOnboardingProfile';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hr-portal/ui';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, useToast } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -20,6 +20,7 @@ type Step = (typeof steps)[number];
 
 export function OnboardingWizard(): ReactNode {
   const router = useRouter();
+  const { addToast } = useToast();
   const profileQuery = useOnboardingProfile();
   const createProfile = useCreateOnboardingProfile();
   const updateStep = useUpdateOnboardingProfile();
@@ -251,8 +252,20 @@ export function OnboardingWizard(): ReactNode {
           const payload = await response
             .json()
             .catch(() => ({ error: 'Failed to complete onboarding' }));
-          throw new Error(payload.error || 'Failed to complete onboarding');
+          const message = payload.error || 'Failed to complete onboarding';
+          addToast({
+            title: 'Error',
+            description: message,
+            variant: 'error',
+          });
+          throw new Error(message);
         }
+
+        addToast({
+          title: 'Onboarding completed!',
+          description: 'Your submission is awaiting approval',
+          variant: 'success',
+        });
 
         clearDraft();
         router.push('/onboarding/awaiting-approval');
@@ -262,6 +275,11 @@ export function OnboardingWizard(): ReactNode {
       const nextStep = steps[stepIndex + 1];
       if (nextStep) {
         setStep(nextStep);
+        addToast({
+          title: 'Progress saved',
+          description: 'Your information has been saved',
+          variant: 'success',
+        });
       }
     } catch (error) {
       const raw = error instanceof Error ? error.message : 'Unable to continue onboarding.';
@@ -276,6 +294,11 @@ export function OnboardingWizard(): ReactNode {
       } catch {
         setErrorMessage(raw);
       }
+      addToast({
+        title: 'Error',
+        description: raw,
+        variant: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
