@@ -356,8 +356,8 @@ export default function EvaluationsPage(): ReactNode {
         await updateOKR.mutateAsync({
           id: selectedOKR.id,
           status: 'completed',
-          adminRating: okrEvalForm.overallRating || undefined,
-          adminComments: okrEvalForm.comments || undefined,
+          ...(okrEvalForm.overallRating ? { adminRating: okrEvalForm.overallRating } : {}),
+          ...(okrEvalForm.comments ? { adminComments: okrEvalForm.comments } : {}),
           evaluatedBy: user.id,
           evaluatedAt: now,
         });
@@ -370,9 +370,9 @@ export default function EvaluationsPage(): ReactNode {
       } else if (evaluationType === 'kpi' && selectedKPI) {
         await updateKPI.mutateAsync({
           id: selectedKPI.id,
-          status: 'completed',
-          adminRating: kpiEvalForm.overallRating || undefined,
-          adminComments: kpiEvalForm.comments || undefined,
+          status: 'completed' as const,
+          ...(kpiEvalForm.overallRating ? { adminRating: kpiEvalForm.overallRating } : {}),
+          ...(kpiEvalForm.comments ? { adminComments: kpiEvalForm.comments } : {}),
           evaluatedBy: user.id,
           evaluatedAt: now,
         });

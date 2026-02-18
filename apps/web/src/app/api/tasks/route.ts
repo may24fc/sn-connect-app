@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabase, user } = auth.context;
+    const { supabase } = auth.context;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';

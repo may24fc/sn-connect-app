@@ -46,7 +46,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch task assignees' }, { status: 500 });
     }
 
-    const userRows = users || [];
+    const userRows: Array<{ id: string; role: string }> = users || [];
 
     if (userRows.length === 0) {
       return NextResponse.json({ data: [] satisfies Array<TaskAssigneeOption> });

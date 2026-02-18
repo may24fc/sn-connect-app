@@ -46,7 +46,7 @@ function toTaskDetailViewModel(apiTask: ApiTaskPayload): Task {
             role: 'employee',
             department: '—',
             assignedAt: apiTask.created_at,
-            completedAt: apiTask.completed_at || undefined,
+            ...(apiTask.completed_at ? { completedAt: apiTask.completed_at } : {}),
           },
         ]
       : [],

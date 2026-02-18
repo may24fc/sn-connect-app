@@ -64,6 +64,7 @@ export interface KPI {
   unit: string;
   weight: number;
   score: number;
+  status?: string;
   createdAt: string;
   updatedAt: string;
 }

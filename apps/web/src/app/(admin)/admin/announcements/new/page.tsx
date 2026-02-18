@@ -98,7 +98,7 @@ export default function NewAnnouncementPage() {
         status: nextStatus,
         publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-        targetRoles: parseCsvList(targeting.rolesCsv),
+        targetRoles: parseCsvList(targeting.rolesCsv) as ('employee' | 'intern' | 'admin' | 'super_admin')[],
         targetDepartments: parseCsvList(targeting.departmentsCsv),
         targetEmployees: parseCsvList(targeting.employeesCsv),
         isPinned,

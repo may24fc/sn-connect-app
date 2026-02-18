@@ -55,7 +55,7 @@ export function useUpdateTask(taskId: string) {
 
       return { previousTasks, previousTask };
     },
-    onError: (err, payload, context) => {
+    onError: (_err, _payload, context) => {
       // Rollback on error
       if (context?.previousTasks) {
         queryClient.setQueryData(queryKeys.tasks.all, context.previousTasks);
