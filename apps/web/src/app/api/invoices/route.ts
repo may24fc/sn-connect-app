@@ -67,7 +67,8 @@ export async function GET(request: NextRequest) {
 
     if (!isAdmin && !employeeId) {
       // Non-admin users can only see their own invoices.
-      const { data: empData } = await supabase
+      // Use admin client for employee lookup to avoid RLS issues.
+      const { data: empData } = await supabaseAdmin
         .from('employees')
         .select('id')
         .eq('user_id', user.id)
@@ -126,13 +127,17 @@ export async function POST(request: NextRequest) {
     const parsed = invoiceCreateSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error('POST /api/invoices validation error:', JSON.stringify(parsed.error.flatten()));
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    const { data: employeeData, error: employeeError } = await supabase
+    // Use admin client for employee lookup — regular client may fail due to RLS
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    const { data: employeeData, error: employeeError } = await supabaseAdmin
       .from('employees')
       .select('id')
       .eq('user_id', user.id)
@@ -157,12 +162,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the employee actually belongs to the authenticated user (unless admin)
-    const { data: userData } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    const isAdmin = ['admin', 'super_admin'].includes(userData?.role ?? '');
+    const role =
+      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (!isAdmin && resolvedEmployeeId !== employeeData?.id) {
       return NextResponse.json(
@@ -171,11 +173,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use admin client for the insert to bypass RLS. Security is enforced
+    // Use the same admin client for the insert to bypass RLS. Security is enforced
     // at the application layer above (auth check + employee ownership check).
     // This matches the established pattern used in other API routes (invite,
     // assign-intern, approve-onboarding, resources/upload).
-    const supabaseAdmin = createSupabaseAdminClient();
 
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')

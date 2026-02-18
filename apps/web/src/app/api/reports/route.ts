@@ -62,7 +62,8 @@ export async function GET(request: NextRequest) {
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
     } else if (!isAdmin) {
-      const { data: empData } = await supabase
+      // Use admin client for employee lookup to avoid RLS failures
+      const { data: empData } = await supabaseAdmin
         .from('employees')
         .select('id')
         .eq('user_id', user.id)
@@ -125,13 +126,15 @@ export async function POST(request: NextRequest) {
     const parsed = reportCreateSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error('POST /api/reports validation error:', JSON.stringify(parsed.error.flatten()));
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    const { data: employeeData, error: employeeError } = await supabase
+    // Use admin client for employee lookup — regular client may fail due to RLS
+    const { data: employeeData, error: employeeError } = await supabaseAdmin
       .from('employees')
       .select('id')
       .eq('user_id', user.id)
