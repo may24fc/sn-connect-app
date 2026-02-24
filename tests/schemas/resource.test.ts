@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
   bookmarkResourceSchema,
   createCollectionSchema,
@@ -12,6 +11,7 @@ import {
   trackViewSchema,
   updateResourceSchema,
 } from '@/lib/schemas/resource.schema';
+import { describe, expect, it } from 'vitest';
 
 // ============================================
 // Enum Schemas

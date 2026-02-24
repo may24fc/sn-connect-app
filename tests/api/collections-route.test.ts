@@ -20,7 +20,11 @@ function createCollectionListQuery(result: QueryBuilderResult) {
     is: vi.fn(() => query),
     order: vi.fn(() => query),
     or: vi.fn(() => query),
-    range: vi.fn(async () => ({ data: result.data, error: result.error, count: result.count ?? 0 })),
+    range: vi.fn(async () => ({
+      data: result.data,
+      error: result.error,
+      count: result.count ?? 0,
+    })),
   };
 
   return query;

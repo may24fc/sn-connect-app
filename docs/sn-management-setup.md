@@ -2604,7 +2604,7 @@ CREATE TABLE public.intern_daily_logs (
 
 ### 6.2 RAG Implementation
 
-- [ ] **Implement packages/ai module**
+- [X] **Implement packages/ai module**
   - File: `packages/ai/src/embeddings.ts` - Generate embeddings
   - File: `packages/ai/src/chat.ts` - Chat with context
   - File: `packages/ai/src/chunking.ts` - Document chunking
@@ -2615,24 +2615,24 @@ CREATE TABLE public.intern_daily_logs (
   - File: `apps/web/src/app/api/ai/sources/[id]/route.ts`
   - File: `apps/web/src/app/api/ai/sources/upload/route.ts`
 
-- [ ] **Create Supabase Edge Function for embeddings**
+- [X] **Create Supabase Edge Function for embeddings**
   - File: `supabase/functions/generate-embeddings/index.ts`
   - Trigger: On knowledge source insert
   - Action: Chunk document, generate embeddings, store
 
-- [ ] **Connect AI knowledge pages to real data**
+- [X] **Connect AI knowledge pages to real data**
   - Update `apps/web/src/app/(admin)/admin/ai-knowledge/page.tsx`
   - Update `apps/web/src/app/(admin)/super-admin/ai-knowledge/page.tsx`
 
 ### 6.3 Chat Interface
 
-- [ ] **Create chat hooks**
+- [X] **Create chat hooks**
   - File: `apps/web/src/hooks/useAIChat.ts`
   - Streaming response support
   - Context retrieval
   - Chat history management
 
-- [ ] **Update AIChatbot component with real API**
+- [X] **Update AIChatbot component with real API**
   - File: `packages/ui/src/components/AIChatbot.tsx`
   - Connect to /api/ai/chat
   - Implement streaming responses

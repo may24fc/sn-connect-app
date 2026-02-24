@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 export interface PendingOnboarding {
   id: string;

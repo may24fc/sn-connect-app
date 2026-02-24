@@ -1,15 +1,7 @@
 'use client';
 
 import { useCreateCollection } from '@/hooks/useResourceCollections';
-import {
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Input,
-  Textarea,
-} from '@hr-portal/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -60,7 +52,11 @@ export default function NewCollectionPage() {
           <CardTitle>Collection Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Input placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <Input
+            placeholder="Title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
           <Textarea
             placeholder="Description"
             value={description}

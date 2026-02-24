@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('performance_reviews')
-      .select('*, review_cycles(id, name, start_date, end_date, status), employees(id, first_name, last_name, department, immediate_head)')
+      .select(
+        '*, review_cycles(id, name, start_date, end_date, status), employees(id, first_name, last_name, department, immediate_head)'
+      )
       .order('created_at', { ascending: false });
 
     if (employeeId) {

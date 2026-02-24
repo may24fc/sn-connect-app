@@ -1,7 +1,7 @@
 import { queryKeys } from '@/lib/query-keys';
 import type { CreateReviewCycleInput } from '@/lib/schemas/performance.schema';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { KPI, OKR, PerformanceCycle, ReviewStatus } from '@hr-portal/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface ReviewCycleRow {
   id: string;
@@ -78,9 +78,7 @@ function toUiCycle(row: ReviewCycleRow): PerformanceCycle {
     endDate: row.end_date,
     status: mapCycleStatus(row.status),
     ...(row.self_review_deadline ? { selfAssessmentDeadline: row.self_review_deadline } : {}),
-    ...(row.manager_review_deadline
-      ? { managerReviewDeadline: row.manager_review_deadline }
-      : {}),
+    ...(row.manager_review_deadline ? { managerReviewDeadline: row.manager_review_deadline } : {}),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -183,7 +181,10 @@ export function usePerformanceReviews(cycleId?: string) {
       const response = await fetch(`/api/performance/reviews?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch reviews');
       const payload = (await response.json()) as { data: Array<ReviewRow> };
-      return (payload.data || []).map((row) => ({ id: row.id, status: mapReviewStatus(row.status) }));
+      return (payload.data || []).map((row) => ({
+        id: row.id,
+        status: mapReviewStatus(row.status),
+      }));
     },
   });
 }

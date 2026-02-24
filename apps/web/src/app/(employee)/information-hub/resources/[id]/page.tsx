@@ -1,15 +1,14 @@
 'use client';
 
-import { useBookmarkResource, useRemoveBookmark, useResourceBookmarks, useTrackResourceView } from '@/hooks/useResourceBookmarks';
+import {
+  useBookmarkResource,
+  useRemoveBookmark,
+  useResourceBookmarks,
+  useTrackResourceView,
+} from '@/hooks/useResourceBookmarks';
 import { useResourcesByCategory } from '@/hooks/useResourceFeed';
 import { useResource } from '@/hooks/useResources';
-import {
-  Button,
-  DocumentViewer,
-  ResourceCard,
-  ResourceGrid,
-  VideoPlayer,
-} from '@hr-portal/ui';
+import { Button, DocumentViewer, ResourceCard, ResourceGrid, VideoPlayer } from '@hr-portal/ui';
 import { Bookmark, CheckCircle2, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -63,7 +62,10 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden -m-4 lg:-m-6">
       <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-3 text-sm">
-        <Link href="/information-hub" className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
+        <Link
+          href="/information-hub"
+          className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+        >
           Information Hub
         </Link>
         <span className="mx-2 text-zinc-400">/</span>
@@ -96,13 +98,17 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
               {...(resource.mime_type ? { mimeType: resource.mime_type } : {})}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-zinc-300">No inline preview available</div>
+            <div className="h-full flex items-center justify-center text-zinc-300">
+              No inline preview available
+            </div>
           )}
         </div>
 
         <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resource.title}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">{resource.description || resource.excerpt}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+            {resource.description || resource.excerpt}
+          </p>
 
           <div className="flex items-center gap-3 mt-4">
             <Button
@@ -130,7 +136,9 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
 
             <Button
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md"
-              onClick={() => trackView.mutate({ resourceId: resource.id, completed: true, durationSeconds })}
+              onClick={() =>
+                trackView.mutate({ resourceId: resource.id, completed: true, durationSeconds })
+              }
             >
               <CheckCircle2 className="h-4 w-4" />
               Mark as Completed
@@ -139,8 +147,13 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
         </div>
 
         <div className="p-6 space-y-3">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Related Resources</h2>
-          <ResourceGrid columns={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            Related Resources
+          </h2>
+          <ResourceGrid
+            columns={3}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          >
             {relatedResources.map((item) => (
               <ResourceCard
                 key={item.id}

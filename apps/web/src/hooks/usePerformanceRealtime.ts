@@ -30,7 +30,9 @@ interface UsePerformanceRealtimeOptions {
   enabled?: boolean;
 }
 
-export function usePerformanceRealtime({ enabled = true }: UsePerformanceRealtimeOptions = {}): void {
+export function usePerformanceRealtime({
+  enabled = true,
+}: UsePerformanceRealtimeOptions = {}): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -59,49 +61,25 @@ export function usePerformanceRealtime({ enabled = true }: UsePerformanceRealtim
     const channel = supabase
       .channel('performance:realtime')
       // OKR events --------------------------------------------------------
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'okrs' },
-        () => {
-          invalidateOkrQueries();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'okrs' },
-        () => {
-          invalidateOkrQueries();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'okrs' },
-        () => {
-          invalidateOkrQueries();
-        }
-      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'okrs' }, () => {
+        invalidateOkrQueries();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'okrs' }, () => {
+        invalidateOkrQueries();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'okrs' }, () => {
+        invalidateOkrQueries();
+      })
       // KPI events --------------------------------------------------------
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'kpis' },
-        () => {
-          invalidateKpiQueries();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'kpis' },
-        () => {
-          invalidateKpiQueries();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'kpis' },
-        () => {
-          invalidateKpiQueries();
-        }
-      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kpis' }, () => {
+        invalidateKpiQueries();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'kpis' }, () => {
+        invalidateKpiQueries();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'kpis' }, () => {
+        invalidateKpiQueries();
+      })
       .subscribe();
 
     return () => {

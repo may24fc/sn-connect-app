@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
   RESOURCE_ADMIN_ROLES,
   camelToSnake,
@@ -6,6 +5,7 @@ import {
   normalizeExcerpt,
   transformPayloadToSnakeCase,
 } from '@/app/api/resources/_lib';
+import { describe, expect, it } from 'vitest';
 
 describe('normalizeExcerpt', () => {
   it('returns explicit excerpt when provided', () => {

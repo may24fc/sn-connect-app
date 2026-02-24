@@ -35,10 +35,9 @@ export async function GET(request: NextRequest) {
     // Use admin client to avoid nested RLS failures on cross-table subqueries
     let query = supabaseAdmin
       .from('reports')
-      .select(
-        '*, employees(id, user_id, first_name, last_name, department), report_metrics(*)',
-        { count: 'exact' }
-      )
+      .select('*, employees(id, user_id, first_name, last_name, department), report_metrics(*)', {
+        count: 'exact',
+      })
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -55,8 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Role-based scoping: non-admins only see their own reports
-    const role =
-      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (employeeId) {
@@ -159,8 +157,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Ownership check: non-admins can only create reports for themselves
-    const role =
-      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (!isAdmin && employeeId !== employeeData?.id) {
@@ -198,7 +195,9 @@ export async function POST(request: NextRequest) {
         notes: metric.notes || null,
       }));
 
-      const { error: metricsError } = await supabaseAdmin.from('report_metrics').insert(metricsPayload);
+      const { error: metricsError } = await supabaseAdmin
+        .from('report_metrics')
+        .insert(metricsPayload);
 
       if (metricsError) {
         console.error('Error creating report metrics:', metricsError);

@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  useCreatePerformanceCycle,
+  useDeletePerformanceCycle,
+  usePerformanceCycles,
+  useUpdatePerformanceCycle,
+} from '@/hooks/usePerformance';
+import {
   Badge,
   Button,
   Card,
@@ -27,12 +33,6 @@ import {
   TableRow,
   useToast,
 } from '@hr-portal/ui';
-import {
-  useCreatePerformanceCycle,
-  useDeletePerformanceCycle,
-  usePerformanceCycles,
-  useUpdatePerformanceCycle,
-} from '@/hooks/usePerformance';
 import {
   ArrowLeft,
   Calendar,
@@ -312,95 +312,95 @@ export default function CyclesPage(): ReactNode {
             <TableBody>
               {cycles.length > 0 ? (
                 cycles.map((cycle) => {
-                const config = statusConfig[cycle.status];
-                const StatusIcon = config.icon;
-                return (
-                  <TableRow key={cycle.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                          <Calendar className="h-5 w-5 text-primary" />
+                  const config = statusConfig[cycle.status];
+                  const StatusIcon = config.icon;
+                  return (
+                    <TableRow key={cycle.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                            <Calendar className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{cycle.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Created {formatDate(cycle.createdAt)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">{cycle.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Created {formatDate(cycle.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">
-                        {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">
-                        {cycle.selfAssessmentDeadline
-                          ? formatDate(cycle.selfAssessmentDeadline)
-                          : '-'}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm">
-                        {cycle.managerReviewDeadline
-                          ? formatDate(cycle.managerReviewDeadline)
-                          : '-'}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={config.variant} className="gap-1">
-                        <StatusIcon className="h-3 w-3" />
-                        {config.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenEdit(cycle)}>
-                            <Edit2 className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          {cycle.status === 'draft' && (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                void handleActivate(cycle);
-                              }}
-                            >
-                              <Play className="mr-2 h-4 w-4" />
-                              Activate
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">
+                          {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">
+                          {cycle.selfAssessmentDeadline
+                            ? formatDate(cycle.selfAssessmentDeadline)
+                            : '-'}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">
+                          {cycle.managerReviewDeadline
+                            ? formatDate(cycle.managerReviewDeadline)
+                            : '-'}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={config.variant} className="gap-1">
+                          <StatusIcon className="h-3 w-3" />
+                          {config.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleOpenEdit(cycle)}>
+                              <Edit2 className="mr-2 h-4 w-4" />
+                              Edit
                             </DropdownMenuItem>
-                          )}
-                          {cycle.status === 'active' && (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                void handleClose(cycle);
-                              }}
-                            >
-                              <Pause className="mr-2 h-4 w-4" />
-                              Close Cycle
-                            </DropdownMenuItem>
-                          )}
-                          {cycle.status !== 'active' && (
-                            <DropdownMenuItem
-                              onClick={() => handleOpenDelete(cycle)}
-                              className="text-error"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                            {cycle.status === 'draft' && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  void handleActivate(cycle);
+                                }}
+                              >
+                                <Play className="mr-2 h-4 w-4" />
+                                Activate
+                              </DropdownMenuItem>
+                            )}
+                            {cycle.status === 'active' && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  void handleClose(cycle);
+                                }}
+                              >
+                                <Pause className="mr-2 h-4 w-4" />
+                                Close Cycle
+                              </DropdownMenuItem>
+                            )}
+                            {cycle.status !== 'active' && (
+                              <DropdownMenuItem
+                                onClick={() => handleOpenDelete(cycle)}
+                                className="text-error"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">

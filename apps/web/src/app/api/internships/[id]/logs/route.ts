@@ -36,10 +36,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { supabase, user, role, error } = await getAuthedInternshipContext();
@@ -54,7 +51,8 @@ export async function POST(
 
     const internship = access.internship as { employee_id: string; completed_hours?: number };
     const isAdmin = isInternshipAdmin(role);
-    const canSubmitForSelf = access.employeeId !== null && access.employeeId === internship.employee_id;
+    const canSubmitForSelf =
+      access.employeeId !== null && access.employeeId === internship.employee_id;
 
     if (!isAdmin && !canSubmitForSelf) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -116,10 +114,7 @@ export async function POST(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { supabase, user, role, error } = await getAuthedInternshipContext();

@@ -9,16 +9,16 @@ import {
   TagInput,
   Textarea,
 } from '@hr-portal/ui';
-import { 
-  FileText, 
-  Upload, 
-  Link2, 
-  Target, 
-  Tag as TagIcon,
+import {
   ChevronDown,
   ChevronUp,
-  Send,
+  FileText,
   Globe,
+  Link2,
+  Send,
+  Tag as TagIcon,
+  Target,
+  Upload,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -81,8 +81,24 @@ export default function NewResourcePage() {
     const created = await createResource.mutateAsync({
       title,
       description,
-      resourceType: resourceType as 'link' | 'video' | 'document' | 'image' | 'presentation' | 'interactive',
-      category: category as 'benefits' | 'performance' | 'training' | 'emergency' | 'onboarding' | 'policies' | 'tools' | 'culture' | 'department_specific' | 'forms_templates',
+      resourceType: resourceType as
+        | 'link'
+        | 'video'
+        | 'document'
+        | 'image'
+        | 'presentation'
+        | 'interactive',
+      category: category as
+        | 'benefits'
+        | 'performance'
+        | 'training'
+        | 'emergency'
+        | 'onboarding'
+        | 'policies'
+        | 'tools'
+        | 'culture'
+        | 'department_specific'
+        | 'forms_templates',
       tags,
       filePath: filePath || undefined,
       externalUrl: externalUrl || undefined,

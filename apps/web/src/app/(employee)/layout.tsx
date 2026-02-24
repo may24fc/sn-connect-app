@@ -45,46 +45,53 @@ export default function EmployeeLayout({
   return (
     <ToastProvider>
       <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block flex-shrink-0">
-        <Sidebar
-          variant={sidebarVariant}
-          currentPath={pathname}
-          onNavigate={handleNavigate}
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-      </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative z-10 flex-shrink-0">
-            <Sidebar variant={sidebarVariant} currentPath={pathname} onNavigate={handleNavigate} />
-          </div>
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block flex-shrink-0">
+          <Sidebar
+            variant={sidebarVariant}
+            currentPath={pathname}
+            onNavigate={handleNavigate}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
         </div>
-      )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
-          user={user}
-          onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-          onLogout={handleLogout}
-          onProfileClick={handleProfileClick}
-          notificationCount={3}
-          onNotificationsClick={() => {
-            // TODO: Open notifications panel
-          }}
-        />
+        {/* Mobile Sidebar Overlay */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="relative z-10 flex-shrink-0">
+              <Sidebar
+                variant={sidebarVariant}
+                currentPath={pathname}
+                onNavigate={handleNavigate}
+              />
+            </div>
+          </div>
+        )}
 
-        {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
-      </div>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header
+            user={user}
+            onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onLogout={handleLogout}
+            onProfileClick={handleProfileClick}
+            notificationCount={3}
+            onNotificationsClick={() => {
+              // TODO: Open notifications panel
+            }}
+          />
 
-      {/* AI Chatbot */}
-      <AIChatbot />
+          {/* Scrollable Content Area */}
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+        </div>
+
+        {/* AI Chatbot */}
+        <AIChatbot />
       </div>
     </ToastProvider>
   );

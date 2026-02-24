@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  usePerformanceCycles,
+  usePerformanceKPIs,
+  usePerformanceOKRs,
+} from '@/hooks/usePerformance';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import {
   Badge,
   Button,
   Card,
@@ -10,8 +16,6 @@ import {
   type PerformanceDashboardStats,
   PerformanceSummaryCards,
 } from '@hr-portal/ui';
-import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs } from '@/hooks/usePerformance';
-import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import { Calendar, ClipboardCheck, Download, Settings } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -105,16 +109,12 @@ export default function AdminPerformancePage(): ReactNode {
 
         return accumulator;
       },
-      {} as Record<
-        string,
-        DepartmentPerformanceData & { okrSum: number; kpiSum: number }
-      >
+      {} as Record<string, DepartmentPerformanceData & { okrSum: number; kpiSum: number }>
     )
   ).map(({ okrSum: _okrSum, kpiSum: _kpiSum, ...value }) => value);
 
   const currentCycleLabel = activeCycle?.name || 'Performance Cycle';
-  const currentCycleRange =
-    activeCycle && `${activeCycle.startDate} - ${activeCycle.endDate}`;
+  const currentCycleRange = activeCycle && `${activeCycle.startDate} - ${activeCycle.endDate}`;
 
   return (
     <div className="space-y-6">
@@ -154,7 +154,9 @@ export default function AdminPerformancePage(): ReactNode {
               </div>
               <div>
                 <h2 className="font-semibold">{currentCycleLabel}</h2>
-                <p className="text-sm text-muted-foreground">{currentCycleRange || 'No cycle dates'}</p>
+                <p className="text-sm text-muted-foreground">
+                  {currentCycleRange || 'No cycle dates'}
+                </p>
               </div>
             </div>
             <Badge variant="success">Active Cycle</Badge>

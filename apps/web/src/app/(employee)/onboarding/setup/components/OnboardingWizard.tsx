@@ -4,7 +4,15 @@ import { useCreateOnboardingProfile } from '@/hooks/useCreateOnboardingProfile';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { useUpdateOnboardingProfile } from '@/hooks/useUpdateOnboardingProfile';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, useToast } from '@hr-portal/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  useToast,
+} from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -41,7 +49,11 @@ export function OnboardingWizard(): ReactNode {
     }
 
     // Only sync step from server on initial load to avoid race conditions
-    if (!initialSyncDone.current && profile.current_step && profile.current_step !== draft.currentStep) {
+    if (
+      !initialSyncDone.current &&
+      profile.current_step &&
+      profile.current_step !== draft.currentStep
+    ) {
       setStep(profile.current_step);
     }
 

@@ -1,7 +1,15 @@
 'use client';
 
 import { useRemoveBookmark, useResourceBookmarks } from '@/hooks/useResourceBookmarks';
-import { Button, Card, CardContent, CardHeader, CardTitle, ResourceCard, ResourceGrid } from '@hr-portal/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ResourceCard,
+  ResourceGrid,
+} from '@hr-portal/ui';
 import Link from 'next/link';
 
 export default function ResourceBookmarksPage() {
@@ -19,7 +27,9 @@ export default function ResourceBookmarksPage() {
           </Link>{' '}
           / Resource Bookmarks
         </p>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">My Bookmarked Resources</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+          My Bookmarked Resources
+        </h1>
       </div>
 
       {isLoading ? (
@@ -32,7 +42,10 @@ export default function ResourceBookmarksPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          <ResourceGrid columns={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <ResourceGrid
+            columns={3}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {bookmarks.map((bookmark) => {
               if (!bookmark.resource) return null;
 
@@ -51,7 +64,9 @@ export default function ResourceBookmarksPage() {
                     downloadCount={bookmark.resource.download_count}
                     bookmarkCount={bookmark.resource.bookmark_count}
                     isBookmarked
-                    dateLabel={(bookmark.resource.published_at || bookmark.resource.created_at).slice(0, 10)}
+                    dateLabel={(
+                      bookmark.resource.published_at || bookmark.resource.created_at
+                    ).slice(0, 10)}
                     onClick={() => {
                       window.location.href = `/information-hub/resources/${bookmark.resource_id}`;
                     }}

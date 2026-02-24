@@ -41,10 +41,13 @@ export default function ProfilePage() {
   // Handle missing employee data gracefully - show UI structure
   const displayName = employee
     ? `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim()
-    : user?.name ?? 'User';
+    : (user?.name ?? 'User');
   const initials = employee
     ? (employee.first_name?.[0] ?? '') + (employee.last_name?.[0] ?? '')
-    : (user?.name?.split(' ').map((n) => n[0]).join('') ?? 'U');
+    : (user?.name
+        ?.split(' ')
+        .map((n) => n[0])
+        .join('') ?? 'U');
   const position = employee?.position ?? 'Position not set';
   const department = employee?.department ?? 'Department not assigned';
   const employeeNumber = employee?.employee_number ?? 'N/A';
@@ -79,7 +82,8 @@ export default function ProfilePage() {
               </div>
               {!employee && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
-                  Complete profile information will be available once your employee record is created
+                  Complete profile information will be available once your employee record is
+                  created
                 </p>
               )}
             </div>

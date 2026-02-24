@@ -1,6 +1,13 @@
 'use client';
 
 import {
+  useCreateOKR,
+  usePerformanceCycles,
+  usePerformanceOKRs,
+  useUpdateOKR,
+} from '@/hooks/usePerformance';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import {
   Button,
   Card,
   CardContent,
@@ -21,8 +28,6 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { useCreateOKR, usePerformanceCycles, usePerformanceOKRs, useUpdateOKR } from '@/hooks/usePerformance';
-import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import { ArrowLeft, Calendar, Filter, ListChecks, Plus, Target, X } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
@@ -86,14 +91,21 @@ export default function OKRsPage(): ReactNode {
 
     const updatedKeyResults = okr.keyResults.map((kr) => {
       if (kr.id === keyResultId) {
-        return { ...kr, currentValue: value, progressPercentage: Math.round((value / kr.targetValue) * 100) };
+        return {
+          ...kr,
+          currentValue: value,
+          progressPercentage: Math.round((value / kr.targetValue) * 100),
+        };
       }
       return kr;
     });
 
     const overallProgress = Math.round(
       updatedKeyResults.reduce((sum, kr) => sum + kr.progressPercentage * (kr.weight || 1), 0) /
-        Math.max(updatedKeyResults.reduce((sum, kr) => sum + (kr.weight || 1), 0), 1)
+        Math.max(
+          updatedKeyResults.reduce((sum, kr) => sum + (kr.weight || 1), 0),
+          1
+        )
     );
 
     updateOKR.mutate(
@@ -156,9 +168,34 @@ export default function OKRsPage(): ReactNode {
       weight: number;
       progressPercentage: number;
     }> = [
-      { description: newOKR.kr1, targetValue: 100, currentValue: 0, unit: '%', weight: hasKr3 ? 33 : 50, progressPercentage: 0 },
-      { description: newOKR.kr2, targetValue: 100, currentValue: 0, unit: '%', weight: hasKr3 ? 33 : 50, progressPercentage: 0 },
-      ...(hasKr3 ? [{ description: newOKR.kr3, targetValue: 100, currentValue: 0, unit: '%', weight: 34, progressPercentage: 0 }] : []),
+      {
+        description: newOKR.kr1,
+        targetValue: 100,
+        currentValue: 0,
+        unit: '%',
+        weight: hasKr3 ? 33 : 50,
+        progressPercentage: 0,
+      },
+      {
+        description: newOKR.kr2,
+        targetValue: 100,
+        currentValue: 0,
+        unit: '%',
+        weight: hasKr3 ? 33 : 50,
+        progressPercentage: 0,
+      },
+      ...(hasKr3
+        ? [
+            {
+              description: newOKR.kr3,
+              targetValue: 100,
+              currentValue: 0,
+              unit: '%',
+              weight: 34,
+              progressPercentage: 0,
+            },
+          ]
+        : []),
     ];
 
     const payload: {
@@ -494,7 +531,12 @@ export default function OKRsPage(): ReactNode {
               onClick={() => {
                 void handleCreateOKR();
               }}
-              disabled={!newOKR.objective.trim() || !newOKR.kr1.trim() || !newOKR.kr2.trim() || createOKR.isPending}
+              disabled={
+                !newOKR.objective.trim() ||
+                !newOKR.kr1.trim() ||
+                !newOKR.kr2.trim() ||
+                createOKR.isPending
+              }
             >
               Create Objective
             </Button>

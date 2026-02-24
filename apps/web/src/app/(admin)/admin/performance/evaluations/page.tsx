@@ -1,5 +1,14 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  usePerformanceCycles,
+  usePerformanceKPIs,
+  usePerformanceOKRs,
+  useUpdateKPI,
+  useUpdateOKR,
+} from '@/hooks/usePerformance';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
   Badge,
   Button,
@@ -14,9 +23,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  type KPI,
   Label,
   type OKR,
-  type KPI,
   type PerformanceRating,
   Progress,
   RATING_CONFIG,
@@ -27,9 +36,6 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs, useUpdateKPI, useUpdateOKR } from '@/hooks/usePerformance';
-import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
-import { useAuth } from '@/contexts/AuthContext';
 import {
   ArrowLeft,
   BarChart3,
@@ -102,9 +108,7 @@ function CompactRatingSelector({
         />
       ))}
       {value && (
-        <span className="text-xs text-muted-foreground ml-1">
-          {RATING_CONFIG[value].label}
-        </span>
+        <span className="text-xs text-muted-foreground ml-1">{RATING_CONFIG[value].label}</span>
       )}
     </div>
   );
@@ -208,9 +212,7 @@ function OKREvaluationTable({
                     {okr.progressPercentage}%
                   </span>
                 </div>
-                <Badge variant={getStatusVariant(okr.status)}>
-                  {getStatusLabel(okr.status)}
-                </Badge>
+                <Badge variant={getStatusVariant(okr.status)}>{getStatusLabel(okr.status)}</Badge>
                 <Button size="sm" variant="outline" onClick={() => onEvaluate(okr)}>
                   Evaluate
                 </Button>
@@ -279,7 +281,9 @@ function KPIEvaluationTable({
                 <div className="hidden sm:block">
                   <span className="text-sm font-medium">{kpi.score}%</span>
                 </div>
-                <Badge variant={kpi.score >= 100 ? 'success' : kpi.score >= 80 ? 'warning' : 'error'}>
+                <Badge
+                  variant={kpi.score >= 100 ? 'success' : kpi.score >= 80 ? 'warning' : 'error'}
+                >
                   {kpi.score >= 100 ? 'On Target' : kpi.score >= 80 ? 'Near Target' : 'Below'}
                 </Badge>
                 <Button size="sm" variant="outline" onClick={() => onEvaluate(kpi)}>
@@ -347,11 +351,11 @@ export default function EvaluationsPage(): ReactNode {
 
   const handleSubmitEvaluation = async (): Promise<void> => {
     if (!user) return;
-    
+
     setIsSubmitting(true);
     try {
       const now = new Date().toISOString();
-      
+
       if (evaluationType === 'okr' && selectedOKR) {
         await updateOKR.mutateAsync({
           id: selectedOKR.id,
@@ -383,7 +387,7 @@ export default function EvaluationsPage(): ReactNode {
           variant: 'success',
         });
       }
-      
+
       // Close dialog and reset state
       setEvaluationDialogOpen(false);
       setSelectedOKR(null);
@@ -425,9 +429,7 @@ export default function EvaluationsPage(): ReactNode {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Performance Evaluations</h1>
-            <p className="text-muted-foreground">
-              Review and evaluate OKR and KPI submissions
-            </p>
+            <p className="text-muted-foreground">Review and evaluate OKR and KPI submissions</p>
           </div>
         </div>
       </div>
@@ -485,9 +487,7 @@ export default function EvaluationsPage(): ReactNode {
             <Card>
               <CardContent className="py-12 text-center">
                 <Target className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No OKRs found for the current cycle
-                </p>
+                <p className="text-sm text-muted-foreground">No OKRs found for the current cycle</p>
               </CardContent>
             </Card>
           )}
@@ -515,9 +515,7 @@ export default function EvaluationsPage(): ReactNode {
             <Card>
               <CardContent className="py-12 text-center">
                 <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  No KPIs found for the current cycle
-                </p>
+                <p className="text-sm text-muted-foreground">No KPIs found for the current cycle</p>
               </CardContent>
             </Card>
           )}
@@ -545,8 +543,12 @@ export default function EvaluationsPage(): ReactNode {
 
           {/* Step Indicator */}
           <div className="flex items-center gap-2 mb-4">
-            <div className={`h-2 flex-1 rounded-full ${modalStep >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-            <div className={`h-2 flex-1 rounded-full ${modalStep >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+            <div
+              className={`h-2 flex-1 rounded-full ${modalStep >= 1 ? 'bg-primary' : 'bg-muted'}`}
+            />
+            <div
+              className={`h-2 flex-1 rounded-full ${modalStep >= 2 ? 'bg-primary' : 'bg-muted'}`}
+            />
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto">
@@ -555,7 +557,9 @@ export default function EvaluationsPage(): ReactNode {
               <div className="space-y-3">
                 {/* Objective Rating */}
                 <div className="p-3 rounded-lg border border-border space-y-2">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Objective</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Objective
+                  </p>
                   <p className="text-sm font-medium">{selectedOKR.objective}</p>
                   <CompactRatingSelector
                     value={okrEvalForm.objectiveRating}
@@ -603,11 +607,15 @@ export default function EvaluationsPage(): ReactNode {
                   <div className="flex items-center gap-6 text-sm">
                     <div>
                       <span className="text-xs text-muted-foreground">Target: </span>
-                      <span className="font-medium">{selectedKPI.target} {selectedKPI.unit}</span>
+                      <span className="font-medium">
+                        {selectedKPI.target} {selectedKPI.unit}
+                      </span>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Actual: </span>
-                      <span className="font-medium">{selectedKPI.actual} {selectedKPI.unit}</span>
+                      <span className="font-medium">
+                        {selectedKPI.actual} {selectedKPI.unit}
+                      </span>
                     </div>
                     <div>
                       <span className="text-xs text-muted-foreground">Score: </span>

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Skeleton } from '../../primitives/skeleton';
 import type { AccessLevel, FileStatus, KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { SourcesInventory } from './SourcesInventory';
@@ -8,12 +9,23 @@ import { UploadProgress } from './UploadProgress';
 import { UploadZone } from './UploadZone';
 
 export interface KnowledgeBasePanelProps {
+  /** External sources from API (when undefined, uses internal state) */
   sources: Array<KnowledgeSource>;
   onSourcesChange: (sources: Array<KnowledgeSource>) => void;
+  /** Called when files are selected for upload (API integration) */
+  onUploadFiles?: (files: Array<File>) => void;
+  /** Called when a source's access level changes (API integration) */
+  onAccessChange?: (sourceId: string, accessLevel: AccessLevel) => void;
+  /** Called when a source is deleted */
+  onDeleteSource?: (sourceId: string) => void;
+  /** Whether sources are currently loading from the API */
+  isLoading?: boolean;
+  /** Upload state for files currently being processed */
+  uploadingFiles?: Array<{ id: string; fileName: string; stage: FileStatus }>;
   className?: string;
 }
 
-interface UploadingFile {
+interface InternalUploadingFile {
   id: string;
   fileName: string;
   stage: FileStatus;
@@ -22,46 +34,55 @@ interface UploadingFile {
 export function KnowledgeBasePanel({
   sources,
   onSourcesChange,
+  onUploadFiles,
+  onAccessChange: externalAccessChange,
+  onDeleteSource,
+  isLoading = false,
+  uploadingFiles: externalUploadingFiles,
   className,
 }: KnowledgeBasePanelProps): React.ReactNode {
-  const [uploadingFiles, setUploadingFiles] = React.useState<Array<UploadingFile>>([]);
+  const [internalUploadingFiles, setInternalUploadingFiles] = React.useState<
+    Array<InternalUploadingFile>
+  >([]);
+
+  const uploadingFiles = externalUploadingFiles ?? internalUploadingFiles;
 
   const handleFileSelect = (files: Array<File>): void => {
-    const newUploads: Array<UploadingFile> = files.map((file) => ({
+    if (onUploadFiles) {
+      onUploadFiles(files);
+      return;
+    }
+
+    // Fallback: simulate upload for standalone mode
+    const newUploads: Array<InternalUploadingFile> = files.map((file) => ({
       id: `upload-${Date.now()}-${Math.random()}`,
       fileName: file.name,
       stage: 'scanning' as FileStatus,
     }));
 
-    setUploadingFiles((prev) => [...prev, ...newUploads]);
+    setInternalUploadingFiles((prev) => [...prev, ...newUploads]);
 
-    // Simulate upload process for each file
-    newUploads.forEach((upload) => {
+    for (const upload of newUploads) {
       simulateUpload(upload);
-    });
+    }
   };
 
-  const simulateUpload = async (upload: UploadingFile): Promise<void> => {
+  const simulateUpload = async (upload: InternalUploadingFile): Promise<void> => {
     const stages: Array<FileStatus> = ['scanning', 'chunking', 'indexing', 'ready'];
 
     for (let i = 0; i < stages.length; i++) {
       const stage = stages[i];
-
-      // Type guard to satisfy TypeScript - stage will always be defined since we're iterating over the array
       if (!stage) continue;
 
-      // Update the stage
-      setUploadingFiles((prev) =>
-        prev.map((u) => (u.id === upload.id && stage ? { ...u, stage } : u))
+      setInternalUploadingFiles((prev) =>
+        prev.map((u) => (u.id === upload.id ? { ...u, stage } : u))
       );
 
-      // Wait before moving to next stage (except for the last stage)
       if (i < stages.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 1500));
       }
     }
 
-    // After reaching 'ready', add to sources and remove from uploading
     setTimeout(() => {
       const fileExtension = upload.fileName.split('.').pop()?.toLowerCase() || 'txt';
       const fileType = (
@@ -80,11 +101,16 @@ export function KnowledgeBasePanel({
       };
 
       onSourcesChange([...sources, newSource]);
-      setUploadingFiles((prev) => prev.filter((u) => u.id !== upload.id));
+      setInternalUploadingFiles((prev) => prev.filter((u) => u.id !== upload.id));
     }, 500);
   };
 
   const handleAccessChange = (sourceId: string, newAccessLevel: AccessLevel): void => {
+    if (externalAccessChange) {
+      externalAccessChange(sourceId, newAccessLevel);
+      return;
+    }
+
     const updatedSources = sources.map((source) =>
       source.id === sourceId ? { ...source, accessLevel: newAccessLevel } : source
     );
@@ -121,12 +147,35 @@ export function KnowledgeBasePanel({
 
       {/* Sources Inventory - Scrollable */}
       <div className="flex-1 min-h-0 px-6 py-3">
-        <SourcesInventory
-          sources={sources}
-          onAccessChange={handleAccessChange}
-          className="h-full"
-        />
+        {isLoading ? (
+          <SourcesLoadingSkeleton />
+        ) : (
+          <SourcesInventory
+            sources={sources}
+            onAccessChange={handleAccessChange}
+            {...(onDeleteSource && { onDeleteSource })}
+            className="h-full"
+          />
+        )}
       </div>
+    </div>
+  );
+}
+
+function SourcesLoadingSkeleton(): React.ReactNode {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-5 w-8 rounded-full" />
+      </div>
+      <div className="flex gap-3 mb-4">
+        <Skeleton className="h-10 flex-1 rounded-lg" />
+        <Skeleton className="h-10 w-36 rounded-lg" />
+      </div>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={`source-skeleton-${i}`} className="h-16 w-full rounded-lg" />
+      ))}
     </div>
   );
 }

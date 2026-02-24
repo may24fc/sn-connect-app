@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  usePerformanceCycles,
+  usePerformanceKPIs,
+  usePerformanceOKRs,
+} from '@/hooks/usePerformance';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import {
   Badge,
   Button,
   Card,
@@ -11,19 +17,9 @@ import {
   Progress,
   ProgressGauge,
 } from '@hr-portal/ui';
-import { usePerformanceCycles, usePerformanceKPIs, usePerformanceOKRs } from '@/hooks/usePerformance';
-import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
-import {
-  AlertCircle,
-  BarChart3,
-  Calendar,
-  ChevronRight,
-  Target,
-} from 'lucide-react';
+import { AlertCircle, BarChart3, Calendar, ChevronRight, Target } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-
-
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -92,9 +88,7 @@ export default function PerformancePage(): ReactNode {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Performance</h1>
-        <p className="text-muted-foreground">
-          Track your objectives and KPIs
-        </p>
+        <p className="text-muted-foreground">Track your objectives and KPIs</p>
       </div>
 
       {/* Current Cycle Banner */}
@@ -108,7 +102,9 @@ export default function PerformancePage(): ReactNode {
               <div>
                 <h2 className="font-semibold">{cycle?.name || 'No Active Cycle'}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {cycle ? `${formatDate(cycle.startDate)} - ${formatDate(cycle.endDate)}` : 'No performance cycle has been created yet'}
+                  {cycle
+                    ? `${formatDate(cycle.startDate)} - ${formatDate(cycle.endDate)}`
+                    : 'No performance cycle has been created yet'}
                 </p>
                 {cycle && (
                   <p className="text-xs font-medium text-primary mt-0.5">
@@ -173,9 +169,7 @@ export default function PerformancePage(): ReactNode {
                   >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{item.objective}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(item.deadline)}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{formatDate(item.deadline)}</p>
                     </div>
                     <Badge
                       variant={daysLeft <= 7 ? 'error' : daysLeft <= 14 ? 'warning' : 'secondary'}

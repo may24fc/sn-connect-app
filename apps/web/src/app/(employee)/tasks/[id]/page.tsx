@@ -110,7 +110,8 @@ export default function TaskDetailPage({
                     onError: (error) => {
                       addToast({
                         title: 'Error',
-                        description: error instanceof Error ? error.message : 'Failed to update task',
+                        description:
+                          error instanceof Error ? error.message : 'Failed to update task',
                         variant: 'error',
                       });
                     },

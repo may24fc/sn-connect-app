@@ -22,12 +22,13 @@ export function DocumentViewer({
 
   if (isPdf) {
     return (
-      <div className={cn('rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800', className)}>
-        <iframe
-          src={src}
-          title={fileName ?? 'Document'}
-          className="w-full h-[600px]"
-        />
+      <div
+        className={cn(
+          'rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800',
+          className
+        )}
+      >
+        <iframe src={src} title={fileName ?? 'Document'} className="w-full h-[600px]" />
       </div>
     );
   }

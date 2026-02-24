@@ -381,7 +381,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
               router.push(mock.user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
               break;
             case 'intern':
-              router.push(mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
+              router.push(
+                mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup'
+              );
               break;
             case 'admin':
               router.push('/admin/dashboard');

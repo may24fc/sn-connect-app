@@ -1,6 +1,13 @@
 'use client';
 
 import {
+  useCreateKPI,
+  usePerformanceCycles,
+  usePerformanceKPIs,
+  useUpdateKPI,
+} from '@/hooks/usePerformance';
+import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import {
   Button,
   Card,
   CardContent,
@@ -22,9 +29,16 @@ import {
   SelectValue,
   useToast,
 } from '@hr-portal/ui';
-import { useCreateKPI, usePerformanceCycles, usePerformanceKPIs, useUpdateKPI } from '@/hooks/usePerformance';
-import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
-import { ArrowLeft, BarChart3, Calendar, Minus, Pencil, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  BarChart3,
+  Calendar,
+  Minus,
+  Pencil,
+  Plus,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
@@ -252,11 +266,7 @@ export default function KPIsPage(): ReactNode {
                       {kpi.actual} / {kpi.target} {kpi.unit}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenUpdateDialog(kpi)}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => handleOpenUpdateDialog(kpi)}>
                     <Pencil className="mr-1.5 h-3 w-3" />
                     Update
                   </Button>
@@ -275,9 +285,7 @@ export default function KPIsPage(): ReactNode {
               <BarChart3 className="h-5 w-5 text-primary" />
               Update KPI Progress
             </DialogTitle>
-            <DialogDescription>
-              Update the current value for this KPI.
-            </DialogDescription>
+            <DialogDescription>Update the current value for this KPI.</DialogDescription>
           </DialogHeader>
 
           {selectedKPI && (
@@ -285,7 +293,8 @@ export default function KPIsPage(): ReactNode {
               <div className="rounded-md border border-zinc-200 dark:border-zinc-800 p-3">
                 <p className="text-sm font-medium">{selectedKPI.name}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Target: {selectedKPI.target} {selectedKPI.unit} | Current: {selectedKPI.actual} {selectedKPI.unit}
+                  Target: {selectedKPI.target} {selectedKPI.unit} | Current: {selectedKPI.actual}{' '}
+                  {selectedKPI.unit}
                 </p>
               </div>
 

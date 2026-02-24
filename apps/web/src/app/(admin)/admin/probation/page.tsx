@@ -1,5 +1,12 @@
 'use client';
 
+import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
+import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
+import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { useRealtimeProbationEmployees } from '@/hooks/useRealtimeProbationEmployees';
 import {
   Avatar,
   AvatarFallback,
@@ -41,14 +48,10 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
-import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
-import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
-import { useRealtimeProbationEmployees } from '@/hooks/useRealtimeProbationEmployees';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  AlertTriangle,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   ChevronRight,
   Clock,
@@ -60,15 +63,12 @@ import {
   Star,
   Target,
   TrendingUp,
-  Users,
   UserPlus,
+  Users,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
-import { InviteUserModal } from '@/components/admin/InviteUserModal';
-import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
-import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -80,7 +80,6 @@ function formatDateTime(dateString: string): string {
     hour12: true,
   }).format(date);
 }
-
 
 type ProbationStatus = 'on-track' | 'at-risk' | 'completed' | 'extended';
 type ProbationStage = 1 | 2 | 3 | 4;
@@ -255,9 +254,10 @@ export default function ProbationPage(): ReactNode {
 
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('employee');
-  
+
   // Real-time probation employees hook
-  const { employees: _realtimeEmployees, isSubscribed: _isProbationSubscribed } = useRealtimeProbationEmployees();
+  const { employees: _realtimeEmployees, isSubscribed: _isProbationSubscribed } =
+    useRealtimeProbationEmployees();
 
   const employeeRecords = probationPayload?.data?.length ? probationPayload.data : employees;
 
@@ -271,7 +271,7 @@ export default function ProbationPage(): ReactNode {
   const [feedback, setFeedback] = useState('');
   const [okrRatings, setOkrRatings] = useState<Record<string, number>>({});
   const [kpiRatings, setKpiRatings] = useState<Record<string, number>>({});
-  
+
   // Modal states for credentials-first flow
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
@@ -373,7 +373,9 @@ export default function ProbationPage(): ReactNode {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Employee Probation</h1>
-          <p className="text-muted-foreground">Monitor employee probation periods and onboarding status</p>
+          <p className="text-muted-foreground">
+            Monitor employee probation periods and onboarding status
+          </p>
         </div>
         <Button onClick={() => setInviteModalOpen(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
@@ -389,471 +391,477 @@ export default function ProbationPage(): ReactNode {
 
         <TabsContent value="probation" className="space-y-6">
           {/* Probation Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Employees</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-                <TrendingUp className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">On Track</p>
-                <p className="text-2xl font-bold">{stats.onTrack}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-error/10">
-                <AlertTriangle className="h-5 w-5 text-error" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">At Risk</p>
-                <p className="text-2xl font-bold">{stats.atRisk}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search employees..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="on-track">On Track</SelectItem>
-              <SelectItem value="at-risk">At Risk</SelectItem>
-              <SelectItem value="extended">Extended</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments.map((dept) => (
-                <SelectItem key={dept} value={dept}>
-                  {dept}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Employee Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Stage</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Documents</TableHead>
-                <TableHead>View</TableHead>
-                <TableHead>Days Left</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredEmployees.length > 0 ? (
-                filteredEmployees.map((employee) => {
-                const config = statusConfig[employee.status];
-                const StatusIcon = config.icon;
-                const docProgress = Math.round(
-                  (employee.documentsComplete / employee.totalDocuments) * 100
-                );
-
-                return (
-                  <TableRow key={employee.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          {employee.avatarUrl && <AvatarImage src={employee.avatarUrl} />}
-                          <AvatarFallback className="text-xs">
-                            {getInitials(employee.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{employee.name}</p>
-                          <p className="text-xs text-muted-foreground">{employee.position}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>
-                      <StageIndicator stage={employee.stage} status={employee.status} />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={config.variant} className="gap-1">
-                        <StatusIcon className="h-3 w-3" />
-                        {config.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Progress value={docProgress} className="h-2 w-16" />
-                        <span className="text-xs text-muted-foreground">
-                          {employee.documentsComplete}/{employee.totalDocuments}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewAppraisal(employee)}
-                        disabled={employee.okrs.length === 0 && employee.kpis.length === 0}
-                      >
-                        <Eye className="mr-1 h-4 w-4" />
-                        View
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      {employee.status === 'completed' ? (
-                        <span className="text-muted-foreground">-</span>
-                      ) : (
-                        <span
-                          className={employee.daysRemaining <= 15 ? 'text-error font-medium' : ''}
-                        >
-                          {employee.daysRemaining} days
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewAppraisal(employee)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Appraisal
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Add Note
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              void handleExtendProbation(employee.id);
-                            }}
-                          >
-                            <ChevronRight className="mr-2 h-4 w-4" />
-                            Advance Stage
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No probationary employees found
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Performance Appraisal Modal */}
-      <Dialog open={appraisalDialogOpen} onOpenChange={setAppraisalDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-3">
-              <Target className="h-5 w-5 text-primary" />
-              Performance Appraisal
-            </DialogTitle>
-            <DialogDescription>
-              Review and rate {selectedEmployee?.name}&apos;s performance based on their OKRs and
-              KPIs
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedEmployee && (
-            <div className="space-y-6">
-              {/* Employee Info */}
-              <div className="flex items-center gap-4 rounded-lg bg-muted/50 p-4">
-                <Avatar className="h-14 w-14">
-                  {selectedEmployee.avatarUrl && <AvatarImage src={selectedEmployee.avatarUrl} />}
-                  <AvatarFallback className="text-lg">
-                    {getInitials(selectedEmployee.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{selectedEmployee.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedEmployee.position} - {selectedEmployee.department}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Manager: {selectedEmployee.manager}
-                  </p>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Employees</p>
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                  </div>
                 </div>
-                <Badge variant={statusConfig[selectedEmployee.status].variant}>
-                  {statusConfig[selectedEmployee.status].label}
-                </Badge>
-              </div>
+              </CardContent>
+            </Card>
 
-              <Tabs defaultValue="okrs" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="okrs">OKRs</TabsTrigger>
-                  <TabsTrigger value="kpis">KPIs</TabsTrigger>
-                  <TabsTrigger value="rating">Overall Rating</TabsTrigger>
-                </TabsList>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
+                    <TrendingUp className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">On Track</p>
+                    <p className="text-2xl font-bold">{stats.onTrack}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                {/* OKRs Tab */}
-                <TabsContent value="okrs" className="space-y-4">
-                  {selectedEmployee.okrs.length === 0 ? (
-                    <Card>
-                      <CardContent className="p-6 text-center text-muted-foreground">
-                        No OKRs submitted yet
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    selectedEmployee.okrs.map((okr) => (
-                      <Card key={okr.id}>
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <CardTitle className="text-base">{okr.objective}</CardTitle>
-                              <CardDescription>
-                                Status:{' '}
-                                <Badge variant="secondary" className="ml-1">
-                                  {okr.status.replace('_', ' ')}
-                                </Badge>
-                              </CardDescription>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-muted-foreground">Rate this OKR</p>
-                              <StarRating
-                                value={okrRatings[okr.id] || 0}
-                                onChange={(rating) =>
-                                  setOkrRatings((prev) => ({ ...prev, [okr.id]: rating }))
-                                }
-                              />
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          {okr.keyResults.map((kr) => (
-                            <div key={kr.id} className="rounded-lg border p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="text-sm font-medium">{kr.description}</p>
-                                <span className="text-sm font-semibold text-primary">
-                                  {kr.progress}%
-                                </span>
-                              </div>
-                              <Progress value={kr.progress} className="h-2" />
-                              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                                <span>Current: {kr.current}</span>
-                                <span>Target: {kr.target}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </TabsContent>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-error/10">
+                    <AlertTriangle className="h-5 w-5 text-error" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">At Risk</p>
+                    <p className="text-2xl font-bold">{stats.atRisk}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                {/* KPIs Tab */}
-                <TabsContent value="kpis" className="space-y-4">
-                  {selectedEmployee.kpis.length === 0 ? (
-                    <Card>
-                      <CardContent className="p-6 text-center text-muted-foreground">
-                        No KPIs defined yet
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    selectedEmployee.kpis.map((kpi) => (
-                      <Card key={kpi.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium">{kpi.name}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {kpi.description}
-                              </p>
-                              <div className="flex gap-6 mt-3">
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Target</p>
-                                  <p className="font-semibold">{kpi.target}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Actual</p>
-                                  <p className="font-semibold">{kpi.actual}</p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Score</p>
-                                  <p
-                                    className={`font-semibold ${
-                                      kpi.score >= 100
-                                        ? 'text-success'
-                                        : kpi.score >= 80
-                                          ? 'text-warning'
-                                          : 'text-error'
-                                    }`}
-                                  >
-                                    {kpi.score}%
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-muted-foreground">Rate</p>
-                              <StarRating
-                                value={kpiRatings[kpi.id] || 0}
-                                onChange={(rating) =>
-                                  setKpiRatings((prev) => ({ ...prev, [kpi.id]: rating }))
-                                }
-                              />
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </TabsContent>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold">{stats.completed}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-                {/* Overall Rating Tab */}
-                <TabsContent value="rating" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Overall Performance Rating</CardTitle>
-                      <CardDescription>
-                        Select the overall rating based on OKR and KPI performance
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-center gap-4 py-4">
-                        <StarRating value={starRating} onChange={setStarRating} />
-                        <span className="text-2xl font-bold">{starRating}/5</span>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Rating Category</label>
-                        <Select
-                          value={overallRating}
-                          onValueChange={(value) => setOverallRating(value as PerformanceRating)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(ratingConfig).map(([key, config]) => (
-                              <SelectItem key={key} value={key}>
-                                <div className="flex items-center gap-2">
-                                  <div className={`h-3 w-3 rounded-full ${config.color}`} />
-                                  {config.label}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-sm text-muted-foreground">
-                          {ratingConfig[overallRating].description}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Feedback & Comments</CardTitle>
-                      <CardDescription>
-                        Provide detailed feedback based on {selectedEmployee.name}&apos;s
-                        performance
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Textarea
-                        placeholder={`Based on ${selectedEmployee.name}'s ${
-                          selectedEmployee.okrs[0]?.objective
-                            ? `goal to "${selectedEmployee.okrs[0].objective}"`
-                            : 'submitted objectives'
-                        }, provide specific feedback on their progress, areas of strength, and areas for improvement...`}
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value)}
-                        className="min-h-[150px]"
-                      />
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+          {/* Filters */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search employees..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          )}
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="on-track">On Track</SelectItem>
+                  <SelectItem value="at-risk">At Risk</SelectItem>
+                  <SelectItem value="extended">Extended</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => setAppraisalDialogOpen(false)}>
-              <X className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                void handleSubmitAppraisal();
-              }}
-              disabled={completeProbation.isPending}
-            >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              Submit Appraisal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          {/* Employee Table */}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Stage</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Documents</TableHead>
+                    <TableHead>View</TableHead>
+                    <TableHead>Days Left</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEmployees.length > 0 ? (
+                    filteredEmployees.map((employee) => {
+                      const config = statusConfig[employee.status];
+                      const StatusIcon = config.icon;
+                      const docProgress = Math.round(
+                        (employee.documentsComplete / employee.totalDocuments) * 100
+                      );
+
+                      return (
+                        <TableRow key={employee.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                {employee.avatarUrl && <AvatarImage src={employee.avatarUrl} />}
+                                <AvatarFallback className="text-xs">
+                                  {getInitials(employee.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{employee.name}</p>
+                                <p className="text-xs text-muted-foreground">{employee.position}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{employee.department}</TableCell>
+                          <TableCell>
+                            <StageIndicator stage={employee.stage} status={employee.status} />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={config.variant} className="gap-1">
+                              <StatusIcon className="h-3 w-3" />
+                              {config.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Progress value={docProgress} className="h-2 w-16" />
+                              <span className="text-xs text-muted-foreground">
+                                {employee.documentsComplete}/{employee.totalDocuments}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewAppraisal(employee)}
+                              disabled={employee.okrs.length === 0 && employee.kpis.length === 0}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            {employee.status === 'completed' ? (
+                              <span className="text-muted-foreground">-</span>
+                            ) : (
+                              <span
+                                className={
+                                  employee.daysRemaining <= 15 ? 'text-error font-medium' : ''
+                                }
+                              >
+                                {employee.daysRemaining} days
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewAppraisal(employee)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Appraisal
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <MessageSquare className="mr-2 h-4 w-4" />
+                                  Add Note
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    void handleExtendProbation(employee.id);
+                                  }}
+                                >
+                                  <ChevronRight className="mr-2 h-4 w-4" />
+                                  Advance Stage
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        No probationary employees found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Performance Appraisal Modal */}
+          <Dialog open={appraisalDialogOpen} onOpenChange={setAppraisalDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <Target className="h-5 w-5 text-primary" />
+                  Performance Appraisal
+                </DialogTitle>
+                <DialogDescription>
+                  Review and rate {selectedEmployee?.name}&apos;s performance based on their OKRs
+                  and KPIs
+                </DialogDescription>
+              </DialogHeader>
+
+              {selectedEmployee && (
+                <div className="space-y-6">
+                  {/* Employee Info */}
+                  <div className="flex items-center gap-4 rounded-lg bg-muted/50 p-4">
+                    <Avatar className="h-14 w-14">
+                      {selectedEmployee.avatarUrl && (
+                        <AvatarImage src={selectedEmployee.avatarUrl} />
+                      )}
+                      <AvatarFallback className="text-lg">
+                        {getInitials(selectedEmployee.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold">{selectedEmployee.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedEmployee.position} - {selectedEmployee.department}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Manager: {selectedEmployee.manager}
+                      </p>
+                    </div>
+                    <Badge variant={statusConfig[selectedEmployee.status].variant}>
+                      {statusConfig[selectedEmployee.status].label}
+                    </Badge>
+                  </div>
+
+                  <Tabs defaultValue="okrs" className="space-y-4">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="okrs">OKRs</TabsTrigger>
+                      <TabsTrigger value="kpis">KPIs</TabsTrigger>
+                      <TabsTrigger value="rating">Overall Rating</TabsTrigger>
+                    </TabsList>
+
+                    {/* OKRs Tab */}
+                    <TabsContent value="okrs" className="space-y-4">
+                      {selectedEmployee.okrs.length === 0 ? (
+                        <Card>
+                          <CardContent className="p-6 text-center text-muted-foreground">
+                            No OKRs submitted yet
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        selectedEmployee.okrs.map((okr) => (
+                          <Card key={okr.id}>
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <CardTitle className="text-base">{okr.objective}</CardTitle>
+                                  <CardDescription>
+                                    Status:{' '}
+                                    <Badge variant="secondary" className="ml-1">
+                                      {okr.status.replace('_', ' ')}
+                                    </Badge>
+                                  </CardDescription>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm text-muted-foreground">Rate this OKR</p>
+                                  <StarRating
+                                    value={okrRatings[okr.id] || 0}
+                                    onChange={(rating) =>
+                                      setOkrRatings((prev) => ({ ...prev, [okr.id]: rating }))
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {okr.keyResults.map((kr) => (
+                                <div key={kr.id} className="rounded-lg border p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-sm font-medium">{kr.description}</p>
+                                    <span className="text-sm font-semibold text-primary">
+                                      {kr.progress}%
+                                    </span>
+                                  </div>
+                                  <Progress value={kr.progress} className="h-2" />
+                                  <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                                    <span>Current: {kr.current}</span>
+                                    <span>Target: {kr.target}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </TabsContent>
+
+                    {/* KPIs Tab */}
+                    <TabsContent value="kpis" className="space-y-4">
+                      {selectedEmployee.kpis.length === 0 ? (
+                        <Card>
+                          <CardContent className="p-6 text-center text-muted-foreground">
+                            No KPIs defined yet
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        selectedEmployee.kpis.map((kpi) => (
+                          <Card key={kpi.id}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-medium">{kpi.name}</h4>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {kpi.description}
+                                  </p>
+                                  <div className="flex gap-6 mt-3">
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Target</p>
+                                      <p className="font-semibold">{kpi.target}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Actual</p>
+                                      <p className="font-semibold">{kpi.actual}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs text-muted-foreground">Score</p>
+                                      <p
+                                        className={`font-semibold ${
+                                          kpi.score >= 100
+                                            ? 'text-success'
+                                            : kpi.score >= 80
+                                              ? 'text-warning'
+                                              : 'text-error'
+                                        }`}
+                                      >
+                                        {kpi.score}%
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm text-muted-foreground">Rate</p>
+                                  <StarRating
+                                    value={kpiRatings[kpi.id] || 0}
+                                    onChange={(rating) =>
+                                      setKpiRatings((prev) => ({ ...prev, [kpi.id]: rating }))
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))
+                      )}
+                    </TabsContent>
+
+                    {/* Overall Rating Tab */}
+                    <TabsContent value="rating" className="space-y-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Overall Performance Rating</CardTitle>
+                          <CardDescription>
+                            Select the overall rating based on OKR and KPI performance
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-center gap-4 py-4">
+                            <StarRating value={starRating} onChange={setStarRating} />
+                            <span className="text-2xl font-bold">{starRating}/5</span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Rating Category</label>
+                            <Select
+                              value={overallRating}
+                              onValueChange={(value) =>
+                                setOverallRating(value as PerformanceRating)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(ratingConfig).map(([key, config]) => (
+                                  <SelectItem key={key} value={key}>
+                                    <div className="flex items-center gap-2">
+                                      <div className={`h-3 w-3 rounded-full ${config.color}`} />
+                                      {config.label}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-sm text-muted-foreground">
+                              {ratingConfig[overallRating].description}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Feedback & Comments</CardTitle>
+                          <CardDescription>
+                            Provide detailed feedback based on {selectedEmployee.name}&apos;s
+                            performance
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Textarea
+                            placeholder={`Based on ${selectedEmployee.name}'s ${
+                              selectedEmployee.okrs[0]?.objective
+                                ? `goal to "${selectedEmployee.okrs[0].objective}"`
+                                : 'submitted objectives'
+                            }, provide specific feedback on their progress, areas of strength, and areas for improvement...`}
+                            value={feedback}
+                            onChange={(e) => setFeedback(e.target.value)}
+                            className="min-h-[150px]"
+                          />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              )}
+
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={() => setAppraisalDialogOpen(false)}>
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    void handleSubmitAppraisal();
+                  }}
+                  disabled={completeProbation.isPending}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Submit Appraisal
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-6">
@@ -922,7 +930,8 @@ export default function ProbationPage(): ReactNode {
                   </div>
                   <div>
                     <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
-                      {pendingApprovals.length} Onboarding Submission{pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
+                      {pendingApprovals.length} Onboarding Submission
+                      {pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
                     </h3>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                       Review and approve employee onboarding submissions to activate their accounts.
@@ -955,7 +964,10 @@ export default function ProbationPage(): ReactNode {
                 <TableBody>
                   {pendingApprovals.length > 0 ? (
                     pendingApprovals.map((approval) => (
-                      <TableRow key={approval.id} className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5">
+                      <TableRow
+                        key={approval.id}
+                        className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5"
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -997,10 +1009,7 @@ export default function ProbationPage(): ReactNode {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No pending approvals</p>
                         <p className="text-sm mt-1">
@@ -1064,9 +1073,7 @@ export default function ProbationPage(): ReactNode {
                           </TableCell>
                           <TableCell>{department || 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge
-                              variant={profile.status === 'completed' ? 'success' : 'warning'}
-                            >
+                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
                               {profile.status === 'completed' ? 'Completed' : 'In Progress'}
                             </Badge>
                           </TableCell>
@@ -1091,10 +1098,7 @@ export default function ProbationPage(): ReactNode {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         {onboardingLoading
                           ? 'Loading onboarding data...'
                           : 'No employee onboarding submissions found'}
@@ -1114,7 +1118,7 @@ export default function ProbationPage(): ReactNode {
         onOpenChange={setInviteModalOpen}
         defaultRole="employee"
       />
-      
+
       <ApproveOnboardingModal
         open={!!selectedApproval}
         onOpenChange={(open) => !open && setSelectedApproval(null)}
@@ -1124,7 +1128,7 @@ export default function ProbationPage(): ReactNode {
           setAssignmentModalOpen(true);
         }}
       />
-      
+
       <AssignEmployeeModal
         open={assignmentModalOpen}
         onOpenChange={setAssignmentModalOpen}

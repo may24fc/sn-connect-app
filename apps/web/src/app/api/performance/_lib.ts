@@ -6,11 +6,9 @@ export function isPerformanceAdmin(role: string | null): boolean {
   return role ? PERFORMANCE_ADMIN_ROLES.includes(role) : false;
 }
 
-export function toUiReviewStatus(status: string | null):
-  | 'pending_self'
-  | 'pending_manager'
-  | 'pending_hr'
-  | 'completed' {
+export function toUiReviewStatus(
+  status: string | null
+): 'pending_self' | 'pending_manager' | 'pending_hr' | 'completed' {
   if (status === 'pending') return 'pending_self';
   if (status === 'self_review') return 'pending_manager';
   if (status === 'manager_review') return 'pending_hr';
@@ -24,7 +22,10 @@ export function toUiCycleStatus(status: string | null): 'draft' | 'active' | 'cl
   return 'closed';
 }
 
-export async function resolveEmployeeIdForUser(supabase: any, userId: string): Promise<string | null> {
+export async function resolveEmployeeIdForUser(
+  supabase: any,
+  userId: string
+): Promise<string | null> {
   const { data, error } = await supabase
     .from('employees')
     .select('id')

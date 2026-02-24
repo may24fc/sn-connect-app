@@ -71,7 +71,12 @@ export default function AdminDashboardPage(): ReactNode {
     activeInterns: 0,
     performanceReviews: 0,
   };
-  const recentActivities: Array<{ id: string; action: string; employee: string; timestamp: string }> = [];
+  const recentActivities: Array<{
+    id: string;
+    action: string;
+    employee: string;
+    timestamp: string;
+  }> = [];
   const departmentStats: Array<{ name: string; headcount: number; openPositions: number }> = [];
 
   return (

@@ -10,12 +10,14 @@ import { SourceRow } from './SourceRow';
 export interface SourcesInventoryProps {
   sources: Array<KnowledgeSource>;
   onAccessChange: (sourceId: string, accessLevel: AccessLevel) => void;
+  onDeleteSource?: (sourceId: string) => void;
   className?: string;
 }
 
 export function SourcesInventory({
   sources,
   onAccessChange,
+  onDeleteSource,
   className,
 }: SourcesInventoryProps): React.ReactNode {
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -65,7 +67,12 @@ export function SourcesInventory({
         <div className="space-y-1">
           {filteredSources.length > 0 ? (
             filteredSources.map((source) => (
-              <SourceRow key={source.id} source={source} onAccessChange={onAccessChange} />
+              <SourceRow
+                key={source.id}
+                source={source}
+                onAccessChange={onAccessChange}
+                {...(onDeleteSource && { onDelete: () => onDeleteSource(source.id) })}
+              />
             ))
           ) : (
             <div className="text-center py-12 text-muted-foreground">

@@ -14,7 +14,7 @@ test.describe('Onboarding Setup Flow', () => {
     await page.fill('[name="email"]', authEmail);
     await page.fill('[name="password"]', authPassword);
     await page.click('button[type="submit"]');
-    
+
     // Wait for navigation after login
     await page.waitForLoadState('networkidle');
   });
@@ -29,7 +29,7 @@ test.describe('Onboarding Setup Flow', () => {
 
     test('displays all required steps in progress stepper', async ({ page }) => {
       await page.goto('/onboarding/setup');
-      
+
       // Verify all steps are visible
       await expect(page.getByText(/Personal/i)).toBeVisible();
       await expect(page.getByText(/Payment/i)).toBeVisible();
@@ -40,7 +40,7 @@ test.describe('Onboarding Setup Flow', () => {
     test('prevents accessing protected routes before onboarding complete', async ({ page }) => {
       // Try to access dashboard
       await page.goto('/dashboard');
-      
+
       // Should redirect to onboarding setup if not complete
       // Or stay on dashboard if already complete
       const url = page.url();
@@ -76,46 +76,46 @@ test.describe('Onboarding Setup Flow', () => {
 
       // Step 2: Payment Information
       await expect(page.getByText(/Payment/i)).toBeVisible({ timeout: 5000 });
-      
+
       await page.fill('#paymentAccountName', 'John M. Doe');
       await page.fill('#paymentAccountNumber', '1234567890');
       await page.fill('#paymentEmail', 'john.payment@example.com');
       await page.fill('#paymentPhoneNumber', '+1234567890');
-      
+
       const addressField = page.locator('#paymentAddress').first();
       if (await addressField.isVisible()) {
         await addressField.fill('123 Main Street, Apt 4B');
       }
-      
+
       const cityField = page.locator('#paymentCity');
       if (await cityField.isVisible()) {
         await cityField.fill('New York');
       }
-      
+
       const provinceField = page.locator('#paymentProvince');
       if (await provinceField.isVisible()) {
         await provinceField.fill('NY');
       }
-      
+
       const zipcodeField = page.locator('#paymentZipcode');
       if (await zipcodeField.isVisible()) {
         await zipcodeField.fill('10001');
       }
-      
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // Step 3: Documents
       await expect(page.getByText(/Documents/i)).toBeVisible({ timeout: 5000 });
-      
+
       // Verify document upload sections are present
       await expect(page.getByText(/Valid ID/i)).toBeVisible();
       await expect(page.getByText(/Profile Photo/i)).toBeVisible();
-      
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // Step 4: Review
       await expect(page.getByText(/Review/i)).toBeVisible({ timeout: 5000 });
-      
+
       // Verify entered information is displayed
       await expect(page.getByText(/John/i)).toBeVisible();
       await expect(page.getByText(/Doe/i)).toBeVisible();
@@ -150,7 +150,7 @@ test.describe('Onboarding Setup Flow', () => {
       const backButton = page.getByRole('button', { name: /Back|Previous/i });
       if (await backButton.isVisible()) {
         await backButton.click();
-        
+
         // Verify data is preserved
         await expect(page.locator('#firstName')).toHaveValue('Jane');
         await expect(page.locator('#lastName')).toHaveValue('Smith');
@@ -164,7 +164,7 @@ test.describe('Onboarding Setup Flow', () => {
       // Initial step should be Personal Info
       const stepIndicator = page.locator('[data-current-step], .step-active, [aria-current]');
       const hasIndicator = await stepIndicator.count();
-      
+
       // Either there's a visual indicator or the step content is visible
       await expect(page.getByText(/Personal Information/i)).toBeVisible();
     });
@@ -225,7 +225,7 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#firstName', 'Resume');
       await page.fill('#lastName', 'User');
       await page.fill('#position', 'Developer');
-      
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
       await expect(page.getByText(/Payment/i)).toBeVisible({ timeout: 5000 });
 
@@ -236,7 +236,7 @@ test.describe('Onboarding Setup Flow', () => {
       // Navigate away and back
       await page.goto('/dashboard');
       await page.waitForLoadState('networkidle');
-      
+
       await page.goto('/onboarding/setup');
       await page.waitForLoadState('networkidle');
 
@@ -252,14 +252,14 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#firstName', 'Multi');
       await page.fill('#lastName', 'Step');
       await page.fill('#position', 'Tester');
-      
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
       await expect(page.getByText(/Payment/i)).toBeVisible({ timeout: 5000 });
 
       // Fill Step 2
       await page.fill('#paymentAccountName', 'Multi Step');
       await page.fill('#paymentAccountNumber', '5555555555');
-      
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
       await expect(page.getByText(/Documents/i)).toBeVisible({ timeout: 5000 });
 
@@ -268,7 +268,7 @@ test.describe('Onboarding Setup Flow', () => {
       if (await backButton.isVisible()) {
         await backButton.click();
         await expect(page.locator('#paymentAccountName')).toHaveValue('Multi Step');
-        
+
         await backButton.click();
         await expect(page.locator('#firstName')).toHaveValue('Multi');
       }
@@ -280,13 +280,13 @@ test.describe('Onboarding Setup Flow', () => {
       // Fill some data
       await page.fill('#firstName', 'Clear');
       await page.fill('#lastName', 'Draft');
-      
+
       // Navigate completely away from onboarding
       await page.goto('/login');
-      
+
       // Check sessionStorage was cleared
       const storage = await page.evaluate(() => sessionStorage.getItem('onboarding_draft'));
-      
+
       // Either cleared or still exists depending on implementation
       // This test documents the behavior
       const hasStorage = storage !== null;
@@ -302,9 +302,7 @@ test.describe('Onboarding Setup Flow', () => {
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // Should show validation error (new validation message for the updated fields)
-      await expect(
-        page.getByText(/First name|required/i)
-      ).toBeVisible({ timeout: 3000 });
+      await expect(page.getByText(/First name|required/i)).toBeVisible({ timeout: 3000 });
 
       // Should remain on step 1
       await expect(page.getByText(/Personal Information/i)).toBeVisible();
@@ -336,9 +334,7 @@ test.describe('Onboarding Setup Flow', () => {
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // Should show validation error
-      await expect(
-        page.getByText(/Account name|required/i)
-      ).toBeVisible({ timeout: 3000 });
+      await expect(page.getByText(/Account name|required/i)).toBeVisible({ timeout: 3000 });
     });
 
     test('validates individual required fields', async ({ page }) => {
@@ -346,7 +342,7 @@ test.describe('Onboarding Setup Flow', () => {
 
       // Fill only first name
       await page.fill('#firstName', 'Incomplete');
-      
+
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // Should show error about missing required fields
@@ -364,19 +360,19 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#firstName', 'Email');
       await page.fill('#lastName', 'Test');
       await page.fill('#position', 'Developer');
-      
+
       const emailField = page.locator('#emailAddress');
       if (await emailField.isVisible()) {
         await emailField.fill('invalid-email');
-        
+
         // Trigger validation
         await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
-        
+
         // Check for validation message
         const validationMessage = await emailField.evaluate(
           (el: HTMLInputElement) => el.validationMessage
         );
-        
+
         // Should have browser validation or custom error
         if (validationMessage) {
           expect(validationMessage.length).toBeGreaterThan(0);
@@ -391,7 +387,7 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#firstName', 'Min');
       await page.fill('#lastName', 'Data');
       await page.fill('#position', 'Test');
-      
+
       // Try to skip ahead multiple times
       for (let i = 0; i < 3; i++) {
         await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
@@ -435,7 +431,7 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#paymentCity', 'Boston');
       await page.fill('#paymentProvince', 'MA');
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
-      
+
       await expect(page.getByText(/Documents/i)).toBeVisible({ timeout: 5000 });
     });
 
@@ -450,7 +446,7 @@ test.describe('Onboarding Setup Flow', () => {
     test('shows file input elements for uploads', async ({ page }) => {
       const fileInputs = page.locator('input[type="file"]');
       const count = await fileInputs.count();
-      
+
       // Should have at least 4 file inputs for the required documents
       expect(count).toBeGreaterThanOrEqual(4);
     });
@@ -461,9 +457,12 @@ test.describe('Onboarding Setup Flow', () => {
 
       // Should either show error if uploads required, or proceed to review
       await page.waitForTimeout(1000);
-      
+
       const url = page.url();
-      const onReview = await page.getByText(/Review/i).isVisible().catch(() => false);
+      const onReview = await page
+        .getByText(/Review/i)
+        .isVisible()
+        .catch(() => false);
       const hasError = await page
         .getByText(/required|upload|missing/i)
         .isVisible()
@@ -483,19 +482,19 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#lastName', 'Test');
       await page.fill('#position', 'Reviewer');
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
-      
+
       await expect(page.getByText(/Payment/i)).toBeVisible({ timeout: 5000 });
-      
+
       await page.fill('#paymentAccountName', 'Review Test');
       await page.fill('#paymentAccountNumber', '9876543210');
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
-      
+
       await expect(page.getByText(/Documents/i)).toBeVisible({ timeout: 5000 });
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
 
       // On review step
       await expect(page.getByText(/Review/i)).toBeVisible({ timeout: 5000 });
-      
+
       // Verify information is displayed
       await expect(page.getByText(/Review|Test/i)).toBeVisible();
       await expect(page.getByText(/Reviewer/i)).toBeVisible();
@@ -503,11 +502,11 @@ test.describe('Onboarding Setup Flow', () => {
 
     test('completion page is accessible', async ({ page }) => {
       await page.goto('/onboarding/complete');
-      
+
       // Should show completion message
-      await expect(
-        page.getByText(/Complete|Success|Welcome|Congratulations/i)
-      ).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(/Complete|Success|Welcome|Congratulations/i)).toBeVisible({
+        timeout: 5000,
+      });
     });
 
     test('shows submit button on review step', async ({ page }) => {
@@ -518,26 +517,29 @@ test.describe('Onboarding Setup Flow', () => {
       await page.fill('#lastName', 'Test');
       await page.fill('#position', 'Tester');
       await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
-      
+
       await page.waitForTimeout(1000);
-      
-      const paymentVisible = await page.getByText(/Payment/i).isVisible().catch(() => false);
+
+      const paymentVisible = await page
+        .getByText(/Payment/i)
+        .isVisible()
+        .catch(() => false);
       if (paymentVisible) {
         await page.fill('#paymentAccountName', 'Submit Test');
         await page.fill('#paymentAccountNumber', '1234567890');
         await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
         await page.waitForTimeout(1000);
-        
+
         await page.click('button:has-text("Next"), button:has-text("Save & Continue")');
         await page.waitForTimeout(1000);
-        
+
         // Check for submit button
         const submitButton = page.getByRole('button', {
           name: /Submit|Complete|Finish/i,
         });
-        
+
         const hasSubmit = await submitButton.isVisible().catch(() => false);
-        
+
         // Should have submit button on review or enabled after all steps
         expect(hasSubmit || page.url().includes('setup')).toBeTruthy();
       }

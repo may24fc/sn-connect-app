@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 export interface ProbationEmployee {
@@ -38,10 +38,10 @@ const employeePayloadSchema = z.object({
 
 /**
  * Real-time hook for Probation Tracker
- * 
+ *
  * Subscribes to employees table CDC events and invalidates TanStack Query cache.
  * RLS policies ensure only admins can subscribe to this channel.
- * 
+ *
  * Events monitored:
  * - INSERT: New employee created (e.g., from onboarding approval)
  * - UPDATE: Employee record modified (e.g., probation extended)
@@ -116,9 +116,13 @@ export function useRealtimeProbationEmployees() {
             new Date(newEmployee.probation_end_date) >= new Date() &&
             !newEmployee.deleted_at
           ) {
-            setEmployees((prev) => [...prev, newEmployee].sort((a, b) => 
-              new Date(a.probation_end_date!).getTime() - new Date(b.probation_end_date!).getTime()
-            ));
+            setEmployees((prev) =>
+              [...prev, newEmployee].sort(
+                (a, b) =>
+                  new Date(a.probation_end_date!).getTime() -
+                  new Date(b.probation_end_date!).getTime()
+              )
+            );
           }
           // Invalidate queries to ensure consistency
           queryClient.invalidateQueries({ queryKey: ['probation'] });
@@ -140,7 +144,7 @@ export function useRealtimeProbationEmployees() {
           }
           const updatedEmployee = parseResult.data as ProbationEmployee;
           console.log('[Realtime Probation] UPDATE event:', updatedEmployee.employee_number);
-          
+
           // Update or remove based on probation_end_date
           setEmployees((prev) => {
             const shouldInclude =
@@ -154,19 +158,23 @@ export function useRealtimeProbationEmployees() {
                 // Update existing
                 const updated = [...prev];
                 updated[index] = updatedEmployee;
-                return updated.sort((a, b) => 
-                  new Date(a.probation_end_date!).getTime() - new Date(b.probation_end_date!).getTime()
+                return updated.sort(
+                  (a, b) =>
+                    new Date(a.probation_end_date!).getTime() -
+                    new Date(b.probation_end_date!).getTime()
                 );
               }
               // Add new
-              return [...prev, updatedEmployee].sort((a, b) => 
-                new Date(a.probation_end_date!).getTime() - new Date(b.probation_end_date!).getTime()
+              return [...prev, updatedEmployee].sort(
+                (a, b) =>
+                  new Date(a.probation_end_date!).getTime() -
+                  new Date(b.probation_end_date!).getTime()
               );
             }
             // Remove if no longer on probation
             return prev.filter((e) => e.id !== updatedEmployee.id);
           });
-          
+
           queryClient.invalidateQueries({ queryKey: ['probation'] });
           queryClient.invalidateQueries({ queryKey: ['employees'] });
         }

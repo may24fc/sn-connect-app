@@ -1,10 +1,6 @@
 import { createKPISchema, updateKPISchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import {
-  getAuthedPerformanceContext,
-  isPerformanceAdmin,
-  resolveEmployeeIdForUser,
-} from '../_lib';
+import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,7 +56,10 @@ export async function POST(request: NextRequest) {
     const parsed = createKPISchema.safeParse(body);
 
     if (!parsed.success) {
-      console.error('POST /api/performance/kpis validation error:', JSON.stringify(parsed.error.flatten()));
+      console.error(
+        'POST /api/performance/kpis validation error:',
+        JSON.stringify(parsed.error.flatten())
+      );
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }

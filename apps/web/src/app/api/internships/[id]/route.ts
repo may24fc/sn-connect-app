@@ -71,27 +71,28 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       updated_at: string;
     };
 
-    const [{ data: internEmployee }, { data: supervisorEmployee }, { data: logs }] = await Promise.all([
-      supabase
-        .from('employees')
-        .select('id, user_id, first_name, last_name, company_email, phone, department')
-        .eq('id', internship.employee_id)
-        .is('deleted_at', null)
-        .single(),
-      internship.supervisor_id
-        ? supabase
-            .from('employees')
-            .select('user_id, first_name, last_name, company_email')
-            .eq('user_id', internship.supervisor_id)
-            .is('deleted_at', null)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase
-        .from('intern_daily_logs')
-        .select('*')
-        .eq('internship_id', internship.id)
-        .order('log_date', { ascending: false }),
-    ]);
+    const [{ data: internEmployee }, { data: supervisorEmployee }, { data: logs }] =
+      await Promise.all([
+        supabase
+          .from('employees')
+          .select('id, user_id, first_name, last_name, company_email, phone, department')
+          .eq('id', internship.employee_id)
+          .is('deleted_at', null)
+          .single(),
+        internship.supervisor_id
+          ? supabase
+              .from('employees')
+              .select('user_id, first_name, last_name, company_email')
+              .eq('user_id', internship.supervisor_id)
+              .is('deleted_at', null)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        supabase
+          .from('intern_daily_logs')
+          .select('*')
+          .eq('internship_id', internship.id)
+          .order('log_date', { ascending: false }),
+      ]);
 
     if (!internEmployee) {
       return NextResponse.json({ error: 'Intern profile not found' }, { status: 404 });
@@ -161,10 +162,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { supabase, user, role, error } = await getAuthedInternshipContext();

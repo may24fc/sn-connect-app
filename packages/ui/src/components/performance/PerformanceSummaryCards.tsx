@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  BarChart3,
-  Target,
-  TrendingUp,
-  AlertTriangle,
-} from 'lucide-react';
+import { AlertTriangle, BarChart3, Target, TrendingUp } from 'lucide-react';
 import type * as React from 'react';
 import { Card, CardContent } from '../../primitives/card';
 import type { PerformanceDashboardStats } from '../../types/performance.types';

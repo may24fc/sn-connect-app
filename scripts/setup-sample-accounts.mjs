@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
  * Setup Sample Accounts for SN HR Portal
- * 
+ *
  * Creates the 4 standard test accounts matching the simplified role system:
  * - employee@example.com → employee role
  * - intern@example.com → intern role
  * - admin@example.com → admin role (covers admin + hr functions)
  * - super-admin@example.com → super_admin role (covers cos + ceo + super_admin functions)
- * 
+ *
  * All accounts use password: password
- * 
+ *
  * Usage:
  *   node scripts/setup-sample-accounts.mjs
  */
@@ -143,7 +143,7 @@ async function main() {
     if (existingAuth) {
       authUserId = existingAuth.id;
       console.log(`  ✅ auth.users: EXISTS (id: ${authUserId})`);
-      
+
       // Check if app_metadata.db_role matches
       if (existingAuth.app_metadata?.db_role !== account.role) {
         console.log(`  ⚠️  Updating app_metadata.db_role to '${account.role}'...`);
@@ -198,7 +198,11 @@ async function main() {
         updateUrl.searchParams.set('id', `eq.${authUserId}`);
         await fetchJson(updateUrl.toString(), {
           method: 'PATCH',
-          headers: { ...adminHeaders, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          headers: {
+            ...adminHeaders,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
           body: JSON.stringify({ role: account.role, status: 'active' }),
         });
         console.log(`  ✅ Updated role to '${account.role}'`);
@@ -275,7 +279,9 @@ async function main() {
   };
 
   for (const account of SAMPLE_ACCOUNTS) {
-    console.log(`  ${account.email.padEnd(30)} | ${account.role.padEnd(12)} | ${roleDescriptions[account.role]}`);
+    console.log(
+      `  ${account.email.padEnd(30)} | ${account.role.padEnd(12)} | ${roleDescriptions[account.role]}`
+    );
   }
 
   console.log('\n🔑 Password for all accounts: password');
@@ -286,7 +292,7 @@ async function main() {
   console.log('  • super_admin  → Executive level (was: cos + ceo + super_admin)');
   console.log('\n🎯 Next Steps:');
   console.log('  1. Login at http://localhost:3000/login');
-  console.log('  2. Test each role\'s permissions');
+  console.log("  2. Test each role's permissions");
   console.log('  3. Create reports as employee, approve as admin');
   console.log('\n⚠️  These are development accounts only - DO NOT use in production!');
 }

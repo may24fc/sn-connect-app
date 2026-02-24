@@ -272,7 +272,10 @@ export default function AdminReportDetailPage({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="action-notes" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label
+                htmlFor="action-notes"
+                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
                 Notes (optional)
               </label>
               <Textarea

@@ -69,7 +69,10 @@ export default function TaskManagementPage() {
 
   const { data: tasksData, isLoading, error } = useTasks(taskFilters);
   const { data: assigneesData, isLoading: assigneesLoading } = useTaskAssignees(true);
-  const { data: employeesData, isLoading: employeesLoading } = useEmployees({ page: 1, pageSize: 200 });
+  const { data: employeesData, isLoading: employeesLoading } = useEmployees({
+    page: 1,
+    pageSize: 200,
+  });
   const createTask = useCreateTask();
 
   useTasksRealtime({ scope: 'all' });
@@ -275,7 +278,8 @@ export default function TaskManagementPage() {
                 </Select>
                 {!assigneesLoading && !employeesLoading && effectiveAssignees.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    No assignees found. Ensure employee/intern user accounts exist in `users` and `employees`.
+                    No assignees found. Ensure employee/intern user accounts exist in `users` and
+                    `employees`.
                   </p>
                 ) : null}
               </div>

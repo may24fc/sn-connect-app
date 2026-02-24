@@ -110,10 +110,7 @@ export default function InternDetailPage({
   }
 
   const daysRemaining = getDaysRemaining(intern.endDate);
-  const progressPercentage = calculateHoursProgress(
-    intern.completedHours,
-    intern.requiredHours
-  );
+  const progressPercentage = calculateHoursProgress(intern.completedHours, intern.requiredHours);
   const pendingReports = uiReports.filter((r) => r.status === 'submitted').length;
 
   const handleProvideFeedback = (report: DailyReport): void => {
@@ -327,7 +324,8 @@ export default function InternDetailPage({
                         style={{
                           width: `${Math.min(
                             ((new Date().getTime() - new Date(intern.startDate).getTime()) /
-                              (new Date(intern.endDate).getTime() - new Date(intern.startDate).getTime())) *
+                              (new Date(intern.endDate).getTime() -
+                                new Date(intern.startDate).getTime())) *
                               100,
                             100
                           )}%`,
@@ -460,7 +458,10 @@ export default function InternDetailPage({
             <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmitFeedback} disabled={!feedback.trim() || updateLogMutation.isPending}>
+            <Button
+              onClick={handleSubmitFeedback}
+              disabled={!feedback.trim() || updateLogMutation.isPending}
+            >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Submit Feedback
             </Button>
@@ -489,7 +490,10 @@ export default function InternDetailPage({
             <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCompleteInternship} disabled={updateInternshipMutation.isPending}>
+            <Button
+              onClick={handleCompleteInternship}
+              disabled={updateInternshipMutation.isPending}
+            >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Complete Internship
             </Button>

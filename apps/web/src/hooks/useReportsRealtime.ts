@@ -59,9 +59,7 @@ interface UseReportsRealtimeOptions {
  */
 const INVALIDATION_DEBOUNCE_MS = 300;
 
-export function useReportsRealtime({
-  enabled = true,
-}: UseReportsRealtimeOptions = {}): void {
+export function useReportsRealtime({ enabled = true }: UseReportsRealtimeOptions = {}): void {
   const queryClient = useQueryClient();
 
   // Ref-based debounce timer so we can clear it on unmount without
@@ -105,31 +103,19 @@ export function useReportsRealtime({
       .channel('reports:realtime')
       // ── Reports table events ──────────────────────────────────────
       // INSERT: Employee creates a new report (draft or direct submit)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'reports' },
-        () => {
-          invalidateReportQueries();
-        }
-      )
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reports' }, () => {
+        invalidateReportQueries();
+      })
       // UPDATE: Status transitions (draft->submitted, submitted->approved/rejected)
       // This is the primary event for real-time sync — an employee hitting
       // "Submit" triggers an UPDATE that flips status from 'draft' to 'submitted'.
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'reports' },
-        () => {
-          invalidateReportQueries();
-        }
-      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'reports' }, () => {
+        invalidateReportQueries();
+      })
       // DELETE: Soft-delete via deleted_at column, or hard delete if applicable.
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'reports' },
-        () => {
-          invalidateReportQueries();
-        }
-      )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'reports' }, () => {
+        invalidateReportQueries();
+      })
       // ── Report Metrics table events ───────────────────────────────
       // These drive the Analytics and Compare tabs. When a report is
       // submitted, metric rows are inserted alongside the report.

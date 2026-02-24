@@ -1,18 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useDepartments } from '@/hooks/useDepartments';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Building2,
-  Calendar,
-  Loader2,
-  Target,
-  TrendingUp,
-  Clock,
-  Users,
-} from 'lucide-react';
+import { Button } from '@hr-portal/ui/primitives/button';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@hr-portal/ui/primitives/dialog';
-import { Button } from '@hr-portal/ui/primitives/button';
-import { Label } from '@hr-portal/ui/primitives/label';
 import { Input } from '@hr-portal/ui/primitives/input';
+import { Label } from '@hr-portal/ui/primitives/label';
 import {
   Select,
   SelectContent,
@@ -30,7 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hr-portal/ui/primitives/select';
-import { useDepartments } from '@/hooks/useDepartments';
+import { Building2, Calendar, Clock, Loader2, Target, TrendingUp, Users } from 'lucide-react';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 // Schema for employee assignment (probation tracker)
 const employeeAssignmentSchema = z.object({
@@ -96,9 +88,8 @@ export function AssignEmployeeModal({
       stage: 1,
       status: 'on-track' as const,
       // Default probation to 90 days from today
-      probationEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0] || '',
+      probationEndDate:
+        new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '',
     },
   });
 
@@ -202,7 +193,11 @@ export function AssignEmployeeModal({
   let departmentList: any[] = [];
   if (Array.isArray(departmentsQuery.data)) {
     departmentList = departmentsQuery.data;
-  } else if (departmentsQuery.data && typeof departmentsQuery.data === 'object' && 'data' in departmentsQuery.data) {
+  } else if (
+    departmentsQuery.data &&
+    typeof departmentsQuery.data === 'object' &&
+    'data' in departmentsQuery.data
+  ) {
     departmentList = (departmentsQuery.data as any).data || [];
   }
 
@@ -365,9 +360,7 @@ export function AssignEmployeeModal({
                   disabled={isSubmitting}
                 />
                 {employeeErrors.probationEndDate && (
-                  <p className="text-sm text-red-600">
-                    {employeeErrors.probationEndDate.message}
-                  </p>
+                  <p className="text-sm text-red-600">{employeeErrors.probationEndDate.message}</p>
                 )}
               </div>
 

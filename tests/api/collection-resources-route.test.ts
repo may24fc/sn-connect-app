@@ -5,14 +5,13 @@ vi.mock('@/app/api/resources/_lib', () => ({
   isResourceAdmin: vi.fn(),
 }));
 
-import {
-  DELETE,
-  GET,
-  POST,
-} from '@/app/api/collections/[id]/resources/route';
+import { DELETE, GET, POST } from '@/app/api/collections/[id]/resources/route';
 import { getAuthedSupabase, isResourceAdmin } from '@/app/api/resources/_lib';
 
-function createCollectionResourcesQuery(data: Array<{ resources: unknown | null }>, error: unknown = null) {
+function createCollectionResourcesQuery(
+  data: Array<{ resources: unknown | null }>,
+  error: unknown = null
+) {
   const query = {
     select: vi.fn(() => query),
     eq: vi.fn(() => query),
@@ -48,9 +47,12 @@ describe('/api/collections/[id]/resources route', () => {
       error: null,
     });
 
-    const response = await GET(new Request('http://localhost/api/collections/col-1/resources') as never, {
-      params: Promise.resolve({ id: 'col-1' }),
-    });
+    const response = await GET(
+      new Request('http://localhost/api/collections/col-1/resources') as never,
+      {
+        params: Promise.resolve({ id: 'col-1' }),
+      }
+    );
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
@@ -179,12 +181,9 @@ describe('/api/collections/[id]/resources route', () => {
     const request = {
       nextUrl: { searchParams: url.searchParams },
     };
-    const response = await DELETE(
-      request as never,
-      {
-        params: Promise.resolve({ id: 'col-1' }),
-      }
-    );
+    const response = await DELETE(request as never, {
+      params: Promise.resolve({ id: 'col-1' }),
+    });
 
     expect(query.delete).toHaveBeenCalled();
     expect(query.eq).toHaveBeenCalledWith('collection_id', 'col-1');

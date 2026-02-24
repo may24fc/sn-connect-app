@@ -204,7 +204,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No security alerts</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No security alerts
+                </p>
               )}
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/super-admin/audit-logs">
@@ -253,7 +255,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No system health data available</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No system health data available
+                </p>
               )}
             </div>
           </BentoCardContent>
@@ -288,7 +292,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No role distribution data available</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No role distribution data available
+                </p>
               )}
             </div>
           </BentoCardContent>
@@ -334,7 +340,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No recent audit logs</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No recent audit logs
+                </p>
               )}
             </div>
           </BentoCardContent>

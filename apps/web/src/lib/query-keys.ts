@@ -125,6 +125,14 @@ export interface CollectionFilters {
   pageSize?: number;
 }
 
+export interface AISourceFilters {
+  search?: string;
+  status?: 'scanning' | 'chunking' | 'indexing' | 'ready' | 'error';
+  accessLevel?: 'all' | 'admin';
+  page?: number;
+  pageSize?: number;
+}
+
 export interface AnalyticsParams {
   startDate?: string;
   endDate?: string;
@@ -203,7 +211,10 @@ export const queryKeys = {
   aiKnowledge: {
     all: ['ai-knowledge'] as const,
     sources: () => [...queryKeys.aiKnowledge.all, 'sources'] as const,
+    sourcesList: (filters: AISourceFilters) =>
+      [...queryKeys.aiKnowledge.sources(), 'list', filters] as const,
     source: (id: string) => [...queryKeys.aiKnowledge.sources(), id] as const,
+    chat: () => [...queryKeys.aiKnowledge.all, 'chat'] as const,
   },
 
   // Dashboard

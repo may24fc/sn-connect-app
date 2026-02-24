@@ -1,7 +1,7 @@
 'use client';
 
-import * as React from 'react';
 import { X } from 'lucide-react';
+import * as React from 'react';
 import { cn } from '../utils/cn';
 import { Button } from './button';
 
@@ -81,9 +81,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     // Auto-dismiss after duration
     setTimeout(() => {
-      setToasts((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, visible: false } : t))
-      );
+      setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, visible: false } : t)));
       // Remove from DOM after animation
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -92,9 +90,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeToast = React.useCallback((id: string) => {
-    setToasts((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, visible: false } : t))
-    );
+    setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, visible: false } : t)));
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 300);
@@ -105,11 +101,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <div className="pointer-events-none fixed bottom-0 right-0 z-50 flex max-h-screen w-full flex-col-reverse gap-2 p-4 sm:bottom-0 sm:right-0 sm:flex-col md:max-w-[420px]">
         {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            {...toast}
-            onClose={() => removeToast(toast.id)}
-          />
+          <Toast key={toast.id} {...toast} onClose={() => removeToast(toast.id)} />
         ))}
       </div>
     </ToastContext.Provider>

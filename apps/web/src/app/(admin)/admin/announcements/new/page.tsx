@@ -16,16 +16,16 @@ import {
   TargetingSelector,
   useToast,
 } from '@hr-portal/ui';
-import { 
-  AlertCircle, 
-  Calendar, 
-  FileText, 
-  MessageSquare, 
-  Pin, 
-  Send, 
-  Target,
+import {
+  AlertCircle,
+  Calendar,
   ChevronDown,
   ChevronUp,
+  FileText,
+  MessageSquare,
+  Pin,
+  Send,
+  Target,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -98,7 +98,12 @@ export default function NewAnnouncementPage() {
         status: nextStatus,
         publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-        targetRoles: parseCsvList(targeting.rolesCsv) as ('employee' | 'intern' | 'admin' | 'super_admin')[],
+        targetRoles: parseCsvList(targeting.rolesCsv) as (
+          | 'employee'
+          | 'intern'
+          | 'admin'
+          | 'super_admin'
+        )[],
         targetDepartments: parseCsvList(targeting.departmentsCsv),
         targetEmployees: parseCsvList(targeting.employeesCsv),
         isPinned,
@@ -107,7 +112,10 @@ export default function NewAnnouncementPage() {
 
       addToast({
         title: nextStatus === 'published' ? 'Announcement published' : 'Draft saved',
-        description: nextStatus === 'published' ? 'Announcement is now visible to selected audience' : 'You can continue editing later',
+        description:
+          nextStatus === 'published'
+            ? 'Announcement is now visible to selected audience'
+            : 'You can continue editing later',
         variant: 'success',
       });
 
@@ -258,9 +266,7 @@ export default function NewAnnouncementPage() {
               isUploading={uploadAttachment.isPending}
             />
             {!createdId && (
-              <p className="text-xs text-zinc-500">
-                💡 Save as draft first to attach files
-              </p>
+              <p className="text-xs text-zinc-500">💡 Save as draft first to attach files</p>
             )}
           </div>
 
@@ -311,9 +317,7 @@ export default function NewAnnouncementPage() {
             </button>
             {showTargeting && (
               <div className="p-4 pt-0 border-t border-zinc-200 dark:border-zinc-800">
-                <p className="text-xs text-zinc-500 mb-3">
-                  Leave empty to show to everyone
-                </p>
+                <p className="text-xs text-zinc-500 mb-3">Leave empty to show to everyone</p>
                 <TargetingSelector value={targeting} onChange={setTargeting} />
               </div>
             )}
@@ -357,9 +361,7 @@ export default function NewAnnouncementPage() {
                       onChange={(e) => setExpiresAt(e.target.value)}
                       className="text-sm"
                     />
-                    <p className="text-xs text-zinc-500">
-                      Leave empty to never expire
-                    </p>
+                    <p className="text-xs text-zinc-500">Leave empty to never expire</p>
                   </div>
                 </div>
               </div>

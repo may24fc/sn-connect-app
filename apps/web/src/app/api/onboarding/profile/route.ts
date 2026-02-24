@@ -18,10 +18,10 @@ export async function GET() {
     if (queryError) {
       console.error('Failed to fetch onboarding profile:', queryError);
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to fetch onboarding profile',
-          details: process.env.NODE_ENV === 'development' ? queryError.message : undefined
-        }, 
+          details: process.env.NODE_ENV === 'development' ? queryError.message : undefined,
+        },
         { status: 500 }
       );
     }
@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error('Failed to create onboarding profile:', insertError);
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to create onboarding profile',
-          details: process.env.NODE_ENV === 'development' ? insertError.message : undefined
-        }, 
+          details: process.env.NODE_ENV === 'development' ? insertError.message : undefined,
+        },
         { status: 500 }
       );
     }

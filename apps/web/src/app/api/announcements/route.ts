@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating announcement with payload:', {
       ...payload,
-      content: payload.content.slice(0, 100) + '...' // truncate for logging
+      content: payload.content.slice(0, 100) + '...', // truncate for logging
     });
 
     const { data, error: createError } = await supabase
@@ -137,10 +137,10 @@ export async function POST(request: NextRequest) {
       console.error('Error creating announcement:', createError);
       console.error('Full error details:', JSON.stringify(createError, null, 2));
       return NextResponse.json(
-        { 
+        {
           error: 'Failed to create announcement',
-          details: createError?.message || 'Unknown database error'
-        }, 
+          details: createError?.message || 'Unknown database error',
+        },
         { status: 500 }
       );
     }

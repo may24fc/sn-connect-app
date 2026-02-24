@@ -9,11 +9,7 @@ import {
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
-import {
-  useCreateInternDailyLog,
-  useInternship,
-  useInternships,
-} from '@/hooks/useInternships';
+import { useCreateInternDailyLog, useInternship, useInternships } from '@/hooks/useInternships';
 import {
   Badge,
   Button,
@@ -148,7 +144,8 @@ export default function InternDashboardPage(): ReactNode {
           style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
         >
           <p className="text-sm text-amber-800 dark:text-amber-200">
-            No active internship record found. Contact your supervisor to set up your internship profile.
+            No active internship record found. Contact your supervisor to set up your internship
+            profile.
           </p>
         </div>
 
@@ -281,7 +278,10 @@ export default function InternDashboardPage(): ReactNode {
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-zinc-400 dark:text-zinc-500 tabular-nums">—</span>
                     <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-zinc-300 dark:bg-zinc-700 rounded-full" style={{ width: '0%' }} />
+                      <div
+                        className="h-full bg-zinc-300 dark:bg-zinc-700 rounded-full"
+                        style={{ width: '0%' }}
+                      />
                     </div>
                     <span className="text-zinc-400 dark:text-zinc-500 tabular-nums">—</span>
                   </div>
@@ -491,8 +491,7 @@ export default function InternDashboardPage(): ReactNode {
                       className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
                       style={{
                         width: `${Math.min(
-                          ((new Date().getTime() -
-                            new Date(profile.startDate).getTime()) /
+                          ((new Date().getTime() - new Date(profile.startDate).getTime()) /
                             (new Date(profile.endDate).getTime() -
                               new Date(profile.startDate).getTime())) *
                             100,

@@ -161,7 +161,9 @@ export function useInternshipLogs(id: string | null, enabled = true) {
     queryFn: async (): Promise<InternshipLogsResponse> => {
       const response = await fetch(`/api/internships/${id}/logs`);
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to fetch internship logs' }));
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to fetch internship logs' }));
         throw new Error(error.error || 'Failed to fetch internship logs');
       }
 
@@ -203,7 +205,9 @@ export function useCreateInternDailyLog() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.internships.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.internships.logs(variables.internshipId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.logs(variables.internshipId),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.internships.detail(variables.internshipId),
       });
@@ -239,7 +243,9 @@ export function useUpdateInternDailyLog() {
       return response.json();
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.internships.logs(variables.internshipId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.logs(variables.internshipId),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.internships.detail(variables.internshipId),
       });

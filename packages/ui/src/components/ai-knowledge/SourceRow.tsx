@@ -1,7 +1,8 @@
 'use client';
 
-import { AlertCircle, File, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
+import { AlertCircle, File, FileSpreadsheet, FileText, Loader2, Trash2 } from 'lucide-react';
 import type * as React from 'react';
+import { Button } from '../../primitives/button';
 import type { AccessLevel, KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { AccessToggle } from './AccessToggle';
@@ -9,6 +10,7 @@ import { AccessToggle } from './AccessToggle';
 export interface SourceRowProps {
   source: KnowledgeSource;
   onAccessChange: (sourceId: string, accessLevel: AccessLevel) => void;
+  onDelete?: () => void;
   className?: string;
 }
 
@@ -74,7 +76,12 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-export function SourceRow({ source, onAccessChange, className }: SourceRowProps): React.ReactNode {
+export function SourceRow({
+  source,
+  onAccessChange,
+  onDelete,
+  className,
+}: SourceRowProps): React.ReactNode {
   const handleAccessChange = (newAccessLevel: AccessLevel): void => {
     onAccessChange(source.id, newAccessLevel);
   };
@@ -113,6 +120,22 @@ export function SourceRow({ source, onAccessChange, className }: SourceRowProps)
           disabled={source.status !== 'ready'}
         />
       </div>
+
+      {/* Delete Button */}
+      {onDelete && (
+        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={onDelete}
+            className="h-7 w-7 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+            aria-label={`Delete ${source.fileName}`}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

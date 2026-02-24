@@ -13,14 +13,13 @@ export interface ResourceTargetingSelectorProps {
   onChange: (value: ResourceTargetingSelectorValue) => void;
 }
 
-export function ResourceTargetingSelector({
-  value,
-  onChange,
-}: ResourceTargetingSelectorProps) {
+export function ResourceTargetingSelector({ value, onChange }: ResourceTargetingSelectorProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-sm text-zinc-700 dark:text-zinc-300">Target Roles (comma-separated)</Label>
+        <Label className="text-sm text-zinc-700 dark:text-zinc-300">
+          Target Roles (comma-separated)
+        </Label>
         <Input
           placeholder="employee, intern, hr"
           value={value.rolesCsv}
@@ -29,7 +28,9 @@ export function ResourceTargetingSelector({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-sm text-zinc-700 dark:text-zinc-300">Target Departments (UUID, comma-separated)</Label>
+        <Label className="text-sm text-zinc-700 dark:text-zinc-300">
+          Target Departments (UUID, comma-separated)
+        </Label>
         <Textarea
           rows={2}
           value={value.departmentsCsv}
@@ -38,7 +39,9 @@ export function ResourceTargetingSelector({
       </div>
 
       <div className="space-y-2">
-        <Label className="text-sm text-zinc-700 dark:text-zinc-300">Target Employees (UUID, comma-separated)</Label>
+        <Label className="text-sm text-zinc-700 dark:text-zinc-300">
+          Target Employees (UUID, comma-separated)
+        </Label>
         <Textarea
           rows={2}
           value={value.employeesCsv}

@@ -1,10 +1,14 @@
 'use client';
 
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
-import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
-import { useBookmarkResource, useRemoveBookmark, useResourceBookmarks } from '@/hooks/useResourceBookmarks';
-import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
 import type { AnnouncementRecord } from '@/hooks/useAnnouncements';
+import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
+import {
+  useBookmarkResource,
+  useRemoveBookmark,
+  useResourceBookmarks,
+} from '@/hooks/useResourceBookmarks';
+import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
 import {
   AnnouncementDetailDialog,
   Badge,
@@ -269,7 +273,9 @@ export default function InformationHubPage() {
               onClick={() => handleAnnouncementClick(announcement)}
             >
               <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  {announcement.title}
+                </h3>
                 <Badge variant="destructive">Urgent</Badge>
               </div>
               <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1">
@@ -285,7 +291,9 @@ export default function InformationHubPage() {
               onClick={() => handleAnnouncementClick(announcement)}
             >
               <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                  {announcement.title}
+                </h3>
                 <Badge>Pinned</Badge>
               </div>
               <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1">
@@ -313,8 +321,14 @@ export default function InformationHubPage() {
                   onClick={() => handleAnnouncementClick(announcement)}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
-                    {!announcement.is_read ? <Badge>Unread</Badge> : <Badge variant="secondary">Read</Badge>}
+                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                      {announcement.title}
+                    </h3>
+                    {!announcement.is_read ? (
+                      <Badge>Unread</Badge>
+                    ) : (
+                      <Badge variant="secondary">Read</Badge>
+                    )}
                   </div>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-3">
                     {announcement.excerpt || announcement.content.slice(0, 200)}
@@ -332,7 +346,10 @@ export default function InformationHubPage() {
                 <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                 Featured Resources
               </h3>
-              <ResourceGrid columns={4} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <ResourceGrid
+                columns={4}
+                className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              >
                 {featuredResources.slice(0, 4).map((resource) => (
                   <ResourceCard
                     key={resource.id}
@@ -377,7 +394,10 @@ export default function InformationHubPage() {
               </CardContent>
             </Card>
           ) : (
-            <ResourceGrid columns={4} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <ResourceGrid
+              columns={4}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            >
               {resources.map((resource) => (
                 <ResourceCard
                   key={resource.id}
@@ -452,7 +472,9 @@ export default function InformationHubPage() {
                 <CardTitle className="text-lg">Active Items</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{growthItems.length}</p>
+                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+                  {growthItems.length}
+                </p>
               </CardContent>
             </Card>
 

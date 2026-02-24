@@ -1,4 +1,4 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -62,26 +62,25 @@ export async function POST(request: NextRequest) {
     const userExists = existingAuthUser?.users.some((u: any) => u.email === email);
 
     if (userExists) {
-      return NextResponse.json(
-        { error: 'A user with this email already exists' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 });
     }
 
     // Generate a temporary password (user should change on first login)
     const temporaryPassword = generateTemporaryPassword();
 
     // Create auth user (using admin client)
-    const { data: newAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: temporaryPassword,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: {
-        first_name: firstName,
-        last_name: lastName,
-        role,
-      },
-    });
+    const { data: newAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser(
+      {
+        email,
+        password: temporaryPassword,
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          first_name: firstName,
+          last_name: lastName,
+          role,
+        },
+      }
+    );
 
     if (createAuthError || !newAuthUser.user) {
       console.error('Error creating auth user:', createAuthError);
@@ -94,13 +93,16 @@ export async function POST(request: NextRequest) {
     // Upsert public.users record with pending_onboarding status.
     // A DB trigger already auto-creates public.users on auth.users insert,
     // so plain insert can fail with duplicate PK on retries/new invites.
-    const { error: createUserError } = await supabaseAdmin.from('users').upsert({
-      id: newAuthUser.user.id,
-      role,
-      status: 'pending_onboarding',
-      department_id: departmentId || null,
-      created_by: user.id,
-    }, { onConflict: 'id' });
+    const { error: createUserError } = await supabaseAdmin.from('users').upsert(
+      {
+        id: newAuthUser.user.id,
+        role,
+        status: 'pending_onboarding',
+        department_id: departmentId || null,
+        created_by: user.id,
+      },
+      { onConflict: 'id' }
+    );
 
     if (createUserError) {
       console.error('Error creating public user:', createUserError);

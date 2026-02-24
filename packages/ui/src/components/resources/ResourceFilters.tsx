@@ -64,10 +64,7 @@ export function ResourceFilters({
         className="max-w-sm"
       />
 
-      <Select
-        value={value.category}
-        onValueChange={(category) => onChange({ ...value, category })}
-      >
+      <Select value={value.category} onValueChange={(category) => onChange({ ...value, category })}>
         <SelectTrigger className="w-[170px] border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
@@ -97,10 +94,7 @@ export function ResourceFilters({
       </Select>
 
       {showStatus ? (
-        <Select
-          value={value.status}
-          onValueChange={(status) => onChange({ ...value, status })}
-        >
+        <Select value={value.status} onValueChange={(status) => onChange({ ...value, status })}>
           <SelectTrigger className="w-[170px] border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm">
             <SelectValue placeholder="Status" />
           </SelectTrigger>

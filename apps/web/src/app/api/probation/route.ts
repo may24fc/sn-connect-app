@@ -12,7 +12,10 @@ function daysBetweenToday(dateValue: string): number {
 function getStage(dateHired: string, probationEndDate: string): 1 | 2 | 3 | 4 {
   const start = new Date(dateHired);
   const end = new Date(probationEndDate);
-  const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  const totalDays = Math.max(
+    1,
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  );
   const elapsed = Math.max(0, Math.ceil((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24)));
   const ratio = elapsed / totalDays;
 
@@ -36,7 +39,9 @@ export async function GET() {
 
     const { data: employees, error: employeesError } = await supabase
       .from('employees')
-      .select('id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head')
+      .select(
+        'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head'
+      )
       .is('deleted_at', null)
       .order('probation_end_date', { ascending: true, nullsFirst: false });
 
@@ -44,7 +49,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch probation records' }, { status: 500 });
     }
 
-    const activeEmployees = (employees || []).filter((employee: any) => employee.probation_end_date);
+    const activeEmployees = (employees || []).filter(
+      (employee: any) => employee.probation_end_date
+    );
 
     if (activeEmployees.length === 0) {
       return NextResponse.json({ data: [] });

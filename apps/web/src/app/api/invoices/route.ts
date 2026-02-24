@@ -60,8 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Resolve user role for authorization scoping
-    const role =
-      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const adminRoles = ['admin', 'super_admin'];
     const isAdmin = adminRoles.includes(role ?? '');
 
@@ -162,8 +161,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the employee actually belongs to the authenticated user (unless admin)
-    const role =
-      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (!isAdmin && resolvedEmployeeId !== employeeData?.id) {

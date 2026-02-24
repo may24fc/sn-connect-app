@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useInviteUser } from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Check, Copy, Loader2, Mail, UserPlus } from 'lucide-react';
+import { Button } from '@hr-portal/ui/primitives/button';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@hr-portal/ui/primitives/dialog';
-import { Button } from '@hr-portal/ui/primitives/button';
 import { Input } from '@hr-portal/ui/primitives/input';
 import { Label } from '@hr-portal/ui/primitives/label';
 import {
@@ -22,7 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hr-portal/ui/primitives/select';
-import { useInviteUser } from '@/hooks/useUserManagement';
+import { Check, Copy, Loader2, Mail, UserPlus } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 const inviteSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -54,9 +54,7 @@ export function InviteUserModal({
     email: string;
     temporaryPassword: string;
   } | null>(null);
-  const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(
-    null
-  );
+  const [copiedField, setCopiedField] = useState<'email' | 'password' | null>(null);
 
   const {
     register,
@@ -121,8 +119,8 @@ export function InviteUserModal({
                 Invite New {defaultRole === 'intern' ? 'Intern' : 'Employee'}
               </DialogTitle>
               <DialogDescription>
-                Create a new user account. They will receive login credentials
-                to complete their onboarding.
+                Create a new user account. They will receive login credentials to complete their
+                onboarding.
               </DialogDescription>
             </DialogHeader>
 
@@ -136,9 +134,7 @@ export function InviteUserModal({
                   {...register('email')}
                   disabled={inviteUser.isPending}
                 />
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
-                )}
+                {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -151,9 +147,7 @@ export function InviteUserModal({
                     disabled={inviteUser.isPending}
                   />
                   {errors.firstName && (
-                    <p className="text-sm text-red-600">
-                      {errors.firstName.message}
-                    </p>
+                    <p className="text-sm text-red-600">{errors.firstName.message}</p>
                   )}
                 </div>
 
@@ -166,9 +160,7 @@ export function InviteUserModal({
                     disabled={inviteUser.isPending}
                   />
                   {errors.lastName && (
-                    <p className="text-sm text-red-600">
-                      {errors.lastName.message}
-                    </p>
+                    <p className="text-sm text-red-600">{errors.lastName.message}</p>
                   )}
                 </div>
               </div>
@@ -177,9 +169,7 @@ export function InviteUserModal({
                 <Label htmlFor="role">Role *</Label>
                 <Select
                   value={selectedRole}
-                  onValueChange={(value) =>
-                    setValue('role', value as 'employee' | 'intern')
-                  }
+                  onValueChange={(value) => setValue('role', value as 'employee' | 'intern')}
                   disabled={inviteUser.isPending || !!defaultRole}
                 >
                   <SelectTrigger id="role">
@@ -190,9 +180,7 @@ export function InviteUserModal({
                     <SelectItem value="intern">Intern</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.role && (
-                  <p className="text-sm text-red-600">{errors.role.message}</p>
-                )}
+                {errors.role && <p className="text-sm text-red-600">{errors.role.message}</p>}
               </div>
 
               <div className="space-y-2">
@@ -252,9 +240,7 @@ export function InviteUserModal({
               </div>
 
               {inviteUser.isError && (
-                <p className="text-sm text-red-600">
-                  Failed to invite user. Please try again.
-                </p>
+                <p className="text-sm text-red-600">Failed to invite user. Please try again.</p>
               )}
             </form>
           </>
@@ -266,8 +252,8 @@ export function InviteUserModal({
                 User Invited Successfully
               </DialogTitle>
               <DialogDescription>
-                Share these credentials with the new user. They will be prompted
-                to complete onboarding on first login.
+                Share these credentials with the new user. They will be prompted to complete
+                onboarding on first login.
               </DialogDescription>
             </DialogHeader>
 
@@ -283,9 +269,7 @@ export function InviteUserModal({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() =>
-                          handleCopy('email', invitedCredentials.email)
-                        }
+                        onClick={() => handleCopy('email', invitedCredentials.email)}
                       >
                         {copiedField === 'email' ? (
                           <Check className="h-4 w-4 text-green-600" />
@@ -297,9 +281,7 @@ export function InviteUserModal({
                   </div>
 
                   <div>
-                    <Label className="text-xs text-zinc-500">
-                      Temporary Password
-                    </Label>
+                    <Label className="text-xs text-zinc-500">Temporary Password</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="flex-1 text-sm font-mono bg-white dark:bg-zinc-800 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700">
                         {invitedCredentials.temporaryPassword}
@@ -307,12 +289,7 @@ export function InviteUserModal({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() =>
-                          handleCopy(
-                            'password',
-                            invitedCredentials.temporaryPassword
-                          )
-                        }
+                        onClick={() => handleCopy('password', invitedCredentials.temporaryPassword)}
                       >
                         {copiedField === 'password' ? (
                           <Check className="h-4 w-4 text-green-600" />
@@ -327,8 +304,8 @@ export function InviteUserModal({
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 dark:bg-yellow-900/20 dark:border-yellow-800">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  ⚠️ <strong>Important:</strong> This password will only be
-                  shown once. Make sure to share it securely with the new user.
+                  ⚠️ <strong>Important:</strong> This password will only be shown once. Make sure to
+                  share it securely with the new user.
                 </p>
               </div>
 

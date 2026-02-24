@@ -20,9 +20,7 @@ export function useUpdateOnboardingProfile() {
         console.error('Update onboarding profile error:', body);
 
         // Build a human-readable message from the Zod field errors when available
-        const fieldErrors = body?.details?.fieldErrors as
-          | Record<string, string[]>
-          | undefined;
+        const fieldErrors = body?.details?.fieldErrors as Record<string, string[]> | undefined;
         if (fieldErrors) {
           const messages = Object.entries(fieldErrors)
             .map(([field, errs]) => `${field}: ${(errs as string[]).join(', ')}`)

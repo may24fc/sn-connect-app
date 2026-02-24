@@ -1,7 +1,7 @@
 import { completeOnboardingSchema } from '@/lib/schemas/onboarding.schema';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedOnboardingContext } from '../../_lib';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {

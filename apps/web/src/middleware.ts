@@ -11,7 +11,14 @@ const publicPaths = new Set<string>([
 ]);
 
 const publicPrefixes = ['/api/auth'];
-const protectedPrefixes = ['/dashboard', '/intern', '/admin', '/super-admin', '/information-hub', '/onboarding'];
+const protectedPrefixes = [
+  '/dashboard',
+  '/intern',
+  '/admin',
+  '/super-admin',
+  '/information-hub',
+  '/onboarding',
+];
 
 /**
  * Next.js Middleware for Supabase session refresh + route protection.
@@ -29,7 +36,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     try {
       // Refresh the session to ensure cookies are up-to-date
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (!sessionError && sessionData.session) {
         // Session exists and is valid
         data = { user: sessionData.session.user };
@@ -100,7 +107,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         .maybeSingle();
 
       if (onboardingError) {
-        console.warn('Skipping onboarding gate; failed to fetch onboarding status:', onboardingError);
+        console.warn(
+          'Skipping onboarding gate; failed to fetch onboarding status:',
+          onboardingError
+        );
         return response;
       }
 

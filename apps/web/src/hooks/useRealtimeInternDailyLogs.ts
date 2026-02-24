@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 export interface InternDailyLog {
@@ -48,10 +48,10 @@ const dailyLogPayloadSchema = z.object({
 
 /**
  * Real-time hook for Intern Daily Logs (EOD Reports)
- * 
+ *
  * Subscribes to intern_daily_logs table CDC events and invalidates TanStack Query cache.
  * RLS policies ensure only admins can subscribe to this channel.
- * 
+ *
  * Events monitored:
  * - INSERT: New daily log submitted (intern submits EOD report)
  * - UPDATE: Daily log modified (admin approves/adds notes)

@@ -86,7 +86,11 @@ export function useCompleteProbation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { employeeId: string; finalRating?: number; comments?: string }) => {
+    mutationFn: async (payload: {
+      employeeId: string;
+      finalRating?: number;
+      comments?: string;
+    }) => {
       const response = await fetch('/api/probation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

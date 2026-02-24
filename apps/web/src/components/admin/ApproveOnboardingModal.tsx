@@ -1,21 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useApproveOnboarding } from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  CheckCircle,
-  Loader2,
-  XCircle,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Briefcase,
-  Calendar,
-  FileText,
-} from 'lucide-react';
+import { Button } from '@hr-portal/ui/primitives/button';
 import {
   Dialog,
   DialogContent,
@@ -23,11 +10,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@hr-portal/ui/primitives/dialog';
-import { Button } from '@hr-portal/ui/primitives/button';
 import { Label } from '@hr-portal/ui/primitives/label';
-import { Textarea } from '@hr-portal/ui/primitives/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hr-portal/ui/primitives/tabs';
-import { useApproveOnboarding } from '@/hooks/useUserManagement';
+import { Textarea } from '@hr-portal/ui/primitives/textarea';
+import {
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  FileText,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  XCircle,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 const approvalSchema = z.object({
   notes: z.string().optional(),
@@ -152,8 +152,8 @@ export function ApproveOnboardingModal({
             Review Onboarding Submission
           </DialogTitle>
           <DialogDescription>
-            Review the submitted information and approve or reject this{' '}
-            {onboarding.role} onboarding.
+            Review the submitted information and approve or reject this {onboarding.role}{' '}
+            onboarding.
           </DialogDescription>
         </DialogHeader>
 
@@ -208,11 +208,7 @@ export function ApproveOnboardingModal({
               <InfoField
                 icon={<Calendar className="h-4 w-4" />}
                 label="Birth Date"
-                value={
-                  onboarding.birthday
-                    ? formatDate(onboarding.birthday)
-                    : 'Not provided'
-                }
+                value={onboarding.birthday ? formatDate(onboarding.birthday) : 'Not provided'}
               />
               <InfoField
                 icon={<Mail className="h-4 w-4" />}
@@ -286,9 +282,7 @@ export function ApproveOnboardingModal({
                 {...register('notes')}
                 disabled={approveOnboarding.isPending}
               />
-              {errors.notes && (
-                <p className="text-sm text-red-600">{errors.notes.message}</p>
-              )}
+              {errors.notes && <p className="text-sm text-red-600">{errors.notes.message}</p>}
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-700">

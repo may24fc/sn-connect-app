@@ -1,12 +1,14 @@
 'use client';
 
+import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
-import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
-import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
-import { type InternshipFilters } from '@/lib/query-keys';
-import { useQueryClient } from '@tanstack/react-query';
+import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
+import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import type { InternshipFilters } from '@/lib/query-keys';
 import {
   Avatar,
   AvatarFallback,
@@ -45,7 +47,10 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import {
+  AlertCircle,
+  Calendar,
   CheckCircle2,
   Clock,
   Download,
@@ -53,18 +58,13 @@ import {
   FileText,
   Filter,
   GraduationCap,
-  Search,
-  UserPlus,
-  AlertCircle,
-  Calendar,
-  ThumbsUp,
   MessageSquare,
+  Search,
+  ThumbsUp,
+  UserPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
-import { InviteUserModal } from '@/components/admin/InviteUserModal';
-import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
-import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -85,7 +85,7 @@ export default function AdminInternsPage(): ReactNode {
   const [schoolFilter, setSchoolFilter] = useState<string>('all');
   const [supervisorFilter, setSupervisorFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
+
   // Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
@@ -94,10 +94,11 @@ export default function AdminInternsPage(): ReactNode {
 
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
-  
+
   // Real-time internships hook
-  const { internships: _realtimeInternships, isSubscribed: _isInternshipsSubscribed } = useRealtimeInternships();
-  
+  const { internships: _realtimeInternships, isSubscribed: _isInternshipsSubscribed } =
+    useRealtimeInternships();
+
   // Real-time daily logs hook
   const { dailyLogs, isSubscribed: isDailyLogsSubscribed } = useRealtimeInternDailyLogs();
 
@@ -208,9 +209,9 @@ export default function AdminInternsPage(): ReactNode {
           <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
           <TabsTrigger value="eod-reports">
             EOD Reports
-            {dailyLogs.filter(log => !log.is_approved).length > 0 && (
+            {dailyLogs.filter((log) => !log.is_approved).length > 0 && (
               <Badge variant="destructive" className="ml-2">
-                {dailyLogs.filter(log => !log.is_approved).length}
+                {dailyLogs.filter((log) => !log.is_approved).length}
               </Badge>
             )}
           </TabsTrigger>
@@ -220,180 +221,184 @@ export default function AdminInternsPage(): ReactNode {
           {/* Summary Cards */}
           <InternshipSummaryCards stats={stats} />
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Filter className="h-4 w-4" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, or program..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full lg:w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="terminated">Terminated</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="School" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Schools</SelectItem>
-                {schools.map((school) => (
-                  <SelectItem key={school} value={school}>
-                    {school}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={supervisorFilter} onValueChange={setSupervisorFilter}>
-              <SelectTrigger className="w-full lg:w-[180px]">
-                <SelectValue placeholder="Supervisor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Supervisors</SelectItem>
-                {supervisors.map((sup) => (
-                  <SelectItem key={sup} value={sup}>
-                    {sup}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {(statusFilter !== 'all' ||
-            schoolFilter !== 'all' ||
-            supervisorFilter !== 'all' ||
-            searchQuery) && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredInterns.length} of {interns.length} interns
-              </p>
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Filter className="h-4 w-4" />
+                Filters
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, email, or program..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full lg:w-[150px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="terminated">Terminated</SelectItem>
+                    <SelectItem value="converted">Converted</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={schoolFilter} onValueChange={setSchoolFilter}>
+                  <SelectTrigger className="w-full lg:w-[180px]">
+                    <SelectValue placeholder="School" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Schools</SelectItem>
+                    {schools.map((school) => (
+                      <SelectItem key={school} value={school}>
+                        {school}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={supervisorFilter} onValueChange={setSupervisorFilter}>
+                  <SelectTrigger className="w-full lg:w-[180px]">
+                    <SelectValue placeholder="Supervisor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Supervisors</SelectItem>
+                    {supervisors.map((sup) => (
+                      <SelectItem key={sup} value={sup}>
+                        {sup}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {(statusFilter !== 'all' ||
+                schoolFilter !== 'all' ||
+                supervisorFilter !== 'all' ||
+                searchQuery) && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {filteredInterns.length} of {interns.length} interns
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setStatusFilter('all');
+                      setSchoolFilter('all');
+                      setSupervisorFilter('all');
+                    }}
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* View Toggle */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Interns ({filteredInterns.length})</h2>
+            <div className="flex gap-2">
               <Button
-                variant="ghost"
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                  setSchoolFilter('all');
-                  setSupervisorFilter('all');
-                }}
+                onClick={() => setViewMode('grid')}
               >
-                Clear All Filters
+                Grid
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                List
               </Button>
             </div>
+          </div>
+
+          {/* Interns Display */}
+          {viewMode === 'grid' ? (
+            <InternList
+              interns={filteredInterns}
+              onView={handleViewIntern}
+              layout="grid"
+              emptyMessage={
+                searchQuery ||
+                statusFilter !== 'all' ||
+                schoolFilter !== 'all' ||
+                supervisorFilter !== 'all'
+                  ? 'No interns match the selected filters'
+                  : 'No interns found'
+              }
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                {filteredInterns.length > 0 ? (
+                  filteredInterns.map((intern) => (
+                    <InternRow key={intern.id} intern={intern} onView={handleViewIntern} />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>
+                      {searchQuery ||
+                      statusFilter !== 'all' ||
+                      schoolFilter !== 'all' ||
+                      supervisorFilter !== 'all'
+                        ? 'No interns match the selected filters'
+                        : 'No interns found'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
 
-      {/* View Toggle */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Interns ({filteredInterns.length})</h2>
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-          >
-            Grid
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-          >
-            List
-          </Button>
-        </div>
-      </div>
+          {/* Pending Reports Alert */}
+          {stats.pendingReports > 0 && (
+            <Card className="border-warning/50 bg-warning/5">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <FileText className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      There are {stats.pendingReports} daily reports waiting for supervisor review.
+                      Timely feedback helps interns improve their performance.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Interns Display */}
-      {viewMode === 'grid' ? (
-        <InternList
-          interns={filteredInterns}
-          onView={handleViewIntern}
-          layout="grid"
-          emptyMessage={
-            searchQuery ||
-            statusFilter !== 'all' ||
-            schoolFilter !== 'all' ||
-            supervisorFilter !== 'all'
-              ? 'No interns match the selected filters'
-              : 'No interns found'
-          }
-        />
-      ) : (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            {filteredInterns.length > 0 ? (
-              filteredInterns.map((intern) => (
-                <InternRow key={intern.id} intern={intern} onView={handleViewIntern} />
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>
-                  {searchQuery ||
-                  statusFilter !== 'all' ||
-                  schoolFilter !== 'all' ||
-                  supervisorFilter !== 'all'
-                    ? 'No interns match the selected filters'
-                    : 'No interns found'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+          {internshipsQuery.isLoading && (
+            <Card>
+              <CardContent className="p-6 text-sm text-muted-foreground">
+                Loading interns...
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Pending Reports Alert */}
-      {stats.pendingReports > 0 && (
-        <Card className="border-warning/50 bg-warning/5">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                <FileText className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  There are {stats.pendingReports} daily reports waiting for supervisor review.
-                  Timely feedback helps interns improve their performance.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {internshipsQuery.isLoading && (
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">Loading interns...</CardContent>
-        </Card>
-      )}
-
-      {internshipsQuery.error && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardContent className="p-6 text-sm text-destructive">Failed to load interns.</CardContent>
-        </Card>
-      )}
+          {internshipsQuery.error && (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardContent className="p-6 text-sm text-destructive">
+                Failed to load interns.
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-6">
@@ -462,7 +467,8 @@ export default function AdminInternsPage(): ReactNode {
                   </div>
                   <div>
                     <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
-                      {pendingApprovals.length} Onboarding Submission{pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
+                      {pendingApprovals.length} Onboarding Submission
+                      {pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
                     </h3>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                       Review and approve intern onboarding submissions to activate their accounts.
@@ -495,7 +501,10 @@ export default function AdminInternsPage(): ReactNode {
                 <TableBody>
                   {pendingApprovals.length > 0 ? (
                     pendingApprovals.map((approval) => (
-                      <TableRow key={approval.id} className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5">
+                      <TableRow
+                        key={approval.id}
+                        className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5"
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -537,10 +546,7 @@ export default function AdminInternsPage(): ReactNode {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No pending approvals</p>
                         <p className="text-sm mt-1">
@@ -604,9 +610,7 @@ export default function AdminInternsPage(): ReactNode {
                           </TableCell>
                           <TableCell>{department || 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge
-                              variant={profile.status === 'completed' ? 'success' : 'warning'}
-                            >
+                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
                               {profile.status === 'completed' ? 'Completed' : 'In Progress'}
                             </Badge>
                           </TableCell>
@@ -631,10 +635,7 @@ export default function AdminInternsPage(): ReactNode {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         {onboardingLoading
                           ? 'Loading onboarding data...'
                           : 'No intern onboarding submissions found'}
@@ -646,7 +647,7 @@ export default function AdminInternsPage(): ReactNode {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* EOD Reports Tab */}
         <TabsContent value="eod-reports" className="space-y-6">
           <Card>
@@ -661,7 +662,8 @@ export default function AdminInternsPage(): ReactNode {
                 )}
               </CardTitle>
               <CardDescription>
-                Monitor daily reports submitted by interns. Pending approvals require supervisor review.
+                Monitor daily reports submitted by interns. Pending approvals require supervisor
+                review.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -689,7 +691,7 @@ export default function AdminInternsPage(): ReactNode {
                         </div>
                         <div>
                           <p className="text-2xl font-bold">
-                            {dailyLogs.filter(log => !log.is_approved).length}
+                            {dailyLogs.filter((log) => !log.is_approved).length}
                           </p>
                           <p className="text-sm text-muted-foreground">Pending Approval</p>
                         </div>
@@ -704,7 +706,7 @@ export default function AdminInternsPage(): ReactNode {
                         </div>
                         <div>
                           <p className="text-2xl font-bold">
-                            {dailyLogs.filter(log => log.is_approved).length}
+                            {dailyLogs.filter((log) => log.is_approved).length}
                           </p>
                           <p className="text-sm text-muted-foreground">Approved</p>
                         </div>
@@ -732,7 +734,7 @@ export default function AdminInternsPage(): ReactNode {
                         const internName = log.internship?.employee
                           ? `${log.internship.employee.first_name} ${log.internship.employee.last_name}`
                           : 'Unknown Intern';
-                        
+
                         return (
                           <TableRow key={log.id}>
                             <TableCell>
@@ -835,14 +837,13 @@ export default function AdminInternsPage(): ReactNode {
                       })
                     ) : (
                       <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center py-12 text-muted-foreground"
-                        >
+                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <FileText className="h-12 w-12 text-muted-foreground/50" />
                             <p>No daily reports found</p>
-                            <p className="text-sm">Reports will appear here when interns submit their EOD forms</p>
+                            <p className="text-sm">
+                              Reports will appear here when interns submit their EOD forms
+                            </p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -861,7 +862,7 @@ export default function AdminInternsPage(): ReactNode {
         onOpenChange={setInviteModalOpen}
         defaultRole="intern"
       />
-      
+
       <ApproveOnboardingModal
         open={!!selectedApproval}
         onOpenChange={(open) => !open && setSelectedApproval(null)}
@@ -871,7 +872,7 @@ export default function AdminInternsPage(): ReactNode {
           setAssignmentModalOpen(true);
         }}
       />
-      
+
       <AssignEmployeeModal
         open={assignmentModalOpen}
         onOpenChange={setAssignmentModalOpen}

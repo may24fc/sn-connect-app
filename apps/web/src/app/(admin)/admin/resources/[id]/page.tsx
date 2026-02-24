@@ -102,7 +102,9 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
           </Button>
           <Button
             variant="outline"
-            onClick={() => toggleFeatured.mutate({ id: resource.id, featured: !resource.is_featured })}
+            onClick={() =>
+              toggleFeatured.mutate({ id: resource.id, featured: !resource.is_featured })
+            }
           >
             {resource.is_featured ? 'Unfeature' : 'Feature'}
           </Button>
@@ -130,7 +132,10 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
             </CardHeader>
             <CardContent className="space-y-3">
               <Input value={title} onChange={(event) => setTitle(event.target.value)} />
-              <Textarea value={description} onChange={(event) => setDescription(event.target.value)} />
+              <Textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
               <TagInput value={tags} onChange={setTags} />
               <Button onClick={saveDetails} disabled={updateResource.isPending}>
                 Save Changes
@@ -161,12 +166,12 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
             bookmarkCount={analyticsData?.data?.bookmarkCount ?? resource.bookmark_count}
             avgDurationSeconds={analyticsData?.data?.avgDurationSeconds ?? null}
             completionRate={analyticsData?.data?.completionRate ?? null}
-            viewTrend={
-              (analyticsData?.data?.timeSeries || []).map((item: { date: string; views: number }) => ({
+            viewTrend={(analyticsData?.data?.timeSeries || []).map(
+              (item: { date: string; views: number }) => ({
                 date: item.date,
                 count: item.views,
-              }))
-            }
+              })
+            )}
           />
         </TabsContent>
 
@@ -178,7 +183,8 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
             <CardContent className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
               <p>Current Version: v{resource.version}</p>
               <p>
-                Previous Version ID: {resource.previous_version_id ? resource.previous_version_id : 'None'}
+                Previous Version ID:{' '}
+                {resource.previous_version_id ? resource.previous_version_id : 'None'}
               </p>
               <Button variant="outline" disabled>
                 Restore Previous Version
