@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 
+import { getPasswordResetRedirectUrl } from '@/lib/auth/redirect-config';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export default function ForgotPasswordPage(): ReactNode {
@@ -29,9 +30,8 @@ export default function ForgotPasswordPage(): ReactNode {
     setIsLoading(true);
     setError('');
 
-    const redirectTo = new URL('/reset-password', window.location.origin).toString();
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
+      redirectTo: getPasswordResetRedirectUrl(),
     });
 
     if (resetError) {

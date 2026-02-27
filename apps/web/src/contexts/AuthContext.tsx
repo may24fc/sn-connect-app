@@ -3,7 +3,9 @@
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
+import { getAuthCallbackUrl } from '@/lib/auth/redirect-config';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Type definitions
 export type UserRoleType = 'employee' | 'intern' | 'admin' | 'super_admin';
@@ -71,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const [isLoading, setIsLoading] = React.useState(true);
   const userRef = React.useRef<User | null>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const supabase = React.useMemo(() => createSupabaseBrowserClient(), []);
   const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
   const useMock = enableMockAuth || !supabase;
@@ -417,6 +420,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           throw new Error('Unable to load user profile.');
         }
 
+        // Invalidate all stale queries after login to ensure fresh data
+        await queryClient.invalidateQueries();
+
         // Handle pending_onboarding status - redirect to onboarding
         if (nextUser.status === 'pending_onboarding') {
           router.push('/onboarding/setup');
@@ -449,7 +455,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         setIsLoading(false);
       }
     },
-    [MOCK_USERS, router, supabase, syncAuthState, useMock]
+    [MOCK_USERS, queryClient, router, supabase, syncAuthState, useMock]
   );
 
   const signup = React.useCallback(
@@ -469,7 +475,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: getAuthCallbackUrl(),
         },
       });
 
@@ -477,10 +483,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         throw new Error(error.message);
       }
 
-      // After signup, the user must confirm their email. The caller is responsible
-      // for redirecting to the confirmation page.
+      // Invalidate stale caches and refresh router state so the UI
+      // reflects the new signup without requiring a manual page refresh.
+      await queryClient.invalidateQueries();
+      router.refresh();
     },
-    [supabase, useMock]
+    [queryClient, router, supabase, useMock]
   );
 
   const logout = React.useCallback(async (): Promise<void> => {

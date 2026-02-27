@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
 
+import { getAuthCallbackUrl } from '@/lib/auth/redirect-config';
 import { signupSchema } from '@/lib/schemas/auth.schema';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
@@ -72,7 +73,7 @@ export default function SignupPage(): ReactNode {
           data: {
             full_name: parsed.data.fullName,
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: getAuthCallbackUrl(),
         },
       });
 

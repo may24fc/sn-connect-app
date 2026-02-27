@@ -73,9 +73,17 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const onboardingExemptPaths = ['/onboarding/setup', '/onboarding/complete'];
   const onboardingGatePaths = ['/dashboard', '/intern/dashboard'];
 
+  // Paths that are exempt from the intern setup redirect
+  const internSetupExemptPaths = ['/intern/setup', '/api/internships/initialize'];
+  const internSetupGatePaths = ['/intern/dashboard'];
+
   const isOnboardingExempt =
     onboardingExemptPaths.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith('/api/onboarding');
+
+  const isInternSetupExempt =
+    internSetupExemptPaths.some((path) => pathname.startsWith(path)) ||
+    pathname.startsWith('/onboarding');
 
   if (supabase && data && (data as any).user && !isOnboardingExempt) {
     const authUser = (data as any).user as {
@@ -120,6 +128,35 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       if (!isOnboardingComplete && shouldGateCurrentPath) {
         const redirectUrl = new URL('/onboarding/setup', request.url);
         return NextResponse.redirect(redirectUrl);
+      }
+
+      // Intern setup gate: redirect interns without an active internship record
+      // to the setup flow so they can self-initialize their record.
+      if (
+        role === 'intern' &&
+        isOnboardingComplete &&
+        !isInternSetupExempt &&
+        internSetupGatePaths.some((path) => pathname.startsWith(path))
+      ) {
+        const { data: activeInternship, error: internshipError } = await supabase
+          .from('internships')
+          .select('id')
+          .eq('employee_id', (
+            await supabase
+              .from('employees')
+              .select('id')
+              .eq('user_id', authUser.id)
+              .is('deleted_at', null)
+              .maybeSingle()
+          ).data?.id ?? '')
+          .eq('status', 'active')
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        if (!internshipError && !activeInternship) {
+          const redirectUrl = new URL('/intern/setup', request.url);
+          return NextResponse.redirect(redirectUrl);
+        }
       }
     }
   }

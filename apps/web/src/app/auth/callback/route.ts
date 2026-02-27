@@ -2,31 +2,41 @@
  * Auth Callback Route Handler
  *
  * This route handles the PKCE code exchange after a user clicks the email
- * confirmation link. Supabase Auth redirects here with a `code` query parameter,
- * which we exchange for a session (stored in httpOnly cookies via @supabase/ssr).
+ * confirmation link or password reset link. Supabase Auth redirects here
+ * with a `code` query parameter, which we exchange for a session (stored
+ * in httpOnly cookies via @supabase/ssr).
+ *
+ * Environment Handling:
+ * - Works on localhost, Vercel preview deployments, and production.
+ * - The `next` parameter is validated against an allowlist of origins to
+ *   prevent open-redirect attacks (see redirect-config.ts).
+ * - Uses `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_VERCEL_URL` to build the
+ *   correct redirect base URL, falling back to the request origin.
  *
  * Security:
  * - The `code` is a one-time-use authorization code (PKCE flow).
  * - The code_verifier is stored in the Supabase auth cookie, never exposed to JS.
  * - After exchange, the session tokens are written to httpOnly cookies automatically
  *   by the @supabase/ssr createServerClient cookie handlers.
+ * - The `next` redirect target is validated against an explicit allowlist.
  * - On failure, the user is redirected to login with an error indicator.
+ *
+ * Attack Vectors Mitigated:
+ * - Open redirect: `next` param validated via isAllowedOrigin + relative-path check.
+ * - Session hijacking: Tokens stored in httpOnly cookies, never accessible to JS.
+ * - PKCE replay: One-time code exchange; replayed codes are rejected by Supabase.
  */
 
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
-type CookieOptions = { [key: string]: unknown };
-
-type CookieStore = Awaited<ReturnType<typeof cookies>> & {
-  set: (options: { name: string; value: string } & CookieOptions) => void;
-};
+import { validateRedirectTarget } from '@/lib/auth/redirect-config';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = searchParams.get('next');
 
   if (!code) {
     // No code present -- likely a direct visit or tampered URL.
@@ -40,18 +50,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(new URL('/login?error=config', origin));
   }
 
-  const cookieStore = (await cookies()) as CookieStore;
+  // Use the modern getAll/setAll cookie pattern recommended by @supabase/ssr.
+  // This correctly handles chunked JWTs (large tokens split across multiple cookies)
+  // which the older get/set/remove pattern silently drops.
+  const cookieStore = await cookies();
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll();
       },
-      set(name: string, value: string, options: CookieOptions) {
-        cookieStore.set({ name, value, ...options });
-      },
-      remove(name: string, options: CookieOptions) {
-        cookieStore.set({ name, value: '', ...options });
+      setAll(cookiesToSet) {
+        for (const { name, value, options } of cookiesToSet) {
+          cookieStore.set(name, value, options);
+        }
       },
     },
   });
@@ -60,12 +72,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (error) {
     // Exchange failed -- code expired, already used, or invalid.
+    // Do NOT log the code itself — it's a sensitive one-time credential.
     console.error('Auth callback code exchange failed:', error.message);
     return NextResponse.redirect(new URL('/login?error=auth_callback', origin));
   }
 
-  // Successful exchange. Redirect to the intended destination.
-  // Ensure the redirect target is a relative path to prevent open-redirect attacks.
-  const safeNext = next.startsWith('/') ? next : '/dashboard';
+  // Validate the `next` redirect target against the allowlist.
+  // This prevents open-redirect attacks where an attacker crafts a callback URL
+  // with `next=https://evil.com` to steal the session after a successful exchange.
+  const safeNext = validateRedirectTarget(next, '/dashboard');
   return NextResponse.redirect(new URL(safeNext, origin));
 }
