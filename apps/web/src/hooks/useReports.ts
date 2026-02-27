@@ -12,8 +12,12 @@ export interface ReportRecord {
   reviewed_by: string | null;
   reviewed_at: string | null;
   notes: string | null;
+  parent_report_id: string | null;
+  report_group: string | null;
+  hierarchy_path: string[] | null;
   created_at: string;
   updated_at: string;
+  child_count?: number;
   employees?: {
     id: string;
     user_id: string;
@@ -50,6 +54,8 @@ export function useReports(filters: ReportFilters = {}) {
       if (filters.status) params.append('status', filters.status);
       if (filters.reportType) params.append('reportType', filters.reportType);
       if (filters.employeeId) params.append('employeeId', filters.employeeId);
+      if (filters.groupBy) params.append('groupBy', filters.groupBy);
+      if (filters.parentReportId) params.append('parentReportId', filters.parentReportId);
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
 

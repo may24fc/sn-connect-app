@@ -29,15 +29,18 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
     const reportType = searchParams.get('reportType') || '';
     const employeeId = searchParams.get('employeeId') || '';
+    const groupBy = searchParams.get('groupBy') || '';
+    const parentReportId = searchParams.get('parentReportId') || '';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
     // Use admin client to avoid nested RLS failures on cross-table subqueries
     let query = supabaseAdmin
       .from('reports')
-      .select('*, employees(id, user_id, first_name, last_name, department), report_metrics(*)', {
-        count: 'exact',
-      })
+      .select(
+        '*, employees(id, user_id, first_name, last_name, department), report_metrics(*)',
+        { count: 'exact' }
+      )
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -51,6 +54,16 @@ export async function GET(request: NextRequest) {
 
     if (reportType) {
       query = query.eq('report_type', reportType);
+    }
+
+    // Grouped view: return only root reports (no parent)
+    if (groupBy) {
+      query = query.is('parent_report_id', null);
+    }
+
+    // Filter by parent to get child reports
+    if (parentReportId) {
+      query = query.eq('parent_report_id', parentReportId);
     }
 
     // Role-based scoping: non-admins only see their own reports
@@ -84,8 +97,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch reports' }, { status: 500 });
     }
 
+    // For grouped view, attach child_count to each root report
+    let responseData = data;
+    if (groupBy && data) {
+      const rootIds = data.map((r: Record<string, unknown>) => r.id as string);
+
+      if (rootIds.length > 0) {
+        // Count children for each root report
+        const { data: childCounts, error: childError } = await supabaseAdmin
+          .from('reports')
+          .select('parent_report_id')
+          .in('parent_report_id', rootIds)
+          .is('deleted_at', null);
+
+        if (!childError && childCounts) {
+          const countMap = new Map<string, number>();
+          for (const child of childCounts) {
+            const parentId = child.parent_report_id as string;
+            countMap.set(parentId, (countMap.get(parentId) || 0) + 1);
+          }
+
+          responseData = data.map((report: Record<string, unknown>) => ({
+            ...report,
+            child_count: countMap.get(report.id as string) || 0,
+          }));
+        }
+      }
+    }
+
     return NextResponse.json({
-      data,
+      data: responseData,
       pagination: {
         page,
         pageSize,

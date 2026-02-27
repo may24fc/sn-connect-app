@@ -20,7 +20,7 @@ import {
   TableRow,
   Textarea,
 } from '@hr-portal/ui';
-import { Eye } from 'lucide-react';
+import { AlertTriangle, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -49,6 +49,7 @@ export function ReportsSubmissionsTab({
 }: ReportsSubmissionsTabProps) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
+  const [showLateOnly, setShowLateOnly] = useState(false);
   const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
 
@@ -65,16 +66,40 @@ export function ReportsSubmissionsTab({
 
   // Filter by department client-side (API doesn't support department filter yet)
   const reports = useMemo(() => {
-    const all = data?.data || [];
-    if (department === 'all') return all;
-    return all.filter((r) => r.employees?.department?.toLowerCase() === department.toLowerCase());
-  }, [data?.data, department]);
+    let all = data?.data || [];
+    if (department !== 'all') {
+      all = all.filter((r) => r.employees?.department?.toLowerCase() === department.toLowerCase());
+    }
+    if (showLateOnly) {
+      const now = new Date();
+      all = all.filter((r) => {
+        if (r.status !== 'submitted' && r.status !== 'draft') return false;
+        const periodEnd = r.period_end ? new Date(r.period_end) : null;
+        if (!periodEnd) return false;
+        const daysSince = Math.floor((now.getTime() - periodEnd.getTime()) / 86_400_000);
+        return daysSince > 7;
+      });
+    }
+    return all;
+  }, [data?.data, department, showLateOnly]);
+
+  /** Calculate days overdue for a report (>7 days past period_end) */
+  function getDaysOverdue(periodEnd: string | null | undefined): number {
+    if (!periodEnd) return 0;
+    const end = new Date(periodEnd);
+    const daysSince = Math.floor((Date.now() - end.getTime()) / 86_400_000);
+    return daysSince > 7 ? daysSince - 7 : 0;
+  }
 
   const stats = useMemo(() => {
     const submitted = reports.filter((report) => report.status === 'submitted').length;
     const approved = reports.filter((report) => report.status === 'approved').length;
     const rejected = reports.filter((report) => report.status === 'rejected').length;
-    return { submitted, approved, rejected, total: reports.length };
+    const overdue = reports.filter((report) => {
+      if (report.status === 'approved' || report.status === 'rejected') return false;
+      return getDaysOverdue(report.period_end) > 0;
+    }).length;
+    return { submitted, approved, rejected, overdue, total: reports.length };
   }, [reports]);
 
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
@@ -94,7 +119,7 @@ export function ReportsSubmissionsTab({
   return (
     <div className="space-y-6">
       {/* Stats row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Total</p>
@@ -119,14 +144,32 @@ export function ReportsSubmissionsTab({
             <p className="text-2xl font-bold">{stats.rejected}</p>
           </CardContent>
         </Card>
+        <Card
+          className={
+            stats.overdue > 0 ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950' : ''
+          }
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2">
+              {stats.overdue > 0 && <AlertTriangle className="h-4 w-4 text-red-500" />}
+              <p className="text-sm text-muted-foreground">Overdue</p>
+            </div>
+            <p
+              className={`text-2xl font-bold ${stats.overdue > 0 ? 'text-red-600 dark:text-red-400' : ''}`}
+            >
+              {stats.overdue}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Input
           placeholder="Search report type or notes"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
+          className="flex-1"
         />
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[200px]">
@@ -140,6 +183,15 @@ export function ReportsSubmissionsTab({
             <SelectItem value="draft">Draft</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          size="sm"
+          variant={showLateOnly ? 'destructive' : 'outline'}
+          onClick={() => setShowLateOnly((prev) => !prev)}
+          className="whitespace-nowrap"
+        >
+          <AlertTriangle className="mr-1 h-3.5 w-3.5" />
+          {showLateOnly ? 'Show All' : 'Show Late Only'}
+        </Button>
       </div>
 
       {/* Table */}
@@ -164,6 +216,7 @@ export function ReportsSubmissionsTab({
                   <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Period</TableHead>
+                  <TableHead>Overdue</TableHead>
                   <TableHead>Action Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -171,7 +224,7 @@ export function ReportsSubmissionsTab({
               <TableBody>
                 {reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No reports found.
                     </TableCell>
                   </TableRow>
@@ -190,6 +243,22 @@ export function ReportsSubmissionsTab({
                       </TableCell>
                       <TableCell>
                         {report.period_start} to {report.period_end}
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const days = getDaysOverdue(report.period_end);
+                          if (
+                            days <= 0 ||
+                            report.status === 'approved' ||
+                            report.status === 'rejected'
+                          )
+                            return <span className="text-muted-foreground">—</span>;
+                          return (
+                            <Badge variant="error" className="whitespace-nowrap">
+                              {days}d late
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="min-w-[220px]">
                         <Textarea
