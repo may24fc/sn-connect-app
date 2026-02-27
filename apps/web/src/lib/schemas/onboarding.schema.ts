@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 /** Optional email: accepts a valid email, empty string, null, or undefined */
 const optionalEmail = z
@@ -18,11 +19,20 @@ const optionalUuid = z
   .union([z.string().uuid(), z.literal(''), z.null(), z.undefined()])
   .optional();
 
-/** Phone number validation: Philippine format (+63 or 09) */
+/** Phone number validation: supports international formats via libphonenumber-js */
 const phoneNumber = z
   .string()
   .min(1, 'Contact number is required')
-  .regex(/^(\+63|0)?9\d{9}$/, 'Invalid phone number. Use format: 09XXXXXXXXX or +639XXXXXXXXX');
+  .refine(
+    (val) => {
+      try {
+        return isValidPhoneNumber(val);
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Invalid phone number. Include country code (e.g., +63 for PH, +39 for IT)' }
+  );
 
 export const onboardingStepSchema = z.enum([
   'personal_info',
@@ -83,7 +93,7 @@ export const paymentInfoSchema = z.object({
     .email('Valid payment email is required')
     .min(1, 'Payment email is required')
     .max(150),
-  paymentPhoneNumber: z.string().min(1, 'Phone number is required').max(30),
+  paymentPhoneNumber: phoneNumber,
   paymentAddress: z.string().min(1, 'Address is required').max(500),
   paymentCity: z.string().min(1, 'City is required').max(100),
   paymentProvince: z.string().min(1, 'Province is required').max(100),
