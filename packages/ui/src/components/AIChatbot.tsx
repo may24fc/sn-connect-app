@@ -1,16 +1,6 @@
 'use client';
 
-import {
-  Bot,
-  Loader2,
-  Maximize2,
-  MessageCircle,
-  Minimize2,
-  Send,
-  Sparkles,
-  User,
-  X,
-} from 'lucide-react';
+import { Loader2, Send, Sparkles, User, X } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../primitives/avatar';
 import { Button } from '../primitives/button';
@@ -48,7 +38,6 @@ export function AIChatbot({
   className,
 }: AIChatbotProps): React.ReactNode {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [isExpanded, setIsExpanded] = React.useState(false);
   const [messages, setMessages] = React.useState<Array<ChatMessage>>([
     {
       id: '1',
@@ -139,88 +128,80 @@ export function AIChatbot({
   };
 
   return (
-    <div className={cn('fixed bottom-4 left-20 lg:left-4 z-50', className)}>
-      {/* Chat Panel */}
+    <div className={cn('relative', className)}>
+      {/* Backdrop — closes panel when clicking outside */}
       {isOpen && (
         <div
-          className={cn(
-            'mb-4 flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg transition-all duration-300',
-            isExpanded ? 'h-[600px] w-[450px]' : 'h-[500px] w-[380px]'
-          )}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-indigo-600 px-4 py-3 rounded-t-xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                <Sparkles className="h-4 w-4 text-white" strokeWidth={1.5} />
+          className="fixed inset-0 z-40"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Chat Panel — drops down from header, anchored top-right */}
+      {isOpen && (
+        <div className="fixed top-[65px] right-4 z-50 flex flex-col w-[380px] h-[520px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-lg animate-in fade-in-0 slide-in-from-top-2 duration-200">
+          {/* Panel Header */}
+          <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-indigo-600 px-4 py-3 rounded-t-xl flex-shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+                <Sparkles className="h-3.5 w-3.5 text-white" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="font-semibold text-white">SN Connect AI</h3>
-                <p className="text-xs text-white/70">Powered by AI</p>
+                <h3 className="text-sm font-semibold text-white tracking-tight">SN Connect AI</h3>
+                <p className="text-[11px] text-white/70">HR Assistant · Powered by AI</p>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                {isExpanded ? (
-                  <Minimize2 className="h-4 w-4" strokeWidth={1.5} />
-                ) : (
-                  <Maximize2 className="h-4 w-4" strokeWidth={1.5} />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-white hover:bg-white/20 hover:text-white"
-                onClick={() => setIsOpen(false)}
-              >
-                <X className="h-4 w-4" strokeWidth={1.5} />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-white hover:bg-white/20 hover:text-white"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close AI panel"
+            >
+              <X className="h-4 w-4" strokeWidth={1.5} />
+            </Button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-700">
             {messages.map((message) => (
               <div
                 key={message.id}
                 className={cn(
-                  'flex gap-3',
+                  'flex gap-2.5',
                   message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                 )}
               >
-                <Avatar className="h-8 w-8 flex-shrink-0">
+                <Avatar className="h-7 w-7 flex-shrink-0">
                   <AvatarFallback
                     className={cn(
+                      'text-[11px]',
                       message.role === 'assistant'
                         ? 'bg-indigo-600 text-white'
                         : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
                     )}
                   >
                     {message.role === 'assistant' ? (
-                      <Bot className="h-4 w-4" strokeWidth={1.5} />
+                      <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
                     ) : (
-                      <User className="h-4 w-4" strokeWidth={1.5} />
+                      <User className="h-3.5 w-3.5" strokeWidth={1.5} />
                     )}
                   </AvatarFallback>
                 </Avatar>
                 <div
                   className={cn(
-                    'max-w-[75%] rounded-lg px-4 py-2',
+                    'max-w-[78%] rounded-lg px-3 py-2',
                     message.role === 'user'
                       ? 'bg-indigo-600 text-white'
                       : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
                   )}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
                   <p
                     className={cn(
-                      'mt-1 text-xs',
-                      message.role === 'user' ? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'
+                      'mt-1 text-[11px]',
+                      message.role === 'user' ? 'text-white/60' : 'text-zinc-400 dark:text-zinc-500'
                     )}
                   >
                     {formatTime(message.timestamp)}
@@ -230,14 +211,14 @@ export function AIChatbot({
             ))}
 
             {isLoading && (
-              <div className="flex gap-3">
-                <Avatar className="h-8 w-8 flex-shrink-0">
+              <div className="flex gap-2.5">
+                <Avatar className="h-7 w-7 flex-shrink-0">
                   <AvatarFallback className="bg-indigo-600 text-white">
-                    <Bot className="h-4 w-4" strokeWidth={1.5} />
+                    <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex items-center gap-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 px-4 py-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-zinc-400" strokeWidth={1.5} />
+                <div className="flex items-center gap-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-500" strokeWidth={1.5} />
                   <span className="text-sm text-zinc-500 dark:text-zinc-400">Thinking...</span>
                 </div>
               </div>
@@ -247,7 +228,7 @@ export function AIChatbot({
           </div>
 
           {/* Input */}
-          <div className="border-t border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="border-t border-zinc-200 dark:border-zinc-800 p-3 flex-shrink-0">
             <div className="flex items-center gap-2">
               <Input
                 ref={inputRef}
@@ -256,37 +237,48 @@ export function AIChatbot({
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
                 disabled={isLoading}
-                className="flex-1 h-10 px-4 text-sm bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                className="flex-1 h-9 px-3 text-sm bg-zinc-100 dark:bg-zinc-800 border border-transparent rounded-lg placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 focus:bg-white dark:focus:bg-zinc-900 transition-all"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isLoading}
                 size="icon"
-                className="h-10 w-10 flex items-center justify-center rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 w-9 flex-shrink-0 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Send className="h-4 w-4" strokeWidth={1.5} />
+                <Send className="h-3.5 w-3.5" strokeWidth={1.5} />
               </Button>
             </div>
-            <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
-              AI responses may not always be accurate. Verify important information.
+            <p className="mt-2 text-center text-[11px] text-zinc-500 dark:text-zinc-400">
+              AI may make mistakes. Verify important information.
             </p>
           </div>
         </div>
       )}
 
-      {/* Toggle Button */}
+      {/* Header Trigger Button — Gemini-style icon */}
       <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setIsOpen(!isOpen)}
-        size="lg"
+        aria-label="Open AI Assistant"
+        aria-expanded={isOpen}
         className={cn(
-          'h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-105 bg-indigo-600 hover:bg-indigo-700 text-white',
-          isOpen && 'rotate-0'
+          'group relative h-9 w-9 transition-colors',
+          isOpen
+            ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600'
+            : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-200'
         )}
       >
-        {isOpen ? (
-          <X className="h-5 w-5" strokeWidth={1.5} />
-        ) : (
-          <MessageCircle className="h-5 w-5" strokeWidth={1.5} />
+        <Sparkles
+          className={cn(
+            'h-[18px] w-[18px] transition-colors',
+            isOpen ? 'text-indigo-600' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
+          )}
+          strokeWidth={1.5}
+        />
+        {/* Active indicator dot */}
+        {isOpen && (
+          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-indigo-500" />
         )}
       </Button>
     </div>

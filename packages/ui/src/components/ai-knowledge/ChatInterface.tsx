@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Bot, Loader2, Send, StopCircle } from 'lucide-react';
+import { AlertCircle, Loader2, Send, Sparkles, StopCircle } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../../primitives/avatar';
 import { Button } from '../../primitives/button';
@@ -148,7 +148,7 @@ export function ChatInterface({
           <div className="flex gap-3">
             <Avatar className="h-9 w-9 flex-shrink-0">
               <AvatarFallback className="bg-primary text-primary-foreground">
-                <Bot className="h-4 w-4" />
+                <Sparkles className="h-4 w-4" />
               </AvatarFallback>
             </Avatar>
             <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-card border border-border px-4 py-3">

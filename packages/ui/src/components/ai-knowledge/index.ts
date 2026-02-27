@@ -10,6 +10,7 @@ export { ChatInterface } from './ChatInterface';
 export { ChatMessage } from './ChatMessage';
 export { DebugPanel } from './DebugPanel';
 export { AccessToggle } from './AccessToggle';
+export { VersionHistory } from './VersionHistory';
 
 export type { AIKnowledgeManagerProps } from './AIKnowledgeManager';
 export type { KnowledgeBasePanelProps } from './KnowledgeBasePanel';
@@ -23,3 +24,4 @@ export type { ChatInterfaceProps, ChatInterfaceMessage } from './ChatInterface';
 export type { ChatMessageProps } from './ChatMessage';
 export type { DebugPanelProps } from './DebugPanel';
 export type { AccessToggleProps } from './AccessToggle';
+export type { VersionHistoryProps, VersionRecord } from './VersionHistory';
