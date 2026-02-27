@@ -422,6 +422,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
         // Invalidate all stale queries after login to ensure fresh data
         await queryClient.invalidateQueries();
+        // Refresh router to clear Next.js server-side cache (fixes stale
+        // state after signup → email confirmation → login flow)
+        router.refresh();
 
         // Handle pending_onboarding status - redirect to onboarding
         if (nextUser.status === 'pending_onboarding') {

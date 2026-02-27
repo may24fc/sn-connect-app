@@ -332,6 +332,10 @@ export function OnboardingWizard(): ReactNode {
     return <StepReview personalInfo={draft.personalInfo} paymentInfo={draft.paymentInfo} />;
   };
 
+  // Onboarding is mandatory when the profile is not completed.
+  // Hide the Exit button in that case so users cannot bypass the flow.
+  const isMandatory = !profileQuery.data?.data?.is_completed;
+
   return (
     <Card className="w-full max-w-5xl">
       <CardHeader className="space-y-4">
@@ -342,9 +346,11 @@ export function OnboardingWizard(): ReactNode {
               Fill out all required onboarding data. You can continue where you left off.
             </CardDescription>
           </div>
-          <Button variant="outline" onClick={() => router.push('/dashboard')}>
-            Exit
-          </Button>
+          {!isMandatory && (
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              Exit
+            </Button>
+          )}
         </div>
         <ProgressStepper currentStep={draft.currentStep as Step} />
       </CardHeader>

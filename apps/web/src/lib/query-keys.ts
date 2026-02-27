@@ -42,6 +42,8 @@ export interface ReportFilters {
   status?: 'draft' | 'submitted' | 'approved' | 'rejected';
   reportType?: string;
   employeeId?: string;
+  groupBy?: 'report_group' | 'hierarchy';
+  parentReportId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -176,6 +178,13 @@ export interface DirectoryFilters {
 export interface MilestoneFilters {
   days?: number;
   type?: 'birthday' | 'anniversary' | 'all';
+}
+
+export interface NotificationFilters {
+  page?: number;
+  pageSize?: number;
+  isRead?: boolean | 'all';
+  type?: string;
 }
 
 export const queryKeys = {
@@ -356,6 +365,21 @@ export const queryKeys = {
     all: ['milestones'] as const,
     lists: () => [...queryKeys.milestones.all, 'list'] as const,
     list: (filters: MilestoneFilters) => [...queryKeys.milestones.lists(), filters] as const,
+  },
+
+  // Notifications
+  notifications: {
+    all: ['notifications'] as const,
+    lists: () => [...queryKeys.notifications.all, 'list'] as const,
+    list: (filters: NotificationFilters) => [...queryKeys.notifications.lists(), filters] as const,
+    unreadCount: () => [...queryKeys.notifications.all, 'unread-count'] as const,
+    detail: (id: string) => [...queryKeys.notifications.all, 'detail', id] as const,
+  },
+
+  // Pending Approvals (Dashboard)
+  pendingApprovals: {
+    all: ['pending-approvals'] as const,
+    counts: () => [...queryKeys.pendingApprovals.all, 'counts'] as const,
   },
 } as const;
 

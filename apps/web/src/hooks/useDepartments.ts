@@ -1,4 +1,5 @@
 import { type DepartmentFilters, queryKeys } from '@/lib/query-keys';
+import { STALE_TIMES } from '@/lib/query-client';
 import type { Department, DepartmentInsert } from '@hr-portal/database';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -33,6 +34,7 @@ export function useDepartments(filters: DepartmentFilters = {}) {
 
       return response.json();
     },
+    staleTime: STALE_TIMES.stable,
   });
 }
 
