@@ -92,6 +92,8 @@ export default function InvoicePage() {
         status: 'draft',
         notes: notes || undefined,
         lineItems: [],
+        sourceCurrency: 'PHP',
+        targetCurrency: 'PHP',
       });
 
       addToast({

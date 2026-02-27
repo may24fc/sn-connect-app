@@ -22,6 +22,10 @@ export const invoiceCreateSchema = z.object({
   status: invoiceStatusSchema.default('draft'),
   notes: z.string().optional().nullable(),
   lineItems: z.array(invoiceLineItemSchema).default([]),
+  sourceCurrency: z.string().length(3).default('PHP'),
+  targetCurrency: z.string().length(3).default('PHP'),
+  exchangeRate: z.number().positive().optional().nullable(),
+  convertedAmount: z.number().nonnegative().optional().nullable(),
 });
 
 export const invoiceUpdateSchema = invoiceCreateSchema.partial();
