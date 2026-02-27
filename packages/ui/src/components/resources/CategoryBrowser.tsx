@@ -58,7 +58,7 @@ export function CategoryBrowser({
             key={cat.value}
             onClick={() => onSelect(cat.value)}
             className={cn(
-              'cursor-pointer border rounded-lg p-4 transition-colors text-center',
+              'group cursor-pointer border rounded-lg p-4 transition-colors text-center',
               isSelected
                 ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/30'
                 : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'
@@ -67,10 +67,10 @@ export function CategoryBrowser({
             <CardContent className="p-0 flex flex-col items-center gap-2">
               <Icon
                 className={cn(
-                  'h-6 w-6',
+                  'h-6 w-6 transition-colors',
                   isSelected
                     ? 'text-indigo-600 dark:text-indigo-400'
-                    : 'text-zinc-400 dark:text-zinc-500'
+                    : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
                 )}
                 strokeWidth={1.5}
               />

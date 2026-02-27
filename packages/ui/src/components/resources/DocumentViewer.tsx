@@ -40,7 +40,7 @@ export function DocumentViewer({
         className
       )}
     >
-      <FileText className="h-12 w-12 text-zinc-300 dark:text-zinc-600" strokeWidth={1.5} />
+      <FileText className="h-12 w-12 text-zinc-400 dark:text-zinc-600" strokeWidth={1.5} />
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
         {fileName ?? 'Document preview is not available'}
       </p>

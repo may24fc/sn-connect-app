@@ -63,11 +63,11 @@ export function ResourceUploader({
         isUploading && 'pointer-events-none opacity-60'
       )}
     >
-      <Upload className="mx-auto h-8 w-8 text-zinc-400 dark:text-zinc-500 mb-3" strokeWidth={1.5} />
+      <Upload className="mx-auto h-8 w-8 text-zinc-500 dark:text-zinc-400 mb-3" strokeWidth={1.5} />
       <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">
         Drag and drop a file here, or click to browse
       </p>
-      <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-3">Max file size: {maxSizeMB}MB</p>
+      <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">Max file size: {maxSizeMB}MB</p>
 
       <input
         ref={inputRef}

@@ -111,7 +111,7 @@ export function ResourceCard({
         </div>
       ) : (
         <div className="h-36 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center">
-          <TypeIcon className="h-10 w-10 text-zinc-300 dark:text-zinc-600" strokeWidth={1.5} />
+          <TypeIcon className="h-10 w-10 text-zinc-400 dark:text-zinc-600" strokeWidth={1.5} />
         </div>
       )}
 

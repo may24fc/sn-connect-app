@@ -8,14 +8,23 @@ import {
 } from '@/hooks/useResourceBookmarks';
 import { useResourcesByCategory } from '@/hooks/useResourceFeed';
 import { useResource } from '@/hooks/useResources';
-import { Button, DocumentViewer, ResourceCard, ResourceGrid, VideoPlayer } from '@hr-portal/ui';
+import {
+  Button,
+  DocumentViewer,
+  ResourceCard,
+  ResourceGrid,
+  VideoPlayer,
+  type ResourceAccessLevel,
+} from '@hr-portal/ui';
 import { Bookmark, CheckCircle2, Download } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export default function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [resourceId, setResourceId] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState(0);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [streamAccessLevel, setStreamAccessLevel] = useState<ResourceAccessLevel>('full');
 
   useEffect(() => {
     params.then((value) => setResourceId(value.id));
@@ -39,6 +48,37 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
     trackView.mutate({ resourceId });
   }, [resourceId, trackView]);
 
+  // Fetch signed stream URL for video resources
+  useEffect(() => {
+    if (!resource || resource.resource_type !== 'video') return;
+
+    const fetchStreamUrl = async () => {
+      try {
+        const response = await fetch(`/api/resources/${resource.id}/stream`);
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (payload?.data?.url) {
+          setStreamUrl(payload.data.url);
+          setStreamAccessLevel(payload.data.accessLevel ?? 'full');
+        }
+      } catch {
+        // Fallback to direct URL if stream endpoint fails
+      }
+    };
+
+    fetchStreamUrl();
+
+    // Refresh signed URL before it expires (every 4 minutes for view_only, 14 for full)
+    const refreshInterval = setInterval(
+      fetchStreamUrl,
+      resource.access_level === 'view_only' ? 4 * 60 * 1000 : 14 * 60 * 1000
+    );
+
+    return () => clearInterval(refreshInterval);
+  }, [resource]);
+
+  const isViewOnly = streamAccessLevel === 'view_only';
+
   if (isLoading || !resource) {
     return <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading resource...</div>;
   }
@@ -50,14 +90,21 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
     .filter((item) => item.id !== resource.id)
     .slice(0, 3);
 
-  const handleDownload = async (): Promise<void> => {
+  const handleDownload = useCallback(async (): Promise<void> => {
     const response = await fetch(`/api/resources/${resource.id}/download`);
-    if (!response.ok) return;
+    if (!response.ok) {
+      const payload = await response.json();
+      if (response.status === 403) {
+        alert(payload?.error ?? 'This resource is view-only and cannot be downloaded.');
+        return;
+      }
+      return;
+    }
     const payload = await response.json();
     if (payload?.data?.url) {
       window.open(payload.data.url, '_blank', 'noopener,noreferrer');
     }
-  };
+  }, [resource.id]);
 
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden -m-4 lg:-m-6">
@@ -83,9 +130,10 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
         <div className="bg-zinc-900 aspect-video w-full">
           {isVideo ? (
             <VideoPlayer
-              src={resource.external_url || resource.file_path || ''}
+              src={streamUrl || resource.external_url || resource.file_path || ''}
               title={resource.title}
               className="rounded-none"
+              accessLevel={streamAccessLevel}
               onTimeUpdate={(time) => setDurationSeconds(Math.floor(time))}
               {...(resource.thumbnail_path ? { poster: resource.thumbnail_path } : {})}
             />
@@ -129,9 +177,11 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
               variant="outline"
               className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 px-4 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
               onClick={handleDownload}
+              disabled={isViewOnly}
+              title={isViewOnly ? 'This resource is view-only' : 'Download resource'}
             >
               <Download className="h-4 w-4" />
-              Download
+              {isViewOnly ? 'View Only' : 'Download'}
             </Button>
 
             <Button
