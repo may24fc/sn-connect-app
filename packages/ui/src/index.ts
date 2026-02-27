@@ -12,6 +12,7 @@ export {
   ToastProvider,
   useToast,
   type ToastProps,
+  type ToastState,
   type ToastVariant,
 } from './primitives/toast';
 export { Label } from './primitives/label';
@@ -100,6 +101,9 @@ export {
   FormInput,
   FormSelect,
   FormTextarea,
+  PhoneInput,
+  CurrencySelector,
+  BankSelector,
 } from './components/forms';
 export type {
   FormProps,
@@ -108,6 +112,12 @@ export type {
   FormSelectOption,
   FormSelectProps,
   FormTextareaProps,
+  PhoneInputProps,
+  PhoneCountry,
+  CurrencySelectorProps,
+  CurrencyOption,
+  BankSelectorProps,
+  BankOption,
 } from './components/forms';
 
 // AI Knowledge Components
@@ -178,6 +188,17 @@ export {
   InternPersonalStats,
 } from './components/internship/InternshipSummaryCards';
 export { EODReportForm } from './components/internship/EODReportForm';
+export {
+  InternHoursProgressBar,
+  type InternHoursProgressBarProps,
+} from './components/internship/InternHoursProgressBar';
+
+// Dashboard Components
+export {
+  MilestoneFeed,
+  type MilestoneFeedProps,
+  type MilestoneItem,
+} from './components/dashboard/MilestoneFeed';
 
 // Reports Components
 export {

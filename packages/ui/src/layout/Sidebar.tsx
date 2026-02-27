@@ -5,7 +5,6 @@ import {
   CheckSquare,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   FileCheck,
   FileText,
   FolderOpen,
@@ -17,6 +16,8 @@ import {
   Receipt,
   Target,
   User,
+  UserCog,
+  Users,
 } from 'lucide-react';
 import type * as React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../primitives/tooltip';
@@ -65,7 +66,8 @@ const internNavItems: Array<NavItem> = [
 // Admin (HR) navigation - includes team management features
 const adminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
-  { label: 'Employee Probation', href: '/admin/probation', icon: ClipboardList },
+  { label: 'Directory', href: '/admin/directory', icon: Users },
+  { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
@@ -77,7 +79,8 @@ const adminNavItems: Array<NavItem> = [
 // Super Admin navigation - same as admin plus payroll approvals
 const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
-  { label: 'Employee Probation', href: '/admin/probation', icon: ClipboardList },
+  { label: 'Directory', href: '/admin/directory', icon: Users },
+  { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
