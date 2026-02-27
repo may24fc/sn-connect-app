@@ -16,13 +16,21 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
     const { data: resource, error: resourceError } = await supabase
       .from('resources')
-      .select('id, file_path, external_url, download_count')
+      .select('id, file_path, external_url, download_count, access_level')
       .eq('id', id)
       .is('deleted_at', null)
       .single();
 
     if (resourceError || !resource) {
       return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+    }
+
+    // Block downloads for view-only resources
+    if (resource.access_level === 'view_only') {
+      return NextResponse.json(
+        { error: 'This resource is view-only and cannot be downloaded' },
+        { status: 403 }
+      );
     }
 
     if (resource.external_url) {

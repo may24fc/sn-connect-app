@@ -34,7 +34,8 @@ export async function GET(_: NextRequest) {
         )
       `)
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50);
 
     if (bookmarksError) {
       console.error('Error fetching bookmarks:', bookmarksError);
