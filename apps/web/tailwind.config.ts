@@ -68,6 +68,14 @@ const config: Config = {
           DEFAULT: '#FFFFFF',
           foreground: '#18181B',
         },
+        popover: {
+          DEFAULT: '#FFFFFF',
+          foreground: '#18181B',
+        },
+        accent: {
+          DEFAULT: '#EEF2FF', // Indigo 50
+          foreground: '#4F46E5', // Indigo 600
+        },
         border: '#E4E4E7',
         input: '#E4E4E7',
         ring: '#4F46E5',
