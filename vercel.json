@@ -4,6 +4,12 @@
   "installCommand": "pnpm install",
   "framework": "nextjs",
   "outputDirectory": "apps/web/.next",
+  "crons": [
+    {
+      "path": "/api/cron/probation-check",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
