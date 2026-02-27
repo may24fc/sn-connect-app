@@ -5,6 +5,7 @@ import {
   useUpdateInternDailyLog,
   useUpdateInternship,
 } from '@/hooks/useInternships';
+import { useExtendInternship } from '@/hooks/useIndividualPerformance';
 import {
   Avatar,
   AvatarFallback,
@@ -30,9 +31,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HoursProgressCard,
+  InternHoursProgressBar,
+  Input,
   type InternId,
   type InternshipPeriodId,
   InternshipStatusBadge,
+  Label,
   Progress,
   Tabs,
   TabsContent,
@@ -78,10 +82,14 @@ export default function InternDetailPage({
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [feedback, setFeedback] = useState('');
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+  const [newEndDate, setNewEndDate] = useState('');
+  const [extendReason, setExtendReason] = useState('');
 
   const internshipQuery = useInternship(id);
   const updateLogMutation = useUpdateInternDailyLog();
   const updateInternshipMutation = useUpdateInternship();
+  const extendMutation = useExtendInternship();
 
   const intern = internshipQuery.data?.data;
   const reports = intern?.recentReports || [];
@@ -136,6 +144,18 @@ export default function InternDetailPage({
     setFeedback('');
   };
 
+  const handleExtendInternship = async (): Promise<void> => {
+    if (!newEndDate.trim() || !extendReason.trim()) return;
+    await extendMutation.mutateAsync({
+      internshipId: id,
+      newEndDate: newEndDate,
+      reason: extendReason,
+    });
+    setExtendDialogOpen(false);
+    setNewEndDate('');
+    setExtendReason('');
+  };
+
   const handleCompleteInternship = async (): Promise<void> => {
     await updateInternshipMutation.mutateAsync({
       internshipId: id,
@@ -181,6 +201,15 @@ export default function InternDetailPage({
                 <Award className="mr-2 h-4 w-4" />
                 Generate Certificate
               </DropdownMenuItem>
+              {intern.status === 'active' && (
+                <DropdownMenuItem onClick={() => {
+                  setNewEndDate(intern.endDate);
+                  setExtendDialogOpen(true);
+                }}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Extend Internship
+                </DropdownMenuItem>
+              )}
               {intern.status === 'active' && progressPercentage >= 100 && (
                 <DropdownMenuItem onClick={() => setCompleteDialogOpen(true)}>
                   <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -272,6 +301,14 @@ export default function InternDetailPage({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Hours Progress Bar - V2-2.6 */}
+          <InternHoursProgressBar
+            completedHours={intern.completedHours}
+            requiredHours={intern.requiredHours}
+            startDate={intern.startDate}
+            endDate={intern.endDate}
+          />
+
           <div className="grid gap-6 lg:grid-cols-2">
             <HoursProgressCard
               completedHours={intern.completedHours}
@@ -464,6 +501,56 @@ export default function InternDetailPage({
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Submit Feedback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extend Internship Dialog - V2-2.6 */}
+      <Dialog open={extendDialogOpen} onOpenChange={setExtendDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Extend Internship
+            </DialogTitle>
+            <DialogDescription>
+              Extend {intern.name}'s internship end date. Current end date:{' '}
+              {new Date(intern.endDate).toLocaleDateString()}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-end-date">New End Date</Label>
+              <Input
+                id="new-end-date"
+                type="date"
+                value={newEndDate}
+                onChange={(e) => setNewEndDate(e.target.value)}
+                min={intern.endDate}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="extend-reason">Reason for Extension</Label>
+              <Textarea
+                id="extend-reason"
+                placeholder="Explain why the internship is being extended..."
+                value={extendReason}
+                onChange={(e) => setExtendReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExtendInternship}
+              disabled={!newEndDate.trim() || !extendReason.trim() || extendMutation.isPending}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Extend Internship
             </Button>
           </DialogFooter>
         </DialogContent>

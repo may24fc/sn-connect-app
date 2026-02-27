@@ -29,10 +29,22 @@ const statusVariant: Record<
   rejected: 'error',
 };
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-PH', {
+const CURRENCY_LOCALES: Record<string, string> = {
+  PHP: 'en-PH',
+  USD: 'en-US',
+  EUR: 'de-DE',
+  AUD: 'en-AU',
+  GBP: 'en-GB',
+  SGD: 'en-SG',
+  JPY: 'ja-JP',
+};
+
+const formatCurrency = (value: number, currencyCode = 'PHP') =>
+  new Intl.NumberFormat(CURRENCY_LOCALES[currencyCode] || 'en-US', {
     style: 'currency',
-    currency: 'PHP',
+    currency: currencyCode,
+    minimumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
+    maximumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
   }).format(value || 0);
 
 export default function PayrollApprovalsPage() {
@@ -160,7 +172,24 @@ export default function PayrollApprovalsPage() {
                         <TableCell>
                           {invoice.period_start} to {invoice.period_end}
                         </TableCell>
-                        <TableCell>{formatCurrency(Number(invoice.net_amount || 0))}</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const inv = invoice as unknown as Record<string, unknown>;
+                            const srcCurrency = (inv.source_currency as string) || 'PHP';
+                            const tgtCurrency = (inv.target_currency as string) || 'PHP';
+                            const convertedAmt = inv.converted_amount as number | null;
+                            return (
+                              <div>
+                                <span>{formatCurrency(Number(invoice.net_amount || 0), srcCurrency)}</span>
+                                {convertedAmt && srcCurrency !== tgtCurrency && (
+                                  <span className="block text-xs text-muted-foreground">
+                                    ≈ {formatCurrency(Number(convertedAmt || 0), tgtCurrency)}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell className="min-w-[220px]">
                           <Textarea
                             rows={2}

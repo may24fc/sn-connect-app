@@ -11,9 +11,11 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
-import { Badge, Button, Progress } from '@hr-portal/ui';
+import { useMilestones } from '@/hooks/useMilestones';
+import { Badge, Button, MilestoneFeed, Progress } from '@hr-portal/ui';
 import {
   BarChart3,
+  Cake,
   CheckCircle,
   ChevronRight,
   ClipboardList,
@@ -64,6 +66,8 @@ export default function AdminDashboardPage(): ReactNode {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
+
+  const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
 
   // Data would come from API hooks - showing UI structure without data
   const stats = {
@@ -217,6 +221,24 @@ export default function AdminDashboardPage(): ReactNode {
                 description="Recent HR activities will appear here"
               />
             )}
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* Milestones - Birthdays & Anniversaries */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Cake className="h-4 w-4" strokeWidth={1.5} />}>
+              Upcoming Milestones
+            </BentoCardTitle>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <MilestoneFeed
+              milestones={milestonesData?.milestones || []}
+              grouped={milestonesData?.grouped}
+              isLoading={milestonesLoading}
+              maxItems={6}
+              compact
+            />
           </BentoCardContent>
         </BentoCard>
 
