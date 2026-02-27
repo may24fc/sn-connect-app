@@ -12,7 +12,8 @@ import {
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMilestones } from '@/hooks/useMilestones';
-import { Badge, Button, MilestoneFeed, Progress } from '@hr-portal/ui';
+import { usePendingApprovals } from '@/hooks/usePendingApprovals';
+import { Badge, Button, MilestoneFeed, PendingApprovalsCard, Progress } from '@hr-portal/ui';
 import {
   BarChart3,
   Cake,
@@ -25,6 +26,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 // Quick actions configuration
@@ -64,10 +66,12 @@ function getGreeting(): string {
 
 export default function AdminDashboardPage(): ReactNode {
   const { user } = useAuth();
+  const router = useRouter();
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
 
   const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
+  const { data: pendingData, isLoading: pendingLoading } = usePendingApprovals();
 
   // Data would come from API hooks - showing UI structure without data
   const stats = {
@@ -91,7 +95,7 @@ export default function AdminDashboardPage(): ReactNode {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
             {greeting}, {firstName}
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
             Here is your HR overview for today.
           </p>
         </div>
@@ -103,7 +107,15 @@ export default function AdminDashboardPage(): ReactNode {
         </Button>
       </div>
 
+      {/* Pending Approvals */}
+      <PendingApprovalsCard
+        data={pendingData ?? null}
+        isLoading={pendingLoading}
+        onNavigate={(path) => router.push(path)}
+      />
+
       {/* Stats Row */}
+      <div data-tour="stat-cards">
       <StatCardGrid columns={3}>
         <StatCard
           label="Total Employees"
@@ -124,11 +136,12 @@ export default function AdminDashboardPage(): ReactNode {
           icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
         />
       </StatCardGrid>
+      </div>
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
         {/* Department Overview Card */}
-        <BentoCard colSpan={2}>
+        <BentoCard colSpan={2} data-tour="department-overview">
           <BentoCardHeader>
             <BentoCardTitle icon={<BarChart3 className="h-4 w-4" strokeWidth={1.5} />}>
               Department Overview
@@ -149,7 +162,7 @@ export default function AdminDashboardPage(): ReactNode {
                         {dept.name}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        <span className="text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
                           {dept.headcount} employees
                         </span>
                         {dept.openPositions > 0 && (
@@ -196,7 +209,7 @@ export default function AdminDashboardPage(): ReactNode {
                   >
                     <div className="flex items-start gap-3">
                       <CheckCircle
-                        className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
+                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 mt-0.5"
                         strokeWidth={1.5}
                       />
                       <div>
@@ -208,7 +221,7 @@ export default function AdminDashboardPage(): ReactNode {
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                    <span className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 flex-shrink-0">
                       {activity.timestamp}
                     </span>
                   </div>
@@ -225,7 +238,7 @@ export default function AdminDashboardPage(): ReactNode {
         </BentoCard>
 
         {/* Milestones - Birthdays & Anniversaries */}
-        <BentoCard colSpan={2}>
+        <BentoCard colSpan={2} data-tour="milestones">
           <BentoCardHeader>
             <BentoCardTitle icon={<Cake className="h-4 w-4" strokeWidth={1.5} />}>
               Upcoming Milestones
@@ -243,7 +256,7 @@ export default function AdminDashboardPage(): ReactNode {
         </BentoCard>
 
         {/* Quick Actions Card */}
-        <BentoCard colSpan={4}>
+        <BentoCard colSpan={4} data-tour="quick-actions">
           <BentoCardHeader>
             <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
               Quick Actions
@@ -253,21 +266,21 @@ export default function AdminDashboardPage(): ReactNode {
             <div className="grid grid-cols-4 gap-3">
               {quickActions.map((action) => (
                 <Link key={action.title} href={action.href}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
+                  <div className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
                     <action.icon
-                      className="h-4 w-4 text-zinc-400 flex-shrink-0"
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
                       strokeWidth={1.5}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
                         {action.title}
                       </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                      <p className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 truncate">
                         {action.description}
                       </p>
                     </div>
                     <ChevronRight
-                      className="h-4 w-4 text-zinc-400 flex-shrink-0"
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
                       strokeWidth={1.5}
                     />
                   </div>

@@ -55,7 +55,7 @@ export function StatCard({
     >
       {/* Icon - positioned top-right, no background */}
       {icon && (
-        <div className="absolute top-4 right-4 text-zinc-400 dark:text-zinc-500">{icon}</div>
+        <div className="absolute top-4 right-4 text-zinc-500 dark:text-zinc-400">{icon}</div>
       )}
 
       <div className="space-y-1">

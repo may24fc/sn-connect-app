@@ -201,7 +201,7 @@ export function MilestoneFeed({
   return (
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center gap-2">
-        <CalendarDays className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+        <CalendarDays className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
           Upcoming Milestones
         </h3>

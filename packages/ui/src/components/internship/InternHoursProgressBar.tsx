@@ -100,7 +100,7 @@ export function InternHoursProgressBar({
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Clock className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+          <Clock className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
             Hours Progress
           </span>

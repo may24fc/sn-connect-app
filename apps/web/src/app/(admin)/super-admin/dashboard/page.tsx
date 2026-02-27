@@ -108,7 +108,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
             {greeting}, {firstName}
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
             Complete system overview and control.
           </p>
         </div>
@@ -121,6 +121,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
       </div>
 
       {/* Stats Row */}
+      <div data-tour="stat-cards">
       <StatCardGrid columns={4}>
         <StatCard
           label="Total Users"
@@ -147,6 +148,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
           icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
         />
       </StatCardGrid>
+      </div>
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
@@ -184,7 +186,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
                           {alert.description}
                         </p>
-                        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 dark:text-zinc-500 mt-0.5">
                           {alert.timestamp}
                         </p>
                       </div>
@@ -204,7 +206,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
                   No security alerts
                 </p>
               )}
@@ -240,7 +242,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                         {component.component}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
                           {component.uptime}% uptime
                         </span>
                         <Badge
@@ -255,7 +257,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
                   No system health data available
                 </p>
               )}
@@ -280,7 +282,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                         {roleData.role}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        <span className="text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
                           {roleData.count} users
                         </span>
                         <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
@@ -292,7 +294,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
                   No role distribution data available
                 </p>
               )}
@@ -322,7 +324,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   >
                     <div className="flex items-start gap-3">
                       <Lock
-                        className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
+                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 mt-0.5"
                         strokeWidth={1.5}
                       />
                       <div>
@@ -334,13 +336,13 @@ export default function SuperAdminDashboardPage(): ReactNode {
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                    <span className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 flex-shrink-0">
                       {log.timestamp}
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
                   No recent audit logs
                 </p>
               )}
@@ -350,21 +352,21 @@ export default function SuperAdminDashboardPage(): ReactNode {
       </BentoGrid>
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-4" data-tour="quick-actions">
         {quickActions.map((action) => (
           <Link key={action.title} href={action.href}>
             <div
-              className="flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
+              className="group flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
               style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
             >
-              <action.icon className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+              <action.icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {action.title}
                 </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">{action.description}</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+              <ChevronRight className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
             </div>
           </Link>
         ))}

@@ -102,7 +102,7 @@ export default function EmployeeDashboard(): ReactNode {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Target className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <Target className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
               Onboarding Progress
             </CardTitle>
           </CardHeader>
@@ -128,7 +128,7 @@ export default function EmployeeDashboard(): ReactNode {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingUp className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <TrendingUp className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
               Probation Status
             </CardTitle>
           </CardHeader>
@@ -151,7 +151,7 @@ export default function EmployeeDashboard(): ReactNode {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <Calendar className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
               Upcoming Events
             </CardTitle>
           </CardHeader>
@@ -178,14 +178,14 @@ export default function EmployeeDashboard(): ReactNode {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {actionCards.map((card) => (
             <Link key={card.title} href={card.href}>
-              <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
+              <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
                 <CardContent className="flex items-center gap-4 p-4">
-                  <card.icon className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                  <card.icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
                   <div className="flex-1">
                     <h3 className="font-medium">{card.title}</h3>
                     <p className="text-sm text-muted-foreground">{card.description}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                  <ChevronRight className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
                 </CardContent>
               </Card>
             </Link>
@@ -198,7 +198,7 @@ export default function EmployeeDashboard(): ReactNode {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <CheckSquare className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
               Assigned Tasks
             </CardTitle>
             <CardDescription>Tasks requiring your attention</CardDescription>
@@ -222,7 +222,7 @@ export default function EmployeeDashboard(): ReactNode {
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <CheckSquare className="h-5 w-5 mx-auto mb-3 text-zinc-400" strokeWidth={1.5} />
+              <CheckSquare className="h-5 w-5 mx-auto mb-3 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
               <p>No tasks assigned yet</p>
             </div>
           )}
@@ -234,7 +234,7 @@ export default function EmployeeDashboard(): ReactNode {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <Bell className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
               Latest Announcements
             </CardTitle>
             <CardDescription>Stay updated with company news</CardDescription>
@@ -267,7 +267,7 @@ export default function EmployeeDashboard(): ReactNode {
               ))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <Bell className="h-5 w-5 mx-auto mb-3 text-zinc-400" strokeWidth={1.5} />
+                <Bell className="h-5 w-5 mx-auto mb-3 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
                 <p>No announcements yet</p>
               </div>
             )}

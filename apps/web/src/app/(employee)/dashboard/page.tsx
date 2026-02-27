@@ -13,7 +13,13 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
-import { Badge, Button, Progress } from '@hr-portal/ui';
+import {
+  useRoleMetadata,
+  useKPIEntries,
+  ROLE_TYPE_REGISTRY,
+} from '@/hooks/useRoleMetadata';
+import { Badge, Button, Progress, RoleDashboardWidget } from '@hr-portal/ui';
+import type { KPICardData } from '@hr-portal/ui';
 import {
   Bell,
   Calendar,
@@ -83,6 +89,45 @@ export default function DashboardPage(): ReactNode {
   const assignedTasks = tasksResponse?.data || [];
   const tasksDueCount = assignedTasks.filter((task) => task.status !== 'completed').length;
 
+  // Role-specific KPI data (V2-4.2)
+  const { data: metadataRecords = [] } = useRoleMetadata(user?.id);
+  const roleTypesWithKPIs = metadataRecords
+    .map((r) => r.role_type)
+    .filter((rt) => {
+      const config = ROLE_TYPE_REGISTRY[rt as keyof typeof ROLE_TYPE_REGISTRY];
+      return config?.kpiMetrics && config.kpiMetrics.length > 0;
+    });
+  const primaryKPIRole = roleTypesWithKPIs.length > 0 ? (roleTypesWithKPIs[0] as string) : '';
+  const kpiFilters: { role_type?: string } = primaryKPIRole ? { role_type: primaryKPIRole } : {};
+  const { data: kpiEntries = [] } = useKPIEntries(user?.id, kpiFilters);
+
+  // Build KPI card data from latest entries (deduplicated by kpi_name)
+  const kpiCardData: KPICardData[] = (() => {
+    if (!primaryKPIRole) return [];
+    const config = ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY];
+    if (!config?.kpiMetrics) return [];
+
+    const latestByName = new Map<string, (typeof kpiEntries)[number]>();
+    for (const entry of kpiEntries) {
+      const existing = latestByName.get(entry.kpi_name);
+      if (!existing || entry.entry_date > existing.entry_date) {
+        latestByName.set(entry.kpi_name, entry);
+      }
+    }
+
+    return config.kpiMetrics
+      .filter((m) => latestByName.has(m.name))
+      .map((m) => {
+        const entry = latestByName.get(m.name)!;
+        return {
+          name: m.name,
+          label: m.label,
+          value: entry.kpi_value,
+          unit: m.unit,
+        };
+      });
+  })();
+
   // Data would come from API hooks - showing UI structure without data
   const onboardingProgress = 0;
   const hasOnboardingData = false;
@@ -97,7 +142,7 @@ export default function DashboardPage(): ReactNode {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
             {greeting}, {firstName}
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
             Here is what is happening with your HR journey today.
           </p>
         </div>
@@ -110,6 +155,7 @@ export default function DashboardPage(): ReactNode {
       </div>
 
       {/* Stats Row */}
+      <div data-tour="stat-cards">
       <StatCardGrid columns={4}>
         <StatCard
           label="Onboarding"
@@ -139,11 +185,12 @@ export default function DashboardPage(): ReactNode {
           icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
         />
       </StatCardGrid>
+      </div>
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
         {/* Quick Actions Card */}
-        <BentoCard colSpan={2}>
+        <BentoCard colSpan={2} data-tour="quick-actions">
           <BentoCardHeader>
             <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
               Quick Actions
@@ -153,8 +200,8 @@ export default function DashboardPage(): ReactNode {
             <div className="grid grid-cols-2 gap-3">
               {quickActions.map((action) => (
                 <Link key={action.title} href={action.href}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                    <action.icon className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                  <div className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
+                    <action.icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
                     <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                       {action.title}
                     </span>
@@ -228,7 +275,7 @@ export default function DashboardPage(): ReactNode {
                     className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                   >
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                      <Calendar className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
                       <div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                           {event.title}
@@ -252,7 +299,7 @@ export default function DashboardPage(): ReactNode {
         </BentoCard>
 
         {/* Announcements Card */}
-        <BentoCard colSpan={2}>
+        <BentoCard colSpan={2} data-tour="announcements">
           <BentoCardHeader>
             <BentoCardTitle icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}>
               Latest Announcements
@@ -285,7 +332,7 @@ export default function DashboardPage(): ReactNode {
                       </div>
                     </div>
                     <ChevronRight
-                      className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-1"
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 mt-1"
                       strokeWidth={1.5}
                     />
                   </div>
@@ -301,6 +348,18 @@ export default function DashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>
+
+      {/* Role-Specific KPI Dashboard (V2-4.2) */}
+      {primaryKPIRole && kpiCardData.length > 0 && (
+        <RoleDashboardWidget
+          roleType={primaryKPIRole}
+          roleLabel={
+            ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY]?.label ??
+            primaryKPIRole
+          }
+          kpiData={kpiCardData}
+        />
+      )}
     </div>
   );
 }
