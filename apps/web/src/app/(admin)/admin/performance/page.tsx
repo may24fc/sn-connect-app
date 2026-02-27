@@ -16,7 +16,7 @@ import {
   type PerformanceDashboardStats,
   PerformanceSummaryCards,
 } from '@hr-portal/ui';
-import { Calendar, ClipboardCheck, Download, Settings } from 'lucide-react';
+import { Calendar, ClipboardCheck, Download, Settings, UserSearch } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -125,6 +125,12 @@ export default function AdminPerformancePage(): ReactNode {
           <p className="text-muted-foreground">Organization-wide performance metrics</p>
         </div>
         <div className="flex gap-2">
+          <Link href="/admin/directory">
+            <Button variant="outline">
+              <UserSearch className="mr-2 h-4 w-4" />
+              View Individual
+            </Button>
+          </Link>
           <Link href="/admin/performance/evaluations">
             <Button variant="outline">
               <ClipboardCheck className="mr-2 h-4 w-4" />
