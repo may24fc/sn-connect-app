@@ -3,6 +3,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import {
+  useRoleMetadata,
+  useUpdateRoleMetadata,
+  useDeleteRoleMetadata,
+  ROLE_TYPE_REGISTRY,
+} from '@/hooks/useRoleMetadata';
+import {
   Avatar,
   AvatarFallback,
   AvatarImage,
@@ -10,9 +16,10 @@ import {
   Button,
   Card,
   CardContent,
+  RoleMetadataFormContainer,
 } from '@hr-portal/ui';
 import { Camera, Edit2 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -23,6 +30,25 @@ export default function ProfilePage() {
   const employee = employeesData?.data?.[0] ?? null;
 
   const [isEditing, setIsEditing] = useState(false);
+
+  // Role metadata hooks (must be called before any early returns)
+  const { data: metadataRecords = [], isLoading: isMetadataLoading } = useRoleMetadata(user?.id);
+  const updateMetadata = useUpdateRoleMetadata(user?.id);
+  const deleteMetadata = useDeleteRoleMetadata(user?.id);
+
+  const handleSaveMetadata = useCallback(
+    async (roleType: string, metadata: Record<string, unknown>) => {
+      await updateMetadata.mutateAsync({ role_type: roleType, metadata });
+    },
+    [updateMetadata]
+  );
+
+  const handleDeleteMetadata = useCallback(
+    async (roleType: string) => {
+      await deleteMetadata.mutateAsync(roleType);
+    },
+    [deleteMetadata]
+  );
 
   if (isLoading) {
     return (
@@ -52,12 +78,17 @@ export default function ProfilePage() {
   const department = employee?.department ?? 'Department not assigned';
   const employeeNumber = employee?.employee_number ?? 'N/A';
 
+  const formattedMetadata = metadataRecords.map((r) => ({
+    role_type: r.role_type,
+    metadata: (r.metadata ?? {}) as Record<string, unknown>,
+  }));
+
   return (
     <div className="space-y-6">
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col items-center gap-6 sm:flex-row">
-            <div className="relative">
+            <div className="relative" data-tour="profile-avatar">
               <Avatar className="h-24 w-24">
                 <AvatarImage src="/placeholder-avatar.jpg" />
                 <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
@@ -91,6 +122,7 @@ export default function ProfilePage() {
             <Button
               variant={isEditing ? 'outline' : 'default'}
               onClick={() => setIsEditing(!isEditing)}
+              data-tour="profile-edit"
             >
               <Edit2 className="mr-2 h-4 w-4" />
               {isEditing ? 'Cancel' : 'Edit Profile'}
@@ -98,6 +130,20 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Role Details Section (V2-4.1) */}
+      {!isMetadataLoading && (
+        <div data-tour="profile-roles">
+        <RoleMetadataFormContainer
+          metadataRecords={formattedMetadata}
+          roleTypeRegistry={ROLE_TYPE_REGISTRY}
+          onSave={handleSaveMetadata}
+          onDelete={handleDeleteMetadata}
+          isSaving={updateMetadata.isPending}
+          isDeleting={deleteMetadata.isPending}
+        />
+        </div>
+      )}
     </div>
   );
 }
