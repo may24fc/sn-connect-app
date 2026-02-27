@@ -60,25 +60,25 @@ CREATE POLICY standup_recordings_select_authenticated_policy
   TO authenticated
   USING (deleted_at IS NULL);
 
--- INSERT: Only admin, hr, cos, ceo roles can create recordings
+-- INSERT: Only admin, super_admin roles can create recordings
 CREATE POLICY standup_recordings_insert_admin_policy
   ON public.standup_recordings
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
--- UPDATE: Only admin, hr, cos, ceo roles can update recordings
+-- UPDATE: Only admin, super_admin roles can update recordings
 CREATE POLICY standup_recordings_update_admin_policy
   ON public.standup_recordings
   FOR UPDATE
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   )
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 -- DELETE: Only admin role can delete recordings
@@ -107,34 +107,34 @@ CREATE POLICY standup_topics_select_authenticated_policy
     )
   );
 
--- INSERT: Only admin, hr, cos, ceo roles can create topics
+-- INSERT: Only admin, super_admin roles can create topics
 CREATE POLICY standup_topics_insert_admin_policy
   ON public.standup_topics
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
--- UPDATE: Only admin, hr, cos, ceo roles can update topics
+-- UPDATE: Only admin, super_admin roles can update topics
 CREATE POLICY standup_topics_update_admin_policy
   ON public.standup_topics
   FOR UPDATE
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   )
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
--- DELETE: Only admin, hr, cos, ceo roles can delete topics
+-- DELETE: Only admin, super_admin roles can delete topics
 CREATE POLICY standup_topics_delete_admin_policy
   ON public.standup_topics
   FOR DELETE
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 -- ============================================
@@ -201,7 +201,7 @@ CREATE POLICY standup_recordings_storage_insert_policy
   TO authenticated
   WITH CHECK (
     bucket_id = 'standup-recordings'
-    AND user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    AND user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 -- DELETE: Only admin roles can remove recordings from storage
@@ -211,7 +211,7 @@ CREATE POLICY standup_recordings_storage_delete_policy
   TO authenticated
   USING (
     bucket_id = 'standup-recordings'
-    AND user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo']::user_role[])
+    AND user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 COMMIT;

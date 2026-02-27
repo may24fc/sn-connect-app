@@ -10,8 +10,7 @@ SELECT
   e.first_name,
   e.last_name,
   u.role,
-  d.name AS department_name,
-  e.department_id,
+  e.department AS department_name,
   e.position,
   e.status,
   e.employment_type,
@@ -27,7 +26,6 @@ SELECT
   i.program
 FROM public.users u
 LEFT JOIN public.employees e ON e.user_id = u.id
-LEFT JOIN public.departments d ON e.department_id = d.id
 LEFT JOIN public.internships i ON i.employee_id = e.id AND i.status = 'active'
 WHERE u.deleted_at IS NULL AND (e.deleted_at IS NULL OR e.id IS NULL);
 

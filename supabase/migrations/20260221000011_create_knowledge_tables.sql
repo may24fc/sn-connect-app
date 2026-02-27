@@ -101,28 +101,28 @@ CREATE POLICY knowledge_sources_select_admin_all_policy
   FOR SELECT
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
--- INSERT: Only admin, hr, super_admin can create knowledge sources
+-- INSERT: Only admin, super_admin can create knowledge sources
 CREATE POLICY knowledge_sources_insert_admin_policy
   ON public.knowledge_sources
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
--- UPDATE: Only admin, hr, super_admin can update knowledge sources
+-- UPDATE: Only admin, super_admin can update knowledge sources
 CREATE POLICY knowledge_sources_update_admin_policy
   ON public.knowledge_sources
   FOR UPDATE
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   )
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 -- DELETE: Only admin and super_admin can delete knowledge sources
@@ -158,28 +158,28 @@ CREATE POLICY knowledge_embeddings_select_admin_all_policy
   FOR SELECT
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
--- INSERT: Only admin, hr, super_admin can create embeddings
+-- INSERT: Only admin, super_admin can create embeddings
 CREATE POLICY knowledge_embeddings_insert_admin_policy
   ON public.knowledge_embeddings
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
--- UPDATE: Only admin, hr, super_admin can update embeddings
+-- UPDATE: Only admin, super_admin can update embeddings
 CREATE POLICY knowledge_embeddings_update_admin_policy
   ON public.knowledge_embeddings
   FOR UPDATE
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   )
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 -- DELETE: Only admin and super_admin can delete embeddings

@@ -36,9 +36,9 @@ ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{
 -- Create index on the new action column for Edge Function queries
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON public.audit_logs(action);
 
--- Add composite index for idempotency checks (action + date)
-CREATE INDEX IF NOT EXISTS idx_audit_logs_action_date
-  ON public.audit_logs(action, (performed_at::date));
+-- Add composite index for idempotency checks (action + performed_at)
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action_performed_at
+  ON public.audit_logs(action, performed_at);
 
 COMMENT ON COLUMN public.audit_logs.action IS 'Edge Function action identifier (e.g., onboarding_initiated, probation_milestone_reminder). Used instead of operation for workflow-triggered audit entries.';
 COMMENT ON COLUMN public.audit_logs.metadata IS 'Structured metadata for Edge Function audit entries. Replaces old_values/new_values for workflow-triggered entries.';
