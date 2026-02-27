@@ -1,8 +1,9 @@
 'use client';
 
-import { AlertCircle, Calendar, ClipboardList, FileText, Loader2, Tag } from 'lucide-react';
+import { AlertCircle, Calendar, ClipboardList, FileText, Loader2, Tag, X } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '../../primitives/button';
+import { Badge } from '../../primitives/badge';
 import {
   Card,
   CardContent,
@@ -21,7 +22,8 @@ import {
   SelectValue,
 } from '../../primitives/select';
 import { Textarea } from '../../primitives/textarea';
-import type { TaskAssignee, TaskFormData, TaskPriority } from '../../types/task.types';
+import type { TaskAssignee, TaskFormData, TaskPriority, TaskCategory } from '../../types/task.types';
+import { TASK_CATEGORIES } from '../../types/task.types';
 import { cn } from '../../utils/cn';
 import { TaskAssigneeSelect } from './TaskAssigneeSelect';
 
@@ -32,6 +34,68 @@ export interface TaskFormProps {
   initialData?: Partial<TaskFormData>;
   mode?: 'create' | 'edit';
   className?: string;
+}
+
+// --- Tag Input Sub-Component ---
+
+function TaskTagsInput({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (tags: string[]) => void;
+}): React.ReactNode {
+  const [inputValue, setInputValue] = React.useState('');
+
+  const addTag = (tag: string): void => {
+    const trimmed = tag.trim();
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+    }
+    setInputValue('');
+  };
+
+  const removeTag = (tag: string): void => {
+    onChange(value.filter((t) => t !== tag));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      if (inputValue.trim()) {
+        addTag(inputValue);
+      }
+    } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
+      const lastTag = value[value.length - 1];
+      if (lastTag) removeTag(lastTag);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[40px] focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
+      {value.map((tag) => (
+        <Badge key={tag} variant="secondary" className="gap-1 h-6 text-xs">
+          {tag}
+          <button
+            type="button"
+            onClick={() => removeTag(tag)}
+            className="ml-0.5 hover:text-destructive transition-colors"
+            aria-label={`Remove tag: ${tag}`}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </Badge>
+      ))}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={value.length === 0 ? 'Add tags (press Enter or comma)...' : 'Add more...'}
+        className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+      />
+    </div>
+  );
 }
 
 export function TaskForm({
@@ -47,7 +111,8 @@ export function TaskForm({
     description: initialData?.description || '',
     priority: initialData?.priority || 'medium',
     dueDate: initialData?.dueDate || '',
-    category: initialData?.category || '',
+    category: initialData?.category || undefined,
+    tags: initialData?.tags || [],
     assigneeIds: initialData?.assigneeIds || [],
   });
 
@@ -104,7 +169,7 @@ export function TaskForm({
 
   const handleChange = (
     field: keyof TaskFormData,
-    value: string | Array<string> | TaskPriority
+    value: string | Array<string> | TaskPriority | TaskCategory | undefined
   ): void => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
@@ -119,7 +184,8 @@ export function TaskForm({
       description: '',
       priority: 'medium',
       dueDate: '',
-      category: '',
+      category: undefined,
+      tags: [],
       assigneeIds: [],
     });
     setErrors({});
@@ -224,13 +290,35 @@ export function TaskForm({
               <Tag className="h-4 w-4 text-muted-foreground" />
               Category (Optional)
             </Label>
-            <Input
-              id="category"
-              type="text"
-              placeholder="e.g., Finance, HR, Development"
-              value={formData.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              maxLength={50}
+            <Select
+              value={formData.category || '_none'}
+              onValueChange={(value: string) =>
+                handleChange('category', value === '_none' ? undefined : value as TaskCategory)
+              }
+            >
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select a category..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_none">No Category</SelectItem>
+                {TASK_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tags */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              Tags (Optional)
+            </Label>
+            <TaskTagsInput
+              value={formData.tags || []}
+              onChange={(tags) => handleChange('tags', tags)}
             />
           </div>
 

@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '../../primitives/select';
 import type { TaskFilters } from '../../types/task.types';
+import { TASK_CATEGORIES } from '../../types/task.types';
 import { cn } from '../../utils/cn';
 
 export interface TaskFiltersProps {
@@ -45,6 +46,7 @@ export function TaskFilters({
     filters.search ||
     filters.status ||
     filters.priority ||
+    filters.category ||
     filters.assigneeId ||
     filters.dateFrom ||
     filters.dateTo;
@@ -110,6 +112,29 @@ export function TaskFilters({
               <SelectItem value="high">High</SelectItem>
               <SelectItem value="medium">Medium</SelectItem>
               <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Category Filter */}
+        <div className="w-full sm:w-[180px]">
+          <Label htmlFor="category" className="sr-only">
+            Filter by category
+          </Label>
+          <Select
+            value={filters.category || 'all'}
+            onValueChange={(value) => handleFilterChange('category', value)}
+          >
+            <SelectTrigger id="category">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {TASK_CATEGORIES.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

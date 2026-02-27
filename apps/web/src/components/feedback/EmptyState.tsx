@@ -80,7 +80,7 @@ export function EmptyState({
       )}
     >
       {/* Icon - no background container, just the icon */}
-      <div className="mb-4 text-zinc-400 dark:text-zinc-500">
+      <div className="mb-4 text-zinc-500 dark:text-zinc-400">
         {icon ? (
           <span className={sizes.icon}>{icon}</span>
         ) : (

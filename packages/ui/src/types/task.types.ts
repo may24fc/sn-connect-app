@@ -7,13 +7,25 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'blocked';
 
 // Task Interfaces
+export type TaskCategory = 'launch' | 'optimization' | 'maintenance' | 'research' | 'administrative' | 'other';
+
+export const TASK_CATEGORIES: Array<{ value: TaskCategory; label: string }> = [
+  { value: 'launch', label: 'Launch' },
+  { value: 'optimization', label: 'Optimization' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'research', label: 'Research' },
+  { value: 'administrative', label: 'Administrative' },
+  { value: 'other', label: 'Other' },
+];
+
 export interface Task {
   id: TaskId;
   title: string;
   description: string;
   priority: TaskPriority;
   status: TaskStatus;
-  category?: string;
+  category?: TaskCategory | undefined;
+  tags?: string[] | undefined;
   dueDate: string;
   createdBy: string;
   createdByName: string;
@@ -38,17 +50,20 @@ export interface TaskFormData {
   description: string;
   priority: TaskPriority;
   dueDate: string;
-  category?: string;
+  category?: TaskCategory | undefined;
+  tags?: string[] | undefined;
   assigneeIds: Array<string>;
 }
 
 export interface TaskFilters {
-  status?: TaskStatus | 'all';
-  priority?: TaskPriority | 'all';
-  assigneeId?: string;
-  search?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  status?: TaskStatus | 'all' | undefined;
+  priority?: TaskPriority | 'all' | undefined;
+  category?: TaskCategory | 'all' | undefined;
+  tags?: string[] | undefined;
+  assigneeId?: string | undefined;
+  search?: string | undefined;
+  dateFrom?: string | undefined;
+  dateTo?: string | undefined;
 }
 
 export interface TaskDashboardStats {

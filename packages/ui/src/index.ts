@@ -134,6 +134,7 @@ export {
   ChatMessage as AIKnowledgeChatMessage,
   DebugPanel,
   AccessToggle,
+  VersionHistory,
 } from './components/ai-knowledge';
 export type {
   AIKnowledgeManagerProps,
@@ -149,6 +150,8 @@ export type {
   ChatMessageProps as AIKnowledgeChatMessageProps,
   DebugPanelProps,
   AccessToggleProps,
+  VersionHistoryProps,
+  VersionRecord,
 } from './components/ai-knowledge';
 
 // Performance Components
@@ -199,6 +202,29 @@ export {
   type MilestoneFeedProps,
   type MilestoneItem,
 } from './components/dashboard/MilestoneFeed';
+export {
+  RoleDashboardWidget,
+  type RoleDashboardWidgetProps,
+  type KPICardData,
+} from './components/dashboard/RoleDashboardWidget';
+
+// Profile Components
+export {
+  RoleMetadataForm,
+  RoleMetadataFormContainer,
+  type RoleMetadataFormProps,
+  type RoleMetadataFormContainerProps,
+  type RoleMetadataFieldConfig,
+  type RoleTypeConfig,
+} from './components/profile/RoleMetadataForm';
+
+// Notification Components
+export {
+  NotificationBell,
+  type NotificationBellProps,
+  type NotificationItem,
+  type NotificationType,
+} from './components/notifications/NotificationBell';
 
 // Reports Components
 export {
@@ -328,6 +354,7 @@ export type {
   TaskAssignmentId,
   TaskPriority,
   TaskStatus,
+  TaskCategory,
   Task,
   TaskAssignee,
   TaskFormData,
@@ -337,6 +364,7 @@ export type {
 export {
   TASK_PRIORITY_CONFIG,
   TASK_STATUS_CONFIG,
+  TASK_CATEGORIES,
   isTaskOverdue,
   getDaysUntilDue,
   formatDueDate,
@@ -351,6 +379,7 @@ export {
   AnnouncementPreview,
   AttachmentUploader,
   AnnouncementAnalytics,
+  AnnouncementAnalyticsDashboard,
   AnnouncementDetailDialog,
 } from './components/announcements';
 export type {
@@ -363,6 +392,8 @@ export type {
   AnnouncementPreviewProps,
   AttachmentUploaderProps,
   AnnouncementAnalyticsProps,
+  AnnouncementAnalyticsDashboardProps,
+  AnnouncementAnalyticsData,
   AnnouncementDetailDialogProps,
 } from './components/announcements';
 
@@ -391,6 +422,7 @@ export type {
   ResourceUploaderProps,
   ResourcePreviewProps,
   VideoPlayerProps,
+  ResourceAccessLevel,
   DocumentViewerProps,
   ResourceAnalyticsProps,
   ResourceTargetingSelectorProps,

@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, LogOut, Menu, Search, Settings, User } from 'lucide-react';
+import { Bell, CircleHelp, LogOut, Menu, Search, Settings, User } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Badge } from '../primitives/badge';
@@ -29,8 +29,16 @@ export interface HeaderProps {
   onLogout: () => void;
   onProfileClick: () => void;
   onSettingsClick?: () => void;
+  /** @deprecated Use notificationSlot instead */
   notificationCount?: number;
+  /** @deprecated Use notificationSlot instead */
   onNotificationsClick?: () => void;
+  /** Render slot for the notification bell component (replaces legacy notificationCount/onNotificationsClick) */
+  notificationSlot?: React.ReactNode;
+  /** Render slot for the AI assistant icon button (renders beside the notification bell) */
+  aiChatSlot?: React.ReactNode;
+  /** Callback for the Help / guided tour button */
+  onHelpClick?: () => void;
   showMobileMenu?: boolean;
   title?: string;
 }
@@ -44,6 +52,9 @@ export function Header({
   onSettingsClick,
   notificationCount = 0,
   onNotificationsClick,
+  notificationSlot,
+  aiChatSlot,
+  onHelpClick,
   showMobileMenu = true,
   title,
 }: HeaderProps): React.ReactNode {
@@ -71,11 +82,11 @@ export function Header({
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="group lg:hidden text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             onClick={onMenuToggle}
             aria-label="Toggle menu"
           >
-            <Menu className="h-5 w-5 text-zinc-400" strokeWidth={1.5} />
+            <Menu className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
           </Button>
         )}
 
@@ -90,7 +101,7 @@ export function Header({
           <form onSubmit={handleSearchSubmit} className="hidden md:flex md:w-80">
             <div className="relative w-full">
               <Search
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
                 strokeWidth={1.5}
               />
               <Input
@@ -107,23 +118,39 @@ export function Header({
 
       {/* Right Section */}
       <div className="flex items-center gap-2">
-        {/* Notifications */}
-        {onNotificationsClick && (
+        {/* Help / Guided Tour */}
+        {onHelpClick && (
           <Button
             variant="ghost"
             size="icon"
-            className="relative text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            onClick={onHelpClick}
+            aria-label="Help — start guided tour"
+          >
+            <CircleHelp className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+          </Button>
+        )}
+
+        {/* AI Assistant */}
+        {aiChatSlot}
+
+        {/* Notifications */}
+        {notificationSlot ?? (onNotificationsClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="group relative text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             onClick={onNotificationsClick}
             aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
           >
-            <Bell className="h-5 w-5 text-zinc-400" strokeWidth={1.5} />
+            <Bell className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
             {notificationCount > 0 && (
               <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-rose-600 text-[10px] font-medium text-white">
                 {notificationCount > 9 ? '9+' : notificationCount}
               </span>
             )}
           </Button>
-        )}
+        ))}
 
         {/* User Menu */}
         <DropdownMenu>
@@ -131,6 +158,7 @@ export function Header({
             <Button
               variant="ghost"
               className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              data-tour="user-menu"
             >
               <Avatar className="h-8 w-8">
                 {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
@@ -166,7 +194,7 @@ export function Header({
               onClick={onProfileClick}
               className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
-              <User className="mr-2 h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <User className="mr-2 h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
               Profile
             </DropdownMenuItem>
             {onSettingsClick && (
@@ -174,7 +202,7 @@ export function Header({
                 onClick={onSettingsClick}
                 className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <Settings className="mr-2 h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                <Settings className="mr-2 h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
                 Settings
               </DropdownMenuItem>
             )}

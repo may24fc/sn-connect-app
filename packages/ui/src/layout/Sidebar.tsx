@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Brain,
   CheckSquare,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +13,7 @@ import {
   type LucideIcon,
   Megaphone,
   Receipt,
+  Sparkles,
   Target,
   User,
   UserCog,
@@ -72,7 +72,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
-  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Brain },
+  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/admin/resources', icon: Library },
 ];
 
@@ -87,7 +87,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
-  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Brain },
+  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
 ];
 
@@ -156,7 +156,7 @@ export function Sidebar({
                   type="button"
                   onClick={() => onNavigate(item.href)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors relative',
+                    'group flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors relative',
                     isActive
                       ? 'text-zinc-900 dark:text-zinc-100 before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-0.5 before:h-5 before:bg-zinc-900 dark:before:bg-zinc-100 before:rounded-r'
                       : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50',
@@ -165,10 +165,10 @@ export function Sidebar({
                 >
                   <Icon
                     className={cn(
-                      'h-5 w-5 flex-shrink-0',
+                      'h-5 w-5 flex-shrink-0 transition-colors',
                       isActive
                         ? 'text-zinc-900 dark:text-zinc-100'
-                        : 'text-zinc-400 dark:text-zinc-500'
+                        : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
                     )}
                     strokeWidth={1.5}
                   />
@@ -209,28 +209,25 @@ export function Sidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 shadow-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="group absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 shadow-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <ChevronRight className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
             ) : (
-              <ChevronLeft className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              <ChevronLeft className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
             )}
           </button>
         )}
 
-        {/* Footer */}
-        <div
-          className={cn(
-            'border-t border-zinc-200 dark:border-zinc-800 p-4 relative z-10',
-            collapsed && 'p-2'
-          )}
-        >
-          <p className={cn('text-xs text-zinc-500 dark:text-zinc-400', collapsed && 'text-center')}>
-            {collapsed ? 'SN' : 'Where Policy Meets Productivity'}
-          </p>
-        </div>
+        {/* Footer - hidden when collapsed to prevent overlay on toggle button */}
+        {!collapsed && (
+          <div className="border-t border-zinc-200 dark:border-zinc-800 p-4">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Where Policy Meets Productivity
+            </p>
+          </div>
+        )}
       </aside>
     </TooltipProvider>
   );
