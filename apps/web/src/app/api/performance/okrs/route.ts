@@ -25,7 +25,11 @@ export async function GET(request: NextRequest) {
 
     // Use admin client to bypass RLS cross-table subquery failures.
     // App-level auth scopes non-admin users to their own employee_id above.
-    let query = supabaseAdmin.from('okrs').select('*').order('created_at', { ascending: false });
+    let query = supabaseAdmin
+      .from('okrs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
