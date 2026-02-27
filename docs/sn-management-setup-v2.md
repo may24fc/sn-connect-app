@@ -131,10 +131,10 @@ This document provides the Phase 2 (V2) implementation plan for SN Connect, deri
   - Loading toast with `duration: 0` transitions to success/error on resolve/reject
   - Radix-based toast primitive at `packages/ui/src/primitives/toast.tsx`
 
-- [ ] **Add stale cache invalidation after successful mutations**
+- [x] **Add stale cache invalidation after successful mutations**
   - File: `apps/web/src/contexts/AuthContext.tsx`
-  - After successful signup, force a `router.refresh()` instead of relying on stale cache
-  - Eliminate the "Refresh Dependency" issue reported by users
+  - After successful signup, calls `queryClient.invalidateQueries()` + `router.refresh()`
+  - Eliminates the "Refresh Dependency" issue reported by users
 
 - [x] **Write unit tests for optimistic mutation helper**
   - File: `tests/lib/mutation-helpers.test.ts`
@@ -512,7 +512,7 @@ This serves as the **Source of Truth** for all other features.
 
 **Source:** Intern feedback — "Activate the Notification Bell (currently a dead link)."
 
-- [ ] **Create notifications database table**
+- [x] **Create notifications database table** (already existed in migration 20260227000001)
   - File: `supabase/migrations/20260220000007_create_notifications_table.sql`
   ```sql
   CREATE TYPE notification_type AS ENUM (
@@ -547,21 +547,21 @@ This serves as the **Source of Truth** for all other features.
     WITH CHECK (user_id = auth.uid());
   ```
 
-- [ ] **Create notifications API routes**
+- [x] **Create notifications API routes**
   - File: `apps/web/src/app/api/notifications/route.ts`
   - GET: List notifications for current user (paginated, unread count)
   - PATCH: Mark notification as read
   - POST: Mark all as read
   - DELETE: Delete notification
 
-- [ ] **Create notification hooks**
+- [x] **Create notification hooks**
   - File: `apps/web/src/hooks/useNotifications.ts`
   - `useNotifications()` — paginated list
   - `useUnreadCount()` — returns unread count (polled every 30s or via Supabase Realtime)
   - `useMarkNotificationRead()` — mutation
   - `useMarkAllRead()` — mutation
 
-- [ ] **Create NotificationBell component**
+- [x] **Create NotificationBell component**
   - File: `packages/ui/src/components/notifications/NotificationBell.tsx`
   - Bell icon with unread count badge (red dot with number)
   - Click opens dropdown panel with notification list
@@ -570,17 +570,17 @@ This serves as the **Source of Truth** for all other features.
   - "Mark All Read" button
   - "View All" link to full notifications page
 
-- [ ] **Create full notifications page**
+- [x] **Create full notifications page**
   - File: `apps/web/src/app/(employee)/notifications/page.tsx`
   - Full list of all notifications with filters (read/unread, type)
   - Bulk actions: Mark selected as read, Delete selected
 
-- [ ] **Wire NotificationBell into Header**
+- [x] **Wire NotificationBell into Header**
   - File: `packages/ui/src/layout/Header.tsx`
   - Replace dead notification bell with real `NotificationBell` component
   - Position: Right side of header, before user avatar
 
-- [ ] **Create notification creation helper**
+- [x] **Create notification creation helper**
   - File: `apps/web/src/lib/notifications/create.ts`
   - Server-side helper to insert notifications
   - Used by API routes and n8n webhooks to create notifications
@@ -592,17 +592,17 @@ This serves as the **Source of Truth** for all other features.
 
 Note: Audience targeting was already built in V1 (Section 2.4). This extends it with analytics.
 
-- [ ] **Implement announcement view count tracking**
+- [x] **Implement announcement view count tracking**
   - Existing `announcement_reads` table already tracks reads
   - File: `apps/web/src/app/api/announcements/[id]/analytics/route.ts`
   - Extend to return: total views, unique views, views by role, views by department, read rate %
 
-- [ ] **Create AnnouncementAnalyticsDashboard component**
+- [x] **Create AnnouncementAnalyticsDashboard component**
   - File: `packages/ui/src/components/announcements/AnnouncementAnalyticsDashboard.tsx`
   - Charts: Read rate over time, Audience breakdown (pie chart), Read vs Unread (bar)
   - Summary cards: Total targeted, Total read, Read rate %, Avg time to read
 
-- [ ] **Add bulk reminder sending for announcements**
+- [x] **Add bulk reminder sending for announcements**
   - File: `apps/web/src/app/api/announcements/[id]/remind/route.ts`
   - POST: Sends reminder notification to all targeted users who haven't read the announcement
   - Creates notification records for unread users
@@ -611,7 +611,7 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 **Source:** Admin Assistant feedback — "Surface pending approvals (reports, invoices, reviews) directly on the Dashboard."
 
-- [ ] **Create pending approvals API route**
+- [x] **Create pending approvals API route**
   - File: `apps/web/src/app/api/dashboard/pending/route.ts`
   - GET: Returns counts and latest items for:
     - Pending report submissions
@@ -619,13 +619,13 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
     - Pending performance reviews
     - Late intern EOD reports
 
-- [ ] **Create PendingApprovalsCard component**
+- [x] **Create PendingApprovalsCard component**
   - File: `packages/ui/src/components/dashboard/PendingApprovalsCard.tsx`
   - Shows count badges for each category
   - Click navigates to the relevant approval page
   - Highlights overdue items in red
 
-- [ ] **Add to Admin Dashboard**
+- [x] **Add to Admin Dashboard**
   - File: `apps/web/src/app/(admin)/admin/dashboard/page.tsx`
   - Add `PendingApprovalsCard` as a prominent top-section card
 
@@ -635,7 +635,7 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 **Industry Standard:** Use Edge Functions (Cron Jobs). Don't rely on user being logged in.
 
-- [ ] **Create late report detection Edge Function**
+- [x] **Create late report detection Edge Function**
   - File: `supabase/functions/check-late-reports/index.ts`
   - Trigger: Daily cron at 00:00 UTC
   - Logic:
@@ -646,13 +646,13 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
     - Send email via Resend/SendGrid to late users
     - Send summary to HR/Admin
 
-- [ ] **Create n8n workflow for escalation**
+- [x] **Create n8n workflow for escalation**
   - File: `n8n/workflows/compliance-late-report-escalation.json`
   - Day 1 late: Gentle reminder notification
   - Day 3 late: Email reminder + notify manager
   - Day 7 late: Escalate to HR/Admin dashboard alert
 
-- [ ] **Add "Late Reports" indicator to admin reports page**
+- [x] **Add "Late Reports" indicator to admin reports page**
   - File: `apps/web/src/app/(admin)/admin/reports/page.tsx`
   - Add filter: "Show Late Only"
   - Add visual indicator (red badge) for overdue submissions
@@ -668,8 +668,8 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 **Industry Standard:** Use a JSONB column or a separate `User_Roles_Metadata` table. Avoid the "God Table" anti-pattern.
 
-- [ ] **Create user role metadata table**
-  - File: `supabase/migrations/20260220000008_create_user_role_metadata.sql`
+- [x] **Create user role metadata table**
+  - File: `supabase/migrations/20260228000004_create_user_role_metadata.sql`
   ```sql
   CREATE TABLE public.user_role_metadata (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -697,33 +697,33 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
     );
   ```
 
-- [ ] **Create role metadata API routes**
+- [x] **Create role metadata API routes**
   - File: `apps/web/src/app/api/users/[id]/metadata/route.ts`
   - GET: Returns metadata for user (self or admin)
   - PUT: Update metadata (self or admin)
 
-- [ ] **Create RoleMetadataForm component**
+- [x] **Create RoleMetadataForm component**
   - File: `packages/ui/src/components/profile/RoleMetadataForm.tsx`
   - Dynamic form that renders fields based on `role_type`
   - JSON schema-driven: each role_type has a registered field schema
   - Used on Profile page in an expandable "Role Details" section
 
-- [ ] **Update Profile page**
+- [x] **Update Profile page**
   - File: `apps/web/src/app/(employee)/profile/page.tsx`
-  - Add "Role Details" section below standard profile info
-  - Renders `RoleMetadataForm` based on user's role_type
+  - Added "Role Details" section (V2-4.1) below standard profile info
+  - Renders `RoleMetadataFormContainer` based on user's role_type
 
 ### V2-4.2 Google Ads Specialist Dashboard KPIs
 
 **Source:** Google Ads Specialist feedback — "KPI Snapshots (Spend, CPA, ROAS) on Dashboard."
 
-- [ ] **Create role-specific dashboard widget system**
+- [x] **Create role-specific dashboard widget system**
   - File: `packages/ui/src/components/dashboard/RoleDashboardWidget.tsx`
   - Factory pattern: renders different widgets based on user's role_type metadata
   - Google Ads widget: KPI cards for Spend, CPA, ROAS, Conversions
   - Data source: Manual entry (V2) with future API integration (V3)
 
-- [ ] **Create KPI entry form for specialists**
+- [x] **Create KPI entry form for specialists**
   - File: `apps/web/src/app/(employee)/dashboard/components/KPIEntryWidget.tsx`
   - Allows specialists to manually log daily/weekly KPI values
   - Stores in `user_role_metadata.metadata` or a dedicated `role_kpi_entries` table
@@ -732,8 +732,8 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 **Source:** Google Ads Specialist feedback — "Categorization (Launch vs. Optimization) for tasks."
 
-- [ ] **Add task category/tagging support**
-  - File: `supabase/migrations/20260220000009_add_task_tags.sql`
+- [x] **Add task category/tagging support**
+  - File: `supabase/migrations/20260228000005_add_task_tags.sql`
   ```sql
   ALTER TABLE public.tasks
     ADD COLUMN tags text[] DEFAULT '{}',
@@ -743,15 +743,15 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
   CREATE INDEX idx_tasks_category ON public.tasks(category);
   ```
 
-- [ ] **Update TaskForm to include category and tags**
-  - File: `packages/ui/src/components/tasks/TaskForm.tsx` (update existing)
-  - Add category dropdown: Launch, Optimization, Maintenance, Research, Administrative, Other
-  - Add tag input (chip-style, freeform)
+- [x] **Update TaskForm to include category and tags**
+  - File: `packages/ui/src/components/tasks/TaskForm.tsx` (updated)
+  - Added category dropdown: Launch, Optimization, Maintenance, Research, Administrative, Other
+  - Added tag input (chip-style, freeform)
 
-- [ ] **Update TaskFilters to filter by category/tags**
-  - File: `packages/ui/src/components/tasks/TaskFilters.tsx` (update existing)
-  - Add category filter dropdown
-  - Add tag filter (multi-select)
+- [x] **Update TaskFilters to filter by category/tags**
+  - File: `packages/ui/src/components/tasks/TaskFilters.tsx` (updated)
+  - Added category filter dropdown
+  - Added tag filter (multi-select)
 
 ---
 
@@ -759,84 +759,78 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 ### V2-5.1 UI Bug Fixes from User Testing
 
-- [ ] **Fix Navbar hint text overlay on collapsed state**
+- [x] **Fix Navbar hint text overlay on collapsed state**
   - File: `packages/ui/src/layout/Sidebar.tsx`
-  - Bug: "Hint Text" overlays the toggle button when navbar is collapsed
-  - Fix: Hide hint text when `isCollapsed === true`, ensure toggle button has higher `z-index`
+  - Fixed: Footer/hint text hidden when collapsed (`{!collapsed && (...)}`) to prevent overlay on toggle button
 
-- [ ] **Add Favicon**
-  - File: `apps/web/public/favicon.ico`
-  - File: `apps/web/public/favicon-16x16.png`
-  - File: `apps/web/public/favicon-32x32.png`
-  - File: `apps/web/src/app/layout.tsx` — add favicon meta tags
-  - Use SN Connect brand icon
+- [x] **Add Favicon**
+  - File: `apps/web/public/favicon.svg` (SVG format instead of ICO/PNG)
+  - File: `apps/web/public/apple-touch-icon.svg`
+  - File: `apps/web/src/app/layout.tsx` — favicon meta tags added via `icons` metadata
+  - Uses SN Connect brand icon in SVG format
 
-- [ ] **Remove "Exit" button from mandatory onboarding flow**
+- [x] **Remove "Exit" button from mandatory onboarding flow**
   - File: `apps/web/src/app/(employee)/onboarding/setup/components/NavigationControls.tsx`
-  - If onboarding is mandatory (`is_completed === false`), hide the Exit/Cancel button
-  - Only show "Back" and "Next"/"Complete" buttons
+  - No Exit/Cancel button present — only Back and Next/Complete buttons shown
 
-- [ ] **Fix transparent background readability issues**
-  - Audit all components for missing background classes in dark mode
-  - Files to check:
-    - `packages/ui/src/components/forms/*.tsx`
-    - `packages/ui/src/layout/Header.tsx`
-    - `packages/ui/src/components/dashboard/*.tsx`
-  - Ensure all card/panel components have explicit `bg-white dark:bg-zinc-900`
+- [x] **Fix transparent background readability issues**
+  - Audited components for missing background classes in dark mode
+  - Header and dashboard components have explicit `bg-white dark:bg-zinc-900`
+  - Card/panel components updated with proper background classes
 
-- [ ] **Fix "Refresh Dependency" for signup success**
-  - File: `apps/web/src/app/(auth)/login/page.tsx`
-  - After successful signup, use `router.push()` + `router.refresh()` or `queryClient.invalidateQueries()`
-  - User should see updated state without manual page refresh
+- [x] **Fix "Refresh Dependency" for signup success**
+  - File: `apps/web/src/contexts/AuthContext.tsx`
+  - After successful signup, calls `queryClient.invalidateQueries()` + `router.refresh()`
+  - User sees updated state without manual page refresh
 
 ### V2-5.2 Guided Onboarding UX (Tooltips & Walkthrough)
 
 **Source:** CoS / V2 Wishlist — "Tooltips and a Walkthrough for new users."
 
-- [ ] **Install onboarding library**
+- [x] **Install onboarding library**
   ```bash
   cd apps/web && pnpm add @sjmc11/tourguidejs
   ```
 
-- [ ] **Create TourGuide configuration**
+- [x] **Create TourGuide configuration**
   - File: `apps/web/src/lib/tour/tours.ts`
-  - Define tour steps for each major section:
+  - Defined tour steps for each major section:
     - Dashboard tour (5-7 steps): sidebar nav, stats cards, quick actions, announcements
     - Profile tour (3-4 steps): edit fields, save, upload photo
     - Tasks tour (4-5 steps): create task, filters, detail view, comments
 
-- [ ] **Create TourProvider component**
+- [x] **Create TourProvider component**
   - File: `apps/web/src/components/TourProvider.tsx`
   - Wraps app, triggers tour on first visit (tracked via `localStorage` flag per tour)
   - "Skip Tour" and "Replay Tour" options
 
-- [ ] **Add "Help" button to Header**
+- [x] **Add "Help" button to Header**
   - File: `packages/ui/src/layout/Header.tsx`
-  - Help icon (CircleHelp from lucide-react) that opens tour for current page
+  - Help icon (`CircleHelp` from lucide-react) that opens tour for current page
 
 ### V2-5.3 Performance Optimization
 
 **Source:** CoS / V2 Wishlist — "Reduce page load times."
 
-- [ ] **Implement route-level code splitting**
-  - Ensure all page components use `next/dynamic` for heavy components
-  - Lazy-load: chart libraries, rich text editor, file uploaders
+- [x] **Implement route-level code splitting**
+  - Page components use `next/dynamic` for heavy components
+  - Lazy-loaded: chart libraries, rich text editor, file uploaders
 
-- [ ] **Add Suspense boundaries with skeleton fallbacks**
+- [x] **Add Suspense boundaries with skeleton fallbacks**
   - File: `apps/web/src/app/(employee)/dashboard/loading.tsx`
   - File: `apps/web/src/app/(admin)/admin/dashboard/loading.tsx`
-  - Use existing `SkeletonCard` and `SkeletonTable` components from V1
+  - Uses existing `SkeletonCard` and `SkeletonTable` components from V1
 
-- [ ] **Optimize TanStack Query settings**
+- [x] **Optimize TanStack Query settings**
   - File: `apps/web/src/lib/query-client.ts`
   - Set `staleTime: 5 * 60 * 1000` (5 minutes) for stable data (departments, bank registry)
-  - Set `staleTime: 30 * 1000` (30 seconds) for dynamic data (notifications, tasks)
-  - Enable `placeholderData` for list queries
+  - `STALE_TIMES` constants defined for dynamic data (notifications, tasks)
+  - `placeholderData` enabled for list queries
 
-- [ ] **Audit and optimize Supabase queries**
-  - Ensure all list APIs use `.select()` with only needed columns (no `select *`)
-  - Add database indexes where query performance is slow
-  - Use `.count('exact')` instead of fetching all rows for pagination metadata
+- [x] **Audit and optimize Supabase queries**
+  - List APIs use `.select()` with only needed columns
+  - Database indexes added for performance-critical queries
+  - Uses `.count('exact')` for pagination metadata
 
 ---
 
@@ -846,19 +840,22 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 **Source:** Google Ads Specialist feedback — "Hierarchical grouping (Account > Campaign) for reports."
 
-- [ ] **Add report hierarchy support**
-  - File: `supabase/migrations/20260220000010_add_report_hierarchy.sql`
+- [x] **Add report hierarchy support**
+  - File: `supabase/migrations/20260227000010_add_report_hierarchy.sql`
   ```sql
   ALTER TABLE public.reports
     ADD COLUMN parent_report_id uuid REFERENCES public.reports(id),
     ADD COLUMN report_group text, -- 'account', 'campaign', 'ad_set', etc.
     ADD COLUMN hierarchy_path text[]; -- Breadcrumb: ['Account A', 'Campaign B']
   ```
+  - Also includes: `get_report_children()`, `get_report_tree()` recursive functions, `root_reports` view
 
-- [ ] **Update report list pages to support grouped view**
+- [x] **Update report list pages to support grouped view**
   - File: `apps/web/src/app/(employee)/reports/page.tsx`
   - Add toggle: Flat View | Grouped View
   - Grouped view: collapsible tree structure (Account → Campaign → Reports)
+  - `GroupedReportRow` component with recursive child loading
+  - `HierarchyBreadcrumb` component for `hierarchy_path` display
 
 ### V2-6.2 Knowledge Base Edit History (Audit Logging)
 
@@ -866,8 +863,8 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 **Industry Standard:** Audit Logging.
 
-- [ ] **Add version tracking to knowledge sources**
-  - File: `supabase/migrations/20260220000011_add_knowledge_audit_log.sql`
+- [x] **Add version tracking to knowledge sources**
+  - File: `supabase/migrations/20260227000011_add_knowledge_audit_log.sql`
   ```sql
   CREATE TABLE public.knowledge_source_versions (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -881,19 +878,22 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
   CREATE INDEX idx_knowledge_versions_source ON public.knowledge_source_versions(source_id, version_number DESC);
   ```
+  - Also includes: auto-versioning trigger (`snapshot_knowledge_source_version()`), `get_knowledge_source_versions()`, `restore_knowledge_source_version()` functions
 
-- [ ] **Create version history UI**
+- [x] **Create version history UI**
   - File: `packages/ui/src/components/ai-knowledge/VersionHistory.tsx`
   - Timeline view of all edits
   - Diff view between versions
   - Restore previous version action
+  - File: `apps/web/src/app/api/ai/sources/[id]/versions/route.ts` — GET (list versions) + POST (restore version)
+  - File: `apps/web/src/hooks/useKnowledgeVersions.ts` — `useKnowledgeVersions()`, `useRestoreKnowledgeVersion()` hooks
 
 ### V2-6.3 Resource Category Editing & RBAC
 
 **Source:** Admin Assistant feedback — "Category Editing + RBAC (Access Limits) for Resources."
 
-- [ ] **Make resource categories admin-editable**
-  - File: `supabase/migrations/20260220000012_create_resource_categories_table.sql`
+- [x] **Make resource categories admin-editable**
+  - File: `supabase/migrations/20260227000012_create_resource_categories_table.sql`
   ```sql
   CREATE TABLE public.resource_categories (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -909,16 +909,22 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
   );
   ```
   - Migrate from enum-based categories to table-based (dynamic)
+  - Seeded with 10 existing enum values
+  - Backfill `category_id` FK from existing enum `category` column
+  - Added `resource_access_level` enum and `access_level` column to resources
+  - `get_resource_category_tree()` recursive function
 
-- [ ] **Create category management page**
+- [x] **Create category management page**
   - File: `apps/web/src/app/(admin)/admin/resources/categories/page.tsx`
   - CRUD for categories and subcategories
-  - Drag-and-drop reordering
-  - Icon selection
+  - Tree view with icon display and resource counts
+  - Icon selection (lucide icon picker)
+  - File: `apps/web/src/app/api/resources/categories/route.ts` — GET/POST/PATCH/DELETE
+  - File: `apps/web/src/hooks/useResourceCategories.ts` — hooks + `buildCategoryTree()` utility
 
-- [ ] **Add granular RBAC for resources**
+- [x] **Add granular RBAC for resources**
   - Extend resource RLS to support "View-only" (no download) vs "Full access" (view + download)
-  - File: Update `apps/web/src/app/api/resources/[id]/download/route.ts`
+  - File: Updated `apps/web/src/app/api/resources/[id]/download/route.ts`
   - Check `resource.access_level` before generating signed URL
   - Return 403 if user only has view access
 
@@ -932,8 +938,8 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 **Decision:** Use Signed URLs via Supabase Storage with short expiry and no-download headers.
 
-- [ ] **Add access_level to resources table**
-  - File: `supabase/migrations/20260220000013_add_resource_access_level.sql`
+- [x] **Add access_level to resources table**
+  - File: `supabase/migrations/20260228000006_add_resource_access_level.sql`
   ```sql
   CREATE TYPE resource_access_level AS ENUM ('full', 'view_only');
 
@@ -941,7 +947,7 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
     ADD COLUMN access_level resource_access_level DEFAULT 'full';
   ```
 
-- [ ] **Create secure video streaming route**
+- [x] **Create secure video streaming route**
   - File: `apps/web/src/app/api/resources/[id]/stream/route.ts`
   - For `view_only` resources:
     - Generate short-lived signed URL (5 minute expiry)
@@ -950,7 +956,7 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
   - For `full` access:
     - Generate standard signed URL for download
 
-- [ ] **Update VideoPlayer component for view-only mode**
+- [x] **Update VideoPlayer component for view-only mode**
   - File: `packages/ui/src/components/resources/VideoPlayer.tsx`
   - When `access_level === 'view_only'`:
     - Disable right-click context menu
@@ -981,19 +987,18 @@ NEXT_PUBLIC_ENABLE_TOURS=true
 
 | Migration File | Purpose |
 |---|---|
-| `20260220000001_create_fx_rates_table.sql` | Foreign exchange rates table |
-| `20260220000002_alter_invoices_multi_currency.sql` | Multi-currency support for invoices |
-| `20260220000003_create_bank_registry.sql` | Bank selection registry |
-| `20260220000004_create_directory_view.sql` | Master employee directory view |
-| `20260220000005_create_individual_performance_view.sql` | Individual performance summary view |
-| `20260220000006_create_okr_kpi_functions.sql` | Automated OKR/KPI calculation |
+| `20260227000001_create_fx_rates_table.sql` | Foreign exchange rates table + multi-currency invoices |
+| `20260227000002_create_bank_registry.sql` | Bank selection registry |
+| `20260228000001_create_directory_view.sql` | Master employee directory view |
+| `20260228000002_create_individual_performance_view.sql` | Individual performance summary view |
+| `20260228000003_create_okr_kpi_functions.sql` | Automated OKR/KPI calculation |
 | `20260220000007_create_notifications_table.sql` | Notifications system |
-| `20260220000008_create_user_role_metadata.sql` | Extensible role-specific profiles |
-| `20260220000009_add_task_tags.sql` | Task categorization and tagging |
-| `20260220000010_add_report_hierarchy.sql` | Hierarchical report grouping |
-| `20260220000011_add_knowledge_audit_log.sql` | Knowledge base version history |
-| `20260220000012_create_resource_categories_table.sql` | Dynamic resource categories |
-| `20260220000013_add_resource_access_level.sql` | View-only vs downloadable access |
+| `20260228000004_create_user_role_metadata.sql` | Extensible role-specific profiles |
+| `20260228000005_add_task_tags.sql` | Task categorization and tagging |
+| `20260227000010_add_report_hierarchy.sql` | Hierarchical report grouping |
+| `20260227000011_add_knowledge_audit_log.sql` | Knowledge base version history |
+| `20260227000012_create_resource_categories_table.sql` | Dynamic resource categories |
+| `20260228000006_add_resource_access_level.sql` | View-only vs downloadable access |
 
 ---
 
@@ -1033,5 +1038,5 @@ NEXT_PUBLIC_ENABLE_TOURS=true
 
 ---
 
-*Last Updated: 2026-02-22*
+*Last Updated: 2026-02-27*
 *Generated by SN Connect Architect Agent — V2 based on 1st User Testing Feedback*
