@@ -161,6 +161,23 @@ export interface InternshipFilters {
   pageSize?: number;
 }
 
+export interface DirectoryFilters {
+  search?: string;
+  role?: string;
+  department?: string;
+  status?: string;
+  employmentType?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface MilestoneFilters {
+  days?: number;
+  type?: 'birthday' | 'anniversary' | 'all';
+}
+
 export const queryKeys = {
   // Employees
   employees: {
@@ -233,6 +250,8 @@ export const queryKeys = {
     cycle: (id: string) => [...queryKeys.performance.cycles(), id] as const,
     kpis: () => [...queryKeys.performance.all, 'kpis'] as const,
     okrs: () => [...queryKeys.performance.all, 'okrs'] as const,
+    individual: (employeeId: string) =>
+      [...queryKeys.performance.all, 'individual', employeeId] as const,
   },
 
   // Payroll
@@ -321,6 +340,22 @@ export const queryKeys = {
     details: () => [...queryKeys.collections.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.collections.details(), id] as const,
     resources: (id: string) => [...queryKeys.collections.all, 'resources', id] as const,
+  },
+
+  // Directory
+  directory: {
+    all: ['directory'] as const,
+    lists: () => [...queryKeys.directory.all, 'list'] as const,
+    list: (filters: DirectoryFilters) => [...queryKeys.directory.lists(), filters] as const,
+    export: (filters: DirectoryFilters) =>
+      [...queryKeys.directory.all, 'export', filters] as const,
+  },
+
+  // Milestones (Birthdays & Anniversaries)
+  milestones: {
+    all: ['milestones'] as const,
+    lists: () => [...queryKeys.milestones.all, 'list'] as const,
+    list: (filters: MilestoneFilters) => [...queryKeys.milestones.lists(), filters] as const,
   },
 } as const;
 
