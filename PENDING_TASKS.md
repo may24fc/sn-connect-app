@@ -1,7 +1,7 @@
 # SN HR Portal - Pending Tasks & Next Steps
 
-**Last Updated:** February 11, 2026  
-**Current Phase:** Phase 1 - Backend Foundation (In Progress)
+**Last Updated:** February 24, 2026  
+**Current Phase:** Phase 1 - Backend Foundation (Largely Complete)
 
 ---
 
@@ -564,6 +564,54 @@ ADD COLUMN reviewed_at timestamptz;
 
 ---
 
+## 🆕 Recently Completed - AI, Standups, User Management & Realtime
+
+### AI Policy Assistant (Phase 6)
+- [x] Knowledge tables migration (`20260221000011_create_knowledge_tables.sql`)
+- [x] pgvector extension enabled
+- [x] packages/ai module (embeddings, chat, chunking)
+- [x] AI API routes (chat, sources CRUD, upload)
+- [x] AI validation schemas (`ai.schema.ts`)
+- [x] AI hooks (`useAIChat.ts`, `useAISources.ts`)
+- [x] AI knowledge UI components (AIKnowledgeManager, ChatInterface, KnowledgeBasePanel, PlaygroundPanel, SourcesInventory)
+- [x] Generate embeddings Edge Function
+- [x] Admin AI knowledge pages connected to real data
+
+### Stand-up Call Recordings (Phase 7)
+- [x] Standup tables migration (`20260222000012_create_standup_tables.sql`)
+- [x] Standup API routes (list, detail, upload)
+- [x] Transcription Edge Function (Whisper + Claude summary)
+- [x] Supabase Storage bucket for recordings
+
+### User Management & Credential-First Onboarding
+- [x] User invitation API (`/api/users/invite`)
+- [x] Onboarding approval API (`/api/users/approve-onboarding`)
+- [x] Employee assignment API (`/api/users/assign-employee`)
+- [x] Intern assignment API (`/api/users/assign-intern`)
+- [x] Admin modal components (InviteUserModal, ApproveOnboardingModal, AssignEmployeeModal)
+- [x] User management hooks (`useUserManagement.ts`)
+- [x] Awaiting approval page
+- [x] Credential-first onboarding flow documentation
+
+### Realtime Subscriptions
+- [x] Realtime internship hooks
+- [x] Realtime intern daily logs hooks
+- [x] Realtime onboarding approvals hooks
+- [x] Realtime probation employees hooks
+- [x] Realtime reports hooks
+- [x] Realtime performance hooks
+
+### Performance, Probation & Internships
+- [x] Performance API routes (reviews, OKRs, KPIs, cycles)
+- [x] Performance validation schemas
+- [x] Performance hooks with realtime
+- [x] Probation API routes and hooks
+- [x] Internship API routes (list, detail, daily logs)
+- [x] Internship hooks with realtime
+- [x] Intern dashboard component
+
+---
+
 ## 🆕 Recently Completed - Onboarding Features (Phase 3.3)
 
 ### Onboarding System Overview
@@ -706,32 +754,46 @@ Implemented a comprehensive onboarding system with three major features:
 | Phase 1.5 (Employee API) | ✅ Complete | 100% |
 | Phase 1.6 (Documents API) | ✅ Complete* | 90% |
 | Phase 1.7 (Departments API) | ✅ Complete | 100% |
-| Phase 3.3 (Onboarding Automation) | ✅ Complete** | 85% |
+| Phase 2.1 (Reports System) | ✅ Complete | 100% |
+| Phase 2.2 (Tasks System) | ✅ Complete | 100% |
+| Phase 2.3 (Payroll/Invoice) | ✅ Complete** | 85% |
+| Phase 2.4 (Announcements) | ✅ Complete | 100% |
+| Phase 2.5 (Resources/Info Hub) | ✅ Complete | 100% |
+| Phase 3.3 (Onboarding Automation) | ✅ Complete | 95% |
 | Phase 3.3.1 (Onboarding Wizard) | ✅ Complete | 95% |
 | Phase 3.3.2 (Onboarding Data Viewer) | ✅ Complete | 95% |
-| Testing (Employee/Documents/Departments) | 🔴 Not Started | 0% |
-| Testing (Onboarding) | 🟡 Partial | 40% |
-| Storage Configuration | 🟡 Pending | 0% |
-| Documentation | 🟢 Partial | 60% |
+| Phase 4 (Performance Management) | ✅ Complete | 100% |
+| Phase 5 (Internship Management) | ✅ Complete | 100% |
+| Phase 6 (AI Policy Assistant) | ✅ Complete | 100% |
+| Phase 7 (Stand-up Recordings) | ✅ Complete | 100% |
+| User Management & Credential Flow | ✅ Complete | 100% |
+| Realtime Subscriptions | ✅ Complete | 100% |
+| Testing (Unit/Hook) | 🟡 Partial | 40% |
+| Testing (E2E) | 🟡 Partial | 30% |
+| Storage Configuration | 🟡 Pending | 50% |
+| Documentation | 🟢 Partial | 70% |
+| Phase 8 (Production Readiness) | 🔴 Not Started | 0% |
+| V2 Improvements | 🔴 Not Started | 0% |
 | Mobile & Performance | 🔵 Future | - |
 
 *Awaiting Supabase Storage bucket configuration for employee-documents  
-**Missing n8n workflow automation (15% pending)
+**Missing WISE payment integration (15% pending)
 
 ---
 
 ## 🚀 Recommended Next Steps (Priority Order)
 
-1. **IMMEDIATE** - Configure Supabase Storage bucket (blocking deployment for employee-documents)
-2. **THIS WEEK** - Create n8n workflow for onboarding automation (blocking automated onboarding)
-3. **THIS WEEK** - Fix profile emergency contact tab
-4. **THIS WEEK** - Create environment variable documentation
-5. **NEXT SPRINT** - Write E2E tests for onboarding wizard and admin viewer
-6. **NEXT SPRINT** - Write unit tests for all employee/document/department hooks (80%+ coverage)
+1. **IMMEDIATE** - Configure Supabase Storage buckets in dashboard (employee-documents, standup-recordings)
+2. **THIS WEEK** - Fix profile emergency contact tab
+3. **THIS WEEK** - Create environment variable documentation
+4. **THIS WEEK** - Write E2E tests for onboarding wizard and admin viewer
+5. **NEXT SPRINT** - Begin V2 P0 Blockers (~~Intern dead-end fix~~ ✅ DONE, Auth redirect fix, Ghost Success bug)
+6. **NEXT SPRINT** - Write unit tests for all hooks (80%+ coverage)
 7. **NEXT SPRINT** - Write E2E tests for employee and document API routes
-8. **SPRINT 3** - Implement document approval workflow (both employee docs and onboarding docs)
-9. **SPRINT 3** - Create admin department management page
-10. **ONGOING** - Performance optimization and mobile testing
+8. **SPRINT 3** - Implement V2 P1 (Phone validation, multi-currency, bank selection)
+9. **SPRINT 3** - Implement WISE payment integration
+10. **SPRINT 4** - Implement V2 P2 (Master directory, individual KPIs, notifications)
+11. **ONGOING** - Phase 8 production readiness (rate limiting, CSRF, monitoring, security headers)
 
 ---
 
@@ -746,14 +808,23 @@ Implemented a comprehensive onboarding system with three major features:
 - **NEW:** Payment account numbers are masked in admin list views (last 4 digits only)
 - **NEW:** Document uploads support 4 required types: valid_id, profile_photo, cv, birth_certificate
 - **NEW:** Middleware enforces onboarding completion before portal access for employee/intern roles
+- **NEW:** AI Policy Assistant with RAG-based chat using pgvector embeddings
+- **NEW:** Stand-up call recording storage with Whisper transcription + Claude summarization
+- **NEW:** Credential-first onboarding flow (admin invites → user onboards → admin approves)
+- **NEW:** Supabase Realtime subscriptions for live data updates across all major features
+- **NEW:** Performance management with KPIs, OKRs, review cycles, and evaluations
+- **NEW:** Internship tracking with daily logs, hours progress, and supervisor management
 
 ---
 
 ## 🔗 Related Documentation
 
-- See `docs/sn-management-setup.md` for overall implementation checklist
+- See `docs/sn-management-setup.md` for V1 implementation checklist
+- See `docs/sn-management-setup-v2.md` for V2 implementation checklist (user testing feedback)
+- See `docs/credentials-first-onboarding-flow.md` for credential-based onboarding design
 - See `docs/adr/ADR-001-role-mapping.md` for role system design
 - See `docs/ENVIRONMENT.md` for environment setup guide
+- See `RBAC-IMPLEMENTATION.md` for RBAC patterns and implementation details
 - See README files in each package for specific setup instructions
 
 ---

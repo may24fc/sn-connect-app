@@ -107,7 +107,7 @@ This document provides a comprehensive, actionable checklist for implementing th
   - File: [docs/adr/ADR-001-role-mapping.md](docs/adr/ADR-001-role-mapping.md)
   - Document the chosen approach and rationale
 
-- [ ] **If Option A chosen: Create migration to add super_admin role**
+- [x] **If Option A chosen: Create migration to add super_admin role**
   - File: `supabase/migrations/20260210000001_add_super_admin_role.sql`
   ```sql
   ALTER TYPE user_role ADD VALUE 'super_admin';
@@ -2563,12 +2563,12 @@ CREATE TABLE public.intern_daily_logs (
 
 ### 6.1 Vector Database Setup
 
-- [ ] **Enable pgvector extension in Supabase**
+- [x] **Enable pgvector extension in Supabase**
   ```sql
   CREATE EXTENSION IF NOT EXISTS vector;
   ```
 
-- [ ] **Create knowledge base tables**
+- [x] **Create knowledge base tables**
   ```sql
   CREATE TABLE public.knowledge_sources (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -2599,40 +2599,41 @@ CREATE TABLE public.intern_daily_logs (
   WITH (lists = 100);
   ```
 
-- [ ] **Create migration for knowledge tables**
-  - File: `supabase/migrations/20260210000011_create_knowledge_tables.sql`
+- [x] **Create migration for knowledge tables**
+  - File: `supabase/migrations/20260221000011_create_knowledge_tables.sql`
 
 ### 6.2 RAG Implementation
 
-- [X] **Implement packages/ai module**
+- [x] **Implement packages/ai module**
   - File: `packages/ai/src/embeddings.ts` - Generate embeddings
   - File: `packages/ai/src/chat.ts` - Chat with context
   - File: `packages/ai/src/chunking.ts` - Document chunking
 
-- [ ] **Create AI API routes**
+- [x] **Create AI API routes**
   - File: `apps/web/src/app/api/ai/chat/route.ts`
   - File: `apps/web/src/app/api/ai/sources/route.ts`
   - File: `apps/web/src/app/api/ai/sources/[id]/route.ts`
   - File: `apps/web/src/app/api/ai/sources/upload/route.ts`
+  - File: `apps/web/src/app/api/ai/_lib.ts`
 
-- [X] **Create Supabase Edge Function for embeddings**
+- [x] **Create Supabase Edge Function for embeddings**
   - File: `supabase/functions/generate-embeddings/index.ts`
   - Trigger: On knowledge source insert
   - Action: Chunk document, generate embeddings, store
 
-- [X] **Connect AI knowledge pages to real data**
+- [x] **Connect AI knowledge pages to real data**
   - Update `apps/web/src/app/(admin)/admin/ai-knowledge/page.tsx`
   - Update `apps/web/src/app/(admin)/super-admin/ai-knowledge/page.tsx`
 
 ### 6.3 Chat Interface
 
-- [X] **Create chat hooks**
+- [x] **Create chat hooks**
   - File: `apps/web/src/hooks/useAIChat.ts`
   - Streaming response support
   - Context retrieval
   - Chat history management
 
-- [X] **Update AIChatbot component with real API**
+- [x] **Update AIChatbot component with real API**
   - File: `packages/ui/src/components/AIChatbot.tsx`
   - Connect to /api/ai/chat
   - Implement streaming responses
@@ -2670,22 +2671,98 @@ CREATE TABLE public.standup_topics (
 );
 ```
 
-- [ ] **Create migration for standup tables**
-  - File: `supabase/migrations/20260210000012_create_standup_tables.sql`
+- [x] **Create migration for standup tables**
+  - File: `supabase/migrations/20260222000012_create_standup_tables.sql`
 
-- [ ] **Create Supabase Storage bucket for recordings**
+- [x] **Create Supabase Storage bucket for recordings**
   - Bucket: `standup-recordings`
-  - Configure appropriate size limits
+  - Configure appropriate size limits (500MB, audio/video files)
 
-- [ ] **Create standup API routes**
+- [x] **Create standup API routes**
   - File: `apps/web/src/app/api/standups/route.ts`
   - File: `apps/web/src/app/api/standups/[id]/route.ts`
   - File: `apps/web/src/app/api/standups/upload/route.ts`
 
-- [ ] **Create transcription Edge Function**
+- [x] **Create transcription Edge Function**
   - File: `supabase/functions/transcribe-recording/index.ts`
   - Use Whisper API or similar
   - Auto-generate summary with Claude
+
+---
+
+## Phase 7.5: User Management & Credential-First Onboarding (Added Post-V1)
+
+These features were implemented after the initial V1 checklist was written and are tracked here for completeness.
+
+### 7.5.1 Credential-First Onboarding Flow
+
+Admin-initiated onboarding: Admin invites user → user receives credentials → user completes onboarding wizard → admin approves → employee/intern record created.
+
+- [x] **Create user invitation API route**
+  - File: `apps/web/src/app/api/users/invite/route.ts`
+  - POST: Admin creates Supabase Auth user with email/password, inserts users record with pending status
+
+- [x] **Create onboarding approval API route**
+  - File: `apps/web/src/app/api/users/approve-onboarding/route.ts`
+  - POST: Admin approves completed onboarding, updates user status
+
+- [x] **Create employee assignment API route**
+  - File: `apps/web/src/app/api/users/assign-employee/route.ts`
+  - POST: Creates employee record from approved onboarding profile data
+
+- [x] **Create intern assignment API route**
+  - File: `apps/web/src/app/api/users/assign-intern/route.ts`
+  - POST: Creates internship record from approved onboarding profile data
+
+- [x] **Create admin modal components**
+  - File: `apps/web/src/components/admin/InviteUserModal.tsx`
+  - File: `apps/web/src/components/admin/ApproveOnboardingModal.tsx`
+  - File: `apps/web/src/components/admin/AssignEmployeeModal.tsx`
+
+- [x] **Create user management hooks**
+  - File: `apps/web/src/hooks/useUserManagement.ts`
+  - Includes: useInviteUser, useApproveOnboarding, useAssignEmployee, useAssignIntern
+
+- [x] **Create awaiting approval page**
+  - File: `apps/web/src/app/onboarding/awaiting-approval/page.tsx`
+  - Shown to users who completed onboarding wizard but haven't been approved yet
+
+- [x] **Documentation**
+  - File: `docs/credentials-first-onboarding-flow.md`
+
+### 7.5.2 Realtime Subscriptions
+
+Supabase Realtime hooks for live data updates across the portal.
+
+- [x] **Create realtime internship hooks**
+  - File: `apps/web/src/hooks/useRealtimeInternships.ts`
+  - File: `apps/web/src/hooks/useRealtimeInternDailyLogs.ts`
+
+- [x] **Create realtime onboarding hooks**
+  - File: `apps/web/src/hooks/useRealtimeOnboardingApprovals.ts`
+
+- [x] **Create realtime probation hooks**
+  - File: `apps/web/src/hooks/useRealtimeProbationEmployees.ts`
+
+- [x] **Create realtime reports hooks**
+  - File: `apps/web/src/hooks/useReportsRealtime.ts`
+
+- [x] **Create realtime performance hooks**
+  - File: `apps/web/src/hooks/usePerformanceRealtime.ts`
+
+### 7.5.3 Additional Schemas & Hooks
+
+- [x] **Create performance validation schemas**
+  - File: `apps/web/src/lib/schemas/performance.schema.ts`
+
+- [x] **Create AI validation schemas**
+  - File: `apps/web/src/lib/schemas/ai.schema.ts`
+
+- [x] **Create probation hooks**
+  - File: `apps/web/src/hooks/useProbation.ts`
+
+- [x] **Create intern dashboard component**
+  - File: `apps/web/src/components/dashboards/InternDashboard.tsx`
 
 ---
 
@@ -2821,5 +2898,5 @@ UPSTASH_REDIS_REST_TOKEN=
 
 ---
 
-*Last Updated: 2026-02-10*
+*Last Updated: 2026-02-24*
 *Generated by SN Connect Architect Agent*
