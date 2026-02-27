@@ -20,3 +20,8 @@ export {
   AnnouncementAnalytics,
   type AnnouncementAnalyticsProps,
 } from './AnnouncementAnalytics';
+export {
+  AnnouncementAnalyticsDashboard,
+  type AnnouncementAnalyticsDashboardProps,
+  type AnnouncementAnalyticsData,
+} from './AnnouncementAnalyticsDashboard';
