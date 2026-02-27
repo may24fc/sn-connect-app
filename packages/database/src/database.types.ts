@@ -1316,6 +1316,7 @@ export type Database = {
       };
       resources: {
         Row: {
+          access_level: Database['public']['Enums']['resource_access_level'] | null;
           author_id: string;
           bookmark_count: number | null;
           category: Database['public']['Enums']['resource_category'];
@@ -1353,6 +1354,7 @@ export type Database = {
           view_count: number | null;
         };
         Insert: {
+          access_level?: Database['public']['Enums']['resource_access_level'] | null;
           author_id: string;
           bookmark_count?: number | null;
           category: Database['public']['Enums']['resource_category'];
@@ -1390,6 +1392,7 @@ export type Database = {
           view_count?: number | null;
         };
         Update: {
+          access_level?: Database['public']['Enums']['resource_access_level'] | null;
           author_id?: string;
           bookmark_count?: number | null;
           category?: Database['public']['Enums']['resource_category'];
@@ -1695,6 +1698,7 @@ export type Database = {
       invoice_status: 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
       onboarding_document_type: 'valid_id' | 'profile_photo' | 'cv' | 'birth_certificate';
       onboarding_step: 'personal_info' | 'payment_info' | 'documents' | 'review';
+      resource_access_level: 'full' | 'view_only';
       resource_category:
         | 'onboarding'
         | 'training'
@@ -1874,6 +1878,7 @@ export const Constants = {
       invoice_status: ['draft', 'submitted', 'approved', 'paid', 'rejected'],
       onboarding_document_type: ['valid_id', 'profile_photo', 'cv', 'birth_certificate'],
       onboarding_step: ['personal_info', 'payment_info', 'documents', 'review'],
+      resource_access_level: ['full', 'view_only'],
       resource_category: [
         'onboarding',
         'training',
