@@ -200,7 +200,7 @@ export default function EmployeeManagementPage(): ReactNode {
                         {daysRemaining !== null && (
                           <div className="flex items-center gap-2">
                             <Clock
-                              className={`h-3.5 w-3.5 ${isUrgent ? 'text-amber-500' : 'text-zinc-400'}`}
+                              className={`h-3.5 w-3.5 ${isUrgent ? 'text-amber-500' : 'text-zinc-500 dark:text-zinc-400'}`}
                               strokeWidth={1.5}
                             />
                             <span
