@@ -223,7 +223,7 @@ export function AssignEmployeeModal({
               <div>
                 <h3 className="font-semibold">{assignmentData.fullName}</h3>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{assignmentData.email}</p>
-                <p className="text-sm text-zinc-500 mt-1">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                   Position: {assignmentData.position || 'Not specified'}
                 </p>
               </div>

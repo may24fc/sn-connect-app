@@ -94,6 +94,24 @@ export function useUploadDocument() {
 }
 
 /**
+ * Hook to get document preview URL (without auto-downloading)
+ */
+export function usePreviewDocument() {
+  return useMutation({
+    mutationFn: async (documentId: string): Promise<DownloadDocumentResponse> => {
+      const response = await fetch(`/api/documents/${documentId}/download`);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate preview URL');
+      }
+
+      return response.json();
+    },
+  });
+}
+
+/**
  * Hook to download a document (generates signed URL)
  */
 export function useDownloadDocument() {

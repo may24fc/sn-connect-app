@@ -56,6 +56,8 @@ import {
   FileText,
   Filter,
   GraduationCap,
+  LayoutGrid,
+  List,
   Search,
   ThumbsUp,
   UserPlus,
@@ -349,21 +351,31 @@ export default function AdminInternsPage(): ReactNode {
           {/* View Toggle */}
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Interns ({filteredInterns.length})</h2>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="sm"
+            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+              <button
+                type="button"
                 onClick={() => setViewMode('grid')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
               >
-                Grid
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
+                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Cards
+              </button>
+              <button
+                type="button"
                 onClick={() => setViewMode('list')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
               >
+                <List className="h-3.5 w-3.5" strokeWidth={1.5} />
                 List
-              </Button>
+              </button>
             </div>
           </div>
 

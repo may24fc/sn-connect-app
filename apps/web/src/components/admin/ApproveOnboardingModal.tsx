@@ -168,11 +168,11 @@ export function ApproveOnboardingModal({
                 </p>
                 <div className="mt-2 flex items-center gap-4 text-sm">
                   <span className="inline-flex items-center gap-1">
-                    <Briefcase className="h-3.5 w-3.5 text-zinc-500" />
+                    <Briefcase className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                     {onboarding.position || 'No position specified'}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-zinc-500" />
+                    <Calendar className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                     Submitted {formatDate(onboarding.completed_at)}
                   </span>
                 </div>
@@ -362,7 +362,7 @@ function InfoField({
 }) {
   return (
     <div className="flex items-start gap-3">
-      {icon && <div className="text-zinc-500 mt-0.5">{icon}</div>}
+      {icon && <div className="text-zinc-500 dark:text-zinc-400 mt-0.5">{icon}</div>}
       <div className="flex-1 min-w-0">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">{label}</p>
         <p className="text-sm font-medium break-words">{value}</p>

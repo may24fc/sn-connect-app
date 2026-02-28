@@ -47,6 +47,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Filter by user_id (for current user lookup)
+    const userId = searchParams.get('userId') || '';
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
     if (department) {
       query = query.eq('department', department);
     }
