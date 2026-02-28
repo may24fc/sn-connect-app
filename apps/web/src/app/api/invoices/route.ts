@@ -171,6 +171,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Auto-generate invoice number: INV-YYYYMMDD-XXXX
+    let invoiceNumber = parsed.data.invoiceNumber;
+    if (!invoiceNumber) {
+      const today = new Date();
+      const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+      const { count } = await supabaseAdmin
+        .from('invoices')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', today.toISOString().slice(0, 10));
+      const seq = String((count ?? 0) + 1).padStart(4, '0');
+      invoiceNumber = `INV-${dateStr}-${seq}`;
+    }
+
     // Use the same admin client for the insert to bypass RLS. Security is enforced
     // at the application layer above (auth check + employee ownership check).
     // This matches the established pattern used in other API routes (invite,
@@ -180,7 +193,7 @@ export async function POST(request: NextRequest) {
       .from('invoices')
       .insert({
         employee_id: resolvedEmployeeId,
-        invoice_number: parsed.data.invoiceNumber,
+        invoice_number: invoiceNumber,
         period_start: parsed.data.periodStart,
         period_end: parsed.data.periodEnd,
         gross_amount: parsed.data.grossAmount,

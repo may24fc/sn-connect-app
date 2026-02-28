@@ -62,11 +62,7 @@ export async function getExchangeRate(from: string, to: string): Promise<number>
 /**
  * Convert an amount from one currency to another.
  */
-export async function convertAmount(
-  amount: number,
-  from: string,
-  to: string
-): Promise<number> {
+export async function convertAmount(amount: number, from: string, to: string): Promise<number> {
   const rate = await getExchangeRate(from, to);
   return Math.round(amount * rate * 100) / 100;
 }

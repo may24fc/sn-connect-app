@@ -1,6 +1,8 @@
 'use client';
 
+import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
+import { formatDate, formatDateRange, formatLabel } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -10,11 +12,13 @@ import {
   CardTitle,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   Input,
   Label,
+  Separator,
   Table,
   TableBody,
   TableCell,
@@ -24,7 +28,8 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { type FormEvent, useMemo, useState } from 'react';
+import { Eye } from 'lucide-react';
+import { type FormEvent, useCallback, useMemo, useState } from 'react';
 
 const statusVariant: Record<
   'draft' | 'submitted' | 'approved' | 'paid' | 'rejected',
@@ -43,16 +48,164 @@ const formatCurrency = (value: number) =>
     currency: 'PHP',
   }).format(value || 0);
 
+/* ------------------------------------------------------------------ */
+/*  Detail row used in both the View and Confirm dialogs               */
+/* ------------------------------------------------------------------ */
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-1.5">
+      <span className="text-sm text-muted-foreground shrink-0">{label}</span>
+      <span className="text-sm font-medium text-right">{value}</span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Invoice Detail Dialog (shown on row click or "View" button)        */
+/* ------------------------------------------------------------------ */
+function InvoiceDetailDialog({
+  invoice,
+  open,
+  onOpenChange,
+}: {
+  invoice: InvoiceRecord | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  if (!invoice) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Invoice Details</DialogTitle>
+          <DialogDescription className="sr-only">
+            Details for invoice {invoice.invoice_number}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-1">
+          <DetailRow label="Invoice #" value={invoice.invoice_number} />
+          <DetailRow label="Status" value={formatLabel(invoice.status)} />
+          <Separator className="my-2" />
+          <DetailRow
+            label="Period"
+            value={formatDateRange(invoice.period_start, invoice.period_end)}
+          />
+          <DetailRow
+            label="Gross Amount"
+            value={formatCurrency(Number(invoice.gross_amount || 0))}
+          />
+          <DetailRow label="Deductions" value={formatCurrency(Number(invoice.deductions || 0))} />
+          <Separator className="my-2" />
+          <DetailRow
+            label="Net Amount"
+            value={formatCurrency(Number(invoice.net_amount || 0))}
+          />
+          {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
+          <Separator className="my-2" />
+          <DetailRow label="Created" value={formatDate(invoice.created_at)} />
+          {invoice.submitted_at && (
+            <DetailRow label="Submitted" value={formatDate(invoice.submitted_at)} />
+          )}
+          {invoice.approved_at && (
+            <DetailRow label="Approved" value={formatDate(invoice.approved_at)} />
+          )}
+          {invoice.paid_at && <DetailRow label="Paid" value={formatDate(invoice.paid_at)} />}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Submit Confirmation Dialog                                         */
+/* ------------------------------------------------------------------ */
+function SubmitConfirmDialog({
+  invoice,
+  open,
+  onOpenChange,
+  onConfirm,
+  isPending,
+}: {
+  invoice: InvoiceRecord | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+  isPending: boolean;
+}) {
+  if (!invoice) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Confirm Submission</DialogTitle>
+          <DialogDescription>
+            Please review the invoice details before submitting. This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1">
+          <DetailRow label="Invoice #" value={invoice.invoice_number} />
+          <Separator className="my-2" />
+          <DetailRow
+            label="Period"
+            value={formatDateRange(invoice.period_start, invoice.period_end)}
+          />
+          <DetailRow
+            label="Gross Amount"
+            value={formatCurrency(Number(invoice.gross_amount || 0))}
+          />
+          <DetailRow label="Deductions" value={formatCurrency(Number(invoice.deductions || 0))} />
+          <Separator className="my-2" />
+          <DetailRow
+            label="Net Amount"
+            value={formatCurrency(Number(invoice.net_amount || 0))}
+          />
+          {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
+        </div>
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} disabled={isPending}>
+            {isPending ? 'Submitting...' : 'Confirm & Submit'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main Page                                                          */
+/* ------------------------------------------------------------------ */
 export default function InvoicePage() {
   const { addToast } = useToast();
-  const [open, setOpen] = useState(false);
 
-  const [invoiceNumber, setInvoiceNumber] = useState('');
+  // Create invoice dialog
+  const [createOpen, setCreateOpen] = useState(false);
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   const [grossAmount, setGrossAmount] = useState('0');
   const [deductions, setDeductions] = useState('0');
   const [notes, setNotes] = useState('');
+
+  // Detail / View dialog
+  const [detailInvoice, setDetailInvoice] = useState<InvoiceRecord | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  // Submit confirmation dialog
+  const [confirmInvoice, setConfirmInvoice] = useState<InvoiceRecord | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 100 });
   const createInvoice = useCreateInvoice();
@@ -74,6 +227,14 @@ export default function InvoicePage() {
     };
   }, [invoices]);
 
+  const resetForm = useCallback(() => {
+    setPeriodStart('');
+    setPeriodEnd('');
+    setGrossAmount('0');
+    setDeductions('0');
+    setNotes('');
+  }, []);
+
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -83,7 +244,6 @@ export default function InvoicePage() {
 
     try {
       await createInvoice.mutateAsync({
-        invoiceNumber,
         periodStart,
         periodEnd,
         grossAmount: gross,
@@ -98,24 +258,59 @@ export default function InvoicePage() {
 
       addToast({
         title: 'Invoice created',
-        description: `Invoice ${invoiceNumber} has been saved as draft`,
+        description: 'Invoice has been saved as draft with an auto-generated number.',
         variant: 'success',
       });
 
-      setOpen(false);
-      setInvoiceNumber('');
-      setPeriodStart('');
-      setPeriodEnd('');
-      setGrossAmount('0');
-      setDeductions('0');
-      setNotes('');
-    } catch (error) {
+      setCreateOpen(false);
+      resetForm();
+    } catch (_err) {
       addToast({
         title: 'Error',
         description: 'Failed to create invoice',
         variant: 'error',
       });
     }
+  };
+
+  const handleRowClick = (invoice: InvoiceRecord) => {
+    setDetailInvoice(invoice);
+    setDetailOpen(true);
+  };
+
+  const handleSubmitClick = (invoice: InvoiceRecord, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmInvoice(invoice);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmSubmit = () => {
+    if (!confirmInvoice) return;
+
+    submitInvoice.mutate(confirmInvoice.id, {
+      onSuccess: () => {
+        addToast({
+          title: 'Invoice submitted',
+          description: `Invoice ${confirmInvoice.invoice_number} has been submitted for approval.`,
+          variant: 'success',
+        });
+        setConfirmOpen(false);
+        setConfirmInvoice(null);
+      },
+      onError: () => {
+        addToast({
+          title: 'Error',
+          description: 'Failed to submit invoice',
+          variant: 'error',
+        });
+      },
+    });
+  };
+
+  const handleViewClick = (invoice: InvoiceRecord, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDetailInvoice(invoice);
+    setDetailOpen(true);
   };
 
   return (
@@ -125,7 +320,7 @@ export default function InvoicePage() {
           <h1 className="text-headline">Invoice</h1>
           <p className="text-muted-foreground">Submit and monitor your invoices</p>
         </div>
-        <Button onClick={() => setOpen(true)}>Create Invoice</Button>
+        <Button onClick={() => setCreateOpen(true)}>Create Invoice</Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -196,43 +391,53 @@ export default function InvoicePage() {
                   </TableRow>
                 ) : (
                   invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
+                    <TableRow
+                      key={invoice.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleRowClick(invoice)}
+                    >
                       <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
-                      <TableCell>
-                        {invoice.period_start} to {invoice.period_end}
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDateRange(invoice.period_start, invoice.period_end)}
                       </TableCell>
                       <TableCell>{formatCurrency(Number(invoice.gross_amount || 0))}</TableCell>
                       <TableCell>{formatCurrency(Number(invoice.net_amount || 0))}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[invoice.status]}>{invoice.status}</Badge>
+                        <Badge variant={statusVariant[invoice.status]}>
+                          {formatLabel(invoice.status)}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {invoice.status === 'draft' && (
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              submitInvoice.mutate(invoice.id, {
-                                onSuccess: () => {
-                                  addToast({
-                                    title: 'Invoice submitted',
-                                    description: `Invoice ${invoice.invoice_number} has been submitted for approval`,
-                                    variant: 'success',
-                                  });
-                                },
-                                onError: () => {
-                                  addToast({
-                                    title: 'Error',
-                                    description: 'Failed to submit invoice',
-                                    variant: 'error',
-                                  });
-                                },
-                              })
-                            }
-                            disabled={submitInvoice.isPending}
-                          >
-                            Submit
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {invoice.status === 'draft' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => handleViewClick(invoice, e)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={(e) => handleSubmitClick(invoice, e)}
+                                disabled={submitInvoice.isPending}
+                              >
+                                Submit
+                              </Button>
+                            </>
+                          )}
+                          {invoice.status !== 'draft' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => handleViewClick(invoice, e)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -243,21 +448,17 @@ export default function InvoicePage() {
         </Card>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* ---- Create Invoice Dialog ---- */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
+            <DialogDescription>
+              Fill in the details below. An invoice number will be assigned automatically.
+            </DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleCreate}>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Invoice Number</Label>
-                <Input
-                  value={invoiceNumber}
-                  onChange={(event) => setInvoiceNumber(event.target.value)}
-                  required
-                />
-              </div>
               <div className="space-y-2">
                 <Label>Gross Amount</Label>
                 <Input
@@ -266,6 +467,17 @@ export default function InvoicePage() {
                   step="0.01"
                   value={grossAmount}
                   onChange={(event) => setGrossAmount(event.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Deductions</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={deductions}
+                  onChange={(event) => setDeductions(event.target.value)}
                   required
                 />
               </div>
@@ -287,35 +499,51 @@ export default function InvoicePage() {
                   required
                 />
               </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label>Deductions</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={deductions}
-                  onChange={(event) => setDeductions(event.target.value)}
-                  required
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
               <Label>Notes</Label>
-              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={4} />
+              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Net Amount</span>
+                <span className="font-semibold text-base">
+                  {formatCurrency(
+                    Math.max(0, Number(grossAmount || 0) - Number(deductions || 0))
+                  )}
+                </span>
+              </div>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={createInvoice.isPending}>
-                Save Draft
+                {createInvoice.isPending ? 'Saving...' : 'Save Draft'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* ---- Invoice Detail Dialog ---- */}
+      <InvoiceDetailDialog
+        invoice={detailInvoice}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
+
+      {/* ---- Submit Confirmation Dialog ---- */}
+      <SubmitConfirmDialog
+        invoice={confirmInvoice}
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onConfirm={handleConfirmSubmit}
+        isPending={submitInvoice.isPending}
+      />
     </div>
   );
 }
