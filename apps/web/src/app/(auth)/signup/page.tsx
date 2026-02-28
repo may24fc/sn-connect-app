@@ -7,10 +7,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  FormGroup,
   Input,
-  Label,
 } from '@hr-portal/ui';
-import { Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
@@ -123,20 +123,22 @@ export default function SignupPage(): ReactNode {
         </CardHeader>
 
         <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {error && (
-              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3 text-sm text-rose-600 dark:text-rose-400">
-                {error}
+              <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="fullName"
-                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-              >
-                Full Name
-              </Label>
+            <FormGroup
+              label="Full Name"
+              htmlFor="fullName"
+              required
+              showOptional={false}
+              error={fieldErrors.fullName}
+              icon={<User className="h-3.5 w-3.5" />}
+            >
               <Input
                 id="fullName"
                 type="text"
@@ -145,20 +147,19 @@ export default function SignupPage(): ReactNode {
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 autoComplete="name"
-                className="h-10 w-full px-4 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md placeholder:text-zinc-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
+                error={!!fieldErrors.fullName}
+                className="h-10"
               />
-              {fieldErrors.fullName && (
-                <p className="text-xs text-rose-500">{fieldErrors.fullName}</p>
-              )}
-            </div>
+            </FormGroup>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-              >
-                Email
-              </Label>
+            <FormGroup
+              label="Email Address"
+              htmlFor="email"
+              required
+              showOptional={false}
+              error={fieldErrors.email}
+              icon={<Mail className="h-3.5 w-3.5" />}
+            >
               <Input
                 id="email"
                 type="email"
@@ -167,50 +168,55 @@ export default function SignupPage(): ReactNode {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="h-10 w-full px-4 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md placeholder:text-zinc-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
+                error={!!fieldErrors.email}
+                className="h-10"
               />
-              {fieldErrors.email && <p className="text-xs text-rose-500">{fieldErrors.email}</p>}
-            </div>
+            </FormGroup>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-              >
-                Password
-              </Label>
+            <FormGroup
+              label="Password"
+              htmlFor="password"
+              required
+              showOptional={false}
+              error={fieldErrors.password}
+              description={
+                !fieldErrors.password
+                  ? 'Must be at least 8 characters with uppercase, lowercase, and number'
+                  : undefined
+              }
+              icon={<Lock className="h-3.5 w-3.5" />}
+            >
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="At least 8 characters"
+                  placeholder="Create a strong password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="h-10 w-full px-4 pr-10 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md placeholder:text-zinc-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
+                  error={!!fieldErrors.password}
+                  className="h-10 pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 dark:hover:text-zinc-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {fieldErrors.password && (
-                <p className="text-xs text-rose-500">{fieldErrors.password}</p>
-              )}
-            </div>
+            </FormGroup>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="confirmPassword"
-                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-              >
-                Confirm Password
-              </Label>
+            <FormGroup
+              label="Confirm Password"
+              htmlFor="confirmPassword"
+              required
+              showOptional={false}
+              error={fieldErrors.confirmPassword}
+              icon={<Lock className="h-3.5 w-3.5" />}
+            >
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -220,12 +226,13 @@ export default function SignupPage(): ReactNode {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="h-10 w-full px-4 pr-10 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md placeholder:text-zinc-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
+                  error={!!fieldErrors.confirmPassword}
+                  className="h-10 pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 dark:hover:text-zinc-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
                   aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                 >
                   {showConfirmPassword ? (
@@ -235,18 +242,22 @@ export default function SignupPage(): ReactNode {
                   )}
                 </button>
               </div>
-              {fieldErrors.confirmPassword && (
-                <p className="text-xs text-rose-500">{fieldErrors.confirmPassword}</p>
-              )}
-            </div>
+            </FormGroup>
 
             <Button
               type="submit"
-              className="h-10 w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-medium rounded-md transition-colors focus:ring-2 focus:ring-indigo-600/20 focus:ring-offset-2"
+              className="h-11 w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-medium rounded-lg transition-all focus:ring-2 focus:ring-indigo-600/20 focus:ring-offset-2 disabled:opacity-60"
               size="lg"
               disabled={isLoading}
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating account...
+                </span>
+              ) : (
+                'Create account'
+              )}
             </Button>
           </form>
 
@@ -255,7 +266,7 @@ export default function SignupPage(): ReactNode {
               Already have an account?{' '}
               <Link
                 href="/login"
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
               >
                 Sign in
               </Link>

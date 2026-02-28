@@ -10,10 +10,12 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  FormGroup,
   Input,
   Label,
   PasswordInput,
 } from '@hr-portal/ui';
+import { AlertCircle, Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, type ReactNode, useState } from 'react';
 
@@ -84,20 +86,21 @@ export default function LoginPage(): ReactNode {
         </CardHeader>
 
         <CardContent className="pt-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3 text-sm text-rose-600 dark:text-rose-400">
-                {error}
+              <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-              >
-                Email
-              </Label>
+            <FormGroup
+              label="Email Address"
+              htmlFor="email"
+              required
+              showOptional={false}
+              icon={<Mail className="h-3.5 w-3.5" />}
+            >
               <Input
                 id="email"
                 type="email"
@@ -106,21 +109,25 @@ export default function LoginPage(): ReactNode {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="h-10 w-full px-4 text-sm bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md placeholder:text-zinc-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
+                className="h-10"
               />
-            </div>
+            </FormGroup>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="password"
-                  className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                  className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"
                 >
+                  <Lock className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                   Password
+                  <span className="text-rose-500 dark:text-rose-400" aria-label="required">
+                    *
+                  </span>
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -136,7 +143,7 @@ export default function LoginPage(): ReactNode {
               />
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2.5 py-1">
               <Checkbox
                 id="remember"
                 checked={rememberMe}
@@ -144,7 +151,7 @@ export default function LoginPage(): ReactNode {
               />
               <Label
                 htmlFor="remember"
-                className="text-sm font-normal text-zinc-600 dark:text-zinc-400"
+                className="text-sm font-normal text-zinc-600 dark:text-zinc-400 cursor-pointer select-none"
               >
                 Remember me for 30 days
               </Label>
@@ -152,11 +159,18 @@ export default function LoginPage(): ReactNode {
 
             <Button
               type="submit"
-              className="h-10 w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-medium rounded-md transition-colors focus:ring-2 focus:ring-indigo-600/20 focus:ring-offset-2"
+              className="h-11 w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-medium rounded-lg transition-all focus:ring-2 focus:ring-indigo-600/20 focus:ring-offset-2 disabled:opacity-60"
               size="lg"
               disabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in...
+                </span>
+              ) : (
+                'Sign in'
+              )}
             </Button>
           </form>
 

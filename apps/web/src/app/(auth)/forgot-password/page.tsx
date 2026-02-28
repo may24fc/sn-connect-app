@@ -7,10 +7,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  FormGroup,
   Input,
-  Label,
 } from '@hr-portal/ui';
-import { ArrowLeft, Mail } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useMemo, useState } from 'react';
@@ -57,14 +57,20 @@ export default function ForgotPasswordPage(): ReactNode {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error ? (
-              <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-600 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-400">
-                {error}
+              <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
               </div>
             ) : null}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <FormGroup
+              label="Email Address"
+              htmlFor="email"
+              required
+              showOptional={false}
+              icon={<Mail className="h-3.5 w-3.5" />}
+            >
               <Input
                 id="email"
                 type="email"
@@ -73,11 +79,24 @@ export default function ForgotPasswordPage(): ReactNode {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                className="h-10"
               />
-            </div>
+            </FormGroup>
 
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Reset password'}
+            <Button
+              type="submit"
+              className="h-11 w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Sending...
+                </span>
+              ) : (
+                'Reset password'
+              )}
             </Button>
           </form>
 
