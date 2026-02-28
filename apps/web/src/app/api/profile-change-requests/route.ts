@@ -3,7 +3,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
-async function getUserRole(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<string | null> {
+async function getUserRole(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string
+): Promise<string | null> {
   const { data } = await supabase
     .from('users')
     .select('role')
@@ -103,10 +106,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!employee_id || !changes || Object.keys(changes).length === 0) {
-      return NextResponse.json(
-        { error: 'employee_id and changes are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'employee_id and changes are required' }, { status: 400 });
     }
 
     // Verify the employee belongs to this user (unless admin)

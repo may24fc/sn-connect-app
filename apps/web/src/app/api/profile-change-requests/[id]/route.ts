@@ -9,10 +9,7 @@ const ADMIN_ROLES = ['admin', 'super_admin'];
  * Body: { action: 'approve' | 'reject', review_note?: string }
  * Only admin/super_admin
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
@@ -52,10 +49,7 @@ export async function PATCH(
     };
 
     if (!action || !['approve', 'reject'].includes(action)) {
-      return NextResponse.json(
-        { error: 'action must be "approve" or "reject"' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'action must be "approve" or "reject"' }, { status: 400 });
     }
 
     // Fetch the change request
@@ -94,10 +88,7 @@ export async function PATCH(
 
     if (updateError) {
       console.error('Error updating change request:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to update change request' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update change request' }, { status: 500 });
     }
 
     // If approved, apply the changes to the employees table

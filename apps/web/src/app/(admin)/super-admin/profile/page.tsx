@@ -69,7 +69,7 @@ function calculateAge(dateStr: string | null | undefined): string | null {
   }
 }
 
-export default function ProfilePage() {
+export default function SuperAdminProfilePage() {
   const { user } = useAuth();
   const { data: employeesData, isLoading } = useEmployees({
     search: user?.email || '',
@@ -77,7 +77,6 @@ export default function ProfilePage() {
   });
   const employee = employeesData?.data?.[0] ?? null;
 
-  // Fetch onboarding profile for enriched personal data
   const { data: profileData, isLoading: isProfileLoading } = useOnboardingProfile();
   const profile = profileData?.data ?? null;
 
@@ -86,7 +85,6 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const updateProfileInfo = useUpdateProfileInfo();
 
-  // Role metadata hooks (must be called before any early returns)
   const { data: metadataRecords = [], isLoading: isMetadataLoading } = useRoleMetadata(user?.id);
   const updateMetadata = useUpdateRoleMetadata(user?.id);
   const deleteMetadata = useDeleteRoleMetadata(user?.id);
@@ -110,24 +108,20 @@ export default function ProfilePage() {
       const file = e.target.files?.[0];
       if (!file) return;
 
-      // Show instant preview
       const previewUrl = URL.createObjectURL(file);
       setAvatarPreview(previewUrl);
 
       try {
         await uploadAvatar.mutateAsync(file);
       } catch {
-        // Revert preview on error
         setAvatarPreview(null);
       } finally {
-        // Reset file input so same file can be selected again
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
     [uploadAvatar]
   );
 
-  // Merge data: prefer onboarding profile for enriched fields, fallback to employee
   const mergedData = useMemo(() => {
     const rawBirthday = profile?.birthday ?? employee?.birthday ?? null;
     return {
@@ -153,7 +147,6 @@ export default function ProfilePage() {
     };
   }, [profile, employee, user?.email]);
 
-  /** Save handler for each editable section */
   const handleSectionSave = useCallback(
     async (updates: Record<string, string>) => {
       await updateProfileInfo.mutateAsync(updates);
@@ -164,7 +157,6 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        {/* Header Card skeleton */}
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col items-center gap-6 sm:flex-row">
@@ -181,7 +173,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Personal info section skeleton */}
         <div>
           <Skeleton className="h-6 w-48 mb-1" />
           <Skeleton className="h-4 w-72 mb-4" />
@@ -215,7 +206,6 @@ export default function ProfilePage() {
     );
   }
 
-  // Handle missing employee data gracefully - show UI structure
   const displayName = employee
     ? `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim()
     : (user?.name ?? 'User');
@@ -225,7 +215,7 @@ export default function ProfilePage() {
         ?.split(' ')
         .map((n) => n[0])
         .join('') ?? 'U');
-  const position = employee?.position ?? 'Position not set';
+  const position = employee?.position ?? 'Super Administrator';
   const department = employee?.department ?? 'Department not assigned';
   const employeeNumber = employee?.employee_number ?? 'N/A';
 
@@ -234,7 +224,6 @@ export default function ProfilePage() {
     metadata: (r.metadata ?? {}) as Record<string, unknown>,
   }));
 
-  // Build field definitions for each editable section
   const basicInfoFields: EditableField[] = [
     {
       key: 'nationality',
@@ -391,6 +380,9 @@ export default function ProfilePage() {
               <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
                 <Badge variant="secondary">{department}</Badge>
                 <Badge variant="outline">{employeeNumber}</Badge>
+                <Badge className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">
+                  Super Admin
+                </Badge>
               </div>
               {!employee && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
@@ -461,17 +453,17 @@ export default function ProfilePage() {
         </BentoGrid>
       </div>
 
-      {/* Role Details Section (V2-4.1) */}
+      {/* Role Details Section */}
       {!isMetadataLoading && (
         <div data-tour="profile-roles">
-        <RoleMetadataFormContainer
-          metadataRecords={formattedMetadata}
-          roleTypeRegistry={ROLE_TYPE_REGISTRY}
-          onSave={handleSaveMetadata}
-          onDelete={handleDeleteMetadata}
-          isSaving={updateMetadata.isPending}
-          isDeleting={deleteMetadata.isPending}
-        />
+          <RoleMetadataFormContainer
+            metadataRecords={formattedMetadata}
+            roleTypeRegistry={ROLE_TYPE_REGISTRY}
+            onSave={handleSaveMetadata}
+            onDelete={handleDeleteMetadata}
+            isSaving={updateMetadata.isPending}
+            isDeleting={deleteMetadata.isPending}
+          />
         </div>
       )}
     </div>

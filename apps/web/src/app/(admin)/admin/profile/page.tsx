@@ -1,12 +1,7 @@
 'use client';
 
-import {
-  BentoGrid,
-  BentoCard,
-  BentoCardHeader,
-  BentoCardTitle,
-  BentoCardContent,
-} from '@/components/data-display';
+import { BentoGrid } from '@/components/data-display';
+import { EditableProfileSection, type EditableField } from '@/components/profile/EditableProfileSection';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
@@ -16,11 +11,12 @@ import {
   useDeleteRoleMetadata,
   ROLE_TYPE_REGISTRY,
 } from '@/hooks/useRoleMetadata';
+import { useUpdateProfileInfo } from '@/hooks/useUpdateProfileInfo';
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   Badge,
-  Button,
   Card,
   CardContent,
   RoleMetadataFormContainer,
@@ -30,8 +26,6 @@ import {
   Building2,
   Calendar,
   Camera,
-  Edit2,
-  ExternalLink,
   Flag,
   GraduationCap,
   Heart,
@@ -41,60 +35,8 @@ import {
   Phone,
   User,
 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-
-// --- Profile Info Item ---
-
-interface ProfileInfoItemProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | null | undefined;
-  href?: string;
-  isExternal?: boolean;
-}
-
-function ProfileInfoItem({ icon, label, value, href, isExternal }: ProfileInfoItemProps): React.ReactNode {
-  const displayValue = value || '—';
-  const content = href && value ? (
-    <a
-      href={href}
-      target={isExternal ? '_blank' : undefined}
-      rel={isExternal ? 'noopener noreferrer' : undefined}
-      className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
-    >
-      {displayValue}
-      {isExternal && <ExternalLink className="h-3 w-3" />}
-    </a>
-  ) : (
-    <p className="text-sm text-zinc-900 dark:text-zinc-100">{displayValue}</p>
-  );
-
-  return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 text-zinc-400 dark:text-zinc-500">{icon}</span>
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-0.5">{label}</p>
-        {content}
-      </div>
-    </div>
-  );
-}
-
-function ProfileInfoSkeleton({ rows = 3 }: { rows?: number }): React.ReactNode {
-  return (
-    <div className="space-y-4">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={`skeleton-${i.toString()}`} className="flex items-start gap-3">
-          <Skeleton className="h-4 w-4 mt-0.5 rounded" />
-          <div className="flex-1 space-y-1">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useUploadAvatar } from '@/hooks/useAvatar';
 
 // --- Helpers ---
 
@@ -139,7 +81,10 @@ export default function AdminProfilePage() {
   const { data: profileData, isLoading: isProfileLoading } = useOnboardingProfile();
   const profile = profileData?.data ?? null;
 
-  const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadAvatar = useUploadAvatar();
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const updateProfileInfo = useUpdateProfileInfo();
 
   // Role metadata hooks (must be called before any early returns)
   const { data: metadataRecords = [], isLoading: isMetadataLoading } = useRoleMetadata(user?.id);
@@ -160,20 +105,45 @@ export default function AdminProfilePage() {
     [deleteMetadata]
   );
 
+  const handleAvatarChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Show instant preview
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+
+      try {
+        await uploadAvatar.mutateAsync(file);
+      } catch {
+        // Revert preview on error
+        setAvatarPreview(null);
+      } finally {
+        // Reset file input so same file can be selected again
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    },
+    [uploadAvatar]
+  );
+
   // Merge data: prefer onboarding profile for enriched fields, fallback to employee
   const mergedData = useMemo(() => {
-    const birthday = profile?.birthday ?? employee?.birthday ?? null;
+    const rawBirthday = profile?.birthday ?? employee?.birthday ?? null;
     return {
       nationality: profile?.nationality ?? null,
       contactNumber: profile?.contact_number ?? employee?.phone ?? null,
       emailAddress: profile?.email_address ?? employee?.company_email ?? user?.email ?? null,
-      education: profile?.education
+      education: profile?.education ?? null,
+      major: profile?.major ?? null,
+      educationDisplay: profile?.education
         ? profile.major
           ? `${profile.education} — ${profile.major}`
           : profile.education
         : null,
-      birthday: formatBirthday(birthday),
-      age: profile?.age?.toString() ?? calculateAge(birthday),
+      rawBirthday: rawBirthday ?? null,
+      birthday: formatBirthday(rawBirthday),
+      age: profile?.age?.toString() ?? calculateAge(rawBirthday),
       address: profile?.address ?? employee?.address ?? null,
       emergencyContactName: profile?.emergency_contact_name ?? employee?.emergency_contact_name ?? null,
       emergencyContactNumber: profile?.emergency_contact_number ?? employee?.emergency_contact_number ?? null,
@@ -183,16 +153,64 @@ export default function AdminProfilePage() {
     };
   }, [profile, employee, user?.email]);
 
+  /** Save handler for each editable section */
+  const handleSectionSave = useCallback(
+    async (updates: Record<string, string>) => {
+      await updateProfileInfo.mutateAsync(updates);
+    },
+    [updateProfileInfo]
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-6">
+        {/* Header Card skeleton */}
         <Card>
           <CardContent className="p-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-24 w-24 rounded-full bg-muted" />
+            <div className="flex flex-col items-center gap-6 sm:flex-row">
+              <Skeleton className="h-24 w-24 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-4 w-32" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Personal info section skeleton */}
+        <div>
+          <Skeleton className="h-6 w-48 mb-1" />
+          <Skeleton className="h-4 w-72 mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={`card-${i.toString()}`}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-4"
+                style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Skeleton className="h-4 w-4 rounded" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                {Array.from({ length: i === 1 ? 4 : i === 4 ? 3 : i === 2 ? 2 : i === 3 ? 1 : 3 }).map(
+                  (_, j) => (
+                    <div key={`field-${j.toString()}`} className="flex items-start gap-3">
+                      <Skeleton className="h-4 w-4 mt-0.5 rounded" />
+                      <div className="flex-1 space-y-1">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -216,9 +234,118 @@ export default function AdminProfilePage() {
     metadata: (r.metadata ?? {}) as Record<string, unknown>,
   }));
 
-  const emergencyContact = mergedData.emergencyContactRelationship
-    ? `${mergedData.emergencyContactNumber ?? '—'} (${mergedData.emergencyContactRelationship})`
-    : mergedData.emergencyContactNumber;
+  // Build field definitions for each editable section
+  const basicInfoFields: EditableField[] = [
+    {
+      key: 'nationality',
+      label: 'Nationality',
+      icon: <Flag className="h-4 w-4" />,
+      displayValue: mergedData.nationality,
+    },
+    {
+      key: 'birthday',
+      label: 'Birthday',
+      icon: <Calendar className="h-4 w-4" />,
+      displayValue: mergedData.birthday,
+      editValue: mergedData.rawBirthday ?? '',
+      inputType: 'date',
+    },
+    {
+      key: 'age',
+      label: 'Age',
+      icon: <User className="h-4 w-4" />,
+      displayValue: mergedData.age,
+      readOnly: true,
+    },
+  ];
+
+  const contactFields: EditableField[] = [
+    {
+      key: 'contactNumber',
+      label: 'Contact Number',
+      icon: <Phone className="h-4 w-4" />,
+      displayValue: mergedData.contactNumber,
+      inputType: 'tel',
+    },
+    {
+      key: 'emailAddress',
+      label: 'Email Address',
+      icon: <Mail className="h-4 w-4" />,
+      displayValue: mergedData.emailAddress,
+      href: mergedData.emailAddress ? `mailto:${mergedData.emailAddress}` : undefined,
+      inputType: 'email',
+    },
+    {
+      key: 'companyEmail',
+      label: 'Company Email',
+      icon: <Building2 className="h-4 w-4" />,
+      displayValue: mergedData.companyEmail,
+      href: mergedData.companyEmail ? `mailto:${mergedData.companyEmail}` : undefined,
+      inputType: 'email',
+    },
+    {
+      key: 'linkedinProfileUrl',
+      label: 'LinkedIn Profile',
+      icon: <Linkedin className="h-4 w-4" />,
+      displayValue: mergedData.linkedinUrl ? 'View Profile' : null,
+      editValue: mergedData.linkedinUrl ?? '',
+      href: mergedData.linkedinUrl ?? undefined,
+      isExternal: true,
+      inputType: 'url',
+      placeholder: 'https://linkedin.com/in/...',
+    },
+  ];
+
+  const educationFields: EditableField[] = [
+    {
+      key: 'education',
+      label: 'Education',
+      icon: <GraduationCap className="h-4 w-4" />,
+      displayValue: mergedData.educationDisplay,
+      editValue: mergedData.education ?? '',
+      placeholder: 'e.g. Bachelor of Science in Computer Science',
+    },
+    {
+      key: 'major',
+      label: 'Major / Specialization',
+      icon: <GraduationCap className="h-4 w-4" />,
+      displayValue: mergedData.major,
+      placeholder: 'e.g. Software Engineering',
+    },
+  ];
+
+  const addressFields: EditableField[] = [
+    {
+      key: 'address',
+      label: 'Address',
+      icon: <MapPin className="h-4 w-4" />,
+      displayValue: mergedData.address,
+      placeholder: 'Full address',
+    },
+  ];
+
+  const emergencyContactFields: EditableField[] = [
+    {
+      key: 'emergencyContactName',
+      label: 'Contact Name',
+      icon: <User className="h-4 w-4" />,
+      displayValue: mergedData.emergencyContactName,
+    },
+    {
+      key: 'emergencyContactNumber',
+      label: 'Contact Number',
+      icon: <Phone className="h-4 w-4" />,
+      displayValue: mergedData.emergencyContactNumber,
+      inputType: 'tel',
+    },
+    {
+      key: 'emergencyContactRelationship',
+      label: 'Relationship',
+      icon: <Heart className="h-4 w-4" />,
+      displayValue: mergedData.emergencyContactRelationship,
+      placeholder: 'e.g. Parent, Spouse, Sibling',
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -227,16 +354,33 @@ export default function AdminProfilePage() {
           <div className="flex flex-col items-center gap-6 sm:flex-row">
             <div className="relative" data-tour="profile-avatar">
               <Avatar className="h-24 w-24">
+                {(avatarPreview || user?.avatarUrl) && (
+                  <AvatarImage src={avatarPreview ?? user?.avatarUrl} />
+                )}
                 <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                   {initials}
                 </AvatarFallback>
               </Avatar>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleAvatarChange}
+                className="hidden"
+                aria-label="Upload profile picture"
+              />
               <button
                 type="button"
-                className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadAvatar.isPending}
+                className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 aria-label="Change profile picture"
               >
-                <Camera className="h-4 w-4" />
+                {uploadAvatar.isPending ? (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </button>
             </div>
 
@@ -254,15 +398,6 @@ export default function AdminProfilePage() {
                 </p>
               )}
             </div>
-
-            <Button
-              variant={isEditing ? 'outline' : 'default'}
-              onClick={() => setIsEditing(!isEditing)}
-              data-tour="profile-edit"
-            >
-              <Edit2 className="mr-2 h-4 w-4" />
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -277,135 +412,51 @@ export default function AdminProfilePage() {
         </p>
 
         <BentoGrid columns={3}>
-          {/* Basic Info */}
-          <BentoCard>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<User className="h-4 w-4" />}>Basic Info</BentoCardTitle>
-            </BentoCardHeader>
-            <BentoCardContent>
-              {isProfileLoading ? (
-                <ProfileInfoSkeleton rows={3} />
-              ) : (
-                <div className="space-y-4">
-                  <ProfileInfoItem
-                    icon={<Flag className="h-4 w-4" />}
-                    label="Nationality"
-                    value={mergedData.nationality}
-                  />
-                  <ProfileInfoItem
-                    icon={<Calendar className="h-4 w-4" />}
-                    label="Birthday"
-                    value={mergedData.birthday}
-                  />
-                  <ProfileInfoItem
-                    icon={<User className="h-4 w-4" />}
-                    label="Age"
-                    value={mergedData.age}
-                  />
-                </div>
-              )}
-            </BentoCardContent>
-          </BentoCard>
+          <EditableProfileSection
+            title="Basic Info"
+            titleIcon={<User className="h-4 w-4" />}
+            fields={basicInfoFields}
+            isLoading={isProfileLoading}
+            onSave={handleSectionSave}
+            isSaving={updateProfileInfo.isPending}
+          />
 
-          {/* Contact Info */}
-          <BentoCard>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<Phone className="h-4 w-4" />}>Contact</BentoCardTitle>
-            </BentoCardHeader>
-            <BentoCardContent>
-              {isProfileLoading ? (
-                <ProfileInfoSkeleton rows={4} />
-              ) : (
-                <div className="space-y-4">
-                  <ProfileInfoItem
-                    icon={<Phone className="h-4 w-4" />}
-                    label="Contact Number"
-                    value={mergedData.contactNumber}
-                  />
-                  <ProfileInfoItem
-                    icon={<Mail className="h-4 w-4" />}
-                    label="Email Address"
-                    value={mergedData.emailAddress}
-                    href={mergedData.emailAddress ? `mailto:${mergedData.emailAddress}` : undefined}
-                  />
-                  <ProfileInfoItem
-                    icon={<Building2 className="h-4 w-4" />}
-                    label="Company Email"
-                    value={mergedData.companyEmail}
-                    href={mergedData.companyEmail ? `mailto:${mergedData.companyEmail}` : undefined}
-                  />
-                  <ProfileInfoItem
-                    icon={<Linkedin className="h-4 w-4" />}
-                    label="LinkedIn Profile"
-                    value={mergedData.linkedinUrl ? 'View Profile' : null}
-                    href={mergedData.linkedinUrl ?? undefined}
-                    isExternal
-                  />
-                </div>
-              )}
-            </BentoCardContent>
-          </BentoCard>
+          <EditableProfileSection
+            title="Contact"
+            titleIcon={<Phone className="h-4 w-4" />}
+            fields={contactFields}
+            isLoading={isProfileLoading}
+            onSave={handleSectionSave}
+            isSaving={updateProfileInfo.isPending}
+          />
 
-          {/* Education */}
-          <BentoCard>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<GraduationCap className="h-4 w-4" />}>Education</BentoCardTitle>
-            </BentoCardHeader>
-            <BentoCardContent>
-              {isProfileLoading ? (
-                <ProfileInfoSkeleton rows={1} />
-              ) : (
-                <ProfileInfoItem
-                  icon={<GraduationCap className="h-4 w-4" />}
-                  label="Education"
-                  value={mergedData.education}
-                />
-              )}
-            </BentoCardContent>
-          </BentoCard>
+          <EditableProfileSection
+            title="Education"
+            titleIcon={<GraduationCap className="h-4 w-4" />}
+            fields={educationFields}
+            isLoading={isProfileLoading}
+            onSave={handleSectionSave}
+            isSaving={updateProfileInfo.isPending}
+          />
 
-          {/* Address */}
-          <BentoCard colSpan={2}>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<MapPin className="h-4 w-4" />}>Address</BentoCardTitle>
-            </BentoCardHeader>
-            <BentoCardContent>
-              {isProfileLoading ? (
-                <ProfileInfoSkeleton rows={1} />
-              ) : (
-                <ProfileInfoItem
-                  icon={<MapPin className="h-4 w-4" />}
-                  label="Address"
-                  value={mergedData.address}
-                />
-              )}
-            </BentoCardContent>
-          </BentoCard>
+          <EditableProfileSection
+            title="Address"
+            titleIcon={<MapPin className="h-4 w-4" />}
+            fields={addressFields}
+            isLoading={isProfileLoading}
+            onSave={handleSectionSave}
+            isSaving={updateProfileInfo.isPending}
+            colSpan={2}
+          />
 
-          {/* Emergency Contact */}
-          <BentoCard>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<Heart className="h-4 w-4" />}>Emergency Contact</BentoCardTitle>
-            </BentoCardHeader>
-            <BentoCardContent>
-              {isProfileLoading ? (
-                <ProfileInfoSkeleton rows={2} />
-              ) : (
-                <div className="space-y-4">
-                  <ProfileInfoItem
-                    icon={<User className="h-4 w-4" />}
-                    label="Contact Name"
-                    value={mergedData.emergencyContactName}
-                  />
-                  <ProfileInfoItem
-                    icon={<Phone className="h-4 w-4" />}
-                    label="Number & Relationship"
-                    value={emergencyContact}
-                  />
-                </div>
-              )}
-            </BentoCardContent>
-          </BentoCard>
+          <EditableProfileSection
+            title="Emergency Contact"
+            titleIcon={<Heart className="h-4 w-4" />}
+            fields={emergencyContactFields}
+            isLoading={isProfileLoading}
+            onSave={handleSectionSave}
+            isSaving={updateProfileInfo.isPending}
+          />
         </BentoGrid>
       </div>
 
