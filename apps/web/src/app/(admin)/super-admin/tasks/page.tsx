@@ -31,10 +31,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   TaskPriorityBadge,
   TaskStatusBadge,
   Textarea,
@@ -214,18 +210,34 @@ export default function TaskManagementPage() {
       </div>
 
       {/* View Tabs */}
-      <Tabs value={activeView} onValueChange={(v) => setActiveView(v as ViewMode)}>
+      <div>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="list" className="gap-1.5">
-              <List className="h-4 w-4" />
-              List View
-            </TabsTrigger>
-            <TabsTrigger value="board" className="gap-1.5">
-              <LayoutGrid className="h-4 w-4" />
-              Board View
-            </TabsTrigger>
-          </TabsList>
+          <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+            <button
+              type="button"
+              onClick={() => setActiveView('list')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeView === 'list'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+              }`}
+            >
+              <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView('board')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeView === 'board'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Board
+            </button>
+          </div>
 
           {/* Search */}
           <Input
@@ -237,7 +249,7 @@ export default function TaskManagementPage() {
         </div>
 
         {/* List View */}
-        <TabsContent value="list" className="mt-4">
+        {activeView === 'list' && <div className="mt-4">
           {isLoading ? (
             <TasksLoadingSkeleton viewMode="list" />
           ) : error ? (
@@ -247,10 +259,10 @@ export default function TaskManagementPage() {
           ) : (
             <TaskListView tasks={tasks} assigneeById={assigneeById} />
           )}
-        </TabsContent>
+        </div>}
 
         {/* Board View */}
-        <TabsContent value="board" className="mt-4">
+        {activeView === 'board' && <div className="mt-4">
           {isLoading ? (
             <TasksLoadingSkeleton viewMode="board" />
           ) : error ? (
@@ -270,8 +282,8 @@ export default function TaskManagementPage() {
               linkPrefix="/super-admin/tasks"
             />
           )}
-        </TabsContent>
-      </Tabs>
+        </div>}
+      </div>
 
       {/* Create Task Modal */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

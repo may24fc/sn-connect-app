@@ -1,3 +1,7 @@
+import {
+  createNotification,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -121,6 +125,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (error || !data) {
       console.error('Error creating task comment:', error);
       return NextResponse.json({ error: 'Failed to create comment' }, { status: 500 });
+    }
+
+    // Notify task assignee and assigner about the new comment
+    const { data: task } = await supabase
+      .from('tasks')
+      .select('title, assigned_to, assigned_by')
+      .eq('id', id)
+      .single();
+
+    if (task) {
+      const commenterName = await getUserDisplayName(user.id);
+      const notifyIds = new Set<string>();
+      if (task.assigned_to && task.assigned_to !== user.id) notifyIds.add(task.assigned_to);
+      if (task.assigned_by && task.assigned_by !== user.id) notifyIds.add(task.assigned_by);
+
+      for (const recipientId of notifyIds) {
+        createNotification({
+          userId: recipientId,
+          type: 'system',
+          title: 'New Comment on Task',
+          message: `${commenterName} commented on "${task.title}"`,
+          link: `/tasks`,
+          metadata: { taskId: id, commentId: data.id },
+        });
+      }
     }
 
     return NextResponse.json({ data }, { status: 201 });
