@@ -137,7 +137,7 @@ function CategoryFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900">
+      <div className="w-full max-w-lg rounded-lg bg-popover p-6 shadow-xl">
         <h2 className="mb-4 text-lg font-semibold">
           {mode === 'create' ? 'Create Category' : 'Edit Category'}
         </h2>
@@ -253,7 +253,7 @@ function CategoryFormModal({
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="h-4 w-4 rounded border-zinc-300"
+                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
                 />
                 Active
               </label>
@@ -311,9 +311,9 @@ function CategoryTreeRow({
                 className="rounded p-0.5 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
                 {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-zinc-500" />
+                  <ChevronDown className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-zinc-500" />
+                  <ChevronRight className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                 )}
               </button>
             ) : (
@@ -339,7 +339,7 @@ function CategoryTreeRow({
         <td className="whitespace-nowrap px-4 py-3 text-center text-sm">
           <Badge variant="secondary">{node.resourceCount}</Badge>
         </td>
-        <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-zinc-500">
+        <td className="whitespace-nowrap px-4 py-3 text-center text-sm text-zinc-500 dark:text-zinc-400">
           {node.displayOrder}
         </td>
         <td className="whitespace-nowrap px-4 py-3 text-right">

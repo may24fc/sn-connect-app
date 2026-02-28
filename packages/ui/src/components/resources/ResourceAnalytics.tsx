@@ -40,7 +40,7 @@ export function ResourceAnalytics({
         </div>
       ) : null}
 
-      <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+      <Card className="bg-card border border-border rounded-lg p-4">
         <CardHeader className="p-0 pb-3">
           <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400">View Trend</CardTitle>
         </CardHeader>
@@ -63,7 +63,7 @@ export function ResourceAnalytics({
 
 function StatCard({ label, value }: { label: string; value: string | number }): React.ReactNode {
   return (
-    <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+    <Card className="bg-card border border-border rounded-lg p-4">
       <CardHeader className="p-0 pb-2">
         <CardTitle className="text-sm text-zinc-600 dark:text-zinc-400">{label}</CardTitle>
       </CardHeader>

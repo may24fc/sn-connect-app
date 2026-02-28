@@ -61,7 +61,7 @@ export function CategoryBrowser({
               'group cursor-pointer border rounded-lg p-4 transition-colors text-center',
               isSelected
                 ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/30'
-                : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'
+                : 'border-zinc-200 dark:border-zinc-800 bg-card hover:border-zinc-300 dark:hover:border-zinc-700'
             )}
           >
             <CardContent className="p-0 flex flex-col items-center gap-2">
@@ -85,7 +85,7 @@ export function CategoryBrowser({
                 {cat.label}
               </span>
               {cat.count !== undefined ? (
-                <span className="text-[10px] text-zinc-400">{cat.count} resources</span>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">{cat.count} resources</span>
               ) : null}
             </CardContent>
           </Card>

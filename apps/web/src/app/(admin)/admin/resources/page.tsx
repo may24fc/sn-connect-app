@@ -6,6 +6,11 @@ import {
   Button,
   Card,
   CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   ResourceCard,
   ResourceFilters,
@@ -14,7 +19,7 @@ import {
   Skeleton,
   useToast,
 } from '@hr-portal/ui';
-import { FileImage } from 'lucide-react';
+import { Archive, FileImage, FolderOpen, MoreHorizontal, Star, StarOff, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -65,7 +70,7 @@ export default function AdminResourcesPage() {
 
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-card p-6">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Resources</h1>
@@ -73,12 +78,32 @@ export default function AdminResourcesPage() {
               Manage drafts, published resources, and engagement
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link href="/admin/resources/collections">Collections</Link>
-            </Button>
-            <Button variant="outline">Bulk Upload</Button>
-            <Button variant="outline">Bulk Archive</Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="h-4 w-4 mr-1.5" />
+                  Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/resources/collections">
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    Collections
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Bulk Upload
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Archive className="mr-2 h-4 w-4" />
+                  Bulk Archive
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               asChild
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
@@ -97,7 +122,7 @@ export default function AdminResourcesPage() {
           ].map((stat) => (
             <Card
               key={stat.label}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
+              className="bg-card border border-border rounded-lg p-4"
             >
               <CardContent className="p-0">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{stat.label}</p>
@@ -122,7 +147,7 @@ export default function AdminResourcesPage() {
             {[...Array(8)].map((_, i) => (
               <Card
                 key={i}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden"
+                className="bg-card border border-border rounded-lg overflow-hidden"
               >
                 <Skeleton className="h-48 w-full rounded-none" />
                 <CardContent className="p-4 space-y-3">
@@ -138,7 +163,7 @@ export default function AdminResourcesPage() {
             ))}
           </ResourceGrid>
         ) : error ? (
-          <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+          <Card className="bg-card border border-border rounded-lg p-4">
             <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400">
               Failed to load resources.
             </CardContent>
@@ -158,88 +183,97 @@ export default function AdminResourcesPage() {
             ) : (
               <ResourceGrid
                 columns={4}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
               >
                 {resources.map((resource) => (
-                  <div key={resource.id} className="space-y-2">
-                    <ResourceCard
-                      id={resource.id}
-                      title={resource.title}
-                      excerpt={resource.excerpt}
-                      resourceType={resource.resource_type}
-                      category={resource.category}
-                      status={resource.status}
-                      tags={resource.tags}
-                      thumbnailPath={resource.thumbnail_path}
-                      viewCount={resource.view_count}
-                      downloadCount={resource.download_count}
-                      bookmarkCount={resource.bookmark_count}
-                      isFeatured={resource.is_featured}
-                      isPinned={resource.is_pinned}
-                      dateLabel={formatDate(resource.published_at || resource.created_at)}
-                      onClick={() => {
-                        window.location.href = `/admin/resources/${resource.id}`;
-                      }}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          toggleFeatured.mutate(
-                            {
-                              id: resource.id,
-                              featured: !resource.is_featured,
-                            },
-                            {
+                  <ResourceCard
+                    key={resource.id}
+                    id={resource.id}
+                    title={resource.title}
+                    excerpt={resource.excerpt}
+                    resourceType={resource.resource_type}
+                    category={resource.category}
+                    status={resource.status}
+                    tags={resource.tags}
+                    thumbnailPath={resource.thumbnail_path}
+                    viewCount={resource.view_count}
+                    downloadCount={resource.download_count}
+                    bookmarkCount={resource.bookmark_count}
+                    isFeatured={resource.is_featured}
+                    isPinned={resource.is_pinned}
+                    dateLabel={formatDate(resource.published_at || resource.created_at)}
+                    onClick={() => {
+                      window.location.href = `/admin/resources/${resource.id}`;
+                    }}
+                    actions={
+                      // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation prevents card click
+                      <div
+                        className="flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            toggleFeatured.mutate(
+                              {
+                                id: resource.id,
+                                featured: !resource.is_featured,
+                              },
+                              {
+                                onSuccess: () => {
+                                  addToast({
+                                    title: resource.is_featured
+                                      ? 'Resource unfeatured'
+                                      : 'Resource featured',
+                                    description: 'Changes saved successfully',
+                                    variant: 'success',
+                                  });
+                                },
+                                onError: () => {
+                                  addToast({
+                                    title: 'Error',
+                                    description: 'Failed to update resource',
+                                    variant: 'error',
+                                  });
+                                },
+                              }
+                            )
+                          }
+                        >
+                          {resource.is_featured ? (
+                            <><StarOff className="mr-1 h-3.5 w-3.5" /> Unfeature</>
+                          ) : (
+                            <><Star className="mr-1 h-3.5 w-3.5" /> Feature</>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            archiveResource.mutate(resource.id, {
                               onSuccess: () => {
                                 addToast({
-                                  title: resource.is_featured
-                                    ? 'Resource unfeatured'
-                                    : 'Resource featured',
-                                  description: 'Changes saved successfully',
+                                  title: 'Resource archived',
+                                  description: 'Resource moved to archive',
                                   variant: 'success',
                                 });
                               },
                               onError: () => {
                                 addToast({
                                   title: 'Error',
-                                  description: 'Failed to update resource',
+                                  description: 'Failed to archive resource',
                                   variant: 'error',
                                 });
                               },
-                            }
-                          )
-                        }
-                      >
-                        {resource.is_featured ? 'Unfeature' : 'Feature'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          archiveResource.mutate(resource.id, {
-                            onSuccess: () => {
-                              addToast({
-                                title: 'Resource archived',
-                                description: 'Resource moved to archive',
-                                variant: 'success',
-                              });
-                            },
-                            onError: () => {
-                              addToast({
-                                title: 'Error',
-                                description: 'Failed to archive resource',
-                                variant: 'error',
-                              });
-                            },
-                          })
-                        }
-                      >
-                        Archive
-                      </Button>
-                    </div>
-                  </div>
+                            })
+                          }
+                        >
+                          <Archive className="mr-1 h-3.5 w-3.5" /> Archive
+                        </Button>
+                      </div>
+                    }
+                  />
                 ))}
               </ResourceGrid>
             )}

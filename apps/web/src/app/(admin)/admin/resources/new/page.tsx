@@ -6,42 +6,61 @@ import {
   Input,
   ResourceTargetingSelector,
   ResourceUploader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   TagInput,
   Textarea,
 } from '@hr-portal/ui';
 import {
+  AlertTriangle,
+  ArrowLeft,
+  Award,
+  BookOpen,
   ChevronDown,
   ChevronUp,
   FileText,
+  FolderOpen,
   Globe,
+  Heart,
+  Image,
   Link2,
+  MonitorPlay,
+  MousePointer,
+  Presentation,
   Send,
   Tag as TagIcon,
   Target,
+  TrendingUp,
   Upload,
+  Wrench,
+  Zap,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const categoryOptions = [
-  { value: 'onboarding', label: 'Onboarding', icon: '👋' },
-  { value: 'training', label: 'Training', icon: '📚' },
-  { value: 'policies', label: 'Policies & Guidelines', icon: '📋' },
-  { value: 'benefits', label: 'Benefits', icon: '🎁' },
-  { value: 'tools', label: 'Tools & Software', icon: '🛠️' },
-  { value: 'culture', label: 'Culture & Values', icon: '❤️' },
-  { value: 'forms_templates', label: 'Forms & Templates', icon: '📝' },
-  { value: 'performance', label: 'Performance', icon: '📊' },
-  { value: 'emergency', label: 'Emergency Procedures', icon: '🚨' },
+const categoryOptions: Array<{ value: string; label: string; icon: LucideIcon }> = [
+  { value: 'onboarding', label: 'Onboarding', icon: FolderOpen },
+  { value: 'training', label: 'Training', icon: BookOpen },
+  { value: 'policies', label: 'Policies & Guidelines', icon: FileText },
+  { value: 'benefits', label: 'Benefits', icon: Award },
+  { value: 'tools', label: 'Tools & Software', icon: Wrench },
+  { value: 'culture', label: 'Culture & Values', icon: Heart },
+  { value: 'forms_templates', label: 'Forms & Templates', icon: FileText },
+  { value: 'performance', label: 'Performance', icon: TrendingUp },
+  { value: 'emergency', label: 'Emergency Procedures', icon: AlertTriangle },
 ];
 
-const resourceTypeOptions = [
-  { value: 'document', label: 'Document', icon: '📄' },
-  { value: 'video', label: 'Video', icon: '🎥' },
-  { value: 'presentation', label: 'Presentation', icon: '📊' },
-  { value: 'link', label: 'External Link', icon: '🔗' },
-  { value: 'image', label: 'Image', icon: '🖼️' },
-  { value: 'interactive', label: 'Interactive', icon: '⚡' },
+const resourceTypeOptions: Array<{ value: string; label: string; icon: LucideIcon }> = [
+  { value: 'document', label: 'Document', icon: FileText },
+  { value: 'video', label: 'Video', icon: MonitorPlay },
+  { value: 'presentation', label: 'Presentation', icon: Presentation },
+  { value: 'link', label: 'External Link', icon: Link2 },
+  { value: 'image', label: 'Image', icon: Image },
+  { value: 'interactive', label: 'Interactive', icon: Zap },
 ];
 
 export default function NewResourcePage() {
@@ -136,21 +155,22 @@ export default function NewResourcePage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Header */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-card">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               onClick={() => router.push('/admin/resources')}
-              className="text-zinc-500"
+              className="text-zinc-500 dark:text-zinc-400"
             >
-              ← Back
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back
             </Button>
             <div>
               <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
                 New Resource
               </h1>
-              <p className="text-sm text-zinc-500">Share documents, videos, and links</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Share documents, videos, and links</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -164,10 +184,10 @@ export default function NewResourcePage() {
             <Button
               onClick={() => create(true)}
               disabled={createResource.isPending || !canPublish}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
             >
               <Send className="w-4 h-4 mr-2" />
-              Publish
+              {createResource.isPending ? 'Publishing...' : 'Publish'}
             </Button>
           </div>
         </div>
@@ -182,7 +202,7 @@ export default function NewResourcePage() {
               placeholder="Resource title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-2xl font-semibold border-0 px-0 focus-visible:ring-0 placeholder:text-zinc-300"
+              className="text-2xl font-semibold border-0 px-0 focus-visible:ring-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
             />
             <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
           </div>
@@ -203,55 +223,63 @@ export default function NewResourcePage() {
           {/* Resource Type & Category */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label className="text-sm font-medium flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
                 <FileText className="w-4 h-4" />
                 Resource Type
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                {resourceTypeOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setResourceType(option.value)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors text-sm ${
-                      resourceType === option.value
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950 dark:border-indigo-800'
-                        : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900'
-                    }`}
-                  >
-                    <span>{option.icon}</span>
-                    <span>{option.label}</span>
-                  </button>
-                ))}
-              </div>
+              <Select value={resourceType} onValueChange={setResourceType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {resourceTypeOptions.map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          {option.label}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label className="text-sm font-medium flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
                 <TagIcon className="w-4 h-4" />
                 Category
               </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm bg-white dark:bg-zinc-900"
-              >
-                {categoryOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.icon} {option.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          {option.label}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Content Upload or Link */}
-          <div className="space-y-3 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 bg-white dark:bg-zinc-900">
+          <div className="space-y-3 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6 bg-card">
             <div className="flex items-center gap-2 mb-2">
               {isExternalLink ? (
-                <Link2 className="w-5 h-5 text-zinc-500" />
+                <Link2 className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               ) : (
-                <Upload className="w-5 h-5 text-zinc-500" />
+                <Upload className="w-5 h-5 text-zinc-500 dark:text-zinc-400" />
               )}
               <h3 className="text-sm font-medium">
                 {isExternalLink ? 'External Link' : 'Upload File'}
@@ -275,7 +303,7 @@ export default function NewResourcePage() {
                   <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                     <FileText className="w-4 h-4" />
                     <span>{fileName}</span>
-                    <span className="text-xs text-zinc-500">
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
                       ({(fileMeta?.fileSize ? fileMeta.fileSize / 1024 / 1024 : 0).toFixed(2)} MB)
                     </span>
                   </div>
@@ -291,7 +319,7 @@ export default function NewResourcePage() {
               Tags (Optional)
             </label>
             <TagInput value={tags} onChange={setTags} />
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Add tags to help people find this resource (press Enter to add)
             </p>
           </div>
@@ -321,18 +349,18 @@ export default function NewResourcePage() {
                 className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-zinc-500" />
+                  <Target className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                   <span className="text-sm font-medium">Who can access this? (Optional)</span>
                 </div>
                 {showTargeting ? (
-                  <ChevronUp className="w-4 h-4 text-zinc-500" />
+                  <ChevronUp className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-zinc-500" />
+                  <ChevronDown className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                 )}
               </button>
               {showTargeting && (
                 <div className="p-4 pt-0 border-t border-zinc-200 dark:border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-3">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
                     Leave empty to make available to all employees
                   </p>
                   <ResourceTargetingSelector value={targeting} onChange={setTargeting} />

@@ -12,18 +12,16 @@ import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hoo
 import { formatDate } from '@/lib/format';
 import {
   ActiveFilterBadges,
+  AnnouncementCard,
   AnnouncementDetailDialog,
-  Badge,
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CategoryBrowser,
   Input,
   MultiSelectFilter,
-  Progress,
   ResourceCard,
   ResourceGrid,
   Skeleton,
@@ -34,58 +32,13 @@ import {
 } from '@hr-portal/ui';
 import type { FilterOption } from '@hr-portal/ui';
 import {
-  ArrowRight,
-  Award,
   BookOpen,
   Megaphone,
   Search,
   Star,
-  Target,
-  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-
-interface GrowthItem {
-  id: string;
-  title: string;
-  description: string;
-  progress: number;
-  dueDate?: string;
-  type: 'course' | 'goal' | 'achievement';
-}
-
-const growthItems: Array<GrowthItem> = [
-  {
-    id: '1',
-    title: 'Leadership Fundamentals',
-    description: 'Complete the leadership training course',
-    progress: 75,
-    dueDate: 'Feb 28, 2026',
-    type: 'course',
-  },
-  {
-    id: '2',
-    title: 'Q1 Performance Goals',
-    description: 'Achieve quarterly performance targets',
-    progress: 40,
-    dueDate: 'Mar 31, 2026',
-    type: 'goal',
-  },
-  {
-    id: '3',
-    title: 'Communication Skills',
-    description: 'Complete the effective communication workshop',
-    progress: 100,
-    type: 'course',
-  },
-];
-
-const typeIcons: Record<GrowthItem['type'], typeof BookOpen> = {
-  course: BookOpen,
-  goal: Target,
-  achievement: Award,
-};
 
 const categoryLabels: Record<string, string> = {
   onboarding: 'Onboarding',
@@ -200,8 +153,6 @@ export default function InformationHubPage() {
     [announcements, pinnedOrUrgentIds]
   );
 
-  const completedCourses = growthItems.filter((item) => item.progress === 100).length;
-
   const handleBookmarkToggle = (resourceId: string): void => {
     if (bookmarkIds.has(resourceId)) {
       removeBookmark.mutate(resourceId);
@@ -224,12 +175,12 @@ export default function InformationHubPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Information Hub</h1>
         <p className="text-muted-foreground">
-          Stay updated with announcements, resources, and your growth plans
+          Stay updated with announcements and resources
         </p>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 flex items-center gap-3">
-        <Search className="h-4 w-4 text-zinc-500" />
+      <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-3">
+        <Search className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
         <Input
           placeholder="Search announcements and resources"
           value={search}
@@ -250,10 +201,6 @@ export default function InformationHubPage() {
           <TabsTrigger value="resources">
             <BookOpen className="mr-2 h-4 w-4" />
             Resources
-          </TabsTrigger>
-          <TabsTrigger value="growth">
-            <TrendingUp className="mr-2 h-4 w-4" />
-            My Growth
           </TabsTrigger>
         </TabsList>
 
@@ -293,39 +240,30 @@ export default function InformationHubPage() {
           </div>
 
           {urgentAnnouncements.map((announcement) => (
-            <div
+            <AnnouncementCard
               key={`urgent-${announcement.id}`}
-              className="bg-rose-50 dark:bg-rose-950/30 border-l-4 border-rose-600 rounded-lg p-4 cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors"
+              title={announcement.title}
+              excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
+              category={announcementCategoryLabels[announcement.category] || announcement.category}
+              priority={announcement.priority}
+              dateLabel={formatDate(announcement.published_at || announcement.created_at)}
+              isRead={announcement.is_read}
               onClick={() => handleAnnouncementClick(announcement)}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                  {announcement.title}
-                </h3>
-                <Badge variant="destructive">Urgent</Badge>
-              </div>
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1 line-clamp-2">
-                {announcement.excerpt || announcement.content.slice(0, 200)}
-              </p>
-            </div>
+            />
           ))}
 
           {pinnedAnnouncements.map((announcement) => (
-            <div
+            <AnnouncementCard
               key={`pinned-${announcement.id}`}
-              className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 border-l-4 border-indigo-600 rounded-lg p-4 cursor-pointer hover:from-indigo-100 hover:to-indigo-150 dark:hover:from-indigo-950/70 dark:hover:to-indigo-900/70 transition-colors"
+              title={announcement.title}
+              excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
+              category={announcementCategoryLabels[announcement.category] || announcement.category}
+              priority={announcement.priority}
+              dateLabel={formatDate(announcement.published_at || announcement.created_at)}
+              isPinned
+              isRead={announcement.is_read}
               onClick={() => handleAnnouncementClick(announcement)}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                  {announcement.title}
-                </h3>
-                <Badge>Pinned</Badge>
-              </div>
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1 line-clamp-2">
-                {announcement.excerpt || announcement.content.slice(0, 200)}
-              </p>
-            </div>
+            />
           ))}
 
           {isAnnouncementsLoading ? (
@@ -334,7 +272,7 @@ export default function InformationHubPage() {
                 <div
                   // biome-ignore lint: skeleton placeholder
                   key={i}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-2"
+                  className="bg-card border border-border rounded-lg p-4 space-y-2"
                 >
                   <div className="flex items-center justify-between">
                     <Skeleton className="h-4 w-48" />
@@ -349,36 +287,23 @@ export default function InformationHubPage() {
             pinnedAnnouncements.length === 0 &&
             urgentAnnouncements.length === 0 ? (
             <Card>
-              <CardContent className="p-6 text-center text-sm text-zinc-500">
+              <CardContent className="p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
                 No announcements found.
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-3">
               {regularAnnouncements.map((announcement) => (
-                <div
+                <AnnouncementCard
                   key={announcement.id}
-                  className={
-                    announcement.is_read
-                      ? 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 opacity-75 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors'
-                      : 'bg-white dark:bg-zinc-900 border-l-4 border-l-indigo-600 border-r border-t border-b border-zinc-200 dark:border-zinc-800 rounded-lg p-4 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors'
-                  }
+                  title={announcement.title}
+                  excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
+                  category={announcementCategoryLabels[announcement.category] || announcement.category}
+                  priority={announcement.priority}
+                  dateLabel={formatDate(announcement.published_at || announcement.created_at)}
+                  isRead={announcement.is_read}
                   onClick={() => handleAnnouncementClick(announcement)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                      {announcement.title}
-                    </h3>
-                    {!announcement.is_read ? (
-                      <Badge>Unread</Badge>
-                    ) : (
-                      <Badge variant="secondary">Read</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">
-                    {announcement.excerpt || announcement.content.slice(0, 200)}
-                  </p>
-                </div>
+                />
               ))}
             </div>
           )}
@@ -534,92 +459,7 @@ export default function InformationHubPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="growth" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Active Items</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-                  {growthItems.length}
-                </p>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Completed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {completedCourses}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Avg Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {Math.round(
-                    growthItems.reduce((sum, item) => sum + item.progress, 0) / growthItems.length
-                  )}
-                  %
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4">
-            {growthItems.map((item) => {
-              const Icon = typeIcons[item.type];
-
-              return (
-                <Card key={item.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                          {item.title}
-                        </CardTitle>
-                        <CardDescription>{item.description}</CardDescription>
-                      </div>
-                      <Badge
-                        variant={
-                          item.progress === 100
-                            ? 'success'
-                            : item.progress >= 60
-                              ? 'warning'
-                              : 'secondary'
-                        }
-                      >
-                        {item.progress}%
-                      </Badge>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-3">
-                    <Progress value={item.progress} className="h-2" />
-
-                    <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
-                      <span>{item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>
-                      {item.dueDate ? <span>Due: {item.dueDate}</span> : null}
-                    </div>
-
-                    <Button variant="ghost" size="sm" className="w-full justify-between">
-                      Continue
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
       </Tabs>
 
       {/* Announcement Detail Dialog */}

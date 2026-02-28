@@ -109,21 +109,21 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden -m-4 lg:-m-6">
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-6 py-3 text-sm">
+      <div className="border-b border-border bg-card px-6 py-3 text-sm">
         <Link
           href="/information-hub"
-          className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
         >
           Information Hub
         </Link>
-        <span className="mx-2 text-zinc-400">/</span>
+        <span className="mx-2 text-muted-foreground">/</span>
         <Link
           href={`/information-hub/resources/category/${resource.category}`}
-          className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
         >
           {resource.category}
         </Link>
-        <span className="mx-2 text-zinc-400">/</span>
+        <span className="mx-2 text-muted-foreground">/</span>
         <span className="text-zinc-900 dark:text-zinc-50">{resource.title}</span>
       </div>
 
@@ -153,7 +153,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
           )}
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 p-6">
+        <div className="bg-card border-b border-border p-6">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resource.title}</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
             {resource.description || resource.excerpt}
