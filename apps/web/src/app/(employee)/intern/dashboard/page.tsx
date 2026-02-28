@@ -141,7 +141,10 @@ export default function InternDashboardPage(): ReactNode {
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <GraduationCap className="h-5 w-5 text-zinc-500 dark:text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+            <GraduationCap
+              className="h-5 w-5 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+              strokeWidth={1.5}
+            />
             <div>
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                 {profile.name}
@@ -170,32 +173,32 @@ export default function InternDashboardPage(): ReactNode {
 
       {/* Stats Row */}
       <div data-tour="stat-cards">
-      <StatCardGrid columns={4}>
-        <StatCard
-          label="Hours Logged"
-          value={profile.completedHours}
-          trend={{ direction: 'up', value: `${progressPercentage}% complete` }}
-          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Required Hours"
-          value={profile.requiredHours}
-          trend={{ direction: 'stable', value: 'Target' }}
-          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Reports Submitted"
-          value={uiReports.length}
-          trend={{ direction: 'up', value: 'This period' }}
-          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Days Remaining"
-          value={daysRemaining}
-          trend={{ direction: 'down', value: 'Until completion' }}
-          icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+        <StatCardGrid columns={4}>
+          <StatCard
+            label="Hours Logged"
+            value={profile.completedHours}
+            trend={{ direction: 'up', value: `${progressPercentage}% complete` }}
+            icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Required Hours"
+            value={profile.requiredHours}
+            trend={{ direction: 'stable', value: 'Target' }}
+            icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Reports Submitted"
+            value={uiReports.length}
+            trend={{ direction: 'up', value: 'This period' }}
+            icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Days Remaining"
+            value={daysRemaining}
+            trend={{ direction: 'down', value: 'Until completion' }}
+            icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
       </div>
 
       {/* Main Bento Grid */}
@@ -247,7 +250,10 @@ export default function InternDashboardPage(): ReactNode {
               {todayReport ? (
                 <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800">
                   <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                    <FileText
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                      strokeWidth={1.5}
+                    />
                     <div>
                       <p className="font-medium text-zinc-900 dark:text-zinc-100">
                         EOD Report Submitted
@@ -354,7 +360,10 @@ function InternSetupRedirect(): ReactNode {
 
   return (
     <div className="h-full flex flex-col items-center justify-center gap-4">
-      <GraduationCap className="h-10 w-10 text-indigo-600 dark:text-indigo-400 animate-pulse" strokeWidth={1.5} />
+      <GraduationCap
+        className="h-10 w-10 text-indigo-600 dark:text-indigo-400 animate-pulse"
+        strokeWidth={1.5}
+      />
       <div className="text-center">
         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
           Setting up your internship profile...

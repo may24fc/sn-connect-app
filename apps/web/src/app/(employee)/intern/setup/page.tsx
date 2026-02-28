@@ -119,19 +119,16 @@ export default function InternSetupPage(): ReactNode {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const updateField = useCallback(
-    <K extends keyof FormState>(key: K, value: FormState[K]) => {
-      setForm((prev) => ({ ...prev, [key]: value }));
-      // Clear field error on change
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        delete next.general;
-        return next;
-      });
-    },
-    []
-  );
+  const updateField = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    // Clear field error on change
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      delete next.general;
+      return next;
+    });
+  }, []);
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
@@ -205,8 +202,8 @@ export default function InternSetupPage(): ReactNode {
                 Complete Your Internship Setup
               </h1>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {user?.name ? `Welcome, ${user.name}!` : 'Welcome!'} Set up your internship
-                profile to get started.
+                {user?.name ? `Welcome, ${user.name}!` : 'Welcome!'} Set up your internship profile
+                to get started.
               </p>
             </div>
           </div>
