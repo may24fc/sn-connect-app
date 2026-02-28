@@ -71,6 +71,20 @@ export {
 } from './primitives/dropdown-menu';
 export { Separator } from './primitives/separator';
 export {
+  SlidePanel,
+  SlidePanelTrigger,
+  SlidePanelClose,
+  SlidePanelOverlay,
+  SlidePanelContent,
+  SlidePanelHeader,
+  SlidePanelTitle,
+  SlidePanelDescription,
+  SlidePanelBody,
+  SlidePanelFooter,
+  SlidePanelSection,
+  type SlidePanelContentProps,
+} from './primitives/slide-panel';
+export {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
@@ -94,12 +108,21 @@ export { Sidebar } from './layout/Sidebar';
 export { Header } from './layout/Header';
 // Shared Components
 export { EmptyState, type EmptyStateProps } from './components/empty-state';
+export {
+  MultiSelectFilter,
+  ActiveFilterBadges,
+  type FilterOption,
+  type MultiSelectFilterProps,
+} from './components/MultiSelectFilter';
 // Components
 export { AIChatbot, type ChatMessage, type AIChatbotProps } from './components/AIChatbot';
 export {
   Form,
+  FormErrorMessage,
   FormField,
+  FormGroup,
   FormInput,
+  FormLabel,
   FormSelect,
   FormTextarea,
   PhoneInput,
@@ -108,8 +131,11 @@ export {
 } from './components/forms';
 export type {
   FormProps,
+  FormErrorMessageProps,
   FormFieldProps,
+  FormGroupProps,
   FormInputProps,
+  FormLabelProps,
   FormSelectOption,
   FormSelectProps,
   FormTextareaProps,

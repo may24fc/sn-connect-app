@@ -89,7 +89,17 @@ function FileUpIcon({ className }: { className?: string }): React.ReactNode {
 
 function FilePdfIcon({ className }: { className?: string }): React.ReactNode {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
       <path d="M14 2v4a2 2 0 0 0 2 2h4" />
       <path d="M10 12h4" />
@@ -101,7 +111,17 @@ function FilePdfIcon({ className }: { className?: string }): React.ReactNode {
 
 function FileDocIcon({ className }: { className?: string }): React.ReactNode {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
       <path d="M14 2v4a2 2 0 0 0 2 2h4" />
       <path d="M10 9H8" />
@@ -113,7 +133,17 @@ function FileDocIcon({ className }: { className?: string }): React.ReactNode {
 
 function FileSpreadsheetIcon({ className }: { className?: string }): React.ReactNode {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
       <path d="M14 2v4a2 2 0 0 0 2 2h4" />
       <path d="M8 13h2" />
@@ -126,7 +156,17 @@ function FileSpreadsheetIcon({ className }: { className?: string }): React.React
 
 function FileImageIcon({ className }: { className?: string }): React.ReactNode {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
       <path d="M14 2v4a2 2 0 0 0 2 2h4" />
       <circle cx="10" cy="12" r="2" />
@@ -137,7 +177,17 @@ function FileImageIcon({ className }: { className?: string }): React.ReactNode {
 
 function FilePresentationIcon({ className }: { className?: string }): React.ReactNode {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
       <path d="M14 2v4a2 2 0 0 0 2 2h4" />
       <rect x="8" y="12" width="8" height="6" rx="1" />
@@ -147,7 +197,17 @@ function FilePresentationIcon({ className }: { className?: string }): React.Reac
 
 function FileGenericIcon({ className }: { className?: string }): React.ReactNode {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
       <path d="M14 2v4a2 2 0 0 0 2 2h4" />
     </svg>
@@ -156,7 +216,17 @@ function FileGenericIcon({ className }: { className?: string }): React.ReactNode
 
 function XIcon({ className }: { className?: string }): React.ReactNode {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M18 6 6 18" />
       <path d="m6 6 12 12" />
     </svg>
@@ -180,11 +250,19 @@ function getFileTypeIcon(file: File): React.ReactNode {
     return <FileDocIcon className="h-4 w-4 text-blue-600" />;
   }
   // Excel
-  if (['xls', 'xlsx', 'csv'].includes(ext) || mime.includes('spreadsheet') || mime.includes('excel')) {
+  if (
+    ['xls', 'xlsx', 'csv'].includes(ext) ||
+    mime.includes('spreadsheet') ||
+    mime.includes('excel')
+  ) {
     return <FileSpreadsheetIcon className="h-4 w-4 text-emerald-600" />;
   }
   // PowerPoint
-  if (['ppt', 'pptx'].includes(ext) || mime.includes('presentation') || mime.includes('powerpoint')) {
+  if (
+    ['ppt', 'pptx'].includes(ext) ||
+    mime.includes('presentation') ||
+    mime.includes('powerpoint')
+  ) {
     return <FilePresentationIcon className="h-4 w-4 text-orange-500" />;
   }
   // Images
@@ -258,7 +336,9 @@ export function FileDropZone({
             setValidationError(`Maximum ${maxFiles} files allowed`);
             return [];
           }
-          setValidationError(`Only ${allowedCount} more file${allowedCount === 1 ? '' : 's'} allowed (max ${maxFiles})`);
+          setValidationError(
+            `Only ${allowedCount} more file${allowedCount === 1 ? '' : 's'} allowed (max ${maxFiles})`
+          );
           validFiles = validFiles.slice(0, allowedCount);
         }
       }
@@ -492,7 +572,12 @@ export function FileDropZone({
 
       {/* Selected files preview list */}
       {hasFiles && onRemoveFile && (
-        <div className={cn('border-t border-zinc-100 dark:border-zinc-800', compact ? 'px-4 py-2' : 'px-6 py-3')}>
+        <div
+          className={cn(
+            'border-t border-zinc-100 dark:border-zinc-800',
+            compact ? 'px-4 py-2' : 'px-6 py-3'
+          )}
+        >
           <div className="space-y-2">
             {selectedFiles.map((file, index) => (
               <div
@@ -524,7 +609,7 @@ export function FileDropZone({
           </div>
           {maxFiles && multiple && (
             <p className="mt-2 text-[11px] text-zinc-400 dark:text-zinc-500">
-              {selectedFiles.length} of {maxFiles} files
+              {selectedFiles.length} {selectedFiles.length === 1 ? 'file' : 'files'} selected (max {maxFiles})
             </p>
           )}
         </div>

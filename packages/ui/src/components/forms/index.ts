@@ -1,6 +1,9 @@
 export { Form } from './Form';
+export { FormErrorMessage } from './FormErrorMessage';
 export { FormField } from './FormField';
+export { FormGroup } from './FormGroup';
 export { FormInput } from './FormInput';
+export { FormLabel } from './FormLabel';
 export { FormSelect } from './FormSelect';
 export { FormTextarea } from './FormTextarea';
 export { PhoneInput } from './PhoneInput';
@@ -8,8 +11,11 @@ export { CurrencySelector } from './CurrencySelector';
 export { BankSelector } from './BankSelector';
 
 export type { FormProps } from './Form';
+export type { FormErrorMessageProps } from './FormErrorMessage';
 export type { FormFieldProps } from './FormField';
+export type { FormGroupProps } from './FormGroup';
 export type { FormInputProps } from './FormInput';
+export type { FormLabelProps } from './FormLabel';
 export type { FormSelectOption, FormSelectProps } from './FormSelect';
 export type { FormTextareaProps } from './FormTextarea';
 export type { PhoneInputProps, PhoneCountry } from './PhoneInput';
