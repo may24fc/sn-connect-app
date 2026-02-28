@@ -11,6 +11,7 @@ import {
 import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
 import { formatDate } from '@/lib/format';
 import {
+  ActiveFilterBadges,
   AnnouncementDetailDialog,
   Badge,
   Button,
@@ -21,6 +22,7 @@ import {
   CardTitle,
   CategoryBrowser,
   Input,
+  MultiSelectFilter,
   Progress,
   ResourceCard,
   ResourceGrid,
@@ -30,6 +32,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
+import type { FilterOption } from '@hr-portal/ui';
 import {
   ArrowRight,
   Award,
@@ -108,10 +111,19 @@ const announcementCategoryLabels: Record<string, string> = {
   emergency: 'Emergency',
 };
 
+const announcementCategoryOptions: Array<FilterOption> = Object.entries(
+  announcementCategoryLabels
+).map(([value, label]) => ({ value, label }));
+
+const readStatusOptions: Array<FilterOption> = [
+  { value: 'unread', label: 'Unread' },
+  { value: 'read', label: 'Read' },
+];
+
 export default function InformationHubPage() {
   const [search, setSearch] = useState('');
-  const [announcementCategory, setAnnouncementCategory] = useState('all');
-  const [readStatus, setReadStatus] = useState<'all' | 'read' | 'unread'>('all');
+  const [selectedCategories, setSelectedCategories] = useState<Array<string>>([]);
+  const [selectedReadStatuses, setSelectedReadStatuses] = useState<Array<string>>([]);
   const [announcementPage, setAnnouncementPage] = useState(1);
   const [resourcePage, setResourcePage] = useState(1);
   const [selectedResourceCategory, setSelectedResourceCategory] = useState<string>('');
@@ -120,8 +132,8 @@ export default function InformationHubPage() {
 
   const { data: announcementData, isLoading: isAnnouncementsLoading } = useAnnouncementFeed({
     ...(search ? { search } : {}),
-    ...(announcementCategory !== 'all' ? { category: announcementCategory as never } : {}),
-    readStatus,
+    ...(selectedCategories.length > 0 ? { categories: selectedCategories } : {}),
+    ...(selectedReadStatuses.length > 0 ? { readStatuses: selectedReadStatuses } : {}),
     page: announcementPage,
     pageSize: 10,
   });
@@ -246,58 +258,38 @@ export default function InformationHubPage() {
         </TabsList>
 
         <TabsContent value="announcements" className="space-y-4">
-          {/* Category filter */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-medium text-zinc-500 mr-1">Category</span>
-            <Button
-              variant={announcementCategory === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                setAnnouncementCategory('all');
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <MultiSelectFilter
+              label="Category"
+              options={announcementCategoryOptions}
+              selected={selectedCategories}
+              onSelectionChange={(values) => {
+                setSelectedCategories(values);
                 setAnnouncementPage(1);
               }}
-            >
-              All
-            </Button>
-            {Object.entries(announcementCategoryLabels).map(([value, label]) => (
-              <Button
-                key={value}
-                variant={announcementCategory === value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setAnnouncementCategory(value);
-                  setAnnouncementPage(1);
-                }}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Read status filter */}
-          <div className="flex gap-2 items-center">
-            <span className="text-xs font-medium text-zinc-500 mr-1">Status</span>
-            <Button
-              variant={readStatus === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setReadStatus('all')}
-            >
-              All
-            </Button>
-            <Button
-              variant={readStatus === 'unread' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setReadStatus('unread')}
-            >
-              Unread
-            </Button>
-            <Button
-              variant={readStatus === 'read' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setReadStatus('read')}
-            >
-              Read
-            </Button>
+            />
+            <MultiSelectFilter
+              label="Status"
+              options={readStatusOptions}
+              selected={selectedReadStatuses}
+              onSelectionChange={(values) => {
+                setSelectedReadStatuses(values);
+                setAnnouncementPage(1);
+              }}
+            />
+            <ActiveFilterBadges
+              options={[...announcementCategoryOptions, ...readStatusOptions]}
+              selected={[...selectedCategories, ...selectedReadStatuses]}
+              onRemove={(value) => {
+                if (selectedCategories.includes(value)) {
+                  setSelectedCategories((prev) => prev.filter((v) => v !== value));
+                } else {
+                  setSelectedReadStatuses((prev) => prev.filter((v) => v !== value));
+                }
+                setAnnouncementPage(1);
+              }}
+            />
           </div>
 
           {urgentAnnouncements.map((announcement) => (

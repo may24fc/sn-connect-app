@@ -98,10 +98,7 @@ function InvoiceDetailDialog({
           />
           <DetailRow label="Deductions" value={formatCurrency(Number(invoice.deductions || 0))} />
           <Separator className="my-2" />
-          <DetailRow
-            label="Net Amount"
-            value={formatCurrency(Number(invoice.net_amount || 0))}
-          />
+          <DetailRow label="Net Amount" value={formatCurrency(Number(invoice.net_amount || 0))} />
           {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
           <Separator className="my-2" />
           <DetailRow label="Created" value={formatDate(invoice.created_at)} />
@@ -165,10 +162,7 @@ function SubmitConfirmDialog({
           />
           <DetailRow label="Deductions" value={formatCurrency(Number(invoice.deductions || 0))} />
           <Separator className="my-2" />
-          <DetailRow
-            label="Net Amount"
-            value={formatCurrency(Number(invoice.net_amount || 0))}
-          />
+          <DetailRow label="Net Amount" value={formatCurrency(Number(invoice.net_amount || 0))} />
           {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
         </div>
 
@@ -510,9 +504,7 @@ export default function InvoicePage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Net Amount</span>
                 <span className="font-semibold text-base">
-                  {formatCurrency(
-                    Math.max(0, Number(grossAmount || 0) - Number(deductions || 0))
-                  )}
+                  {formatCurrency(Math.max(0, Number(grossAmount || 0) - Number(deductions || 0)))}
                 </span>
               </div>
             </div>
@@ -530,11 +522,7 @@ export default function InvoicePage() {
       </Dialog>
 
       {/* ---- Invoice Detail Dialog ---- */}
-      <InvoiceDetailDialog
-        invoice={detailInvoice}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-      />
+      <InvoiceDetailDialog invoice={detailInvoice} open={detailOpen} onOpenChange={setDetailOpen} />
 
       {/* ---- Submit Confirmation Dialog ---- */}
       <SubmitConfirmDialog
