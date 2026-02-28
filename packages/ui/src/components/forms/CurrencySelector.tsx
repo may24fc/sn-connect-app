@@ -87,10 +87,9 @@ export const CurrencySelector = React.forwardRef<HTMLButtonElement, CurrencySele
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           className={cn(
-            'flex h-10 w-full items-center justify-between rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm',
+            'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm',
             'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50',
             error && 'border-rose-600 focus:ring-rose-600/20'
           )}
           aria-expanded={isOpen}
@@ -103,7 +102,7 @@ export const CurrencySelector = React.forwardRef<HTMLButtonElement, CurrencySele
               <span className="text-muted-foreground">({selectedCurrency.symbol})</span>
             </span>
           ) : (
-            <span className="text-zinc-400">{placeholder}</span>
+            <span className="text-muted-foreground">{placeholder}</span>
           )}
           <svg
             className={cn(
@@ -125,8 +124,7 @@ export const CurrencySelector = React.forwardRef<HTMLButtonElement, CurrencySele
         {isOpen && (
           <div
             className={cn(
-              'absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-zinc-200 bg-white py-1 shadow-lg',
-              'dark:border-zinc-700 dark:bg-zinc-900'
+              'absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover py-1 shadow-lg',
             )}
             role="listbox"
           >

@@ -129,10 +129,9 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
             onClick={handleOpen}
             disabled={disabled}
             className={cn(
-              'flex h-10 w-full items-center justify-between rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-left',
+              'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm text-left',
               'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600',
               'disabled:cursor-not-allowed disabled:opacity-50',
-              'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50',
               error && 'border-rose-600 focus:ring-rose-600/20'
             )}
             aria-expanded={isOpen}
@@ -149,7 +148,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
             ) : isOtherSelected ? (
               <span className="text-zinc-700 dark:text-zinc-300">Other Bank</span>
             ) : (
-              <span className="text-zinc-400">{placeholder}</span>
+              <span className="text-muted-foreground">{placeholder}</span>
             )}
             <svg
               className={cn(
@@ -172,8 +171,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
           {isOpen && (
             <div
               className={cn(
-                'absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-md border border-zinc-200 bg-white shadow-lg',
-                'dark:border-zinc-700 dark:bg-zinc-900'
+                'absolute left-0 top-full z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover shadow-lg',
               )}
               role="listbox"
             >
@@ -186,9 +184,8 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search banks..."
                   className={cn(
-                    'w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm',
+                    'w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm',
                     'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600',
-                    'dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-50'
                   )}
                 />
               </div>
@@ -255,10 +252,9 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
             onChange={(e) => onCustomBankNameChange?.(e.target.value)}
             placeholder="Enter bank name"
             className={cn(
-              'mt-2 flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm',
-              'placeholder:text-zinc-400',
+              'mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm',
+              'placeholder:text-muted-foreground',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 focus-visible:border-indigo-600',
-              'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50'
             )}
           />
         )}

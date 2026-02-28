@@ -112,7 +112,7 @@ export function Sidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'relative flex h-screen flex-col flex-shrink-0 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 transition-all duration-300',
+          'relative flex h-screen flex-col flex-shrink-0 bg-card border-r border-border transition-all duration-300',
           collapsed ? 'w-16' : 'w-64'
         )}
       >
@@ -209,7 +209,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="group absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 shadow-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="group absolute -right-3 top-20 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-zinc-600 dark:text-zinc-400 shadow-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (

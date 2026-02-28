@@ -151,11 +151,11 @@ function VersionItem({
         className={`absolute left-0 top-2 h-3 w-3 rounded-full border-2 ${
           isCurrent
             ? 'border-indigo-500 bg-indigo-500'
-            : 'border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800'
+            : 'border-zinc-300 bg-card dark:border-zinc-600'
         }`}
       />
 
-      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="rounded-lg border border-border bg-card p-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -281,7 +281,7 @@ export function VersionHistory({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2 text-sm text-zinc-500">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4 animate-pulse" />
           Loading version history...
         </div>
@@ -295,7 +295,7 @@ export function VersionHistory({
   if (versions.length === 0) {
     return (
       <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-6 text-center dark:border-zinc-700 dark:bg-zinc-900">
-        <Clock className="mx-auto h-8 w-8 text-zinc-500" />
+        <Clock className="mx-auto h-8 w-8 text-muted-foreground" />
         <p className="mt-2 text-sm font-medium text-zinc-600 dark:text-zinc-300">
           No version history
         </p>

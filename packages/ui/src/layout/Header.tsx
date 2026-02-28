@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, CircleHelp, LogOut, Menu, Search, Settings, User } from 'lucide-react';
+import { Bell, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Badge } from '../primitives/badge';
@@ -41,6 +41,10 @@ export interface HeaderProps {
   onHelpClick?: (() => void) | undefined;
   showMobileMenu?: boolean;
   title?: string;
+  /** Current theme value ('light' | 'dark' | 'system') */
+  theme?: string | undefined;
+  /** Callback to change the theme */
+  onThemeChange?: (theme: string) => void;
 }
 
 export function Header({
@@ -57,6 +61,8 @@ export function Header({
   onHelpClick,
   showMobileMenu = true,
   title,
+  theme,
+  onThemeChange,
 }: HeaderProps): React.ReactNode {
   const [searchQuery, setSearchQuery] = React.useState('');
 
@@ -75,7 +81,7 @@ export function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 lg:px-6">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
       {/* Left Section */}
       <div className="flex items-center gap-4">
         {showMobileMenu && onMenuToggle && (
@@ -104,7 +110,7 @@ export function Header({
           <form onSubmit={handleSearchSubmit} className="hidden md:flex md:w-80">
             <div className="relative w-full">
               <Search
-                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                 strokeWidth={1.5}
               />
               <Input
@@ -112,7 +118,7 @@ export function Header({
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-80 h-9 pl-9 pr-4 text-sm bg-zinc-100 dark:bg-zinc-800 border-0 rounded-md placeholder:text-zinc-500 focus:ring-2 focus:ring-indigo-600/20 focus:bg-white dark:focus:bg-zinc-900"
+                className="w-80 h-9 pl-9 pr-4 text-sm bg-zinc-100 dark:bg-zinc-800 border-0 rounded-md placeholder:text-zinc-500 focus:ring-2 focus:ring-indigo-600/20 focus:bg-card"
               />
             </div>
           </form>
@@ -191,7 +197,7 @@ export function Header({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+            className="w-56 bg-popover border border-border"
           >
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
@@ -217,6 +223,22 @@ export function Header({
                   strokeWidth={1.5}
                 />
                 Settings
+              </DropdownMenuItem>
+            )}
+            {onThemeChange && (
+              <DropdownMenuItem
+                onClick={() => onThemeChange(theme === 'dark' ? 'light' : 'dark')}
+                className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="mr-2 h-4 w-4 text-amber-500" strokeWidth={1.5} />
+                ) : (
+                  <Moon
+                    className="mr-2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
+                    strokeWidth={1.5}
+                  />
+                )}
+                {theme === 'dark' ? 'Light mode' : 'Dark mode'}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800" />

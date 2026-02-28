@@ -455,7 +455,7 @@ export function AIChatbot({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex items-center gap-2 rounded-xl rounded-tl-sm bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" strokeWidth={1.5} />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" strokeWidth={1.5} />
                       <span className="text-sm text-zinc-500 dark:text-zinc-400">Thinking...</span>
                     </div>
                   </div>
@@ -481,7 +481,13 @@ export function AIChatbot({
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     disabled={isLoading}
-                    className="flex-1 h-10 px-4 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                    className={[
+                      'flex-1 h-10 px-4 text-sm rounded-xl transition-all',
+                      'bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
+                      'placeholder:text-zinc-400 dark:placeholder:text-zinc-500',
+                      'focus:outline-none focus:ring-2 focus:ring-indigo-600/20',
+                      'focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900',
+                    ].join(' ')}
                   />
                   <Button
                     onClick={handleSendMessage}
@@ -568,7 +574,7 @@ function ConversationGroup({
           )}
           style={{ width: 'calc(100% - 8px)' }}
         >
-          <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-zinc-400" strokeWidth={1.5} />
+          <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-muted-foreground" strokeWidth={1.5} />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium truncate leading-snug">{conv.title}</p>
             <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">

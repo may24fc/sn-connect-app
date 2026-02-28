@@ -149,11 +149,10 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           required={required}
           placeholder={displayPlaceholder}
           className={cn(
-            'flex h-10 w-full rounded-r-md border border-zinc-200 bg-white px-3 py-2 text-sm',
-            'placeholder:text-zinc-400',
+            'flex h-10 w-full rounded-r-md border border-input bg-background px-3 py-2 text-sm',
+            'placeholder:text-muted-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 focus-visible:border-indigo-600',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-500',
             error && 'border-rose-600 focus-visible:ring-rose-600/20 focus-visible:border-rose-600'
           )}
         />
@@ -162,8 +161,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         {isOpen && (
           <div
             className={cn(
-              'absolute left-0 top-full z-50 mt-1 max-h-60 w-64 overflow-auto rounded-md border border-zinc-200 bg-white py-1 shadow-lg',
-              'dark:border-zinc-700 dark:bg-zinc-900'
+              'absolute left-0 top-full z-50 mt-1 max-h-60 w-64 overflow-auto rounded-md border border-border bg-popover py-1 shadow-lg',
             )}
             role="listbox"
             aria-label="Select country"

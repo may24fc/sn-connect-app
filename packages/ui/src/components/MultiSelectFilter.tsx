@@ -82,16 +82,16 @@ export function MultiSelectFilter({
                 onClick={handleClearAll}
                 className="ml-0.5 rounded-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 p-0.5"
               >
-                <X className="h-3 w-3 text-zinc-500" />
+                <X className="h-3 w-3 text-muted-foreground" />
               </button>
             </span>
           ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-52">
-        <DropdownMenuLabel className="text-xs font-medium text-zinc-500">{label}</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{label}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {options.map((option) => (
           <DropdownMenuCheckboxItem
@@ -102,7 +102,7 @@ export function MultiSelectFilter({
           >
             <span className="flex-1">{option.label}</span>
             {option.count !== undefined && (
-              <span className="ml-auto text-xs text-zinc-400">{option.count}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{option.count}</span>
             )}
           </DropdownMenuCheckboxItem>
         ))}
