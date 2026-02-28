@@ -19,7 +19,6 @@ import {
 import {
   Avatar,
   AvatarFallback,
-  AvatarImage,
   Badge,
   Button,
   Card,
@@ -28,7 +27,6 @@ import {
   Skeleton,
 } from '@hr-portal/ui';
 import {
-  Briefcase,
   Building2,
   Calendar,
   Camera,
@@ -129,7 +127,7 @@ function calculateAge(dateStr: string | null | undefined): string | null {
   }
 }
 
-export default function ProfilePage() {
+export default function AdminProfilePage() {
   const { user } = useAuth();
   const { data: employeesData, isLoading } = useEmployees({
     search: user?.email || '',
@@ -224,13 +222,11 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col items-center gap-6 sm:flex-row">
             <div className="relative" data-tour="profile-avatar">
               <Avatar className="h-24 w-24">
-                {employee?.avatar_url && <AvatarImage src={employee.avatar_url} />}
                 <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                   {initials}
                 </AvatarFallback>
@@ -281,7 +277,7 @@ export default function ProfilePage() {
         </p>
 
         <BentoGrid columns={3}>
-          {/* Basic Info — spans 1 col */}
+          {/* Basic Info */}
           <BentoCard>
             <BentoCardHeader>
               <BentoCardTitle icon={<User className="h-4 w-4" />}>Basic Info</BentoCardTitle>
@@ -311,7 +307,7 @@ export default function ProfilePage() {
             </BentoCardContent>
           </BentoCard>
 
-          {/* Contact Info — spans 1 col */}
+          {/* Contact Info */}
           <BentoCard>
             <BentoCardHeader>
               <BentoCardTitle icon={<Phone className="h-4 w-4" />}>Contact</BentoCardTitle>
@@ -350,7 +346,7 @@ export default function ProfilePage() {
             </BentoCardContent>
           </BentoCard>
 
-          {/* Education — spans 1 col */}
+          {/* Education */}
           <BentoCard>
             <BentoCardHeader>
               <BentoCardTitle icon={<GraduationCap className="h-4 w-4" />}>Education</BentoCardTitle>
@@ -368,7 +364,7 @@ export default function ProfilePage() {
             </BentoCardContent>
           </BentoCard>
 
-          {/* Address — spans 2 cols */}
+          {/* Address */}
           <BentoCard colSpan={2}>
             <BentoCardHeader>
               <BentoCardTitle icon={<MapPin className="h-4 w-4" />}>Address</BentoCardTitle>
@@ -386,7 +382,7 @@ export default function ProfilePage() {
             </BentoCardContent>
           </BentoCard>
 
-          {/* Emergency Contact — spans 1 col */}
+          {/* Emergency Contact */}
           <BentoCard>
             <BentoCardHeader>
               <BentoCardTitle icon={<Heart className="h-4 w-4" />}>Emergency Contact</BentoCardTitle>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // --- Types ---
 
@@ -72,18 +72,69 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Digital advertising and campaign management',
     icon: 'BarChart3',
     fields: [
-      { key: 'primary_platforms', label: 'Primary Platforms', type: 'tags', options: ['Google Ads', 'Meta Ads', 'LinkedIn Ads', 'TikTok Ads', 'Twitter Ads'] },
-      { key: 'certifications', label: 'Certifications', type: 'tags', options: ['Google Ads Search', 'Google Ads Display', 'Google Ads Video', 'Google Analytics', 'Meta Blueprint'] },
-      { key: 'managed_accounts', label: 'Managed Accounts', type: 'number', placeholder: 'Number of accounts managed' },
-      { key: 'monthly_budget_managed', label: 'Monthly Budget Managed (USD)', type: 'number', placeholder: 'e.g., 50000' },
+      {
+        key: 'primary_platforms',
+        label: 'Primary Platforms',
+        type: 'tags',
+        options: ['Google Ads', 'Meta Ads', 'LinkedIn Ads', 'TikTok Ads', 'Twitter Ads'],
+      },
+      {
+        key: 'certifications',
+        label: 'Certifications',
+        type: 'tags',
+        options: [
+          'Google Ads Search',
+          'Google Ads Display',
+          'Google Ads Video',
+          'Google Analytics',
+          'Meta Blueprint',
+        ],
+      },
+      {
+        key: 'managed_accounts',
+        label: 'Managed Accounts',
+        type: 'number',
+        placeholder: 'Number of accounts managed',
+      },
+      {
+        key: 'monthly_budget_managed',
+        label: 'Monthly Budget Managed (USD)',
+        type: 'number',
+        placeholder: 'e.g., 50000',
+      },
     ],
     kpiMetrics: [
       { name: 'spend', label: 'Ad Spend', unit: 'USD', description: 'Total advertising spend' },
-      { name: 'cpa', label: 'Cost Per Acquisition', unit: 'USD', description: 'Average cost per conversion' },
-      { name: 'roas', label: 'Return on Ad Spend', unit: 'ratio', description: 'Revenue / Ad Spend ratio' },
-      { name: 'conversions', label: 'Conversions', unit: 'count', description: 'Total conversion count' },
-      { name: 'ctr', label: 'Click-Through Rate', unit: '%', description: 'Click-through rate percentage' },
-      { name: 'impressions', label: 'Impressions', unit: 'count', description: 'Total impressions served' },
+      {
+        name: 'cpa',
+        label: 'Cost Per Acquisition',
+        unit: 'USD',
+        description: 'Average cost per conversion',
+      },
+      {
+        name: 'roas',
+        label: 'Return on Ad Spend',
+        unit: 'ratio',
+        description: 'Revenue / Ad Spend ratio',
+      },
+      {
+        name: 'conversions',
+        label: 'Conversions',
+        unit: 'count',
+        description: 'Total conversion count',
+      },
+      {
+        name: 'ctr',
+        label: 'Click-Through Rate',
+        unit: '%',
+        description: 'Click-through rate percentage',
+      },
+      {
+        name: 'impressions',
+        label: 'Impressions',
+        unit: 'count',
+        description: 'Total impressions served',
+      },
     ],
   },
   content_creator: {
@@ -91,8 +142,18 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Content production and management',
     icon: 'PenTool',
     fields: [
-      { key: 'content_types', label: 'Content Types', type: 'tags', options: ['Blog', 'Social Media', 'Video', 'Podcast', 'Newsletter', 'Whitepaper'] },
-      { key: 'tools', label: 'Tools', type: 'tags', options: ['Canva', 'Premiere Pro', 'Final Cut Pro', 'Figma', 'WordPress', 'Buffer'] },
+      {
+        key: 'content_types',
+        label: 'Content Types',
+        type: 'tags',
+        options: ['Blog', 'Social Media', 'Video', 'Podcast', 'Newsletter', 'Whitepaper'],
+      },
+      {
+        key: 'tools',
+        label: 'Tools',
+        type: 'tags',
+        options: ['Canva', 'Premiere Pro', 'Final Cut Pro', 'Figma', 'WordPress', 'Buffer'],
+      },
       { key: 'portfolio_url', label: 'Portfolio URL', type: 'url', placeholder: 'https://...' },
     ],
     kpiMetrics: [
@@ -106,8 +167,26 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Software development and engineering',
     icon: 'Code2',
     fields: [
-      { key: 'primary_languages', label: 'Primary Languages', type: 'tags', options: ['TypeScript', 'JavaScript', 'Python', 'Go', 'Rust', 'Java', 'C#'] },
-      { key: 'specializations', label: 'Specializations', type: 'tags', options: ['Frontend', 'Backend', 'Full Stack', 'DevOps', 'Mobile', 'Data Engineering', 'ML/AI'] },
+      {
+        key: 'primary_languages',
+        label: 'Primary Languages',
+        type: 'tags',
+        options: ['TypeScript', 'JavaScript', 'Python', 'Go', 'Rust', 'Java', 'C#'],
+      },
+      {
+        key: 'specializations',
+        label: 'Specializations',
+        type: 'tags',
+        options: [
+          'Frontend',
+          'Backend',
+          'Full Stack',
+          'DevOps',
+          'Mobile',
+          'Data Engineering',
+          'ML/AI',
+        ],
+      },
       { key: 'github_username', label: 'GitHub Username', type: 'text', placeholder: 'username' },
     ],
     kpiMetrics: [
@@ -121,8 +200,18 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Visual and UX design',
     icon: 'Palette',
     fields: [
-      { key: 'design_tools', label: 'Design Tools', type: 'tags', options: ['Figma', 'Photoshop', 'Illustrator', 'Sketch', 'InDesign', 'After Effects'] },
-      { key: 'specializations', label: 'Specializations', type: 'tags', options: ['UI/UX', 'Branding', 'Motion Graphics', 'Print', 'Web Design', 'Product Design'] },
+      {
+        key: 'design_tools',
+        label: 'Design Tools',
+        type: 'tags',
+        options: ['Figma', 'Photoshop', 'Illustrator', 'Sketch', 'InDesign', 'After Effects'],
+      },
+      {
+        key: 'specializations',
+        label: 'Specializations',
+        type: 'tags',
+        options: ['UI/UX', 'Branding', 'Motion Graphics', 'Print', 'Web Design', 'Product Design'],
+      },
       { key: 'portfolio_url', label: 'Portfolio URL', type: 'url', placeholder: 'https://...' },
     ],
   },
@@ -131,9 +220,24 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Project and program management',
     icon: 'Kanban',
     fields: [
-      { key: 'methodologies', label: 'Methodologies', type: 'tags', options: ['Agile', 'Scrum', 'Kanban', 'Waterfall', 'Lean', 'SAFe'] },
-      { key: 'tools', label: 'PM Tools', type: 'tags', options: ['Jira', 'Asana', 'Trello', 'Monday.com', 'ClickUp', 'Linear'] },
-      { key: 'pmp_certified', label: 'PMP Certified', type: 'select', options: ['Yes', 'No', 'In Progress'] },
+      {
+        key: 'methodologies',
+        label: 'Methodologies',
+        type: 'tags',
+        options: ['Agile', 'Scrum', 'Kanban', 'Waterfall', 'Lean', 'SAFe'],
+      },
+      {
+        key: 'tools',
+        label: 'PM Tools',
+        type: 'tags',
+        options: ['Jira', 'Asana', 'Trello', 'Monday.com', 'ClickUp', 'Linear'],
+      },
+      {
+        key: 'pmp_certified',
+        label: 'PMP Certified',
+        type: 'select',
+        options: ['Yes', 'No', 'In Progress'],
+      },
     ],
   },
   hr_specialist: {
@@ -141,8 +245,25 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Human resources and people operations',
     icon: 'Users',
     fields: [
-      { key: 'specializations', label: 'Specializations', type: 'tags', options: ['Recruitment', 'Compensation', 'Training', 'Employee Relations', 'Compliance', 'Benefits'] },
-      { key: 'certifications', label: 'Certifications', type: 'tags', options: ['SHRM-CP', 'SHRM-SCP', 'PHR', 'SPHR'] },
+      {
+        key: 'specializations',
+        label: 'Specializations',
+        type: 'tags',
+        options: [
+          'Recruitment',
+          'Compensation',
+          'Training',
+          'Employee Relations',
+          'Compliance',
+          'Benefits',
+        ],
+      },
+      {
+        key: 'certifications',
+        label: 'Certifications',
+        type: 'tags',
+        options: ['SHRM-CP', 'SHRM-SCP', 'PHR', 'SPHR'],
+      },
     ],
   },
   finance: {
@@ -150,9 +271,24 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Financial operations and analysis',
     icon: 'DollarSign',
     fields: [
-      { key: 'specializations', label: 'Specializations', type: 'tags', options: ['Accounting', 'FP&A', 'Tax', 'Audit', 'Treasury', 'Payroll'] },
-      { key: 'certifications', label: 'Certifications', type: 'tags', options: ['CPA', 'CFA', 'CMA', 'ACCA'] },
-      { key: 'tools', label: 'Tools', type: 'tags', options: ['QuickBooks', 'SAP', 'Oracle', 'Excel Advanced', 'Xero'] },
+      {
+        key: 'specializations',
+        label: 'Specializations',
+        type: 'tags',
+        options: ['Accounting', 'FP&A', 'Tax', 'Audit', 'Treasury', 'Payroll'],
+      },
+      {
+        key: 'certifications',
+        label: 'Certifications',
+        type: 'tags',
+        options: ['CPA', 'CFA', 'CMA', 'ACCA'],
+      },
+      {
+        key: 'tools',
+        label: 'Tools',
+        type: 'tags',
+        options: ['QuickBooks', 'SAP', 'Oracle', 'Excel Advanced', 'Xero'],
+      },
     ],
   },
   sales: {
@@ -160,8 +296,18 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Sales and business development',
     icon: 'TrendingUp',
     fields: [
-      { key: 'specializations', label: 'Focus Areas', type: 'tags', options: ['B2B', 'B2C', 'Enterprise', 'SMB', 'Inside Sales', 'Field Sales'] },
-      { key: 'crm_tools', label: 'CRM Tools', type: 'tags', options: ['Salesforce', 'HubSpot', 'Pipedrive', 'Close.io'] },
+      {
+        key: 'specializations',
+        label: 'Focus Areas',
+        type: 'tags',
+        options: ['B2B', 'B2C', 'Enterprise', 'SMB', 'Inside Sales', 'Field Sales'],
+      },
+      {
+        key: 'crm_tools',
+        label: 'CRM Tools',
+        type: 'tags',
+        options: ['Salesforce', 'HubSpot', 'Pipedrive', 'Close.io'],
+      },
     ],
     kpiMetrics: [
       { name: 'deals_closed', label: 'Deals Closed', unit: 'count' },
@@ -174,8 +320,25 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Marketing strategy and execution',
     icon: 'Megaphone',
     fields: [
-      { key: 'specializations', label: 'Specializations', type: 'tags', options: ['Digital Marketing', 'SEO', 'SEM', 'Email Marketing', 'Brand Strategy', 'Product Marketing'] },
-      { key: 'tools', label: 'Tools', type: 'tags', options: ['Google Analytics', 'Mailchimp', 'SEMrush', 'Ahrefs', 'Marketo'] },
+      {
+        key: 'specializations',
+        label: 'Specializations',
+        type: 'tags',
+        options: [
+          'Digital Marketing',
+          'SEO',
+          'SEM',
+          'Email Marketing',
+          'Brand Strategy',
+          'Product Marketing',
+        ],
+      },
+      {
+        key: 'tools',
+        label: 'Tools',
+        type: 'tags',
+        options: ['Google Analytics', 'Mailchimp', 'SEMrush', 'Ahrefs', 'Marketo'],
+      },
     ],
     kpiMetrics: [
       { name: 'leads_generated', label: 'Leads Generated', unit: 'count' },
@@ -188,8 +351,24 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Business operations and process management',
     icon: 'Settings',
     fields: [
-      { key: 'specializations', label: 'Specializations', type: 'tags', options: ['Supply Chain', 'Logistics', 'Process Improvement', 'Quality Assurance', 'Vendor Management'] },
-      { key: 'certifications', label: 'Certifications', type: 'tags', options: ['Six Sigma', 'Lean', 'PMP', 'ITIL'] },
+      {
+        key: 'specializations',
+        label: 'Specializations',
+        type: 'tags',
+        options: [
+          'Supply Chain',
+          'Logistics',
+          'Process Improvement',
+          'Quality Assurance',
+          'Vendor Management',
+        ],
+      },
+      {
+        key: 'certifications',
+        label: 'Certifications',
+        type: 'tags',
+        options: ['Six Sigma', 'Lean', 'PMP', 'ITIL'],
+      },
     ],
   },
   other: {
@@ -199,7 +378,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     fields: [
       { key: 'specializations', label: 'Specializations', type: 'tags' },
       { key: 'tools', label: 'Tools & Technologies', type: 'tags' },
-      { key: 'notes', label: 'Additional Notes', type: 'text', placeholder: 'Describe your role...' },
+      {
+        key: 'notes',
+        label: 'Additional Notes',
+        type: 'text',
+        placeholder: 'Describe your role...',
+      },
     ],
   },
 };
@@ -259,9 +443,12 @@ export function useDeleteRoleMetadata(userId: string | undefined) {
 
   return useMutation({
     mutationFn: async (roleType: string) => {
-      const res = await fetch(`/api/users/${userId}/metadata?role_type=${encodeURIComponent(roleType)}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(
+        `/api/users/${userId}/metadata?role_type=${encodeURIComponent(roleType)}`,
+        {
+          method: 'DELETE',
+        }
+      );
       if (!res.ok) throw new Error('Failed to delete metadata');
       return res.json();
     },
@@ -284,7 +471,7 @@ export function useKPIEntries(
   if (filters?.kpi_name) params.set('kpi_name', filters.kpi_name);
 
   return useQuery({
-    queryKey: roleMetadataKeys.kpiFiltered(userId ?? '', filters as Record<string, string> ?? {}),
+    queryKey: roleMetadataKeys.kpiFiltered(userId ?? '', (filters as Record<string, string>) ?? {}),
     queryFn: async (): Promise<KPIEntry[]> => {
       const qs = params.toString();
       const res = await fetch(`/api/users/${userId}/kpi-entries${qs ? `?${qs}` : ''}`);

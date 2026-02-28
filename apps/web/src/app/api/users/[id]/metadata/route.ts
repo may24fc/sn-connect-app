@@ -3,7 +3,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'ceo', 'cos'];
 
-async function getUserRole(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string): Promise<string | null> {
+async function getUserRole(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string
+): Promise<string | null> {
   const { data: userData } = await supabase
     .from('users')
     .select('role')
@@ -17,10 +20,7 @@ async function getUserRole(supabase: Awaited<ReturnType<typeof createSupabaseSer
  * GET /api/users/[id]/metadata
  * Returns role metadata for a user. Self-access or admin access.
  */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: targetUserId } = await params;
     const supabase = await createSupabaseServerClient();
@@ -70,10 +70,7 @@ export async function GET(
  * Create or update role metadata for a user. Self-access or admin access.
  * Body: { role_type: string, metadata: Record<string, unknown> }
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: targetUserId } = await params;
     const supabase = await createSupabaseServerClient();

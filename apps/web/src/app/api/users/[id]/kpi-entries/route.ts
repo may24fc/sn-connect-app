@@ -8,10 +8,7 @@ const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'ceo', 'cos'];
  * Returns KPI entries for a user. Self-access or admin access.
  * Query params: role_type, from_date, to_date, kpi_name
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: targetUserId } = await params;
     const supabase = await createSupabaseServerClient();
@@ -80,10 +77,7 @@ export async function GET(
  * Create a KPI entry. Self-access only.
  * Body: { role_type, entry_date?, kpi_name, kpi_value, kpi_unit?, notes? }
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: targetUserId } = await params;
     const supabase = await createSupabaseServerClient();
@@ -98,7 +92,10 @@ export async function POST(
 
     // Only self can create entries
     if (user.id !== targetUserId) {
-      return NextResponse.json({ error: 'Forbidden: can only create own KPI entries' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Forbidden: can only create own KPI entries' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();

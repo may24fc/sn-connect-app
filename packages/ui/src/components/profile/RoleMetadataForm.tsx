@@ -1,23 +1,10 @@
 'use client';
 
-import {
-  Briefcase,
-  Check,
-  Loader2,
-  Plus,
-  Save,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Briefcase, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import * as React from 'react';
+import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../../primitives/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
 import { Input } from '../../primitives/input';
 import { Label } from '../../primitives/label';
 import {
@@ -27,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
-import { Badge } from '../../primitives/badge';
 import { cn } from '../../utils/cn';
 
 // --- Types ---
@@ -107,9 +93,7 @@ function TagsInput({
   const filteredOptions = React.useMemo(() => {
     if (!options) return [];
     return options.filter(
-      (opt) =>
-        !value.includes(opt) &&
-        opt.toLowerCase().includes(inputValue.toLowerCase())
+      (opt) => !value.includes(opt) && opt.toLowerCase().includes(inputValue.toLowerCase())
     );
   }, [options, value, inputValue]);
 
@@ -174,7 +158,7 @@ function TagsInput({
           }}
           onFocus={() => setShowSuggestions(true)}
           onKeyDown={handleKeyDown}
-          placeholder={value.length === 0 ? (placeholder || 'Add tags...') : 'Add more...'}
+          placeholder={value.length === 0 ? placeholder || 'Add tags...' : 'Add more...'}
           className="flex-1 min-w-[120px] bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none"
         />
       </div>
@@ -201,6 +185,48 @@ function TagsInput({
 
 // --- Individual Role Metadata Form ---
 
+// --- Read-Only Field Value Display ---
+
+function FieldValueDisplay({
+  field,
+  value,
+}: {
+  field: RoleMetadataFieldConfig;
+  value: unknown;
+}): React.ReactNode {
+  if (field.type === 'tags') {
+    const tags = (value as string[] | undefined) || [];
+    if (tags.length === 0) return <p className="text-sm text-zinc-400 dark:text-zinc-500">—</p>;
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {tags.map((tag) => (
+          <Badge key={tag} variant="secondary" className="text-xs h-6">
+            {tag}
+          </Badge>
+        ))}
+      </div>
+    );
+  }
+
+  if (field.type === 'url') {
+    const url = (value as string) || '';
+    if (!url) return <p className="text-sm text-zinc-400 dark:text-zinc-500">—</p>;
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+      >
+        {url}
+      </a>
+    );
+  }
+
+  const display = value != null && value !== '' ? String(value) : '—';
+  return <p className="text-sm text-zinc-900 dark:text-zinc-100">{display}</p>;
+}
+
 export function RoleMetadataForm({
   roleType,
   roleConfig,
@@ -213,6 +239,7 @@ export function RoleMetadataForm({
 }: RoleMetadataFormProps): React.ReactNode {
   const [formData, setFormData] = React.useState<Record<string, unknown>>(metadata);
   const [isDirty, setIsDirty] = React.useState(false);
+  const [isEditing, setIsEditing] = React.useState(false);
 
   const handleFieldChange = (key: string, value: unknown): void => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -222,12 +249,19 @@ export function RoleMetadataForm({
   const handleSave = async (): Promise<void> => {
     await onSave(roleType, formData);
     setIsDirty(false);
+    setIsEditing(false);
   };
 
   const handleDelete = async (): Promise<void> => {
     if (onDelete) {
       await onDelete(roleType);
     }
+  };
+
+  const handleCancel = (): void => {
+    setFormData(metadata);
+    setIsDirty(false);
+    setIsEditing(false);
   };
 
   return (
@@ -244,21 +278,42 @@ export function RoleMetadataForm({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isDirty && (
-              <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700">
+            {isEditing && isDirty && (
+              <Badge
+                variant="outline"
+                className="text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700"
+              >
                 Unsaved
               </Badge>
             )}
-            {onDelete && (
+            {isEditing ? (
+              <>
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="text-zinc-400 hover:text-red-500 h-8 w-8 p-0"
+                    aria-label={`Remove ${roleConfig.label} details`}
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </>
+            ) : (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="text-zinc-400 hover:text-red-500 h-8 w-8 p-0"
-                aria-label={`Remove ${roleConfig.label} details`}
+                onClick={() => setIsEditing(true)}
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 h-8 w-8 p-0"
+                aria-label={`Edit ${roleConfig.label} details`}
               >
-                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                <Pencil className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -266,92 +321,112 @@ export function RoleMetadataForm({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {roleConfig.fields.map((field) => (
-          <div key={field.key} className="space-y-1.5">
-            <Label htmlFor={`${roleType}-${field.key}`} className="text-sm font-medium">
-              {field.label}
-              {field.required && <span className="text-red-500 ml-0.5">*</span>}
-            </Label>
+        {isEditing ? (
+          <>
+            {roleConfig.fields.map((field) => (
+              <div key={field.key} className="space-y-1.5">
+                <Label htmlFor={`${roleType}-${field.key}`} className="text-sm font-medium">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                </Label>
 
-            {field.type === 'text' && (
-              <Input
-                id={`${roleType}-${field.key}`}
-                type="text"
-                value={(formData[field.key] as string) || ''}
-                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                placeholder={field.placeholder}
-              />
-            )}
+                {field.type === 'text' && (
+                  <Input
+                    id={`${roleType}-${field.key}`}
+                    type="text"
+                    value={(formData[field.key] as string) || ''}
+                    onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                  />
+                )}
 
-            {field.type === 'number' && (
-              <Input
-                id={`${roleType}-${field.key}`}
-                type="number"
-                value={(formData[field.key] as number) ?? ''}
-                onChange={(e) =>
-                  handleFieldChange(field.key, e.target.value ? Number(e.target.value) : undefined)
-                }
-                placeholder={field.placeholder}
-              />
-            )}
+                {field.type === 'number' && (
+                  <Input
+                    id={`${roleType}-${field.key}`}
+                    type="number"
+                    value={(formData[field.key] as number) ?? ''}
+                    onChange={(e) =>
+                      handleFieldChange(
+                        field.key,
+                        e.target.value ? Number(e.target.value) : undefined
+                      )
+                    }
+                    placeholder={field.placeholder}
+                  />
+                )}
 
-            {field.type === 'url' && (
-              <Input
-                id={`${roleType}-${field.key}`}
-                type="url"
-                value={(formData[field.key] as string) || ''}
-                onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                placeholder={field.placeholder || 'https://...'}
-              />
-            )}
+                {field.type === 'url' && (
+                  <Input
+                    id={`${roleType}-${field.key}`}
+                    type="url"
+                    value={(formData[field.key] as string) || ''}
+                    onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder || 'https://...'}
+                  />
+                )}
 
-            {field.type === 'tags' && (
-              <TagsInput
-                value={(formData[field.key] as string[]) || []}
-                onChange={(tags) => handleFieldChange(field.key, tags)}
-                options={field.options}
-                placeholder={field.placeholder}
-              />
-            )}
+                {field.type === 'tags' && (
+                  <TagsInput
+                    value={(formData[field.key] as string[]) || []}
+                    onChange={(tags) => handleFieldChange(field.key, tags)}
+                    options={field.options}
+                    placeholder={field.placeholder}
+                  />
+                )}
 
-            {field.type === 'select' && field.options && (
-              <Select
-                value={(formData[field.key] as string) || ''}
-                onValueChange={(value) => handleFieldChange(field.key, value)}
+                {field.type === 'select' && field.options && (
+                  <Select
+                    value={(formData[field.key] as string) || ''}
+                    onValueChange={(value) => handleFieldChange(field.key, value)}
+                  >
+                    <SelectTrigger id={`${roleType}-${field.key}`}>
+                      <SelectValue
+                        placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {field.options.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            ))}
+
+            {/* Action Buttons — only visible in edit mode */}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={handleCancel} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || !isDirty}
+                size="sm"
+                className="gap-2"
               >
-                <SelectTrigger id={`${roleType}-${field.key}`}>
-                  <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {field.options.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                {isSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </>
+        ) : (
+          /* View mode — read-only display */
+          <div className="space-y-3">
+            {roleConfig.fields.map((field) => (
+              <div key={field.key} className="space-y-0.5">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">{field.label}</p>
+                <FieldValueDisplay field={field} value={formData[field.key]} />
+              </div>
+            ))}
           </div>
-        ))}
-
-        {/* Save Button */}
-        <div className="flex justify-end pt-2">
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || !isDirty}
-            size="sm"
-            className="gap-2"
-          >
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : isDirty ? (
-              <Save className="h-4 w-4" />
-            ) : (
-              <Check className="h-4 w-4" />
-            )}
-            {isSaving ? 'Saving...' : isDirty ? 'Save Changes' : 'Saved'}
-          </Button>
-        </div>
+        )}
       </CardContent>
     </Card>
   );
