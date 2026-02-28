@@ -15,11 +15,12 @@
 
 // Filter type definitions
 export interface EmployeeFilters {
-  search?: string;
-  department?: string;
-  status?: 'active' | 'on_leave' | 'probation' | 'terminated';
-  page?: number;
-  pageSize?: number;
+  search?: string | undefined;
+  userId?: string | undefined;
+  department?: string | undefined;
+  status?: 'active' | 'on_leave' | 'probation' | 'terminated' | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 }
 
 export interface DepartmentFilters {
@@ -59,12 +60,12 @@ export interface InvoiceFilters {
 }
 
 export interface DocumentFilters {
-  search?: string;
-  employeeId?: string;
-  documentType?: string;
-  isConfidential?: boolean;
-  page?: number;
-  pageSize?: number;
+  search?: string | undefined;
+  employeeId?: string | undefined;
+  documentType?: string | undefined;
+  isConfidential?: boolean | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 }
 
 export interface AnnouncementFilters {

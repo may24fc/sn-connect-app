@@ -57,28 +57,32 @@ const config: Config = {
           foreground: '#FFFFFF',
         },
 
-        // Neutral - Zinc Scale
-        background: '#FAFAFA',
-        foreground: '#09090B',
+        // Neutral - Zinc Scale (use CSS variables so dark mode switches automatically)
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
         muted: {
-          DEFAULT: '#F4F4F5',
-          foreground: '#71717A',
+          DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+          foreground: 'rgb(var(--muted-foreground) / <alpha-value>)',
         },
         card: {
-          DEFAULT: '#FFFFFF',
-          foreground: '#18181B',
+          DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+          foreground: 'rgb(var(--card-foreground) / <alpha-value>)',
         },
         popover: {
-          DEFAULT: '#FFFFFF',
-          foreground: '#18181B',
+          DEFAULT: 'rgb(var(--popover) / <alpha-value>)',
+          foreground: 'rgb(var(--popover-foreground) / <alpha-value>)',
         },
         accent: {
-          DEFAULT: '#EEF2FF', // Indigo 50
-          foreground: '#4F46E5', // Indigo 600
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          foreground: 'rgb(var(--accent-foreground) / <alpha-value>)',
         },
-        border: '#E4E4E7',
-        input: '#E4E4E7',
-        ring: '#4F46E5',
+        destructive: {
+          DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+          foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
+        },
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
       },
 
       fontFamily: {
