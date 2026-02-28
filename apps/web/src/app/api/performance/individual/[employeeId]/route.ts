@@ -1,7 +1,7 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin'];
+const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
 
 export async function GET(
   request: NextRequest,
@@ -9,6 +9,7 @@ export async function GET(
 ) {
   try {
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
     const {
       data: { user },
       error: authError,
@@ -24,7 +25,7 @@ export async function GET(
       role = user.app_metadata.db_role;
     }
     if (!role) {
-      const { data: roleData } = await supabase
+      const { data: roleData } = await supabaseAdmin
         .from('users')
         .select('role')
         .eq('id', user.id)
@@ -37,7 +38,7 @@ export async function GET(
 
     // Non-admins can only view their own data
     if (!ADMIN_ROLES.includes(role || '')) {
-      const { data: ownEmployee } = await supabase
+      const { data: ownEmployee } = await supabaseAdmin
         .from('employees')
         .select('id')
         .eq('user_id', user.id)
@@ -49,12 +50,15 @@ export async function GET(
       }
     }
 
+    // Use admin client to bypass RLS — app-level auth above already scopes access
+    const db = supabaseAdmin;
+
     // Fetch employee details
-    const { data: employee, error: empError } = await supabase
+    const { data: employee, error: empError } = await db
       .from('employees')
       .select(
         `
-        id, user_id, first_name, last_name, position, department, status,
+        id, user_id, first_name, last_name, position, department,
         employment_type, date_hired
       `
       )
@@ -66,17 +70,17 @@ export async function GET(
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
-    // Fetch user data for avatar and department_id
-    const { data: userData } = await supabase
+    // Fetch user data for avatar, role, status, and department_id
+    const { data: userData } = await db
       .from('users')
-      .select('avatar_url, role, email, department_id')
+      .select('avatar_url, role, email, department_id, status')
       .eq('id', employee.user_id)
       .maybeSingle();
 
     // Resolve department name: use employees.department text, or look up from users.department_id
     let departmentName: string | null = employee.department ?? null;
     if (!departmentName && userData?.department_id) {
-      const { data: dept } = await supabase
+      const { data: dept } = await db
         .from('departments')
         .select('name')
         .eq('id', userData.department_id)
@@ -85,21 +89,21 @@ export async function GET(
     }
 
     // Fetch KPIs
-    const { data: kpis } = await supabase
+    const { data: kpis } = await db
       .from('kpis')
       .select('*')
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false });
 
     // Fetch OKRs
-    const { data: okrs } = await supabase
+    const { data: okrs } = await db
       .from('okrs')
       .select('*')
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false });
 
     // Fetch OKR Targets
-    const { data: okrTargets } = await supabase
+    const { data: okrTargets } = await db
       .from('okr_targets')
       .select('*')
       .eq('employee_id', employeeId)
@@ -108,7 +112,7 @@ export async function GET(
       .order('created_at', { ascending: true });
 
     // Fetch performance reviews
-    const { data: reviews } = await supabase
+    const { data: reviews } = await db
       .from('performance_reviews')
       .select(
         `
@@ -154,7 +158,7 @@ export async function GET(
         fullName: `${employee.first_name || ''} ${employee.last_name || ''}`.trim(),
         position: employee.position,
         department: departmentName,
-        status: employee.status,
+        status: userData?.status ?? null,
         employmentType: employee.employment_type,
         dateHired: employee.date_hired,
         avatarUrl: userData?.avatar_url ?? null,
@@ -170,6 +174,7 @@ export async function GET(
       latestReview,
     });
   } catch (err) {
+    console.error('[performance/individual] Internal error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

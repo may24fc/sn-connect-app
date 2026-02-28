@@ -492,10 +492,10 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Back button */}
-      <Link href="/admin/performance/individual">
+      <Link href="/admin/performance">
         <Button variant="ghost" size="sm" className="w-fit">
           <ArrowLeft className="h-4 w-4 mr-2" strokeWidth={1.5} />
-          Back to Individual List
+          Back to Performance
         </Button>
       </Link>
 

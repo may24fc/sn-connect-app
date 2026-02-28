@@ -92,6 +92,7 @@ export default function PerformancePage(): ReactNode {
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [formState, setFormState] = useState<CreateObjectiveFormState>(emptyForm);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all');
 
   // Calculate overall weighted progress across all objectives
   const totalWeight = okrs.reduce((sum, okr) => sum + (okr.weight || 1), 0);
@@ -266,6 +267,20 @@ export default function PerformancePage(): ReactNode {
             <Target className="h-5 w-5" />
             Objectives
           </h2>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+          >
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Filter status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="not_started">Not Started</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {okrs.length === 0 ? (
@@ -282,9 +297,18 @@ export default function PerformancePage(): ReactNode {
               </Button>
             </CardContent>
           </Card>
-        ) : (
+        ) : (() => {
+          const filteredOkrs = statusFilter === 'all' ? okrs : okrs.filter((o) => o.status === statusFilter);
+          return filteredOkrs.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No objectives match the selected filter</p>
+              </CardContent>
+            </Card>
+          ) : (
           <div className="space-y-3">
-            {okrs.map((okr) => {
+            {filteredOkrs.map((okr) => {
               const weightPct = totalWeight > 0 ? Math.round((okr.weight / totalWeight) * 100) : 0;
               return (
                 <Link key={okr.id} href={`/performance/okrs/${okr.id}`} className="block">
@@ -372,7 +396,8 @@ export default function PerformancePage(): ReactNode {
               );
             })}
           </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Create Objective — Slide Panel */}
