@@ -1,6 +1,16 @@
 'use client';
 
-import { BankSelector, Input, Label, PhoneInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import {
+  BankSelector,
+  Input,
+  Label,
+  PhoneInput,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 import type { BankOption } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
 
@@ -21,7 +31,12 @@ export function StepPaymentInfo({
   // Default bank data - in production this would come from the API
   const banks: BankOption[] = [
     { id: 'bdo', bankName: 'BDO Unibank', bankCode: 'BDO', countryCode: 'PH' },
-    { id: 'bpi', bankName: 'BPI (Bank of the Philippine Islands)', bankCode: 'BPI', countryCode: 'PH' },
+    {
+      id: 'bpi',
+      bankName: 'BPI (Bank of the Philippine Islands)',
+      bankCode: 'BPI',
+      countryCode: 'PH',
+    },
     { id: 'metrobank', bankName: 'Metrobank', bankCode: 'MBTC', countryCode: 'PH' },
     { id: 'unionbank', bankName: 'UnionBank', bankCode: 'UBP', countryCode: 'PH' },
     { id: 'gcash', bankName: 'GCash', bankCode: 'GCASH', countryCode: 'PH' },
