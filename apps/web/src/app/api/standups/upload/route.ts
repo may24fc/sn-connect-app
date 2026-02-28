@@ -34,10 +34,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Validate file type
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: `File type ${file.type} is not allowed` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `File type ${file.type} is not allowed` }, { status: 400 });
     }
 
     // Validate file size

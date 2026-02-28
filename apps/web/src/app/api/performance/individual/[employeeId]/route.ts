@@ -98,6 +98,15 @@ export async function GET(
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false });
 
+    // Fetch OKR Targets
+    const { data: okrTargets } = await supabase
+      .from('okr_targets')
+      .select('*')
+      .eq('employee_id', employeeId)
+      .is('deleted_at', null)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
+
     // Fetch performance reviews
     const { data: reviews } = await supabase
       .from('performance_reviews')
@@ -155,6 +164,7 @@ export async function GET(
       kpis: kpis || [],
       kpiSummary,
       okrs: okrs || [],
+      okrTargets: okrTargets || [],
       okrSummary,
       reviews: reviews || [],
       latestReview,

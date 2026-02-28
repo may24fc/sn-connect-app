@@ -15,10 +15,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
 // Lazy-load the chatbot — it's interactive and only opened on demand
-const AIChatbot = dynamic(
-  () => import('@hr-portal/ui').then((m) => ({ default: m.AIChatbot })),
-  { ssr: false }
-);
+const AIChatbot = dynamic(() => import('@hr-portal/ui').then((m) => ({ default: m.AIChatbot })), {
+  ssr: false,
+});
 
 export default function EmployeeLayout({
   children,
@@ -104,51 +103,44 @@ function EmployeeLayoutInner({
   const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
 
   return (
-      <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block flex-shrink-0">
-          <Sidebar
-            variant={sidebarVariant}
-            currentPath={pathname}
-            onNavigate={onNavigate}
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-        </div>
-
-        {/* Mobile Sidebar Overlay */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            <div
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            <div className="relative z-10 flex-shrink-0">
-              <Sidebar
-                variant={sidebarVariant}
-                currentPath={pathname}
-                onNavigate={onNavigate}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Header
-            user={user}
-            onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-            onLogout={onLogout}
-            onProfileClick={onProfileClick}
-            onHelpClick={currentGroup ? startTour : undefined}
-            notificationSlot={<EmployeeNotificationBell />}
-            aiChatSlot={<AIChatbot />}
-          />
-
-          {/* Scrollable Content Area */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
-        </div>
+    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block flex-shrink-0">
+        <Sidebar
+          variant={sidebarVariant}
+          currentPath={pathname}
+          onNavigate={onNavigate}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <div className="relative z-10 flex-shrink-0">
+            <Sidebar variant={sidebarVariant} currentPath={pathname} onNavigate={onNavigate} />
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header
+          user={user}
+          onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onLogout={onLogout}
+          onProfileClick={onProfileClick}
+          onHelpClick={currentGroup ? startTour : undefined}
+          notificationSlot={<EmployeeNotificationBell />}
+          aiChatSlot={<AIChatbot />}
+        />
+
+        {/* Scrollable Content Area */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+      </div>
+    </div>
   );
 }
 

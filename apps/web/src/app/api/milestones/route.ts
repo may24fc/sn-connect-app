@@ -60,10 +60,14 @@ export async function GET(request: NextRequest) {
 
     // Get user avatars
     const userIds = (employees || []).map((e) => e.user_id).filter(Boolean);
-    const { data: users } = await supabase
-      .from('users')
-      .select('id, avatar_url, role')
-      .in('id', userIds);
+    let users: Array<{ id: string; avatar_url: string | null; role: string }> | null = null;
+    if (userIds.length > 0) {
+      const { data } = await supabase
+        .from('users')
+        .select('id, avatar_url, role')
+        .in('id', userIds);
+      users = data;
+    }
 
     const userMap = new Map(
       (users || []).map((u) => [u.id, { avatar_url: u.avatar_url, role: u.role }])
@@ -71,10 +75,11 @@ export async function GET(request: NextRequest) {
 
     // Get department names
     const deptIds = [...new Set((employees || []).map((e) => e.department_id).filter(Boolean))];
-    const { data: departments } = await supabase
-      .from('departments')
-      .select('id, name')
-      .in('id', deptIds);
+    let departments: Array<{ id: string; name: string }> | null = null;
+    if (deptIds.length > 0) {
+      const { data } = await supabase.from('departments').select('id, name').in('id', deptIds);
+      departments = data;
+    }
 
     const deptMap = new Map((departments || []).map((d) => [d.id, d.name]));
 

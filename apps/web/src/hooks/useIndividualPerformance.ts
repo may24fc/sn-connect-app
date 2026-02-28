@@ -40,12 +40,33 @@ export interface IndividualPerformanceData {
     employee_id: string;
     cycle_id: string | null;
     objective: string;
+    description: string | null;
     key_results: unknown;
     progress: number;
+    weight: number;
     status: string;
     admin_comments: string | null;
-    admin_rating: number | null;
+    admin_rating: string | null;
     created_at: string;
+  }>;
+  okrTargets: Array<{
+    id: string;
+    okr_id: string;
+    employee_id: string;
+    cycle_id: string | null;
+    name: string;
+    description: string | null;
+    metric_type: 'number' | 'boolean' | 'currency' | 'tasks';
+    start_value: number;
+    target_value: number;
+    current_value: number;
+    unit: string | null;
+    weight: number;
+    sort_order: number;
+    admin_rating: string | null;
+    admin_comments: string | null;
+    created_at: string;
+    updated_at: string;
   }>;
   okrSummary: {
     total: number;

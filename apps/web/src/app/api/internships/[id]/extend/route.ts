@@ -12,10 +12,7 @@ const extendInternshipSchema = z.object({
   reason: z.string().min(5, 'Reason must be at least 5 characters').max(500),
 });
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createSupabaseServerClient();
     const {
@@ -73,10 +70,7 @@ export async function PATCH(
     }
 
     if (internship.status !== 'active') {
-      return NextResponse.json(
-        { error: 'Can only extend active internships' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Can only extend active internships' }, { status: 400 });
     }
 
     const previousEndDate = internship.end_date;

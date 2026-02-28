@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocuments, useDownloadDocument, useUploadDocument } from '@/hooks/useDocuments';
+import { useEmployees } from '@/hooks/useEmployees';
 import {
   Badge,
   Button,
@@ -14,19 +15,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Input,
-  Label,
+  FileDropZone,
 } from '@hr-portal/ui';
 import { Download, FileText, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+
+const MAX_FILES = 5;
 
 export default function FilesPage() {
   const { user } = useAuth();
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [fileInput, setFileInput] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Array<File>>([]);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Fetch the current user's employee record to get the employee ID
+  const { data: empLookup } = useEmployees({
+    search: user?.email || '',
+    pageSize: 1,
+  });
+  const employee = empLookup?.data?.[0] ?? null;
 
   const { data: docsData, isLoading } = useDocuments({
-    search: user?.email || '',
+    employeeId: employee?.id,
   });
 
   const upload = useUploadDocument();
@@ -34,24 +44,45 @@ export default function FilesPage() {
 
   const documents = docsData?.data ?? [];
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] ?? null;
-    setFileInput(f);
-  };
+  const handleFilesSelected = useCallback((files: Array<File>) => {
+    setSelectedFiles((prev) => {
+      const combined = [...prev, ...files];
+      // Limit to MAX_FILES
+      return combined.slice(0, MAX_FILES);
+    });
+  }, []);
+
+  const handleRemoveFile = useCallback((index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const handleUpload = async () => {
-    if (!fileInput) return;
+    if (selectedFiles.length === 0 || !employee?.id) return;
+
+    setIsUploading(true);
     try {
-      await upload.mutateAsync({
-        file: fileInput,
-        employeeId: '',
-        documentType: 'other',
-        isConfidential: false,
-      });
+      // Upload all files sequentially
+      for (const file of selectedFiles) {
+        await upload.mutateAsync({
+          file,
+          employeeId: employee.id,
+          documentType: 'other',
+          isConfidential: false,
+        });
+      }
       setUploadOpen(false);
-      setFileInput(null);
+      setSelectedFiles([]);
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    if (!isUploading) {
+      setUploadOpen(false);
+      setSelectedFiles([]);
     }
   };
 
@@ -111,23 +142,35 @@ export default function FilesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+      <Dialog open={uploadOpen} onOpenChange={handleCloseDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
+            <DialogTitle>Upload Documents</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="file">File</Label>
-              <Input id="file" type="file" onChange={handleFileChange} />
-            </div>
+            <FileDropZone
+              onFilesSelected={handleFilesSelected}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/jpeg,image/png,image/gif"
+              maxSizeMB={10}
+              multiple
+              maxFiles={MAX_FILES}
+              selectedFiles={selectedFiles}
+              onRemoveFile={handleRemoveFile}
+              isUploading={isUploading}
+              formatHint={`PDF, Word, Excel, PowerPoint, Images — max 10 MB each (up to ${MAX_FILES} files)`}
+            />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setUploadOpen(false)}>
+            <Button variant="outline" onClick={handleCloseDialog} disabled={isUploading}>
               Cancel
             </Button>
-            <Button onClick={handleUpload} disabled={!fileInput}>
-              Upload
+            <Button
+              onClick={handleUpload}
+              disabled={selectedFiles.length === 0 || !employee?.id || isUploading}
+            >
+              {isUploading
+                ? 'Uploading...'
+                : `Upload ${selectedFiles.length > 0 ? `(${selectedFiles.length})` : ''}`}
             </Button>
           </DialogFooter>
         </DialogContent>
