@@ -97,9 +97,11 @@ export async function POST(request: NextRequest) {
         employee_id: employeeId,
         cycle_id: parsed.data.cycleId || null,
         objective: parsed.data.objective,
+        description: parsed.data.description || null,
         key_results: parsed.data.keyResults,
         progress: parsed.data.progress,
         status: parsed.data.status,
+        weight: parsed.data.weight ?? 1,
       })
       .select('*')
       .single();
@@ -134,9 +136,11 @@ export async function PATCH(request: NextRequest) {
 
     const payload: Record<string, unknown> = {};
     if (parsed.data.objective !== undefined) payload.objective = parsed.data.objective;
+    if (parsed.data.description !== undefined) payload.description = parsed.data.description;
     if (parsed.data.keyResults !== undefined) payload.key_results = parsed.data.keyResults;
     if (parsed.data.progress !== undefined) payload.progress = parsed.data.progress;
     if (parsed.data.status !== undefined) payload.status = parsed.data.status;
+    if (parsed.data.weight !== undefined) payload.weight = parsed.data.weight;
     if (parsed.data.adminRating !== undefined) payload.admin_rating = parsed.data.adminRating;
     if (parsed.data.adminComments !== undefined) payload.admin_comments = parsed.data.adminComments;
     if (parsed.data.evaluatedBy !== undefined) payload.evaluated_by = parsed.data.evaluatedBy;

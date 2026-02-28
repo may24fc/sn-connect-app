@@ -1,6 +1,14 @@
 import { queryKeys } from '@/lib/query-keys';
 import type { CreateReviewCycleInput } from '@/lib/schemas/performance.schema';
-import type { KPI, OKR, PerformanceCycle, ReviewStatus } from '@hr-portal/ui';
+import type {
+  KPI,
+  OKR,
+  OKRTarget,
+  OKRTargetId,
+  PerformanceCycle,
+  ReviewStatus,
+  TargetMetricType,
+} from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface ReviewCycleRow {
@@ -21,6 +29,7 @@ interface OkrRow {
   employee_id: string;
   cycle_id: string | null;
   objective: string;
+  description: string | null;
   key_results: Array<{
     id?: string;
     description?: string;
@@ -32,6 +41,7 @@ interface OkrRow {
   }>;
   progress: number | null;
   status: string | null;
+  weight: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -46,6 +56,26 @@ interface KpiRow {
   unit: string | null;
   period_start: string;
   period_end: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface OkrTargetRow {
+  id: string;
+  okr_id: string;
+  employee_id: string;
+  cycle_id: string | null;
+  name: string;
+  description: string | null;
+  metric_type: TargetMetricType;
+  start_value: number | null;
+  target_value: number;
+  current_value: number | null;
+  unit: string | null;
+  weight: number | null;
+  sort_order: number | null;
+  admin_rating: string | null;
+  admin_comments: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -104,9 +134,54 @@ function toUiOKR(row: OkrRow): OKR {
     employeeId: row.employee_id as OKR['employeeId'],
     cycleId: (row.cycle_id || 'uncategorized') as OKR['cycleId'],
     objective: row.objective,
+    description: row.description || undefined,
     status: (row.status || 'in_progress') as OKR['status'],
+    weight: Number(row.weight ?? 1),
     progressPercentage: Number(row.progress ?? 0),
+    targets: [], // Populated separately via useOKRTargets
     keyResults: mappedKeyResults,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function calculateTargetProgress(target: OkrTargetRow): number {
+  const current = Number(target.current_value ?? 0);
+  const targetVal = Number(target.target_value);
+  const start = Number(target.start_value ?? 0);
+
+  switch (target.metric_type) {
+    case 'boolean':
+      return current >= 1 ? 100 : 0;
+    case 'number':
+    case 'currency':
+      if (targetVal > start) {
+        return Math.min(Math.round(((current - start) / (targetVal - start)) * 100), 100);
+      }
+      return current >= targetVal ? 100 : 0;
+    case 'tasks':
+      return targetVal > 0 ? Math.min(Math.round((current / targetVal) * 100), 100) : 0;
+    default:
+      return 0;
+  }
+}
+
+function toUiOKRTarget(row: OkrTargetRow): OKRTarget {
+  return {
+    id: row.id as OKRTargetId,
+    okrId: row.okr_id as OKR['id'],
+    employeeId: row.employee_id as OKR['employeeId'],
+    cycleId: row.cycle_id as OKR['cycleId'] | null,
+    name: row.name,
+    description: row.description || undefined,
+    metricType: row.metric_type,
+    startValue: Number(row.start_value ?? 0),
+    targetValue: Number(row.target_value),
+    currentValue: Number(row.current_value ?? 0),
+    unit: row.unit || undefined,
+    weight: Number(row.weight ?? 1),
+    sortOrder: Number(row.sort_order ?? 0),
+    progressPercentage: Math.max(0, calculateTargetProgress(row)),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -265,9 +340,11 @@ export function useUpdateOKR() {
     mutationFn: async (payload: {
       id: string;
       objective?: string;
+      description?: string;
       keyResults?: Array<Record<string, unknown>>;
       progress?: number;
       status?: string;
+      weight?: number;
       adminRating?: 'exceptional' | 'exceeds' | 'meets' | 'needs_improvement' | 'unsatisfactory';
       adminComments?: string;
       evaluatedBy?: string;
@@ -364,10 +441,12 @@ export function useCreateOKR() {
   return useMutation({
     mutationFn: async (payload: {
       objective: string;
+      description?: string;
       cycleId?: string;
       keyResults?: Array<Record<string, unknown>>;
       progress?: number;
       status?: string;
+      weight?: number;
       employeeId?: string;
     }) => {
       const response = await fetch('/api/performance/okrs', {
@@ -384,6 +463,133 @@ export function useCreateOKR() {
       return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
+// =============================================
+// OKR Target Hooks
+// =============================================
+
+export function useOKRTargets(okrId?: string) {
+  return useQuery({
+    queryKey: queryKeys.performance.okrTargets(okrId),
+    queryFn: async (): Promise<Array<OKRTarget>> => {
+      const params = new URLSearchParams();
+      if (okrId) params.set('okrId', okrId);
+      const response = await fetch(`/api/performance/okr-targets?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch targets');
+      const payload = (await response.json()) as { data: Array<OkrTargetRow> };
+      return (payload.data || []).map(toUiOKRTarget);
+    },
+    enabled: !!okrId,
+  });
+}
+
+export function useCreateOKRTarget() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      okrId: string;
+      name: string;
+      description?: string;
+      metricType: TargetMetricType;
+      startValue?: number;
+      targetValue: number;
+      currentValue?: number;
+      unit?: string;
+      weight?: number;
+      sortOrder?: number;
+    }) => {
+      const response = await fetch('/api/performance/okr-targets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to create target');
+      }
+
+      return response.json() as Promise<{ data: OkrTargetRow }>;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.performance.okrTargets(variables.okrId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
+export function useUpdateOKRTarget() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      okrId: string; // needed for cache invalidation
+      name?: string;
+      description?: string;
+      metricType?: TargetMetricType;
+      startValue?: number;
+      targetValue?: number;
+      currentValue?: number;
+      unit?: string;
+      weight?: number;
+      sortOrder?: number;
+      adminRating?: string;
+      adminComments?: string;
+    }) => {
+      const { okrId: _, ...body } = payload;
+      const response = await fetch('/api/performance/okr-targets', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to update target');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.performance.okrTargets(variables.okrId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
+export function useDeleteOKRTarget() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { id: string; okrId: string }) => {
+      const response = await fetch(`/api/performance/okr-targets?id=${payload.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to delete target');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.performance.okrTargets(variables.okrId),
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
     },

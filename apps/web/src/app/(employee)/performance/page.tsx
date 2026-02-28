@@ -1,10 +1,6 @@
-'use client';
+﻿'use client';
 
-import {
-  usePerformanceCycles,
-  usePerformanceKPIs,
-  usePerformanceOKRs,
-} from '@/hooks/usePerformance';
+import { useCreateOKR, usePerformanceCycles, usePerformanceOKRs } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
   Badge,
@@ -14,12 +10,27 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
   Progress,
   ProgressGauge,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+  useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, BarChart3, Calendar, ChevronRight, Target } from 'lucide-react';
+import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -27,13 +38,6 @@ function formatDate(dateString: string): string {
     day: 'numeric',
     year: 'numeric',
   });
-}
-
-function getDaysUntil(dateString: string): number {
-  const target = new Date(dateString);
-  const today = new Date();
-  const diff = target.getTime() - today.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 function getQuarterLabel(dateString: string): string {
@@ -50,45 +54,115 @@ function getQuarterLabel(dateString: string): string {
   return `Q${quarter}: ${quarterMonths[quarter]} ${year}`;
 }
 
+function getProgressBarColor(value: number): string {
+  if (value >= 80) return 'bg-success';
+  if (value >= 50) return 'bg-warning';
+  return 'bg-error';
+}
+
+function getProgressColor(value: number): string {
+  if (value >= 80) return 'text-success';
+  if (value >= 50) return 'text-warning';
+  return 'text-error';
+}
+
+interface CreateObjectiveFormState {
+  objective: string;
+  description: string;
+  cycleId: string;
+  weight: string;
+}
+
+const emptyForm: CreateObjectiveFormState = {
+  objective: '',
+  description: '',
+  cycleId: '',
+  weight: '1',
+};
+
 export default function PerformancePage(): ReactNode {
   usePerformanceRealtime();
+  const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
-  const { data: kpis = [] } = usePerformanceKPIs(activeCycle?.id);
+  const createOKR = useCreateOKR();
 
-  const cycle = activeCycle;
-  const currentOkrs = okrs;
-  const currentKpis = kpis;
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [formState, setFormState] = useState<CreateObjectiveFormState>(emptyForm);
 
-  const avgOkrProgress =
-    currentOkrs.length > 0
+  // Calculate overall weighted progress across all objectives
+  const totalWeight = okrs.reduce((sum, okr) => sum + (okr.weight || 1), 0);
+  const overallProgress =
+    totalWeight > 0
       ? Math.round(
-          currentOkrs.reduce((sum, okr) => sum + okr.progressPercentage, 0) / currentOkrs.length
+          okrs.reduce((sum, okr) => sum + okr.progressPercentage * (okr.weight || 1), 0) /
+            totalWeight
         )
       : 0;
 
-  const avgKpiScore =
-    currentKpis.length > 0
-      ? Math.round(currentKpis.reduce((sum, kpi) => sum + kpi.score, 0) / currentKpis.length)
-      : 0;
+  const stats = {
+    total: okrs.length,
+    inProgress: okrs.filter((o) => o.status === 'in_progress').length,
+    completed: okrs.filter((o) => o.status === 'completed').length,
+  };
 
-  const okrDeadlines = currentOkrs
-    .filter((okr) => {
-      const record = okr as unknown as Record<string, unknown>;
-      return 'deadline' in record && typeof record.deadline === 'string';
-    })
-    .map((okr) => ({
-      objective: okr.objective,
-      deadline: (okr as unknown as Record<string, unknown>).deadline as string,
-    }));
+  const handleOpenCreate = (): void => {
+    setFormState({
+      ...emptyForm,
+      cycleId: activeCycle?.id || '',
+    });
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateObjective = async (): Promise<void> => {
+    if (!formState.objective.trim()) return;
+
+    const selectedCycleId = formState.cycleId || activeCycle?.id;
+
+    try {
+      const payload: Parameters<typeof createOKR.mutateAsync>[0] = {
+        objective: formState.objective,
+        keyResults: [],
+        progress: 0,
+        status: 'in_progress',
+        weight: Number(formState.weight) || 1,
+      };
+      const desc = formState.description.trim();
+      if (desc) payload.description = desc;
+      if (selectedCycleId) payload.cycleId = selectedCycleId;
+
+      await createOKR.mutateAsync(payload);
+
+      addToast({
+        title: 'Objective created',
+        description: 'Click on it to add targets and KPIs',
+        variant: 'success',
+      });
+
+      setCreateDialogOpen(false);
+      setFormState(emptyForm);
+    } catch {
+      addToast({
+        title: 'Error',
+        description: 'Failed to create objective',
+        variant: 'error',
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Performance</h1>
-        <p className="text-muted-foreground">Track your objectives and KPIs</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Performance</h1>
+          <p className="text-muted-foreground">Track your objectives, targets, and KPIs</p>
+        </div>
+        <Button onClick={handleOpenCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          New Objective
+        </Button>
       </div>
 
       {/* Current Cycle Banner */}
@@ -100,216 +174,296 @@ export default function PerformancePage(): ReactNode {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold">{cycle?.name || 'No Active Cycle'}</h2>
+                <h2 className="font-semibold">{activeCycle?.name || 'No Active Cycle'}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {cycle
-                    ? `${formatDate(cycle.startDate)} - ${formatDate(cycle.endDate)}`
+                  {activeCycle
+                    ? `${formatDate(activeCycle.startDate)} - ${formatDate(activeCycle.endDate)}`
                     : 'No performance cycle has been created yet'}
                 </p>
-                {cycle && (
+                {activeCycle && (
                   <p className="text-xs font-medium text-primary mt-0.5">
-                    {getQuarterLabel(cycle.startDate)}
+                    {getQuarterLabel(activeCycle.startDate)}
                   </p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {cycle ? (
-                <Badge variant="success">Active Cycle</Badge>
-              ) : (
-                <Badge variant="secondary">No Cycle</Badge>
-              )}
-            </div>
+            <Badge variant={activeCycle ? 'success' : 'secondary'}>
+              {activeCycle ? 'Active Cycle' : 'No Cycle'}
+            </Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Progress Summary */}
+      {/* Overall Progress + Stats */}
       <div className="grid gap-6 lg:grid-cols-3">
+        {/* Overall Weighted Progress */}
+        <Card className="lg:col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Overall Score</CardTitle>
+            <CardDescription>Weighted average across all objectives</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center py-4">
+            <ProgressGauge value={overallProgress} label="Overall Progress" size="lg" />
+            <p className="text-sm text-muted-foreground mt-2">
+              {okrs.length} objective{okrs.length !== 1 ? 's' : ''} &middot; {stats.completed}{' '}
+              completed
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Stats Grid */}
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Your Progress</CardTitle>
-            <CardDescription>Overview of your performance metrics for this cycle</CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-6 sm:grid-cols-2">
-              <ProgressGauge value={avgOkrProgress} label="OKR Progress" size="md" />
-              <ProgressGauge
-                value={avgKpiScore > 100 ? 100 : avgKpiScore}
-                label="KPI Score"
-                size="md"
+            <div className="grid gap-4 grid-cols-3">
+              <div className="text-center p-3 rounded-lg bg-primary/5">
+                <p className="text-3xl font-bold text-primary">{stats.total}</p>
+                <p className="text-xs text-muted-foreground mt-1">Objectives</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-warning/5">
+                <p className="text-3xl font-bold text-warning">{stats.inProgress}</p>
+                <p className="text-xs text-muted-foreground mt-1">In Progress</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-success/5">
+                <p className="text-3xl font-bold text-success">{stats.completed}</p>
+                <p className="text-xs text-muted-foreground mt-1">Completed</p>
+              </div>
+            </div>
+
+            {/* Weight distribution bar */}
+            {okrs.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-xs text-muted-foreground mb-2 font-medium">
+                  Weight Distribution
+                </p>
+                <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-muted">
+                  {okrs.map((okr) => {
+                    const weightPct = totalWeight > 0 ? (okr.weight / totalWeight) * 100 : 0;
+                    return (
+                      <div
+                        key={okr.id}
+                        className={`${getProgressBarColor(okr.progressPercentage)} opacity-70 hover:opacity-100 transition-opacity`}
+                        style={{ width: `${weightPct}%` }}
+                        title={`${okr.objective}: weight ${okr.weight} (${Math.round(weightPct)}%)`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Objectives List */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Objectives
+          </h2>
+        </div>
+
+        {okrs.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-semibold text-lg mb-2">No objectives yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first objective, then add targets and KPIs to track your progress.
+              </p>
+              <Button onClick={handleOpenCreate}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Objective
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {okrs.map((okr) => {
+              const weightPct = totalWeight > 0 ? Math.round((okr.weight / totalWeight) * 100) : 0;
+              return (
+                <Link key={okr.id} href={`/performance/okrs/${okr.id}`} className="block">
+                  <Card className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Left: Progress circle + info */}
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          <div className="shrink-0">
+                            <div className="relative h-14 w-14">
+                              <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
+                                <circle
+                                  cx="28"
+                                  cy="28"
+                                  r="24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  className="text-muted/30"
+                                />
+                                <circle
+                                  cx="28"
+                                  cy="28"
+                                  r="24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                  strokeDasharray={`${(okr.progressPercentage / 100) * 150.8} 150.8`}
+                                  strokeLinecap="round"
+                                  className={getProgressColor(okr.progressPercentage)}
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-xs font-bold">{okr.progressPercentage}%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-foreground truncate">
+                              {okr.objective}
+                            </h3>
+                            {okr.description && (
+                              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
+                                {okr.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-3 mt-2">
+                              <Badge
+                                variant={
+                                  okr.status === 'completed'
+                                    ? 'success'
+                                    : okr.status === 'in_progress'
+                                      ? 'warning'
+                                      : 'secondary'
+                                }
+                                className="text-xs"
+                              >
+                                {okr.status === 'in_progress'
+                                  ? 'In Progress'
+                                  : okr.status.charAt(0).toUpperCase() + okr.status.slice(1)}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                Weight: {weightPct}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <Progress
+                          value={okr.progressPercentage}
+                          className="h-2"
+                          indicatorClassName={getProgressBarColor(okr.progressPercentage)}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Create Objective Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              Create New Objective
+            </DialogTitle>
+            <DialogDescription>
+              Define an objective, then add targets and KPIs inside it.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cycle">Performance Cycle</Label>
+              <Select
+                value={formState.cycleId}
+                onValueChange={(value) => setFormState({ ...formState, cycleId: value })}
+              >
+                <SelectTrigger id="cycle">
+                  <SelectValue placeholder="Select a cycle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cycles.map((cycle) => (
+                    <SelectItem key={cycle.id} value={cycle.id}>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>{cycle.name}</span>
+                        {cycle.status === 'active' && (
+                          <span className="text-xs text-success font-medium">(Active)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="objective">Objective</Label>
+              <Input
+                id="objective"
+                placeholder="e.g., Increase monthly VP points to 2,000"
+                value={formState.objective}
+                onChange={(e) => setFormState({ ...formState, objective: e.target.value })}
               />
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Upcoming Deadlines */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-warning" />
-              Upcoming Deadlines
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {cycle && (
-              <div className="p-2 rounded-lg bg-primary/5 border border-primary/10 mb-2">
-                <p className="text-xs font-medium text-primary">
-                  {getQuarterLabel(cycle.startDate)}
-                </p>
-              </div>
-            )}
-            {okrDeadlines.length > 0 ? (
-              okrDeadlines.map((item) => {
-                const daysLeft = getDaysUntil(item.deadline);
-                return (
-                  <div
-                    key={item.objective}
-                    className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{item.objective}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(item.deadline)}</p>
-                    </div>
-                    <Badge
-                      variant={daysLeft <= 7 ? 'error' : daysLeft <= 14 ? 'warning' : 'secondary'}
-                      className="ml-2 shrink-0"
-                    >
-                      {daysLeft > 0 ? `${daysLeft}d` : 'Due'}
-                    </Badge>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="text-sm text-muted-foreground py-2">No personal deadlines set</p>
-            )}
-            {cycle?.managerReviewDeadline && (
-              <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                <div>
-                  <p className="text-sm font-medium">Manager Review</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatDate(cycle.managerReviewDeadline)}
-                  </p>
-                </div>
-                <Badge variant="secondary">{getDaysUntil(cycle.managerReviewDeadline)}d</Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {/* OKRs Card */}
-        <Link href="/performance/okrs" className="block">
-          <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-success/10">
-                  <Target className="h-6 w-6 text-success" />
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold mb-1">OKRs</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {currentOkrs.length} objectives with{' '}
-                {currentOkrs.reduce((sum, okr) => sum + okr.keyResults.length, 0)} key results
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Average Progress</span>
-                  <span className="font-medium">{avgOkrProgress}%</span>
-                </div>
-                <Progress value={avgOkrProgress} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* KPIs Card */}
-        <Link href="/performance/kpis" className="block">
-          <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10">
-                  <BarChart3 className="h-6 w-6 text-warning" />
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <h3 className="font-semibold mb-1">KPIs</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {currentKpis.length} key performance indicators
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Average Score</span>
-                  <span className="font-medium">{avgKpiScore}%</span>
-                </div>
-                <Progress
-                  value={Math.min(avgKpiScore, 100)}
-                  className="h-2"
-                  indicatorClassName={
-                    avgKpiScore >= 100
-                      ? 'bg-success'
-                      : avgKpiScore >= 80
-                        ? 'bg-warning'
-                        : 'bg-error'
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      {/* Recent OKR Activity */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recent OKR Updates</CardTitle>
-              <CardDescription>Latest progress on your objectives</CardDescription>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                placeholder="Provide more context about this objective..."
+                value={formState.description}
+                onChange={(e) => setFormState({ ...formState, description: e.target.value })}
+              />
             </div>
-            <Link href="/performance/okrs">
-              <Button variant="outline" size="sm">
-                View All
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
+
+            <div className="space-y-2">
+              <Label htmlFor="weight">Weight</Label>
+              <Input
+                id="weight"
+                type="number"
+                min="0"
+                step="0.5"
+                placeholder="1"
+                value={formState.weight}
+                onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                How much this objective counts toward your overall score. Higher = more impact.
+              </p>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {currentOkrs.slice(0, 2).map((okr) => (
-              <div
-                key={okr.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-border"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                    <Target className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{okr.objective}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {okr.keyResults.length} key result{okr.keyResults.length !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-lg font-semibold">{okr.progressPercentage}%</p>
-                    <p className="text-xs text-muted-foreground">progress</p>
-                  </div>
-                  <div className="w-24 hidden md:block">
-                    <Progress value={okr.progressPercentage} className="h-2" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleCreateObjective();
+              }}
+              disabled={!formState.objective.trim() || createOKR.isPending}
+            >
+              Create Objective
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

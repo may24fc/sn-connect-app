@@ -58,6 +58,14 @@ export function usePerformanceRealtime({
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
     };
 
+    const invalidateTargetQueries = (): void => {
+      // okrTargets(undefined) invalidates all okr_targets queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrTargets() });
+      // Also invalidate OKRs since their progress depends on targets
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    };
+
     const channel = supabase
       .channel('performance:realtime')
       // OKR events --------------------------------------------------------
@@ -70,7 +78,17 @@ export function usePerformanceRealtime({
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'okrs' }, () => {
         invalidateOkrQueries();
       })
-      // KPI events --------------------------------------------------------
+      // OKR Targets events ------------------------------------------------
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'okr_targets' }, () => {
+        invalidateTargetQueries();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'okr_targets' }, () => {
+        invalidateTargetQueries();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'okr_targets' }, () => {
+        invalidateTargetQueries();
+      })
+      // KPI events (legacy) -----------------------------------------------
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'kpis' }, () => {
         invalidateKpiQueries();
       })

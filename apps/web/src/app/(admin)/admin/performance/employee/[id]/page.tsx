@@ -18,15 +18,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
-import {
-  ArrowLeft,
-  BarChart3,
-  CheckCircle2,
-  Clock,
-  Star,
-  Target,
-  TrendingUp,
-} from 'lucide-react';
+import { ArrowLeft, BarChart3, CheckCircle2, Clock, Star, Target, TrendingUp } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 
@@ -103,12 +95,7 @@ export default function IndividualPerformancePage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Back button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="w-fit"
-        onClick={() => router.back()}
-      >
+      <Button variant="ghost" size="sm" className="w-fit" onClick={() => router.back()}>
         <ArrowLeft className="h-4 w-4 mr-2" strokeWidth={1.5} />
         Back to Performance
       </Button>
@@ -187,13 +174,13 @@ export default function IndividualPerformancePage(): ReactNode {
               </span>
             </div>
             <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mt-1 tabular-nums">
-              {data.latestReview && typeof data.latestReview === 'object' && 'final_rating' in data.latestReview
+              {data.latestReview &&
+              typeof data.latestReview === 'object' &&
+              'final_rating' in data.latestReview
                 ? String((data.latestReview as { final_rating: number | null }).final_rating ?? '—')
                 : '—'}
             </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              out of 5.0
-            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">out of 5.0</p>
           </CardContent>
         </Card>
         <Card>
@@ -211,10 +198,10 @@ export default function IndividualPerformancePage(): ReactNode {
       </div>
 
       {/* Detail Tabs */}
-      <Tabs defaultValue="kpis">
+      <Tabs defaultValue="okrs">
         <TabsList>
-          <TabsTrigger value="kpis">KPIs ({kpis.length})</TabsTrigger>
-          <TabsTrigger value="okrs">OKRs ({okrs.length})</TabsTrigger>
+          <TabsTrigger value="okrs">Objectives ({okrs.length})</TabsTrigger>
+          <TabsTrigger value="kpis">Legacy KPIs ({kpis.length})</TabsTrigger>
           <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
         </TabsList>
 
@@ -223,7 +210,10 @@ export default function IndividualPerformancePage(): ReactNode {
           {kpis.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Target className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" strokeWidth={1.5} />
+                <Target
+                  className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2"
+                  strokeWidth={1.5}
+                />
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">No KPIs assigned</p>
               </CardContent>
             </Card>
@@ -256,7 +246,9 @@ export default function IndividualPerformancePage(): ReactNode {
                           <span className="text-zinc-600 dark:text-zinc-300 tabular-nums">
                             {kpi.current_value} / {kpi.target_value} {kpi.unit || ''}
                           </span>
-                          <span className={`font-medium tabular-nums ${getProgressColor(progress)}`}>
+                          <span
+                            className={`font-medium tabular-nums ${getProgressColor(progress)}`}
+                          >
                             {progress}%
                           </span>
                         </div>
@@ -280,7 +272,10 @@ export default function IndividualPerformancePage(): ReactNode {
           {okrs.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <TrendingUp className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" strokeWidth={1.5} />
+                <TrendingUp
+                  className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2"
+                  strokeWidth={1.5}
+                />
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">No OKRs assigned</p>
               </CardContent>
             </Card>
@@ -304,7 +299,9 @@ export default function IndividualPerformancePage(): ReactNode {
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
                           <Progress value={progress} className="h-2 flex-1" />
-                          <span className={`text-sm font-medium tabular-nums ${getProgressColor(progress)}`}>
+                          <span
+                            className={`text-sm font-medium tabular-nums ${getProgressColor(progress)}`}
+                          >
                             {progress}%
                           </span>
                         </div>
@@ -315,10 +312,7 @@ export default function IndividualPerformancePage(): ReactNode {
                               Key Results
                             </p>
                             {keyResults.map(
-                              (
-                                kr: { title?: string; progress?: number },
-                                i: number
-                              ) => (
+                              (kr: { title?: string; progress?: number }, i: number) => (
                                 <div
                                   key={`kr-${okr.id}-${i}`}
                                   className="flex items-center gap-2 text-sm"

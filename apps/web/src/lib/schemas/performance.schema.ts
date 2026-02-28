@@ -83,17 +83,57 @@ export const createOKRSchema = z.object({
   employeeId: z.string().uuid().optional(),
   cycleId: z.string().uuid().optional().nullable(),
   objective: z.string().min(1),
+  description: z.string().optional().nullable(),
   keyResults: z.array(keyResultSchema).default([]),
   progress: z.number().min(0).max(100).default(0),
   status: z.string().default('in_progress'),
+  weight: z.number().min(0).default(1),
 });
 
 export const updateOKRSchema = z.object({
   id: z.string().uuid(),
   objective: z.string().min(1).optional(),
+  description: z.string().optional().nullable(),
   keyResults: z.array(keyResultSchema).optional(),
   progress: z.number().min(0).max(100).optional(),
   status: z.string().optional(),
+  weight: z.number().min(0).optional(),
+  adminRating: z
+    .enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'])
+    .optional(),
+  adminComments: z.string().optional(),
+  evaluatedBy: z.string().uuid().optional(),
+  evaluatedAt: z.string().datetime().optional(),
+});
+
+export const targetMetricTypeSchema = z.enum(['number', 'boolean', 'currency', 'tasks']);
+
+export const createOKRTargetSchema = z.object({
+  okrId: z.string().uuid(),
+  employeeId: z.string().uuid().optional(),
+  cycleId: z.string().uuid().optional().nullable(),
+  name: z.string().min(1),
+  description: z.string().optional().nullable(),
+  metricType: targetMetricTypeSchema.default('number'),
+  startValue: z.number().default(0),
+  targetValue: z.number(),
+  currentValue: z.number().default(0),
+  unit: z.string().optional().nullable(),
+  weight: z.number().min(0).default(1),
+  sortOrder: z.number().int().default(0),
+});
+
+export const updateOKRTargetSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).optional(),
+  description: z.string().optional().nullable(),
+  metricType: targetMetricTypeSchema.optional(),
+  startValue: z.number().optional(),
+  targetValue: z.number().optional(),
+  currentValue: z.number().optional(),
+  unit: z.string().optional().nullable(),
+  weight: z.number().min(0).optional(),
+  sortOrder: z.number().int().optional(),
   adminRating: z
     .enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'])
     .optional(),
@@ -160,6 +200,8 @@ export type CreatePerformanceReviewInput = z.infer<typeof createPerformanceRevie
 export type UpdatePerformanceReviewInput = z.infer<typeof updatePerformanceReviewSchema>;
 export type CreateOKRInput = z.infer<typeof createOKRSchema>;
 export type UpdateOKRInput = z.infer<typeof updateOKRSchema>;
+export type CreateOKRTargetInput = z.infer<typeof createOKRTargetSchema>;
+export type UpdateOKRTargetInput = z.infer<typeof updateOKRTargetSchema>;
 export type CreateKPIInput = z.infer<typeof createKPISchema>;
 export type UpdateKPIInput = z.infer<typeof updateKPISchema>;
 export type ProbationActionInput = z.infer<typeof probationActionSchema>;
