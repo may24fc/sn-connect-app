@@ -1,5 +1,6 @@
 'use client';
 
+import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
@@ -24,19 +25,25 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   TaskPriorityBadge,
   TaskStatusBadge,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, LayoutGrid, List } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 export default function MyTasksPage() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
   const [priority, setPriority] = useState<string>('all');
+  const [activeView, setActiveView] = useState<'list' | 'board'>('list');
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
   const taskFilters = {
     ...(search ? { search } : {}),
@@ -46,7 +53,7 @@ export default function MyTasksPage() {
     ...(priority !== 'all' ? { priority: priority as 'low' | 'medium' | 'high' | 'urgent' } : {}),
     ...(user?.id ? { assigneeId: user.id } : {}),
     page: 1,
-    pageSize: 50,
+    pageSize: 100,
   };
 
   const { data, isLoading, error } = useTasks(taskFilters, { enabled: Boolean(user?.id) });
@@ -68,17 +75,39 @@ export default function MyTasksPage() {
     };
   }, [tasks]);
 
+  // Handler for status change in Kanban board
+  const handleStatusChange = useCallback(async (taskId: string, newStatus: TaskStatusDB) => {
+    setUpdatingTaskId(taskId);
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update task');
+      }
+    } finally {
+      setUpdatingTaskId(null);
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-headline">My Tasks</h1>
-        <p className="text-muted-foreground">Track and update your assigned tasks</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">My Tasks</h1>
+          <p className="text-sm text-muted-foreground">Track and update your assigned tasks</p>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Cards */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.total}</p>
@@ -86,169 +115,282 @@ export default function MyTasksPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{stats.pending}</p>
+            <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{stats.inProgress}</p>
+            <p className="text-2xl font-bold text-indigo-600">{stats.inProgress}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{stats.completed}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        <Input
-          className="min-w-[260px] flex-1"
-          placeholder="Search title or description"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={priority} onValueChange={setPriority}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Priority" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="urgent">Urgent</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* View Tabs */}
+      <Tabs value={activeView} onValueChange={(v) => setActiveView(v as 'list' | 'board')}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList>
+            <TabsTrigger value="list" className="gap-1.5">
+              <List className="h-4 w-4" />
+              List View
+            </TabsTrigger>
+            <TabsTrigger value="board" className="gap-1.5">
+              <LayoutGrid className="h-4 w-4" />
+              Board View
+            </TabsTrigger>
+          </TabsList>
 
-      {isLoading ? (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Assigned By</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-48 mb-2" />
-                      <Skeleton className="h-3 w-64" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-16" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-20" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-24" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Skeleton className="h-8 w-16 ml-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      ) : error ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-error">Failed to load tasks.</CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Assigned By</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tasks.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-0">
-                      <EmptyState
-                        icon={ClipboardList}
-                        title="No tasks assigned"
-                        description="You don't have any tasks assigned to you yet. Check back later or contact your manager."
-                        className="border-0"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  tasks.map((task) => (
-                    <TableRow key={task.id}>
-                      <TableCell>
-                        <p className="font-medium text-sm">{task.title}</p>
-                        {task.description ? (
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                            {task.description}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell>
-                        <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
-                      </TableCell>
-                      <TableCell>
-                        <TaskStatusBadge status={task.status as TaskStatus} size="sm" />
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(task.due_date)}
-                      </TableCell>
-                      <TableCell className="text-sm">{task.assigner_name || '—'}</TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/tasks/${task.id}`}>View</Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+          {/* Filters */}
+          <div className="flex flex-wrap gap-2">
+            <Input
+              className="w-[200px]"
+              placeholder="Search tasks..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={priority} onValueChange={setPriority}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priority</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="urgent">Urgent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* List View */}
+        <TabsContent value="list" className="mt-4">
+          {isLoading ? (
+            <TaskListSkeleton />
+          ) : error ? (
+            <Card>
+              <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+            </Card>
+          ) : (
+            <TaskListView tasks={tasks} />
+          )}
+        </TabsContent>
+
+        {/* Board View */}
+        <TabsContent value="board" className="mt-4">
+          {isLoading ? (
+            <TaskBoardSkeleton />
+          ) : error ? (
+            <Card>
+              <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+            </Card>
+          ) : tasks.length === 0 ? (
+            <Card>
+              <CardContent className="py-12">
+                <EmptyState
+                  icon={ClipboardList}
+                  title="No tasks assigned"
+                  description="You don't have any tasks assigned to you yet."
+                  className="border-0"
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <TaskKanbanBoard
+              tasks={tasks}
+              onStatusChange={handleStatusChange}
+              linkPrefix="/tasks"
+              isUpdating={Boolean(updatingTaskId)}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+function TaskListSkeleton() {
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Assigned By</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TableRow key={`skeleton-${n}`}>
+                <TableCell>
+                  <Skeleton className="h-4 w-48 mb-2" />
+                  <Skeleton className="h-3 w-64" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-16" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-5 w-20" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-32" />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Skeleton className="h-8 w-16 ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TaskBoardSkeleton() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {[1, 2, 3, 4].map((col) => (
+        <div key={`col-${col}`} className="space-y-3">
+          <Skeleton className="h-10 w-full rounded-md" />
+          <div className="space-y-2 rounded-md border border-zinc-200 p-2 dark:border-zinc-800">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface TaskListViewProps {
+  tasks: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    priority: string;
+    status: string;
+    due_date: string | null;
+    assigner_name?: string | null;
+  }>;
+}
+
+function TaskListView({ tasks }: TaskListViewProps) {
+  if (tasks.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Title</TableHead>
+                <TableHead>Priority</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Assigned By</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState
+                    icon={ClipboardList}
+                    title="No tasks assigned"
+                    description="You don't have any tasks assigned to you yet. Check back later or contact your manager."
+                    className="border-0"
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Priority</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Due Date</TableHead>
+              <TableHead>Assigned By</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tasks.map((task) => (
+              <TableRow key={task.id}>
+                <TableCell>
+                  <p className="text-sm font-medium">{task.title}</p>
+                  {task.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                      {task.description}
+                    </p>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
+                </TableCell>
+                <TableCell>
+                  <TaskStatusBadge status={task.status as TaskStatus} size="sm" />
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {formatDate(task.due_date)}
+                </TableCell>
+                <TableCell className="text-sm">{task.assigner_name || '—'}</TableCell>
+                <TableCell className="text-right">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/tasks/${task.id}`}>View</Link>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }

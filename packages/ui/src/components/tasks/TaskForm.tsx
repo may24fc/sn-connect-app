@@ -221,9 +221,15 @@ export function TaskForm({
         <CardContent className="space-y-6">
           {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title" className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              Title *
+            <Label
+              htmlFor="title"
+              className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <FileText className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+              Title
+              <span className="text-rose-500 dark:text-rose-400" aria-label="required">
+                *
+              </span>
             </Label>
             <Input
               id="title"
@@ -231,30 +237,40 @@ export function TaskForm({
               placeholder="e.g., Review Q1 financial reports"
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className={errors.title ? 'border-error' : ''}
+              error={!!errors.title}
               maxLength={200}
+              className="h-10"
             />
             {errors.title && (
-              <p className="text-xs text-error flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.title}
-              </p>
+              <div
+                className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200"
+                role="alert"
+              >
+                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>{errors.title}</span>
+              </div>
             )}
           </div>
 
           {/* Priority and Due Date Row */}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-5 sm:grid-cols-2">
             {/* Priority */}
             <div className="space-y-2">
-              <Label htmlFor="priority" className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                Priority *
+              <Label
+                htmlFor="priority"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                <AlertCircle className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+                Priority
+                <span className="text-rose-500 dark:text-rose-400" aria-label="required">
+                  *
+                </span>
               </Label>
               <Select
                 value={formData.priority}
                 onValueChange={(value: TaskPriority) => handleChange('priority', value)}
               >
-                <SelectTrigger id="priority">
+                <SelectTrigger id="priority" className="h-10">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -268,9 +284,15 @@ export function TaskForm({
 
             {/* Due Date */}
             <div className="space-y-2">
-              <Label htmlFor="dueDate" className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                Due Date *
+              <Label
+                htmlFor="dueDate"
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                <Calendar className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+                Due Date
+                <span className="text-rose-500 dark:text-rose-400" aria-label="required">
+                  *
+                </span>
               </Label>
               <Input
                 id="dueDate"
@@ -278,22 +300,32 @@ export function TaskForm({
                 value={formData.dueDate}
                 onChange={(e) => handleChange('dueDate', e.target.value)}
                 min={minDate}
-                className={errors.dueDate ? 'border-error' : ''}
+                error={!!errors.dueDate}
+                className="h-10"
               />
               {errors.dueDate && (
-                <p className="text-xs text-error flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.dueDate}
-                </p>
+                <div
+                  className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200"
+                  role="alert"
+                >
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>{errors.dueDate}</span>
+                </div>
               )}
             </div>
           </div>
 
           {/* Category */}
           <div className="space-y-2">
-            <Label htmlFor="category" className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              Category (Optional)
+            <Label
+              htmlFor="category"
+              className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <Tag className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+              Category
+              <span className="text-zinc-400 dark:text-zinc-500 text-xs font-normal ml-1">
+                (optional)
+              </span>
             </Label>
             <Select
               value={formData.category || '_none'}
@@ -301,7 +333,7 @@ export function TaskForm({
                 handleChange('category', value === '_none' ? undefined : (value as TaskCategory))
               }
             >
-              <SelectTrigger id="category">
+              <SelectTrigger id="category" className="h-10">
                 <SelectValue placeholder="Select a category..." />
               </SelectTrigger>
               <SelectContent>
@@ -317,9 +349,12 @@ export function TaskForm({
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-muted-foreground" />
-              Tags (Optional)
+            <Label className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <Tag className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+              Tags
+              <span className="text-zinc-400 dark:text-zinc-500 text-xs font-normal ml-1">
+                (optional)
+              </span>
             </Label>
             <TaskTagsInput
               value={formData.tags || []}
@@ -329,28 +364,42 @@ export function TaskForm({
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              Description *
+            <Label
+              htmlFor="description"
+              className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <FileText className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
+              Description
+              <span className="text-rose-500 dark:text-rose-400" aria-label="required">
+                *
+              </span>
             </Label>
             <Textarea
               id="description"
               placeholder="Provide detailed instructions and expectations for this task..."
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              className={cn('min-h-[120px]', errors.description ? 'border-error' : '')}
+              className={cn(
+                'min-h-[120px] resize-none',
+                errors.description && 'border-rose-500 focus-visible:ring-rose-500/20'
+              )}
               maxLength={2000}
             />
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs">
               <div>
                 {errors.description && (
-                  <p className="text-error flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.description}
-                  </p>
+                  <div
+                    className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200"
+                    role="alert"
+                  >
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>{errors.description}</span>
+                  </div>
                 )}
               </div>
-              <span>{formData.description.length} / 2000</span>
+              <span className="text-zinc-400 dark:text-zinc-500">
+                {formData.description.length} / 2000
+              </span>
             </div>
           </div>
 
@@ -362,19 +411,22 @@ export function TaskForm({
               employees={employees}
             />
             {errors.assigneeIds && (
-              <p className="text-xs text-error flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {errors.assigneeIds}
-              </p>
+              <div
+                className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200"
+                role="alert"
+              >
+                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>{errors.assigneeIds}</span>
+              </div>
             )}
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-3 border-t border-border pt-4">
+        <CardFooter className="flex justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-4">
           <Button type="button" variant="outline" onClick={handleReset} disabled={isSubmitting}>
             Clear
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="min-w-[120px]">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
