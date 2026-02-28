@@ -27,10 +27,10 @@ Deno.serve(async (req: Request) => {
 
     const apiKey = Deno.env.get('OPEN_EXCHANGE_RATES_API_KEY');
     if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: 'OPEN_EXCHANGE_RATES_API_KEY not configured' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'OPEN_EXCHANGE_RATES_API_KEY not configured' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Fetch latest rates from Open Exchange Rates
@@ -55,11 +55,15 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data, error } = await supabase.from('fx_rates').insert({
-      base_currency: oxrData.base,
-      rates: filteredRates,
-      fetched_at: new Date(oxrData.timestamp * 1000).toISOString(),
-    }).select().single();
+    const { data, error } = await supabase
+      .from('fx_rates')
+      .insert({
+        base_currency: oxrData.base,
+        rates: filteredRates,
+        fetched_at: new Date(oxrData.timestamp * 1000).toISOString(),
+      })
+      .select()
+      .single();
 
     if (error) {
       throw new Error(`Supabase insert error: ${error.message}`);
@@ -76,9 +80,9 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return new Response(
-      JSON.stringify({ error: message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 });

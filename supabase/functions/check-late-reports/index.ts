@@ -1,9 +1,9 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
-import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
-import { corsHeaders, handleCors } from '../_shared/cors.ts';
-import { validateAdminAuth } from '../_shared/auth.ts';
-import { createInAppNotification, createBulkInAppNotifications } from '../_shared/in-app-notify.ts';
 import { writeAuditLog } from '../_shared/audit.ts';
+import { validateAdminAuth } from '../_shared/auth.ts';
+import { corsHeaders, handleCors } from '../_shared/cors.ts';
+import { createBulkInAppNotifications, createInAppNotification } from '../_shared/in-app-notify.ts';
+import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -40,20 +40,20 @@ serve(async (req: Request): Promise<Response> => {
 
   // Only POST allowed (triggered by cron or manual invocation)
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
     // Validate admin auth (service key or admin JWT)
     const authResult = await validateAdminAuth(req);
     if (!authResult.authorized) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const supabase = getSupabaseAdmin();
@@ -83,10 +83,10 @@ serve(async (req: Request): Promise<Response> => {
 
     if (empError) {
       console.error('Failed to fetch employees:', empError.message);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch employees' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Failed to fetch employees' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const lateEmployees: LateEmployee[] = [];
@@ -103,9 +103,7 @@ serve(async (req: Request): Promise<Response> => {
         .gte('submitted_at', lastWeekStartStr)
         .order('submitted_at', { ascending: false });
 
-      const submittedEmployeeIds = new Set(
-        (recentReports ?? []).map((r) => r.employee_id)
-      );
+      const submittedEmployeeIds = new Set((recentReports ?? []).map((r) => r.employee_id));
 
       for (const emp of activeEmployees) {
         if (!submittedEmployeeIds.has(emp.id)) {
@@ -160,9 +158,7 @@ serve(async (req: Request): Promise<Response> => {
         .in('employee_id', internEmployeeIds)
         .eq('log_date', yesterdayStr);
 
-      const submittedInternIds = new Set(
-        (yesterdayLogs ?? []).map((l) => l.employee_id)
-      );
+      const submittedInternIds = new Set((yesterdayLogs ?? []).map((l) => l.employee_id));
 
       for (const internship of activeInternships) {
         if (!submittedInternIds.has(internship.employee_id)) {
@@ -220,7 +216,8 @@ serve(async (req: Request): Promise<Response> => {
         metadata: {
           daysLate: emp.days_late,
           reportType: emp.report_type,
-          escalationLevel: emp.days_late <= 1 ? 'gentle' : emp.days_late <= 3 ? 'firm' : 'escalation',
+          escalationLevel:
+            emp.days_late <= 1 ? 'gentle' : emp.days_late <= 3 ? 'firm' : 'escalation',
         },
       });
       notificationsSent++;
@@ -312,15 +309,15 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`[check-late-reports] Completed: ${JSON.stringify(result)}`);
 
-    return new Response(
-      JSON.stringify({ data: result }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ data: result }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('[check-late-reports] Fatal error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

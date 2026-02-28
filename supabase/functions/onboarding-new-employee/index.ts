@@ -1,11 +1,11 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { z } from 'zod';
-import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
-import { corsHeaders, handleCors } from '../_shared/cors.ts';
-import { validateAdminAuth } from '../_shared/auth.ts';
-import { sendEmail } from '../_shared/resend.ts';
-import { createInAppNotification } from '../_shared/in-app-notify.ts';
 import { writeAuditLog } from '../_shared/audit.ts';
+import { validateAdminAuth } from '../_shared/auth.ts';
+import { corsHeaders, handleCors } from '../_shared/cors.ts';
+import { createInAppNotification } from '../_shared/in-app-notify.ts';
+import { sendEmail } from '../_shared/resend.ts';
+import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
 
 // ---------------------------------------------------------------------------
 // Input Schema
@@ -204,8 +204,7 @@ serve(async (req: Request): Promise<Response> => {
         .maybeSingle();
 
       if (employee) {
-        employeeName =
-          input.employeeName ?? `${employee.first_name} ${employee.last_name}`.trim();
+        employeeName = input.employeeName ?? `${employee.first_name} ${employee.last_name}`.trim();
         employeeEmail = input.employeeEmail ?? employee.work_email ?? '';
       }
     }
@@ -325,12 +324,9 @@ serve(async (req: Request): Promise<Response> => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[onboarding-new-employee] Error:', message);
 
-    return new Response(
-      JSON.stringify({ success: false, error: message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ success: false, error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

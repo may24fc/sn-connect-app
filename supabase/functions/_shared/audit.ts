@@ -36,9 +36,6 @@ export async function writeAuditLog(
       console.error('[audit] Failed to write audit log:', error.message);
     }
   } catch (err) {
-    console.error(
-      '[audit] Unexpected error:',
-      err instanceof Error ? err.message : String(err)
-    );
+    console.error('[audit] Unexpected error:', err instanceof Error ? err.message : String(err));
   }
 }
