@@ -122,32 +122,32 @@ export default function SuperAdminDashboardPage(): ReactNode {
 
       {/* Stats Row */}
       <div data-tour="stat-cards">
-      <StatCardGrid columns={4}>
-        <StatCard
-          label="Total Users"
-          value={systemStats.totalUsers}
-          trend={{ direction: 'up', value: `${systemStats.activeUsers} active` }}
-          icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="System Uptime"
-          value={`${systemStats.systemUptime}%`}
-          trend={{ direction: 'up', value: 'Last 30 days' }}
-          icon={<Activity className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Security Alerts"
-          value={securityAlerts.length}
-          trend={{ direction: 'down', value: 'Requires attention' }}
-          icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Audit Logs"
-          value={systemStats.auditLogs}
-          trend={{ direction: 'stable', value: 'This month' }}
-          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+        <StatCardGrid columns={4}>
+          <StatCard
+            label="Total Users"
+            value={systemStats.totalUsers}
+            trend={{ direction: 'up', value: `${systemStats.activeUsers} active` }}
+            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="System Uptime"
+            value={`${systemStats.systemUptime}%`}
+            trend={{ direction: 'up', value: 'Last 30 days' }}
+            icon={<Activity className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Security Alerts"
+            value={securityAlerts.length}
+            trend={{ direction: 'down', value: 'Requires attention' }}
+            icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Audit Logs"
+            value={systemStats.auditLogs}
+            trend={{ direction: 'stable', value: 'This month' }}
+            icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
       </div>
 
       {/* Main Bento Grid */}
@@ -359,14 +359,20 @@ export default function SuperAdminDashboardPage(): ReactNode {
               className="group flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
               style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
             >
-              <action.icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+              <action.icon
+                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                strokeWidth={1.5}
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {action.title}
                 </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">{action.description}</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+              <ChevronRight
+                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                strokeWidth={1.5}
+              />
             </div>
           </Link>
         ))}

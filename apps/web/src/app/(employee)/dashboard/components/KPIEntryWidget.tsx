@@ -2,10 +2,10 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  useRoleMetadata,
-  useKPIEntries,
-  useCreateKPIEntry,
   ROLE_TYPE_REGISTRY,
+  useCreateKPIEntry,
+  useKPIEntries,
+  useRoleMetadata,
 } from '@/hooks/useRoleMetadata';
 import {
   Badge,
@@ -49,7 +49,8 @@ export default function KPIEntryWidget(): ReactNode {
       });
   }, [metadataRecords]);
 
-  const firstRoleType: string = roleTypesWithKPIs.length > 0 ? (roleTypesWithKPIs[0] as string) : '';
+  const firstRoleType: string =
+    roleTypesWithKPIs.length > 0 ? (roleTypesWithKPIs[0] as string) : '';
   const [selectedRoleType, setSelectedRoleType] = useState<string>(firstRoleType);
   const todayStr: string = new Date().toISOString().split('T')[0] as string;
   const [entryDate, setEntryDate] = useState<string>(todayStr);
@@ -170,7 +171,10 @@ export default function KPIEntryWidget(): ReactNode {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" strokeWidth={1.5} />
+            <BarChart3
+              className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400"
+              strokeWidth={1.5}
+            />
             <div>
               <CardTitle className="text-base">Log KPI Values</CardTitle>
               <CardDescription className="text-xs">
@@ -237,7 +241,9 @@ export default function KPIEntryWidget(): ReactNode {
                 >
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <Label className="text-sm font-medium">{metricConfig?.label ?? entry.kpi_name}</Label>
+                      <Label className="text-sm font-medium">
+                        {metricConfig?.label ?? entry.kpi_name}
+                      </Label>
                       <Badge variant="outline" className="text-[10px] h-4 px-1">
                         {entry.kpi_unit}
                       </Badge>
@@ -279,7 +285,9 @@ export default function KPIEntryWidget(): ReactNode {
             <div className="flex justify-end pt-1">
               <Button
                 onClick={handleSaveAll}
-                disabled={entries.every((_, i) => savedIndices.has(i)) || entries.every((e) => !e.kpi_value)}
+                disabled={
+                  entries.every((_, i) => savedIndices.has(i)) || entries.every((e) => !e.kpi_value)
+                }
                 size="sm"
                 className="gap-2"
               >

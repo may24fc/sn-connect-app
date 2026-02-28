@@ -116,26 +116,26 @@ export default function AdminDashboardPage(): ReactNode {
 
       {/* Stats Row */}
       <div data-tour="stat-cards">
-      <StatCardGrid columns={3}>
-        <StatCard
-          label="Total Employees"
-          value={stats.totalEmployees}
-          trend={{ direction: 'stable', value: 'No data available' }}
-          icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Active Interns"
-          value={stats.activeInterns}
-          trend={{ direction: 'stable', value: 'No data available' }}
-          icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Reviews Due"
-          value={stats.performanceReviews}
-          trend={{ direction: 'stable', value: 'No data available' }}
-          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+        <StatCardGrid columns={3}>
+          <StatCard
+            label="Total Employees"
+            value={stats.totalEmployees}
+            trend={{ direction: 'stable', value: 'No data available' }}
+            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Active Interns"
+            value={stats.activeInterns}
+            trend={{ direction: 'stable', value: 'No data available' }}
+            icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Reviews Due"
+            value={stats.performanceReviews}
+            trend={{ direction: 'stable', value: 'No data available' }}
+            icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
       </div>
 
       {/* Main Bento Grid */}

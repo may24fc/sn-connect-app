@@ -11,13 +11,9 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useRoleMetadata';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
-import {
-  useRoleMetadata,
-  useKPIEntries,
-  ROLE_TYPE_REGISTRY,
-} from '@/hooks/useRoleMetadata';
 import { Badge, Button, Progress, RoleDashboardWidget } from '@hr-portal/ui';
 import type { KPICardData } from '@hr-portal/ui';
 import {
@@ -156,35 +152,35 @@ export default function DashboardPage(): ReactNode {
 
       {/* Stats Row */}
       <div data-tour="stat-cards">
-      <StatCardGrid columns={4}>
-        <StatCard
-          label="Onboarding"
-          value={hasOnboardingData ? `${onboardingProgress}%` : '0%'}
-          trend={{ direction: 'stable', value: 'Not started' }}
-          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Probation"
-          value="N/A"
-          trend={{ direction: 'stable', value: 'No active period' }}
-          icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Tasks Due"
-          value={String(tasksDueCount)}
-          trend={{
-            direction: 'stable',
-            value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
-          }}
-          icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Notifications"
-          value="0"
-          trend={{ direction: 'stable', value: 'No new notifications' }}
-          icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+        <StatCardGrid columns={4}>
+          <StatCard
+            label="Onboarding"
+            value={hasOnboardingData ? `${onboardingProgress}%` : '0%'}
+            trend={{ direction: 'stable', value: 'Not started' }}
+            icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Probation"
+            value="N/A"
+            trend={{ direction: 'stable', value: 'No active period' }}
+            icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Tasks Due"
+            value={String(tasksDueCount)}
+            trend={{
+              direction: 'stable',
+              value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
+            }}
+            icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Notifications"
+            value="0"
+            trend={{ direction: 'stable', value: 'No new notifications' }}
+            icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
       </div>
 
       {/* Main Bento Grid */}
@@ -201,7 +197,10 @@ export default function DashboardPage(): ReactNode {
               {quickActions.map((action) => (
                 <Link key={action.title} href={action.href}>
                   <div className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                    <action.icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+                    <action.icon
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                      strokeWidth={1.5}
+                    />
                     <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                       {action.title}
                     </span>
@@ -275,7 +274,10 @@ export default function DashboardPage(): ReactNode {
                     className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                   >
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                      <Calendar
+                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                        strokeWidth={1.5}
+                      />
                       <div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                           {event.title}

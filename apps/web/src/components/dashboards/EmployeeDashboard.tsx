@@ -180,12 +180,18 @@ export default function EmployeeDashboard(): ReactNode {
             <Link key={card.title} href={card.href}>
               <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-card-hover">
                 <CardContent className="flex items-center gap-4 p-4">
-                  <card.icon className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+                  <card.icon
+                    className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                    strokeWidth={1.5}
+                  />
                   <div className="flex-1">
                     <h3 className="font-medium">{card.title}</h3>
                     <p className="text-sm text-muted-foreground">{card.description}</p>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+                  <ChevronRight
+                    className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                    strokeWidth={1.5}
+                  />
                 </CardContent>
               </Card>
             </Link>
@@ -222,7 +228,10 @@ export default function EmployeeDashboard(): ReactNode {
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              <CheckSquare className="h-5 w-5 mx-auto mb-3 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+              <CheckSquare
+                className="h-5 w-5 mx-auto mb-3 text-zinc-500 dark:text-zinc-400"
+                strokeWidth={1.5}
+              />
               <p>No tasks assigned yet</p>
             </div>
           )}
@@ -267,7 +276,10 @@ export default function EmployeeDashboard(): ReactNode {
               ))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <Bell className="h-5 w-5 mx-auto mb-3 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+                <Bell
+                  className="h-5 w-5 mx-auto mb-3 text-zinc-500 dark:text-zinc-400"
+                  strokeWidth={1.5}
+                />
                 <p>No announcements yet</p>
               </div>
             )}
