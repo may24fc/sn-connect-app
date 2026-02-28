@@ -1,6 +1,7 @@
 'use client';
 
 import { useResourceFeed } from '@/hooks/useResourceFeed';
+import { formatDate } from '@/lib/format';
 import {
   Button,
   ResourceCard,
@@ -121,7 +122,7 @@ export default function ResourceCategoryPage({
               viewCount={resource.view_count}
               downloadCount={resource.download_count}
               bookmarkCount={resource.bookmark_count}
-              dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+              dateLabel={formatDate(resource.published_at || resource.created_at)}
               onClick={() => {
                 window.location.href = `/information-hub/resources/${resource.id}`;
               }}

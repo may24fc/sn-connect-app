@@ -1,6 +1,7 @@
 'use client';
 
 import { useArchiveResource, useResources, useToggleResourceFeatured } from '@/hooks/useResources';
+import { formatDate } from '@/lib/format';
 import {
   Button,
   Card,
@@ -175,7 +176,7 @@ export default function AdminResourcesPage() {
                       bookmarkCount={resource.bookmark_count}
                       isFeatured={resource.is_featured}
                       isPinned={resource.is_pinned}
-                      dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+                      dateLabel={formatDate(resource.published_at || resource.created_at)}
                       onClick={() => {
                         window.location.href = `/admin/resources/${resource.id}`;
                       }}

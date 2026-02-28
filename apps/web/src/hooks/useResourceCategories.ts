@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface ResourceCategoryRecord {
   id: string;
@@ -46,7 +46,9 @@ export function useResourceCategories(options?: { includeInactive?: boolean }) {
 /**
  * Build a tree from flat category list.
  */
-export function buildCategoryTree(categories: ResourceCategoryRecord[]): ResourceCategoryTreeNode[] {
+export function buildCategoryTree(
+  categories: ResourceCategoryRecord[]
+): ResourceCategoryTreeNode[] {
   const map = new Map<string, ResourceCategoryTreeNode>();
   const roots: ResourceCategoryTreeNode[] = [];
 

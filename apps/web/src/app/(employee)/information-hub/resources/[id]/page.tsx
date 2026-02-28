@@ -8,13 +8,14 @@ import {
 } from '@/hooks/useResourceBookmarks';
 import { useResourcesByCategory } from '@/hooks/useResourceFeed';
 import { useResource } from '@/hooks/useResources';
+import { formatDate } from '@/lib/format';
 import {
   Button,
   DocumentViewer,
+  type ResourceAccessLevel,
   ResourceCard,
   ResourceGrid,
   VideoPlayer,
-  type ResourceAccessLevel,
 } from '@hr-portal/ui';
 import { Bookmark, CheckCircle2, Download } from 'lucide-react';
 import Link from 'next/link';
@@ -217,7 +218,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
                 viewCount={item.view_count}
                 downloadCount={item.download_count}
                 bookmarkCount={item.bookmark_count}
-                dateLabel={(item.published_at || item.created_at).slice(0, 10)}
+                dateLabel={formatDate(item.published_at || item.created_at)}
                 onClick={() => {
                   window.location.href = `/information-hub/resources/${item.id}`;
                 }}

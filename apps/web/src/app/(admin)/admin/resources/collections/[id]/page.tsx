@@ -8,6 +8,7 @@ import {
   useUpdateCollection,
 } from '@/hooks/useResourceCollections';
 import { useResources } from '@/hooks/useResources';
+import { formatDate } from '@/lib/format';
 import {
   Button,
   Card,
@@ -169,7 +170,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
                     viewCount={resource.view_count}
                     downloadCount={resource.download_count}
                     bookmarkCount={resource.bookmark_count}
-                    dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+                    dateLabel={formatDate(resource.published_at || resource.created_at)}
                     onClick={() => {
                       router.push(`/admin/resources/${resource.id}`);
                     }}
@@ -214,7 +215,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
                     viewCount={resource.view_count}
                     downloadCount={resource.download_count}
                     bookmarkCount={resource.bookmark_count}
-                    dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+                    dateLabel={formatDate(resource.published_at || resource.created_at)}
                     onClick={() => {
                       router.push(`/admin/resources/${resource.id}`);
                     }}

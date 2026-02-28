@@ -1,6 +1,7 @@
 'use client';
 
 import { useRemoveBookmark, useResourceBookmarks } from '@/hooks/useResourceBookmarks';
+import { formatDate } from '@/lib/format';
 import {
   Button,
   Card,
@@ -64,9 +65,9 @@ export default function ResourceBookmarksPage() {
                     downloadCount={bookmark.resource.download_count}
                     bookmarkCount={bookmark.resource.bookmark_count}
                     isBookmarked
-                    dateLabel={(
+                    dateLabel={formatDate(
                       bookmark.resource.published_at || bookmark.resource.created_at
-                    ).slice(0, 10)}
+                    )}
                     onClick={() => {
                       window.location.href = `/information-hub/resources/${bookmark.resource_id}`;
                     }}

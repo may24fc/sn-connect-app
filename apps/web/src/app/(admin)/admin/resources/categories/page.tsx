@@ -4,10 +4,10 @@ import {
   type ResourceCategoryRecord,
   type ResourceCategoryTreeNode,
   buildCategoryTree,
-  useResourceCategories,
   useCreateResourceCategory,
-  useUpdateResourceCategory,
   useDeleteResourceCategory,
+  useResourceCategories,
+  useUpdateResourceCategory,
 } from '@/hooks/useResourceCategories';
 import {
   Badge,
@@ -36,6 +36,7 @@ import {
   FolderPlus,
   GraduationCap,
   Heart,
+  type LucideIcon,
   Pencil,
   Plus,
   ScrollText,
@@ -44,7 +45,6 @@ import {
   UserPlus,
   Users,
   Wrench,
-  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
@@ -319,7 +319,9 @@ function CategoryTreeRow({
             ) : (
               <span className="w-5" />
             )}
-            {IconComponent && <IconComponent className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />}
+            {IconComponent && (
+              <IconComponent className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            )}
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{node.name}</span>
             {!node.isActive && (
               <Badge variant="secondary" className="text-xs">
@@ -332,7 +334,7 @@ function CategoryTreeRow({
           {node.slug}
         </td>
         <td className="whitespace-nowrap px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400">
-          {node.description || '-'}
+          {node.description || '—'}
         </td>
         <td className="whitespace-nowrap px-4 py-3 text-center text-sm">
           <Badge variant="secondary">{node.resourceCount}</Badge>
@@ -533,9 +535,7 @@ export default function ResourceCategoriesPage() {
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-red-600">
-            Failed to load categories.
-          </CardContent>
+          <CardContent className="p-6 text-sm text-red-600">Failed to load categories.</CardContent>
         </Card>
       ) : (
         <Card>

@@ -1,11 +1,15 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase, isResourceAdmin } from '../_lib';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getAuthedSupabase, isResourceAdmin } from '../_lib';
 
 const createCategorySchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  slug: z.string().min(1, 'Slug is required').max(100).regex(/^[a-z0-9_-]+$/, 'Slug must be lowercase alphanumeric with hyphens/underscores'),
+  slug: z
+    .string()
+    .min(1, 'Slug is required')
+    .max(100)
+    .regex(/^[a-z0-9_-]+$/, 'Slug must be lowercase alphanumeric with hyphens/underscores'),
   description: z.string().max(500).optional().nullable(),
   icon: z.string().max(50).optional().nullable(),
   parentId: z.string().uuid().optional().nullable(),
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     // Count resources per category
     const categoryIds = (data || []).map((c) => c.id);
-    let resourceCounts = new Map<string, number>();
+    const resourceCounts = new Map<string, number>();
 
     if (categoryIds.length > 0) {
       const { data: counts, error: countError } = await adminClient
@@ -81,13 +85,16 @@ export async function GET(request: NextRequest) {
       resourceCount: resourceCounts.get(cat.id) || 0,
     }));
 
-    return NextResponse.json({
-      data: categories,
-    }, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    return NextResponse.json(
+      {
+        data: categories,
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (err) {
     console.error('Unexpected error in GET /api/resources/categories:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -198,7 +205,8 @@ export async function PATCH(request: NextRequest) {
     if (parsed.data.description !== undefined) updatePayload.description = parsed.data.description;
     if (parsed.data.icon !== undefined) updatePayload.icon = parsed.data.icon;
     if (parsed.data.parentId !== undefined) updatePayload.parent_id = parsed.data.parentId;
-    if (parsed.data.displayOrder !== undefined) updatePayload.display_order = parsed.data.displayOrder;
+    if (parsed.data.displayOrder !== undefined)
+      updatePayload.display_order = parsed.data.displayOrder;
     if (parsed.data.isActive !== undefined) updatePayload.is_active = parsed.data.isActive;
 
     const { data, error: updateError } = await adminClient
@@ -272,7 +280,9 @@ export async function DELETE(request: NextRequest) {
 
     if (resourceCount && resourceCount > 0) {
       return NextResponse.json(
-        { error: `Cannot delete a category with ${resourceCount} resource(s). Reassign resources first.` },
+        {
+          error: `Cannot delete a category with ${resourceCount} resource(s). Reassign resources first.`,
+        },
         { status: 409 }
       );
     }
