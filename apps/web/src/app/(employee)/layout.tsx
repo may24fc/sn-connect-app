@@ -10,6 +10,7 @@ import {
   useUnreadCount,
 } from '@/hooks/useNotifications';
 import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
+import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
@@ -98,6 +99,7 @@ function EmployeeLayoutInner({
   children: ReactNode;
 }): ReactNode {
   const { startTour, currentGroup } = useTour();
+  const { theme, setTheme } = useTheme();
 
   // Determine sidebar variant based on user role
   const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
@@ -135,6 +137,8 @@ function EmployeeLayoutInner({
           onHelpClick={currentGroup ? startTour : undefined}
           notificationSlot={<EmployeeNotificationBell />}
           aiChatSlot={<AIChatbot />}
+          theme={theme ?? 'light'}
+          onThemeChange={setTheme}
         />
 
         {/* Scrollable Content Area */}

@@ -10,6 +10,7 @@ import {
   useUnreadCount,
 } from '@/hooks/useNotifications';
 import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
+import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
@@ -98,6 +99,7 @@ function AdminLayoutInner({
   children: ReactNode;
 }): ReactNode {
   const { startTour, currentGroup } = useTour();
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -132,6 +134,8 @@ function AdminLayoutInner({
           onHelpClick={currentGroup ? startTour : undefined}
           notificationSlot={<AdminNotificationBell />}
           aiChatSlot={<AIChatbot />}
+          theme={theme ?? 'light'}
+          onThemeChange={setTheme}
         />
 
         {/* Scrollable Content Area */}
@@ -158,7 +162,7 @@ function AdminNotificationBell(): ReactNode {
       onMarkAllRead={() => markAllRead.mutate()}
       onDelete={(id) => deleteNotification.mutate(id)}
       onNavigate={(path) => router.push(path)}
-      onViewAll={() => router.push('/notifications')}
+      onViewAll={() => router.push('/admin/notifications')}
     />
   );
 }
