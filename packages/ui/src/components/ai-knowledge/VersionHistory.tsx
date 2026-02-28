@@ -1,7 +1,7 @@
 'use client';
 
+import { ChevronDown, ChevronRight, Clock, FileText, RotateCcw, User } from 'lucide-react';
 import { useState } from 'react';
-import { Clock, RotateCcw, ChevronDown, ChevronRight, FileText, User } from 'lucide-react';
 
 // ===== Types =====
 
@@ -315,8 +315,7 @@ export function VersionHistory({
             Version History
           </h3>
           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-            {versions.length} version{versions.length !== 1 ? 's' : ''} • Current: v
-            {currentVersion}
+            {versions.length} version{versions.length !== 1 ? 's' : ''} • Current: v{currentVersion}
           </p>
         </div>
       </div>

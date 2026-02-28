@@ -131,11 +131,7 @@ export function AIChatbot({
     <div className={cn('relative', className)}>
       {/* Backdrop — closes panel when clicking outside */}
       {isOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-          aria-hidden="true"
-        />
+        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} aria-hidden="true" />
       )}
 
       {/* Chat Panel — drops down from header, anchored top-right */}
@@ -272,7 +268,9 @@ export function AIChatbot({
         <Sparkles
           className={cn(
             'h-[18px] w-[18px] transition-colors',
-            isOpen ? 'text-indigo-600' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
+            isOpen
+              ? 'text-indigo-600'
+              : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
           )}
           strokeWidth={1.5}
         />

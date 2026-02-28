@@ -138,10 +138,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const versionNumber = body?.versionNumber;
 
     if (typeof versionNumber !== 'number' || versionNumber < 1) {
-      return NextResponse.json(
-        { error: 'Invalid version number' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid version number' }, { status: 400 });
     }
 
     const adminClient = getAdminClient();
