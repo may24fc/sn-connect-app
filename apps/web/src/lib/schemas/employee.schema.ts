@@ -1,6 +1,6 @@
 import { EmploymentType, UserStatus, WorkArrangement } from '@hr-portal/database';
-import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js';
+import { z } from 'zod';
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
@@ -23,7 +23,11 @@ export const employeeBaseSchema = z.object({
     .refine(
       (val) => {
         if (!val) return true;
-        try { return isValidPhoneNumber(val); } catch { return false; }
+        try {
+          return isValidPhoneNumber(val);
+        } catch {
+          return false;
+        }
       },
       { message: 'Invalid phone number. Include country code (e.g., +63)' }
     ),
@@ -41,7 +45,11 @@ export const employeeBaseSchema = z.object({
     .refine(
       (val) => {
         if (!val) return true;
-        try { return isValidPhoneNumber(val); } catch { return false; }
+        try {
+          return isValidPhoneNumber(val);
+        } catch {
+          return false;
+        }
       },
       { message: 'Invalid phone number. Include country code (e.g., +63)' }
     ),

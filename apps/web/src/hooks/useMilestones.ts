@@ -50,9 +50,7 @@ export function useMilestones(filters: MilestoneFilters = {}) {
       const response = await fetch(`/api/milestones${query ? `?${query}` : ''}`);
 
       if (!response.ok) {
-        const error = await response
-          .json()
-          .catch(() => ({ error: 'Failed to fetch milestones' }));
+        const error = await response.json().catch(() => ({ error: 'Failed to fetch milestones' }));
         throw new Error(error.error || 'Failed to fetch milestones');
       }
 

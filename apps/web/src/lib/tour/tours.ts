@@ -43,16 +43,14 @@ export const dashboardTourSteps: TourGuideStep[] = [
   },
   {
     title: 'Announcements',
-    content:
-      'Stay up to date with the latest company announcements and important updates.',
+    content: 'Stay up to date with the latest company announcements and important updates.',
     target: '[data-tour="announcements"]',
     group: 'dashboard',
     order: 4,
   },
   {
     title: 'Your Profile',
-    content:
-      'Click your avatar in the top-right to access your profile, settings, or log out.',
+    content: 'Click your avatar in the top-right to access your profile, settings, or log out.',
     target: '[data-tour="user-menu"]',
     group: 'dashboard',
     order: 5,
@@ -109,16 +107,14 @@ export const tasksTourSteps: TourGuideStep[] = [
   },
   {
     title: 'Create a Task',
-    content:
-      'Click "New Task" to create a task for yourself or assign one to a team member.',
+    content: 'Click "New Task" to create a task for yourself or assign one to a team member.',
     target: '[data-tour="create-task"]',
     group: 'tasks',
     order: 1,
   },
   {
     title: 'Filter & Sort',
-    content:
-      'Use filters to narrow down tasks by status, priority, category, or assignee.',
+    content: 'Use filters to narrow down tasks by status, priority, category, or assignee.',
     target: '[data-tour="task-filters"]',
     group: 'tasks',
     order: 2,
@@ -148,7 +144,7 @@ export const adminDashboardTourSteps: TourGuideStep[] = [
   {
     title: 'Admin Dashboard',
     content:
-      'Welcome to the Admin Dashboard. Get a bird\'s-eye view of employees, interns, and organizational metrics.',
+      "Welcome to the Admin Dashboard. Get a bird's-eye view of employees, interns, and organizational metrics.",
     group: 'admin-dashboard',
     order: 0,
   },
@@ -162,24 +158,21 @@ export const adminDashboardTourSteps: TourGuideStep[] = [
   },
   {
     title: 'Department Overview',
-    content:
-      'View headcount and status breakdowns by department.',
+    content: 'View headcount and status breakdowns by department.',
     target: '[data-tour="department-overview"]',
     group: 'admin-dashboard',
     order: 2,
   },
   {
     title: 'Upcoming Milestones',
-    content:
-      'Track birthdays and work anniversaries for your team. Never miss a celebration!',
+    content: 'Track birthdays and work anniversaries for your team. Never miss a celebration!',
     target: '[data-tour="milestones"]',
     group: 'admin-dashboard',
     order: 3,
   },
   {
     title: 'Quick Actions',
-    content:
-      'Jump to Employee Management, Performance Reviews, Recruitment, or Reports from here.',
+    content: 'Jump to Employee Management, Performance Reviews, Recruitment, or Reports from here.',
     target: '[data-tour="quick-actions"]',
     group: 'admin-dashboard',
     order: 4,
@@ -210,10 +203,7 @@ export function getTourGroupForPath(pathname: string): string | undefined {
   if (pathname.startsWith('/tasks')) {
     return 'tasks';
   }
-  if (
-    pathname === '/admin/dashboard' ||
-    pathname === '/super-admin/dashboard'
-  ) {
+  if (pathname === '/admin/dashboard' || pathname === '/super-admin/dashboard') {
     return 'admin-dashboard';
   }
   return undefined;
@@ -252,9 +242,7 @@ export function resetTour(group: string): void {
 /** Reset all tours */
 export function resetAllTours(): void {
   try {
-    const keys = Object.keys(localStorage).filter((k) =>
-      k.startsWith(TOUR_STORAGE_PREFIX)
-    );
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith(TOUR_STORAGE_PREFIX));
     for (const key of keys) {
       localStorage.removeItem(key);
     }

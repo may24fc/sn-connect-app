@@ -69,9 +69,7 @@ export function createOptimisticMutation<TData, TVariables>(
 
     onMutate: async (variables: TVariables) => {
       // 1. Cancel any in-flight queries for the affected keys
-      const cancelPromises = queryKeys.map((key) =>
-        queryClient.cancelQueries({ queryKey: key })
-      );
+      const cancelPromises = queryKeys.map((key) => queryClient.cancelQueries({ queryKey: key }));
       if (additionalCancelKeys) {
         for (const key of additionalCancelKeys) {
           cancelPromises.push(queryClient.cancelQueries({ queryKey: key }));
@@ -225,8 +223,7 @@ export async function toastMutation<T>(
 
     return result;
   } catch (err) {
-    const errorMessage =
-      showErrorDetail && err instanceof Error ? err.message : undefined;
+    const errorMessage = showErrorDetail && err instanceof Error ? err.message : undefined;
 
     // Transition to error
     toast.updateToast(toastId, {
@@ -262,6 +259,5 @@ export function createToastMutationHandler<TVariables, TResult>(
   mutationFn: (variables: TVariables) => Promise<TResult>,
   messages: ToastMutationMessages = {}
 ): (variables: TVariables) => Promise<TResult | undefined> {
-  return (variables: TVariables) =>
-    toastMutation(toast, () => mutationFn(variables), messages);
+  return (variables: TVariables) => toastMutation(toast, () => mutationFn(variables), messages);
 }

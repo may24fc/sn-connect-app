@@ -1,4 +1,4 @@
-import { parsePhoneNumber, isValidPhoneNumber, type CountryCode } from 'libphonenumber-js';
+import { type CountryCode, isValidPhoneNumber, parsePhoneNumber } from 'libphonenumber-js';
 
 /** Supported country codes with labels and dial codes */
 export const SUPPORTED_COUNTRIES = [
@@ -64,7 +64,7 @@ export function getPhoneCountryCode(number: string): CountryCode | null {
  */
 export function getDefaultCountryCode(): CountryCode {
   if (typeof navigator === 'undefined') return 'PH';
-  
+
   const locale = navigator.language || 'en-PH';
   const regionMatch = locale.match(/-([A-Z]{2})$/i);
   if (regionMatch?.[1]) {

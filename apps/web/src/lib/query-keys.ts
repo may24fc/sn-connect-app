@@ -259,6 +259,8 @@ export const queryKeys = {
     cycle: (id: string) => [...queryKeys.performance.cycles(), id] as const,
     kpis: () => [...queryKeys.performance.all, 'kpis'] as const,
     okrs: () => [...queryKeys.performance.all, 'okrs'] as const,
+    okrTargets: (okrId?: string) =>
+      [...queryKeys.performance.all, 'okr-targets', okrId || 'all'] as const,
     individual: (employeeId: string) =>
       [...queryKeys.performance.all, 'individual', employeeId] as const,
   },
@@ -356,8 +358,18 @@ export const queryKeys = {
     all: ['directory'] as const,
     lists: () => [...queryKeys.directory.all, 'list'] as const,
     list: (filters: DirectoryFilters) => [...queryKeys.directory.lists(), filters] as const,
-    export: (filters: DirectoryFilters) =>
-      [...queryKeys.directory.all, 'export', filters] as const,
+    details: () => [...queryKeys.directory.all, 'detail'] as const,
+    detail: (userId: string) => [...queryKeys.directory.details(), userId] as const,
+    export: (filters: DirectoryFilters) => [...queryKeys.directory.all, 'export', filters] as const,
+  },
+
+  // Profile Change Requests
+  profileChangeRequests: {
+    all: ['profile-change-requests'] as const,
+    lists: () => [...queryKeys.profileChangeRequests.all, 'list'] as const,
+    list: (filters: { employeeId?: string; status?: string; page?: number }) =>
+      [...queryKeys.profileChangeRequests.lists(), filters] as const,
+    pending: () => [...queryKeys.profileChangeRequests.all, 'pending'] as const,
   },
 
   // Milestones (Birthdays & Anniversaries)

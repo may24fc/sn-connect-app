@@ -47,10 +47,7 @@ interface TourProviderProps {
   autoStart?: boolean;
 }
 
-export function TourProvider({
-  children,
-  autoStart = true,
-}: TourProviderProps): ReactNode {
+export function TourProvider({ children, autoStart = true }: TourProviderProps): ReactNode {
   const pathname = usePathname();
   const [isActive, setIsActive] = useState(false);
   const tourClientRef = useRef<InstanceType<
@@ -72,14 +69,17 @@ export function TourProvider({
     const allSteps = tourStepsByGroup[currentGroup];
     if (!allSteps || allSteps.length === 0) return;
 
-    // Filter out steps whose target elements don't exist in the DOM.
-    // Steps without a target (intro/floating steps) are always kept.
-    const steps = allSteps.filter((step) => {
-      if (!step.target) return true;
-      const selector = typeof step.target === 'string' ? step.target : null;
-      if (!selector) return true;
-      return document.querySelector(selector) !== null;
-    });
+    // Deep-clone steps to avoid TourGuideJS mutating the originals
+    // (the library replaces string selectors with HTMLElement references).
+    // Then filter out steps whose target elements don't exist in the DOM.
+    const steps = allSteps
+      .map((step) => ({ ...step }))
+      .filter((step) => {
+        if (!step.target) return true;
+        const selector = typeof step.target === 'string' ? step.target : null;
+        if (!selector) return true;
+        return document.querySelector(selector) !== null;
+      });
 
     if (steps.length === 0) return;
 
@@ -88,10 +88,21 @@ export function TourProvider({
     // Import styles
     await import('@sjmc11/tourguidejs/dist/css/tour.min.css');
 
-    // Exit previous tour if active
-    if (tourClientRef.current?.isVisible) {
-      await tourClientRef.current.exit();
+    // Exit previous tour if active and clean up
+    if (tourClientRef.current) {
+      try {
+        if (tourClientRef.current.isVisible) {
+          await tourClientRef.current.exit();
+        }
+      } catch {
+        // ignore exit errors from stale instances
+      }
+      tourClientRef.current = null;
     }
+
+    // Remove any stale TourGuideJS DOM elements from previous instances
+    document.querySelectorAll('.tg-dialog, .tg-backdrop').forEach((el) => el.remove());
+    document.body.classList.remove('tg-no-interaction');
 
     const tg = new TourGuideClient({
       backdropColor: 'rgba(0, 0, 0, 0.5)',
@@ -131,10 +142,10 @@ export function TourProvider({
     if (!autoStart || !currentGroup) return;
     if (isTourCompleted(currentGroup)) return;
 
-    // Small delay to let the page render targets
+    // Larger delay to let the page fully render targets (including async data)
     const timer = setTimeout(() => {
       void startTour();
-    }, 800);
+    }, 1500);
 
     return () => clearTimeout(timer);
     // Only re-run when the page changes
