@@ -1,11 +1,11 @@
 'use client';
 
+import { useExtendInternship } from '@/hooks/useIndividualPerformance';
 import {
   useInternship,
   useUpdateInternDailyLog,
   useUpdateInternship,
 } from '@/hooks/useInternships';
-import { useExtendInternship } from '@/hooks/useIndividualPerformance';
 import {
   Avatar,
   AvatarFallback,
@@ -31,8 +31,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HoursProgressCard,
-  InternHoursProgressBar,
   Input,
+  InternHoursProgressBar,
   type InternId,
   type InternshipPeriodId,
   InternshipStatusBadge,
@@ -202,10 +202,12 @@ export default function InternDetailPage({
                 Generate Certificate
               </DropdownMenuItem>
               {intern.status === 'active' && (
-                <DropdownMenuItem onClick={() => {
-                  setNewEndDate(intern.endDate);
-                  setExtendDialogOpen(true);
-                }}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setNewEndDate(intern.endDate);
+                    setExtendDialogOpen(true);
+                  }}
+                >
                   <Calendar className="mr-2 h-4 w-4" />
                   Extend Internship
                 </DropdownMenuItem>

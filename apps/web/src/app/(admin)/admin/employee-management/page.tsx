@@ -1,7 +1,7 @@
 'use client';
 
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
-import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
+import { useProbation } from '@/hooks/useProbation';
 import {
   Avatar,
   AvatarFallback,
@@ -20,14 +20,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
-import {
-  ArrowRight,
-  CheckCircle2,
-  Clock,
-  Search,
-  UserCog,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock, Search, UserCog, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
@@ -173,7 +166,10 @@ export default function EmployeeManagementPage(): ReactNode {
                   const isUrgent = daysRemaining !== null && daysRemaining <= 14;
 
                   return (
-                    <Card key={emp.id} className={isUrgent ? 'border-amber-300 dark:border-amber-700' : ''}>
+                    <Card
+                      key={emp.id}
+                      className={isUrgent ? 'border-amber-300 dark:border-amber-700' : ''}
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
@@ -255,9 +251,7 @@ export default function EmployeeManagementPage(): ReactNode {
                 }) => {
                   const progress =
                     profile.total_steps && profile.total_steps > 0
-                      ? Math.round(
-                          ((profile.completed_steps || 0) / profile.total_steps) * 100
-                        )
+                      ? Math.round(((profile.completed_steps || 0) / profile.total_steps) * 100)
                       : 0;
 
                   return (
@@ -320,11 +314,7 @@ export default function EmployeeManagementPage(): ReactNode {
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
                 Access the full employee and intern directory for a complete view.
               </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => router.push('/admin/directory')}
-              >
+              <Button variant="outline" size="sm" onClick={() => router.push('/admin/directory')}>
                 Go to Directory
                 <ArrowRight className="h-4 w-4 ml-2" strokeWidth={1.5} />
               </Button>

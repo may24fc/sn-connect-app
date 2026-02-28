@@ -2,8 +2,9 @@
 
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
-import { useInternships } from '@/hooks/useInternships';
+import { useInternships, useUpdateInternDailyLog } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
 import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
@@ -19,10 +20,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   Input,
   type InternDashboardStats,
   type InternId,
@@ -58,7 +55,6 @@ import {
   FileText,
   Filter,
   GraduationCap,
-  MessageSquare,
   Search,
   ThumbsUp,
   UserPlus,
@@ -91,6 +87,10 @@ export default function AdminInternsPage(): ReactNode {
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
+  const [selectedEodLog, setSelectedEodLog] = useState<(typeof dailyLogs)[number] | null>(null);
+
+  // Quick approve mutation
+  const updateDailyLog = useUpdateInternDailyLog();
 
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
@@ -792,45 +792,14 @@ export default function AdminInternsPage(): ReactNode {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      // Navigate to detailed view with the log
-                                      router.push(`/admin/interns/${log.internship_id}#daily-logs`);
-                                    }}
-                                  >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  {!log.is_approved && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        // TODO: Quick approve action
-                                        console.log('Quick approve:', log.id);
-                                      }}
-                                    >
-                                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                                      Quick Approve
-                                    </DropdownMenuItem>
-                                  )}
-                                  {log.is_approved && log.supervisor_notes && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        alert(`Supervisor Notes: ${log.supervisor_notes}`);
-                                      }}
-                                    >
-                                      <MessageSquare className="mr-2 h-4 w-4" />
-                                      View Notes
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedEodLog(log)}
+                                title="View report details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
@@ -885,6 +854,14 @@ export default function AdminInternsPage(): ReactNode {
           setAssignmentData(null);
           setAssignmentModalOpen(false);
         }}
+      />
+
+      <EODReportDetailModal
+        open={!!selectedEodLog}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEodLog(null);
+        }}
+        log={selectedEodLog}
       />
     </div>
   );

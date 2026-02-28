@@ -1,6 +1,7 @@
 'use client';
 
 import { useApproveInvoice, useInvoices } from '@/hooks/useInvoices';
+import { formatDate, formatLabel } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -169,8 +170,8 @@ export default function PayrollApprovalsPage() {
                             : '-'}
                         </TableCell>
                         <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
-                        <TableCell>
-                          {invoice.period_start} to {invoice.period_end}
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(invoice.period_start)} – {formatDate(invoice.period_end)}
                         </TableCell>
                         <TableCell>
                           {(() => {
@@ -180,7 +181,9 @@ export default function PayrollApprovalsPage() {
                             const convertedAmt = inv.converted_amount as number | null;
                             return (
                               <div>
-                                <span>{formatCurrency(Number(invoice.net_amount || 0), srcCurrency)}</span>
+                                <span>
+                                  {formatCurrency(Number(invoice.net_amount || 0), srcCurrency)}
+                                </span>
                                 {convertedAmt && srcCurrency !== tgtCurrency && (
                                   <span className="block text-xs text-muted-foreground">
                                     ≈ {formatCurrency(Number(convertedAmt || 0), tgtCurrency)}
@@ -262,11 +265,13 @@ export default function PayrollApprovalsPage() {
                         </TableCell>
                         <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                         <TableCell>
-                          <Badge variant={statusVariant[invoice.status]}>{invoice.status}</Badge>
+                          <Badge variant={statusVariant[invoice.status]}>
+                            {formatLabel(invoice.status)}
+                          </Badge>
                         </TableCell>
                         <TableCell>{formatCurrency(Number(invoice.net_amount || 0))}</TableCell>
-                        <TableCell>
-                          {invoice.approved_at ? invoice.approved_at.slice(0, 10) : '-'}
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(invoice.approved_at)}
                         </TableCell>
                       </TableRow>
                     ))

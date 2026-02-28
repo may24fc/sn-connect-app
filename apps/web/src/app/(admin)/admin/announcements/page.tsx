@@ -2,6 +2,7 @@
 
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { useArchiveAnnouncement, useToggleAnnouncementPin } from '@/hooks/usePublishAnnouncement';
+import { formatDate } from '@/lib/format';
 import {
   AnnouncementCard,
   AnnouncementFilters,
@@ -130,11 +131,7 @@ export default function AdminAnnouncementsPage() {
                   category={announcement.category}
                   priority={announcement.priority}
                   status={announcement.status}
-                  dateLabel={
-                    announcement.published_at
-                      ? announcement.published_at.slice(0, 10)
-                      : announcement.created_at.slice(0, 10)
-                  }
+                  dateLabel={formatDate(announcement.published_at || announcement.created_at)}
                   isPinned={announcement.is_pinned}
                   onClick={() => {
                     window.location.href = `/admin/announcements/${announcement.id}`;
