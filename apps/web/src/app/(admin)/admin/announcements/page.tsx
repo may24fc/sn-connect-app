@@ -7,12 +7,67 @@ import {
   AnnouncementCard,
   AnnouncementFilters,
   type AnnouncementFiltersValue,
+  Badge,
   Button,
   Card,
   CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@hr-portal/ui';
+import { Archive, Pin, PinOff } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+
+/** Maps status to badge variant */
+function getStatusBadgeVariant(
+  status: string
+): 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning' {
+  switch (status) {
+    case 'published':
+      return 'success';
+    case 'draft':
+      return 'secondary';
+    case 'scheduled':
+      return 'warning';
+    case 'archived':
+      return 'outline';
+    case 'expired':
+      return 'destructive';
+    default:
+      return 'default';
+  }
+}
+
+/** Maps priority to badge variant */
+function getPriorityBadgeVariant(
+  priority: string
+): 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning' {
+  switch (priority) {
+    case 'urgent':
+      return 'destructive';
+    case 'high':
+      return 'warning';
+    case 'normal':
+      return 'default';
+    case 'low':
+      return 'secondary';
+    default:
+      return 'default';
+  }
+}
+
+/** Formats label for display */
+function formatLabel(value: string): string {
+  if (value === 'hr_updates') return 'HR Updates';
+  return value
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 export default function AdminAnnouncementsPage() {
   const [filters, setFilters] = useState<AnnouncementFiltersValue>({
@@ -20,6 +75,7 @@ export default function AdminAnnouncementsPage() {
     status: 'all',
     category: 'all',
     priority: 'all',
+    view: 'card',
   });
 
   const queryFilters = {
@@ -120,6 +176,106 @@ export default function AdminAnnouncementsPage() {
             <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400">
               Failed to load announcements.
             </CardContent>
+          </Card>
+        ) : filters.view === 'list' ? (
+          <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-zinc-200 dark:border-zinc-800">
+                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Title
+                  </TableHead>
+                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Category
+                  </TableHead>
+                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Priority
+                  </TableHead>
+                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Date
+                  </TableHead>
+                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Reads
+                  </TableHead>
+                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400 text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {announcements.map((announcement) => (
+                  <TableRow
+                    key={announcement.id}
+                    className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
+                    onClick={() => {
+                      window.location.href = `/admin/announcements/${announcement.id}`;
+                    }}
+                  >
+                    <TableCell className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      <div className="flex items-center gap-2">
+                        {announcement.is_pinned && <Pin className="h-3.5 w-3.5 text-indigo-600" />}
+                        <span className="truncate max-w-[300px]">{announcement.title}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {formatLabel(announcement.category)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(announcement.status)}>
+                        {formatLabel(announcement.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getPriorityBadgeVariant(announcement.priority)}>
+                        {formatLabel(announcement.priority)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {formatDate(announcement.published_at || announcement.created_at)}
+                    </TableCell>
+                    <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {announcement.read_count}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation prevents row click, buttons handle their own events */}
+                      <div
+                        className="flex items-center justify-end gap-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            togglePin.mutate({
+                              id: announcement.id,
+                              pinned: !announcement.is_pinned,
+                            })
+                          }
+                          title={announcement.is_pinned ? 'Unpin' : 'Pin'}
+                        >
+                          {announcement.is_pinned ? (
+                            <PinOff className="h-4 w-4 text-zinc-500" />
+                          ) : (
+                            <Pin className="h-4 w-4 text-zinc-500" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => archiveAnnouncement.mutate(announcement.id)}
+                          title="Archive"
+                        >
+                          <Archive className="h-4 w-4 text-zinc-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

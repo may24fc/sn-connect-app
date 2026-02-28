@@ -7,6 +7,7 @@ export {
   AnnouncementFilters,
   type AnnouncementFiltersProps,
   type AnnouncementFiltersValue,
+  type AnnouncementViewType,
 } from './AnnouncementFilters';
 export { AnnouncementEditor, type AnnouncementEditorProps } from './AnnouncementEditor';
 export {

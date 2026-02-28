@@ -41,7 +41,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (filters.category) {
-      query = query.eq('category', filters.category);
+      const categories = filters.category
+        .split(',')
+        .map((c: string) => c.trim())
+        .filter(Boolean);
+      if (categories.length === 1) {
+        query = query.eq('category', categories[0]);
+      } else if (categories.length > 1) {
+        query = query.in('category', categories);
+      }
     }
 
     const from = (filters.page - 1) * filters.pageSize;
@@ -77,10 +85,15 @@ export async function GET(request: NextRequest) {
 
     if (filters.readStatus === 'read') {
       enrichedData = enrichedData.filter((item) => item.is_read);
-    }
-
-    if (filters.readStatus === 'unread') {
+    } else if (filters.readStatus === 'unread') {
       enrichedData = enrichedData.filter((item) => !item.is_read);
+    } else if (filters.readStatus && filters.readStatus.includes(',')) {
+      const statuses = filters.readStatus.split(',').map((s: string) => s.trim());
+      if (statuses.includes('read') && !statuses.includes('unread')) {
+        enrichedData = enrichedData.filter((item) => item.is_read);
+      } else if (statuses.includes('unread') && !statuses.includes('read')) {
+        enrichedData = enrichedData.filter((item) => !item.is_read);
+      }
     }
 
     return NextResponse.json({
