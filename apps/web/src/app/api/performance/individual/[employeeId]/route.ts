@@ -54,7 +54,7 @@ export async function GET(
       .from('employees')
       .select(
         `
-        id, user_id, first_name, last_name, position, department_id, status,
+        id, user_id, first_name, last_name, position, department, status,
         employment_type, date_hired
       `
       )
@@ -66,20 +66,20 @@ export async function GET(
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
-    // Fetch user data for avatar
+    // Fetch user data for avatar and department_id
     const { data: userData } = await supabase
       .from('users')
-      .select('avatar_url, role, email')
+      .select('avatar_url, role, email, department_id')
       .eq('id', employee.user_id)
       .maybeSingle();
 
-    // Fetch department name
-    let departmentName: string | null = null;
-    if (employee.department_id) {
+    // Resolve department name: use employees.department text, or look up from users.department_id
+    let departmentName: string | null = employee.department ?? null;
+    if (!departmentName && userData?.department_id) {
       const { data: dept } = await supabase
         .from('departments')
         .select('name')
-        .eq('id', employee.department_id)
+        .eq('id', userData.department_id)
         .maybeSingle();
       departmentName = dept?.name ?? null;
     }

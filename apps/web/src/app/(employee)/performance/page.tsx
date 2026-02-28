@@ -10,12 +10,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   Progress,
@@ -25,6 +19,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SlidePanel,
+  SlidePanelBody,
+  SlidePanelContent,
+  SlidePanelDescription,
+  SlidePanelFooter,
+  SlidePanelHeader,
+  SlidePanelSection,
+  SlidePanelTitle,
   Textarea,
   useToast,
 } from '@hr-portal/ui';
@@ -373,83 +375,108 @@ export default function PerformancePage(): ReactNode {
         )}
       </div>
 
-      {/* Create Objective Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
+      {/* Create Objective — Slide Panel */}
+      <SlidePanel open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <SlidePanelContent size="lg">
+          <SlidePanelHeader>
+            <SlidePanelTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <Target className="h-4 w-4 text-primary" />
+              </div>
               Create New Objective
-            </DialogTitle>
-            <DialogDescription>
+            </SlidePanelTitle>
+            <SlidePanelDescription>
               Define an objective, then add targets and KPIs inside it.
-            </DialogDescription>
-          </DialogHeader>
+            </SlidePanelDescription>
+          </SlidePanelHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="cycle">Performance Cycle</Label>
-              <Select
-                value={formState.cycleId}
-                onValueChange={(value) => setFormState({ ...formState, cycleId: value })}
-              >
-                <SelectTrigger id="cycle">
-                  <SelectValue placeholder="Select a cycle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cycles.map((cycle) => (
-                    <SelectItem key={cycle.id} value={cycle.id}>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>{cycle.name}</span>
-                        {cycle.status === 'active' && (
-                          <span className="text-xs text-success font-medium">(Active)</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <SlidePanelBody className="space-y-6">
+            {/* ── Context ─────────────────────────────────── */}
+            <SlidePanelSection label="Context">
+              <div className="space-y-1.5">
+                <Label htmlFor="cycle" className="text-sm font-medium">
+                  Performance Cycle
+                </Label>
+                <Select
+                  value={formState.cycleId}
+                  onValueChange={(value) => setFormState({ ...formState, cycleId: value })}
+                >
+                  <SelectTrigger id="cycle">
+                    <SelectValue placeholder="Select a cycle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cycles.map((cycle) => (
+                      <SelectItem key={cycle.id} value={cycle.id}>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{cycle.name}</span>
+                          {cycle.status === 'active' && (
+                            <span className="text-xs text-success font-medium">(Active)</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </SlidePanelSection>
 
-            <div className="space-y-2">
-              <Label htmlFor="objective">Objective</Label>
-              <Input
-                id="objective"
-                placeholder="e.g., Increase monthly VP points to 2,000"
-                value={formState.objective}
-                onChange={(e) => setFormState({ ...formState, objective: e.target.value })}
-              />
-            </div>
+            {/* ── Objective Details ────────────────────────── */}
+            <SlidePanelSection label="Objective">
+              <div className="space-y-1.5">
+                <Label htmlFor="objective" className="text-sm font-medium">
+                  What do you want to achieve?
+                </Label>
+                <Input
+                  id="objective"
+                  placeholder="e.g., Increase monthly VP points to 2,000"
+                  value={formState.objective}
+                  onChange={(e) => setFormState({ ...formState, objective: e.target.value })}
+                  autoFocus
+                />
+                <p className="text-xs text-muted-foreground">
+                  Write a concise, outcome-oriented statement
+                </p>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Provide more context about this objective..."
-                value={formState.description}
-                onChange={(e) => setFormState({ ...formState, description: e.target.value })}
-              />
-            </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-sm font-medium">
+                  Why does this matter?
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">Optional</span>
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Add context so your team understands the purpose behind this goal..."
+                  value={formState.description}
+                  onChange={(e) => setFormState({ ...formState, description: e.target.value })}
+                  className="min-h-[72px] resize-none"
+                />
+              </div>
+            </SlidePanelSection>
 
-            <div className="space-y-2">
-              <Label htmlFor="weight">Weight</Label>
-              <Input
-                id="weight"
-                type="number"
-                min="0"
-                step="0.5"
-                placeholder="1"
-                value={formState.weight}
-                onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                How much this objective counts toward your overall score. Higher = more impact.
-              </p>
-            </div>
-          </div>
+            {/* ── Weight ───────────────────────────────── */}
+            <SlidePanelSection label="Priority">
+              <div className="space-y-1.5">
+                <Label htmlFor="weight" className="text-sm font-medium">
+                  Weight
+                </Label>
+                <Input
+                  id="weight"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="1"
+                  value={formState.weight}
+                  onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  How much this objective counts toward your overall score. Higher = more impact.
+                </p>
+              </div>
+            </SlidePanelSection>
+          </SlidePanelBody>
 
-          <DialogFooter>
+          <SlidePanelFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
@@ -459,11 +486,11 @@ export default function PerformancePage(): ReactNode {
               }}
               disabled={!formState.objective.trim() || createOKR.isPending}
             >
-              Create Objective
+              {createOKR.isPending ? 'Creating...' : 'Create Objective'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SlidePanelFooter>
+        </SlidePanelContent>
+      </SlidePanel>
     </div>
   );
 }

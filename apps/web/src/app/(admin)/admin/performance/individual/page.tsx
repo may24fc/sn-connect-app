@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hr-portal/ui';
-import { ArrowLeft, ChevronLeft, ChevronRight, Search, UserSearch, Users } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Search, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';

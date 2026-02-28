@@ -11,12 +11,6 @@ import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   Input,
   Label,
   OKRList,
@@ -25,6 +19,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SlidePanel,
+  SlidePanelBody,
+  SlidePanelContent,
+  SlidePanelDescription,
+  SlidePanelFooter,
+  SlidePanelHeader,
+  SlidePanelSection,
+  SlidePanelTitle,
   Textarea,
   useToast,
 } from '@hr-portal/ui';
@@ -364,166 +366,203 @@ export default function OKRsPage(): ReactNode {
         }
       />
 
-      {/* Create OKR Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[560px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Create New Objective
-            </DialogTitle>
-            <DialogDescription>
-              Define a new objective with key results for a performance cycle.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4">
-            {/* Cycle Selector */}
-            <div className="space-y-2">
-              <Label htmlFor="cycle">Performance Cycle</Label>
-              <Select
-                value={newOKR.cycleId}
-                onValueChange={(value) => setNewOKR({ ...newOKR, cycleId: value })}
-              >
-                <SelectTrigger id="cycle">
-                  <SelectValue placeholder="Select a cycle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cycles.map((cycle) => (
-                    <SelectItem key={cycle.id} value={cycle.id}>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>{cycle.name}</span>
-                        {cycle.status === 'active' && (
-                          <span className="text-xs text-success font-medium">(Active)</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Objective */}
-            <div className="space-y-2">
-              <Label htmlFor="objective">Objective</Label>
-              <Input
-                id="objective"
-                placeholder="e.g., Improve customer satisfaction rating"
-                value={newOKR.objective}
-                onChange={(e) => setNewOKR({ ...newOKR, objective: e.target.value })}
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Provide more context about this objective..."
-                value={newOKR.description}
-                onChange={(e) => setNewOKR({ ...newOKR, description: e.target.value })}
-              />
-            </div>
-
-            {/* Key Result 1 */}
-            <div className="space-y-2">
-              <Label htmlFor="kr1">Key Result 1</Label>
-              <Input
-                id="kr1"
-                placeholder="e.g., Increase NPS score from 30 to 50"
-                value={newOKR.kr1}
-                onChange={(e) => setNewOKR({ ...newOKR, kr1: e.target.value })}
-              />
-            </div>
-
-            {/* Key Result 2 */}
-            <div className="space-y-2">
-              <Label htmlFor="kr2">Key Result 2</Label>
-              <Input
-                id="kr2"
-                placeholder="e.g., Reduce average response time to under 2 hours"
-                value={newOKR.kr2}
-                onChange={(e) => setNewOKR({ ...newOKR, kr2: e.target.value })}
-              />
-            </div>
-
-            {/* Key Result 3 */}
-            <div className="space-y-2">
-              <Label htmlFor="kr3">Key Result 3 (Optional)</Label>
-              <Input
-                id="kr3"
-                placeholder="e.g., Achieve 95% customer retention rate"
-                value={newOKR.kr3}
-                onChange={(e) => setNewOKR({ ...newOKR, kr3: e.target.value })}
-              />
-            </div>
-
-            {/* Personal Deadline */}
-            <div className="space-y-2">
-              <Label htmlFor="deadline">Personal Deadline (Optional)</Label>
-              <Input
-                id="deadline"
-                type="date"
-                value={newOKR.deadline}
-                onChange={(e) => setNewOKR({ ...newOKR, deadline: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Set a personal target date for completing this objective
-              </p>
-            </div>
-
-            {/* Subtasks */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <ListChecks className="h-3.5 w-3.5" />
-                Subtasks (Optional)
-              </Label>
-
-              {newOKR.subtasks.length > 0 && (
-                <div className="space-y-1.5">
-                  {newOKR.subtasks.map((subtask, index) => (
-                    <div
-                      key={`subtask-${index}`}
-                      className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border border-border"
-                    >
-                      <span className="text-sm text-muted-foreground w-5 shrink-0 text-center">
-                        {index + 1}.
-                      </span>
-                      <span className="text-sm flex-1 min-w-0 truncate">{subtask}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSubtask(index)}
-                        className="shrink-0 p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Add a subtask..."
-                  value={subtaskInput}
-                  onChange={(e) => setSubtaskInput(e.target.value)}
-                  onKeyDown={handleSubtaskKeyDown}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddSubtask}
-                  disabled={!subtaskInput.trim()}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+      {/* Create OKR — Slide Panel */}
+      <SlidePanel open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <SlidePanelContent size="xl">
+          <SlidePanelHeader>
+            <SlidePanelTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <Target className="h-4 w-4 text-primary" />
               </div>
-            </div>
-          </div>
+              Create New Objective
+            </SlidePanelTitle>
+            <SlidePanelDescription>
+              Define a clear objective and break it into measurable key results.
+            </SlidePanelDescription>
+          </SlidePanelHeader>
 
-          <DialogFooter>
+          <SlidePanelBody className="space-y-6">
+            {/* ── Context ─────────────────────────────────── */}
+            <SlidePanelSection label="Context">
+              <div className="space-y-1.5">
+                <Label htmlFor="cycle" className="text-sm font-medium">
+                  Performance Cycle
+                </Label>
+                <Select
+                  value={newOKR.cycleId}
+                  onValueChange={(value) => setNewOKR({ ...newOKR, cycleId: value })}
+                >
+                  <SelectTrigger id="cycle">
+                    <SelectValue placeholder="Select a cycle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cycles.map((cycle) => (
+                      <SelectItem key={cycle.id} value={cycle.id}>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{cycle.name}</span>
+                          {cycle.status === 'active' && (
+                            <span className="text-xs text-success font-medium">(Active)</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </SlidePanelSection>
+
+            {/* ── Objective Details ────────────────────────── */}
+            <SlidePanelSection label="Objective">
+              <div className="space-y-1.5">
+                <Label htmlFor="objective" className="text-sm font-medium">
+                  What do you want to achieve?
+                </Label>
+                <Input
+                  id="objective"
+                  placeholder="e.g., Improve customer satisfaction rating"
+                  value={newOKR.objective}
+                  onChange={(e) => setNewOKR({ ...newOKR, objective: e.target.value })}
+                  autoFocus
+                />
+                <p className="text-xs text-muted-foreground">
+                  Write a concise, outcome-oriented statement
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-sm font-medium">
+                  Why does this matter?
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">Optional</span>
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="Add context so your team understands the purpose behind this goal..."
+                  value={newOKR.description}
+                  onChange={(e) => setNewOKR({ ...newOKR, description: e.target.value })}
+                  className="min-h-[72px] resize-none"
+                />
+              </div>
+            </SlidePanelSection>
+
+            {/* ── Key Results ─────────────────────────────── */}
+            <SlidePanelSection label="Key Results">
+              <p className="text-xs text-muted-foreground -mt-1">
+                How will you measure success? Add 2–3 measurable outcomes.
+              </p>
+
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/5 text-xs font-semibold text-primary">
+                    1
+                  </span>
+                  <div className="flex-1 space-y-1">
+                    <Input
+                      id="kr1"
+                      placeholder="e.g., Increase NPS score from 30 to 50"
+                      value={newOKR.kr1}
+                      onChange={(e) => setNewOKR({ ...newOKR, kr1: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/5 text-xs font-semibold text-primary">
+                    2
+                  </span>
+                  <div className="flex-1 space-y-1">
+                    <Input
+                      id="kr2"
+                      placeholder="e.g., Reduce average response time to under 2 hours"
+                      value={newOKR.kr2}
+                      onChange={(e) => setNewOKR({ ...newOKR, kr2: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-500">
+                    3
+                  </span>
+                  <div className="flex-1 space-y-1">
+                    <Input
+                      id="kr3"
+                      placeholder="Optional — e.g., Achieve 95% customer retention rate"
+                      value={newOKR.kr3}
+                      onChange={(e) => setNewOKR({ ...newOKR, kr3: e.target.value })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </SlidePanelSection>
+
+            {/* ── Timeline & Tasks ────────────────────────── */}
+            <SlidePanelSection label="Timeline & Tasks">
+              <div className="space-y-1.5">
+                <Label htmlFor="deadline" className="text-sm font-medium">
+                  Target Completion Date
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">Optional</span>
+                </Label>
+                <Input
+                  id="deadline"
+                  type="date"
+                  value={newOKR.deadline}
+                  onChange={(e) => setNewOKR({ ...newOKR, deadline: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5 text-sm font-medium">
+                  <ListChecks className="h-3.5 w-3.5" />
+                  Subtasks
+                  <span className="text-xs font-normal text-muted-foreground">Optional</span>
+                </Label>
+
+                {newOKR.subtasks.length > 0 && (
+                  <div className="space-y-1.5">
+                    {newOKR.subtasks.map((subtask, index) => (
+                      <div
+                        key={`subtask-${index}`}
+                        className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900"
+                      >
+                        <span className="w-5 shrink-0 text-center text-sm text-muted-foreground">
+                          {index + 1}.
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm">{subtask}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSubtask(index)}
+                          className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:bg-zinc-200 hover:text-foreground dark:hover:bg-zinc-700"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Type a subtask and press Enter..."
+                    value={subtaskInput}
+                    onChange={(e) => setSubtaskInput(e.target.value)}
+                    onKeyDown={handleSubtaskKeyDown}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddSubtask}
+                    disabled={!subtaskInput.trim()}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </SlidePanelSection>
+          </SlidePanelBody>
+
+          <SlidePanelFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
@@ -538,11 +577,11 @@ export default function OKRsPage(): ReactNode {
                 createOKR.isPending
               }
             >
-              Create Objective
+              {createOKR.isPending ? 'Creating...' : 'Create Objective'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SlidePanelFooter>
+        </SlidePanelContent>
+      </SlidePanel>
     </div>
   );
 }

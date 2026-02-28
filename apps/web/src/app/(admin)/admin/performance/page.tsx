@@ -6,6 +6,7 @@ import {
   usePerformanceOKRs,
 } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import { exportToCsv, formatPercentageForCsv } from '@/lib/csv';
 import {
   Badge,
   Button,
@@ -16,9 +17,9 @@ import {
   type PerformanceDashboardStats,
   PerformanceSummaryCards,
 } from '@hr-portal/ui';
-import { Calendar, ClipboardCheck, Download, Settings, UserSearch } from 'lucide-react';
+import { Calendar, Download, Settings, UserSearch } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 
 interface EmployeePerformanceRow {
   id: string;
@@ -116,6 +117,34 @@ export default function AdminPerformancePage(): ReactNode {
   const currentCycleLabel = activeCycle?.name || 'Performance Cycle';
   const currentCycleRange = activeCycle && `${activeCycle.startDate} - ${activeCycle.endDate}`;
 
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportReport = useCallback((): void => {
+    setExporting(true);
+    try {
+      // Export department performance data
+      const exportData = departmentData.map((dept) => ({
+        department: dept.department,
+        employeeCount: dept.employeeCount,
+        averageOkrProgress: dept.averageOkrProgress,
+        averageKpiScore: dept.averageKpiScore,
+      }));
+
+      exportToCsv(exportData, {
+        filename: `performance-report-${activeCycle?.name || 'all'}`,
+        headers: ['Department', 'Employee Count', 'Avg OKR Progress', 'Avg KPI Score'],
+        rowMapper: (item) => [
+          item.department,
+          item.employeeCount,
+          formatPercentageForCsv(item.averageOkrProgress),
+          formatPercentageForCsv(item.averageKpiScore),
+        ],
+      });
+    } finally {
+      setExporting(false);
+    }
+  }, [departmentData, activeCycle]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -125,16 +154,10 @@ export default function AdminPerformancePage(): ReactNode {
           <p className="text-muted-foreground">Organization-wide performance metrics</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/admin/directory">
+          <Link href="/admin/performance/individual">
             <Button variant="outline">
               <UserSearch className="mr-2 h-4 w-4" />
-              View Individual
-            </Button>
-          </Link>
-          <Link href="/admin/performance/evaluations">
-            <Button variant="outline">
-              <ClipboardCheck className="mr-2 h-4 w-4" />
-              Evaluations
+              View & Evaluate
             </Button>
           </Link>
           <Link href="/admin/performance/cycles">
@@ -143,9 +166,9 @@ export default function AdminPerformancePage(): ReactNode {
               Manage Cycles
             </Button>
           </Link>
-          <Button>
+          <Button onClick={handleExportReport} disabled={exporting}>
             <Download className="mr-2 h-4 w-4" />
-            Export Report
+            {exporting ? 'Exporting...' : 'Export Report'}
           </Button>
         </div>
       </div>
