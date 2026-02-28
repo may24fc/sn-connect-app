@@ -21,6 +21,12 @@ import {
   type InternId,
   type InternshipPeriodId,
   Progress,
+  SlidePanel,
+  SlidePanelBody,
+  SlidePanelContent,
+  SlidePanelDescription,
+  SlidePanelHeader,
+  SlidePanelTitle,
   getDaysRemaining,
 } from '@hr-portal/ui';
 import {
@@ -82,7 +88,8 @@ export default function InternDashboardPage(): ReactNode {
       logDate: data.date,
       hoursWorked: data.hoursLogged,
       tasksCompleted: data.tasksCompleted,
-      ...(data.learnings ? { learnings: data.learnings } : {}),
+      // Map focusTomorrow -> learnings (same DB column)
+      ...(data.focusTomorrow ? { learnings: data.focusTomorrow } : {}),
       ...(data.challenges ? { challenges: data.challenges } : {}),
     };
 
@@ -126,7 +133,7 @@ export default function InternDashboardPage(): ReactNode {
             Track your internship progress and submit daily reports.
           </p>
         </div>
-        {!(todayReport || showForm) && (
+        {!todayReport && (
           <Button onClick={() => setShowForm(true)}>
             <FileText className="mr-2 h-4 w-4" strokeWidth={1.5} />
             Submit EOD Report
@@ -265,7 +272,7 @@ export default function InternDashboardPage(): ReactNode {
                   </div>
                   <Badge variant="success">Submitted</Badge>
                 </div>
-              ) : showForm ? null : (
+              ) : (
                 <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800">
                   <div className="flex items-center gap-3">
                     <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" strokeWidth={1.5} />
@@ -274,7 +281,7 @@ export default function InternDashboardPage(): ReactNode {
                         No Report Today
                       </p>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Don't forget to submit your EOD report
+                        Don&apos;t forget to submit your EOD report
                       </p>
                     </div>
                   </div>
@@ -317,10 +324,29 @@ export default function InternDashboardPage(): ReactNode {
         </BentoCard>
       </BentoGrid>
 
-      {/* EOD Report Form */}
-      {showForm && !todayReport && (
-        <EODReportForm onSubmit={handleSubmitReport} isSubmitting={createLogMutation.isPending} />
-      )}
+      {/* EOD Report — Slide Panel */}
+      <SlidePanel open={showForm && !todayReport} onOpenChange={setShowForm}>
+        <SlidePanelContent size="xl">
+          <SlidePanelHeader>
+            <SlidePanelTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <FileText className="h-4 w-4 text-primary" strokeWidth={1.5} />
+              </div>
+              End of Day Report
+            </SlidePanelTitle>
+            <SlidePanelDescription>
+              Submit your daily progress report for today.
+            </SlidePanelDescription>
+          </SlidePanelHeader>
+          <SlidePanelBody className="p-0">
+            <EODReportForm
+              onSubmit={handleSubmitReport}
+              isSubmitting={createLogMutation.isPending}
+              className="border-0 shadow-none rounded-none"
+            />
+          </SlidePanelBody>
+        </SlidePanelContent>
+      </SlidePanel>
 
       {/* Recent Reports Card */}
       <BentoCard colSpan={4}>

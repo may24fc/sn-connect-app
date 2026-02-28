@@ -6,6 +6,7 @@ import {
   useUpdateInternDailyLog,
   useUpdateInternship,
 } from '@/hooks/useInternships';
+import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
 import {
   Avatar,
   AvatarFallback,
@@ -63,7 +64,7 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, use, useState } from 'react';
+import { type ReactNode, use, useCallback, useState } from 'react';
 
 function getInitials(name: string): string {
   return name
@@ -120,6 +121,36 @@ export default function InternDetailPage({
   const daysRemaining = getDaysRemaining(intern.endDate);
   const progressPercentage = calculateHoursProgress(intern.completedHours, intern.requiredHours);
   const pendingReports = uiReports.filter((r) => r.status === 'submitted').length;
+
+  const handleExportReport = useCallback((): void => {
+    if (!intern) return;
+
+    // Export intern profile info and daily reports
+    const profileData = [
+      {
+        field: 'Name',
+        value: intern.name,
+      },
+      { field: 'Email', value: intern.email },
+      { field: 'Phone', value: intern.phone || 'N/A' },
+      { field: 'School', value: intern.school },
+      { field: 'Program', value: intern.program },
+      { field: 'Department', value: intern.department },
+      { field: 'Supervisor', value: intern.supervisor },
+      { field: 'Start Date', value: formatDateForCsv(intern.startDate) },
+      { field: 'End Date', value: formatDateForCsv(intern.endDate) },
+      { field: 'Required Hours', value: String(intern.requiredHours) },
+      { field: 'Completed Hours', value: String(intern.completedHours) },
+      { field: 'Progress', value: formatPercentageForCsv(progressPercentage) },
+      { field: 'Status', value: intern.status },
+    ];
+
+    exportToCsv(profileData, {
+      filename: `intern-${intern.name.replace(/\s+/g, '-').toLowerCase()}`,
+      headers: ['Field', 'Value'],
+      rowMapper: (item) => [item.field, item.value],
+    });
+  }, [intern, progressPercentage]);
 
   const handleProvideFeedback = (report: DailyReport): void => {
     setSelectedReport(report);
@@ -193,7 +224,7 @@ export default function InternDetailPage({
                 <Edit2 className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportReport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export Report
               </DropdownMenuItem>

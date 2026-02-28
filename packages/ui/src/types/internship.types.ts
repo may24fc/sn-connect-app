@@ -109,10 +109,10 @@ export interface InternFilters {
 // EOD Report Form Data
 export interface EODReportFormData {
   date: string;
-  tasksCompleted: string;
   hoursLogged: number;
-  learnings: string;
+  tasksCompleted: string;
   challenges?: string;
+  focusTomorrow?: string;
 }
 
 // Status Configuration

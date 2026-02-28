@@ -9,6 +9,7 @@ import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
 import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
 import type { InternshipFilters } from '@/lib/query-keys';
 import {
   Avatar,
@@ -60,7 +61,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -177,6 +178,47 @@ export default function AdminInternsPage(): ReactNode {
     return matchesSearch && matchesStatus && matchesSchool && matchesSupervisor;
   });
 
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportReport = useCallback((): void => {
+    setExporting(true);
+    try {
+      exportToCsv(filteredInterns, {
+        filename: 'interns-report',
+        headers: [
+          'Name',
+          'Email',
+          'School',
+          'Program',
+          'Department',
+          'Supervisor',
+          'Start Date',
+          'End Date',
+          'Required Hours',
+          'Completed Hours',
+          'Progress',
+          'Status',
+        ],
+        rowMapper: (intern) => [
+          intern.name,
+          intern.email,
+          intern.school,
+          intern.program,
+          intern.department,
+          intern.supervisor,
+          formatDateForCsv(intern.startDate),
+          formatDateForCsv(intern.endDate),
+          intern.requiredHours,
+          intern.completedHours,
+          formatPercentageForCsv(intern.progressPercentage),
+          intern.status,
+        ],
+      });
+    } finally {
+      setExporting(false);
+    }
+  }, [filteredInterns]);
+
   const handleViewIntern = (intern: InternSummary): void => {
     router.push(`/admin/interns/${intern.id}`);
   };
@@ -192,9 +234,9 @@ export default function AdminInternsPage(): ReactNode {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportReport} disabled={exporting}>
             <Download className="mr-2 h-4 w-4" />
-            Export Report
+            {exporting ? 'Exporting...' : 'Export Report'}
           </Button>
           <Button onClick={() => setInviteModalOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />

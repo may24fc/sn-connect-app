@@ -248,11 +248,12 @@ export default function InternSetupPage(): ReactNode {
 
             <CardContent className="space-y-6">
               {/* Dates Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate" className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    Start Date <span className="text-rose-500">*</span>
+                  <Label htmlFor="startDate" className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    <Calendar className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                    Start Date
+                    <span className="text-rose-500 dark:text-rose-400" aria-label="required">*</span>
                   </Label>
                   <Input
                     id="startDate"
@@ -260,16 +261,21 @@ export default function InternSetupPage(): ReactNode {
                     value={form.startDate}
                     onChange={(e) => updateField('startDate', e.target.value)}
                     error={!!errors.startDate}
+                    className="h-10"
                   />
                   {errors.startDate && (
-                    <p className="text-xs text-rose-600 dark:text-rose-400">{errors.startDate}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200" role="alert">
+                      <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} />
+                      <span>{errors.startDate}</span>
+                    </div>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="endDate" className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    End Date <span className="text-rose-500">*</span>
+                  <Label htmlFor="endDate" className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    <Calendar className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                    End Date
+                    <span className="text-rose-500 dark:text-rose-400" aria-label="required">*</span>
                   </Label>
                   <Input
                     id="endDate"
@@ -277,18 +283,23 @@ export default function InternSetupPage(): ReactNode {
                     value={form.endDate}
                     onChange={(e) => updateField('endDate', e.target.value)}
                     error={!!errors.endDate}
+                    className="h-10"
                   />
                   {errors.endDate && (
-                    <p className="text-xs text-rose-600 dark:text-rose-400">{errors.endDate}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200" role="alert">
+                      <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} />
+                      <span>{errors.endDate}</span>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Department */}
               <div className="space-y-2">
-                <Label htmlFor="department" className="flex items-center gap-1.5">
-                  <Building2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Department <span className="text-rose-500">*</span>
+                <Label htmlFor="department" className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <Building2 className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                  Department
+                  <span className="text-rose-500 dark:text-rose-400" aria-label="required">*</span>
                 </Label>
                 <Select
                   value={form.department}
@@ -296,7 +307,7 @@ export default function InternSetupPage(): ReactNode {
                 >
                   <SelectTrigger
                     id="department"
-                    className={errors.department ? 'border-rose-500 ring-rose-500' : ''}
+                    className={errors.department ? 'border-rose-500 focus:ring-rose-500/20' : ''}
                   >
                     <SelectValue placeholder="Select your department" />
                   </SelectTrigger>
@@ -309,15 +320,19 @@ export default function InternSetupPage(): ReactNode {
                   </SelectContent>
                 </Select>
                 {errors.department && (
-                  <p className="text-xs text-rose-600 dark:text-rose-400">{errors.department}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200" role="alert">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} />
+                    <span>{errors.department}</span>
+                  </div>
                 )}
               </div>
 
               {/* School */}
               <div className="space-y-2">
-                <Label htmlFor="school" className="flex items-center gap-1.5">
-                  <School className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  School / University <span className="text-rose-500">*</span>
+                <Label htmlFor="school" className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <School className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                  School / University
+                  <span className="text-rose-500 dark:text-rose-400" aria-label="required">*</span>
                 </Label>
                 <Input
                   id="school"
@@ -326,17 +341,22 @@ export default function InternSetupPage(): ReactNode {
                   value={form.school}
                   onChange={(e) => updateField('school', e.target.value)}
                   error={!!errors.school}
+                  className="h-10"
                 />
                 {errors.school && (
-                  <p className="text-xs text-rose-600 dark:text-rose-400">{errors.school}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200" role="alert">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} />
+                    <span>{errors.school}</span>
+                  </div>
                 )}
               </div>
 
               {/* Program */}
               <div className="space-y-2">
-                <Label htmlFor="program" className="flex items-center gap-1.5">
-                  <GraduationCap className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Program / Course <span className="text-rose-500">*</span>
+                <Label htmlFor="program" className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <GraduationCap className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                  Program / Course
+                  <span className="text-rose-500 dark:text-rose-400" aria-label="required">*</span>
                 </Label>
                 <Input
                   id="program"
@@ -345,17 +365,22 @@ export default function InternSetupPage(): ReactNode {
                   value={form.program}
                   onChange={(e) => updateField('program', e.target.value)}
                   error={!!errors.program}
+                  className="h-10"
                 />
                 {errors.program && (
-                  <p className="text-xs text-rose-600 dark:text-rose-400">{errors.program}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200" role="alert">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} />
+                    <span>{errors.program}</span>
+                  </div>
                 )}
               </div>
 
               {/* Required Hours */}
               <div className="space-y-2">
-                <Label htmlFor="requiredHours" className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Required Hours <span className="text-rose-500">*</span>
+                <Label htmlFor="requiredHours" className="flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <Clock className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                  Required Hours
+                  <span className="text-rose-500 dark:text-rose-400" aria-label="required">*</span>
                 </Label>
                 <Input
                   id="requiredHours"
@@ -366,21 +391,25 @@ export default function InternSetupPage(): ReactNode {
                   value={form.requiredHours}
                   onChange={(e) => updateField('requiredHours', e.target.value)}
                   error={!!errors.requiredHours}
+                  className="h-10"
                 />
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                   The total number of hours required for your internship (default: 480).
                 </p>
                 {errors.requiredHours && (
-                  <p className="text-xs text-rose-600 dark:text-rose-400">{errors.requiredHours}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200" role="alert">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={1.5} />
+                    <span>{errors.requiredHours}</span>
+                  </div>
                 )}
               </div>
             </CardContent>
 
-            <CardFooter className="flex justify-end gap-3 border-t border-zinc-100 dark:border-zinc-800 pt-6">
+            <CardFooter className="flex justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 pt-6">
               <Button
                 type="submit"
                 disabled={initializeMutation.isPending}
-                className="min-w-[140px]"
+                className="min-w-[140px] h-10"
               >
                 {initializeMutation.isPending ? (
                   <>
