@@ -20,7 +20,8 @@ import { useState } from 'react';
 
 // Lazy-load the analytics tab (contains recharts / D3)
 const ReportsAnalyticsTab = dynamic(
-  () => import('./components/ReportsAnalyticsTab').then((m) => ({ default: m.ReportsAnalyticsTab })),
+  () =>
+    import('./components/ReportsAnalyticsTab').then((m) => ({ default: m.ReportsAnalyticsTab })),
   {
     loading: () => (
       <div className="space-y-4 py-4">

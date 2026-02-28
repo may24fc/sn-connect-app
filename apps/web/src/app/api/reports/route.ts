@@ -37,10 +37,9 @@ export async function GET(request: NextRequest) {
     // Use admin client to avoid nested RLS failures on cross-table subqueries
     let query = supabaseAdmin
       .from('reports')
-      .select(
-        '*, employees(id, user_id, first_name, last_name, department), report_metrics(*)',
-        { count: 'exact' }
-      )
+      .select('*, employees(id, user_id, first_name, last_name, department), report_metrics(*)', {
+        count: 'exact',
+      })
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 

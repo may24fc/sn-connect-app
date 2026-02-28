@@ -2,6 +2,7 @@
 
 import { useReport } from '@/hooks/useReport';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
+import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -93,12 +94,12 @@ export default function ReportDetailPage({
           <div>
             <h1 className="text-headline">{report.report_type}</h1>
             <p className="text-muted-foreground">
-              {report.period_start} to {report.period_end}
+              {formatDate(report.period_start)} – {formatDate(report.period_end)}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
+          <Badge variant={statusVariant[report.status]}>{formatLabel(report.status)}</Badge>
           {report.status === 'draft' && (
             <Button
               onClick={() =>
@@ -146,15 +147,15 @@ export default function ReportDetailPage({
             <span className="text-muted-foreground">Employee:</span>{' '}
             {report.employees
               ? `${report.employees.first_name} ${report.employees.last_name}`
-              : '-'}
+              : '—'}
           </p>
           <p>
             <span className="text-muted-foreground">Department:</span>{' '}
-            {report.employees?.department || '-'}
+            {report.employees?.department || '—'}
           </p>
           <p>
             <span className="text-muted-foreground">Submitted At:</span>{' '}
-            {report.submitted_at ? report.submitted_at.replace('T', ' ').slice(0, 16) : '-'}
+            {formatDateTime(report.submitted_at)}
           </p>
           {noteSections.summary && (
             <p>
@@ -210,8 +211,8 @@ export default function ReportDetailPage({
                     <TableCell className="font-mono">
                       {metric.metric_value.toLocaleString()}
                     </TableCell>
-                    <TableCell>{metric.metric_unit || '-'}</TableCell>
-                    <TableCell>{metric.notes || '-'}</TableCell>
+                    <TableCell>{metric.metric_unit || '—'}</TableCell>
+                    <TableCell>{metric.notes || '—'}</TableCell>
                   </TableRow>
                 ))
               )}

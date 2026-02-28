@@ -1,6 +1,7 @@
 'use client';
 
 import { useReports } from '@/hooks/useReports';
+import { formatDate, formatLabel } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -236,13 +237,15 @@ export function ReportsSubmissionsTab({
                           ? `${report.employees.first_name} ${report.employees.last_name}`
                           : '-'}
                       </TableCell>
-                      <TableCell>{report.employees?.department || '-'}</TableCell>
+                      <TableCell>{report.employees?.department || '—'}</TableCell>
                       <TableCell>{report.report_type}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
+                        <Badge variant={statusVariant[report.status]}>
+                          {formatLabel(report.status)}
+                        </Badge>
                       </TableCell>
-                      <TableCell>
-                        {report.period_start} to {report.period_end}
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(report.period_start)} – {formatDate(report.period_end)}
                       </TableCell>
                       <TableCell>
                         {(() => {

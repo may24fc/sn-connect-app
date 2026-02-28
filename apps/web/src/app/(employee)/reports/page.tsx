@@ -2,6 +2,7 @@
 
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
+import { formatDate, formatLabel } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -226,14 +227,16 @@ export default function ReportsPage() {
                   reports.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="font-medium">{report.report_type}</TableCell>
-                      <TableCell>
-                        {report.period_start} to {report.period_end}
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(report.period_start)} – {formatDate(report.period_end)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
+                        <Badge variant={statusVariant[report.status]}>
+                          {formatLabel(report.status)}
+                        </Badge>
                       </TableCell>
-                      <TableCell>
-                        {report.submitted_at ? report.submitted_at.slice(0, 10) : '-'}
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(report.submitted_at)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -326,7 +329,7 @@ function GroupedReportRow({
       : { page: 1, pageSize: 0 }
   );
 
-  const children = isExpanded ? childrenData?.data ?? [] : [];
+  const children = isExpanded ? (childrenData?.data ?? []) : [];
 
   return (
     <>
@@ -373,14 +376,14 @@ function GroupedReportRow({
             )}
           </div>
         </TableCell>
-        <TableCell>
-          {report.period_start} to {report.period_end}
+        <TableCell className="text-sm text-muted-foreground">
+          {formatDate(report.period_start)} – {formatDate(report.period_end)}
         </TableCell>
         <TableCell>
-          <Badge variant={statusVariant[report.status]}>{report.status}</Badge>
+          <Badge variant={statusVariant[report.status]}>{formatLabel(report.status)}</Badge>
         </TableCell>
-        <TableCell>
-          {report.submitted_at ? report.submitted_at.slice(0, 10) : '-'}
+        <TableCell className="text-sm text-muted-foreground">
+          {formatDate(report.submitted_at)}
         </TableCell>
         <TableCell className="text-right">
           <div className="flex justify-end gap-2">
