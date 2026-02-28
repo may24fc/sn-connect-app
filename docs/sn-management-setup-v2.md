@@ -828,9 +828,10 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
   - `placeholderData` enabled for list queries
 
 - [x] **Audit and optimize Supabase queries**
-  - List APIs use `.select()` with only needed columns
-  - Database indexes added for performance-critical queries
-  - Uses `.count('exact')` for pagination metadata
+  - Main list APIs already use `{ count: 'exact' }` + `.range()` for pagination (employees, tasks, resources, notifications, departments)
+  - Added `.limit(200)` safety nets to unbounded endpoints: KPIs, OKRs
+  - Added `.limit(50)` to bookmarks endpoint
+  - Optimized `head: true` count queries to use `select('id')` instead of `select('*')` (notifications, resource categories)
 
 ---
 

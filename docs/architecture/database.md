@@ -152,8 +152,45 @@ Tracks sensitive operations. Insert-only (no update/delete).
 
 | Table | Description |
 |-------|-------------|
-| `knowledge_sources` | Source documents for RAG |
-| `knowledge_embeddings` | Vector chunks (pgvector) |
+| `knowledge_sources` | Source documents for RAG. Has `current_version` integer for auto-versioning |
+| `knowledge_embeddings` | Vector chunks (pgvector, 1536-dim) |
+| `knowledge_source_versions` | Auto-snapshotted version history (trigger on `knowledge_sources` update). See [ADR-006](../adr/ADR-006-knowledge-versioning.md) |
+
+### Notifications
+
+| Table | Description |
+|-------|-------------|
+| `notifications` | In-app notifications with `notification_type` enum (11 types), deep-link support, read tracking, optional expiry |
+
+### Multi-Currency
+
+| Table | Description |
+|-------|-------------|
+| `fx_rates` | Daily FX rates (synced by Edge Function cron) |
+| `bank_registry` | Bank information for international payments |
+
+### Resource Categories
+
+| Table | Description |
+|-------|-------------|
+| `resource_categories` | Dynamic hierarchical categories replacing static enum. Admin-managed with slugs, icons, display ordering. See [ADR-005](../adr/ADR-005-resource-categories-table.md) |
+
+### Role Metadata
+
+| Table | Description |
+|-------|-------------|
+| `user_role_metadata` | Role-specific configuration per user (JSONB). Unique on `(user_id, role_type)` |
+| `role_kpi_entries` | Role-specific daily KPI tracking. Unique on `(user_id, role_type, entry_date, kpi_name)` |
+
+---
+
+## Views
+
+| View | Description |
+|------|-------------|
+| `employee_directory` | Joins users + employees + active internships. Full-name, role, department, position, contact, internship fields |
+| `individual_performance_summary` | Aggregated KPIs (count, avg progress, completed), OKRs, reviews per employee |
+| `root_reports` | Top-level reports (`parent_report_id IS NULL`) with computed `child_count` |
 
 ---
 
@@ -169,6 +206,14 @@ Tracks sensitive operations. Insert-only (no update/delete).
 | `task_status` | todo, in_progress, completed, on_hold, cancelled |
 | `task_priority` | low, medium, high, urgent |
 | `invoice_status` | draft, submitted, approved, rejected |
+| `notification_type` | task_assigned, task_due, report_submitted, report_approved, report_rejected, announcement_new, resource_new, reminder, onboarding_step, probation_update, system |
+| `resource_access_level` | full, view_only |
+| `knowledge_source_type` | pdf, docx, url, manual |
+| `announcement_status` | draft, published, archived |
+| `announcement_priority` | normal, important, urgent |
+| `internship_status` | active, completed, withdrawn, extended |
+| `onboarding_status` | not_started, in_progress, completed, approved, rejected |
+| `review_status` | draft, submitted, acknowledged |
 
 ---
 
@@ -185,6 +230,14 @@ Tracks sensitive operations. Insert-only (no update/delete).
 | `calculate_tenure_days` | `(employee_id uuid) → integer` | Tenure |
 | `soft_delete` | `(table_name text, record_id uuid) → void` | Generic soft delete |
 | `match_knowledge_embeddings` | `(query_embedding vector, match_threshold float, match_count int) → setof record` | Vector search |
+| `get_report_children` | `(parent_id uuid) → setof reports` | Direct child reports |
+| `get_report_tree` | `(root_id uuid) → table` | Recursive tree traversal with depth |
+| `snapshot_knowledge_source_version` | `() → trigger` | Auto-snapshot before update |
+| `get_knowledge_source_versions` | `(p_source_id uuid) → table` | Version history with editor names |
+| `restore_knowledge_source_version` | `(p_source_id uuid, p_version int) → knowledge_sources` | Restore to previous version |
+| `get_resource_category_tree` | `() → table` | Hierarchical categories with resource counts |
+| `calculate_okr_progress` | `(p_okr_id uuid) → numeric` | Average progress from key_results JSONB |
+| `trigger_update_okr_progress` | `() → trigger` | Auto-recalculate on key_results update |
 
 ---
 
@@ -210,8 +263,9 @@ Examples:
 3. **20260211** — Resources hub, onboarding profiles
 4. **20260216-20260217** — Schema repairs, RLS fixes, role consolidation, super_admin support
 5. **20260218** — Storage buckets and storage RLS policies
-6. **20260221-20260222** — AI knowledge tables, standup tables
-7. **20260227-20260228** — FX rates, bank registry, directory view, performance views/functions
+6. **20260221-20260222** — AI knowledge tables (pgvector), standup tables
+7. **20260227** — Notifications, audit log normalization, phone country codes, FX rates, bank registry, report hierarchy, knowledge versioning, resource categories, intern self-init policies
+8. **20260228** — Directory view, performance summary view, OKR/KPI automation, user role metadata, task tags, resource access levels
 
 ### Running Migrations
 

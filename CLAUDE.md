@@ -71,8 +71,9 @@ AI Layer            --> Anthropic Claude SDK (packages/ai/)
 
 ## Role System
 
-### Database Roles (6 roles in user_role enum)
+### Database Roles (7 roles in user_role enum)
 - `admin` - Full system access
+- `super_admin` - Elevated admin privileges
 - `hr` - HR department access
 - `cos` - Chief of Staff access
 - `ceo` - Executive access
@@ -85,25 +86,49 @@ AI Layer            --> Anthropic Claude SDK (packages/ai/)
 - `employee` - Regular employee
 - `intern` - Intern
 
-**WARNING:** Role mismatch exists between DB and UI. Resolution needed in Phase 1.
+**Note:** Role consolidation completed in ADR-001. `super_admin` added to DB enum.
 
-## Database Schema (Phase 1 - Complete)
+## Database Schema
 
-### Tables
+62 migration files, 30+ tables, 3 views, 70+ RLS policies, 20+ functions.  
+Full reference: `supabase/SCHEMA_SUMMARY.md` · `docs/architecture/database.md`
+
+### Core Tables
 | Table | Description | RLS |
 |-------|-------------|-----|
 | `users` | Extends auth.users with HR fields | Yes |
 | `employees` | 201 file data (PII, payroll) | Yes |
 | `departments` | Organizational structure | Yes |
 | `documents` | File references for 201 files | Yes |
-| `audit_logs` | Tracks sensitive operations | Yes |
+| `audit_logs` | Tracks sensitive operations (+ `action`, `metadata` for Edge Functions) | Yes |
+| `notifications` | In-app notifications with deep-link support (11-type enum) | Yes |
 
-### Enums
-- `user_role` - 6 roles
-- `user_status` - active, on_leave, terminated
-- `employment_type` - regular, probationary, intern, project_based
-- `work_arrangement` - part_time, full_time
-- `document_type` - 10 document categories
+### Feature Tables
+| Domain | Tables |
+|--------|--------|
+| Onboarding | `onboarding_profiles`, `onboarding_documents`, `onboarding_checklists`, `onboarding_tasks` |
+| Tasks | `tasks` (with `category`, `tags`), `task_comments` |
+| Reports | `reports` (with hierarchy: `parent_report_id`, `report_group`, `hierarchy_path`), `report_metrics` |
+| Invoices | `invoices`, `invoice_line_items` |
+| Announcements | `announcements`, `announcement_reads`, `announcement_comments`, `announcement_attachments` |
+| Resources | `resources` (with `category_id`, `access_level`), `resource_categories`, `resource_views`, `resource_bookmarks`, `resource_collections`, `collection_resources` |
+| Performance | `review_cycles`, `performance_reviews`, `okrs` (auto-progress), `kpis` (generated `progress_pct`) |
+| Internships | `internships`, `internship_daily_logs` |
+| Standups | `standup_recordings`, `standup_topics` |
+| AI Knowledge | `knowledge_sources` (versioned), `knowledge_embeddings` (pgvector), `knowledge_source_versions` |
+| Multi-Currency | `fx_rates`, `bank_registry` |
+| Role Metadata | `user_role_metadata`, `role_kpi_entries` |
+
+### Views
+| View | Description |
+|------|-------------|
+| `employee_directory` | Joined users + employees + active internships |
+| `individual_performance_summary` | Aggregated KPIs, OKRs, reviews per employee |
+| `root_reports` | Top-level reports with child counts |
+
+### Enums (18)
+**Core:** `user_role` (7), `user_status`, `employment_type`, `work_arrangement`, `document_type`  
+**Feature:** `task_status`, `task_priority`, `invoice_status`, `announcement_status`, `announcement_priority`, `announcement_target_type`, `resource_type`, `resource_access_level`, `onboarding_status`, `internship_status`, `review_status`, `notification_type` (11), `knowledge_source_type`
 
 ### Helper Functions
 - `user_has_role(user_id, role)` - Check single role
@@ -114,6 +139,11 @@ AI Layer            --> Anthropic Claude SDK (packages/ai/)
 - `is_on_probation(employee_id)` - Probation status
 - `calculate_tenure_days(employee_id)` - Tenure calculation
 - `soft_delete(table_name, record_id)` - Generic soft delete
+- `match_knowledge_embeddings(query, threshold, count)` - Vector search
+- `get_report_children(parent_id)` / `get_report_tree(root_id)` - Report hierarchy
+- `get_knowledge_source_versions(source_id)` / `restore_knowledge_source_version(source_id, version)` - Knowledge versioning
+- `get_resource_category_tree()` - Hierarchical categories with counts
+- `calculate_okr_progress(okr_id)` - OKR auto-progress
 
 ## Code Standards
 
@@ -375,28 +405,32 @@ test(reports): add E2E tests for submission flow
 
 ## Current State Summary
 
-### Completed (Phase 0)
+### Completed (Phases 0–8)
 - Monorepo structure with pnpm workspaces
 - Next.js 15 + React 19 setup
 - Titanium & Indigo design system
 - 48+ UI components (primitives + composites)
-- Phase 1 database schema (users, employees, documents, departments, audit_logs)
-- 26 RLS policies
-- TanStack Query infrastructure
-- Mock authentication (4 test accounts)
-- All UI pages built (frontend shell)
+- Database schema: 62 migrations, 30+ tables, 3 views, 70+ RLS policies, 20+ functions
+- Supabase Auth with PKCE callback and middleware protection
+- 112 API route handlers across 17 domains
+- TanStack Query infrastructure with real data fetching
+- 3 Supabase Edge Functions (onboarding-new-employee, probation-check, update-fx-rates)
+- Notifications system (table + API + RLS)
+- AI Knowledge Base with RAG chat, embeddings, auto-versioning
+- Resource categories (dynamic table), report hierarchy, task tags
+- Employee directory view, individual performance summary view
+- Multi-currency support (FX rates, bank registry)
+- OKR/KPI automation (auto-progress triggers)
+- All UI pages built (65 pages)
 - CI/CD pipelines
+- Package READMEs for all 5 packages
 
 ### Not Yet Implemented
-- Server-side authentication (Supabase Auth)
-- API routes (zero endpoints exist)
-- n8n workflows
-- Supabase Edge Functions
-- Real data fetching (all pages use mock data)
-- Form validation (React Hook Form + Zod)
-- Unit tests
-- Middleware for auth protection
-- Email/notification system
+- n8n workflows (removed in favor of Edge Functions — ADR-004)
+- Form validation (React Hook Form + Zod — partial)
+- Unit tests (Vitest configured but sparse)
+- Email delivery (Resend configured, not fully wired)
+- Mobile app (Capacitor skeleton only)
 
 ## Quick Reference
 

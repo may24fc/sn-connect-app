@@ -25,6 +25,42 @@ type UsersInsert = Tables['users']['Insert'];
 type UsersUpdate = Tables['users']['Update'];
 ```
 
+#### Tables (30+)
+
+| Domain | Tables |
+|--------|--------|
+| **Core** | `users`, `employees`, `departments`, `documents`, `audit_logs`, `notifications` |
+| **Onboarding** | `onboarding_profiles`, `onboarding_documents`, `onboarding_checklists`, `onboarding_tasks` |
+| **Tasks** | `tasks`, `task_comments` |
+| **Reports** | `reports`, `report_metrics` |
+| **Invoices** | `invoices`, `invoice_line_items` |
+| **Announcements** | `announcements`, `announcement_reads`, `announcement_comments`, `announcement_attachments` |
+| **Resources** | `resources`, `resource_categories`, `resource_views`, `resource_bookmarks`, `resource_collections`, `collection_resources` |
+| **Performance** | `review_cycles`, `performance_reviews`, `okrs`, `kpis` |
+| **Internships** | `internships`, `internship_daily_logs` |
+| **AI Knowledge** | `knowledge_sources`, `knowledge_embeddings`, `knowledge_source_versions` |
+| **Standups** | `standup_recordings`, `standup_topics` |
+| **Multi-Currency** | `fx_rates`, `bank_registry` |
+| **Role Metadata** | `user_role_metadata`, `role_kpi_entries` |
+
+#### Views
+
+| View | Description |
+|------|-------------|
+| `employee_directory` | Joined users + employees + internships |
+| `individual_performance_summary` | Aggregated KPIs, OKRs, reviews per employee |
+| `root_reports` | Top-level reports with child counts |
+
+#### Functions
+
+| Function | Description |
+|----------|-------------|
+| `match_knowledge_embeddings()` | Vector similarity search |
+| `get_report_children()` / `get_report_tree()` | Report hierarchy traversal |
+| `get_knowledge_source_versions()` / `restore_knowledge_source_version()` | Knowledge versioning |
+| `get_resource_category_tree()` | Hierarchical categories with counts |
+| `calculate_okr_progress()` | OKR auto-progress |
+
 ### Type Helpers (`type-helpers.ts`)
 
 Convenience type aliases for table rows, inserts, and updates:
@@ -78,6 +114,9 @@ Runtime-safe enum values:
 | `TaskStatus` | `Todo`, `InProgress`, `Completed`, `OnHold`, `Cancelled` |
 | `TaskPriority` | `Low`, `Medium`, `High`, `Urgent` |
 | `InvoiceStatus` | `Draft`, `Submitted`, `Approved`, `Rejected` |
+| `NotificationType` | `TaskAssigned`, `TaskDue`, `ReportSubmitted`, `ReportApproved`, `ReportRejected`, `AnnouncementNew`, `ResourceNew`, `Reminder`, `OnboardingStep`, `ProbationUpdate`, `System` |
+| `ResourceAccessLevel` | `Full`, `ViewOnly` |
+| `KnowledgeSourceType` | `Pdf`, `Docx`, `Url`, `Manual` |
 
 ### Validation Schemas (`schemas/`)
 
@@ -95,3 +134,5 @@ pnpm db:generate
 ```
 
 This runs `supabase gen types typescript` and writes to `src/database.types.ts`.
+
+> **Note:** New tables added via migrations (e.g., `resource_categories`, `knowledge_source_versions`, `user_role_metadata`, `role_kpi_entries`) will only appear in types after running `db:generate` against the live database.

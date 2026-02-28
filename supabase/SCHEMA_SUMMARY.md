@@ -1,329 +1,429 @@
-# HR Portal Phase 1 - Schema Summary
+# SN Connect HR Portal — Schema Summary
 
-## Overview
-Complete database schema for HR Portal Phase 1 with comprehensive Row Level Security (RLS) policies, audit logging, and helper functions.
+> Audience: Developers, DevOps
 
-## Files Created
+Complete database schema for SN Connect HR Portal. 62 migration files across 8 phases, 30+ tables, 3 views, 70+ RLS policies, 20+ functions.
 
-### Migration Files (in `supabase/migrations/`)
+---
 
-| File | Purpose | Dependencies |
-|------|---------|--------------|
-| `20260123000001_create_enums_and_extensions.sql` | PostgreSQL extensions and enum types | None |
-| `20260123000002_create_audit_log_table.sql` | Audit logging infrastructure | Extensions |
-| `20260123000003_create_departments_table.sql` | Department table with RLS | Enums |
-| `20260123000004_create_users_table.sql` | Users table (extends auth.users) | Departments, Enums |
-| `20260123000005_create_employees_table.sql` | Employees table (201 files) | Users, Enums |
-| `20260123000006_create_documents_table.sql` | Documents table | Employees, Enums |
-| `20260123000007_create_triggers.sql` | Triggers for timestamps and audit | All tables |
-| `20260123000008_create_helper_functions.sql` | Helper functions for common operations | All tables |
+## Table of Contents
 
-### Documentation Files
+- [Migration Phases](#migration-phases)
+- [Core Tables](#core-tables)
+- [Feature Tables](#feature-tables)
+- [Views](#views)
+- [Enums](#enums)
+- [Helper Functions](#helper-functions)
+- [Access Control Matrix](#access-control-matrix)
+- [RLS Policy Summary](#rls-policy-summary)
+- [Index Summary](#index-summary)
+- [Conventions](#conventions)
 
-| File | Purpose |
-|------|---------|
-| `supabase/migrations/README.md` | Complete migration documentation |
-| `supabase/SETUP.md` | Setup guide for local and production |
-| `supabase/QUICK_REFERENCE.md` | Quick reference for common queries |
-| `supabase/SCHEMA_SUMMARY.md` | This file - overview of all files |
+---
 
-### Seed Files (in `supabase/seed/`)
+## Migration Phases
 
-| File | Purpose |
-|------|---------|
-| `01_sample_data.sql` | Sample data for development/testing |
+| Phase | Date Range | Files | Description |
+|-------|-----------|-------|-------------|
+| 1 — Core | `20260123` | 8 | Enums, users, employees, departments, documents, audit_logs, triggers, helper functions |
+| 2 — Roles | `20260210` | 1 | `super_admin` role addition |
+| 3 — Features | `20260210-20260211` | 9 | Reports, tasks, invoices, announcements, onboarding, offboarding, performance, internships, resources |
+| 4 — Repairs | `20260216-20260217` | 11 | Schema repairs, RLS fixes, role consolidation |
+| 5 — Storage | `20260218` | 4 | Storage buckets and storage RLS policies |
+| 6 — AI & Standups | `20260221-20260222` | 2 | Knowledge tables (pgvector), standup recordings |
+| 7 — Edge Functions | `20260227` | 6 | Notifications, phone codes, FX rates, bank registry, report hierarchy, knowledge versioning, resource categories, intern self-init |
+| 8 — Views & Metadata | `20260228` | 6 | Directory view, performance view, OKR/KPI automation, user role metadata, task tags, resource access levels |
 
-### Validation Files
+---
 
-| File | Purpose |
-|------|---------|
-| `supabase/migrations/validate_schema.sql` | Schema validation script |
+## Core Tables
 
-### TypeScript Files (in `packages/database/src/`)
+### users
 
-| File | Purpose |
-|------|---------|
-| `database.types.ts` | Complete TypeScript type definitions |
-| `example-usage.ts` | Usage examples for frontend |
-| `index.ts` | Package exports |
+Extends `auth.users` with HR-specific fields.
 
-## Database Schema Structure
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid PK | References `auth.users(id)` |
+| `role` | user_role | employee, intern, admin, super_admin, hr, cos, ceo |
+| `department_id` | FK departments | |
+| `manager_id` | FK users (self) | Direct manager |
+| `status` | user_status | active, on_leave, terminated |
+| `avatar_url` | text | Profile image |
+| `created_at`, `updated_at` | timestamptz | Standard timestamps |
+| `deleted_at` | timestamptz | Soft delete |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                       auth.users                             │
-│                    (Supabase Auth)                           │
-│  - id (uuid, PK)                                             │
-│  - email, encrypted_password, etc.                           │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            │ (extends)
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      public.users                            │
-│  - id (FK to auth.users)                                     │
-│  - role (enum)                                               │
-│  - department_id (FK to departments)                         │
-│  - manager_id (self-reference)                               │
-│  - status (enum)                                             │
-│  - Standard columns (created_at, updated_at, etc.)           │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            │ (references)
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    public.employees                          │
-│  - id (uuid, PK)                                             │
-│  - user_id (FK to users)                                     │
-│  - employee_number (unique)                                  │
-│  - immediate_head (FK to users)                              │
-│  - Personal info (name, birthday)                            │
-│  - Employment info (position, department, type)              │
-│  - Payroll info (SENSITIVE)                                  │
-│  - Contact info                                              │
-│  - Demographics                                              │
-│  - Standard columns                                          │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    public.documents                          │
-│  - id (uuid, PK)                                             │
-│  - employee_id (FK to employees)                             │
-│  - document_type (enum)                                      │
-│  - file_path (storage reference)                             │
-│  - is_confidential (boolean)                                 │
-│  - uploaded_by (FK to users)                                 │
-│  - Standard columns                                          │
-└─────────────────────────────────────────────────────────────┘
+### employees
 
-┌─────────────────────────────────────────────────────────────┐
-│                   public.departments                         │
-│  - id (uuid, PK)                                             │
-│  - name (unique)                                             │
-│  - description                                               │
-│  - head_id (FK to users)                                     │
-│  - Standard columns                                          │
-└─────────────────────────────────────────────────────────────┘
+201 file data (Philippine HR term). Contains PII and payroll info.
 
-┌─────────────────────────────────────────────────────────────┐
-│                   public.audit_logs                          │
-│  - id (uuid, PK)                                             │
-│  - table_name, record_id                                     │
-│  - operation (INSERT/UPDATE/DELETE)                          │
-│  - old_values, new_values (jsonb)                            │
-│  - performed_by (FK to users)                                │
-│  - performed_at                                              │
-└─────────────────────────────────────────────────────────────┘
-```
+| Column Group | Fields |
+|-------------|--------|
+| **Identity** | `id`, `user_id` (FK users), `employee_number` (unique) |
+| **Personal** | `first_name`, `last_name`, `middle_name`, `birthday`, `gender`, `civil_status`, `nationality` |
+| **Employment** | `position`, `department`, `employment_type`, `work_arrangement`, `date_hired`, `probation_end_date` |
+| **Contact** | `phone`, `phone_country_code`, `personal_email`, `address` fields |
+| **Payroll** ⚠️ | `sss_number`, `tin_number`, `philhealth_number`, `pagibig_number`, `bank_name`, `bank_account_number` |
+| **Hierarchy** | `immediate_head` (FK users) |
+| **Standard** | `created_at`, `updated_at`, `created_by`, `deleted_at` |
 
-## Enum Types
+### departments
 
-### user_role
-- `admin` - System administrator
-- `hr` - Human Resources
-- `cos` - Chief of Staff
-- `ceo` - Chief Executive Officer
-- `employee` - Regular employee
-- `intern` - Intern
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid PK | |
+| `name` | text UNIQUE | |
+| `description` | text | |
+| `head_id` | FK users | Department head |
 
-### user_status
-- `active` - Currently employed
-- `on_leave` - On leave
-- `terminated` - Employment terminated
+### documents
 
-### employment_type
-- `regular` - Regular employee
-- `probationary` - On probation period
-- `intern` - Intern
-- `project_based` - Project-based contract
+File references for 201 files and uploaded documents.
 
-### work_arrangement
-- `full_time` - Full-time work
-- `part_time` - Part-time work
+| Column | Type | Description |
+|--------|------|-------------|
+| `employee_id` | FK employees | |
+| `document_type` | document_type enum | 10 categories |
+| `file_path` | text | Supabase Storage path |
+| `is_confidential` | boolean | |
+| `uploaded_by` | FK users | |
 
-### document_type
-- `contract` - Employment contract
-- `id` - Identification documents
-- `certificate` - Certificates
-- `performance_review` - Performance reviews
-- `resume` - Resume/CV
-- `medical_record` - Medical records
-- `tax_document` - Tax documents
-- `nda` - Non-disclosure agreement
-- `handbook_acknowledgment` - Handbook acknowledgment
-- `other` - Other documents
+### audit_logs
 
-## Access Control Matrix
+Tracks sensitive operations. Insert-only (no update/delete).
 
-| Role | View Own Data | View Team Data | View All Data | Edit Employees | Edit Users | View Confidential Docs | View Audit Logs |
-|------|--------------|----------------|---------------|----------------|------------|----------------------|-----------------|
-| Employee | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Intern | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Manager | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| CEO | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| COS | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ |
-| HR | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Column | Type | Description |
+|--------|------|-------------|
+| `table_name` | text | Affected table |
+| `record_id` | uuid | Affected record |
+| `action` | text | Operation/action identifier (added for Edge Functions) |
+| `old_values` | jsonb | Before state |
+| `new_values` | jsonb | After state |
+| `user_id` | uuid | Who performed it |
+| `details` | jsonb | Additional context |
+| `metadata` | jsonb | Edge Function metadata (DEFAULT `'{}'`) |
 
-**Note**: CEO can see all data but NOT confidential documents (only HR, COS, Admin)
+### notifications
 
-## RLS Policy Count
+In-app notification system with deep-link support.
 
-- `audit_logs`: 2 policies
-- `departments`: 4 policies (SELECT, INSERT, UPDATE, DELETE)
-- `users`: 5 policies
-- `employees`: 7 policies
-- `documents`: 8 policies
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid PK | |
+| `user_id` | FK users | Target user |
+| `type` | notification_type | 11-value enum |
+| `title` | text | Notification title |
+| `message` | text | Optional body |
+| `link` | text | Deep link path (e.g., `/tasks/abc`) |
+| `is_read` | boolean | DEFAULT false |
+| `read_at` | timestamptz | When read |
+| `metadata` | jsonb | Additional context |
+| `created_at` | timestamptz | |
+| `expires_at` | timestamptz | Optional TTL |
 
-**Total**: 26 RLS policies
+---
 
-## Trigger Count
+## Feature Tables
 
-- `updated_at` triggers: 4 (departments, users, employees, documents)
-- `audit_log` triggers: 4 (departments, users, employees, documents)
+### Onboarding
 
-**Total**: 8 triggers
+| Table | Description |
+|-------|-------------|
+| `onboarding_profiles` | User onboarding state (step data, completion). Includes `contact_country_code`, `emergency_contact_country_code`, `payment_phone_country_code` |
+| `onboarding_documents` | Uploaded documents during onboarding |
+| `onboarding_checklists` | Admin-created task checklists |
+| `onboarding_tasks` | Individual checklist items |
+
+### Tasks
+
+| Table | Description |
+|-------|-------------|
+| `tasks` | Task records with priority, status, due date, `category` (text), `tags` (text[] with GIN index) |
+| `task_comments` | Comments on tasks |
+
+### Reports
+
+| Table | Description |
+|-------|-------------|
+| `reports` | Weekly report submissions. Supports hierarchy via `parent_report_id` (self FK), `report_group`, `hierarchy_path` (text[]) |
+| `report_metrics` | Individual metrics per report |
+
+### Invoices
+
+| Table | Description |
+|-------|-------------|
+| `invoices` | Invoice submissions with multi-currency support |
+| `invoice_line_items` | Line items per invoice |
+
+### Announcements
+
+| Table | Description |
+|-------|-------------|
+| `announcements` | Admin announcements (publish, pin, archive) |
+| `announcement_reads` | Read tracking per user |
+| `announcement_comments` | User comments |
+| `announcement_attachments` | File attachments |
+
+### Resources
+
+| Table | Description |
+|-------|-------------|
+| `resources` | Resource library entries. Has `category_id` (FK resource_categories), `access_level` (resource_access_level enum) |
+| `resource_categories` | Dynamic category management replacing static enum. Hierarchical via `parent_id`, slugged, orderable, admin-managed |
+| `resource_views` | View tracking |
+| `resource_bookmarks` | User bookmarks |
+| `resource_collections` | Curated collections |
+| `collection_resources` | Junction table |
+
+### Performance
+
+| Table | Description |
+|-------|-------------|
+| `review_cycles` | Performance review periods |
+| `performance_reviews` | Individual reviews (self + manager) |
+| `okrs` | Objectives and Key Results. Auto-calculates `progress` via trigger on `key_results` update |
+| `kpis` | Key Performance Indicators. Generated `progress_pct` column |
+
+### Internships
+
+| Table | Description |
+|-------|-------------|
+| `internships` | Internship records with hours tracking. Interns can INSERT/UPDATE their own records |
+| `internship_daily_logs` | Daily log entries (intern EOD reports) |
+
+### Standups
+
+| Table | Description |
+|-------|-------------|
+| `standup_recordings` | Standup meeting audio/video recordings (500MB bucket limit) |
+| `standup_topics` | Discussion topics |
+
+### AI Knowledge
+
+| Table | Description |
+|-------|-------------|
+| `knowledge_sources` | Source documents for RAG chat. Has `current_version` integer for versioning |
+| `knowledge_embeddings` | Vector chunks (pgvector, 1536-dim, IVFFlat cosine index) |
+| `knowledge_source_versions` | Auto-snapshotted version history. Triggered BEFORE UPDATE on `knowledge_sources` |
+
+### Multi-Currency
+
+| Table | Description |
+|-------|-------------|
+| `fx_rates` | Daily foreign exchange rates (synced by Edge Function) |
+| `bank_registry` | Bank information for international payments |
+
+### Role Metadata
+
+| Table | Description |
+|-------|-------------|
+| `user_role_metadata` | Role-specific configuration per user (JSONB). Unique on `(user_id, role_type)` |
+| `role_kpi_entries` | Role-specific KPI tracking entries. Unique on `(user_id, role_type, entry_date, kpi_name)` |
+
+---
+
+## Views
+
+| View | Description |
+|------|-------------|
+| `employee_directory` | Joins users + employees + active internships. Columns: user_id, employee_id, avatar_url, full_name, role, department, position, status, employment_type, start_date, email, contact_number, birthday, internship fields |
+| `individual_performance_summary` | Aggregates per-employee KPIs (count, avg progress, completed), OKRs (count, avg progress, completed), and reviews (latest rating, date, total count) |
+| `root_reports` | Top-level reports (`parent_report_id IS NULL`), with computed `child_count` |
+
+---
+
+## Enums
+
+### Core Enums
+
+| Enum | Values |
+|------|--------|
+| `user_role` | `admin`, `hr`, `cos`, `ceo`, `employee`, `intern`, `super_admin` |
+| `user_status` | `active`, `on_leave`, `terminated` |
+| `employment_type` | `regular`, `probationary`, `intern`, `project_based` |
+| `work_arrangement` | `part_time`, `full_time` |
+| `document_type` | `contract`, `id`, `certificate`, `performance_review`, `tax`, `medical`, `training`, `disciplinary`, `leave`, `other` |
+
+### Feature Enums
+
+| Enum | Values |
+|------|--------|
+| `task_status` | `todo`, `in_progress`, `completed`, `on_hold`, `cancelled` |
+| `task_priority` | `low`, `medium`, `high`, `urgent` |
+| `invoice_status` | `draft`, `submitted`, `approved`, `rejected` |
+| `announcement_status` | `draft`, `published`, `archived` |
+| `announcement_priority` | `normal`, `important`, `urgent` |
+| `announcement_target_type` | `all`, `role`, `department` |
+| `resource_type` | `document`, `link`, `video`, `image`, `other` |
+| `resource_access_level` | `full`, `view_only` |
+| `onboarding_status` | `not_started`, `in_progress`, `completed`, `approved`, `rejected` |
+| `internship_status` | `active`, `completed`, `withdrawn`, `extended` |
+| `review_status` | `draft`, `submitted`, `acknowledged` |
+| `notification_type` | `task_assigned`, `task_due`, `report_submitted`, `report_approved`, `report_rejected`, `announcement_new`, `resource_new`, `reminder`, `onboarding_step`, `probation_update`, `system` |
+| `knowledge_source_type` | `pdf`, `docx`, `url`, `manual` |
+
+---
 
 ## Helper Functions
 
-1. `user_has_role(uuid, user_role)` - Check if user has specific role
-2. `user_has_any_role(uuid, user_role[])` - Check if user has any role
-3. `get_user_role(uuid)` - Get user's role
-4. `is_manager_of(uuid, uuid)` - Check manager relationship
-5. `get_employee_by_user_id(uuid)` - Get employee from user ID
-6. `soft_delete(text, uuid)` - Soft delete helper
-7. `get_direct_reports(uuid)` - Get manager's reports
-8. `is_on_probation(uuid)` - Check probation status
-9. `calculate_tenure_days(uuid)` - Calculate tenure
-10. `get_employees_by_department(text)` - Get employees by dept
-11. `handle_updated_at()` - Trigger function for timestamps
-12. `handle_audit_log()` - Trigger function for audit logs
+### Core Functions
 
-**Total**: 12 functions
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `user_has_role` | `(user_id uuid, role text) → boolean` | Check single role |
+| `user_has_any_role` | `(user_id uuid, roles text[]) → boolean` | Check multiple roles |
+| `get_user_role` | `(user_id uuid) → text` | Get user's role |
+| `is_manager_of` | `(manager_id uuid, employee_id uuid) → boolean` | Manager check |
+| `get_direct_reports` | `(manager_id uuid) → setof uuid` | List reports |
+| `is_on_probation` | `(employee_id uuid) → boolean` | Probation check |
+| `calculate_tenure_days` | `(employee_id uuid) → integer` | Tenure calculation |
+| `soft_delete` | `(table_name text, record_id uuid) → void` | Generic soft delete |
+| `get_employee_by_user_id` | `(user_id uuid) → record` | Get employee from user ID |
+| `get_employees_by_department` | `(dept text) → setof record` | Get by department |
+| `handle_updated_at` | `() → trigger` | Auto-update `updated_at` |
+| `handle_audit_log` | `() → trigger` | Auto-create audit_log entry |
 
-## Index Count
+### AI & Knowledge Functions
 
-| Table | Index Count |
-|-------|-------------|
-| audit_logs | 4 |
-| departments | 3 |
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `match_knowledge_embeddings` | `(query_embedding vector, match_threshold float, match_count int) → setof record` | Cosine similarity search |
+| `snapshot_knowledge_source_version` | `() → trigger` | Auto-snapshot before update |
+| `get_knowledge_source_versions` | `(p_source_id uuid) → table` | Version history with editor names |
+| `restore_knowledge_source_version` | `(p_source_id uuid, p_version_number int) → knowledge_sources` | Restore to previous version |
+
+### Report Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `get_report_children` | `(parent_id uuid) → setof reports` | Direct child reports |
+| `get_report_tree` | `(root_id uuid) → table` | Recursive tree traversal with depth |
+
+### Resource Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `get_resource_category_tree` | `() → table` | Hierarchical categories with resource counts |
+
+### Performance Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `calculate_okr_progress` | `(p_okr_id uuid) → numeric` | Average progress from key_results JSONB |
+| `trigger_update_okr_progress` | `() → trigger` | Auto-recalculate on `key_results` update |
+
+**Total**: 20+ functions (12 core + 4 AI + 2 report + 1 resource + 2 performance)
+
+---
+
+## Access Control Matrix
+
+| Role | Own Data | Team Data | All Data | Edit Employees | Edit Users | Confidential Docs | Audit Logs | Admin Features |
+|------|----------|-----------|----------|----------------|------------|--------------------|------------|----------------|
+| employee | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| intern | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Manager | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| ceo | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| cos | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ |
+| hr | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| super_admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+---
+
+## RLS Policy Summary
+
+| Table / Area | Policy Count |
+|-------------|-------------|
 | users | 5 |
-| employees | 8 |
-| documents | 6 |
+| employees | 7 |
+| departments | 4 |
+| documents | 8 |
+| audit_logs | 2 |
+| notifications | 5 |
+| announcements (4 tables) | ~12 |
+| resources (+ categories) | ~10 |
+| reports | ~4 |
+| tasks | ~4 |
+| invoices | ~4 |
+| onboarding (4 tables) | ~8 |
+| internships | ~6 |
+| performance (4 tables) | ~8 |
+| knowledge (2 tables + versions) | ~12 |
+| standups (2 tables + storage) | ~11 |
+| user_role_metadata | 6 |
+| role_kpi_entries | 5 |
 
-**Total**: 26 indexes (not counting primary keys)
+**Total**: 70+ RLS policies
 
-## Features
+---
 
-### Security
-- ✓ Row Level Security (RLS) enabled on all tables
-- ✓ FORCE ROW LEVEL SECURITY (no bypass)
-- ✓ Comprehensive audit logging
-- ✓ Soft delete on all tables
-- ✓ Confidential document flagging
-- ✓ Encrypted sensitive fields (via PostgreSQL)
+## Index Summary
 
-### Performance
-- ✓ Indexes on all foreign keys
-- ✓ Indexes on commonly queried columns
-- ✓ Partial indexes for soft-deleted records
-- ✓ Composite indexes for multi-column queries
+| Area | Count | Notable |
+|------|-------|---------|
+| Core tables | 26 | FKs, status, role, department |
+| Feature tables | 30+ | Composite indexes, partial indexes |
+| GIN indexes | 5+ | `reports.hierarchy_path`, `tasks.tags`, `user_role_metadata.metadata`, `knowledge_embeddings` (IVFFlat) |
+| Partial indexes | 5+ | `deleted_at IS NULL`, `is_active = true`, `is_read = false` |
 
-### Data Integrity
-- ✓ Foreign key constraints with CASCADE/SET NULL
-- ✓ NOT NULL constraints on required fields
-- ✓ UNIQUE constraints on employee_number, department name
-- ✓ CHECK constraints on enums
-- ✓ Automatic timestamp management
+**Total**: 60+ indexes (not counting primary keys)
 
-### Developer Experience
-- ✓ Complete TypeScript type definitions
-- ✓ Branded types for type safety
-- ✓ Helper functions for common operations
-- ✓ Comprehensive documentation
-- ✓ Example usage patterns
-- ✓ Validation scripts
+---
 
-## Migration Order
+## Conventions
 
-**IMPORTANT**: Migrations must be applied in this exact order:
+### Standard Columns
 
-1. Extensions and Enums (foundation)
-2. Audit Log Table (no dependencies)
-3. Departments Table (needs enums)
-4. Users Table (needs departments, enums)
-5. Employees Table (needs users, enums)
-6. Documents Table (needs employees, enums)
-7. Triggers (needs all tables)
-8. Helper Functions (needs all tables)
+Every table includes:
+```sql
+id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+created_at timestamptz DEFAULT now() NOT NULL,
+updated_at timestamptz DEFAULT now() NOT NULL,
+created_by uuid REFERENCES auth.users(id),
+deleted_at timestamptz  -- soft delete
+```
 
-## Rollback Strategy
+### Naming
 
-Each migration includes a commented DOWN migration section. To rollback:
+- Tables: `snake_case` plural
+- Columns: `snake_case`
+- Indexes: `idx_tablename_columnname`
+- Policies: `tablename_operation_context_policy`
+- Enums: `snake_case`
+- Functions: `snake_case` with verb prefix
 
-1. Copy the DOWN migration from the file
-2. Uncomment the SQL
-3. Run it manually via `psql` or Supabase SQL Editor
-4. Rollback migrations in reverse order
+### Triggers
 
-## Testing Checklist
+All tables with `updated_at` have a `BEFORE UPDATE` trigger calling `handle_updated_at()`. Core tables additionally have `handle_audit_log()` triggers.
 
-Before deploying to production:
+---
 
-- [ ] Run validation script: `psql $DATABASE_URL -f supabase/migrations/validate_schema.sql`
-- [ ] Test RLS policies with different user roles
-- [ ] Verify audit logs are being created
-- [ ] Test soft delete and restore
-- [ ] Verify all indexes are being used
-- [ ] Test helper functions
-- [ ] Load seed data and verify queries
-- [ ] Test document uploads and permissions
-- [ ] Verify confidential document access
-- [ ] Check manager/report relationships
+## Storage Buckets
 
-## Performance Benchmarks
+| Bucket | Max Size | MIME Types |
+|--------|----------|------------|
+| `documents` | — | Documents (PDF, images, etc.) |
+| `onboarding-documents` | — | Onboarding uploads |
+| `standup-recordings` | 500MB | Audio/video |
 
-Recommended testing:
-- Employee list query: < 100ms (for 1000 records)
-- Document access check: < 50ms
-- Audit log write: < 10ms (async)
-- Helper function calls: < 50ms
+---
 
 ## Known Limitations
 
-1. **Recursive hierarchies**: Current schema supports one level of manager-employee. For deep org charts, consider materialized path or closure table.
-
-2. **Payroll data encryption**: Payroll fields are NOT encrypted at rest. Consider using `pgcrypto` for field-level encryption if required.
-
-3. **Document storage**: File paths reference Supabase Storage. Large files may require CDN integration.
-
+1. **Recursive hierarchies**: Manager-employee supports one level. Reports support full recursion via `get_report_tree()`.
+2. **Payroll encryption**: Payroll fields are NOT encrypted at rest. Consider `pgcrypto` for field-level encryption.
+3. **Document storage**: Large files may require CDN integration.
 4. **Audit log retention**: No automatic cleanup. Implement retention policy for production.
-
-5. **Performance at scale**: Indexes are optimized for < 10,000 employees. For larger organizations, consider partitioning.
-
-## Next Steps (Phase 2)
-
-Planned enhancements:
-- Salary and compensation tables
-- Performance review tracking
-- Training and certifications
-- Attendance and time tracking
-- Payroll integration
-- Benefits management
-
-## Support
-
-For questions or issues:
-- Review `supabase/migrations/README.md`
-- Check `supabase/SETUP.md` for setup issues
-- See `supabase/QUICK_REFERENCE.md` for query examples
-- Review project guidelines in `CLAUDE.md`
+5. **Database types lag**: New tables may not appear in `database.types.ts` until `pnpm db:generate` is run against the live schema.
 
 ---
-**Schema Version**: Phase 1 (v1.0.0)
-**Last Updated**: 2026-01-23
-**Total Lines of SQL**: ~2,500+
-**Total Lines of TypeScript**: ~800+
-**Total Documentation**: ~2,000+ lines
+
+**Schema Version**: Phase 8 (Unreleased)
+**Last Updated**: 2026-02-27
+**Migration Files**: 62
+**Total Tables**: 30+
+**Total Views**: 3
+**Total RLS Policies**: 70+
+**Total Functions**: 20+
+**Total Indexes**: 60+

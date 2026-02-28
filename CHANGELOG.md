@@ -10,19 +10,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Package READMEs** — README.md for `@hr-portal/ai`, `@hr-portal/auth`, `@hr-portal/config`, `@hr-portal/database`, `@hr-portal/ui`
+- **Report hierarchy** — `parent_report_id`, `report_group`, `hierarchy_path` columns on `reports`; `get_report_children()`, `get_report_tree()` functions; `root_reports` view (`20260227000010`)
+- **Knowledge versioning** — `knowledge_source_versions` table with auto-snapshot trigger on update; `get_knowledge_source_versions()`, `restore_knowledge_source_version()` functions (`20260227000011`)
+- **Resource categories table** — `resource_categories` table replacing static enum; hierarchical with `parent_id`, seed data for 10 categories; `get_resource_category_tree()` function (`20260227000012`)
+- **Intern self-init policies** — `internships_insert_self_policy` and `internships_update_self_policy` RLS policies allowing interns to create/update their own internship record (`20260227000013`)
+- **Notifications system** — `notifications` table with `notification_type` enum (11 types), 5 RLS policies, deep-link support (`20260227000001`)
+- **User role metadata** — `user_role_metadata` and `role_kpi_entries` tables for role-specific KPI tracking with self-management + admin-read RLS (`20260228000004`)
+- **Task tags & categories** — `category` (text) and `tags` (text[]) columns on `tasks` with GIN index (`20260228000005`)
+- **Resource access levels** — `resource_access_level` enum (`full`, `view_only`), `access_level` column on `resources` (`20260228000006`)
+- **OKR/KPI automation** — `progress_pct` generated column on `kpis`, `calculate_okr_progress()` function with auto-update trigger on `okrs` (`20260228000003`)
+- **Employee directory view** — `employee_directory` view joining users, employees, and active internships (`20260228000001`)
+- **Performance summary view** — `individual_performance_summary` view aggregating KPIs, OKRs, and reviews per employee (`20260228000002`)
+- **Phone country codes** — `contact_country_code`, `emergency_contact_country_code`, `payment_phone_country_code` on `onboarding_profiles` (`20260227000003`)
+- **Audit log normalization** — `action` and `metadata` columns on `audit_logs` for Edge Function context (`20260227000001`)
 - **Agent Guidelines** — `docs/AGENT-GUIDELINES.md` with clean code, doc hygiene, and self-review standards
 - **Documentation plan** — `docs/DOCUMENTATION-PLAN.md` with phased plan for comprehensive docs
 - **API Reference Index** — `docs/api/README.md` listing all 108 HTTP handlers across 16 domains
 - **Component Reference Index** — `docs/components/README.md` listing all primitives and composites
 - **Documentation Hub** — `docs/README.md` audience-segmented entry point
+- **ADR-005** — Resource categories: enum-to-table migration for dynamic category management
+- **ADR-006** — Knowledge base versioning strategy with auto-snapshot triggers
 
 ### Fixed
 
 - `fix(api)`: Use `supabaseAdmin` for all DB operations in POST routes (invoices, OKRs, KPIs, reports) to prevent nested RLS failures
 - `fix(api)`: Use admin client for DB operations to bypass nested RLS failures
+- `fix(db)`: Update offboarding and onboarding RLS policies to use consolidated role enum (`20260227000002`)
 
 ### Changed
 
+- `chore(deps)`: Update package dependencies and extend Tailwind config with new design tokens (semantic colors, animations, sidebar spacing)
+- `chore(db)`: Regenerate TypeScript database types reflecting notifications, task_tags, resource_categories, and role_metadata
+- `chore(db)`: Renumber `fx_rates` and `bank_registry` migration files from `20260227000006/7` to `20260227000004/5`
 - `chore`: Add `.env.example` to `.gitignore`
 
 ---
