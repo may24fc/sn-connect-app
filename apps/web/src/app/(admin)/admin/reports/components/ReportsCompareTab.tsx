@@ -6,8 +6,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   InsightsSummary,
   Skeleton,
   type WeekComparison,
@@ -384,48 +382,42 @@ export function ReportsCompareTab({
       </div>
 
       {timeRange === 'weekly' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Weeks to Compare</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <span className="text-sm font-medium">Previous Week</span>
-                <WeekDropdownSelector
-                  selectedWeek={previousWeek}
-                  onWeekChange={setPreviousWeek}
-                  weeksToShow={12}
-                />
-              </div>
-              <div className="space-y-2">
-                <span className="text-sm font-medium">Current Week</span>
-                <WeekDropdownSelector
-                  selectedWeek={currentWeek}
-                  onWeekChange={handleCurrentWeekChange}
-                  weeksToShow={12}
-                />
-              </div>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-3">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Select Weeks to Compare</p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Previous Week</span>
+              <WeekDropdownSelector
+                selectedWeek={previousWeek}
+                onWeekChange={setPreviousWeek}
+                weeksToShow={12}
+              />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1.5">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">Current Week</span>
+              <WeekDropdownSelector
+                selectedWeek={currentWeek}
+                onWeekChange={handleCurrentWeekChange}
+                weeksToShow={12}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       {timeRange !== 'weekly' && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="grid gap-4 md:grid-cols-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Previous Period: </span>
-                <span className="font-medium">{actualPeriods.previous.label}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Current Period: </span>
-                <span className="font-medium">{actualPeriods.current.label}</span>
-              </div>
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+          <div className="grid gap-4 md:grid-cols-2 text-sm">
+            <div>
+              <span className="text-zinc-500 dark:text-zinc-400">Previous Period: </span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-50">{actualPeriods.previous.label}</span>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <span className="text-zinc-500 dark:text-zinc-400">Current Period: </span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-50">{actualPeriods.current.label}</span>
+            </div>
+          </div>
+        </div>
       )}
 
       <InsightsSummary

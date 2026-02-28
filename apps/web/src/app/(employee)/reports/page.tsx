@@ -154,25 +154,31 @@ export default function ReportsPage() {
             <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex rounded-md border border-input">
-          <Button
-            variant={viewMode === 'flat' ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-r-none"
+        <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+          <button
+            type="button"
             onClick={() => setViewMode('flat')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              viewMode === 'flat'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
           >
-            <List className="mr-1 h-4 w-4" />
+            <List className="h-3.5 w-3.5" strokeWidth={1.5} />
             Flat
-          </Button>
-          <Button
-            variant={viewMode === 'grouped' ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-l-none"
+          </button>
+          <button
+            type="button"
             onClick={() => setViewMode('grouped')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              viewMode === 'grouped'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
           >
-            <Layers className="mr-1 h-4 w-4" />
+            <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
             Grouped
-          </Button>
+          </button>
         </div>
       </div>
 

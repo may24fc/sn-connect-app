@@ -139,8 +139,45 @@ export default function NewReportPage() {
     return parts.join('\n\n');
   };
 
+  const validateRequiredSections = (): string | null => {
+    const filledAccomplishments = accomplishments.filter((a) => a.trim());
+    if (filledAccomplishments.length === 0) {
+      return 'Please add at least one accomplishment.';
+    }
+
+    const filledChallenges = challenges.filter((c) => c.trim());
+    if (filledChallenges.length === 0) {
+      return 'Please add at least one challenge.';
+    }
+
+    const filledPlans = nextWeekPlans.filter((p) => p.trim());
+    if (filledPlans.length === 0) {
+      return 'Please add at least one plan for next week.';
+    }
+
+    const filledMetrics = metrics.filter((m) => m.name.trim());
+    if (filledMetrics.length === 0) {
+      return 'Please add at least one metric.';
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (asDraft: boolean) => {
     setErrorMessage(null);
+
+    if (!asDraft) {
+      const validationError = validateRequiredSections();
+      if (validationError) {
+        setErrorMessage(validationError);
+        addToast({
+          title: 'Validation Error',
+          description: validationError,
+          variant: 'error',
+        });
+        return;
+      }
+    }
 
     try {
       const validMetrics = metrics
@@ -194,6 +231,13 @@ export default function NewReportPage() {
         </div>
       </div>
 
+      <form
+        className="space-y-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit(false);
+        }}
+      >
       {/* Report Details */}
       <Card>
         <CardHeader>
@@ -203,13 +247,7 @@ export default function NewReportPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            className="space-y-5"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void handleSubmit(false);
-            }}
-          >
+          <div className="space-y-5">
             <div className="grid gap-5 sm:grid-cols-2">
               <FormGroup
                 label="Report Type"
@@ -280,42 +318,16 @@ export default function NewReportPage() {
                 className="resize-none"
               />
             </FormGroup>
-
-            {errorMessage && (
-              <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
-                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <span>{errorMessage}</span>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={createReport.isPending}
-                onClick={() => void handleSubmit(true)}
-              >
-                Save Draft
-              </Button>
-              <Button type="submit" disabled={createReport.isPending} className="min-w-[120px]">
-                {createReport.isPending ? (
-                  <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Submitting...
-                  </span>
-                ) : (
-                  'Submit Report'
-                )}
-              </Button>
-            </div>
-          </form>
+          </div>
         </CardContent>
       </Card>
 
       {/* Accomplishments */}
       <Card>
         <CardHeader>
-          <CardTitle>Accomplishments</CardTitle>
+          <CardTitle>
+            Accomplishments <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>List key accomplishments for this reporting period</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -354,7 +366,9 @@ export default function NewReportPage() {
       {/* Challenges */}
       <Card>
         <CardHeader>
-          <CardTitle>Challenges</CardTitle>
+          <CardTitle>
+            Challenges <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>Note any challenges or blockers encountered</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -393,7 +407,9 @@ export default function NewReportPage() {
       {/* Next Week Plans */}
       <Card>
         <CardHeader>
-          <CardTitle>Next Week Plans</CardTitle>
+          <CardTitle>
+            Next Week Plans <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>Outline priorities and goals for the coming week</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -432,7 +448,9 @@ export default function NewReportPage() {
       {/* Metrics */}
       <Card>
         <CardHeader>
-          <CardTitle>Metrics</CardTitle>
+          <CardTitle>
+            Metrics <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>
             Add quantitative metrics to your report (e.g. clicks, impressions, cost)
           </CardDescription>
@@ -487,6 +505,37 @@ export default function NewReportPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 pb-8 border-t border-zinc-200 dark:border-zinc-800">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={createReport.isPending}
+          onClick={() => void handleSubmit(true)}
+        >
+          Save Draft
+        </Button>
+        <Button type="submit" disabled={createReport.isPending} className="min-w-[120px]">
+          {createReport.isPending ? (
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Submitting...
+            </span>
+          ) : (
+            'Submit Report'
+          )}
+        </Button>
+      </div>
+      </form>
     </div>
   );
 }

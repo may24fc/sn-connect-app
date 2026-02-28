@@ -318,7 +318,7 @@ export function ReportsAnalyticsTab({
               ? `PHP ${(kpiData.totalExpenditure / 1000).toFixed(0)}k`
               : '—'
           }
-          change={{ absolute: '—', percent: 0, trend: 'stable' }}
+          change={{ absolute: 'No prior data', trend: 'stable' }}
           color="blue"
         />
         <MetricKPICard
@@ -326,19 +326,19 @@ export function ReportsAnalyticsTab({
           value={
             kpiData.totalResults > 0 ? `PHP ${(kpiData.totalResults / 1000).toFixed(0)}k` : '—'
           }
-          change={{ absolute: '—', percent: 0, trend: 'stable' }}
+          change={{ absolute: 'No prior data', trend: 'stable' }}
           color="green"
         />
         <MetricKPICard
           label="Average ROI"
           value={kpiData.averageROI !== 0 ? `${kpiData.averageROI.toFixed(1)}%` : '—'}
-          change={{ absolute: '—', percent: 0, trend: 'stable' }}
+          change={{ absolute: 'No prior data', trend: 'stable' }}
           color="green"
         />
         <MetricKPICard
           label="Total Reports"
           value={kpiData.totalReports || '—'}
-          change={{ absolute: `${kpiData.totalReports}`, trend: 'stable' }}
+          change={{ absolute: `${kpiData.totalReports} this period`, trend: 'stable' }}
           color="blue"
         />
       </MetricKPICardGrid>
