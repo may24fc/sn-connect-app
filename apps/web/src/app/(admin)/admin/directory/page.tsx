@@ -151,7 +151,7 @@ export default function AdminDirectoryPage(): ReactNode {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                <Users className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
                 <div>
                   <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tabular-nums">
                     {metadata.total}
@@ -202,7 +202,7 @@ export default function AdminDirectoryPage(): ReactNode {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px]">
               <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
                 strokeWidth={1.5}
               />
               <Input

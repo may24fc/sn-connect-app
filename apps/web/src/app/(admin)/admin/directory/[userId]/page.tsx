@@ -247,7 +247,7 @@ function ReviewDialog({
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <p className="text-[11px] text-zinc-400">Current</p>
+                    <p className="text-[11px] text-muted-foreground">Current</p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-300">{change.old || '—'}</p>
                   </div>
                   <div>
@@ -434,7 +434,7 @@ export default function DirectoryDetailPage({
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <User className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                  <User className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
                   Personal Information
                 </CardTitle>
               </CardHeader>
@@ -493,7 +493,7 @@ export default function DirectoryDetailPage({
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                  <Briefcase className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
                   Employment Information
                 </CardTitle>
               </CardHeader>
@@ -534,7 +534,7 @@ export default function DirectoryDetailPage({
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                  <Shield className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
                   Emergency Contact
                 </CardTitle>
               </CardHeader>
@@ -562,7 +562,7 @@ export default function DirectoryDetailPage({
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                  <CreditCard className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
                   Allowance / Payment Details
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -643,7 +643,7 @@ export default function DirectoryDetailPage({
                             {FIELD_LABELS[field] || field}
                           </span>
                           <div className="flex items-center gap-3">
-                            <span className="text-xs text-zinc-400 line-through">
+                            <span className="text-xs text-muted-foreground line-through">
                               {change.old || '—'}
                             </span>
                             <span className="text-xs">→</span>
