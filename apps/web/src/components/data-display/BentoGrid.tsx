@@ -73,7 +73,7 @@ export function BentoCard({
       onClick={onClick}
       data-tour={dataTour}
       className={cn(
-        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5',
+        'bg-card border border-border rounded-lg p-5',
         colSpanClasses[colSpan],
         rowSpanClasses[rowSpan],
         interactive &&

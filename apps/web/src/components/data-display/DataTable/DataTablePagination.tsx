@@ -41,8 +41,8 @@ export function DataTablePagination<TData>({
             value={pageSize}
             onChange={(e) => table.setPageSize(Number(e.target.value))}
             className={cn(
-              'h-8 px-2 text-sm bg-white dark:bg-zinc-900',
-              'border border-zinc-200 dark:border-zinc-800 rounded-md',
+              'h-8 px-2 text-sm bg-card',
+              'border border-border rounded-md',
               'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600'
             )}
           >
@@ -116,11 +116,11 @@ function PaginationButton({
       aria-label={ariaLabel}
       className={cn(
         'h-8 w-8 flex items-center justify-center rounded-md',
-        'border border-zinc-200 dark:border-zinc-800',
-        'bg-white dark:bg-zinc-900',
+        'border border-border',
+        'bg-card',
         'text-zinc-700 dark:text-zinc-300',
         'hover:bg-zinc-50 dark:hover:bg-zinc-800',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white dark:disabled:hover:bg-zinc-900',
+        'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-card',
         'transition-colors'
       )}
     >

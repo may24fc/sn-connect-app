@@ -159,7 +159,7 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900">
+    <div className="rounded-lg border border-border overflow-hidden bg-card">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
@@ -218,7 +218,7 @@ function DataTableSkeleton({
   rows?: number;
 }): React.ReactNode {
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900">
+    <div className="rounded-lg border border-border overflow-hidden bg-card">
       {/* Header skeleton */}
       <div className="bg-zinc-50 dark:bg-zinc-900 h-10 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-4 px-4">
         {Array.from({ length: columns }).map((_, i) => (

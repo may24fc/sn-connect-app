@@ -47,7 +47,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        'relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg',
+        'relative bg-card border border-border rounded-lg',
         compact ? 'p-4' : 'p-5',
         className
       )}

@@ -36,7 +36,7 @@ export function SkeletonTable({
   return (
     <div
       className={cn(
-        'rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900',
+        'rounded-lg border border-border overflow-hidden bg-card',
         className
       )}
     >

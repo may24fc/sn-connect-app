@@ -136,7 +136,7 @@ export function EmptyStateCard({ cardClassName, ...props }: EmptyStateCardProps)
   return (
     <div
       className={cn(
-        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg',
+        'bg-card border border-border rounded-lg',
         cardClassName
       )}
       style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
@@ -167,7 +167,7 @@ export function TableEmptyState({
   icon,
 }: TableEmptyStateProps): React.ReactNode {
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900">
+    <div className="rounded-lg border border-border overflow-hidden bg-card">
       {/* Fake header row */}
       <div className="bg-zinc-50 dark:bg-zinc-900 h-10 border-b border-zinc-200 dark:border-zinc-800" />
 

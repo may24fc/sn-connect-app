@@ -26,7 +26,7 @@ export function SkeletonCard({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5',
+        'bg-card border border-border rounded-lg p-5',
         className
       )}
       style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
@@ -123,7 +123,7 @@ export function SkeletonBentoCard({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5',
+        'bg-card border border-border rounded-lg p-5',
         colSpanClass,
         className
       )}
