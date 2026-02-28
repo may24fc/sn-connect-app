@@ -82,7 +82,7 @@ const SlidePanelContent = React.forwardRef<
         'fixed inset-y-0 right-0 z-50 flex w-full flex-col',
         sizeMap[size],
         // Styling
-        'border-l border-zinc-200 bg-white shadow-sheet dark:border-zinc-800 dark:bg-zinc-950',
+        'border-l border-border bg-background shadow-sheet',
         // Animation
         'data-[state=open]:animate-slide-in-right data-[state=closed]:animate-slide-out-right',
         className

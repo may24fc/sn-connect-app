@@ -13,7 +13,7 @@ const buttonVariants = cva(
         default: 'bg-indigo-600 text-white shadow hover:bg-indigo-700 active:bg-indigo-800',
         destructive: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800',
         outline:
-          'border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 active:bg-zinc-200 dark:active:bg-zinc-700',
+          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-zinc-200 dark:active:bg-zinc-700',
         secondary:
           'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 active:bg-zinc-300 dark:active:bg-zinc-600',
         ghost:

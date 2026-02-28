@@ -270,7 +270,7 @@ function getFileTypeIcon(file: File): React.ReactNode {
     return <FileImageIcon className="h-4 w-4 text-violet-500" />;
   }
   // Generic
-  return <FileGenericIcon className="h-4 w-4 text-zinc-500" />;
+  return <FileGenericIcon className="h-4 w-4 text-muted-foreground" />;
 }
 
 function formatFileSize(bytes: number): string {
