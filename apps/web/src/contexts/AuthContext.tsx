@@ -32,6 +32,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -521,6 +522,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     }
   }, [router, supabase, useMock]);
 
+  const refreshUser = React.useCallback(async () => {
+    if (useMock || !supabase) return;
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) return;
+      await syncAuthState(data.user);
+    } catch (err) {
+      console.warn('Failed to refresh user:', err);
+    }
+  }, [supabase, syncAuthState, useMock]);
+
   const value = React.useMemo(
     () => ({
       user,
@@ -528,9 +540,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       login,
       signup,
       logout,
+      refreshUser,
       isAuthenticated: !!user,
     }),
-    [user, isLoading, login, signup, logout]
+    [user, isLoading, login, signup, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

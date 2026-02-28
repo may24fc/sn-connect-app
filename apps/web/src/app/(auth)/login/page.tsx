@@ -62,7 +62,7 @@ export default function LoginPage(): ReactNode {
 
   return (
     <div className="h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
-      <Card className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-card">
+      <Card className="w-full max-w-md bg-card border border-border rounded-xl shadow-card">
         <CardHeader className="space-y-1 text-center pb-2">
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-6">
