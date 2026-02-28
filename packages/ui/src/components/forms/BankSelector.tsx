@@ -152,7 +152,10 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
               <span className="text-zinc-400">{placeholder}</span>
             )}
             <svg
-              className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-180')}
+              className={cn(
+                'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+                isOpen && 'rotate-180'
+              )}
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
@@ -208,7 +211,8 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                         className={cn(
                           'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                           'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                          bank.id === value && 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
+                          bank.id === value &&
+                            'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
                         )}
                       >
                         <span className="flex-1 text-left">{bank.bankName}</span>
@@ -228,7 +232,8 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                           className={cn(
                             'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                             'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                            isOtherSelected && 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
+                            isOtherSelected &&
+                              'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
                           )}
                         >
                           <span className="flex-1 text-left italic">Other (enter manually)</span>

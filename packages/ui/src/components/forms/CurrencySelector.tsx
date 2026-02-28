@@ -106,7 +106,10 @@ export const CurrencySelector = React.forwardRef<HTMLButtonElement, CurrencySele
             <span className="text-zinc-400">{placeholder}</span>
           )}
           <svg
-            className={cn('h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')}
+            className={cn(
+              'h-4 w-4 text-muted-foreground transition-transform',
+              isOpen && 'rotate-180'
+            )}
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -137,7 +140,8 @@ export const CurrencySelector = React.forwardRef<HTMLButtonElement, CurrencySele
                 className={cn(
                   'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                   'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                  currency.code === value && 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
+                  currency.code === value &&
+                    'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
                 )}
               >
                 <span className="text-base">{currency.flag}</span>

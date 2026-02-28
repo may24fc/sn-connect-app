@@ -27,6 +27,7 @@ export {
 export { Badge, badgeVariants, type BadgeProps } from './primitives/badge';
 export { Avatar, AvatarImage, AvatarFallback } from './primitives/avatar';
 export { Progress } from './primitives/progress';
+export { FileDropZone, type FileDropZoneProps } from './primitives/file-drop-zone';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './primitives/tabs';
 export {
   Dialog,
@@ -207,6 +208,10 @@ export {
   type RoleDashboardWidgetProps,
   type KPICardData,
 } from './components/dashboard/RoleDashboardWidget';
+export {
+  PendingApprovalsCard,
+  type PendingApprovalsCardProps,
+} from './components/dashboard/PendingApprovalsCard';
 
 // Profile Components
 export {
@@ -303,11 +308,14 @@ export type {
   KeyResultId,
   KPIId,
   ReviewId,
+  OKRTargetId,
+  TargetMetricType,
   CycleStatus,
   PerformanceCycle,
   OKRStatus,
   KeyResult,
   OKR,
+  OKRTarget,
   KPI,
   ReviewStatus,
   PerformanceRating,

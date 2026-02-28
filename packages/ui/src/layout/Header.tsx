@@ -38,7 +38,7 @@ export interface HeaderProps {
   /** Render slot for the AI assistant icon button (renders beside the notification bell) */
   aiChatSlot?: React.ReactNode;
   /** Callback for the Help / guided tour button */
-  onHelpClick?: () => void;
+  onHelpClick?: (() => void) | undefined;
   showMobileMenu?: boolean;
   title?: string;
 }
@@ -86,7 +86,10 @@ export function Header({
             onClick={onMenuToggle}
             aria-label="Toggle menu"
           >
-            <Menu className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+            <Menu
+              className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+              strokeWidth={1.5}
+            />
           </Button>
         )}
 
@@ -127,7 +130,10 @@ export function Header({
             onClick={onHelpClick}
             aria-label="Help — start guided tour"
           >
-            <CircleHelp className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
+            <CircleHelp
+              className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+              strokeWidth={1.5}
+            />
           </Button>
         )}
 
@@ -135,22 +141,26 @@ export function Header({
         {aiChatSlot}
 
         {/* Notifications */}
-        {notificationSlot ?? (onNotificationsClick && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="group relative text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            onClick={onNotificationsClick}
-            aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
-          >
-            <Bell className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200" strokeWidth={1.5} />
-            {notificationCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-rose-600 text-[10px] font-medium text-white">
-                {notificationCount > 9 ? '9+' : notificationCount}
-              </span>
-            )}
-          </Button>
-        ))}
+        {notificationSlot ??
+          (onNotificationsClick && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="group relative text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              onClick={onNotificationsClick}
+              aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
+            >
+              <Bell
+                className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                strokeWidth={1.5}
+              />
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-rose-600 text-[10px] font-medium text-white">
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </span>
+              )}
+            </Button>
+          ))}
 
         {/* User Menu */}
         <DropdownMenu>
@@ -202,7 +212,10 @@ export function Header({
                 onClick={onSettingsClick}
                 className="text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <Settings className="mr-2 h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+                <Settings
+                  className="mr-2 h-4 w-4 text-zinc-500 dark:text-zinc-400"
+                  strokeWidth={1.5}
+                />
                 Settings
               </DropdownMenuItem>
             )}

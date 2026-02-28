@@ -1,15 +1,9 @@
 'use client';
 
 import { BarChart3, DollarSign, MousePointerClick, Target, TrendingUp } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../../primitives/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 
 // --- Types ---
@@ -131,7 +125,10 @@ export function RoleDashboardWidget({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400" strokeWidth={1.5} />
+            <BarChart3
+              className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400"
+              strokeWidth={1.5}
+            />
             <div>
               <CardTitle className="text-base">{roleLabel} KPIs</CardTitle>
               <CardDescription className="text-xs">Your latest performance metrics</CardDescription>

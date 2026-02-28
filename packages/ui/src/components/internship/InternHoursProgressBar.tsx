@@ -48,7 +48,10 @@ function estimateCompletionDate(
 
   const start = new Date(startDate);
   const now = new Date();
-  const daysElapsed = Math.max(1, Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  const daysElapsed = Math.max(
+    1,
+    Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  );
   const dailyAverage = completedHours / daysElapsed;
 
   if (dailyAverage <= 0) return null;

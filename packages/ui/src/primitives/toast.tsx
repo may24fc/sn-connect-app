@@ -105,22 +105,19 @@ function scheduleToastDismiss(
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastState[]>([]);
 
-  const addToast = React.useCallback(
-    (toast: Omit<ToastProps, 'id'>): string => {
-      const id = Math.random().toString(36).substring(2, 9);
-      const duration = toast.duration ?? 3000;
+  const addToast = React.useCallback((toast: Omit<ToastProps, 'id'>): string => {
+    const id = Math.random().toString(36).substring(2, 9);
+    const duration = toast.duration ?? 3000;
 
-      setToasts((prev) => [...prev, { ...toast, id, visible: true }]);
+    setToasts((prev) => [...prev, { ...toast, id, visible: true }]);
 
-      // Auto-dismiss after duration (0 = persistent until manually updated/removed)
-      if (duration > 0) {
-        scheduleToastDismiss(id, duration, setToasts);
-      }
+    // Auto-dismiss after duration (0 = persistent until manually updated/removed)
+    if (duration > 0) {
+      scheduleToastDismiss(id, duration, setToasts);
+    }
 
-      return id;
-    },
-    []
-  );
+    return id;
+  }, []);
 
   const updateToast = React.useCallback(
     (id: string, updates: Partial<Omit<ToastProps, 'id'>>): void => {
@@ -128,9 +125,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       clearToastTimer(id);
       clearToastTimer(`${id}_remove`);
 
-      setToasts((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, ...updates, visible: true } : t))
-      );
+      setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, ...updates, visible: true } : t)));
 
       // Schedule new auto-dismiss with the updated duration (default 3000ms)
       const newDuration = updates.duration ?? 3000;

@@ -121,7 +121,10 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           <span className="text-base leading-none">{selectedCountry?.flag}</span>
           <span className="text-xs text-muted-foreground">{selectedCountry?.dialCode}</span>
           <svg
-            className={cn('h-3 w-3 text-muted-foreground transition-transform', isOpen && 'rotate-180')}
+            className={cn(
+              'h-3 w-3 text-muted-foreground transition-transform',
+              isOpen && 'rotate-180'
+            )}
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
             fill="currentColor"
@@ -175,7 +178,8 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
                 className={cn(
                   'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                   'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                  country.code === countryCode && 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
+                  country.code === countryCode &&
+                    'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
                 )}
               >
                 <span className="text-base">{country.flag}</span>
