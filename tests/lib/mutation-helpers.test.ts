@@ -2,10 +2,10 @@ import { QueryClient } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  type ToastController,
   createOptimisticMutation,
   createToastMutationHandler,
   toastMutation,
-  type ToastController,
 } from '@/lib/mutation-helpers';
 
 // ──────────────────────────────────────────────────────────────
@@ -57,9 +57,7 @@ describe('createOptimisticMutation', () => {
       queryKey,
       optimisticUpdate: (current, vars) => {
         const items = current as { id: string; name: string }[];
-        return items.map((item) =>
-          item.id === vars.id ? { ...item, name: vars.name } : item
-        );
+        return items.map((item) => (item.id === vars.id ? { ...item, name: vars.name } : item));
       },
     });
 
@@ -178,15 +176,11 @@ describe('createOptimisticMutation', () => {
 describe('toastMutation', () => {
   it('shows loading → success toast transition', async () => {
     const toast = createMockToast();
-    const result = await toastMutation(
-      toast,
-      async () => ({ saved: true }),
-      {
-        loading: 'Saving report...',
-        success: 'Report saved',
-        successDescription: 'Your report has been saved.',
-      }
-    );
+    const result = await toastMutation(toast, async () => ({ saved: true }), {
+      loading: 'Saving report...',
+      success: 'Report saved',
+      successDescription: 'Your report has been saved.',
+    });
 
     expect(result).toEqual({ saved: true });
 

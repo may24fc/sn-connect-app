@@ -52,9 +52,7 @@ test.describe('Intern First-Login Experience', () => {
       } else if (url.includes('/intern/dashboard')) {
         // Intern already has an active internship record — verify
         // the dashboard loads correctly (no dead-end message)
-        await expect(
-          page.getByText(/no active internship record found/i)
-        ).not.toBeVisible();
+        await expect(page.getByText(/no active internship record found/i)).not.toBeVisible();
       }
       // If they land on /onboarding, that's the onboarding gate working correctly
     });
@@ -109,9 +107,7 @@ test.describe('Intern First-Login Experience', () => {
   });
 
   test.describe('Dashboard Access', () => {
-    test('intern dashboard does not show dead-end "No Active Record" message', async ({
-      page,
-    }) => {
+    test('intern dashboard does not show dead-end "No Active Record" message', async ({ page }) => {
       await page.goto('/intern/dashboard');
       await page.waitForLoadState('networkidle');
 
@@ -150,7 +146,9 @@ test.describe('Intern First-Login Experience', () => {
 
       // Either shows real dashboard content or redirects to setup
       if (url.includes('/intern/setup')) {
-        await expect(page.getByRole('heading', { name: /complete your internship setup/i })).toBeVisible();
+        await expect(
+          page.getByRole('heading', { name: /complete your internship setup/i })
+        ).toBeVisible();
       }
     });
   });

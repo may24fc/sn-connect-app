@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-  validatePhoneNumber,
-  formatPhoneNumber,
-  getPhoneCountryCode,
-  getDefaultCountryCode,
   SUPPORTED_COUNTRIES,
+  formatPhoneNumber,
+  getDefaultCountryCode,
+  getPhoneCountryCode,
+  validatePhoneNumber,
 } from '../../../apps/web/src/lib/validation/phone';
 
 describe('Phone Validation', () => {
