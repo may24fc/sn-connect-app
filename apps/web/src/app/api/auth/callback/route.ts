@@ -24,14 +24,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     if (error) {
       console.error('API auth callback code exchange failed:', error.message);
-      return NextResponse.redirect(
-        new URL('/login?error=auth_callback', requestUrl.origin)
-      );
+      return NextResponse.redirect(new URL('/login?error=auth_callback', requestUrl.origin));
     }
   } else {
-    return NextResponse.redirect(
-      new URL('/login?error=missing_code', requestUrl.origin)
-    );
+    return NextResponse.redirect(new URL('/login?error=missing_code', requestUrl.origin));
   }
 
   const safeNext = validateRedirectTarget(next, '/dashboard');

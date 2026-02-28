@@ -34,16 +34,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   if (supabase) {
     try {
-      // Refresh the session to ensure cookies are up-to-date
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      // SECURITY: Use getUser() to validate JWT with Supabase Auth server.
+      // getSession() only reads from cookies and could be tampered with.
+      const { data: userData, error: userError } = await supabase.auth.getUser();
 
-      if (!sessionError && sessionData.session) {
-        // Session exists and is valid
-        data = { user: sessionData.session.user };
+      if (!userError && userData.user) {
+        data = { user: userData.user };
       } else {
-        // No valid session, try getUser as fallback
-        const result = await supabase.auth.getUser();
-        data = result.data ?? null;
+        data = null;
       }
     } catch (err) {
       // If server-side Supabase call fails, fall back to client-side auth
@@ -141,14 +139,17 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         const { data: activeInternship, error: internshipError } = await supabase
           .from('internships')
           .select('id')
-          .eq('employee_id', (
-            await supabase
-              .from('employees')
-              .select('id')
-              .eq('user_id', authUser.id)
-              .is('deleted_at', null)
-              .maybeSingle()
-          ).data?.id ?? '')
+          .eq(
+            'employee_id',
+            (
+              await supabase
+                .from('employees')
+                .select('id')
+                .eq('user_id', authUser.id)
+                .is('deleted_at', null)
+                .maybeSingle()
+            ).data?.id ?? ''
+          )
           .eq('status', 'active')
           .is('deleted_at', null)
           .maybeSingle();

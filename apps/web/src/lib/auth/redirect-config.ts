@@ -117,10 +117,7 @@ export function getAuthCallbackUrl(): string {
  * @param role - The user's resolved UI role (used for role-based landing pages).
  * @param returnTo - Optional path the user was trying to access before being redirected.
  */
-export function getPostLoginRedirect(
-  role?: string,
-  returnTo?: string | null
-): string {
+export function getPostLoginRedirect(role?: string, returnTo?: string | null): string {
   // If a safe returnTo path was provided, use it.
   if (returnTo && returnTo.startsWith('/')) {
     return returnTo;
