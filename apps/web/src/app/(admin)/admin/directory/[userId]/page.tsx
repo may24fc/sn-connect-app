@@ -121,7 +121,11 @@ function getChangeStatusBadge(status: string): ReactNode {
         </Badge>
       );
     default:
-      return <Badge variant="secondary" className="text-xs">{status}</Badge>;
+      return (
+        <Badge variant="secondary" className="text-xs">
+          {status}
+        </Badge>
+      );
   }
 }
 
@@ -171,9 +175,7 @@ function DetailRow({
 }): ReactNode {
   return (
     <div className="flex items-start gap-3 py-2.5">
-      {icon && (
-        <div className="mt-0.5 text-zinc-400 dark:text-zinc-500 shrink-0">{icon}</div>
-      )}
+      {icon && <div className="mt-0.5 text-zinc-400 dark:text-zinc-500 shrink-0">{icon}</div>}
       <div className="min-w-0 flex-1">
         <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
         {isLink && value ? (
@@ -246,9 +248,7 @@ function ReviewDialog({
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <p className="text-[11px] text-zinc-400">Current</p>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                      {change.old || '—'}
-                    </p>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-300">{change.old || '—'}</p>
                   </div>
                   <div>
                     <p className="text-[11px] text-indigo-500">Proposed</p>
@@ -337,7 +337,10 @@ export default function DirectoryDetailPage({
   if (isError || !entry) {
     return (
       <div className="flex flex-col items-center justify-center py-24 px-6">
-        <AlertCircle className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3" strokeWidth={1.5} />
+        <AlertCircle
+          className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3"
+          strokeWidth={1.5}
+        />
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Employee not found or could not be loaded.
         </p>
@@ -351,9 +354,8 @@ export default function DirectoryDetailPage({
     );
   }
 
-  const pendingRequests = entry.pending_change_requests?.filter(
-    (r) => r.status === 'pending'
-  ) ?? [];
+  const pendingRequests =
+    entry.pending_change_requests?.filter((r) => r.status === 'pending') ?? [];
   const allRequests = entry.pending_change_requests ?? [];
 
   const fullAddress = [entry.address, entry.city, entry.province, entry.postal_code]
@@ -461,10 +463,7 @@ export default function DirectoryDetailPage({
                     value={formatDate(entry.birthday)}
                     icon={<Calendar className="h-3.5 w-3.5" strokeWidth={1.5} />}
                   />
-                  <DetailRow
-                    label="Age"
-                    value={calculateAge(entry.birthday)}
-                  />
+                  <DetailRow label="Age" value={calculateAge(entry.birthday)} />
                   <DetailRow
                     label="Nationality"
                     value={entry.nationality}
@@ -511,10 +510,7 @@ export default function DirectoryDetailPage({
                     label="Employment Type"
                     value={entry.employment_type?.replace('_', ' ') || null}
                   />
-                  <DetailRow
-                    label="Status"
-                    value={entry.status?.replace('_', ' ') || null}
-                  />
+                  <DetailRow label="Status" value={entry.status?.replace('_', ' ') || null} />
                   {entry.internship_id && (
                     <>
                       <Separator className="my-1" />

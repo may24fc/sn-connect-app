@@ -24,8 +24,18 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
-import { AlertCircle, ChevronLeft, ChevronRight, Download, Eye, Search, Target, Users } from 'lucide-react';
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Eye,
+  Search,
+  Target,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
 function getInitials(name: string): string {
@@ -64,6 +74,7 @@ function formatDate(dateStr: string | null): string {
 }
 
 export default function AdminDirectoryPage(): ReactNode {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
@@ -349,7 +360,11 @@ export default function AdminDirectoryPage(): ReactNode {
                 </TableHeader>
                 <TableBody>
                   {entries.map((entry) => (
-                    <TableRow key={entry.user_id}>
+                    <TableRow
+                      key={entry.user_id}
+                      className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                      onClick={() => router.push(`/admin/directory/${entry.user_id}`)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
@@ -405,7 +420,10 @@ export default function AdminDirectoryPage(): ReactNode {
                         {entry.contact_number || '—'}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div
+                          className="flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <Link href={`/admin/directory/${entry.user_id}`}>
                             <Button
                               variant="ghost"

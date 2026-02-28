@@ -190,12 +190,14 @@ export interface ProfileChangeRequestsResponse {
   };
 }
 
-export function useProfileChangeRequests(filters: {
-  employeeId?: string;
-  status?: string;
-  page?: number;
-  pageSize?: number;
-} = {}) {
+export function useProfileChangeRequests(
+  filters: {
+    employeeId?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+  } = {}
+) {
   return useQuery({
     queryKey: queryKeys.profileChangeRequests.list(filters),
     queryFn: async (): Promise<ProfileChangeRequestsResponse> => {
