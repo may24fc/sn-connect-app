@@ -355,15 +355,27 @@ export type Database = {
           date_hired: string;
           deleted_at: string | null;
           department: string;
+          education: string | null;
           emergency_contact_name: string | null;
           emergency_contact_number: string | null;
+          emergency_contact_relationship: string | null;
           employee_number: string;
           employment_type: Database['public']['Enums']['employment_type'];
           first_name: string;
           id: string;
           immediate_head: string | null;
           last_name: string;
+          linkedin_profile_url: string | null;
           middle_name: string | null;
+          nationality: string | null;
+          payment_account_name: string | null;
+          payment_account_number: string | null;
+          payment_address: string | null;
+          payment_city: string | null;
+          payment_email: string | null;
+          payment_phone_number: string | null;
+          payment_province: string | null;
+          payment_zipcode: string | null;
           payroll_account_name: string | null;
           payroll_account_number: string | null;
           personal_email: string | null;
@@ -386,15 +398,27 @@ export type Database = {
           date_hired: string;
           deleted_at?: string | null;
           department: string;
+          education?: string | null;
           emergency_contact_name?: string | null;
           emergency_contact_number?: string | null;
+          emergency_contact_relationship?: string | null;
           employee_number: string;
           employment_type: Database['public']['Enums']['employment_type'];
           first_name: string;
           id?: string;
           immediate_head?: string | null;
           last_name: string;
+          linkedin_profile_url?: string | null;
           middle_name?: string | null;
+          nationality?: string | null;
+          payment_account_name?: string | null;
+          payment_account_number?: string | null;
+          payment_address?: string | null;
+          payment_city?: string | null;
+          payment_email?: string | null;
+          payment_phone_number?: string | null;
+          payment_province?: string | null;
+          payment_zipcode?: string | null;
           payroll_account_name?: string | null;
           payroll_account_number?: string | null;
           personal_email?: string | null;
@@ -417,15 +441,27 @@ export type Database = {
           date_hired?: string;
           deleted_at?: string | null;
           department?: string;
+          education?: string | null;
           emergency_contact_name?: string | null;
           emergency_contact_number?: string | null;
+          emergency_contact_relationship?: string | null;
           employee_number?: string;
           employment_type?: Database['public']['Enums']['employment_type'];
           first_name?: string;
           id?: string;
           immediate_head?: string | null;
           last_name?: string;
+          linkedin_profile_url?: string | null;
           middle_name?: string | null;
+          nationality?: string | null;
+          payment_account_name?: string | null;
+          payment_account_number?: string | null;
+          payment_address?: string | null;
+          payment_city?: string | null;
+          payment_email?: string | null;
+          payment_phone_number?: string | null;
+          payment_province?: string | null;
+          payment_zipcode?: string | null;
           payroll_account_name?: string | null;
           payroll_account_number?: string | null;
           personal_email?: string | null;
@@ -1129,6 +1165,73 @@ export type Database = {
           },
         ];
       };
+      profile_change_requests: {
+        Row: {
+          id: string;
+          employee_id: string;
+          requested_by: string;
+          reviewed_by: string | null;
+          status: Database['public']['Enums']['profile_change_status'];
+          changes: Record<string, { old: string | null; new: string | null }>;
+          review_note: string | null;
+          requested_at: string;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          employee_id: string;
+          requested_by: string;
+          reviewed_by?: string | null;
+          status?: Database['public']['Enums']['profile_change_status'];
+          changes: Record<string, { old: string | null; new: string | null }>;
+          review_note?: string | null;
+          requested_at?: string;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          employee_id?: string;
+          requested_by?: string;
+          reviewed_by?: string | null;
+          status?: Database['public']['Enums']['profile_change_status'];
+          changes?: Record<string, { old: string | null; new: string | null }>;
+          review_note?: string | null;
+          requested_at?: string;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'profile_change_requests_employee_id_fkey';
+            columns: ['employee_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'profile_change_requests_requested_by_fkey';
+            columns: ['requested_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'profile_change_requests_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       report_metrics: {
         Row: {
           created_at: string;
@@ -1643,7 +1746,53 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      employee_directory: {
+        Row: {
+          user_id: string | null;
+          employee_id: string | null;
+          full_name: string | null;
+          first_name: string | null;
+          middle_name: string | null;
+          last_name: string | null;
+          role: Database['public']['Enums']['user_role'] | null;
+          department_name: string | null;
+          department_id: string | null;
+          position: string | null;
+          status: Database['public']['Enums']['user_status'] | null;
+          employment_type: Database['public']['Enums']['employment_type'] | null;
+          start_date: string | null;
+          email: string | null;
+          contact_number: string | null;
+          birthday: string | null;
+          nationality: string | null;
+          education: string | null;
+          address: string | null;
+          city: string | null;
+          province: string | null;
+          postal_code: string | null;
+          linkedin_profile_url: string | null;
+          emergency_contact_name: string | null;
+          emergency_contact_number: string | null;
+          emergency_contact_relationship: string | null;
+          personal_email: string | null;
+          payment_account_name: string | null;
+          payment_account_number: string | null;
+          payment_email: string | null;
+          payment_phone_number: string | null;
+          payment_address: string | null;
+          payment_city: string | null;
+          payment_province: string | null;
+          payment_zipcode: string | null;
+          internship_id: string | null;
+          internship_status: string | null;
+          completed_hours: number | null;
+          required_hours: number | null;
+          school: string | null;
+          program: string | null;
+          pending_changes_count: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       get_user_role: {
@@ -1713,6 +1862,7 @@ export type Database = {
       resource_status: 'draft' | 'published' | 'archived';
       resource_type: 'video' | 'document' | 'image' | 'link' | 'presentation' | 'interactive';
       review_cycle_status: 'draft' | 'active' | 'completed' | 'archived';
+      profile_change_status: 'pending' | 'approved' | 'rejected';
       review_status: 'pending' | 'self_review' | 'manager_review' | 'completed';
       task_priority: 'low' | 'medium' | 'high' | 'urgent';
       task_status: 'pending' | 'in_progress' | 'completed' | 'cancelled';

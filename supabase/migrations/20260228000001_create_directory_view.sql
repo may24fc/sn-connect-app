@@ -5,18 +5,17 @@ CREATE OR REPLACE VIEW public.employee_directory AS
 SELECT
   u.id AS user_id,
   e.id AS employee_id,
-  u.avatar_url,
   COALESCE(e.first_name, '') || ' ' || COALESCE(e.last_name, '') AS full_name,
   e.first_name,
   e.last_name,
   u.role,
   e.department AS department_name,
   e.position,
-  e.status,
+  u.status,
   e.employment_type,
   e.date_hired AS start_date,
-  u.email,
-  e.contact_number,
+  COALESCE(e.company_email, au.email) AS email,
+  e.phone AS contact_number,
   e.birthday,
   i.id AS internship_id,
   i.status AS internship_status,
@@ -25,6 +24,7 @@ SELECT
   i.school,
   i.program
 FROM public.users u
+LEFT JOIN auth.users au ON au.id = u.id
 LEFT JOIN public.employees e ON e.user_id = u.id
 LEFT JOIN public.internships i ON i.employee_id = e.id AND i.status = 'active'
 WHERE u.deleted_at IS NULL AND (e.deleted_at IS NULL OR e.id IS NULL);
