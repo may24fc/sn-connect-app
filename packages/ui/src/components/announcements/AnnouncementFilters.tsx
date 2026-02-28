@@ -1,5 +1,4 @@
 import { Grid2X2, List } from 'lucide-react';
-import { Button } from '../../primitives/button';
 import { Input } from '../../primitives/input';
 import {
   Select,
@@ -106,35 +105,33 @@ export function AnnouncementFilters({
       </Select>
 
       {showViewToggle && (
-        <div className="flex items-center border border-zinc-200 dark:border-zinc-800 rounded-md overflow-hidden ml-auto">
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5 ml-auto">
+          <button
+            type="button"
             onClick={() => onChange({ ...value, view: 'card' })}
-            className={`rounded-none px-3 py-2 ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               value.view === 'card'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
             aria-label="Card view"
-            title="Card view"
           >
-            <Grid2X2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
+            <Grid2X2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Cards
+          </button>
+          <button
+            type="button"
             onClick={() => onChange({ ...value, view: 'list' })}
-            className={`rounded-none px-3 py-2 ${
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
               value.view === 'list'
-                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
             aria-label="List view"
-            title="List view"
           >
-            <List className="h-4 w-4" />
-          </Button>
+            <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+            List
+          </button>
         </div>
       )}
     </div>

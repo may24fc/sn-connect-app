@@ -1,5 +1,5 @@
+import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
-import { Card, CardContent } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 
 export interface AnnouncementCardProps {
@@ -11,29 +11,24 @@ export interface AnnouncementCardProps {
   dateLabel: string;
   isRead?: boolean;
   isPinned?: boolean;
+  readCount?: number;
   onClick?: () => void;
+  actions?: React.ReactNode;
 }
 
-const priorityClasses: Record<AnnouncementCardProps['priority'], string> = {
-  low: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded text-xs font-medium',
-  normal:
-    'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded text-xs font-medium',
-  high: 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-xs font-medium',
-  urgent:
-    'bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 px-2 py-1 rounded text-xs font-medium',
+const statusVariant: Record<string, 'success' | 'secondary' | 'warning' | 'outline'> = {
+  published: 'success',
+  draft: 'secondary',
+  scheduled: 'warning',
+  expired: 'outline',
+  archived: 'outline',
 };
 
-const statusClasses: Record<NonNullable<AnnouncementCardProps['status']>, string> = {
-  draft:
-    'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded text-xs font-medium',
-  scheduled:
-    'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 px-2 py-1 rounded text-xs font-medium',
-  published:
-    'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded text-xs font-medium',
-  expired:
-    'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded text-xs font-medium',
-  archived:
-    'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded text-xs font-medium',
+const priorityIndicator: Record<string, string> = {
+  urgent: 'bg-rose-500',
+  high: 'bg-amber-500',
+  normal: 'bg-zinc-300 dark:bg-zinc-600',
+  low: 'bg-zinc-200 dark:bg-zinc-700',
 };
 
 export function AnnouncementCard({
@@ -45,41 +40,77 @@ export function AnnouncementCard({
   dateLabel,
   isRead,
   isPinned,
+  readCount,
   onClick,
+  actions,
 }: AnnouncementCardProps) {
   return (
-    <Card
+    <div
       onClick={onClick}
       className={cn(
-        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer',
-        isRead && 'opacity-75',
-        !isRead && 'border-l-4 border-l-indigo-600'
+        'group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors',
+        onClick && 'cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700',
+        isRead === true && 'opacity-60'
       )}
     >
-      <CardContent className="p-0 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 line-clamp-2">
+      <div className="p-4 space-y-2">
+        {/* Header: priority dot + title + indicators */}
+        <div className="flex items-start gap-2">
+          <span
+            className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', priorityIndicator[priority])}
+            title={`${priority} priority`}
+          />
+          <h3 className="flex-1 text-sm font-medium text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug">
             {title}
           </h3>
-          {isPinned ? (
-            <Badge className="bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded text-xs font-medium">
-              Pinned
-            </Badge>
-          ) : null}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isPinned && (
+              <Badge variant="indigo" className="text-[11px] px-1.5 py-0">
+                Pinned
+              </Badge>
+            )}
+            {isRead === false && (
+              <span className="h-2 w-2 rounded-full bg-indigo-500" title="Unread" />
+            )}
+          </div>
         </div>
 
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3">{excerpt}</p>
+        {/* Excerpt */}
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+          {excerpt}
+        </p>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded text-xs font-medium">
-            {category}
-          </span>
-          <span className={priorityClasses[priority]}>{priority}</span>
-          {status ? <span className={statusClasses[status]}>{status}</span> : null}
+        {/* Meta row: category · status · date */}
+        <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
+          <span className="text-zinc-600 dark:text-zinc-400 font-medium">{category}</span>
+          {status && (
+            <>
+              <span aria-hidden>·</span>
+              <Badge
+                variant={statusVariant[status] ?? 'outline'}
+                className="text-[11px] px-1.5 py-0"
+              >
+                {status}
+              </Badge>
+            </>
+          )}
+          <span aria-hidden>·</span>
+          <span>{dateLabel}</span>
+          {readCount !== undefined && (
+            <>
+              <span aria-hidden>·</span>
+              <span>{readCount} reads</span>
+            </>
+          )}
         </div>
+      </div>
 
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">{dateLabel}</p>
-      </CardContent>
-    </Card>
+      {/* Actions footer */}
+      {actions && (
+        <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-2 flex items-center gap-1">
+          {actions}
+        </div>
+      )}
+    </div>
   );
 }

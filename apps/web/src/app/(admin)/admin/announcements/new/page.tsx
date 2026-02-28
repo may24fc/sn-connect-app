@@ -134,13 +134,13 @@ export default function NewAnnouncementPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Header */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+      <div className="border-b border-border bg-card">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               onClick={() => router.push('/admin/announcements')}
-              className="text-zinc-500"
+              className="text-zinc-500 dark:text-zinc-400"
             >
               ← Back
             </Button>
@@ -148,7 +148,7 @@ export default function NewAnnouncementPage() {
               <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
                 New Announcement
               </h1>
-              <p className="text-sm text-zinc-500">Share updates with your team</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Share updates with your team</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function NewAnnouncementPage() {
               placeholder="Announcement title..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-2xl font-semibold border-0 px-0 focus-visible:ring-0 placeholder:text-zinc-300"
+              className="text-2xl font-semibold border-0 px-0 focus-visible:ring-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
             />
             <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
           </div>
@@ -266,7 +266,7 @@ export default function NewAnnouncementPage() {
               isUploading={uploadAttachment.isPending}
             />
             {!createdId && (
-              <p className="text-xs text-zinc-500">💡 Save as draft first to attach files</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">💡 Save as draft first to attach files</p>
             )}
           </div>
 
@@ -306,18 +306,18 @@ export default function NewAnnouncementPage() {
               className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-zinc-500" />
+                <Target className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                 <span className="text-sm font-medium">Who can see this? (Optional)</span>
               </div>
               {showTargeting ? (
-                <ChevronUp className="w-4 h-4 text-zinc-500" />
+                <ChevronUp className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-zinc-500" />
+                <ChevronDown className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               )}
             </button>
             {showTargeting && (
               <div className="p-4 pt-0 border-t border-zinc-200 dark:border-zinc-800">
-                <p className="text-xs text-zinc-500 mb-3">Leave empty to show to everyone</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">Leave empty to show to everyone</p>
                 <TargetingSelector value={targeting} onChange={setTargeting} />
               </div>
             )}
@@ -331,13 +331,13 @@ export default function NewAnnouncementPage() {
               className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-zinc-500" />
+                <Calendar className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
                 <span className="text-sm font-medium">Schedule & Expiry (Optional)</span>
               </div>
               {showAdvanced ? (
-                <ChevronUp className="w-4 h-4 text-zinc-500" />
+                <ChevronUp className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-zinc-500" />
+                <ChevronDown className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
               )}
             </button>
             {showAdvanced && (
@@ -351,7 +351,7 @@ export default function NewAnnouncementPage() {
                       onChange={(e) => setPublishedAt(e.target.value)}
                       className="text-sm"
                     />
-                    <p className="text-xs text-zinc-500">Leave empty to publish now</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Leave empty to publish now</p>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">Expiry Date & Time</Label>
@@ -361,7 +361,7 @@ export default function NewAnnouncementPage() {
                       onChange={(e) => setExpiresAt(e.target.value)}
                       className="text-sm"
                     />
-                    <p className="text-xs text-zinc-500">Leave empty to never expire</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Leave empty to never expire</p>
                   </div>
                 </div>
               </div>

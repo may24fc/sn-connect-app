@@ -55,7 +55,7 @@ export function AnnouncementAnalyticsDashboard({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -64,7 +64,7 @@ export function AnnouncementAnalyticsDashboard({
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <BarChart3 className="h-10 w-10 text-zinc-400 dark:text-zinc-600 mb-3" strokeWidth={1.5} />
-        <p className="text-sm text-zinc-500">No analytics data available</p>
+        <p className="text-sm text-muted-foreground">No analytics data available</p>
       </div>
     );
   }

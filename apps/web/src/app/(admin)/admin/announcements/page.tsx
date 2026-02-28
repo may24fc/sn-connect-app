@@ -11,6 +11,10 @@ import {
   Button,
   Card,
   CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Table,
   TableBody,
   TableCell,
@@ -18,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
-import { Archive, Pin, PinOff } from 'lucide-react';
+import { Archive, MoreHorizontal, Pin, PinOff, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -119,7 +123,7 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+      <div className="border-b border-border bg-card p-6">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Announcements</h1>
@@ -127,9 +131,25 @@ export default function AdminAnnouncementsPage() {
               Manage scheduled and published company announcements
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">Bulk Archive</Button>
-            <Button variant="outline">Bulk Delete</Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MoreHorizontal className="h-4 w-4 mr-1.5" />
+                  Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Archive className="mr-2 h-4 w-4" />
+                  Bulk Archive
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-red-600 dark:text-red-400">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Bulk Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               asChild
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
@@ -148,7 +168,7 @@ export default function AdminAnnouncementsPage() {
           ].map((stat) => (
             <Card
               key={stat.label}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
+              className="bg-card border border-border rounded-lg p-4"
             >
               <CardContent className="p-0">
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{stat.label}</p>
@@ -166,19 +186,19 @@ export default function AdminAnnouncementsPage() {
 
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
-          <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+          <Card className="bg-card border border-border rounded-lg p-4">
             <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400">
               Loading announcements...
             </CardContent>
           </Card>
         ) : error ? (
-          <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+          <Card className="bg-card border border-border rounded-lg p-4">
             <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400">
               Failed to load announcements.
             </CardContent>
           </Card>
         ) : filters.view === 'list' ? (
-          <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+          <Card className="bg-card border border-border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-zinc-200 dark:border-zinc-800">
@@ -257,9 +277,9 @@ export default function AdminAnnouncementsPage() {
                           title={announcement.is_pinned ? 'Unpin' : 'Pin'}
                         >
                           {announcement.is_pinned ? (
-                            <PinOff className="h-4 w-4 text-zinc-500" />
+                            <PinOff className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                           ) : (
-                            <Pin className="h-4 w-4 text-zinc-500" />
+                            <Pin className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                           )}
                         </Button>
                         <Button
@@ -268,7 +288,7 @@ export default function AdminAnnouncementsPage() {
                           onClick={() => archiveAnnouncement.mutate(announcement.id)}
                           title="Archive"
                         >
-                          <Archive className="h-4 w-4 text-zinc-500" />
+                          <Archive className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
                         </Button>
                       </div>
                     </TableCell>
@@ -278,40 +298,53 @@ export default function AdminAnnouncementsPage() {
             </Table>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {announcements.map((announcement) => (
-              <div key={announcement.id} className="space-y-2">
-                <AnnouncementCard
-                  title={announcement.title}
-                  excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
-                  category={announcement.category}
-                  priority={announcement.priority}
-                  status={announcement.status}
-                  dateLabel={formatDate(announcement.published_at || announcement.created_at)}
-                  isPinned={announcement.is_pinned}
-                  onClick={() => {
-                    window.location.href = `/admin/announcements/${announcement.id}`;
-                  }}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      togglePin.mutate({ id: announcement.id, pinned: !announcement.is_pinned })
-                    }
+              <AnnouncementCard
+                key={announcement.id}
+                title={announcement.title}
+                excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
+                category={formatLabel(announcement.category)}
+                priority={announcement.priority}
+                status={announcement.status}
+                dateLabel={formatDate(announcement.published_at || announcement.created_at)}
+                isPinned={announcement.is_pinned}
+                readCount={announcement.read_count}
+                onClick={() => {
+                  window.location.href = `/admin/announcements/${announcement.id}`;
+                }}
+                actions={
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation prevents card click
+                  <div
+                    className="flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {announcement.is_pinned ? 'Unpin' : 'Pin'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => archiveAnnouncement.mutate(announcement.id)}
-                  >
-                    Archive
-                  </Button>
-                </div>
-              </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        togglePin.mutate({
+                          id: announcement.id,
+                          pinned: !announcement.is_pinned,
+                        })
+                      }
+                    >
+                      {announcement.is_pinned ? (
+                        <><PinOff className="mr-1 h-3.5 w-3.5" /> Unpin</>
+                      ) : (
+                        <><Pin className="mr-1 h-3.5 w-3.5" /> Pin</>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => archiveAnnouncement.mutate(announcement.id)}
+                    >
+                      <Archive className="mr-1 h-3.5 w-3.5" /> Archive
+                    </Button>
+                  </div>
+                }
+              />
             ))}
           </div>
         )}

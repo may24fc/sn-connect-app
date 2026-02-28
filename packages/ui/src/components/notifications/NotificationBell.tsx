@@ -91,7 +91,7 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   reminder: 'text-amber-500',
   onboarding_step: 'text-cyan-500',
   probation_update: 'text-orange-500',
-  system: 'text-zinc-500',
+  system: 'text-zinc-500 dark:text-zinc-400',
 };
 
 function getTimeAgo(dateString: string): string {
@@ -153,7 +153,7 @@ export function NotificationBell({
 
       <DropdownMenuContent
         align="end"
-        className="w-96 max-h-[480px] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-0 overflow-hidden"
+        className="w-96 max-h-[480px] bg-popover border border-border p-0 overflow-hidden"
         sideOffset={8}
       >
         {/* Header */}
@@ -180,7 +180,7 @@ export function NotificationBell({
         <div className="overflow-y-auto max-h-[360px]">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -195,7 +195,7 @@ export function NotificationBell({
           ) : (
             notifications.map((notification) => {
               const IconComponent = NOTIFICATION_ICONS[notification.type] ?? Info;
-              const iconColor = NOTIFICATION_COLORS[notification.type] ?? 'text-zinc-500';
+              const iconColor = NOTIFICATION_COLORS[notification.type] ?? 'text-zinc-500 dark:text-zinc-400';
 
               return (
                 <div
@@ -203,7 +203,7 @@ export function NotificationBell({
                   className={cn(
                     'group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800 last:border-b-0',
                     notification.is_read
-                      ? 'bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
+                      ? 'bg-card hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
                       : 'bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-50 dark:hover:bg-indigo-950/30'
                   )}
                   onClick={() => handleNotificationClick(notification)}

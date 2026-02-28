@@ -120,7 +120,7 @@ function formatDate(dateString: string): string {
 
 // --- Page ---
 
-export default function NotificationsPage(): ReactNode {
+export default function AdminNotificationsPage(): ReactNode {
   const router = useRouter();
   const [filters, setFilters] = useState<NotificationFilters>({
     page: 1,

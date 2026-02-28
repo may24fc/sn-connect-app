@@ -2,6 +2,11 @@ import {
   announcementFiltersSchema,
   createAnnouncementSchema,
 } from '@/lib/schemas/announcement.schema';
+import {
+  createNotificationsForUsers,
+  getUserDisplayName,
+  getUserIdsByRoles,
+} from '@/lib/notifications/create-notification';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isAnnouncementAdmin, normalizeExcerpt } from './_lib';
 
@@ -143,6 +148,25 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       );
+    }
+
+    // If the announcement is published immediately, notify users
+    if (data.status === 'published') {
+      const authorName = await getUserDisplayName(user.id);
+      const targetRoles = data.target_roles as string[] | null;
+      const recipientIds = targetRoles && targetRoles.length > 0
+        ? await getUserIdsByRoles(targetRoles)
+        : await getUserIdsByRoles();
+
+      const filteredRecipients = recipientIds.filter((uid) => uid !== user.id);
+
+      createNotificationsForUsers(filteredRecipients, {
+        type: 'announcement_new',
+        title: 'New Announcement',
+        message: `${authorName} published: "${data.title}"`,
+        link: `/announcements`,
+        metadata: { announcementId: data.id },
+      });
     }
 
     return NextResponse.json({ data }, { status: 201 });

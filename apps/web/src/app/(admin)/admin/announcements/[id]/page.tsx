@@ -11,11 +11,18 @@ import {
   AnnouncementAnalytics,
   AnnouncementEditor,
   AttachmentUploader,
+  Badge,
   Button,
   Card,
   CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Input,
   Label,
+  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
@@ -23,14 +30,47 @@ import {
   TargetingSelector,
 } from '@hr-portal/ui';
 import { useQuery } from '@tanstack/react-query';
+import { Archive, ArrowLeft, MoreHorizontal, Pencil, Pin, PinOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+type ViewMode = 'preview' | 'edit';
+
+const priorityVariant: Record<string, 'destructive' | 'warning' | 'secondary'> = {
+  urgent: 'destructive',
+  high: 'warning',
+  normal: 'secondary',
+  low: 'secondary',
+};
+
+const statusLabel: Record<string, string> = {
+  draft: 'Draft',
+  scheduled: 'Scheduled',
+  published: 'Published',
+  expired: 'Expired',
+  archived: 'Archived',
+};
+
+const categoryLabel: Record<string, string> = {
+  hr_updates: 'HR Updates',
+  benefits: 'Benefits',
+  events: 'Events',
+  performance: 'Performance',
+  training: 'Training',
+  policy: 'Policy',
+  general: 'General',
+  emergency: 'Emergency',
+};
+
 export default function AnnouncementDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const [announcementId, setAnnouncementId] = useState<string | null>(null);
+  const [mode, setMode] = useState<ViewMode>('preview');
 
   useEffect(() => {
     params.then((p) => setAnnouncementId(p.id));
   }, [params]);
+
   const { data, isLoading, error } = useAnnouncement(announcementId || '');
   const updateAnnouncement = useUpdateAnnouncement(announcementId || '');
   const publishAnnouncement = usePublishAnnouncement();
@@ -77,46 +117,319 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
     });
   }, [data]);
 
+  const handleSaveChanges = (): void => {
+    updateAnnouncement.mutate(
+      {
+        title,
+        content,
+        excerpt: content.slice(0, 200),
+      },
+      {
+        onSuccess: () => {
+          setMode('preview');
+        },
+      }
+    );
+  };
+
+  const handleSaveTargeting = (): void => {
+    updateAnnouncement.mutate(
+      {
+        targetRoles: targeting.rolesCsv
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+        targetDepartments: targeting.departmentsCsv
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+        targetEmployees: targeting.employeesCsv
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      },
+      {
+        onSuccess: () => {
+          setMode('preview');
+        },
+      }
+    );
+  };
+
+  const handleBackFromEdit = (): void => {
+    if (!data?.data) return;
+    const item = data.data;
+    setTitle(item.title);
+    setContent(item.content);
+    setTargeting({
+      rolesCsv: item.target_roles.join(', '),
+      departmentsCsv: item.target_departments.join(', '),
+      employeesCsv: item.target_employees.join(', '),
+    });
+    setMode('preview');
+  };
+
   if (isLoading) {
     return (
-      <div className="p-6 text-sm text-zinc-600 dark:text-zinc-400">Loading announcement...</div>
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-8 w-8 rounded" />
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-64" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+        </div>
+        <Skeleton className="h-64 w-full rounded-lg" />
+      </div>
     );
   }
 
   if (error || !data?.data) {
     return (
-      <div className="p-6 text-sm text-rose-600 dark:text-rose-400">
-        Failed to load announcement.
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        <div className="p-6 text-sm text-rose-600 dark:text-rose-400">
+          Failed to load announcement.
+        </div>
       </div>
     );
   }
 
   const announcement = data.data;
 
+  if (mode === 'preview') {
+    return (
+      <div className="space-y-6">
+        {/* Header with back + actions */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => router.back()}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setMode('edit')}
+            >
+              <Pencil className="mr-2 h-3.5 w-3.5" />
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={() => publishAnnouncement.mutate(announcement.id)}
+              disabled={publishAnnouncement.isPending || announcement.status === 'published'}
+            >
+              {publishAnnouncement.isPending ? 'Publishing...' : 'Publish'}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() =>
+                    pinAnnouncement.mutate({ id: announcement.id, pinned: !announcement.is_pinned })
+                  }
+                  disabled={pinAnnouncement.isPending}
+                >
+                  {announcement.is_pinned ? (
+                    <><PinOff className="mr-2 h-4 w-4" />Unpin</>
+                  ) : (
+                    <><Pin className="mr-2 h-4 w-4" />Pin</>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => archiveAnnouncement.mutate(announcement.id)}
+                  disabled={archiveAnnouncement.isPending}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  Archive
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Announcement preview */}
+        <div className="bg-card border border-border rounded-lg">
+          <div className="p-6 space-y-4">
+            {/* Title & meta row */}
+            <div className="space-y-3">
+              <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                {announcement.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={priorityVariant[announcement.priority] ?? 'secondary'}>
+                  {announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)}
+                </Badge>
+                <Badge variant="outline">
+                  {statusLabel[announcement.status] ?? announcement.status}
+                </Badge>
+                <Badge variant="outline">
+                  {categoryLabel[announcement.category] ?? announcement.category}
+                </Badge>
+                {announcement.is_pinned && (
+                  <Badge className="bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+                    Pinned
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Dates */}
+            <div className="flex flex-wrap gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+              <span>Created: {new Date(announcement.created_at).toLocaleDateString()}</span>
+              {announcement.published_at && (
+                <span>Published: {new Date(announcement.published_at).toLocaleDateString()}</span>
+              )}
+              {announcement.expires_at && (
+                <span>Expires: {new Date(announcement.expires_at).toLocaleDateString()}</span>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-zinc-200 dark:border-zinc-800" />
+
+            {/* Content */}
+            <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">
+              {announcement.content}
+            </div>
+
+            {/* Targeting info */}
+            {(announcement.target_roles.length > 0 ||
+              announcement.target_departments.length > 0 ||
+              announcement.target_employees.length > 0) && (
+              <>
+                <div className="border-t border-zinc-200 dark:border-zinc-800" />
+                <div className="space-y-2">
+                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                    Targeting
+                  </h3>
+                  {announcement.target_roles.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">Roles:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {announcement.target_roles.map((role) => (
+                          <Badge key={role} variant="outline" className="text-xs">
+                            {role}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {announcement.target_departments.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">Departments:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {announcement.target_departments.map((dept) => (
+                          <Badge key={dept} variant="outline" className="text-xs">
+                            {dept}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Attachments preview */}
+            {(uploadAttachment.data?.data || []).length > 0 && (
+              <>
+                <div className="border-t border-zinc-200 dark:border-zinc-800" />
+                <div className="space-y-2">
+                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                    Attachments
+                  </h3>
+                  <div className="space-y-1">
+                    {(uploadAttachment.data?.data || []).map(
+                      (attachment: { id: string; file_name: string; mime_type: string }) => (
+                        <div
+                          key={attachment.id}
+                          className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300"
+                        >
+                          <span>📎</span>
+                          <span>{attachment.file_name}</span>
+                          <span className="text-xs text-zinc-400 dark:text-zinc-500">({attachment.mime_type})</span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Read stats footer */}
+          <div className="border-t border-zinc-200 dark:border-zinc-800 px-6 py-3 flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+            <span>{announcement.read_count} reads</span>
+            <span>Comments {announcement.allow_comments ? 'enabled' : 'disabled'}</span>
+          </div>
+        </div>
+
+        {/* Analytics section */}
+        <Tabs defaultValue="analytics">
+          <TabsList>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+          <TabsContent value="analytics" className="mt-4">
+            <AnnouncementAnalytics
+              readCount={analyticsQuery.data?.data?.readCount || 0}
+              uniqueReaders={analyticsQuery.data?.data?.uniqueReaders || 0}
+              timeSeries={analyticsQuery.data?.data?.timeSeries || []}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
+  // Edit mode
   return (
     <div className="space-y-6">
+      {/* Edit mode header */}
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            {announcement.title}
-          </h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Manage details, targeting, attachments, and analytics
-          </p>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={handleBackFromEdit}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Preview
+          </Button>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => publishAnnouncement.mutate(announcement.id)}>
-            Publish
+          <Button
+            size="sm"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            onClick={() => publishAnnouncement.mutate(announcement.id)}
+            disabled={publishAnnouncement.isPending || announcement.status === 'published'}
+          >
+            {publishAnnouncement.isPending ? 'Publishing...' : 'Publish'}
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={() =>
               pinAnnouncement.mutate({ id: announcement.id, pinned: !announcement.is_pinned })
             }
+            disabled={pinAnnouncement.isPending}
           >
             {announcement.is_pinned ? 'Unpin' : 'Pin'}
           </Button>
-          <Button variant="outline" onClick={() => archiveAnnouncement.mutate(announcement.id)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => archiveAnnouncement.mutate(announcement.id)}
+            disabled={archiveAnnouncement.isPending}
+          >
             Archive
           </Button>
         </div>
@@ -127,7 +440,6 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="targeting">Targeting</TabsTrigger>
           <TabsTrigger value="attachments">Attachments</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="details" className="mt-4 space-y-4">
@@ -136,42 +448,34 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
             <Input value={title} onChange={(event) => setTitle(event.target.value)} />
           </div>
           <AnnouncementEditor value={content} onChange={setContent} />
-          <Button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
-            onClick={() =>
-              updateAnnouncement.mutate({
-                title,
-                content,
-                excerpt: content.slice(0, 200),
-              })
-            }
-          >
-            Save Changes
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={handleSaveChanges}
+              disabled={updateAnnouncement.isPending}
+            >
+              {updateAnnouncement.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <Button variant="outline" onClick={handleBackFromEdit}>
+              Cancel
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="targeting" className="mt-4 space-y-4">
           <TargetingSelector value={targeting} onChange={setTargeting} />
-          <Button
-            onClick={() =>
-              updateAnnouncement.mutate({
-                targetRoles: targeting.rolesCsv
-                  .split(',')
-                  .map((item) => item.trim())
-                  .filter(Boolean),
-                targetDepartments: targeting.departmentsCsv
-                  .split(',')
-                  .map((item) => item.trim())
-                  .filter(Boolean),
-                targetEmployees: targeting.employeesCsv
-                  .split(',')
-                  .map((item) => item.trim())
-                  .filter(Boolean),
-              })
-            }
-          >
-            Save Targeting
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={handleSaveTargeting}
+              disabled={updateAnnouncement.isPending}
+            >
+              {updateAnnouncement.isPending ? 'Saving...' : 'Save Targeting'}
+            </Button>
+            <Button variant="outline" onClick={handleBackFromEdit}>
+              Cancel
+            </Button>
+          </div>
         </TabsContent>
 
         <TabsContent value="attachments" className="mt-4 space-y-4">
@@ -191,7 +495,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
               (attachment: { id: string; file_name: string; mime_type: string }) => (
                 <Card
                   key={attachment.id}
-                  className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
+                  className="bg-card border border-border rounded-lg p-4"
                 >
                   <CardContent className="p-0 flex items-center justify-between">
                     <div>
@@ -204,6 +508,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                     </div>
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={async () => {
                         await fetch(
                           `/api/announcements/${announcementId}/attachments/${attachment.id}`,
@@ -221,14 +526,6 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
               )
             )}
           </div>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="mt-4">
-          <AnnouncementAnalytics
-            readCount={analyticsQuery.data?.data?.readCount || 0}
-            uniqueReaders={analyticsQuery.data?.data?.uniqueReaders || 0}
-            timeSeries={analyticsQuery.data?.data?.timeSeries || []}
-          />
         </TabsContent>
       </Tabs>
     </div>
