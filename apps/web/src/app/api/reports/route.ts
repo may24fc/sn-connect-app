@@ -31,6 +31,9 @@ export async function GET(request: NextRequest) {
     const employeeId = searchParams.get('employeeId') || '';
     const groupBy = searchParams.get('groupBy') || '';
     const parentReportId = searchParams.get('parentReportId') || '';
+    const periodStart = searchParams.get('periodStart') || '';
+    const periodEnd = searchParams.get('periodEnd') || '';
+    const department = searchParams.get('department') || '';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
 
@@ -55,6 +58,14 @@ export async function GET(request: NextRequest) {
       query = query.eq('report_type', reportType);
     }
 
+    // Period filtering: filter by period_start and period_end ranges
+    if (periodStart) {
+      query = query.gte('period_start', periodStart);
+    }
+    if (periodEnd) {
+      query = query.lte('period_end', periodEnd);
+    }
+
     // Grouped view: return only root reports (no parent)
     if (groupBy) {
       query = query.is('parent_report_id', null);
@@ -68,6 +79,27 @@ export async function GET(request: NextRequest) {
     // Role-based scoping: non-admins only see their own reports
     const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
+
+    // Department filtering (case-insensitive match on employee's department)
+    if (department && department !== 'all') {
+      // Get employee IDs matching department first
+      const { data: deptEmployees } = await supabaseAdmin
+        .from('employees')
+        .select('id')
+        .ilike('department', department)
+        .is('deleted_at', null);
+
+      if (deptEmployees && deptEmployees.length > 0) {
+        const empIds = deptEmployees.map((e) => e.id);
+        query = query.in('employee_id', empIds);
+      } else {
+        // No employees in this department, return empty result
+        return NextResponse.json({
+          data: [],
+          pagination: { page, pageSize, total: 0, totalPages: 0 },
+        });
+      }
+    }
 
     if (employeeId) {
       query = query.eq('employee_id', employeeId);

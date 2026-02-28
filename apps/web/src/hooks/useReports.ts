@@ -56,6 +56,9 @@ export function useReports(filters: ReportFilters = {}) {
       if (filters.employeeId) params.append('employeeId', filters.employeeId);
       if (filters.groupBy) params.append('groupBy', filters.groupBy);
       if (filters.parentReportId) params.append('parentReportId', filters.parentReportId);
+      if (filters.periodStart) params.append('periodStart', filters.periodStart);
+      if (filters.periodEnd) params.append('periodEnd', filters.periodEnd);
+      if (filters.department) params.append('department', filters.department);
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
 

@@ -20,6 +20,10 @@ import {
   TableHeader,
   TableRow,
   Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@hr-portal/ui';
 import { AlertTriangle, Eye } from 'lucide-react';
 import Link from 'next/link';
@@ -42,35 +46,93 @@ interface ReportsSubmissionsTabProps {
   customEndDate?: string;
 }
 
+/**
+ * Safely extract date string (YYYY-MM-DD) from an ISO string or return as-is
+ */
+function extractDateString(dateStr: string): string {
+  if (dateStr.includes('T')) {
+    return dateStr.substring(0, 10);
+  }
+  return dateStr;
+}
+
+/**
+ * Calculate period dates based on the time range
+ */
+function getPeriodDates(
+  timeRange: 'weekly' | 'monthly' | 'custom',
+  customStartDate?: string,
+  customEndDate?: string
+): { start: string; end: string } | null {
+  const now = new Date();
+
+  if (timeRange === 'custom' && customStartDate && customEndDate) {
+    return { start: customStartDate, end: customEndDate };
+  }
+
+  if (timeRange === 'monthly') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return {
+      start: extractDateString(start.toISOString()),
+      end: extractDateString(end.toISOString()),
+    };
+  }
+
+  if (timeRange === 'weekly') {
+    const end = new Date(now);
+    const start = new Date(now);
+    start.setDate(start.getDate() - 7);
+    return {
+      start: extractDateString(start.toISOString()),
+      end: extractDateString(end.toISOString()),
+    };
+  }
+
+  return null;
+}
+
 export function ReportsSubmissionsTab({
   department,
-  timeRange: _timeRange,
-  customStartDate: _customStartDate,
-  customEndDate: _customEndDate,
+  timeRange,
+  customStartDate,
+  customEndDate,
 }: ReportsSubmissionsTabProps) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
+  const [localPeriod, setLocalPeriod] = useState<'all' | 'weekly' | 'monthly' | 'custom'>(
+    timeRange
+  );
   const [showLateOnly, setShowLateOnly] = useState(false);
   const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
+
+  // Calculate period dates for API filtering
+  const periodDates = useMemo(() => {
+    if (localPeriod === 'all') return null;
+    return getPeriodDates(
+      localPeriod === 'custom' ? 'custom' : localPeriod,
+      customStartDate,
+      customEndDate
+    );
+  }, [localPeriod, customStartDate, customEndDate]);
 
   const filters = {
     ...(search ? { search } : {}),
     ...(status !== 'all'
       ? { status: status as 'draft' | 'submitted' | 'approved' | 'rejected' }
       : {}),
+    ...(department !== 'all' ? { department } : {}),
+    ...(periodDates ? { periodStart: periodDates.start, periodEnd: periodDates.end } : {}),
     page: 1,
     pageSize: 100,
   };
 
   const { data, isLoading, error, refetch } = useReports(filters);
 
-  // Filter by department client-side (API doesn't support department filter yet)
+  // Additional client-side filtering for late reports
   const reports = useMemo(() => {
     let all = data?.data || [];
-    if (department !== 'all') {
-      all = all.filter((r) => r.employees?.department?.toLowerCase() === department.toLowerCase());
-    }
     if (showLateOnly) {
       const now = new Date();
       all = all.filter((r) => {
@@ -82,7 +144,7 @@ export function ReportsSubmissionsTab({
       });
     }
     return all;
-  }, [data?.data, department, showLateOnly]);
+  }, [data?.data, showLateOnly]);
 
   /** Calculate days overdue for a report (>7 days past period_end) */
   function getDaysOverdue(periodEnd: string | null | undefined): number {
@@ -170,14 +232,27 @@ export function ReportsSubmissionsTab({
           placeholder="Search report type or notes"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="flex-1"
+          className="flex-1 min-w-[200px]"
         />
+        <Select value={localPeriod} onValueChange={(v) => setLocalPeriod(v as typeof localPeriod)}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Period" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Time</SelectItem>
+            <SelectItem value="weekly">This Week</SelectItem>
+            <SelectItem value="monthly">This Month</SelectItem>
+            {customStartDate && customEndDate && (
+              <SelectItem value="custom">Custom Range</SelectItem>
+            )}
+          </SelectContent>
+        </Select>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="submitted">Submitted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
@@ -283,22 +358,60 @@ export function ReportsSubmissionsTab({
                               View
                             </Link>
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={workingId === report.id || report.status !== 'submitted'}
-                            onClick={() => handleAction(report.id, 'approved')}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={workingId === report.id || report.status !== 'submitted'}
-                            onClick={() => handleAction(report.id, 'rejected')}
-                          >
-                            Reject
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className={report.status !== 'submitted' ? 'opacity-50' : ''}
+                                    disabled={
+                                      workingId === report.id || report.status !== 'submitted'
+                                    }
+                                    onClick={() => handleAction(report.id, 'approved')}
+                                  >
+                                    Approve
+                                  </Button>
+                                </span>
+                              </TooltipTrigger>
+                              {report.status !== 'submitted' && (
+                                <TooltipContent>
+                                  <p>Only submitted reports can be approved</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Current status: {formatLabel(report.status)}
+                                  </p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className={report.status !== 'submitted' ? 'opacity-50' : ''}
+                                    disabled={
+                                      workingId === report.id || report.status !== 'submitted'
+                                    }
+                                    onClick={() => handleAction(report.id, 'rejected')}
+                                  >
+                                    Reject
+                                  </Button>
+                                </span>
+                              </TooltipTrigger>
+                              {report.status !== 'submitted' && (
+                                <TooltipContent>
+                                  <p>Only submitted reports can be rejected</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Current status: {formatLabel(report.status)}
+                                  </p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </TableCell>
                     </TableRow>

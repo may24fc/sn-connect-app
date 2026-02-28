@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  FormGroup,
   Input,
   Label,
   Select,
@@ -19,7 +20,7 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Calendar, FileText, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -196,26 +197,35 @@ export default function NewReportPage() {
       {/* Report Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Report Details</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-indigo-600" />
+            Report Details
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form
-            className="space-y-4"
+            className="space-y-5"
             onSubmit={(event) => {
               event.preventDefault();
               void handleSubmit(false);
             }}
           >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Report Type</Label>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FormGroup
+                label="Report Type"
+                htmlFor="reportType"
+                required
+                showOptional={false}
+                description={typeInfo?.description}
+                icon={<FileText className="h-3.5 w-3.5" />}
+              >
                 <Select
                   value={reportType}
                   onValueChange={(value) =>
                     setReportType(value as 'weekly' | 'monthly' | 'marketing')
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="reportType" className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -224,44 +234,61 @@ export default function NewReportPage() {
                     <SelectItem value="marketing">Marketing</SelectItem>
                   </SelectContent>
                 </Select>
-                {typeInfo && (
-                  <p className="text-xs text-muted-foreground">{typeInfo.description}</p>
-                )}
-              </div>
+              </FormGroup>
               <div />
-              <div className="space-y-2">
-                <Label>Period Start</Label>
+              <FormGroup
+                label="Period Start"
+                htmlFor="periodStart"
+                required
+                showOptional={false}
+                icon={<Calendar className="h-3.5 w-3.5" />}
+              >
                 <Input
+                  id="periodStart"
                   type="date"
                   value={periodStart}
                   onChange={(event) => setPeriodStart(event.target.value)}
                   required
+                  className="h-10"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label>Period End</Label>
+              </FormGroup>
+              <FormGroup
+                label="Period End"
+                htmlFor="periodEnd"
+                required
+                showOptional={false}
+                icon={<Calendar className="h-3.5 w-3.5" />}
+              >
                 <Input
+                  id="periodEnd"
                   type="date"
                   value={periodEnd}
                   onChange={(event) => setPeriodEnd(event.target.value)}
                   required
+                  className="h-10"
                 />
-              </div>
+              </FormGroup>
             </div>
 
-            <div className="space-y-2">
-              <Label>Notes</Label>
+            <FormGroup label="Notes" htmlFor="notes">
               <Textarea
+                id="notes"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 rows={3}
                 placeholder="General notes about this report period..."
+                className="resize-none"
               />
-            </div>
+            </FormGroup>
 
-            {errorMessage && <p className="text-sm text-error">{errorMessage}</p>}
+            {errorMessage && (
+              <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
               <Button
                 type="button"
                 variant="outline"
@@ -270,8 +297,15 @@ export default function NewReportPage() {
               >
                 Save Draft
               </Button>
-              <Button type="submit" disabled={createReport.isPending}>
-                Submit Report
+              <Button type="submit" disabled={createReport.isPending} className="min-w-[120px]">
+                {createReport.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Submitting...
+                  </span>
+                ) : (
+                  'Submit Report'
+                )}
               </Button>
             </div>
           </form>
