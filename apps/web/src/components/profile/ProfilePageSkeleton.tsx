@@ -9,7 +9,7 @@ export function ProfilePageSkeleton(): ReactNode {
   return (
     <div className="space-y-6">
       {/* Header Card */}
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-6">
+      <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex flex-col items-center gap-6 sm:flex-row">
           {/* Avatar */}
           <Skeleton className="h-24 w-24 rounded-full shrink-0" />
@@ -55,7 +55,7 @@ export function ProfilePageSkeleton(): ReactNode {
       {/* Role Details section */}
       <div>
         <Skeleton className="h-6 w-32 mb-3" />
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-4">
+        <div className="bg-card border border-border rounded-lg p-5 space-y-4">
           <Skeleton className="h-5 w-40" />
           <div className="space-y-3">
             <Skeleton className="h-4 w-full" />
@@ -71,7 +71,7 @@ export function ProfilePageSkeleton(): ReactNode {
 function BentoCardSkeleton({ rows }: { rows: number }): ReactNode {
   return (
     <div
-      className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-4"
+      className="bg-card border border-border rounded-lg p-5 space-y-4"
       style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
     >
       {/* Card header */}

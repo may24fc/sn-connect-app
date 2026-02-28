@@ -82,12 +82,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Get public URL
+    // Get public URL with cache-busting to prevent stale image on refresh
     const { data: publicUrlData } = adminClient.storage
       .from('avatars')
       .getPublicUrl(filePath);
 
-    const avatarUrl = publicUrlData.publicUrl;
+    const avatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
 
     // Update auth user metadata with the new avatar URL
     const { error: updateError } = await adminClient.auth.admin.updateUserById(user.id, {

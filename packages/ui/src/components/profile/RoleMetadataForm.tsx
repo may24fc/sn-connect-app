@@ -135,7 +135,7 @@ function TagsInput({
 
   return (
     <div ref={containerRef} className="relative">
-      <div className="flex flex-wrap gap-1.5 rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3 py-2 min-h-[40px] focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-1">
+      <div className="flex flex-wrap gap-1.5 rounded-md border border-input bg-background px-3 py-2 min-h-[40px] focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-1">
         {value.map((tag) => (
           <Badge key={tag} variant="secondary" className="gap-1 h-6 text-xs">
             {tag}
@@ -165,7 +165,7 @@ function TagsInput({
 
       {/* Suggestion Dropdown */}
       {showSuggestions && filteredOptions.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg max-h-48 overflow-auto">
           {filteredOptions.map((opt) => (
             <button
               key={opt}
@@ -173,7 +173,7 @@ function TagsInput({
               onClick={() => addTag(opt)}
               className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
-              <Plus className="h-3 w-3 text-zinc-500" />
+              <Plus className="h-3 w-3 text-muted-foreground" />
               {opt}
             </button>
           ))}
@@ -294,7 +294,7 @@ export function RoleMetadataForm({
                     size="sm"
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="text-zinc-400 hover:text-red-500 h-8 w-8 p-0"
+                    className="text-zinc-400 dark:text-zinc-500 hover:text-red-500 h-8 w-8 p-0"
                     aria-label={`Remove ${roleConfig.label} details`}
                   >
                     {isDeleting ? (

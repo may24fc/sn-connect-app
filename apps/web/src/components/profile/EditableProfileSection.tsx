@@ -217,7 +217,7 @@ export function EditableProfileSection({
                 type="button"
                 onClick={handleCancel}
                 disabled={isSaving}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
                 aria-label="Cancel editing"
               >
                 <X className="h-3.5 w-3.5" />

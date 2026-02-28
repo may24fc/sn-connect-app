@@ -1,5 +1,6 @@
 'use client';
 
+import { AvatarPreviewModal } from '@/components/profile/AvatarPreviewModal';
 import { BentoGrid } from '@/components/data-display';
 import { EditableProfileSection, type EditableField } from '@/components/profile/EditableProfileSection';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,7 +71,7 @@ function calculateAge(dateStr: string | null | undefined): string | null {
 }
 
 export default function InternProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { data: employeesData, isLoading } = useEmployees({
     search: user?.email || '',
     pageSize: 1,
@@ -83,6 +84,8 @@ export default function InternProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadAvatar = useUploadAvatar();
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const updateProfileInfo = useUpdateProfileInfo();
 
   const { data: metadataRecords = [], isLoading: isMetadataLoading } = useRoleMetadata(user?.id);
@@ -104,23 +107,35 @@ export default function InternProfilePage() {
   );
 
   const handleAvatarChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
+      setPendingAvatarFile(file);
+      setShowAvatarModal(true);
+    },
+    []
+  );
 
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreview(previewUrl);
-
+  const handleAvatarConfirm = useCallback(
+    async (file: File) => {
       try {
-        await uploadAvatar.mutateAsync(file);
-      } catch {
-        setAvatarPreview(null);
+        const result = await uploadAvatar.mutateAsync(file);
+        setAvatarPreview(result.data.avatar_url);
+        await refreshUser();
       } finally {
+        setShowAvatarModal(false);
+        setPendingAvatarFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
-    [uploadAvatar]
+    [uploadAvatar, refreshUser]
   );
+
+  const handleAvatarModalClose = useCallback(() => {
+    setShowAvatarModal(false);
+    setPendingAvatarFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, []);
 
   const mergedData = useMemo(() => {
     const rawBirthday = profile?.birthday ?? employee?.birthday ?? null;
@@ -182,7 +197,7 @@ export default function InternProfilePage() {
             {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={`card-${i.toString()}`}
-                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-4"
+                className="bg-card border border-border rounded-lg p-5 space-y-4"
                 style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
               >
                 <div className="flex items-center gap-2 mb-4">
@@ -364,15 +379,10 @@ export default function InternProfilePage() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={uploadAvatar.isPending}
-                className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 aria-label="Change profile picture"
               >
-                {uploadAvatar.isPending ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
+                <Camera className="h-4 w-4" />
               </button>
             </div>
 
@@ -468,6 +478,17 @@ export default function InternProfilePage() {
           />
         </div>
       )}
+
+      {/* Avatar Preview Modal */}
+      <AvatarPreviewModal
+        file={pendingAvatarFile}
+        open={showAvatarModal}
+        onClose={handleAvatarModalClose}
+        onConfirm={handleAvatarConfirm}
+        isUploading={uploadAvatar.isPending}
+        initials={initials}
+        currentAvatarUrl={avatarPreview ?? user?.avatarUrl}
+      />
     </div>
   );
 }
