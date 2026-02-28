@@ -22,7 +22,7 @@ export default function DashboardLoading(): ReactNode {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-3"
+            className="bg-card border border-border rounded-lg p-5 space-y-3"
           >
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-8 w-16" />
@@ -34,7 +34,7 @@ export default function DashboardLoading(): ReactNode {
       {/* Bento grid (2x2) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Quick Actions (span 2) */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-4">
+        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-4">
           <Skeleton className="h-5 w-32" />
           <div className="grid grid-cols-2 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -44,14 +44,14 @@ export default function DashboardLoading(): ReactNode {
         </div>
 
         {/* Onboarding Progress (span 2) */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-4">
+        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-4">
           <Skeleton className="h-5 w-40" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-2 w-full rounded-full" />
         </div>
 
         {/* Upcoming Events (span 2) */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-3">
+        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-3">
           <Skeleton className="h-5 w-36" />
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3">
@@ -66,7 +66,7 @@ export default function DashboardLoading(): ReactNode {
         </div>
 
         {/* Announcements (span 2) */}
-        <div className="lg:col-span-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5 space-y-3">
+        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-3">
           <Skeleton className="h-5 w-40" />
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="space-y-1.5 py-2">

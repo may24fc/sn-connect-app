@@ -175,7 +175,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                             ? 'text-rose-500'
                             : alert.severity === 'medium'
                               ? 'text-amber-500'
-                              : 'text-zinc-400'
+                              : 'text-muted-foreground'
                         }`}
                         strokeWidth={1.5}
                       />
@@ -356,7 +356,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
         {quickActions.map((action) => (
           <Link key={action.title} href={action.href}>
             <div
-              className="group flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
+              className="group flex items-center gap-3 p-4 rounded-lg bg-card border border-border hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
               style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
             >
               <action.icon

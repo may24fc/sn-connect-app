@@ -46,9 +46,9 @@ export function PendingApprovalsCard({
 }: PendingApprovalsCardProps): React.ReactNode {
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       </div>
     );
