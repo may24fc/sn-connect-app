@@ -1,5 +1,5 @@
-import { type TaskFilters, queryKeys } from '@/lib/query-keys';
 import { STALE_TIMES } from '@/lib/query-client';
+import { type TaskFilters, queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
 
 export interface TaskRecord {

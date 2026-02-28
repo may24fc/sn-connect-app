@@ -2,8 +2,8 @@
 
 import { AlertCircle, Calendar, ClipboardList, FileText, Loader2, Tag, X } from 'lucide-react';
 import * as React from 'react';
-import { Button } from '../../primitives/button';
 import { Badge } from '../../primitives/badge';
+import { Button } from '../../primitives/button';
 import {
   Card,
   CardContent,
@@ -22,7 +22,12 @@ import {
   SelectValue,
 } from '../../primitives/select';
 import { Textarea } from '../../primitives/textarea';
-import type { TaskAssignee, TaskFormData, TaskPriority, TaskCategory } from '../../types/task.types';
+import type {
+  TaskAssignee,
+  TaskCategory,
+  TaskFormData,
+  TaskPriority,
+} from '../../types/task.types';
 import { TASK_CATEGORIES } from '../../types/task.types';
 import { cn } from '../../utils/cn';
 import { TaskAssigneeSelect } from './TaskAssigneeSelect';
@@ -293,7 +298,7 @@ export function TaskForm({
             <Select
               value={formData.category || '_none'}
               onValueChange={(value: string) =>
-                handleChange('category', value === '_none' ? undefined : value as TaskCategory)
+                handleChange('category', value === '_none' ? undefined : (value as TaskCategory))
               }
             >
               <SelectTrigger id="category">

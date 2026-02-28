@@ -7,7 +7,13 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'blocked';
 
 // Task Interfaces
-export type TaskCategory = 'launch' | 'optimization' | 'maintenance' | 'research' | 'administrative' | 'other';
+export type TaskCategory =
+  | 'launch'
+  | 'optimization'
+  | 'maintenance'
+  | 'research'
+  | 'administrative'
+  | 'other';
 
 export const TASK_CATEGORIES: Array<{ value: TaskCategory; label: string }> = [
   { value: 'launch', label: 'Launch' },

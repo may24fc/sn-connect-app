@@ -3,8 +3,8 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
+import { formatDate } from '@/lib/format';
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -24,20 +24,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TaskPriorityBadge,
+  TaskStatusBadge,
 } from '@hr-portal/ui';
+import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { ClipboardList } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-
-const statusVariant: Record<
-  'pending' | 'in_progress' | 'completed' | 'cancelled',
-  'secondary' | 'pending' | 'approved' | 'error'
-> = {
-  pending: 'secondary',
-  in_progress: 'pending',
-  completed: 'approved',
-  cancelled: 'error',
-};
 
 export default function MyTasksPage() {
   const { user } = useAuth();
@@ -226,17 +219,23 @@ export default function MyTasksPage() {
                   tasks.map((task) => (
                     <TableRow key={task.id}>
                       <TableCell>
-                        <p className="font-medium">{task.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {task.description || '-'}
-                        </p>
+                        <p className="font-medium text-sm">{task.title}</p>
+                        {task.description ? (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                            {task.description}
+                          </p>
+                        ) : null}
                       </TableCell>
-                      <TableCell className="uppercase text-xs">{task.priority}</TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[task.status]}>{task.status}</Badge>
+                        <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
                       </TableCell>
-                      <TableCell>{task.due_date ? task.due_date.slice(0, 10) : '-'}</TableCell>
-                      <TableCell>{task.assigner_name || '-'}</TableCell>
+                      <TableCell>
+                        <TaskStatusBadge status={task.status as TaskStatus} size="sm" />
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDate(task.due_date)}
+                      </TableCell>
+                      <TableCell className="text-sm">{task.assigner_name || '—'}</TableCell>
                       <TableCell className="text-right">
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/tasks/${task.id}`}>View</Link>
