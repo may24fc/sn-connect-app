@@ -34,15 +34,15 @@ interface BentoCardProps {
   children: React.ReactNode;
   className?: string;
   /** Column span on large screens */
-  colSpan?: 1 | 2 | 3 | 4;
+  colSpan?: 1 | 2 | 3 | 4 | undefined;
   /** Row span (default: 1) */
-  rowSpan?: 1 | 2;
+  rowSpan?: 1 | 2 | undefined;
   /** Whether to add hover effect */
-  interactive?: boolean;
+  interactive?: boolean | undefined;
   /** Click handler */
-  onClick?: () => void;
+  onClick?: (() => void) | undefined;
   /** Data-tour attribute for guided tour targeting */
-  'data-tour'?: string;
+  'data-tour'?: string | undefined;
 }
 
 const colSpanClasses = {

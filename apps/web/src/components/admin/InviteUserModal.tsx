@@ -2,6 +2,7 @@
 
 import { useInviteUser } from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { FormGroup } from '@hr-portal/ui/components/forms';
 import { Button } from '@hr-portal/ui/primitives/button';
 import {
   Dialog,
@@ -19,7 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hr-portal/ui/primitives/select';
-import { Check, Copy, Loader2, Mail, UserPlus } from 'lucide-react';
+import {
+  AlertCircle,
+  Briefcase,
+  Building2,
+  Check,
+  Copy,
+  Loader2,
+  Mail,
+  User,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -124,55 +136,77 @@ export function InviteUserModal({
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <FormGroup
+                label="Email Address"
+                htmlFor="email"
+                required
+                showOptional={false}
+                error={errors.email?.message}
+                icon={<Mail className="h-3.5 w-3.5" />}
+              >
                 <Input
                   id="email"
                   type="email"
                   placeholder="employee@example.com"
                   {...register('email')}
                   disabled={inviteUser.isPending}
+                  error={!!errors.email}
+                  className="h-10"
                 />
-                {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
-              </div>
+              </FormGroup>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
+                <FormGroup
+                  label="First Name"
+                  htmlFor="firstName"
+                  required
+                  showOptional={false}
+                  error={errors.firstName?.message}
+                  icon={<User className="h-3.5 w-3.5" />}
+                >
                   <Input
                     id="firstName"
                     placeholder="John"
                     {...register('firstName')}
                     disabled={inviteUser.isPending}
+                    error={!!errors.firstName}
+                    className="h-10"
                   />
-                  {errors.firstName && (
-                    <p className="text-sm text-red-600">{errors.firstName.message}</p>
-                  )}
-                </div>
+                </FormGroup>
 
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
+                <FormGroup
+                  label="Last Name"
+                  htmlFor="lastName"
+                  required
+                  showOptional={false}
+                  error={errors.lastName?.message}
+                >
                   <Input
                     id="lastName"
                     placeholder="Doe"
                     {...register('lastName')}
                     disabled={inviteUser.isPending}
+                    error={!!errors.lastName}
+                    className="h-10"
                   />
-                  {errors.lastName && (
-                    <p className="text-sm text-red-600">{errors.lastName.message}</p>
-                  )}
-                </div>
+                </FormGroup>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role">Role *</Label>
+              <FormGroup
+                label="Role"
+                htmlFor="role"
+                required
+                showOptional={false}
+                error={errors.role?.message}
+                icon={<Users className="h-3.5 w-3.5" />}
+              >
                 <Select
                   value={selectedRole}
                   onValueChange={(value) => setValue('role', value as 'employee' | 'intern')}
                   disabled={inviteUser.isPending || !!defaultRole}
                 >
-                  <SelectTrigger id="role">
+                  <SelectTrigger id="role" className={errors.role ? 'border-rose-500' : ''}>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -180,22 +214,28 @@ export function InviteUserModal({
                     <SelectItem value="intern">Intern</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.role && <p className="text-sm text-red-600">{errors.role.message}</p>}
-              </div>
+              </FormGroup>
 
-              <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
+              <FormGroup
+                label="Position"
+                htmlFor="position"
+                icon={<Briefcase className="h-3.5 w-3.5" />}
+              >
                 <Input
                   id="position"
                   placeholder="Software Engineer"
                   {...register('position')}
                   disabled={inviteUser.isPending}
+                  className="h-10"
                 />
-              </div>
+              </FormGroup>
 
               {departments.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
+                <FormGroup
+                  label="Department"
+                  htmlFor="department"
+                  icon={<Building2 className="h-3.5 w-3.5" />}
+                >
                   <Select
                     value={watch('departmentId') ?? ''}
                     onValueChange={(value) => setValue('departmentId', value)}
@@ -212,10 +252,17 @@ export function InviteUserModal({
                       ))}
                     </SelectContent>
                   </Select>
+                </FormGroup>
+              )}
+
+              {inviteUser.isError && (
+                <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>Failed to invite user. Please try again.</span>
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
                 <Button
                   type="button"
                   variant="outline"
@@ -224,7 +271,7 @@ export function InviteUserModal({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={inviteUser.isPending}>
+                <Button type="submit" disabled={inviteUser.isPending} className="min-w-[120px]">
                   {inviteUser.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -238,10 +285,6 @@ export function InviteUserModal({
                   )}
                 </Button>
               </div>
-
-              {inviteUser.isError && (
-                <p className="text-sm text-red-600">Failed to invite user. Please try again.</p>
-              )}
             </form>
           </>
         ) : (

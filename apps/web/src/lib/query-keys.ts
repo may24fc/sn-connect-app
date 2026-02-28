@@ -44,6 +44,9 @@ export interface ReportFilters {
   employeeId?: string;
   groupBy?: 'report_group' | 'hierarchy';
   parentReportId?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  department?: string;
   page?: number;
   pageSize?: number;
 }
@@ -67,17 +70,11 @@ export interface DocumentFilters {
 export interface AnnouncementFilters {
   search?: string;
   status?: 'draft' | 'scheduled' | 'published' | 'expired' | 'archived';
-  category?:
-    | 'hr_updates'
-    | 'benefits'
-    | 'events'
-    | 'performance'
-    | 'training'
-    | 'policy'
-    | 'general'
-    | 'emergency';
+  category?: string;
+  categories?: string[];
   priority?: 'low' | 'normal' | 'high' | 'urgent';
-  readStatus?: 'all' | 'read' | 'unread';
+  readStatus?: string;
+  readStatuses?: string[];
   authorId?: string;
   startDate?: string;
   endDate?: string;
