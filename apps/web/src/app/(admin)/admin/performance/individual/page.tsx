@@ -172,6 +172,7 @@ export default function IndividualPerformancePage(): ReactNode {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
+                  aria-label="Previous page"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                 >
@@ -181,6 +182,7 @@ export default function IndividualPerformancePage(): ReactNode {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
+                  aria-label="Next page"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 >

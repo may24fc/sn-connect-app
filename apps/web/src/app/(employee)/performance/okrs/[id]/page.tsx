@@ -490,7 +490,7 @@ export default function OKRDetailPage(): ReactNode {
 
       {/* Create / Edit Target — Slide Panel */}
       <SlidePanel open={dialogMode !== null} onOpenChange={() => handleCloseDialog()}>
-        <SlidePanelContent size="xl">
+        <SlidePanelContent size="2xl">
           <SlidePanelHeader>
             <SlidePanelTitle className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
@@ -508,7 +508,7 @@ export default function OKRDetailPage(): ReactNode {
           <SlidePanelBody className="space-y-6">
             {/* ── Metric Type ────────────────────────────── */}
             <SlidePanelSection label="How will you track this?">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(
                   Object.entries(METRIC_TYPE_CONFIG) as Array<
                     [TargetMetricType, typeof METRIC_TYPE_CONFIG.number]
@@ -589,7 +589,7 @@ export default function OKRDetailPage(): ReactNode {
             {/* ── Values ───────────────────────────────── */}
             {formState.metricType !== 'boolean' ? (
               <SlidePanelSection label="Values">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="start-value" className="text-sm font-medium">
                       Starting at
@@ -618,7 +618,7 @@ export default function OKRDetailPage(): ReactNode {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="unit" className="text-sm font-medium">
                       Unit of measurement
