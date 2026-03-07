@@ -28,7 +28,6 @@ import {
   Image,
   Link2,
   MonitorPlay,
-  MousePointer,
   Presentation,
   Send,
   Tag as TagIcon,
