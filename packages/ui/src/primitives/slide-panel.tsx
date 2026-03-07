@@ -59,7 +59,7 @@ SlidePanelOverlay.displayName = 'SlidePanelOverlay';
 interface SlidePanelContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   /** Width of the panel. Defaults to max-w-xl (576px). */
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full' | 'responsive';
 }
 
 const sizeMap: Record<NonNullable<SlidePanelContentProps['size']>, string> = {
@@ -67,6 +67,10 @@ const sizeMap: Record<NonNullable<SlidePanelContentProps['size']>, string> = {
   md: 'max-w-md', // 448px
   lg: 'max-w-lg', // 512px
   xl: 'max-w-xl', // 576px
+  '2xl': 'max-w-2xl', // 672px
+  '3xl': 'max-w-3xl', // 768px
+  full: 'max-w-[calc(100vw-2rem)]',
+  responsive: 'w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl',
 };
 
 const SlidePanelContent = React.forwardRef<

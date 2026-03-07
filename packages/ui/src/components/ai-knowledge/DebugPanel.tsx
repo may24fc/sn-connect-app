@@ -42,7 +42,7 @@ export function DebugPanel({
       </Button>
 
       {isExpanded && (
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-card">
           <h4 className="text-xs font-semibold text-foreground uppercase tracking-wide">
             Source Attributions
           </h4>

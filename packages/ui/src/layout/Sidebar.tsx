@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Briefcase,
   CheckSquare,
   ChevronLeft,
   ChevronRight,
@@ -71,6 +72,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/admin/resources', icon: Library },
@@ -86,6 +88,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
+  { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
