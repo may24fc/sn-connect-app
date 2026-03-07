@@ -230,7 +230,7 @@ export default function InternProfilePage() {
     ? (employee.first_name?.[0] ?? '') + (employee.last_name?.[0] ?? '')
     : (user?.name
         ?.split(' ')
-        .map((n) => n[0])
+        .map((n: string) => n[0])
         .join('') ?? 'U');
   const position = employee?.position ?? 'Intern';
   const department = employee?.department ?? 'Department not assigned';
