@@ -1,14 +1,16 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
-import { useInternships, useUpdateInternDailyLog } from '@/hooks/useInternships';
+import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
 import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { useTableSort } from '@/hooks/useTableSort';
 import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
 import type { InternshipFilters } from '@/lib/query-keys';
 import {
@@ -54,7 +56,6 @@ import {
   Download,
   Eye,
   FileText,
-  Filter,
   GraduationCap,
   LayoutGrid,
   List,
@@ -92,9 +93,6 @@ export default function AdminInternsPage(): ReactNode {
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
   const [selectedEodLog, setSelectedEodLog] = useState<(typeof dailyLogs)[number] | null>(null);
 
-  // Quick approve mutation
-  const updateDailyLog = useUpdateInternDailyLog();
-
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
 
@@ -104,6 +102,35 @@ export default function AdminInternsPage(): ReactNode {
 
   // Real-time daily logs hook
   const { dailyLogs, isSubscribed: isDailyLogsSubscribed } = useRealtimeInternDailyLogs();
+
+  // Sort state for Pending Approvals table
+  const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const sortedPending = pendingSort.sortItems(pendingApprovals, {
+    intern: (a) => a.full_name?.toLowerCase() ?? '',
+    email: (a) => a.email_address?.toLowerCase() ?? '',
+    position: (a) => a.position?.toLowerCase() ?? '',
+    submitted: (a) => a.completed_at ?? '',
+  });
+  const pendingSortHeadProps = { sortColumn: pendingSort.sortColumn, sortDirection: pendingSort.sortDirection, onSort: pendingSort.handleSort };
+
+  // Sort state for EOD Reports table
+  const eodSort = useTableSort({ initialColumn: 'date', initialDirection: 'desc' });
+  const sortedDailyLogs = eodSort.sortItems(dailyLogs, {
+    intern: (l) => {
+      const emp = l.internship?.employee;
+      return emp ? `${emp.first_name} ${emp.last_name}`.toLowerCase() : '';
+    },
+    date: (l) => l.log_date ?? '',
+    school: (l) => l.internship?.school?.toLowerCase() ?? '',
+    department: (l) => l.internship?.department?.toLowerCase() ?? '',
+    hours: (l) => l.hours_worked ?? 0,
+    status: (l) => (l.is_approved ? 1 : 0),
+  });
+  const eodSortHeadProps = { sortColumn: eodSort.sortColumn, sortDirection: eodSort.sortDirection, onSort: eodSort.handleSort };
+
+  // Sort state for Onboarding Submissions table
+  const onboardSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const onboardSortHeadProps = { sortColumn: onboardSort.sortColumn, sortDirection: onboardSort.sortDirection, onSort: onboardSort.handleSort };
 
   const internshipFilters: InternshipFilters = {
     page: 1,
@@ -266,87 +293,78 @@ export default function AdminInternsPage(): ReactNode {
           <InternshipSummaryCards stats={stats} />
 
           {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Filter className="h-4 w-4" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name, email, or program..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full lg:w-[150px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="terminated">Terminated</SelectItem>
-                    <SelectItem value="converted">Converted</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={schoolFilter} onValueChange={setSchoolFilter}>
-                  <SelectTrigger className="w-full lg:w-[180px]">
-                    <SelectValue placeholder="School" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Schools</SelectItem>
-                    {schools.map((school) => (
-                      <SelectItem key={school} value={school}>
-                        {school}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={supervisorFilter} onValueChange={setSupervisorFilter}>
-                  <SelectTrigger className="w-full lg:w-[180px]">
-                    <SelectValue placeholder="Supervisor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Supervisors</SelectItem>
-                    {supervisors.map((sup) => (
-                      <SelectItem key={sup} value={sup}>
-                        {sup}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {(statusFilter !== 'all' ||
-                schoolFilter !== 'all' ||
-                supervisorFilter !== 'all' ||
-                searchQuery) && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
-                    Showing {filteredInterns.length} of {interns.length} interns
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setStatusFilter('all');
-                      setSchoolFilter('all');
-                      setSupervisorFilter('all');
-                    }}
-                  >
-                    Clear All Filters
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or program..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full lg:w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="terminated">Terminated</SelectItem>
+                <SelectItem value="converted">Converted</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={schoolFilter} onValueChange={setSchoolFilter}>
+              <SelectTrigger className="w-full lg:w-[180px]">
+                <SelectValue placeholder="School" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Schools</SelectItem>
+                {schools.map((school) => (
+                  <SelectItem key={school} value={school}>
+                    {school}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={supervisorFilter} onValueChange={setSupervisorFilter}>
+              <SelectTrigger className="w-full lg:w-[180px]">
+                <SelectValue placeholder="Supervisor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Supervisors</SelectItem>
+                {supervisors.map((sup) => (
+                  <SelectItem key={sup} value={sup}>
+                    {sup}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(statusFilter !== 'all' ||
+            schoolFilter !== 'all' ||
+            supervisorFilter !== 'all' ||
+            searchQuery) && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredInterns.length} of {interns.length} interns
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                  setSchoolFilter('all');
+                  setSupervisorFilter('all');
+                }}
+              >
+                Clear All Filters
+              </Button>
+            </div>
+          )}
+           
 
           {/* View Toggle */}
           <div className="flex items-center justify-between">
@@ -545,16 +563,16 @@ export default function AdminInternsPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Intern</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <SortableTableHead column="intern" {...pendingSortHeadProps}>Intern</SortableTableHead>
+                    <SortableTableHead column="email" {...pendingSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="position" {...pendingSortHeadProps}>Position</SortableTableHead>
+                    <SortableTableHead column="submitted" {...pendingSortHeadProps}>Submitted</SortableTableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingApprovals.length > 0 ? (
-                    pendingApprovals.map((approval) => (
+                    sortedPending.map((approval) => (
                       <TableRow
                         key={approval.id}
                         className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5"
@@ -565,7 +583,7 @@ export default function AdminInternsPage(): ReactNode {
                               <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                                 {approval.full_name
                                   ?.split(' ')
-                                  .map((n) => n[0])
+                                  .map((n: string) => n[0])
                                   .join('')
                                   .toUpperCase()
                                   .slice(0, 2) || 'NA'}
@@ -624,18 +642,28 @@ export default function AdminInternsPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Intern</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Current Step</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <SortableTableHead column="intern" {...onboardSortHeadProps}>Intern</SortableTableHead>
+                    <SortableTableHead column="email" {...onboardSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="department" {...onboardSortHeadProps}>Department</SortableTableHead>
+                    <SortableTableHead column="status" {...onboardSortHeadProps}>Status</SortableTableHead>
+                    <SortableTableHead column="step" {...onboardSortHeadProps}>Current Step</SortableTableHead>
+                    <SortableTableHead column="submitted" {...onboardSortHeadProps}>Submitted</SortableTableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {onboardingData?.data && onboardingData.data.length > 0 ? (
-                    onboardingData.data.map((profile) => {
+                    onboardSort.sortItems([...onboardingData.data], {
+                      intern: (p: any) => p.full_name?.toLowerCase() ?? '',
+                      email: (p: any) => p.email_address?.toLowerCase() ?? '',
+                      department: (p: any) => {
+                        const dept = Array.isArray(p.departments) ? p.departments[0]?.name : p.departments?.name;
+                        return dept?.toLowerCase() ?? '';
+                      },
+                      status: (p: any) => p.status ?? '',
+                      step: (p: any) => p.current_step ?? '',
+                      submitted: (p: any) => p.created_at ?? '',
+                    }).map((profile: any) => {
                       const department = Array.isArray(profile.departments)
                         ? profile.departments[0]?.name
                         : profile.departments?.name;
@@ -648,7 +676,7 @@ export default function AdminInternsPage(): ReactNode {
                                 <AvatarFallback className="text-xs">
                                   {profile.full_name
                                     ?.split(' ')
-                                    .map((n) => n[0])
+                                    .map((n: string) => n[0])
                                     .join('')
                                     .toUpperCase()
                                     .slice(0, 2) || 'NA'}
@@ -773,18 +801,18 @@ export default function AdminInternsPage(): ReactNode {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Intern</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>School</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Hours</TableHead>
-                      <TableHead>Status</TableHead>
+                      <SortableTableHead column="intern" {...eodSortHeadProps}>Intern</SortableTableHead>
+                      <SortableTableHead column="date" {...eodSortHeadProps}>Date</SortableTableHead>
+                      <SortableTableHead column="school" {...eodSortHeadProps}>School</SortableTableHead>
+                      <SortableTableHead column="department" {...eodSortHeadProps}>Department</SortableTableHead>
+                      <SortableTableHead column="hours" {...eodSortHeadProps}>Hours</SortableTableHead>
+                      <SortableTableHead column="status" {...eodSortHeadProps}>Status</SortableTableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dailyLogs.length > 0 ? (
-                      dailyLogs.map((log) => {
+                      sortedDailyLogs.map((log) => {
                         const internName = log.internship?.employee
                           ? `${log.internship.employee.first_name} ${log.internship.employee.last_name}`
                           : 'Unknown Intern';
@@ -797,7 +825,7 @@ export default function AdminInternsPage(): ReactNode {
                                   <AvatarFallback className="text-xs">
                                     {internName
                                       .split(' ')
-                                      .map((n) => n[0])
+                                      .map((n: string) => n[0])
                                       .join('')
                                       .toUpperCase()
                                       .slice(0, 2)}

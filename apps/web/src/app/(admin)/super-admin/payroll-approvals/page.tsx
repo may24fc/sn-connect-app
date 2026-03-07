@@ -1,6 +1,8 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useApproveInvoice, useInvoices } from '@/hooks/useInvoices';
+import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
 import {
   Badge,
@@ -55,6 +57,11 @@ export default function PayrollApprovalsPage() {
 
   const invoices = data?.data || [];
 
+  const pendingSort = useTableSort({ initialColumn: 'employee' });
+  const processedSort = useTableSort({ initialColumn: 'approved_at', initialDirection: 'desc' });
+
+  const invoiceStatusOrder: Record<string, number> = { approved: 0, paid: 1, rejected: 2, draft: 3 };
+
   const pending = useMemo(
     () => invoices.filter((invoice) => invoice.status === 'submitted'),
     [invoices]
@@ -73,6 +80,23 @@ export default function PayrollApprovalsPage() {
       pendingAmount: pending.reduce((sum, invoice) => sum + Number(invoice.net_amount || 0), 0),
     };
   }, [invoices, pending]);
+
+  const sortedPending = pendingSort.sortItems(pending, {
+    employee: (i) => i.employees ? `${i.employees.first_name} ${i.employees.last_name}`.toLowerCase() : '',
+    invoice_number: (i) => i.invoice_number,
+    period: (i) => i.period_start ?? '',
+    amount: (i) => Number(i.net_amount || 0),
+  });
+  const pendingSortHeadProps = { sortColumn: pendingSort.sortColumn, sortDirection: pendingSort.sortDirection, onSort: pendingSort.handleSort };
+
+  const sortedProcessed = processedSort.sortItems(processed, {
+    employee: (i) => i.employees ? `${i.employees.first_name} ${i.employees.last_name}`.toLowerCase() : '',
+    invoice_number: (i) => i.invoice_number,
+    status: (i) => invoiceStatusOrder[i.status] ?? 99,
+    amount: (i) => Number(i.net_amount || 0),
+    approved_at: (i) => i.approved_at ?? '',
+  });
+  const processedSortHeadProps = { sortColumn: processedSort.sortColumn, sortDirection: processedSort.sortDirection, onSort: processedSort.handleSort };
 
   const handleAction = (id: string, action: 'approved' | 'rejected') => {
     approveInvoice.mutate({
@@ -146,10 +170,10 @@ export default function PayrollApprovalsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <SortableTableHead column="employee" {...pendingSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="invoice_number" {...pendingSortHeadProps}>Invoice #</SortableTableHead>
+                    <SortableTableHead column="period" {...pendingSortHeadProps}>Period</SortableTableHead>
+                    <SortableTableHead column="amount" {...pendingSortHeadProps}>Amount</SortableTableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -162,7 +186,7 @@ export default function PayrollApprovalsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    pending.map((invoice) => (
+                    sortedPending.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell>
                           {invoice.employees
@@ -241,11 +265,11 @@ export default function PayrollApprovalsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Approved At</TableHead>
+                    <SortableTableHead column="employee" {...processedSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="invoice_number" {...processedSortHeadProps}>Invoice #</SortableTableHead>
+                    <SortableTableHead column="status" {...processedSortHeadProps}>Status</SortableTableHead>
+                    <SortableTableHead column="amount" {...processedSortHeadProps}>Amount</SortableTableHead>
+                    <SortableTableHead column="approved_at" {...processedSortHeadProps}>Approved At</SortableTableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -256,7 +280,7 @@ export default function PayrollApprovalsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    processed.map((invoice) => (
+                    sortedProcessed.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell>
                           {invoice.employees

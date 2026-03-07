@@ -35,7 +35,7 @@ import { type ReactNode, useState } from 'react';
 function getInitials(name: string): string {
   return name
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
@@ -166,7 +166,17 @@ function StageIndicator({
   );
 }
 
-const SAMPLE_PROBATION_EMPLOYEES = [
+const SAMPLE_PROBATION_EMPLOYEES: Array<{
+  id: string;
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  position: string;
+  department: string;
+  date_hired: string;
+  probation_end_date: string;
+  avatar_url?: string;
+}> = [
   {
     id: 'sample-1',
     user_id: 'sample-u1',
@@ -176,7 +186,6 @@ const SAMPLE_PROBATION_EMPLOYEES = [
     department: 'Engineering',
     date_hired: '2025-12-01',
     probation_end_date: '2026-05-30',
-    avatar_url: undefined,
   },
   {
     id: 'sample-2',
@@ -187,7 +196,6 @@ const SAMPLE_PROBATION_EMPLOYEES = [
     department: 'Marketing',
     date_hired: '2026-01-15',
     probation_end_date: '2026-07-14',
-    avatar_url: undefined,
   },
   {
     id: 'sample-3',
@@ -198,7 +206,6 @@ const SAMPLE_PROBATION_EMPLOYEES = [
     department: 'Human Resources',
     date_hired: '2025-09-15',
     probation_end_date: '2026-03-14',
-    avatar_url: undefined,
   },
   {
     id: 'sample-4',
@@ -209,7 +216,6 @@ const SAMPLE_PROBATION_EMPLOYEES = [
     department: 'Finance',
     date_hired: '2025-11-01',
     probation_end_date: '2026-04-30',
-    avatar_url: undefined,
   },
   {
     id: 'sample-5',
@@ -220,7 +226,6 @@ const SAMPLE_PROBATION_EMPLOYEES = [
     department: 'Design',
     date_hired: '2026-02-01',
     probation_end_date: '2026-07-31',
-    avatar_url: undefined,
   },
 ];
 
@@ -236,7 +241,7 @@ export default function EmployeeManagementPage(): ReactNode {
 
   // Onboarding profiles
   const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
-    search: searchTerm || undefined,
+    ...(searchTerm && { search: searchTerm }),
     page: 1,
     pageSize: 50,
   });

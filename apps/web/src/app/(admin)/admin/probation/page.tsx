@@ -2,11 +2,13 @@
 
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { useRealtimeProbationEmployees } from '@/hooks/useRealtimeProbationEmployees';
+import { useTableSort } from '@/hooks/useTableSort';
 import {
   Avatar,
   AvatarFallback,
@@ -278,6 +280,11 @@ export default function ProbationPage(): ReactNode {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
 
+  // Sort hooks for 3 tables
+  const probationSort = useTableSort({ initialColumn: 'employee', initialDirection: 'asc' });
+  const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const onboardSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+
   const filteredEmployees = employeeRecords.filter((emp) => {
     const matchesSearch =
       emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -286,6 +293,38 @@ export default function ProbationPage(): ReactNode {
     const matchesDepartment = departmentFilter === 'all' || emp.department === departmentFilter;
     return matchesSearch && matchesStatus && matchesDepartment;
   });
+
+  const statusOrder: Record<string, number> = { 'on-track': 0, 'at-risk': 1, extended: 2, completed: 3 };
+  const sortedEmployees = probationSort.sortItems(filteredEmployees as Employee[], {
+    employee: (e: Employee) => e.name.toLowerCase(),
+    department: (e: Employee) => e.department.toLowerCase(),
+    stage: (e: Employee) => e.stage,
+    status: (e: Employee) => statusOrder[e.status] ?? 99,
+    days_left: (e: Employee) => e.daysRemaining,
+  });
+
+  const sortedPending = pendingSort.sortItems(pendingApprovals as any[], {
+    employee: (a: any) => (a.full_name || '').toLowerCase(),
+    email: (a: any) => (a.email_address || '').toLowerCase(),
+    position: (a: any) => (a.position || '').toLowerCase(),
+    submitted: (a: any) => a.completed_at || '',
+  });
+
+  const probationSortHeadProps = {
+    sortColumn: probationSort.sortColumn,
+    sortDirection: probationSort.sortDirection,
+    onSort: probationSort.handleSort,
+  };
+  const pendingSortHeadProps = {
+    sortColumn: pendingSort.sortColumn,
+    sortDirection: pendingSort.sortDirection,
+    onSort: pendingSort.handleSort,
+  };
+  const onboardSortHeadProps = {
+    sortColumn: onboardSort.sortColumn,
+    sortDirection: onboardSort.sortDirection,
+    onSort: onboardSort.handleSort,
+  };
 
   const stats = {
     total: employeeRecords.length,
@@ -495,19 +534,19 @@ export default function ProbationPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Stage</TableHead>
-                    <TableHead>Status</TableHead>
+                    <SortableTableHead column="employee" {...probationSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="department" {...probationSortHeadProps}>Department</SortableTableHead>
+                    <SortableTableHead column="stage" {...probationSortHeadProps}>Stage</SortableTableHead>
+                    <SortableTableHead column="status" {...probationSortHeadProps}>Status</SortableTableHead>
                     <TableHead>Documents</TableHead>
                     <TableHead>View</TableHead>
-                    <TableHead>Days Left</TableHead>
+                    <SortableTableHead column="days_left" {...probationSortHeadProps}>Days Left</SortableTableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredEmployees.length > 0 ? (
-                    filteredEmployees.map((employee) => {
+                  {sortedEmployees.length > 0 ? (
+                    sortedEmployees.map((employee) => {
                       const config = statusConfig[employee.status];
                       const StatusIcon = config.icon;
                       const docProgress = Math.round(
@@ -954,16 +993,16 @@ export default function ProbationPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <SortableTableHead column="employee" {...pendingSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="email" {...pendingSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="position" {...pendingSortHeadProps}>Position</SortableTableHead>
+                    <SortableTableHead column="submitted" {...pendingSortHeadProps}>Submitted</SortableTableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pendingApprovals.length > 0 ? (
-                    pendingApprovals.map((approval) => (
+                  {sortedPending.length > 0 ? (
+                    sortedPending.map((approval: any) => (
                       <TableRow
                         key={approval.id}
                         className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5"
@@ -974,7 +1013,7 @@ export default function ProbationPage(): ReactNode {
                               <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                                 {approval.full_name
                                   ?.split(' ')
-                                  .map((n) => n[0])
+                                  .map((n: string) => n[0])
                                   .join('')
                                   .toUpperCase()
                                   .slice(0, 2) || 'NA'}
@@ -1033,18 +1072,28 @@ export default function ProbationPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Current Step</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <SortableTableHead column="employee" {...onboardSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="email" {...onboardSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="department" {...onboardSortHeadProps}>Department</SortableTableHead>
+                    <SortableTableHead column="status" {...onboardSortHeadProps}>Status</SortableTableHead>
+                    <SortableTableHead column="step" {...onboardSortHeadProps}>Current Step</SortableTableHead>
+                    <SortableTableHead column="submitted" {...onboardSortHeadProps}>Submitted</SortableTableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {onboardingData?.data && onboardingData.data.length > 0 ? (
-                    onboardingData.data.map((profile) => {
+                    onboardSort.sortItems(onboardingData.data as any[], {
+                      employee: (p: any) => (p.full_name || '').toLowerCase(),
+                      email: (p: any) => (p.email_address || '').toLowerCase(),
+                      department: (p: any) => {
+                        const dept = Array.isArray(p.departments) ? p.departments[0]?.name : p.departments?.name;
+                        return (dept || '').toLowerCase();
+                      },
+                      status: (p: any) => (p.status === 'completed' ? 0 : 1),
+                      step: (p: any) => (p.current_step || '').toLowerCase(),
+                      submitted: (p: any) => p.created_at || '',
+                    }).map((profile: any) => {
                       const department = Array.isArray(profile.departments)
                         ? profile.departments[0]?.name
                         : profile.departments?.name;
@@ -1057,7 +1106,7 @@ export default function ProbationPage(): ReactNode {
                                 <AvatarFallback className="text-xs">
                                   {profile.full_name
                                     ?.split(' ')
-                                    .map((n) => n[0])
+                                    .map((n: string) => n[0])
                                     .join('')
                                     .toUpperCase()
                                     .slice(0, 2) || 'NA'}
