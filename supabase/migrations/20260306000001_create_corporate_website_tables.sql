@@ -43,14 +43,14 @@ CREATE POLICY business_units_admin_all_policy
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   );
 
@@ -97,14 +97,14 @@ CREATE POLICY job_postings_admin_all_policy
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   );
 
@@ -146,7 +146,7 @@ CREATE POLICY job_applications_admin_select_policy
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   );
 
@@ -156,7 +156,7 @@ CREATE POLICY job_applications_admin_update_policy
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   );
 
@@ -198,7 +198,7 @@ CREATE POLICY public_inquiries_admin_select_policy
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   );
 
@@ -208,7 +208,7 @@ CREATE POLICY public_inquiries_admin_update_policy
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-      AND u.role IN ('admin', 'super_admin', 'hr')
+      AND u.role IN ('admin', 'super_admin')
     )
   );
 
