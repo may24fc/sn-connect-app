@@ -68,7 +68,7 @@ export function Header(): ReactNode {
                       <button
                         type="button"
                         className={cn(
-                          'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                          'relative flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                           isActive
                             ? 'text-indigo-600'
                             : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
@@ -84,6 +84,9 @@ export function Header(): ReactNode {
                             megaOpen && 'rotate-180'
                           )}
                         />
+                        {isActive && (
+                          <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-indigo-600" />
+                        )}
                       </button>
                       <MegaMenu
                         open={megaOpen}
@@ -99,13 +102,16 @@ export function Header(): ReactNode {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                      'relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       isActive
                         ? 'text-indigo-600'
                         : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
                     )}
                   >
                     {link.label}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-indigo-600" />
+                    )}
                   </Link>
                 );
               })}

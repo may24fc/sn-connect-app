@@ -9,20 +9,11 @@ export function ContactCards(): ReactNode {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
       {BUSINESS_UNITS.map((unit, i) => {
-        const Icon = unit.icon;
         return (
           <ScrollReveal key={unit.slug} delay={i * 0.1}>
             <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-card">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: `${unit.color}15` }}
-                >
-                  <Icon className="h-5 w-5" color={unit.color} />
-                </div>
-                <h3 className="font-semibold text-zinc-900">{unit.name}</h3>
-              </div>
-              <div className="mt-4 space-y-2 text-sm text-zinc-600">
+              <h3 className="font-semibold text-zinc-900">{unit.name}</h3>
+              <div className="mt-2 space-y-2 text-sm text-zinc-600">
                 <a
                   href={`mailto:${unit.contact.email}`}
                   className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
