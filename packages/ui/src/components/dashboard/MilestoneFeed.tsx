@@ -1,6 +1,6 @@
 'use client';
 
-import { Cake, CalendarDays, PartyPopper } from 'lucide-react';
+import { Cake, PartyPopper } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '../../utils/cn';
 
@@ -128,7 +128,7 @@ function MilestoneGroup({
       </h4>
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
         {items.map((m) => (
-          <MilestoneRow key={`${m.employeeId}-${m.type}`} milestone={m} compact={compact} />
+          <MilestoneRow key={`${m.employeeId}-${m.type}`} milestone={m} {...(compact !== undefined && { compact })} />
         ))}
       </div>
     </div>
@@ -163,12 +163,6 @@ export function MilestoneFeed({
   if (isLoading) {
     return (
       <div className={cn('space-y-4', className)}>
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            Upcoming Milestones
-          </h3>
-        </div>
         <MilestoneSkeleton />
       </div>
     );
@@ -179,14 +173,8 @@ export function MilestoneFeed({
   if (displayMilestones.length === 0) {
     return (
       <div className={cn('space-y-4', className)}>
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-            Upcoming Milestones
-          </h3>
-        </div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400 py-4 text-center">
-          No upcoming milestones in the next 30 days.
+          No upcoming birthdays or anniversaries in the next 30 days.
         </p>
       </div>
     );
@@ -194,16 +182,6 @@ export function MilestoneFeed({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="flex items-center gap-2">
-        <CalendarDays className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          Upcoming Milestones
-        </h3>
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">
-          ({displayMilestones.length})
-        </span>
-      </div>
-
       {grouped ? (
         <div className="space-y-4">
           <MilestoneGroup title="Today" items={grouped.today} compact={compact} />

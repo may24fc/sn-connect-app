@@ -17,7 +17,7 @@ export interface FormGroupProps {
   /** Error message to display */
   error?: string | null | undefined;
   /** Helper text shown below the input (hidden when error is shown) */
-  description?: string;
+  description?: string | undefined;
   /** Optional icon to display in the label */
   icon?: React.ReactNode;
   /** Additional classes for the wrapper */

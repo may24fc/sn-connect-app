@@ -114,6 +114,8 @@ export {
   type FilterOption,
   type MultiSelectFilterProps,
 } from './components/MultiSelectFilter';
+// Document Components
+export { FullScreenPreview, type FullScreenPreviewProps } from './components/documents';
 // Components
 export { AIChatbot, type ChatMessage, type AIChatbotProps } from './components/AIChatbot';
 export {
@@ -474,5 +476,5 @@ export type {
   ChatMessage as AIKnowledgeChatMessageType,
   SourceAttribution,
   UploadProgress as UploadProgressType,
-  FilterOption,
+  KnowledgeFilterOption,
 } from './types/ai-knowledge.types';
