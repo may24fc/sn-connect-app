@@ -45,6 +45,7 @@ interface TaskKanbanBoardProps {
   tasks: Array<TaskRecord>;
   onStatusChange: (taskId: string, newStatus: TaskStatusDB) => Promise<void>;
   linkPrefix?: string;
+  isUpdating?: boolean;
 }
 
 const formatDate = (value: string | null | undefined): string => {

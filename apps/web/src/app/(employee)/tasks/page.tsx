@@ -29,6 +29,8 @@ import {
   TaskStatusBadge,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { useTableSort } from '@/hooks/useTableSort';
 import { ClipboardList, LayoutGrid, List } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
@@ -325,6 +327,21 @@ interface TaskListViewProps {
 }
 
 function TaskListView({ tasks }: TaskListViewProps) {
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'title' });
+
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+  const statusOrder: Record<string, number> = { pending: 0, in_progress: 1, completed: 2, cancelled: 3 };
+
+  const sortedTasks = sortItems(tasks, {
+    title: (t) => t.title.toLowerCase(),
+    priority: (t) => priorityOrder[t.priority] ?? 99,
+    status: (t) => statusOrder[t.status] ?? 99,
+    due_date: (t) => t.due_date ?? '',
+    assigner_name: (t) => t.assigner_name ?? '',
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
+
   if (tasks.length === 0) {
     return (
       <Card>
@@ -364,16 +381,16 @@ function TaskListView({ tasks }: TaskListViewProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead>Assigned By</TableHead>
+              <SortableTableHead column="title" {...sortHeadProps}>Title</SortableTableHead>
+              <SortableTableHead column="priority" {...sortHeadProps}>Priority</SortableTableHead>
+              <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+              <SortableTableHead column="due_date" {...sortHeadProps}>Due Date</SortableTableHead>
+              <SortableTableHead column="assigner_name" {...sortHeadProps}>Assigned By</SortableTableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tasks.map((task) => (
+            {sortedTasks.map((task) => (
               <TableRow key={task.id}>
                 <TableCell>
                   <p className="text-sm font-medium">{task.title}</p>

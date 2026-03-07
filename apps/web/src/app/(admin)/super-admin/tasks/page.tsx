@@ -1,11 +1,13 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { useCreateTask } from '@/hooks/useCreateTask';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useTaskAssignees } from '@/hooks/useTaskAssignees';
 import { useTasks, type TaskRecord } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
+import { useTableSort } from '@/hooks/useTableSort';
 import type { TaskFilters } from '@/lib/query-keys';
 import {
   Badge,
@@ -396,7 +398,7 @@ export default function TaskManagementPage() {
                         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
                           {assignee.name
                             .split(' ')
-                            .map((n) => n[0])
+                            .map((n: string) => n[0])
                             .join('')
                             .slice(0, 2)}
                         </span>
@@ -483,6 +485,24 @@ function TaskListView({
   tasks: Array<TaskRecord>;
   assigneeById: Map<string, AssigneeInfo>;
 }) {
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+  const statusOrder: Record<string, number> = { pending: 0, in_progress: 1, completed: 2, cancelled: 3 };
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'due_date' });
+
+  const sortedTasks = sortItems(tasks, {
+    title: (t) => t.title.toLowerCase(),
+    assignee: (t) => {
+      const a = t.assigned_to ? assigneeById.get(t.assigned_to) : null;
+      return (a?.name || t.assignee_name || 'Unassigned').toLowerCase();
+    },
+    priority: (t) => priorityOrder[t.priority] ?? 99,
+    status: (t) => statusOrder[t.status] ?? 99,
+    due_date: (t) => t.due_date ?? '',
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
+
   if (tasks.length === 0) {
     return (
       <Card>
@@ -499,16 +519,16 @@ function TaskListView({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Task</TableHead>
-              <TableHead>Assignee</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Due Date</TableHead>
+              <SortableTableHead column="title" {...sortHeadProps}>Task</SortableTableHead>
+              <SortableTableHead column="assignee" {...sortHeadProps}>Assignee</SortableTableHead>
+              <SortableTableHead column="priority" {...sortHeadProps}>Priority</SortableTableHead>
+              <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+              <SortableTableHead column="due_date" {...sortHeadProps}>Due Date</SortableTableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tasks.map((task) => {
+            {sortedTasks.map((task) => {
               const assignee = task.assigned_to ? assigneeById.get(task.assigned_to) : null;
               const assigneeName = assignee?.name || task.assignee_name || 'Unassigned';
               return (
