@@ -1,6 +1,8 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useDirectory, useDirectoryExport } from '@/hooks/useDirectory';
+import type { DirectoryFilters } from '@/hooks/useDirectory';
 import {
   Avatar,
   AvatarFallback,
@@ -41,7 +43,7 @@ import { type ReactNode, useState } from 'react';
 function getInitials(name: string): string {
   return name
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
@@ -77,7 +79,7 @@ export default function AdminDirectoryPage(): ReactNode {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [departmentFilter, _setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('');
   const [sortBy, setSortBy] = useState('full_name');
@@ -85,16 +87,16 @@ export default function AdminDirectoryPage(): ReactNode {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const filters = {
-    search: search || undefined,
-    role: roleFilter || undefined,
-    department: departmentFilter || undefined,
-    status: statusFilter || undefined,
-    employmentType: employmentTypeFilter || undefined,
+  const filters: DirectoryFilters = {
     sortBy,
     sortOrder,
     page,
     pageSize,
+    ...(search && { search }),
+    ...(roleFilter && { role: roleFilter }),
+    ...(departmentFilter && { department: departmentFilter }),
+    ...(statusFilter && { status: statusFilter }),
+    ...(employmentTypeFilter && { employmentType: employmentTypeFilter }),
   };
 
   const { data, isLoading, isError } = useDirectory(filters);
@@ -276,14 +278,45 @@ export default function AdminDirectoryPage(): ReactNode {
       {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
-            Directory
-            {pagination && (
-              <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
-                ({pagination.total} total)
-              </span>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">
+              Directory
+              {pagination && (
+                <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
+                  ({pagination.total} total)
+                </span>
+              )}
+            </CardTitle>
+            {/* Pagination - Gmail style at top */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {(page - 1) * pageSize + 1}-
+                  {Math.min(page * pageSize, pagination.total)} of {pagination.total}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                    disabled={page >= pagination.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </div>
+              </div>
             )}
-          </CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -304,56 +337,12 @@ export default function AdminDirectoryPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[250px]">
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-100"
-                        onClick={() => handleSort('full_name')}
-                      >
-                        Employee
-                        {sortBy === 'full_name' && (
-                          <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </button>
-                    </TableHead>
+                    <SortableTableHead column="full_name" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort} className="w-[250px]">Employee</SortableTableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-100"
-                        onClick={() => handleSort('department_name')}
-                      >
-                        Department
-                        {sortBy === 'department_name' && (
-                          <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </button>
-                    </TableHead>
+                    <SortableTableHead column="department_name" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Department</SortableTableHead>
                     <TableHead>Position</TableHead>
-                    <TableHead>
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-100"
-                        onClick={() => handleSort('status')}
-                      >
-                        Status
-                        {sortBy === 'status' && (
-                          <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </button>
-                    </TableHead>
-                    <TableHead>
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 hover:text-zinc-900 dark:hover:text-zinc-100"
-                        onClick={() => handleSort('start_date')}
-                      >
-                        Start Date
-                        {sortBy === 'start_date' && (
-                          <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </button>
-                    </TableHead>
+                    <SortableTableHead column="status" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Status</SortableTableHead>
+                    <SortableTableHead column="start_date" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Start Date</SortableTableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
@@ -452,35 +441,6 @@ export default function AdminDirectoryPage(): ReactNode {
                   ))}
                 </TableBody>
               </Table>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-zinc-200 dark:border-zinc-800 px-4 py-3">
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                Page {pagination.page} of {pagination.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page <= 1}
-                >
-                  <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
-                  disabled={page >= pagination.totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-                </Button>
-              </div>
             </div>
           )}
         </CardContent>

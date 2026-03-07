@@ -65,9 +65,14 @@ export async function GET(request: NextRequest) {
       query = query.eq('department_name', department);
     }
 
-    // Status filter
+    // Status filter (supports comma-separated values for multi-status filtering)
     if (status) {
-      query = query.eq('status', status);
+      const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        query = query.eq('status', statuses[0]);
+      } else if (statuses.length > 1) {
+        query = query.or(statuses.map((s) => `status.eq.${s}`).join(','));
+      }
     }
 
     // Employment type filter
@@ -108,10 +113,10 @@ export async function GET(request: NextRequest) {
 
     const metadata = {
       total: count || 0,
-      active: allData?.filter((e) => e.status === 'active').length || 0,
-      interns: allData?.filter((e) => e.role === 'intern').length || 0,
-      onLeave: allData?.filter((e) => e.status === 'on_leave').length || 0,
-      probation: allData?.filter((e) => e.status === 'probation').length || 0,
+      active: allData?.filter((e: { status: string | null }) => e.status === 'active').length || 0,
+      interns: allData?.filter((e: { role: string | null }) => e.role === 'intern').length || 0,
+      onLeave: allData?.filter((e: { status: string | null }) => e.status === 'on_leave').length || 0,
+      probation: allData?.filter((e: { status: string | null }) => e.status === 'probation').length || 0,
     };
 
     return NextResponse.json({

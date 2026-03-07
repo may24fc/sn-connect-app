@@ -76,7 +76,17 @@ export async function GET(request: NextRequest) {
         'Contact Number',
       ];
 
-      const csvRows = rows.map((row) =>
+      const csvRows = (rows as Array<{
+        full_name: string | null;
+        role: string | null;
+        department_name: string | null;
+        position: string | null;
+        status: string | null;
+        employment_type: string | null;
+        start_date: string | null;
+        email: string | null;
+        contact_number: string | null;
+      }>).map((row) =>
         [
           escapeCsv(row.full_name),
           escapeCsv(row.role),
