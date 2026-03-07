@@ -285,19 +285,50 @@ export default function AdminNotificationsPage(): ReactNode {
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
-              {pagination.total > 0
-                ? `${pagination.total} notification${pagination.total > 1 ? 's' : ''}`
-                : 'No notifications'}
-            </CardTitle>
-            {notifications.length > 0 && (
-              <button
-                type="button"
-                onClick={toggleSelectAll}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
-              >
-                {selectedIds.size === notifications.length ? 'Deselect All' : 'Select All'}
-              </button>
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-base">
+                {pagination.total > 0
+                  ? `${pagination.total} notification${pagination.total > 1 ? 's' : ''}`
+                  : 'No notifications'}
+              </CardTitle>
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                >
+                  {selectedIds.size === notifications.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+            </div>
+            {/* Pagination - Gmail style at top */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {(pagination.page - 1) * (filters.pageSize ?? 20) + 1}-
+                  {Math.min(pagination.page * (filters.pageSize ?? 20), pagination.total)} of {pagination.total}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={pagination.page <= 1}
+                    onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
+                  >
+                    <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={pagination.page >= pagination.totalPages}
+                    onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
+                  >
+                    <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </CardHeader>
@@ -431,35 +462,6 @@ export default function AdminNotificationsPage(): ReactNode {
           )}
         </CardContent>
       </Card>
-
-      {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Page {pagination.page} of {pagination.totalPages}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pagination.page <= 1}
-              onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
-            >
-              <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
