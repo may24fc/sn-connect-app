@@ -1,7 +1,9 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
+import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
 import {
   Badge,
@@ -60,6 +62,19 @@ export default function ReportsPage() {
   const submitReport = useSubmitReport();
 
   const reports = data?.data || [];
+
+  const statusOrder: Record<string, number> = { draft: 0, submitted: 1, rejected: 2, approved: 3 };
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'submitted_at', initialDirection: 'desc' });
+
+  const sortedReports = sortItems(reports, {
+    report_type: (r) => r.report_type,
+    period: (r) => r.period_start ?? '',
+    status: (r) => statusOrder[r.status] ?? 99,
+    submitted_at: (r) => r.submitted_at ?? '',
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -199,11 +214,11 @@ export default function ReportsPage() {
               <TableHeader>
                 <TableRow>
                   {viewMode === 'grouped' && <TableHead className="w-10" />}
-                  <TableHead>Type</TableHead>
+                  <SortableTableHead column="report_type" {...sortHeadProps}>Type</SortableTableHead>
                   {viewMode === 'grouped' && <TableHead>Group / Path</TableHead>}
-                  <TableHead>Period</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Submitted</TableHead>
+                  <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
+                  <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+                  <SortableTableHead column="submitted_at" {...sortHeadProps}>Submitted</SortableTableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -230,7 +245,7 @@ export default function ReportsPage() {
                     />
                   ))
                 ) : (
-                  reports.map((report) => (
+                  sortedReports.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell className="font-medium">{report.report_type}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">

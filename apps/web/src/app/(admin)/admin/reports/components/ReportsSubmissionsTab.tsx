@@ -1,6 +1,8 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useReports } from '@/hooks/useReports';
+import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
 import {
   Badge,
@@ -146,6 +148,21 @@ export function ReportsSubmissionsTab({
     return all;
   }, [data?.data, showLateOnly]);
 
+  const reportStatusOrder: Record<string, number> = { submitted: 0, draft: 1, rejected: 2, approved: 3 };
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'period', initialDirection: 'desc' });
+
+  const sortedReports = sortItems(reports, {
+    employee: (r) => r.employees ? `${r.employees.first_name} ${r.employees.last_name}`.toLowerCase() : '',
+    department: (r) => r.employees?.department?.toLowerCase() ?? '',
+    type: (r) => r.report_type.toLowerCase(),
+    status: (r) => reportStatusOrder[r.status] ?? 99,
+    period: (r) => r.period_start ?? '',
+    overdue: (r) => getDaysOverdue(r.period_end),
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
+
   /** Calculate days overdue for a report (>7 days past period_end) */
   function getDaysOverdue(periodEnd: string | null | undefined): number {
     if (!periodEnd) return 0;
@@ -287,12 +304,12 @@ export function ReportsSubmissionsTab({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Overdue</TableHead>
+                  <SortableTableHead column="employee" {...sortHeadProps}>Employee</SortableTableHead>
+                  <SortableTableHead column="department" {...sortHeadProps}>Department</SortableTableHead>
+                  <SortableTableHead column="type" {...sortHeadProps}>Type</SortableTableHead>
+                  <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+                  <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
+                  <SortableTableHead column="overdue" {...sortHeadProps}>Overdue</SortableTableHead>
                   <TableHead>Action Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -305,7 +322,7 @@ export function ReportsSubmissionsTab({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  reports.map((report) => (
+                  sortedReports.map((report) => (
                     <TableRow key={report.id}>
                       <TableCell>
                         {report.employees

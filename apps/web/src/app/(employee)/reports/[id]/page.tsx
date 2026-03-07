@@ -1,7 +1,9 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useReport } from '@/hooks/useReport';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
+import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
 import {
   Badge,
@@ -59,6 +61,16 @@ export default function ReportDetailPage({
   }
 
   const metrics = report.report_metrics || [];
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'metric_name' });
+
+  const sortedMetrics = sortItems(metrics, {
+    metric_name: (m) => m.metric_name,
+    metric_value: (m) => m.metric_value,
+    metric_unit: (m) => m.metric_unit ?? '',
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
   // Build KPI cards from metrics
   const kpiCards = metrics.slice(0, 4).map((metric, index) => ({
@@ -191,9 +203,9 @@ export default function ReportDetailPage({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Metric</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Unit</TableHead>
+                <SortableTableHead column="metric_name" {...sortHeadProps}>Metric</SortableTableHead>
+                <SortableTableHead column="metric_value" {...sortHeadProps}>Value</SortableTableHead>
+                <SortableTableHead column="metric_unit" {...sortHeadProps}>Unit</SortableTableHead>
                 <TableHead>Notes</TableHead>
               </TableRow>
             </TableHeader>
@@ -205,7 +217,7 @@ export default function ReportDetailPage({
                   </TableCell>
                 </TableRow>
               ) : (
-                metrics.map((metric) => (
+                sortedMetrics.map((metric) => (
                   <TableRow key={metric.id}>
                     <TableCell className="font-medium">{metric.metric_name}</TableCell>
                     <TableCell className="font-mono">
