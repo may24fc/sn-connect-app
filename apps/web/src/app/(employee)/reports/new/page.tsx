@@ -344,6 +344,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove accomplishment"
                   onClick={() => handleRemoveItem(index, setAccomplishments)}
                 >
                   <X className="h-4 w-4" />
@@ -385,6 +386,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove challenge"
                   onClick={() => handleRemoveItem(index, setChallenges)}
                 >
                   <X className="h-4 w-4" />
@@ -426,6 +428,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove plan"
                   onClick={() => handleRemoveItem(index, setNextWeekPlans)}
                 >
                   <X className="h-4 w-4" />
@@ -489,6 +492,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove metric"
                   onClick={() => handleRemoveMetric(index)}
                 >
                   <X className="h-4 w-4" />

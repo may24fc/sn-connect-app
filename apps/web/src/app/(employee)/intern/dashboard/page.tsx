@@ -326,7 +326,7 @@ export default function InternDashboardPage(): ReactNode {
 
       {/* EOD Report — Slide Panel */}
       <SlidePanel open={showForm && !todayReport} onOpenChange={setShowForm}>
-        <SlidePanelContent size="xl">
+        <SlidePanelContent size="2xl">
           <SlidePanelHeader>
             <SlidePanelTitle className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">

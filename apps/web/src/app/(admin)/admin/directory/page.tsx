@@ -299,6 +299,7 @@ export default function AdminDirectoryPage(): ReactNode {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
+                    aria-label="Previous page"
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page <= 1}
                   >
@@ -308,6 +309,7 @@ export default function AdminDirectoryPage(): ReactNode {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
+                    aria-label="Next page"
                     onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
                     disabled={page >= pagination.totalPages}
                   >

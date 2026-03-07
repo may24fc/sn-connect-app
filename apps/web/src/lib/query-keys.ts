@@ -185,6 +185,22 @@ export interface NotificationFilters {
   type?: string;
 }
 
+export interface JobFilters {
+  search?: string;
+  employmentType?: 'full-time' | 'part-time' | 'internship' | 'contract';
+  isActive?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ApplicationFiltersQuery {
+  search?: string;
+  status?: 'pending' | 'reviewed' | 'shortlisted' | 'interview' | 'rejected' | 'approved' | 'hired';
+  jobPostingId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export const queryKeys = {
   // Employees
   employees: {
@@ -390,6 +406,25 @@ export const queryKeys = {
   pendingApprovals: {
     all: ['pending-approvals'] as const,
     counts: () => [...queryKeys.pendingApprovals.all, 'counts'] as const,
+  },
+
+  // Job Postings
+  jobs: {
+    all: ['jobs'] as const,
+    lists: () => [...queryKeys.jobs.all, 'list'] as const,
+    list: (filters: JobFilters) => [...queryKeys.jobs.lists(), filters] as const,
+    details: () => [...queryKeys.jobs.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.jobs.details(), id] as const,
+  },
+
+  // Job Applications
+  applications: {
+    all: ['applications'] as const,
+    lists: () => [...queryKeys.applications.all, 'list'] as const,
+    list: (filters: ApplicationFiltersQuery) =>
+      [...queryKeys.applications.lists(), filters] as const,
+    details: () => [...queryKeys.applications.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.applications.details(), id] as const,
   },
 } as const;
 

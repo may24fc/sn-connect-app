@@ -253,6 +253,7 @@ export default function InformationHubPage() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
+                    aria-label="Previous page"
                     disabled={announcementPage <= 1}
                     onClick={() => setAnnouncementPage((value) => Math.max(1, value - 1))}
                   >
@@ -262,6 +263,7 @@ export default function InformationHubPage() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
+                    aria-label="Next page"
                     disabled={(announcementData?.pagination.totalPages || 1) <= announcementPage}
                     onClick={() => setAnnouncementPage((value) => value + 1)}
                   >
@@ -355,6 +357,7 @@ export default function InformationHubPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
+                  aria-label="Previous page"
                   disabled={resourcePage <= 1}
                   onClick={() => setResourcePage((value) => Math.max(1, value - 1))}
                 >
@@ -364,6 +367,7 @@ export default function InformationHubPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
+                  aria-label="Next page"
                   disabled={(resourceData?.pagination.totalPages || 1) <= resourcePage}
                   onClick={() => setResourcePage((value) => value + 1)}
                 >
