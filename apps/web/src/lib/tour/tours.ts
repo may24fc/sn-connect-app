@@ -164,7 +164,7 @@ export const adminDashboardTourSteps: TourGuideStep[] = [
     order: 2,
   },
   {
-    title: 'Upcoming Milestones',
+    title: 'Events',
     content: 'Track birthdays and work anniversaries for your team. Never miss a celebration!',
     target: '[data-tour="milestones"]',
     group: 'admin-dashboard',

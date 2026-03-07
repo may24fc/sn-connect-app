@@ -86,6 +86,7 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
     // Dynamically import to keep bundle small
     const { TourGuideClient } = await import('@sjmc11/tourguidejs');
     // Import styles
+    // @ts-ignore - CSS module import without type declarations
     await import('@sjmc11/tourguidejs/dist/css/tour.min.css');
 
     // Exit previous tour if active and clean up
