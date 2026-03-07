@@ -4,10 +4,12 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "dev": "pnpm --filter @hr-portal/web dev",
+    "dev": "pnpm --filter @sn-group/www dev",
+    "dev:web": "pnpm --filter @hr-portal/web dev",
     "dev:mobile": "pnpm --filter @hr-portal/mobile dev",
     "build": "pnpm -r build",
     "build:web": "pnpm --filter @hr-portal/web build",
+    "build:www": "pnpm --filter @sn-group/www build",
     "vercel:deploy:web": "vercel --cwd apps/web --prod",
     "build:packages": "pnpm --filter './packages/*' build",
     "lint": "biome check .",

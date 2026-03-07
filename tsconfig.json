@@ -15,6 +15,7 @@
   },
   "references": [
     { "path": "apps/web" },
+    { "path": "apps/www" },
     { "path": "apps/mobile" },
     { "path": "packages/ui" },
     { "path": "packages/database" },
