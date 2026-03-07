@@ -46,10 +46,9 @@ export async function GET(request: NextRequest) {
     const { data: employees, error } = await supabase
       .from('employees')
       .select(
-        'id, user_id, first_name, last_name, birthday, date_hired, position, department_id, status'
+        'id, user_id, first_name, last_name, birthday, date_hired, position, department'
       )
-      .is('deleted_at', null)
-      .eq('status', 'active');
+      .is('deleted_at', null);
 
     if (error) {
       return NextResponse.json(
@@ -59,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user avatars
-    const userIds = (employees || []).map((e) => e.user_id).filter(Boolean);
+    const userIds = (employees || []).map((e: { user_id: string | null }) => e.user_id).filter(Boolean);
     let users: Array<{ id: string; avatar_url: string | null; role: string }> | null = null;
     if (userIds.length > 0) {
       const { data } = await supabase
@@ -73,15 +72,8 @@ export async function GET(request: NextRequest) {
       (users || []).map((u) => [u.id, { avatar_url: u.avatar_url, role: u.role }])
     );
 
-    // Get department names
-    const deptIds = [...new Set((employees || []).map((e) => e.department_id).filter(Boolean))];
-    let departments: Array<{ id: string; name: string }> | null = null;
-    if (deptIds.length > 0) {
-      const { data } = await supabase.from('departments').select('id, name').in('id', deptIds);
-      departments = data;
-    }
-
-    const deptMap = new Map((departments || []).map((d) => [d.id, d.name]));
+    // Department is stored as text directly on the employees table
+    // No need to join with a departments table
 
     const milestones: Array<{
       employeeId: string;
@@ -127,11 +119,11 @@ export async function GET(request: NextRequest) {
             fullName,
             avatarUrl: userData?.avatar_url ?? null,
             role: userData?.role ?? null,
-            department: emp.department_id ? (deptMap.get(emp.department_id) ?? null) : null,
-            position: emp.position,
+            department: emp.department || null,
+            position: emp.position ?? null,
             type: 'birthday',
             date: emp.birthday,
-            upcomingDate: upcomingBirthday.toISOString().split('T')[0],
+            upcomingDate: upcomingBirthday.toISOString().split('T')[0] ?? '',
             daysUntil,
           });
         }
@@ -162,11 +154,11 @@ export async function GET(request: NextRequest) {
             fullName,
             avatarUrl: userData?.avatar_url ?? null,
             role: userData?.role ?? null,
-            department: emp.department_id ? (deptMap.get(emp.department_id) ?? null) : null,
-            position: emp.position,
+            department: emp.department || null,
+            position: emp.position ?? null,
             type: 'anniversary',
             date: emp.date_hired,
-            upcomingDate: upcomingAnniversary.toISOString().split('T')[0],
+            upcomingDate: upcomingAnniversary.toISOString().split('T')[0] ?? '',
             daysUntil,
             yearsCount,
           });

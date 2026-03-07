@@ -11,12 +11,12 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMilestones } from '@/hooks/useMilestones';
 import { usePendingApprovals } from '@/hooks/usePendingApprovals';
-import { Badge, Button, MilestoneFeed, PendingApprovalsCard, Progress } from '@hr-portal/ui';
+import { Button, MilestoneFeed, PendingApprovalsCard } from '@hr-portal/ui';
 import {
-  BarChart3,
-  Cake,
+  CalendarDays,
   CheckCircle,
   ChevronRight,
   ClipboardList,
@@ -72,20 +72,22 @@ export default function AdminDashboardPage(): ReactNode {
 
   const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
   const { data: pendingData, isLoading: pendingLoading } = usePendingApprovals();
+  const { data: statsData, isLoading: statsLoading } = useDashboardStats();
 
-  // Data would come from API hooks - showing UI structure without data
   const stats = {
-    totalEmployees: 0,
-    activeInterns: 0,
-    performanceReviews: 0,
+    totalEmployees: statsData?.totalEmployees ?? 0,
+    activeInterns: statsData?.activeInterns ?? 0,
+    performanceReviews: statsData?.reviewsDue ?? 0,
+    recentHires: statsData?.recentHires ?? 0,
   };
+
+  // Recent activity placeholder — will be wired when audit_logs API is available
   const recentActivities: Array<{
     id: string;
     action: string;
     employee: string;
     timestamp: string;
   }> = [];
-  const departmentStats: Array<{ name: string; headcount: number; openPositions: number }> = [];
 
   return (
     <div className="h-full space-y-6">
@@ -119,20 +121,41 @@ export default function AdminDashboardPage(): ReactNode {
         <StatCardGrid columns={3}>
           <StatCard
             label="Total Employees"
-            value={stats.totalEmployees}
-            trend={{ direction: 'stable', value: 'No data available' }}
+            value={statsLoading ? '—' : stats.totalEmployees}
+            trend={{
+              direction: stats.recentHires > 0 ? 'up' : 'stable',
+              value: statsLoading
+                ? 'Loading...'
+                : stats.recentHires > 0
+                  ? `+${stats.recentHires} this month`
+                  : 'No new hires this month',
+            }}
             icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
             label="Active Interns"
-            value={stats.activeInterns}
-            trend={{ direction: 'stable', value: 'No data available' }}
+            value={statsLoading ? '—' : stats.activeInterns}
+            trend={{
+              direction: stats.activeInterns > 0 ? 'up' : 'stable',
+              value: statsLoading
+                ? 'Loading...'
+                : stats.activeInterns > 0
+                  ? `${stats.activeInterns} currently active`
+                  : 'No active interns',
+            }}
             icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
             label="Reviews Due"
-            value={stats.performanceReviews}
-            trend={{ direction: 'stable', value: 'No data available' }}
+            value={statsLoading ? '—' : stats.performanceReviews}
+            trend={{
+              direction: stats.performanceReviews > 0 ? 'up' : 'stable',
+              value: statsLoading
+                ? 'Loading...'
+                : stats.performanceReviews > 0
+                  ? `${stats.performanceReviews} awaiting review`
+                  : 'All reviews completed',
+            }}
             icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
           />
         </StatCardGrid>
@@ -140,50 +163,21 @@ export default function AdminDashboardPage(): ReactNode {
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
-        {/* Department Overview Card */}
-        <BentoCard colSpan={2} data-tour="department-overview">
+        {/* Milestones - Birthdays & Anniversaries */}
+        <BentoCard colSpan={2} data-tour="milestones">
           <BentoCardHeader>
-            <BentoCardTitle icon={<BarChart3 className="h-4 w-4" strokeWidth={1.5} />}>
-              Department Overview
+            <BentoCardTitle icon={<CalendarDays className="h-4 w-4" strokeWidth={1.5} />}>
+              Events
             </BentoCardTitle>
-            <Link href="/admin/teams">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                Manage
-              </Button>
-            </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            {departmentStats.length > 0 ? (
-              <div className="space-y-4">
-                {departmentStats.map((dept) => (
-                  <div key={dept.name} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {dept.name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
-                          {dept.headcount} employees
-                        </span>
-                        {dept.openPositions > 0 && (
-                          <Badge variant="secondary" className="text-xs h-5">
-                            {dept.openPositions} open
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <Progress value={(dept.headcount / 100) * 100} className="h-1.5" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={BarChart3}
-                title="No department data"
-                description="Department statistics will appear here once data is available"
-                action={{ label: 'Manage Departments', href: '/admin/teams' }}
-              />
-            )}
+            <MilestoneFeed
+              milestones={milestonesData?.data || []}
+              {...(milestonesData?.grouped !== undefined && { grouped: milestonesData.grouped })}
+              isLoading={milestonesLoading}
+              maxItems={6}
+              compact
+            />
           </BentoCardContent>
         </BentoCard>
 
@@ -234,24 +228,6 @@ export default function AdminDashboardPage(): ReactNode {
                 description="Recent HR activities will appear here"
               />
             )}
-          </BentoCardContent>
-        </BentoCard>
-
-        {/* Milestones - Birthdays & Anniversaries */}
-        <BentoCard colSpan={2} data-tour="milestones">
-          <BentoCardHeader>
-            <BentoCardTitle icon={<Cake className="h-4 w-4" strokeWidth={1.5} />}>
-              Upcoming Milestones
-            </BentoCardTitle>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <MilestoneFeed
-              milestones={milestonesData?.milestones || []}
-              grouped={milestonesData?.grouped}
-              isLoading={milestonesLoading}
-              maxItems={6}
-              compact
-            />
           </BentoCardContent>
         </BentoCard>
 

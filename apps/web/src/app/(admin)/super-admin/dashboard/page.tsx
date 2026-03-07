@@ -10,6 +10,7 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
 import { Badge, Button, Progress } from '@hr-portal/ui';
 import {
   Activity,
@@ -25,14 +26,7 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// TODO: Replace with actual API data
-const systemStats = {
-  totalUsers: 0,
-  activeUsers: 0,
-  systemUptime: 0,
-  auditLogs: 0,
-};
-
+// Security alerts remain placeholder until an alerting system is implemented
 const securityAlerts: Array<{
   id: string;
   type: string;
@@ -41,20 +35,7 @@ const securityAlerts: Array<{
   timestamp: string;
 }> = [];
 
-const userRoleDistribution: Array<{
-  role: string;
-  count: number;
-  percentage: number;
-}> = [];
-
-const recentAuditLogs: Array<{
-  id: string;
-  user: string;
-  action: string;
-  details: string;
-  timestamp: string;
-}> = [];
-
+// System health remains placeholder until monitoring is implemented
 const systemHealth: Array<{
   component: string;
   status: 'healthy' | 'degraded';
@@ -99,6 +80,15 @@ export default function SuperAdminDashboardPage(): ReactNode {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
+  const { data: statsData, isLoading } = useSuperAdminStats();
+
+  const systemStats = {
+    totalUsers: statsData?.totalUsers ?? 0,
+    activeUsers: statsData?.activeUsers ?? 0,
+    auditLogs: statsData?.auditLogsCount ?? 0,
+  };
+  const userRoleDistribution = statsData?.userRoleDistribution ?? [];
+  const recentAuditLogs = statsData?.recentAuditLogs ?? [];
 
   return (
     <div className="h-full space-y-6">
@@ -125,26 +115,32 @@ export default function SuperAdminDashboardPage(): ReactNode {
         <StatCardGrid columns={4}>
           <StatCard
             label="Total Users"
-            value={systemStats.totalUsers}
-            trend={{ direction: 'up', value: `${systemStats.activeUsers} active` }}
+            value={isLoading ? '—' : systemStats.totalUsers}
+            trend={{
+              direction: systemStats.activeUsers > 0 ? 'up' : 'stable',
+              value: isLoading ? 'Loading...' : `${systemStats.activeUsers} active`,
+            }}
             icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
             label="System Uptime"
-            value={`${systemStats.systemUptime}%`}
-            trend={{ direction: 'up', value: 'Last 30 days' }}
+            value="—"
+            trend={{ direction: 'stable', value: 'Monitoring not configured' }}
             icon={<Activity className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
             label="Security Alerts"
             value={securityAlerts.length}
-            trend={{ direction: 'down', value: 'Requires attention' }}
+            trend={{ direction: 'stable', value: 'No alerts configured' }}
             icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
             label="Audit Logs"
-            value={systemStats.auditLogs}
-            trend={{ direction: 'stable', value: 'This month' }}
+            value={isLoading ? '—' : systemStats.auditLogs}
+            trend={{
+              direction: systemStats.auditLogs > 0 ? 'up' : 'stable',
+              value: isLoading ? 'Loading...' : 'This month',
+            }}
             icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
           />
         </StatCardGrid>
@@ -332,13 +328,10 @@ export default function SuperAdminDashboardPage(): ReactNode {
                           {log.action}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          By: {log.user} - {log.details}
+                          {log.details ? `${log.details} • ` : ''}{new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 flex-shrink-0">
-                      {log.timestamp}
-                    </span>
                   </div>
                 ))
               ) : (

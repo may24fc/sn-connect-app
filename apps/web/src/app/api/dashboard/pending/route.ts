@@ -56,33 +56,37 @@ export async function GET(): Promise<NextResponse> {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
-    // Get active interns
+    // Get active interns (need both internship id and employee_id)
     const { data: activeInterns } = await supabase
       .from('internships')
-      .select('employee_id')
+      .select('id, employee_id')
       .eq('status', 'active');
 
     let lateEodCount = 0;
     if (activeInterns && activeInterns.length > 0) {
-      const internEmployeeIds = activeInterns.map((i) => i.employee_id);
+      const internshipIds = activeInterns.map((i: { id: string }) => i.id);
 
-      // Get interns who submitted yesterday
-      const { data: submittedStandups } = await supabase
+      // Get interns who submitted yesterday — intern_daily_logs uses internship_id, not employee_id
+      const { data: submittedLogs } = await supabase
         .from('intern_daily_logs')
-        .select('employee_id')
-        .in('employee_id', internEmployeeIds)
+        .select('internship_id')
+        .in('internship_id', internshipIds)
         .gte('log_date', yesterdayStr)
         .lte('log_date', yesterdayStr);
 
-      const submittedIds = new Set((submittedStandups ?? []).map((s) => s.employee_id));
-      lateEodCount = internEmployeeIds.filter((id) => !submittedIds.has(id)).length;
+      const submittedInternshipIds = new Set(
+        (submittedLogs ?? []).map((s: { internship_id: string }) => s.internship_id)
+      );
+      lateEodCount = activeInterns.filter(
+        (i: { id: string }) => !submittedInternshipIds.has(i.id)
+      ).length;
     }
 
     // Calculate overdue items
     const now = new Date();
     let overdueReports = 0;
     if (pendingReports) {
-      overdueReports = pendingReports.filter((r) => {
+      overdueReports = pendingReports.filter((r: { period_end?: string | null }) => {
         if (!r.period_end) return false;
         const periodEnd = new Date(r.period_end);
         const daysSince = Math.floor((now.getTime() - periodEnd.getTime()) / 86_400_000);
