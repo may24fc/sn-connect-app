@@ -66,12 +66,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Status filter (supports comma-separated values for multi-status filtering)
+    // Note: 'probation' is not a valid user_status enum value.
+    // Probation is tracked via employment_type='probationary', so we translate accordingly.
     if (status) {
       const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
-      if (statuses.length === 1) {
-        query = query.eq('status', statuses[0]);
-      } else if (statuses.length > 1) {
-        query = query.or(statuses.map((s) => `status.eq.${s}`).join(','));
+      const hasProbation = statuses.includes('probation');
+      const validStatuses = statuses.filter((s) => s !== 'probation');
+
+      if (hasProbation && validStatuses.length > 0) {
+        const orParts = validStatuses.map((s) => `status.eq.${s}`);
+        orParts.push('employment_type.eq.probationary');
+        query = query.or(orParts.join(','));
+      } else if (hasProbation) {
+        query = query.eq('employment_type', 'probationary');
+      } else if (validStatuses.length === 1) {
+        query = query.eq('status', validStatuses[0]);
+      } else if (validStatuses.length > 1) {
+        query = query.or(validStatuses.map((s) => `status.eq.${s}`).join(','));
       }
     }
 
@@ -109,14 +120,14 @@ export async function GET(request: NextRequest) {
     // Get aggregate metadata
     const { data: allData } = await supabase
       .from('employee_directory')
-      .select('role, status, internship_status');
+      .select('role, status, internship_status, employment_type');
 
     const metadata = {
       total: count || 0,
       active: allData?.filter((e: { status: string | null }) => e.status === 'active').length || 0,
       interns: allData?.filter((e: { role: string | null }) => e.role === 'intern').length || 0,
       onLeave: allData?.filter((e: { status: string | null }) => e.status === 'on_leave').length || 0,
-      probation: allData?.filter((e: { status: string | null }) => e.status === 'probation').length || 0,
+      probation: allData?.filter((e: { employment_type: string | null }) => e.employment_type === 'probationary').length || 0,
     };
 
     return NextResponse.json({

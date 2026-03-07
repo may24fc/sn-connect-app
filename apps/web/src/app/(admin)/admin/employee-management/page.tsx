@@ -1,5 +1,6 @@
 'use client';
 
+import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useProbation } from '@/hooks/useProbation';
 import {
@@ -7,6 +8,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -23,13 +25,16 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Eye,
   LayoutGrid,
   List,
   Search,
   TrendingUp,
   UserCog,
+  UserPlus,
   Users,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
 function getInitials(name: string): string {
@@ -232,9 +237,11 @@ const SAMPLE_PROBATION_EMPLOYEES: Array<{
 type ProbationView = 'cards' | 'list';
 
 export default function EmployeeManagementPage(): ReactNode {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('probation');
   const [searchTerm, setSearchTerm] = useState('');
   const [probationView, setProbationView] = useState<ProbationView>('cards');
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
   // Probation data
   const { data: probationData, isLoading: probationLoading } = useProbation();
@@ -267,16 +274,22 @@ export default function EmployeeManagementPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <UserCog className="h-5 w-5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            Employee Management
-          </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <UserCog className="h-5 w-5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              Employee Management
+            </h1>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Manage employee probation, onboarding, and directory access
+          </p>
         </div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Manage employee probation, onboarding, and directory access
-        </p>
+        <Button onClick={() => setInviteModalOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite Employee
+        </Button>
       </div>
 
       {/* Search */}
@@ -443,6 +456,15 @@ export default function EmployeeManagementPage(): ReactNode {
                                 </span>
                               </div>
                             )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-1"
+                              onClick={() => router.push('/admin/probation')}
+                            >
+                              <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+                              Evaluate
+                            </Button>
                           </CardContent>
                         </Card>
                       );
@@ -453,12 +475,13 @@ export default function EmployeeManagementPage(): ReactNode {
                 <Card>
                   <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     {/* List Header */}
-                    <div className="grid grid-cols-[1fr_120px_160px_120px_100px] gap-4 px-4 py-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/30">
+                    <div className="grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/30">
                       <span>Employee</span>
                       <span>Department</span>
                       <span>Stage</span>
                       <span>Probation End</span>
                       <span>Status</span>
+                      <span>Action</span>
                     </div>
                     {filteredProbation.map(
                       (emp: {
@@ -488,7 +511,7 @@ export default function EmployeeManagementPage(): ReactNode {
                         return (
                           <div
                             key={emp.id}
-                            className={`grid grid-cols-[1fr_120px_160px_120px_100px] gap-4 px-4 py-3 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors ${
+                            className={`grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-3 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors ${
                               isUrgent ? 'bg-amber-50/50 dark:bg-amber-950/10' : ''
                             }`}
                           >
@@ -544,6 +567,15 @@ export default function EmployeeManagementPage(): ReactNode {
                               <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
                               {statusCfg.label}
                             </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              onClick={() => router.push('/admin/probation')}
+                            >
+                              <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
+                              View
+                            </Button>
                           </div>
                         );
                       }
@@ -640,6 +672,12 @@ export default function EmployeeManagementPage(): ReactNode {
 
 
       </Tabs>
+
+      <InviteUserModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
+        defaultRole="employee"
+      />
     </div>
   );
 }
