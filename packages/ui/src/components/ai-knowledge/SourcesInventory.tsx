@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Badge } from '../../primitives/badge';
-import type { AccessLevel, FilterOption, KnowledgeSource } from '../../types/ai-knowledge.types';
+import type { AccessLevel, KnowledgeFilterOption, KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { SourceFilters } from './SourceFilters';
 import { SourceRow } from './SourceRow';
@@ -21,7 +21,7 @@ export function SourcesInventory({
   className,
 }: SourcesInventoryProps): React.ReactNode {
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [filterOption, setFilterOption] = React.useState<FilterOption>('all');
+  const [filterOption, setFilterOption] = React.useState<KnowledgeFilterOption>('all');
 
   const filteredSources = React.useMemo(() => {
     let filtered = sources;

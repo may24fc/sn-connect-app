@@ -36,4 +36,6 @@ export interface UploadProgress {
   progress: number;
 }
 
-export type FilterOption = 'all' | 'ready' | 'indexing' | 'error';
+export type KnowledgeFilterOption = 'all' | 'ready' | 'indexing' | 'error';
+/** @deprecated Use KnowledgeFilterOption instead */
+export type FilterOption = KnowledgeFilterOption;
