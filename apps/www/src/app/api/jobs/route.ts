@@ -4,20 +4,17 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const unit = searchParams.get('unit');
     const type = searchParams.get('type');
 
     const supabase = createSupabaseServerClient();
 
     let query = supabase
       .from('job_postings')
-      .select('*')
+      .select('*, business_units(slug, name)')
       .eq('is_active', true)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
-    if (unit) {
-      query = query.eq('business_unit_id', unit);
-    }
     if (type) {
       query = query.eq('employment_type', type);
     }

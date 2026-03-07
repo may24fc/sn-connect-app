@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { CULTURE_VALUES, LIFE_PHOTOS, COMPANY } from '@/data/placeholder';
+import { CULTURE_VALUES, LIFE_PHOTOS, COMPANY, EMPLOYEE_SPOTLIGHTS } from '@/data/placeholder';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { CultureHighlights } from '@/components/life/CultureHighlights';
 import { MasonryGrid } from '@/components/life/MasonryGrid';
+import { EmployeeSpotlight } from '@/components/life/EmployeeSpotlight';
 import { CTAButton } from '@/components/shared/CTAButton';
 
 export const metadata: Metadata = {
@@ -64,37 +65,8 @@ export default function LifeAtSNPage() {
           />
         </ScrollReveal>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {[
-            {
-              name: 'Andrea Reyes',
-              role: 'Operations Lead, SFO',
-              tenure: '4 years',
-              quote:
-                'What I love most about SN is the trust and autonomy. I was given the freedom to innovate our meal programs, and the leadership always supported me.',
-            },
-            {
-              name: 'Marco Santos',
-              role: 'Sales Manager, UHP',
-              tenure: '3 years',
-              quote:
-                'SN invests in your growth. I started as a sales executive and within three years, I was leading a team. The opportunities here are real.',
-            },
-          ].map((spotlight, i) => (
-            <ScrollReveal key={spotlight.name} delay={i * 0.15}>
-              <div className="rounded-xl border border-zinc-200 bg-white p-8 shadow-card">
-                <p className="text-zinc-600 italic leading-relaxed">
-                  &ldquo;{spotlight.quote}&rdquo;
-                </p>
-                <div className="mt-4 border-t border-zinc-200 pt-4">
-                  <p className="font-semibold text-zinc-900">{spotlight.name}</p>
-                  <p className="text-sm text-zinc-500">
-                    {spotlight.role} · {spotlight.tenure}
-                  </p>
-                </div>
-              </div>
-            </ScrollReveal>
-          ))}
+        <div className="mt-10 mx-auto max-w-3xl">
+          <EmployeeSpotlight spotlights={EMPLOYEE_SPOTLIGHTS} />
         </div>
       </section>
 

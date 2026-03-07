@@ -13,9 +13,40 @@ const applicationBodySchema = z.object({
   full_name: z.string().min(2).max(200),
   email: z.string().email().max(320),
   phone: z.string().max(30).optional(),
-  job_posting_id: z.string().uuid(),
+  job_posting_id: z.string().min(1, { message: 'Job posting ID is required' }),
   cover_letter: z.string().max(10000).optional(),
 });
+
+/**
+ * GET /api/applications
+ * Returns a map of { [job_posting_id]: count } for displaying applicant counts publicly.
+ * Uses the admin client so RLS does not block the aggregate read.
+ */
+export async function GET() {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from('job_applications')
+      .select('job_posting_id');
+
+    if (error) {
+      console.error('Applicant count fetch error:', error.message);
+      return NextResponse.json({ counts: {} });
+    }
+
+    const counts: Record<string, number> = {};
+    for (const row of data ?? []) {
+      const id: string = row.job_posting_id;
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
+
+    return NextResponse.json({ counts }, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch {
+    return NextResponse.json({ counts: {} });
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,10 +112,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to upload resume' }, { status: 500 });
       }
 
-      const { data: urlData } = supabase.storage
-        .from('applications')
-        .getPublicUrl(filePath);
-      resumeUrl = urlData.publicUrl;
+      // Store the file path, not a public URL (bucket is private; signed URLs are generated on demand)
+      resumeUrl = filePath;
     }
 
     // Insert application
@@ -94,6 +123,7 @@ export async function POST(request: NextRequest) {
       phone: parsed.data.phone ?? null,
       job_posting_id: parsed.data.job_posting_id,
       cover_letter: parsed.data.cover_letter ?? null,
+      cv_url: resumeUrl ?? '',
       resume_url: resumeUrl,
     });
 

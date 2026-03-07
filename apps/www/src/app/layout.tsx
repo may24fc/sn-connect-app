@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { Providers } from './providers';
 
 const inter = Inter({
@@ -11,6 +12,34 @@ const inter = Inter({
   variable: '--font-inter',
   display: 'swap',
 });
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'SN International Group',
+  url: 'https://sninternational.com',
+  logo: 'https://sninternational.com/logo.svg',
+  description:
+    'SN International Group is a diversified conglomerate committed to excellence across food service, healthcare, fitness, and construction in the Philippines.',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'SN International Tower, Bonifacio Global City',
+    addressLocality: 'Taguig',
+    addressRegion: 'Metro Manila',
+    addressCountry: 'PH',
+  },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    telephone: '+63-2-8123-4567',
+    contactType: 'customer service',
+    availableLanguage: ['English', 'Filipino'],
+  },
+  sameAs: [
+    'https://facebook.com/sninternational',
+    'https://linkedin.com/company/sninternational',
+    'https://instagram.com/sninternational',
+  ],
+};
 
 export const metadata: Metadata = {
   title: {
@@ -28,6 +57,10 @@ export const metadata: Metadata = {
     'Philippines',
     'conglomerate',
   ],
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/apple-touch-icon.svg', type: 'image/svg+xml' }],
+  },
   openGraph: {
     type: 'website',
     locale: 'en_PH',
@@ -45,10 +78,17 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="min-h-screen font-sans antialiased">
         <Providers>
+          <ScrollProgress />
           <Header />
-          <main>{children}</main>
+          <main id="main-content">{children}</main>
           <Footer />
         </Providers>
       </body>

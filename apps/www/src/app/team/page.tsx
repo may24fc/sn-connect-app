@@ -4,6 +4,9 @@ import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { ExecutivePortraits } from '@/components/team/ExecutivePortraits';
 import { TeamGrid } from '@/components/team/TeamGrid';
+import { CountUpStats } from '@/components/team/CountUpStats';
+import { OpenRolesTeaser } from '@/components/team/OpenRolesTeaser';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Meet the Team',
@@ -11,49 +14,68 @@ export const metadata: Metadata = {
     'Meet the leadership and people behind SN International Group. Our team drives innovation across all business units.',
 };
 
+async function getOpenRolesCount(): Promise<number> {
+  try {
+    const supabase = createSupabaseServerClient();
+    const { count } = await supabase
+      .from('job_postings')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .is('deleted_at', null);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 const EXECUTIVES = [
   {
-    name: 'CEO Name',
+    name: 'Alfonso Natividad',
     title: 'Chief Executive Officer',
     bio: 'Visionary leader with 20+ years of experience building diversified businesses across the Philippines. Drives the strategic direction and culture of SN International Group.',
-    linkedin: '#',
     email: 'ceo@sninternational.com',
   },
   {
-    name: 'COO Name',
+    name: 'Patricia Reyes',
     title: 'Chief Operating Officer',
     bio: 'Operational excellence expert overseeing day-to-day operations across all four business units. Focused on efficiency, quality, and continuous improvement.',
-    linkedin: '#',
     email: 'coo@sninternational.com',
   },
   {
-    name: 'CFO Name',
+    name: 'Marco Villanueva',
     title: 'Chief Financial Officer',
     bio: 'Financial strategist ensuring sustainable growth, profitability, and sound fiscal management across the group.',
-    linkedin: '#',
     email: 'cfo@sninternational.com',
   },
   {
-    name: 'CHRO Name',
+    name: 'Camille Soriano',
     title: 'Chief Human Resources Officer',
     bio: 'People-first leader driving talent acquisition, employee development, and the culture that makes SN International a top employer.',
-    linkedin: '#',
     email: 'chro@sninternational.com',
   },
 ];
 
 const TEAM_MEMBERS = [
-  { name: 'Director 1', title: 'Director of Operations', department: 'SFO' },
-  { name: 'Director 2', title: 'Head of Sales', department: 'UHP' },
-  { name: 'Director 3', title: 'Club Manager', department: '24 Fit Club' },
-  { name: 'Director 4', title: 'Project Director', department: 'SN Construction' },
-  { name: 'Manager 1', title: 'Marketing Manager', department: 'Corporate' },
-  { name: 'Manager 2', title: 'IT Manager', department: 'Corporate' },
-  { name: 'Manager 3', title: 'Quality Assurance Lead', department: 'SFO' },
-  { name: 'Manager 4', title: 'Supply Chain Manager', department: 'UHP' },
+  { name: 'Benito Castillo', title: 'Director of Operations', department: 'SFO' },
+  { name: 'Angelica Mendoza', title: 'Head of Sales', department: 'UHP' },
+  { name: 'Rafael Dizon', title: 'Club Manager', department: '24 Fit Club' },
+  { name: 'Teresa Bautista', title: 'Project Director', department: 'SN Construction' },
+  { name: 'Enrique Salazar', title: 'Marketing Manager', department: 'Corporate' },
+  { name: 'Danielle Aquino', title: 'IT Manager', department: 'Corporate' },
+  { name: 'Carlos Manalo', title: 'Quality Assurance Lead', department: 'SFO' },
+  { name: 'Vivian Tan', title: 'Supply Chain Manager', department: 'UHP' },
 ];
 
-export default function TeamPage() {
+export default async function TeamPage() {
+  const openRolesCount = await getOpenRolesCount();
+
+  const TEAM_STATS = [
+    { value: 500, suffix: '+', label: 'Team Members' },
+    { value: 4, suffix: '', label: 'Business Units' },
+    { value: 15, suffix: '+', label: 'Years of Experience' },
+    { value: openRolesCount, suffix: '', label: 'Open Positions' },
+  ];
+
   return (
     <>
       {/* Hero */}
@@ -69,20 +91,22 @@ export default function TeamPage() {
       </section>
 
       {/* Executive Leadership */}
-      <section className="section-max section-padding py-16">
-        <ScrollReveal>
-          <SectionHeading
-            title="Executive Leadership"
-            subtitle="Our senior leadership team sets the strategic direction and culture of the organization."
-          />
-        </ScrollReveal>
-        <div className="mt-10">
-          <ExecutivePortraits executives={EXECUTIVES} />
+      <section className="bg-white py-20">
+        <div className="section-max section-padding">
+          <ScrollReveal>
+            <SectionHeading
+              title="Executive Leadership"
+              subtitle="Our senior leadership team sets the strategic direction and culture of the organization."
+            />
+          </ScrollReveal>
+          <div className="mt-10">
+            <ExecutivePortraits executives={EXECUTIVES} />
+          </div>
         </div>
       </section>
 
       {/* Management Team */}
-      <section className="bg-zinc-50 py-16">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-zinc-50 to-indigo-50/30 py-20">
         <div className="section-max section-padding">
           <ScrollReveal>
             <SectionHeading
@@ -97,25 +121,34 @@ export default function TeamPage() {
       </section>
 
       {/* Team stats */}
-      <section className="section-max section-padding py-16">
-        <ScrollReveal>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { value: '500+', label: 'Team Members' },
-              { value: '4', label: 'Business Units' },
-              { value: '15+', label: 'Years of Experience' },
-              { value: '20+', label: 'Industry Awards' },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-card"
-              >
-                <p className="text-4xl font-bold text-indigo-600">{stat.value}</p>
-                <p className="mt-2 text-sm font-medium text-zinc-600">{stat.label}</p>
-              </div>
-            ))}
+      <section className="relative overflow-hidden py-16">
+        {/* Dot matrix background */}
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle, #4F46E5 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+          }}
+        />
+        <div className="section-max section-padding relative">
+          <CountUpStats stats={TEAM_STATS} />
+        </div>
+      </section>
+
+      {/* Open Positions */}
+      <section className="bg-zinc-50 py-20">
+        <div className="section-max section-padding">
+          <ScrollReveal>
+            <SectionHeading
+              title="Open Positions"
+              subtitle="We're hiring across all business units. Find your role and grow with us."
+            />
+          </ScrollReveal>
+          <div className="mt-10">
+            <OpenRolesTeaser />
           </div>
-        </ScrollReveal>
+        </div>
       </section>
     </>
   );
