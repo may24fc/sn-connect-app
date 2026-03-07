@@ -33,6 +33,8 @@ import {
 import type { FilterOption } from '@hr-portal/ui';
 import {
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
   Megaphone,
   Search,
   Star,
@@ -205,38 +207,69 @@ export default function InformationHubPage() {
         </TabsList>
 
         <TabsContent value="announcements" className="space-y-4">
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            <MultiSelectFilter
-              label="Category"
-              options={announcementCategoryOptions}
-              selected={selectedCategories}
-              onSelectionChange={(values) => {
-                setSelectedCategories(values);
-                setAnnouncementPage(1);
-              }}
-            />
-            <MultiSelectFilter
-              label="Status"
-              options={readStatusOptions}
-              selected={selectedReadStatuses}
-              onSelectionChange={(values) => {
-                setSelectedReadStatuses(values);
-                setAnnouncementPage(1);
-              }}
-            />
-            <ActiveFilterBadges
-              options={[...announcementCategoryOptions, ...readStatusOptions]}
-              selected={[...selectedCategories, ...selectedReadStatuses]}
-              onRemove={(value) => {
-                if (selectedCategories.includes(value)) {
-                  setSelectedCategories((prev) => prev.filter((v) => v !== value));
-                } else {
-                  setSelectedReadStatuses((prev) => prev.filter((v) => v !== value));
-                }
-                setAnnouncementPage(1);
-              }}
-            />
+          {/* Filters & Pagination */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <MultiSelectFilter
+                label="Category"
+                options={announcementCategoryOptions}
+                selected={selectedCategories}
+                onSelectionChange={(values) => {
+                  setSelectedCategories(values);
+                  setAnnouncementPage(1);
+                }}
+              />
+              <MultiSelectFilter
+                label="Status"
+                options={readStatusOptions}
+                selected={selectedReadStatuses}
+                onSelectionChange={(values) => {
+                  setSelectedReadStatuses(values);
+                  setAnnouncementPage(1);
+                }}
+              />
+              <ActiveFilterBadges
+                options={[...announcementCategoryOptions, ...readStatusOptions]}
+                selected={[...selectedCategories, ...selectedReadStatuses]}
+                onRemove={(value) => {
+                  if (selectedCategories.includes(value)) {
+                    setSelectedCategories((prev) => prev.filter((v) => v !== value));
+                  } else {
+                    setSelectedReadStatuses((prev) => prev.filter((v) => v !== value));
+                  }
+                  setAnnouncementPage(1);
+                }}
+              />
+            </div>
+            {/* Pagination - Gmail style at top */}
+            {(announcementData?.pagination.totalPages ?? 1) > 1 && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {(announcementPage - 1) * 10 + 1}-
+                  {Math.min(announcementPage * 10, announcementData?.pagination.total ?? 0)} of {announcementData?.pagination.total ?? 0}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={announcementPage <= 1}
+                    onClick={() => setAnnouncementPage((value) => Math.max(1, value - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={(announcementData?.pagination.totalPages || 1) <= announcementPage}
+                    onClick={() => setAnnouncementPage((value) => value + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {urgentAnnouncements.map((announcement) => (
@@ -307,33 +340,39 @@ export default function InformationHubPage() {
               ))}
             </div>
           )}
-
-          {/* Announcement pagination */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              disabled={announcementPage <= 1}
-              onClick={() => setAnnouncementPage((value) => Math.max(1, value - 1))}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">
-              Page {announcementPage}
-              {announcementData?.pagination.totalPages
-                ? ` of ${announcementData.pagination.totalPages}`
-                : ''}
-            </span>
-            <Button
-              variant="outline"
-              disabled={(announcementData?.pagination.totalPages || 1) <= announcementPage}
-              onClick={() => setAnnouncementPage((value) => value + 1)}
-            >
-              Next
-            </Button>
-          </div>
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-6">
+          {/* Pagination - Gmail style at top */}
+          {(resourceData?.pagination.totalPages ?? 1) > 1 && (
+            <div className="flex items-center justify-end gap-3">
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                {(resourcePage - 1) * 12 + 1}-
+                {Math.min(resourcePage * 12, resourceData?.pagination.total ?? 0)} of {resourceData?.pagination.total ?? 0}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={resourcePage <= 1}
+                  onClick={() => setResourcePage((value) => Math.max(1, value - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={(resourceData?.pagination.totalPages || 1) <= resourcePage}
+                  onClick={() => setResourcePage((value) => value + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {featuredResources.length > 0 ? (
             <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3 flex items-center gap-2">
@@ -439,24 +478,6 @@ export default function InformationHubPage() {
               </CardContent>
             </Card>
           ) : null}
-
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              disabled={resourcePage <= 1}
-              onClick={() => setResourcePage((value) => Math.max(1, value - 1))}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">Page {resourcePage}</span>
-            <Button
-              variant="outline"
-              disabled={(resourceData?.pagination.totalPages || 1) <= resourcePage}
-              onClick={() => setResourcePage((value) => value + 1)}
-            >
-              Next
-            </Button>
-          </div>
         </TabsContent>
 
 

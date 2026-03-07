@@ -2,6 +2,7 @@
 
 import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
+import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateRange, formatLabel } from '@/lib/format';
 import {
   Badge,
@@ -28,8 +29,11 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { Eye } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+
+const MASKED_AMOUNT = '••••••';
 
 const statusVariant: Record<
   'draft' | 'submitted' | 'approved' | 'paid' | 'rejected',
@@ -67,11 +71,14 @@ function InvoiceDetailDialog({
   invoice,
   open,
   onOpenChange,
+  showAmounts,
 }: {
   invoice: InvoiceRecord | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  showAmounts: boolean;
 }) {
+  const amount = (v: number) => (showAmounts ? formatCurrency(v) : MASKED_AMOUNT);
   if (!invoice) return null;
 
   return (
@@ -94,11 +101,14 @@ function InvoiceDetailDialog({
           />
           <DetailRow
             label="Gross Amount"
-            value={formatCurrency(Number(invoice.gross_amount || 0))}
+            value={amount(Number(invoice.gross_amount || 0))}
           />
-          <DetailRow label="Deductions" value={formatCurrency(Number(invoice.deductions || 0))} />
+          <DetailRow label="Deductions" value={amount(Number(invoice.deductions || 0))} />
           <Separator className="my-2" />
-          <DetailRow label="Net Amount" value={formatCurrency(Number(invoice.net_amount || 0))} />
+          <DetailRow
+            label="Net Amount"
+            value={amount(Number(invoice.net_amount || 0))}
+          />
           {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
           <Separator className="my-2" />
           <DetailRow label="Created" value={formatDate(invoice.created_at)} />
@@ -130,13 +140,16 @@ function SubmitConfirmDialog({
   onOpenChange,
   onConfirm,
   isPending,
+  showAmounts,
 }: {
   invoice: InvoiceRecord | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   isPending: boolean;
+  showAmounts: boolean;
 }) {
+  const amount = (v: number) => (showAmounts ? formatCurrency(v) : MASKED_AMOUNT);
   if (!invoice) return null;
 
   return (
@@ -158,11 +171,14 @@ function SubmitConfirmDialog({
           />
           <DetailRow
             label="Gross Amount"
-            value={formatCurrency(Number(invoice.gross_amount || 0))}
+            value={amount(Number(invoice.gross_amount || 0))}
           />
-          <DetailRow label="Deductions" value={formatCurrency(Number(invoice.deductions || 0))} />
+          <DetailRow label="Deductions" value={amount(Number(invoice.deductions || 0))} />
           <Separator className="my-2" />
-          <DetailRow label="Net Amount" value={formatCurrency(Number(invoice.net_amount || 0))} />
+          <DetailRow
+            label="Net Amount"
+            value={amount(Number(invoice.net_amount || 0))}
+          />
           {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
         </div>
 
@@ -185,6 +201,9 @@ function SubmitConfirmDialog({
 export default function InvoicePage() {
   const { addToast } = useToast();
 
+  // Amount visibility toggle
+  const [showAmounts, setShowAmounts] = useState(true);
+
   // Create invoice dialog
   const [createOpen, setCreateOpen] = useState(false);
   const [periodStart, setPeriodStart] = useState('');
@@ -206,6 +225,21 @@ export default function InvoicePage() {
   const submitInvoice = useSubmitInvoice();
 
   const invoices = data?.data || [];
+
+  const invoiceStatusOrder: Record<string, number> = { draft: 0, submitted: 1, rejected: 2, approved: 3, paid: 4 };
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'created_at', initialDirection: 'desc' });
+
+  const sortedInvoices = sortItems(invoices, {
+    invoice_number: (i) => i.invoice_number,
+    period: (i) => i.period_start ?? '',
+    gross: (i) => Number(i.gross_amount || 0),
+    net: (i) => Number(i.net_amount || 0),
+    status: (i) => invoiceStatusOrder[i.status] ?? 99,
+    created_at: (i) => i.created_at ?? '',
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
   const stats = useMemo(() => {
     const approved = invoices.filter((invoice) => ['approved', 'paid'].includes(invoice.status));
@@ -307,6 +341,8 @@ export default function InvoicePage() {
     setDetailOpen(true);
   };
 
+  const maskedCurrency = (value: number) => (showAmounts ? formatCurrency(value) : MASKED_AMOUNT);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -314,7 +350,18 @@ export default function InvoicePage() {
           <h1 className="text-headline">Invoice</h1>
           <p className="text-muted-foreground">Submit and monitor your invoices</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>Create Invoice</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAmounts((prev) => !prev)}
+            title={showAmounts ? 'Hide amounts' : 'Show amounts'}
+          >
+            {showAmounts ? <Eye className="h-4 w-4 mr-1.5" /> : <EyeOff className="h-4 w-4 mr-1.5" />}
+            {showAmounts ? 'Hide Amounts' : 'Show Amounts'}
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>Create Invoice</Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -347,7 +394,7 @@ export default function InvoicePage() {
             <CardTitle className="text-sm">Total Approved</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-bold">{formatCurrency(stats.totalApprovedAmount)}</p>
+            <p className="text-xl font-bold">{maskedCurrency(stats.totalApprovedAmount)}</p>
           </CardContent>
         </Card>
       </div>
@@ -368,11 +415,11 @@ export default function InvoicePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Invoice #</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Gross</TableHead>
-                  <TableHead>Net</TableHead>
-                  <TableHead>Status</TableHead>
+                  <SortableTableHead column="invoice_number" {...sortHeadProps}>Invoice #</SortableTableHead>
+                  <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
+                  <SortableTableHead column="gross" {...sortHeadProps}>Gross</SortableTableHead>
+                  <SortableTableHead column="net" {...sortHeadProps}>Net</SortableTableHead>
+                  <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -384,7 +431,7 @@ export default function InvoicePage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  invoices.map((invoice) => (
+                  sortedInvoices.map((invoice) => (
                     <TableRow
                       key={invoice.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -394,8 +441,8 @@ export default function InvoicePage() {
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDateRange(invoice.period_start, invoice.period_end)}
                       </TableCell>
-                      <TableCell>{formatCurrency(Number(invoice.gross_amount || 0))}</TableCell>
-                      <TableCell>{formatCurrency(Number(invoice.net_amount || 0))}</TableCell>
+                      <TableCell>{maskedCurrency(Number(invoice.gross_amount || 0))}</TableCell>
+                      <TableCell>{maskedCurrency(Number(invoice.net_amount || 0))}</TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[invoice.status]}>
                           {formatLabel(invoice.status)}
@@ -504,7 +551,9 @@ export default function InvoicePage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Net Amount</span>
                 <span className="font-semibold text-base">
-                  {formatCurrency(Math.max(0, Number(grossAmount || 0) - Number(deductions || 0)))}
+                  {formatCurrency(
+                    Math.max(0, Number(grossAmount || 0) - Number(deductions || 0))
+                  )}
                 </span>
               </div>
             </div>
@@ -522,7 +571,12 @@ export default function InvoicePage() {
       </Dialog>
 
       {/* ---- Invoice Detail Dialog ---- */}
-      <InvoiceDetailDialog invoice={detailInvoice} open={detailOpen} onOpenChange={setDetailOpen} />
+      <InvoiceDetailDialog
+        invoice={detailInvoice}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        showAmounts={showAmounts}
+      />
 
       {/* ---- Submit Confirmation Dialog ---- */}
       <SubmitConfirmDialog
@@ -531,6 +585,7 @@ export default function InvoicePage() {
         onOpenChange={setConfirmOpen}
         onConfirm={handleConfirmSubmit}
         isPending={submitInvoice.isPending}
+        showAmounts={showAmounts}
       />
     </div>
   );

@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   FileDropZone,
+  FullScreenPreview,
 } from '@hr-portal/ui';
 import {
   Download,
@@ -32,7 +33,6 @@ import {
   Loader2,
   Presentation,
   Upload,
-  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -380,7 +380,7 @@ export default function FilesPage() {
                 key={d.id}
                 type="button"
                 className={`group relative rounded-xl border ${colors.border} bg-white dark:bg-zinc-900 overflow-hidden text-left transition-all hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
-                onClick={() =>
+                onDoubleClick={() =>
                   canPreview(d.mime_type) ? handlePreview(d.id) : download.mutateAsync(d.id)
                 }
                 onKeyDown={(e) => handleKeyDown(e, d.id, d.mime_type)}
@@ -423,12 +423,25 @@ export default function FilesPage() {
                   {/* Overlay on hover */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-white/5 transition-colors" />
 
-                  {/* Extension badge */}
+                  {/* Extension badge — hides on hover, replaced by download button */}
                   <span
-                    className={`absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${colors.bg} ${colors.text} border ${colors.border}`}
+                    className={`absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${colors.bg} ${colors.text} border ${colors.border} transition-opacity group-hover:opacity-0`}
                   >
                     {ext}
                   </span>
+
+                  {/* Download button — appears top-right on hover */}
+                  <button
+                    type="button"
+                    title="Download"
+                    className="absolute top-2 right-2 z-10 h-7 w-7 rounded-md bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-white dark:hover:bg-zinc-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      download.mutateAsync(d.id);
+                    }}
+                  >
+                    <Download className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-300" />
+                  </button>
 
                   {/* Confidential badge */}
                   {d.is_confidential && (
@@ -456,36 +469,7 @@ export default function FilesPage() {
                     ) : null}
                   </div>
 
-                  {/* Hover action buttons */}
-                  <div className="flex items-center gap-1 mt-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {canPreview(d.mime_type) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePreview(d.id);
-                        }}
-                        disabled={previewLoading}
-                      >
-                        <Eye className="h-3.5 w-3.5 mr-1" />
-                        Preview
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        download.mutateAsync(d.id);
-                      }}
-                    >
-                      <Download className="h-3.5 w-3.5 mr-1" />
-                      Download
-                    </Button>
-                  </div>
+
                 </div>
               </button>
             );
@@ -506,7 +490,7 @@ export default function FilesPage() {
                     key={d.id}
                     type="button"
                     className="flex w-full items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500"
-                    onClick={() =>
+                    onDoubleClick={() =>
                       canPreview(d.mime_type) ? handlePreview(d.id) : download.mutateAsync(d.id)
                     }
                     onKeyDown={(e) => handleKeyDown(e, d.id, d.mime_type)}
@@ -612,81 +596,15 @@ export default function FilesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Document Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={handleClosePreview}>
-        <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-          <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="truncate pr-8">
-                {previewData?.fileName || 'Document Preview'}
-              </DialogTitle>
-              <div className="flex items-center gap-2">
-                {previewData && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = previewData.url;
-                      link.download = previewData.fileName;
-                      link.click();
-                    }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                )}
-                <Button variant="ghost" size="sm" onClick={handleClosePreview}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden bg-muted/30">
-            {previewData ? (
-              previewData.mimeType === 'application/pdf' ? (
-                <iframe
-                  src={previewData.url}
-                  className="w-full h-full border-0"
-                  title={previewData.fileName}
-                />
-              ) : previewData.mimeType?.startsWith('image/') ? (
-                <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
-                  <img
-                    src={previewData.url}
-                    alt={previewData.fileName}
-                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p>Preview not available for this file type</p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = previewData.url;
-                        link.download = previewData.fileName;
-                        link.click();
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download to view
-                    </Button>
-                  </div>
-                </div>
-              )
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Document Preview - Full Screen */}
+      <FullScreenPreview
+        open={previewOpen}
+        onClose={handleClosePreview}
+        url={previewData?.url ?? null}
+        fileName={previewData?.fileName || 'Document'}
+        mimeType={previewData?.mimeType ?? null}
+        isLoading={previewLoading}
+      />
     </div>
   );
 }
