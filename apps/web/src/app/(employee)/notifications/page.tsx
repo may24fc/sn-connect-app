@@ -313,6 +313,7 @@ export default function NotificationsPage(): ReactNode {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
+                    aria-label="Previous page"
                     disabled={pagination.page <= 1}
                     onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
                   >
@@ -322,6 +323,7 @@ export default function NotificationsPage(): ReactNode {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
+                    aria-label="Next page"
                     disabled={pagination.page >= pagination.totalPages}
                     onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
                   >
