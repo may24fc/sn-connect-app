@@ -1,11 +1,13 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import {
   useCreatePerformanceCycle,
   useDeletePerformanceCycle,
   usePerformanceCycles,
   useUpdatePerformanceCycle,
 } from '@/hooks/usePerformance';
+import { useTableSort } from '@/hooks/useTableSort';
 import {
   Badge,
   Button,
@@ -102,6 +104,20 @@ export default function CyclesPage(): ReactNode {
   useEffect(() => {
     setCycles(cycleData);
   }, [cycleData]);
+
+  const cycleStatusOrder: Record<string, number> = { active: 0, draft: 1, closed: 2 };
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'startDate', initialDirection: 'desc' });
+
+  const sortedCycles = sortItems(cycles, {
+    name: (c) => c.name.toLowerCase(),
+    period: (c) => c.startDate,
+    selfAssessment: (c) => c.selfAssessmentDeadline ?? '',
+    managerReview: (c) => c.managerReviewDeadline ?? '',
+    status: (c) => cycleStatusOrder[c.status] ?? 99,
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
   const handleOpenCreate = (): void => {
     setEditingCycle(null);
@@ -301,17 +317,17 @@ export default function CyclesPage(): ReactNode {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Cycle Name</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>Self-Assessment</TableHead>
-                <TableHead>Manager Review</TableHead>
-                <TableHead>Status</TableHead>
+                <SortableTableHead column="name" {...sortHeadProps}>Cycle Name</SortableTableHead>
+                <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
+                <SortableTableHead column="selfAssessment" {...sortHeadProps}>Self-Assessment</SortableTableHead>
+                <SortableTableHead column="managerReview" {...sortHeadProps}>Manager Review</SortableTableHead>
+                <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {cycles.length > 0 ? (
-                cycles.map((cycle) => {
+                sortedCycles.map((cycle) => {
                   const config = statusConfig[cycle.status];
                   const StatusIcon = config.icon;
                   return (

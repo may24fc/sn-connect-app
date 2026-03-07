@@ -24,7 +24,7 @@ import { type ReactNode, useState } from 'react';
 function getInitials(name: string): string {
   return name
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
@@ -156,6 +156,40 @@ export default function IndividualPerformancePage(): ReactNode {
 
       {/* Employee Table */}
       <Card>
+        {/* Pagination - Gmail style at top */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-muted/30">
+            <p className="text-xs text-muted-foreground">
+              {pagination?.total ?? 0} total
+            </p>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                {(page - 1) * pageSize + 1}-
+                {Math.min(page * pageSize, pagination?.total ?? 0)} of {pagination?.total ?? 0}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
@@ -261,34 +295,6 @@ export default function IndividualPerformancePage(): ReactNode {
                   </button>
                 ))}
               </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-3 border-t border-border">
-                  <p className="text-xs text-muted-foreground">
-                    Page {page} of {totalPages}
-                    {pagination?.total ? ` · ${pagination.total} total` : ''}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </CardContent>

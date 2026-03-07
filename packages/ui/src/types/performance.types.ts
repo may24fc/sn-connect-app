@@ -34,12 +34,12 @@ export interface OKRTarget {
   employeeId: EmployeeId;
   cycleId: CycleId | null;
   name: string;
-  description?: string;
+  description?: string | undefined;
   metricType: TargetMetricType;
   startValue: number;
   targetValue: number;
   currentValue: number;
-  unit?: string;
+  unit?: string | undefined;
   weight: number;
   sortOrder: number;
   progressPercentage: number; // Computed client-side
@@ -70,7 +70,7 @@ export interface OKR {
   employeeId: EmployeeId;
   cycleId: CycleId;
   objective: string;
-  description?: string;
+  description?: string | undefined;
   status: OKRStatus;
   weight: number;
   progressPercentage: number;
@@ -87,7 +87,7 @@ export interface KPI {
   employeeId: EmployeeId;
   cycleId: CycleId;
   name: string;
-  description?: string;
+  description?: string | undefined;
   target: number;
   actual: number;
   unit: string;

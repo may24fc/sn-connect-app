@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ employeeId: string }> }
 ) {
   try {
