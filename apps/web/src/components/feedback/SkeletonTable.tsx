@@ -40,6 +40,25 @@ export function SkeletonTable({
         className
       )}
     >
+      {/* Pagination skeleton - at top */}
+      {showPagination && (
+        <div className="h-11 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-7 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="flex gap-1">
+              <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+              <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+              <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+              <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header skeleton */}
       {showHeader && (
         <div className="bg-zinc-50 dark:bg-zinc-900 h-10 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-4 px-4">
@@ -71,26 +90,6 @@ export function SkeletonTable({
           ))}
         </div>
       ))}
-
-      {/* Pagination skeleton */}
-      {showPagination && (
-        <div className="h-12 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between px-4">
-          <div className="h-3 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-              <div className="h-8 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-            </div>
-            <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-            <div className="flex gap-1">
-              <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-              <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-              <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-              <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

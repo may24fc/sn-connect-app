@@ -24,39 +24,31 @@ export function DataTablePagination<TData>({
   const totalRows = table.getFilteredRowModel().rows.length;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-100 dark:border-zinc-800">
-      {/* Row count info */}
-      <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-        <span>
-          Showing {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, totalRows)} of{' '}
-          {totalRows}
-        </span>
+    <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+      {/* Page size selector */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-zinc-500 dark:text-zinc-400">Rows per page:</span>
+        <select
+          value={pageSize}
+          onChange={(e) => table.setPageSize(Number(e.target.value))}
+          className={cn(
+            'h-7 px-2 text-sm bg-card',
+            'border border-border rounded-md',
+            'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600'
+          )}
+        >
+          {pageSizeOptions.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Page size selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-500 dark:text-zinc-400">Rows per page:</span>
-          <select
-            value={pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
-            className={cn(
-              'h-8 px-2 text-sm bg-card',
-              'border border-border rounded-md',
-              'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600'
-            )}
-          >
-            {pageSizeOptions.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Page indicator */}
+      <div className="flex items-center gap-3">
+        {/* Row count info - Gmail style */}
         <span className="text-sm text-zinc-500 dark:text-zinc-400">
-          Page {pageIndex + 1} of {pageCount}
+          {pageIndex * pageSize + 1}-{Math.min((pageIndex + 1) * pageSize, totalRows)} of {totalRows}
         </span>
 
         {/* Navigation buttons */}

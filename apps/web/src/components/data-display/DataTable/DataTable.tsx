@@ -160,6 +160,7 @@ export function DataTable<TData>({
 
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-card">
+      {enablePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
@@ -200,8 +201,6 @@ export function DataTable<TData>({
           </tbody>
         </table>
       </div>
-
-      {enablePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
     </div>
   );
 }
@@ -219,6 +218,23 @@ function DataTableSkeleton({
 }): React.ReactNode {
   return (
     <div className="rounded-lg border border-border overflow-hidden bg-card">
+      {/* Pagination skeleton - at top */}
+      <div className="h-11 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+          <div className="h-7 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+          <div className="flex gap-1">
+            <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+            <div className="h-7 w-7 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+
       {/* Header skeleton */}
       <div className="bg-zinc-50 dark:bg-zinc-900 h-10 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-4 px-4">
         {Array.from({ length: columns }).map((_, i) => (
@@ -245,17 +261,6 @@ function DataTableSkeleton({
           ))}
         </div>
       ))}
-
-      {/* Pagination skeleton */}
-      <div className="h-12 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between px-4">
-        <div className="h-3 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-        <div className="flex gap-2">
-          <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-          <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-          <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-          <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse" />
-        </div>
-      </div>
     </div>
   );
 }
