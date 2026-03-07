@@ -85,7 +85,7 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
       if (readerEmployees) {
         const deptIds = [
-          ...new Set(readerEmployees.map((e) => e.department_id).filter(Boolean)),
+          ...new Set(readerEmployees.map((e: { department_id: string | null }) => e.department_id).filter(Boolean)),
         ] as Array<string>;
 
         let deptNames: Record<string, string> = {};
@@ -95,7 +95,7 @@ export async function GET(_: NextRequest, context: RouteContext) {
             .select('id, name')
             .in('id', deptIds);
           if (depts) {
-            deptNames = Object.fromEntries(depts.map((d) => [d.id, d.name]));
+            deptNames = Object.fromEntries(depts.map((d: { id: string; name: string }) => [d.id, d.name]));
           }
         }
 

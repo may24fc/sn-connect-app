@@ -9,7 +9,7 @@ export interface AnnouncementCardProps {
   priority: 'low' | 'normal' | 'high' | 'urgent';
   status?: 'draft' | 'scheduled' | 'published' | 'expired' | 'archived';
   dateLabel: string;
-  isRead?: boolean;
+  isRead?: boolean | undefined;
   isPinned?: boolean;
   readCount?: number;
   onClick?: () => void;

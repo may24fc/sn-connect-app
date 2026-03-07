@@ -1,7 +1,9 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { useArchiveAnnouncement, useToggleAnnouncementPin } from '@/hooks/usePublishAnnouncement';
+import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate } from '@/lib/format';
 import {
   AnnouncementCard,
@@ -112,6 +114,22 @@ export default function AdminAnnouncementsPage() {
 
   const announcements = data?.data || [];
 
+  const priorityOrder: Record<string, number> = { urgent: 0, high: 1, normal: 2, low: 3 };
+  const statusOrder: Record<string, number> = { draft: 0, scheduled: 1, published: 2, archived: 3, expired: 4 };
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'date', initialDirection: 'desc' });
+
+  const sortedAnnouncements = sortItems(announcements, {
+    title: (a) => a.title.toLowerCase(),
+    category: (a) => a.category,
+    status: (a) => statusOrder[a.status] ?? 99,
+    priority: (a) => priorityOrder[a.priority] ?? 99,
+    date: (a) => a.published_at || a.created_at || '',
+    reads: (a) => a.read_count,
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
+
   const stats = useMemo(() => {
     const total = announcements.length;
     const drafts = announcements.filter((item) => item.status === 'draft').length;
@@ -202,31 +220,31 @@ export default function AdminAnnouncementsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-b border-zinc-200 dark:border-zinc-800">
-                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  <SortableTableHead column="title" {...sortHeadProps}>
                     Title
-                  </TableHead>
-                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  </SortableTableHead>
+                  <SortableTableHead column="category" {...sortHeadProps}>
                     Category
-                  </TableHead>
-                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  </SortableTableHead>
+                  <SortableTableHead column="status" {...sortHeadProps}>
                     Status
-                  </TableHead>
-                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  </SortableTableHead>
+                  <SortableTableHead column="priority" {...sortHeadProps}>
                     Priority
-                  </TableHead>
-                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  </SortableTableHead>
+                  <SortableTableHead column="date" {...sortHeadProps}>
                     Date
-                  </TableHead>
-                  <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  </SortableTableHead>
+                  <SortableTableHead column="reads" {...sortHeadProps}>
                     Reads
-                  </TableHead>
+                  </SortableTableHead>
                   <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400 text-right">
                     Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {announcements.map((announcement) => (
+                {sortedAnnouncements.map((announcement) => (
                   <TableRow
                     key={announcement.id}
                     className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"

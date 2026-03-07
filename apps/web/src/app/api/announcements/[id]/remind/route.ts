@@ -46,7 +46,7 @@ export async function POST(_: NextRequest, context: RouteContext): Promise<NextR
       .select('user_id')
       .eq('announcement_id', id);
 
-    const readUserIds = new Set((readRecords ?? []).map((r) => r.user_id));
+    const readUserIds = new Set((readRecords ?? []).map((r: { user_id: string }) => r.user_id));
 
     // Get all active users (simplified — in production, filter by target_roles/departments)
     const { data: allUsers } = await supabase
@@ -60,7 +60,7 @@ export async function POST(_: NextRequest, context: RouteContext): Promise<NextR
     }
 
     // Filter to unread users
-    const unreadUserIds = allUsers.map((u) => u.id).filter((uid) => !readUserIds.has(uid));
+    const unreadUserIds = allUsers.map((u: { id: string }) => u.id).filter((uid: string) => !readUserIds.has(uid));
 
     if (unreadUserIds.length === 0) {
       return NextResponse.json({
