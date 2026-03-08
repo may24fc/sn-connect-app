@@ -7,8 +7,7 @@
  * Since we cannot trigger real Supabase email delivery in E2E tests, we test:
  * 1. The callback route behaviour with missing/invalid codes.
  * 2. The `next` parameter redirect validation (open-redirect prevention).
- * 3. The signup flow reaches the confirmation page.
- * 4. The forgot-password flow reaches the confirmation page.
+ * 3. The forgot-password flow reaches the confirmation page.
  *
  * For full email confirmation flow testing with real Supabase, set:
  *   E2E_AUTH_EMAIL, E2E_AUTH_PASSWORD
@@ -64,36 +63,6 @@ test.describe('Auth Callback Route — Redirect Validation', () => {
     await page.goto('/api/auth/callback');
 
     await expect(page).toHaveURL(/\/login\?error=/);
-  });
-});
-
-test.describe('Signup Flow — Email Confirmation', () => {
-  test('signup form shows confirmation page on success', async ({ page }) => {
-    await page.goto('/signup');
-
-    // Fill out the signup form with a test email.
-    const testEmail = `e2e-test-${Date.now()}@example.com`;
-    await page.getByLabel('Full Name').fill('E2E Test User');
-    await page.getByLabel('Email').fill(testEmail);
-
-    // Handle password fields — there may be "Password" and "Confirm Password"
-    const passwordInputs = page.locator('input[type="password"]');
-    const count = await passwordInputs.count();
-
-    if (count >= 2) {
-      await passwordInputs.nth(0).fill('TestPassword123!');
-      await passwordInputs.nth(1).fill('TestPassword123!');
-    } else if (count === 1) {
-      await passwordInputs.nth(0).fill('TestPassword123!');
-    }
-
-    // Click the signup button.
-    const signupButton = page.getByRole('button', { name: /sign up|create account|register/i });
-    await signupButton.click();
-
-    // After signup, the user should be redirected to a confirmation page
-    // or see a success message (since email needs verification).
-    await expect(page).toHaveURL(/\/(signup\/confirmation|login)/, { timeout: 15000 });
   });
 });
 

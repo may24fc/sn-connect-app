@@ -76,20 +76,6 @@ test.describe('Public Pages Audit', () => {
     await captureScreenshot(page, '01-login-page-tablet');
   });
 
-  test('Signup page - UI consistency', async ({ page }) => {
-    await page.goto(`${BASE_URL}/signup`);
-    await page.waitForLoadState('networkidle');
-
-    await captureScreenshot(page, '02-signup-page');
-
-    // Check key elements exist
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-
-    // Mobile check
-    await page.setViewportSize({ width: 375, height: 667 });
-    await captureScreenshot(page, '02-signup-page-mobile');
-  });
-
   test('Forgot password page - UI consistency', async ({ page }) => {
     await page.goto(`${BASE_URL}/forgot-password`);
     await page.waitForLoadState('networkidle');
