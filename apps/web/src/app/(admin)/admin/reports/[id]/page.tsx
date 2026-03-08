@@ -151,7 +151,7 @@ export default function AdminReportDetailPage({
             </Link>
           </Button>
           <div>
-            <h1 className="text-headline">{report.report_type}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{report.report_type}</h1>
             <p className="text-muted-foreground">
               {formatDate(report.period_start)} – {formatDate(report.period_end)}
             </p>

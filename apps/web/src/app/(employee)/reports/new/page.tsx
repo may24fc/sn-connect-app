@@ -226,7 +226,7 @@ export default function NewReportPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-headline">Create Report</h1>
+          <h1 className="text-2xl font-bold text-foreground">Create Report</h1>
           <p className="text-muted-foreground">Submit a weekly, monthly, or marketing report</p>
         </div>
       </div>

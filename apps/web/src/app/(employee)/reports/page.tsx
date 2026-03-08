@@ -26,7 +26,7 @@ import {
   TableRow,
   useToast,
 } from '@hr-portal/ui';
-import { ChevronDown, ChevronRight, Layers, List, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Layers, List, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -105,7 +105,7 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-headline">My Reports</h1>
+          <h1 className="text-2xl font-bold text-foreground">My Reports</h1>
           <p className="text-muted-foreground">Create, submit, and track report approvals</p>
         </div>
         <Button asChild>
@@ -152,11 +152,15 @@ export default function ReportsPage() {
       </div>
 
       <div className="flex gap-3">
-        <Input
-          placeholder="Search by report type or notes"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-10"
+            placeholder="Search by report type or notes"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Status" />

@@ -58,7 +58,7 @@ export default function AdminReportsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-headline">Reports Management</h1>
+          <h1 className="text-2xl font-bold text-foreground">Reports Management</h1>
           <p className="text-muted-foreground">Review submissions, analytics, and comparisons</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
