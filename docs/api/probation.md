@@ -16,6 +16,7 @@ Probation tracker for employees on probationary period. Aggregates employee, OKR
 |--------|------|------|-------------|
 | `GET` | `/api/probation` | Admin | List all probationary employees |
 | `POST` | `/api/probation` | Admin | Extend or evaluate probation |
+| `GET` | `/api/probation/me` | Any authenticated | Get own probation status |
 
 ---
 
@@ -133,4 +134,54 @@ Updates `employees.probation_end_date` to the new date.
 
 ---
 
-*Last updated: 2026-02-27*
+## GET /api/probation/me
+
+Get the current authenticated user's own probation status. Returns computed fields including stage, progress, and days remaining.
+
+### Authentication
+
+Any authenticated user.
+
+### Response (On Probation)
+
+```json
+{
+  "data": {
+    "employeeId": "employee-uuid",
+    "name": "Juan Dela Cruz",
+    "position": "Software Engineer",
+    "department": "Engineering",
+    "startDate": "2025-12-01",
+    "endDate": "2026-03-01",
+    "stage": 3,
+    "status": "on-track",
+    "daysRemaining": 21,
+    "totalDays": 90,
+    "elapsedDays": 69,
+    "progressPercent": 77
+  },
+  "onProbation": true
+}
+```
+
+### Response (Not On Probation)
+
+```json
+{
+  "data": null,
+  "onProbation": false
+}
+```
+
+### Computed Fields
+
+| Field | Description |
+|-------|-------------|
+| `stage` | 1–4, based on 25% increments of elapsed time |
+| `status` | `on-track`, `at-risk` (≤14 days), `extended` (end > hire+90d), `completed` |
+| `daysRemaining` | Days until probation end (min 0) |
+| `progressPercent` | Elapsed/total percentage (max 100) |
+
+---
+
+*Last updated: 2026-03-08*

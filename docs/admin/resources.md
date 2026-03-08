@@ -80,6 +80,51 @@ Archive outdated resources using the action menu. Archived resources:
 - Remain in the admin view for reference
 - Can be restored later
 
+## Resource Categories (`/admin/resources/categories`)
+
+Categories are now **dynamic** — managed via a dedicated admin page instead of a static enum.
+
+### Category Tree View
+
+Categories are displayed in a tree table with expand/collapse for parent–child hierarchy:
+
+| Column | Description |
+|--------|-------------|
+| Name | Category name with icon |
+| Slug | URL-friendly identifier (auto-generated) |
+| Resources | Count of resources in the category |
+| Actions | Edit, Delete |
+
+### Creating a Category
+
+1. Click **"Create Category"**
+2. Fill in:
+   - **Name** *(required)* — Category label
+   - **Icon** — Select from available icons
+   - **Parent Category** — Optional, to nest under an existing category
+   - **Description** — Brief description
+3. Slug is auto-generated from the name
+4. Click **Save**
+
+### Editing / Deleting Categories
+
+Use the action menu on each row. Deleting a parent category also removes its children.
+
+### API Reference
+
+| Operation | Endpoint |
+|-----------|----------|
+| Get category tree | `GET /api/resources/categories` |
+| Create category | `POST /api/resources/categories` |
+| Update category | `PATCH /api/resources/categories` |
+| Delete category | `DELETE /api/resources/categories?id=...` |
+
+See [API: Resources](../api/resources.md) for full details.
+
+## Resource Streaming
+
+Resources can be streamed directly in the browser via `GET /api/resources/[id]/stream`. This returns the raw file bytes with the appropriate `Content-Type` header, enabling in-browser preview for PDFs, images, and other supported formats.
+
 ## Deleting Resources
 
 Permanently remove a resource by selecting **Delete** from the action menu. This removes:
@@ -89,5 +134,7 @@ Permanently remove a resource by selecting **Delete** from the action menu. This
 - Any collection memberships
 
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [AI Knowledge Base](ai-knowledge.md) · Previous: [Announcements](announcements.md)

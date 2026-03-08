@@ -9,7 +9,7 @@ The SN Connect design system is built on Radix UI primitives styled with Tailwin
 
 ---
 
-## Primitives (19)
+## Primitives (21)
 
 > Location: `packages/ui/src/primitives/`
 
@@ -24,6 +24,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | Checkbox | `checkbox.tsx` | Radix checkbox with indicator |
 | Dialog | `dialog.tsx` | Modal dialog with overlay, close button |
 | DropdownMenu | `dropdown-menu.tsx` | Radix dropdown with items, separators, sub-menus |
+| FileDropZone | `file-drop-zone.tsx` | Drag-and-drop file upload zone with validation |
 | Input | `input.tsx` | Text input with Tailwind styling |
 | Label | `label.tsx` | Form label with Radix label primitive |
 | PasswordInput | `password-input.tsx` | Input with show/hide toggle for passwords |
@@ -31,6 +32,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | Select | `select.tsx` | Radix select dropdown with value, trigger, content |
 | Separator | `separator.tsx` | Horizontal/vertical separator line |
 | Skeleton | `skeleton.tsx` | Shimmer loading placeholder |
+| SlidePanel | `slide-panel.tsx` | Sliding panel from the right (Sheet-style) for detail views and forms |
 | Table | `table.tsx` | HTML table with styled header, body, row, cell |
 | Tabs | `tabs.tsx` | Radix tabs with list, trigger, content |
 | Textarea | `textarea.tsx` | Multi-line text input |
@@ -176,6 +178,40 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 → [Full reference](resources.md)
 
+### Dashboard (3)
+
+> Location: `packages/ui/src/components/dashboard/`
+
+| Component | Description |
+|-----------|-------------|
+| `MilestoneFeed` | Employee milestones feed (birthdays, work anniversaries) |
+| `PendingApprovalsCard` | Card showing pending approval items (invoices, reviews, onboarding) |
+| `RoleDashboardWidget` | Role-specific dashboard widget with KPI metrics |
+
+### Documents (1)
+
+> Location: `packages/ui/src/components/documents/`
+
+| Component | Description |
+|-----------|-------------|
+| `FullScreenPreview` | Full-screen document preview overlay with download (portal-based) |
+
+### Notifications (1)
+
+> Location: `packages/ui/src/components/notifications/`
+
+| Component | Description |
+|-----------|-------------|
+| `NotificationBell` | Notification bell with type-specific icons and unread count |
+
+### Profile (1)
+
+> Location: `packages/ui/src/components/profile/`
+
+| Component | Description |
+|-----------|-------------|
+| `RoleMetadataForm` | Form for viewing and editing role-specific metadata |
+
 ### Tasks (10)
 
 > Location: `packages/ui/src/components/tasks/`
@@ -232,6 +268,14 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `SkeletonCard` | Card-shaped loading skeleton |
 | `SkeletonTable` | Table-shaped loading skeleton |
 
+### Standalone Components
+
+| Component | Location | Description |
+|-----------|----------|-------------|
+| `AIChatbot` | `packages/ui/src/components/AIChatbot.tsx` | Floating AI chat assistant widget |
+| `MultiSelectFilter` | `packages/ui/src/components/MultiSelectFilter.tsx` | Multi-select filter dropdown |
+| `EmptyState` | `packages/ui/src/components/empty-state.tsx` | Reusable empty state display |
+
 → [Full reference: data-display](data-display.md) | [Full reference: feedback](feedback.md)
 
 ---
@@ -276,4 +320,4 @@ All components use the **Titanium & Indigo** design system tokens defined in `ap
 
 ---
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-03-08*

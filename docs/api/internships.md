@@ -18,6 +18,7 @@ Internship lifecycle management — create, track, log daily hours, extend, and 
 | `POST` | `/api/internships` | Admin | Create internship |
 | `GET` | `/api/internships/[id]` | Admin/Supervisor/Self | Get internship detail |
 | `PATCH` | `/api/internships/[id]` | Admin/Supervisor | Update internship |
+| `DELETE` | `/api/internships/[id]` | Admin | Soft-delete internship |
 | `POST` | `/api/internships/initialize` | Intern | Self-initialize internship |
 | `PATCH` | `/api/internships/[id]/extend` | Admin | Extend internship |
 | `GET` | `/api/internships/[id]/logs` | Admin/Supervisor/Self | List daily logs |
@@ -227,6 +228,22 @@ Approve a daily log.
 
 ---
 
+## DELETE /api/internships/[id] (Admin)
+
+Soft-delete an internship record by setting `deleted_at`.
+
+### Authentication
+
+Requires `admin` or `super_admin` role.
+
+### Response
+
+```json
+{ "success": true }
+```
+
+---
+
 ## Internship Status Values
 
 | Status | Description |
@@ -238,4 +255,4 @@ Approve a daily log.
 
 ---
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-03-08*

@@ -128,6 +128,31 @@ This helps you identify:
 - Low-quality matches — sources that aren't being retrieved correctly
 - Overlapping content — duplicated information across sources
 
+## Version History
+
+Knowledge sources are automatically versioned. Each time a source is updated, a new version is created preserving the previous content.
+
+### Viewing Version History
+
+1. Open a knowledge source
+2. Click **"Version History"** or view the versions panel
+3. See a list of all versions with timestamps
+
+### Restoring a Previous Version
+
+1. Select the version you want to restore
+2. Click **"Restore"**
+3. The source content reverts to that version and a new version entry is created
+
+### API Reference
+
+| Operation | Endpoint |
+|-----------|----------|
+| List versions | `GET /api/ai/sources/[id]/versions` |
+| Restore version | `POST /api/ai/sources/[id]/versions` |
+
+See [API: AI](../api/ai.md) for full details.
+
 ## Best Practices
 
 1. **Keep sources focused** — One policy per file produces better matches than large combined documents
@@ -137,5 +162,7 @@ This helps you identify:
 5. **Cover common questions** — Upload FAQ documents for the most frequent employee questions
 
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Super Admin Features](super-admin.md) · Previous: [Resources](resources.md)

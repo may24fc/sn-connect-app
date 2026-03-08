@@ -24,6 +24,10 @@ Performance management system covering review cycles, performance reviews, OKRs 
 | `GET` | `/api/performance/okrs` | Any (scoped) | List OKRs |
 | `POST` | `/api/performance/okrs` | Any | Create OKR |
 | `PATCH` | `/api/performance/okrs` | Any | Update OKR |
+| `GET` | `/api/performance/okr-targets` | Any (scoped) | List OKR targets |
+| `POST` | `/api/performance/okr-targets` | Any | Create OKR target |
+| `PATCH` | `/api/performance/okr-targets` | Any | Update OKR target |
+| `DELETE` | `/api/performance/okr-targets?id=` | Any | Delete OKR target |
 | `GET` | `/api/performance/kpis` | Any (scoped) | List KPIs |
 | `POST` | `/api/performance/kpis` | Any | Create KPI |
 | `PATCH` | `/api/performance/kpis` | Any | Update KPI |
@@ -251,6 +255,56 @@ Update KPI fields. Supports admin evaluation fields.
 
 ---
 
+## OKR Targets
+
+OKR targets are sub-items within an OKR, tracking measurable key results.
+
+### GET /api/performance/okr-targets
+
+List OKR targets. Non-admins are scoped to their own employee ID. Supports filtering by `okrId`, `cycleId`, and `employeeId`.
+
+#### Query Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `okrId` | UUID | Filter by parent OKR |
+| `cycleId` | UUID | Filter by review cycle |
+| `employeeId` | UUID | Filter by employee (admin only) |
+
+### POST /api/performance/okr-targets
+
+Create a new OKR target. Validated with `createOKRTargetSchema`.
+
+```json
+{
+  "okrId": "okr-uuid",
+  "employeeId": "employee-uuid",
+  "cycleId": "cycle-uuid",
+  "description": "Complete 10 code reviews",
+  "targetValue": 10,
+  "currentValue": 0,
+  "unit": "reviews"
+}
+```
+
+### PATCH /api/performance/okr-targets
+
+Update an OKR target's progress or details. Validated with `updateOKRTargetSchema`.
+
+```json
+{
+  "id": "target-uuid",
+  "currentValue": 7,
+  "status": "in_progress"
+}
+```
+
+### DELETE /api/performance/okr-targets?id=
+
+Soft-delete an OKR target by ID.
+
+---
+
 ## GET /api/performance/individual/[employeeId]
 
 Full performance dashboard for a single employee. Non-admins can only view their own profile.
@@ -291,4 +345,4 @@ Full performance dashboard for a single employee. Non-admins can only view their
 
 ---
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-03-08*

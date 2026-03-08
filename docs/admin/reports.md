@@ -82,6 +82,23 @@ Side-by-side week comparison view:
 - See submission rates, expenditure, and results for each
 - Identify trends and changes
 
+## Report Detail (`/admin/reports/[id]`)
+
+Click on any submitted report to view its full detail page:
+
+- **KPI Summary Cards** — Key metrics from the report (total spend, results, ROI)
+- **Report Insights** — Parsed note sections with structured findings
+- **Metrics Table** — Sortable table of all report metrics with amounts and categories
+- **Admin Actions** — Approve or Reject the report with a confirmation dialog
+
+### Approving / Rejecting
+
+1. Click **Approve** or **Reject** at the top of the report detail
+2. Confirm in the dialog
+3. The status updates and the employee is notified
+
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Announcements](announcements.md) · Previous: [Probation Tracking](probation.md)

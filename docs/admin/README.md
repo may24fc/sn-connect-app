@@ -9,6 +9,7 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 | [Getting Started](getting-started.md) | Admin overview and navigation | Admin, Super Admin |
 | [Employee Management](employee-management.md) | Inviting, approving, and managing employees | Admin, Super Admin |
 | [Intern Management](intern-management.md) | Overseeing interns, reviewing daily reports | Admin, Super Admin |
+| [Jobs Management](jobs-management.md) | Job postings and application tracking | Admin, Super Admin |
 | [Performance Management](performance-management.md) | Review cycles, OKRs, KPIs, appraisals | Admin, Super Admin |
 | [Probation Tracking](probation.md) | Monitoring and evaluating probationary employees | Admin, Super Admin |
 | [Reports Analytics](reports.md) | Tracking staff report submissions and analytics | Admin, Super Admin |
@@ -22,13 +23,16 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 | Capability | Admin | Super Admin |
 |------------|-------|-------------|
 | Employee management | ✅ | ✅ |
+| Employee directory | ✅ | ✅ |
 | Intern management | ✅ | ✅ |
+| Jobs & applications | ✅ | ✅ |
 | Performance cycles | ✅ | ✅ |
 | Probation tracking | ✅ | ✅ |
 | Report analytics | ✅ | ✅ |
 | Announcements | ✅ | ✅ |
 | Resources | ✅ | ✅ |
 | AI Knowledge Base | ✅ | ✅ |
+| Notifications | ✅ | ✅ |
 | Task management | ❌ | ✅ |
 | Payroll approvals | ❌ | ✅ |
 | System health | ❌ | ✅ |
@@ -38,9 +42,9 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 
 Admin and Super Admin each have their own sidebar layout:
 
-**Admin sidebar:** Dashboard, Interns, Reports, Performance, Probation, AI Knowledge, Announcements, Resources
+**Admin sidebar:** Dashboard, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Announcements, Resources, Notifications
 
-**Super Admin sidebar:** Dashboard, Task Management, Interns, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources
+**Super Admin sidebar:** Dashboard, Task Management, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources, Notifications
 
 ---
 

@@ -57,11 +57,39 @@ Each resource card displays:
 - File format or link indicator
 - **Bookmark icon** — Click to save the resource for quick access later
 
+### Category Browsing (`/information-hub/resources/category/[category]`)
+
+Click a category to view all resources in that category:
+
+- **Sort** by Newest, Most Viewed, Most Downloaded, or Title
+- **Filter** by resource type within the category
+- **Search** within the category
+- Resources displayed in a responsive 4-column grid
+
+### Resource Detail (`/information-hub/resources/[id]`)
+
+Click any resource to view its full detail page:
+
+- **Video resources** — Embedded video player with signed streaming URL
+- **Document resources** — In-browser document viewer with streaming preview
+- **Actions** — Bookmark, Download, Mark as Completed
+- **Related Resources** — Grid of similar resources
+- Views are tracked automatically
+
+### Bookmarks (`/information-hub/resources/bookmarks`)
+
+Access your saved resources:
+
+- Grid of all bookmarked resources
+- Personal notes for each bookmark
+- Remove bookmark button
+- Empty state with a prompt to browse resources
+
 ### Downloading / Opening
 
-- Click a resource card to view details
-- For documents: download the file
+- For documents: download the file or preview in-browser
 - For links: open the external URL
+- For videos: stream directly in the player
 
 ## My Growth
 
@@ -71,5 +99,7 @@ The **My Growth** section (under the Announcements tab) tracks your personal lea
 - **Learning list** — Courses and goals with progress bars, completion badges, and due dates
 
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [AI Assistant](ai-assistant.md) · Previous: [Performance](performance.md)

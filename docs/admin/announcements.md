@@ -95,6 +95,20 @@ Each published announcement tracks:
 
 Access analytics from the announcement's action menu or detail view.
 
+## Sending Reminders
+
+For published announcements that haven't reached their full audience:
+
+1. Open the announcement detail
+2. Click **"Remind"** from the action menu
+3. The system sends a notification to users who haven't viewed the announcement yet
+
+### API Reference
+
+`POST /api/announcements/[id]/remind` — Triggers reminder notifications for unread users.
+
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Resources](resources.md) · Previous: [Reports Analytics](reports.md)

@@ -47,8 +47,8 @@ Start here: **[Admin Guides](admin/README.md)**
 
 | Document | Description |
 |----------|-------------|
-| [api/README.md](api/README.md) | API endpoint index (106 handlers across 16 domains) |
-| [components/README.md](components/README.md) | UI component index (19 primitives + 80+ composites) |
+| [api/README.md](api/README.md) | API endpoint index (183 handlers across 25 domains) |
+| [components/README.md](components/README.md) | UI component index (21 primitives + 90+ composites) |
 | [architecture/README.md](architecture/README.md) | System architecture, layers, request flows, design decisions |
 | [architecture/auth.md](architecture/auth.md) | Auth provider (PKCE), middleware, role system, RLS |
 | [architecture/data-flow.md](architecture/data-flow.md) | TanStack Query patterns, cache, realtime, file uploads |
@@ -60,40 +60,49 @@ Start here: **[Admin Guides](admin/README.md)**
 
 | Domain | Endpoints | Doc |
 |--------|-----------|-----|
-| Auth | 3 | [api/auth.md](api/auth.md) |
+| Auth | 2 | [api/auth.md](api/auth.md) |
 | Employees | 5 | [api/employees.md](api/employees.md) |
 | Documents | 4 | [api/documents.md](api/documents.md) |
 | Departments | 2 | [api/departments.md](api/departments.md) |
 | Tasks | 8 | [api/tasks.md](api/tasks.md) |
-| Reports | 6 | [api/reports.md](api/reports.md) |
+| Reports | 7 | [api/reports.md](api/reports.md) |
 | Invoices | 6 | [api/invoices.md](api/invoices.md) |
 | Onboarding | 16 | [api/onboarding.md](api/onboarding.md) |
-| Users | 4 | [api/users.md](api/users.md) |
-| Announcements | 17 | [api/announcements.md](api/announcements.md) |
+| Users | 9 | [api/users.md](api/users.md) |
+| Announcements | 18 | [api/announcements.md](api/announcements.md) |
 | Collections | 8 | [api/collections.md](api/collections.md) |
-| Performance | 14 | [api/performance.md](api/performance.md) |
-| Probation | 2 | [api/probation.md](api/probation.md) |
-| Internships | 9 | [api/internships.md](api/internships.md) |
+| Performance | 18 | [api/performance.md](api/performance.md) |
+| Probation | 3 | [api/probation.md](api/probation.md) |
+| Internships | 10 | [api/internships.md](api/internships.md) |
 | Standups | 6 | [api/standups.md](api/standups.md) |
-| AI | 7 | [api/ai.md](api/ai.md) |
-| Resources | — | [api/resources.md](api/resources.md) |
+| AI | 9 | [api/ai.md](api/ai.md) |
+| Resources | 26 | [api/resources.md](api/resources.md) |
 | Notifications | 4 | [api/notifications.md](api/notifications.md) |
+| Dashboard | 3 | [api/dashboard.md](api/dashboard.md) |
+| Directory | 3 | [api/directory.md](api/directory.md) |
+| Jobs | 5 | [api/jobs.md](api/jobs.md) |
+| Applications | 3 | [api/applications.md](api/applications.md) |
+| Profile | 3 | [api/profile.md](api/profile.md) |
+| Profile Change Requests | 3 | [api/profile-change-requests.md](api/profile-change-requests.md) |
+| Banks | 1 | [api/banks.md](api/banks.md) |
 
 #### Component Docs
 
 | Doc | Coverage |
 |-----|----------|
-| [components/primitives.md](components/primitives.md) | 19 Radix-based primitives (Button, Input, Dialog, etc.) |
-| [components/forms.md](components/forms.md) | Form, FormField, PhoneInput, CurrencySelector |
+| [components/primitives.md](components/primitives.md) | 21 Radix-based primitives (Button, Input, Dialog, SlidePanel, FileDropZone, etc.) |
+| [components/forms.md](components/forms.md) | Form, FormField, FormGroup, PhoneInput, CurrencySelector, BankSelector |
 | [components/tasks.md](components/tasks.md) | TaskCard, TaskList, TaskFilters, TaskDetailView |
 | [components/announcements.md](components/announcements.md) | AnnouncementCard, Editor, TargetingSelector |
 | [components/reports.md](components/reports.md) | ReportCard, ReportForm, analytics charts |
 | [components/performance.md](components/performance.md) | OKRCard, KPICard, PerformanceCharts |
 | [components/internship.md](components/internship.md) | InternCard, DailyReportCard, EODReportForm |
 | [components/ai-knowledge.md](components/ai-knowledge.md) | ChatInterface, SourcesInventory, UploadZone |
-| [components/data-display.md](components/data-display.md) | StatCard, BentoGrid, DataTable |
-| [components/feedback.md](components/feedback.md) | SkeletonCard, SkeletonTable, EmptyState |
+| [components/data-display.md](components/data-display.md) | StatCard, BentoGrid, DataTable, SortableTableHead |
+| [components/feedback.md](components/feedback.md) | SkeletonCard, SkeletonTable, EmptyState, ProfilePageSkeleton |
 | [components/resources.md](components/resources.md) | Resource components reference |
+| [components/dashboard.md](components/dashboard.md) | PendingApprovalsCard, RoleDashboardWidget, MilestoneFeed |
+| [components/profile.md](components/profile.md) | RoleMetadataForm, EditableProfileSection, AvatarPreviewModal |
 
 #### Package READMEs
 
@@ -149,4 +158,4 @@ All documentation follows the rules in [AGENT-GUIDELINES.md](AGENT-GUIDELINES.md
 - **Docs are updated immediately** when the corresponding code changes (see §2.1 trigger table)
 - **ADRs are immutable** once accepted — new decisions supersede the old
 
-*Last updated: 2026-02-28*
+*Last updated: 2026-03-08*

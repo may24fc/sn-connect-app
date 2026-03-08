@@ -14,6 +14,8 @@ Welcome to the SN Connect HR Portal user documentation. These guides help employ
 | [Invoices](invoices.md) | Submitting payroll invoices | Employees |
 | [Performance](performance.md) | OKRs, KPIs, and self-assessments | All users |
 | [Information Hub](information-hub.md) | Announcements and company resources | All users |
+| [Profile](profile.md) | Managing your profile and avatar | All users |
+| [Notifications](notifications.md) | Viewing and managing notifications | All users |
 | [AI Assistant](ai-assistant.md) | Getting help from the HR AI chatbot | All users |
 | [Intern Guide](intern-guide.md) | Intern-specific features and daily reports | Interns |
 
@@ -21,8 +23,8 @@ Welcome to the SN Connect HR Portal user documentation. These guides help employ
 
 | Role | What You Can Do |
 |------|-----------------|
-| **Employee** | Dashboard, tasks, profile, 201 files, invoices, reports, performance reviews, announcements, resources |
-| **Intern** | Dashboard, tasks, profile, 201 files, performance reviews, announcements, daily EOD reports |
+| **Employee** | Dashboard, tasks, profile, 201 files, invoices, reports, performance reviews, announcements, resources, notifications |
+| **Intern** | Dashboard, tasks, profile, 201 files, performance reviews, announcements, resources, notifications, daily EOD reports |
 
 > Interns do **not** have access to Invoices or Weekly Reports.
 

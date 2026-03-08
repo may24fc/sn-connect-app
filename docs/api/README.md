@@ -4,7 +4,7 @@
 
 All API routes live under `apps/web/src/app/api/`. Every endpoint requires authentication via Supabase session cookie unless noted otherwise. Row Level Security (RLS) is the final gatekeeper — application-level checks are secondary.
 
-**Total: 106 HTTP method handlers across 16 domains.**
+**Total: 183 HTTP method handlers across 25 domains.**
 
 ---
 
@@ -17,18 +17,26 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Documents](#documents) | 4 | `/api/documents/` | [documents.md](documents.md) |
 | [Departments](#departments) | 2 | `/api/departments/` | [departments.md](departments.md) |
 | [Onboarding](#onboarding) | 16 | `/api/onboarding/` | [onboarding.md](onboarding.md) |
-| [Users](#users) | 4 | `/api/users/` | [users.md](users.md) |
+| [Users](#users) | 9 | `/api/users/` | [users.md](users.md) |
 | [Tasks](#tasks) | 8 | `/api/tasks/` | [tasks.md](tasks.md) |
-| [Reports](#reports) | 6 | `/api/reports/` | [reports.md](reports.md) |
+| [Reports](#reports) | 7 | `/api/reports/` | [reports.md](reports.md) |
 | [Invoices](#invoices) | 6 | `/api/invoices/` | [invoices.md](invoices.md) |
-| [Announcements](#announcements) | 17 | `/api/announcements/` | [announcements.md](announcements.md) |
-| [Resources](#resources) | 22 | `/api/resources/` | [resources.md](resources.md) |
+| [Announcements](#announcements) | 18 | `/api/announcements/` | [announcements.md](announcements.md) |
+| [Resources](#resources) | 26 | `/api/resources/` | [resources.md](resources.md) |
 | [Collections](#collections) | 8 | `/api/collections/` | [collections.md](collections.md) |
-| [Performance](#performance) | 13 | `/api/performance/` | [performance.md](performance.md) |
-| [Probation](#probation) | 2 | `/api/probation/` | [probation.md](probation.md) |
-| [Internships](#internships) | 8 | `/api/internships/` | [internships.md](internships.md) |
+| [Performance](#performance) | 18 | `/api/performance/` | [performance.md](performance.md) |
+| [Probation](#probation) | 3 | `/api/probation/` | [probation.md](probation.md) |
+| [Internships](#internships) | 10 | `/api/internships/` | [internships.md](internships.md) |
 | [Standups](#standups) | 6 | `/api/standups/` | [standups.md](standups.md) |
-| [AI](#ai) | 7 | `/api/ai/` | [ai.md](ai.md) |
+| [AI](#ai) | 9 | `/api/ai/` | [ai.md](ai.md) |
+| [Notifications](#notifications) | 4 | `/api/notifications/` | [notifications.md](notifications.md) |
+| [Dashboard](#dashboard) | 3 | `/api/dashboard/` | [dashboard.md](dashboard.md) |
+| [Directory](#directory) | 3 | `/api/directory/` | [directory.md](directory.md) |
+| [Jobs](#jobs) | 5 | `/api/jobs/` | [jobs.md](jobs.md) |
+| [Applications](#applications) | 3 | `/api/applications/` | [applications.md](applications.md) |
+| [Profile](#profile) | 3 | `/api/profile/` | [profile.md](profile.md) |
+| [Profile Change Requests](#profile-change-requests) | 3 | `/api/profile-change-requests/` | [profile-change-requests.md](profile-change-requests.md) |
+| [Banks](#banks) | 1 | `/api/banks/` | [banks.md](banks.md) |
 
 ---
 
@@ -114,6 +122,11 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/users/approve-onboarding` | admin, super_admin | Approve or reject onboarding |
 | `POST` | `/api/users/assign-employee` | admin, super_admin | Assign probation details to employee |
 | `POST` | `/api/users/assign-intern` | admin, super_admin | Assign internship details + create record |
+| `GET` | `/api/users/[id]/kpi-entries` | admin, super_admin | List KPI entries for user |
+| `POST` | `/api/users/[id]/kpi-entries` | admin, super_admin | Create KPI entry for user |
+| `GET` | `/api/users/[id]/metadata` | Any authenticated | Get user role metadata |
+| `PUT` | `/api/users/[id]/metadata` | admin, super_admin | Update user role metadata |
+| `DELETE` | `/api/users/[id]/metadata` | admin, super_admin | Delete user role metadata |
 
 → [Full reference](users.md)
 
@@ -144,6 +157,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/reports` | Any authenticated | Create report with metrics |
 | `GET` | `/api/reports/[id]` | Any (RLS) | Get report detail with metrics |
 | `PATCH` | `/api/reports/[id]` | Any (RLS) | Update report and replace metrics |
+| `DELETE` | `/api/reports/[id]` | Any (RLS) | Soft-delete a report |
 | `POST` | `/api/reports/[id]/submit` | Any authenticated | Submit report for review |
 | `POST` | `/api/reports/[id]/approve` | admin, super_admin | Approve or reject a report |
 
@@ -182,6 +196,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `DELETE` | `/api/announcements/[id]/pin` | admin, super_admin | Unpin an announcement |
 | `POST` | `/api/announcements/[id]/archive` | admin, super_admin | Archive an announcement |
 | `GET` | `/api/announcements/[id]/analytics` | admin, super_admin | Read analytics (count, readers, time series) |
+| `POST` | `/api/announcements/[id]/remind` | admin, super_admin | Send reminder notification to unread users |
 | `GET` | `/api/announcements/[id]/comments` | Any authenticated | List announcement comments |
 | `POST` | `/api/announcements/[id]/comments` | Any authenticated | Comment on an announcement |
 | `GET` | `/api/announcements/[id]/attachments` | Any authenticated | List announcement attachments |
@@ -205,6 +220,10 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/resources/bookmarks` | Any authenticated | User's bookmarked resources |
 | `POST` | `/api/resources/upload` | admin, super_admin | Upload resource file (up to 100MB) |
 | `POST` | `/api/resources/bulk-upload` | admin, super_admin | Bulk upload with shared metadata |
+| `GET` | `/api/resources/categories` | Any authenticated | List resource categories (tree) |
+| `POST` | `/api/resources/categories` | admin, super_admin | Create a resource category |
+| `PATCH` | `/api/resources/categories` | admin, super_admin | Update a resource category |
+| `DELETE` | `/api/resources/categories` | admin, super_admin | Delete a resource category |
 | `GET` | `/api/resources/[id]` | Any authenticated | Get resource detail |
 | `PATCH` | `/api/resources/[id]` | admin, super_admin | Update resource fields |
 | `DELETE` | `/api/resources/[id]` | admin, super_admin | Soft-delete a resource |
@@ -217,6 +236,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/resources/[id]/view` | Any authenticated | Track resource view |
 | `GET` | `/api/resources/[id]/analytics` | admin, super_admin | View analytics (counts, time series) |
 | `GET` | `/api/resources/[id]/download` | Any authenticated | 15-minute signed download URL |
+| `GET` | `/api/resources/[id]/stream` | Any authenticated | Stream resource file content |
 
 → [Full reference](resources.md)
 
@@ -253,9 +273,14 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/performance/okrs` | Any (scoped) | List OKRs; non-admins see own only |
 | `POST` | `/api/performance/okrs` | Any authenticated | Create an OKR |
 | `PATCH` | `/api/performance/okrs` | Any authenticated | Update OKR progress/status |
+| `GET` | `/api/performance/okr-targets` | Any (scoped) | List OKR targets |
+| `POST` | `/api/performance/okr-targets` | Any authenticated | Create an OKR target |
+| `PATCH` | `/api/performance/okr-targets` | Any authenticated | Update OKR target progress |
+| `DELETE` | `/api/performance/okr-targets` | Any authenticated | Delete an OKR target |
 | `GET` | `/api/performance/reviews` | Any (scoped) | List performance reviews |
 | `POST` | `/api/performance/reviews` | Any authenticated | Create a performance review |
 | `PATCH` | `/api/performance/reviews` | Any authenticated | Update review ratings/status |
+| `GET` | `/api/performance/individual/[employeeId]` | Any (scoped) | Get individual performance summary |
 
 → [Full reference](performance.md)
 
@@ -267,6 +292,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 |--------|------|------|-------------|
 | `GET` | `/api/probation` | admin, super_admin | List probation employees with details |
 | `POST` | `/api/probation` | admin, super_admin | Extend or complete probation |
+| `GET` | `/api/probation/me` | Any authenticated | Get own probation status |
 
 → [Full reference](probation.md)
 
@@ -281,6 +307,8 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/internships/initialize` | intern | Self-initialize internship |
 | `GET` | `/api/internships/[id]` | Owner, supervisor, admin | Get internship detail with logs |
 | `PATCH` | `/api/internships/[id]` | Admin or supervisor | Update internship fields |
+| `DELETE` | `/api/internships/[id]` | admin, super_admin | Soft-delete an internship record |
+| `PATCH` | `/api/internships/[id]/extend` | admin, super_admin | Extend internship end date |
 | `GET` | `/api/internships/[id]/logs` | Owner, supervisor, admin | List daily logs |
 | `POST` | `/api/internships/[id]/logs` | Intern (self) or admin | Create daily log entry |
 | `PATCH` | `/api/internships/[id]/logs` | Admin or supervisor | Approve/review daily log |
@@ -315,8 +343,94 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `PATCH` | `/api/ai/sources/[id]` | admin, super_admin | Update source, clear stale embeddings |
 | `DELETE` | `/api/ai/sources/[id]` | admin, super_admin | Soft-delete source + cleanup embeddings |
 | `POST` | `/api/ai/sources/upload` | admin, super_admin | Upload knowledge file (PDF/DOC/TXT/MD, 10MB) |
+| `GET` | `/api/ai/sources/[id]/versions` | admin, super_admin | List source version history |
+| `POST` | `/api/ai/sources/[id]/versions` | admin, super_admin | Restore a specific source version |
 
 → [Full reference](ai.md)
+
+---
+
+## Dashboard
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/dashboard/stats` | Any authenticated | Role-aware dashboard statistics |
+| `GET` | `/api/dashboard/super-admin-stats` | super_admin | Super-admin aggregate stats |
+| `GET` | `/api/dashboard/pending` | admin, super_admin | Pending approvals count |
+
+→ [Full reference](dashboard.md)
+
+---
+
+## Directory
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/directory` | admin, super_admin | List employees for directory |
+| `GET` | `/api/directory/export` | admin, super_admin | CSV export of directory |
+| `GET` | `/api/directory/[userId]` | admin, super_admin | Get employee detail by user ID |
+
+→ [Full reference](directory.md)
+
+---
+
+## Jobs
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/jobs` | Any authenticated | List job postings |
+| `POST` | `/api/jobs` | admin, super_admin | Create a job posting |
+| `GET` | `/api/jobs/[id]` | Any authenticated | Get job detail |
+| `PATCH` | `/api/jobs/[id]` | admin, super_admin | Update a job posting |
+| `DELETE` | `/api/jobs/[id]` | admin, super_admin | Delete a job posting |
+
+→ [Full reference](jobs.md)
+
+---
+
+## Applications
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/applications` | admin, super_admin | List job applications |
+| `GET` | `/api/applications/[id]` | admin, super_admin | Get application detail |
+| `PATCH` | `/api/applications/[id]` | admin, super_admin | Update application status |
+
+→ [Full reference](applications.md)
+
+---
+
+## Profile
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/profile/avatar` | Any authenticated | Upload profile avatar |
+| `DELETE` | `/api/profile/avatar` | Any authenticated | Remove profile avatar |
+| `PATCH` | `/api/profile/info` | Any authenticated | Update own profile information |
+
+→ [Full reference](profile.md)
+
+---
+
+## Profile Change Requests
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/profile-change-requests` | Any (scoped) | List profile change requests |
+| `POST` | `/api/profile-change-requests` | Any authenticated | Submit profile change request |
+| `PATCH` | `/api/profile-change-requests/[id]` | admin, super_admin | Approve or reject request |
+
+→ [Full reference](profile-change-requests.md)
+
+---
+
+## Banks
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/banks` | Any authenticated | List available banks |
+
+→ [Full reference](banks.md)
 
 ---
 
@@ -386,4 +500,4 @@ All delete operations set `deleted_at` rather than removing rows. Soft-deleted r
 
 ---
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-03-08*

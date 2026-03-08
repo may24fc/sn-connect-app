@@ -38,20 +38,25 @@ Each task is displayed as a card showing:
 Click any task card to open the detail view (`/tasks/[id]`):
 
 - Full task description
-- Complete assignee list
-- Status history
-- Comments section — view and add updates
+- Priority badge and status badge
+- Due date
+- Assigned by and assigned to information
+- **Update Status** dropdown — change the task status inline with toast confirmation
 
 ## Updating Task Status
 
-From a task card or detail view, use the status dropdown to move a task between states:
+From the task detail page, use the **Update Status** dropdown to move a task between states:
 
 1. **Pending** → **In Progress** — When you start working on the task
 2. **In Progress** → **Completed** — When you finish
-3. Any state → **Blocked** — When you're waiting on something external
+3. Any state → **Cancelled** — If the task is no longer needed
+
+A toast notification confirms the status change.
 
 > **Note:** Only Super Admins can create and assign tasks. You can update the status of tasks assigned to you.
 
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Documents](documents.md) · Previous: [Dashboard](dashboard.md)

@@ -102,10 +102,81 @@ From the performance dashboard, track which employees are at each stage. Use the
 | Needs Improvement | ★★ | Falls short on some objectives |
 | Unsatisfactory | ★ | Does not meet minimum requirements |
 
+## OKR Targets
+
+Within each objective, admins can manage individual targets (key results).
+
+### Adding a Target
+
+1. Open an OKR from the performance dashboard or employee detail page
+2. Click **"Add Target"**
+3. Fill in:
+   - **Title** — Target description
+   - **Target Value** — Numeric goal
+   - **Current Value** — Starting progress
+   - **Weight** — Importance relative to other targets
+4. Click **Save**
+
+### Editing / Deleting Targets
+
+Use the action menu on each target row to edit or delete.
+
+### API Reference
+
+| Operation | Endpoint |
+|-----------|----------|
+| List targets | `GET /api/performance/okr-targets?okrId=...` |
+| Create target | `POST /api/performance/okr-targets` |
+| Update target | `PATCH /api/performance/okr-targets` |
+| Delete target | `DELETE /api/performance/okr-targets?id=...` |
+
+See [API: Performance](../api/performance.md) for full details.
+
+## Evaluations (`/admin/performance/evaluations`)
+
+The Evaluations page groups OKRs by status:
+
+| Section | Description |
+|---------|-------------|
+| **For Approval** | OKRs submitted by employees awaiting admin review |
+| **For Review** | OKRs where manager evaluation is pending |
+| **Completed** | OKRs that have been fully evaluated |
+
+### Evaluating an OKR
+
+The evaluation is a 2-step modal:
+
+1. **Step 1: Rate Targets** — Rate each target individually using a compact rating selector
+2. **Step 2: Overall Rating** — Provide an overall OKR rating and written comments
+
+Click **Submit Evaluation** to finalize.
+
+## Individual Performance (`/admin/performance/individual`)
+
+The Individual Performance page shows a searchable employee directory table for viewing per-employee performance.
+
+- **Search** by name or email
+- **Filter** by role, department
+- **Pagination** with configurable page size
+
+Click an employee row to navigate to their performance detail.
+
+### Employee Performance Detail (`/admin/performance/employee/[id]`)
+
+This page provides a comprehensive view of a single employee's performance:
+
+- **Header Card** — Employee name, department, role, avatar
+- **Overall Score** — Weighted mean performance score
+- **View Tab** — Read-only list of objectives with expandable targets and progress bars
+- **Evaluate Tab** — Launch the 2-step evaluation modal for any OKR
+- **Reviews Sub-tab** — Historical review scores and comments
+
 ## Exporting Reports
 
 Click **"Export Report"** to download performance data for payroll processing, talent reviews, or compliance.
 
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Probation Tracking](probation.md) · Previous: [Intern Management](intern-management.md)

@@ -4,12 +4,18 @@ This guide covers inviting new employees, approving onboarding, and managing emp
 
 ## Employee Directory (`/admin/directory`)
 
-The directory provides a searchable list of all employees in the organization.
+The directory provides a searchable list of all employees in the organization, powered by the `employee_directory` database view.
 
 ### Search and Filter
 
-- **Search** by name, email, or employee ID
-- **Filter** by department, role, or status
+- **Search** by name, email, or position
+- **Filter** by department, role, status, or employment type
+- **Sort** by name, department, start date, status, role, or position
+- **Pagination** with configurable page size (up to 100)
+
+### Metadata Summary
+
+Aggregate counts are shown at the top: total employees, active, interns, on leave, and on probation.
 
 ### Employee Records
 
@@ -19,7 +25,22 @@ Each employee entry shows:
 - Department
 - Role badge
 - Status (active, on leave, terminated)
+- Employment type
 - Action menu
+
+### CSV Export
+
+Click **"Export"** to download the directory as a CSV file. The export supports the same filters as the listing — export by role, department, or status. The file includes: Full Name, Role, Department, Position, Status, Employment Type, Start Date, Email, Contact Number.
+
+### Employee Detail View (`/admin/directory/[userId]`)
+
+Click on an employee to view their full profile:
+
+- All directory fields
+- Profile avatar
+- Profile change request history (pending, approved, rejected)
+
+Use this view to review and manage employee profile change requests.
 
 ## Inviting New Employees
 
@@ -95,6 +116,27 @@ Available roles:
 
 Role changes require admin or super admin privileges and are audit-logged.
 
+## Profile Change Requests
+
+Employees can submit requests to change their profile information (name, contact number, address, etc.). These appear in the admin panel for review.
+
+### Reviewing a Request
+
+1. Navigate to **Employee Detail** (`/admin/directory/[userId]`)
+2. View pending change requests with old → new field values
+3. **Approve** to apply changes automatically to the `employees` table
+4. **Reject** with a reason
+
+When approved, the system updates the employee record and marks the request as complete. If the database update fails, the approval is rolled back.
+
+### API Details
+
+- `GET /api/profile-change-requests` — List all requests (RLS-scoped)
+- `POST /api/profile-change-requests` — Submit a new request
+- `PATCH /api/profile-change-requests` — Approve or reject (admin only)
+
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Intern Management](intern-management.md) · Previous: [Getting Started](getting-started.md)

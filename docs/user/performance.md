@@ -47,6 +47,39 @@ Each objective shows:
 - **Overall progress** — Aggregate percentage across all key results
 - **Status** — Not Started, In Progress, At Risk, Completed
 
+### OKR Detail Page (`/performance/okrs/[id]`)
+
+Click an objective to view its full detail:
+
+- **Progress Circle** — SVG circular progress indicator with percentage
+- **Status Badge** and review cycle info
+- **Mark Complete** button when all targets are met
+
+#### Targets & KPIs
+
+Each target card shows:
+
+| Metric Type | Display |
+|-------------|---------||
+| **Number** | Current / Target with progress bar |
+| **Boolean** | Completed / Not completed toggle |
+| **Currency** | PHP amount with target |
+| **Tasks** | Task count completed vs total |
+
+Targets include weight percentage and admin rating (if evaluated).
+
+#### Managing Targets
+
+1. Click **"Add Target"** to create a new key result
+2. Fill in: Title, Metric Type, Target Value, Current Value, Weight
+3. Click **Save**
+
+Use the **"Update Progress"** button on any target to log progress:
+- **Number/Currency** — Numeric slider
+- **Boolean** — Toggle switch
+
+Progress updates are reflected in real-time via Supabase Realtime subscriptions.
+
 ## KPIs (Key Performance Indicators)
 
 Navigate to `/performance/kpis` to view your KPIs.
@@ -87,5 +120,7 @@ Self-Assessment → Manager Review → HR Review → Complete
 | **Unsatisfactory** | Does not meet minimum requirements |
 
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Information Hub](information-hub.md) · Previous: [Invoices](invoices.md)

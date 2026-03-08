@@ -54,7 +54,13 @@ Below the KPIs is an **Insights Summary** with:
 ## Viewing Reports
 
 - Click any report in the list to see the full detail view (`/reports/[id]`)
-- The detail view shows: complete content, attached files, review status, and feedback
+- The detail view shows:
+  - **KPI Summary Cards** — Key metrics (total spend, results, ROI)
+  - **Summary Card** — Employee, department, and submission date
+  - **Insights** — Accomplishments and challenges parsed from report notes
+  - **Metrics Table** — Sortable breakdown of all report line items
+  - **Next Steps** section
+  - **Submit** button — Submit a draft report directly from the detail view
 
 ## Filtering Reports
 
@@ -62,5 +68,7 @@ Below the KPIs is an **Insights Summary** with:
 - **Status filter** — Show All, Draft, Submitted, or Reviewed reports
 
 ---
+
+*Last updated: 2026-03-08*
 
 Next: [Invoices](invoices.md) · Previous: [Documents](documents.md)

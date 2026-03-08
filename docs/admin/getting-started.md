@@ -14,17 +14,20 @@ Personalized greeting with a **"Manage Employees"** shortcut button.
 
 | Card | Description |
 |------|-------------|
-| **Total Employees** | Company-wide headcount with monthly trend |
+| **Total Employees** | Company-wide headcount (from `/api/dashboard/stats`) |
 | **Active Interns** | Currently active intern count |
-| **Pending Leaves** | Leave requests awaiting approval |
 | **Reviews Due** | Performance reviews needing attention |
+| **Recent Hires** | Employees onboarded in the last 30 days |
 
 ### Pending Approvals
 
-Items requiring your action:
+Items requiring your action (powered by `/api/dashboard/pending`):
 
+- Pending report submissions (with overdue count)
+- Pending invoice approvals
 - Performance reviews to complete
-- Priority indicators (urgent, high, medium)
+- Late intern EOD reports
+- **Total pending count** badge
 - **"Review"** quick-action buttons
 - **"View All Approvals"** link
 
@@ -46,7 +49,7 @@ Timeline of HR events:
 
 - **Employee Management** — View and manage all employees
 - **Performance** — Reviews and OKR management
-- **Recruitment** — Open positions (coming soon)
+- **Jobs** — Manage job postings and applications
 - **Reports** — Analytics and insights
 
 ## Super Admin Dashboard (`/super-admin/dashboard`)
@@ -72,10 +75,15 @@ Additional sections:
 |------|-------------|
 | Invite a new employee | Employee Management → Invite |
 | Approve onboarding | Employee Management → Pending approvals |
+| View employee directory | Directory → Search/Filter |
+| Export directory CSV | Directory → Export |
+| Create a job posting | Jobs → Create New |
+| Review applications | Jobs → Applications |
 | Create a performance cycle | Performance → Manage Cycles |
 | Review intern reports | Interns → Select intern → Reports |
 | Publish an announcement | Announcements → Create New |
 | Upload AI knowledge | AI Knowledge → Upload |
+| Manage resource categories | Resources → Categories |
 | Approve an invoice | Payroll Approvals (Super Admin only) |
 | Create and assign a task | Task Management (Super Admin only) |
 

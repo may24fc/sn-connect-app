@@ -163,6 +163,20 @@ Breakdown of users by role:
 | Interns | Count, percentage, progress bar |
 | Super Admins | Count, percentage, progress bar |
 
+## Admin Notifications (`/admin/notifications`)
+
+The admin notification center displays system notifications with:
+
+- **Filters** — Read/Unread, notification type
+- **Bulk Select** — Check multiple notifications for batch operations
+- **Mark Read** — Mark selected notifications as read
+- **Delete** — Remove selected notifications
+- **Pagination** — Navigate through notification history
+
+Notification types include: task assignments, report submissions, leave requests, onboarding completions, and system alerts. Each type has a distinct icon and color.
+
 ---
+
+*Last updated: 2026-03-08*
 
 Previous: [AI Knowledge Base](ai-knowledge.md) · Back to [Admin Guides](README.md)

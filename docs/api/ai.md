@@ -21,6 +21,8 @@ AI-powered HR assistant using Retrieval-Augmented Generation (RAG). Combines a v
 | `PATCH` | `/api/ai/sources/[id]` | Admin | Update source (clears embeddings) |
 | `DELETE` | `/api/ai/sources/[id]` | Admin | Soft-delete + clean embeddings |
 | `POST` | `/api/ai/sources/upload` | Admin | Upload source file |
+| `GET` | `/api/ai/sources/[id]/versions` | Admin | List source version history |
+| `POST` | `/api/ai/sources/[id]/versions` | Admin | Restore a source version |
 
 ---
 
@@ -236,4 +238,54 @@ After upload, the `generate-embeddings` Supabase Edge Function is triggered via 
 
 ---
 
-*Last updated: 2026-02-27*
+## GET /api/ai/sources/[id]/versions
+
+List the version history for a knowledge source. Uses the `get_knowledge_source_versions` database function.
+
+### Authentication
+
+Requires `admin` or `super_admin` role.
+
+### Response
+
+```json
+{
+  "data": [
+    {
+      "version_id": "uuid",
+      "source_id": "source-uuid",
+      "title": "Employee Handbook",
+      "content": "...",
+      "version_number": 3,
+      "changed_at": "2026-03-07T10:00:00Z",
+      "changed_by": "user-uuid"
+    }
+  ]
+}
+```
+
+---
+
+## POST /api/ai/sources/[id]/versions
+
+Restore a knowledge source to a specific previous version. Uses the `restore_knowledge_source_version` database function.
+
+### Authentication
+
+Requires `admin` or `super_admin` role.
+
+### Request Body
+
+```json
+{
+  "versionId": "version-uuid"
+}
+```
+
+### Response
+
+Returns the restored source record.
+
+---
+
+*Last updated: 2026-03-08*
