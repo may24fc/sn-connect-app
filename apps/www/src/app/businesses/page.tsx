@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { BUSINESS_UNITS } from '@/data/placeholder';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { BusinessPortfolio } from '@/components/businesses/BusinessPortfolio';
 
@@ -31,7 +30,7 @@ export default function BusinessesPage() {
           subtitle="Each business unit operates with autonomy while sharing the values, resources, and vision of SN International Group."
         />
 
-        <BusinessPortfolio units={BUSINESS_UNITS} />
+        <BusinessPortfolio />
       </section>
     </>
   );

@@ -4,17 +4,14 @@ import { type ReactNode, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { LayoutGrid, List, ArrowRight } from 'lucide-react';
-import type { BusinessUnit } from '@/data/placeholder';
+import { BUSINESS_UNITS } from '@/data/placeholder';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'grid' | 'list';
 
-interface BusinessPortfolioProps {
-  units: BusinessUnit[];
-}
-
-export function BusinessPortfolio({ units }: BusinessPortfolioProps): ReactNode {
+export function BusinessPortfolio(): ReactNode {
+  const units = BUSINESS_UNITS;
   const [view, setView] = useState<ViewMode>('list');
 
   return (
