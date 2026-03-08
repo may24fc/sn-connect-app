@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Star, ArrowRight, Quote } from 'lucide-react';
-import { BUSINESS_UNITS } from '@/data/placeholder';
+import { BUSINESS_UNITS, slugify } from '@/data/placeholder';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { ServicesGrid } from '@/components/businesses/ServicesGrid';
@@ -183,30 +183,46 @@ export default async function BusinessDetailPage({ params }: PageProps) {
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {unit.services.slice(0, 3).map((service, i) => (
               <ScrollReveal key={service.title} delay={i * 0.1}>
-                <div className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-card transition-all hover:shadow-mega">
-                  {/* Color band */}
-                  <div
-                    className="h-2 transition-all duration-300 group-hover:h-3"
-                    style={{ backgroundColor: unit.color }}
-                  />
-                  <div className="p-6">
+                <Link
+                  href={`/businesses/${unit.slug}/projects/${slugify(service.title)}`}
+                  className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-card transition-all hover:shadow-mega hover:-translate-y-1"
+                >
+                  {/* Project image */}
+                  <div className="relative h-48 w-full overflow-hidden">
+                    {service.image ? (
+                      <Image
+                        src={service.image}
+                        alt={service.title}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full" style={{ backgroundColor: `${unit.color}20` }} />
+                    )}
+                    {/* Subtle gradient overlay for badge legibility */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                    {/* Badge */}
                     <span
-                      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                      style={{ backgroundColor: `${unit.color}15`, color: unit.color }}
+                      className="absolute bottom-3 left-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm"
+                      style={{ backgroundColor: `${unit.color}dd`, color: '#fff' }}
                     >
                       Case Study
                     </span>
-                    <h3 className="mt-3 text-lg font-semibold text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                  </div>
+
+                  <div className="p-6">
+                    <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-indigo-600 transition-colors">
                       {service.title}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-zinc-500">
                       {service.description}
                     </p>
-                    <div className="mt-4 flex items-center gap-1 text-sm font-medium text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100">
-                      Read more <ArrowRight className="h-3.5 w-3.5" />
+                    <div className="mt-4 flex items-center gap-1 text-sm font-medium text-indigo-600">
+                      Learn More <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </div>
                   </div>
-                </div>
+                </Link>
               </ScrollReveal>
             ))}
           </div>

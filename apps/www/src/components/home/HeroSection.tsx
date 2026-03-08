@@ -27,9 +27,6 @@ export function HeroSection(): ReactNode {
               <CTAButton href="/careers" variant="outline" size="lg">
                 View Careers
               </CTAButton>
-              <CTAButton href="/contact" variant="outline" size="lg">
-                Contact Us
-              </CTAButton>
             </div>
           </div>
         </div>

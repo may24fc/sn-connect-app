@@ -19,7 +19,7 @@ export function SocialProofStrip(): ReactNode {
           {STATS.map((stat) => {
             return (
               <div key={stat.label} className="text-center">
-                <p className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
+                <p className="text-2xl font-bold tracking-tight text-zinc-900 hover:text-indigo-600 transition-colors duration-300 sm:text-3xl">
                   <CountUp end={stat.value} suffix={stat.suffix} />
                 </p>
                 <p className="mt-0.5 text-sm text-zinc-500">{stat.label}</p>

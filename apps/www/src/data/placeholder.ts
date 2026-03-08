@@ -1,6 +1,15 @@
 import type { LucideIcon } from 'lucide-react';
 import { Building2, Dumbbell, HardHat, Utensils } from 'lucide-react';
 
+/** Convert a human-readable title to a URL-safe slug, e.g. "Corporate Catering" → "corporate-catering" */
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
 export interface BusinessUnit {
   slug: string;
   name: string;
@@ -185,14 +194,78 @@ export const CULTURE_VALUES = [
 ];
 
 export const LIFE_PHOTOS = [
-  { src: '/images/culture/team-building.jpg', alt: 'Team building event', caption: 'Annual Team Building 2025' },
-  { src: '/images/culture/office.jpg', alt: 'Modern office space', caption: 'Our BGC Headquarters' },
-  { src: '/images/culture/awards.jpg', alt: 'Awards ceremony', caption: 'Best Employer Awards 2025' },
-  { src: '/images/culture/volunteering.jpg', alt: 'Community volunteering', caption: 'CSR — Community Outreach' },
-  { src: '/images/culture/fitness.jpg', alt: 'Company fitness event', caption: 'Wellness Wednesday' },
-  { src: '/images/culture/celebration.jpg', alt: 'Company celebration', caption: 'Year-End Celebration' },
-  { src: '/images/culture/training.jpg', alt: 'Training session', caption: 'Leadership Development Program' },
-  { src: '/images/culture/lunch.jpg', alt: 'Team lunch', caption: 'Team Friday Lunch' },
+  {
+    src: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Team members collaborating at annual team building event',
+    caption: 'Annual Team Building 2025',
+    category: 'Team Building',
+    slug: 'annual-team-building-2025',
+    description:
+      'Our annual team building event brought together 200+ employees for a full day of collaboration, friendly competitions, and camaraderie at Tagaytay Highlands — strengthening bonds that carry back into the workplace.',
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Modern open-plan office space at BGC headquarters',
+    caption: 'Our BGC Headquarters',
+    category: 'Office Life',
+    slug: 'bgc-headquarters',
+    description:
+      'Take a tour of our modern headquarters in Bonifacio Global City — an open, bright workspace designed for collaboration, creativity, and focus where great ideas come to life every day.',
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Awards ceremony on stage at Philippine Business Excellence Awards',
+    caption: 'Best Employer Awards 2025',
+    category: 'Events',
+    slug: 'best-employer-awards-2025',
+    description:
+      'SN International Group was recognized as a Best Employer of 2025 at the Philippine Business Excellence Awards — a landmark achievement that reflects our unwavering commitment to our people and workplace culture.',
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Volunteers from SN distributing goods in underserved communities',
+    caption: 'CSR — Community Outreach',
+    category: 'Events',
+    slug: 'community-outreach',
+    description:
+      'Our CSR team mobilized over 150 employee volunteers to distribute food packs and essential goods to underserved communities in Taguig — because giving back is part of who we are at SN International Group.',
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Employees joining a fitness and wellness class',
+    caption: 'Wellness Wednesday',
+    category: 'Office Life',
+    slug: 'wellness-wednesday',
+    description:
+      'Every Wednesday, employees across all business units enjoy free fitness classes, guided meditation, and wellness check-ins — part of our commitment to nurturing a healthy and balanced work environment.',
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Employees celebrating at the annual year-end party',
+    caption: 'Year-End Celebration',
+    category: 'Events',
+    slug: 'year-end-celebration',
+    description:
+      'We closed out the year in grand style with our annual Year-End Bash — a memorable evening of awards, live entertainment, heartfelt speeches, and genuine gratitude for the incredible people who make SN what it is.',
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Employees participating in a leadership development training workshop',
+    caption: 'Leadership Development Program',
+    category: 'Team Building',
+    slug: 'leadership-development-program',
+    description:
+      "Our Leadership Development Program empowers high-potential employees with executive coaching, cross-functional mentorship, and hands-on challenges — building tomorrow's leaders from within our own ranks.",
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=1200&q=80&auto=format&fit=crop',
+    alt: 'Team sharing a meal together on Team Friday Lunch',
+    caption: 'Team Friday Lunch',
+    category: 'Team Building',
+    slug: 'team-friday-lunch',
+    description:
+      'Every Friday, teams across the company gather for a shared lunch — a simple but meaningful tradition that keeps our culture warm, connected, and rooted in genuine human relationships.',
+  },
 ];
 
 export const NAV_LINKS = [

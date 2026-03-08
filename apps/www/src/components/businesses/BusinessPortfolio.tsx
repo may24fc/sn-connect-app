@@ -67,13 +67,6 @@ export function BusinessPortfolio(): ReactNode {
                       sizes="(max-width: 640px) 100vw, 50vw"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                    {/* Icon badge */}
-                    <div
-                      className="absolute bottom-4 left-4 flex h-11 w-11 items-center justify-center rounded-xl shadow-md transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
-                      style={{ backgroundColor: `${unit.color}ee` }}
-                    >
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
                   </div>
 
                   <div className="p-6">
