@@ -125,12 +125,6 @@ export function Header(): ReactNode {
               >
                 Log in
               </a>
-              <a
-                href={`${PORTAL_URL}/signup`}
-                className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
-              >
-                Sign up
-              </a>
             </div>
 
             {/* Mobile Hamburger */}
