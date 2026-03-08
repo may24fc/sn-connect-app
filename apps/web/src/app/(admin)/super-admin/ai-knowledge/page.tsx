@@ -87,7 +87,7 @@ export default function SuperAdminAIKnowledgePage(): React.ReactNode {
   return (
     <div className="h-full flex flex-col p-6">
       <div className="mb-4 flex-shrink-0">
-        <h1 className="text-xl font-semibold text-foreground">AI Knowledge Base</h1>
+        <h1 className="text-2xl font-bold text-foreground">AI Knowledge Base</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Manage policy documents and test the HR AI assistant
         </p>
