@@ -1,8 +1,9 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDirectory, useDirectoryExport } from '@/hooks/useDirectory';
-import type { DirectoryFilters } from '@/hooks/useDirectory';
+import type { DirectoryEntry, DirectoryFilters } from '@/hooks/useDirectory';
 import {
   Avatar,
   AvatarFallback,
@@ -13,6 +14,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   Select,
   SelectContent,
@@ -26,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   ChevronLeft,
@@ -34,6 +42,7 @@ import {
   Eye,
   Search,
   Target,
+  Trash2,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -77,6 +86,9 @@ function formatDate(dateStr: string | null): string {
 
 export default function AdminDirectoryPage(): ReactNode {
   const router = useRouter();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const isSuperAdmin = user?.role === 'super_admin';
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [departmentFilter, _setDepartmentFilter] = useState('');
@@ -86,6 +98,34 @@ export default function AdminDirectoryPage(): ReactNode {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
   const pageSize = 20;
+
+  // Delete employee state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<DirectoryEntry | null>(null);
+
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (employeeId: string) => {
+      const response = await fetch(`/api/employees/${employeeId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete employee' }));
+        throw new Error(error.error || 'Failed to delete employee');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
+    },
+  });
+
+  const handleDeleteClick = (entry: DirectoryEntry) => {
+    setEmployeeToDelete(entry);
+    setDeleteDialogOpen(true);
+  };
 
   const filters: DirectoryFilters = {
     sortBy,
@@ -437,6 +477,20 @@ export default function AdminDirectoryPage(): ReactNode {
                               </Button>
                             </Link>
                           )}
+                          {isSuperAdmin && entry.employee_id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Remove Employee"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(entry);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -447,6 +501,47 @@ export default function AdminDirectoryPage(): ReactNode {
           )}
         </CardContent>
       </Card>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <Trash2 className="h-5 w-5" />
+              Remove Employee
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {employeeToDelete?.full_name}
+              </span>
+              ? This action will soft-delete their employee record. This can be reversed by a database administrator.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setEmployeeToDelete(null);
+              }}
+              disabled={deleteEmployeeMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (employeeToDelete?.employee_id) {
+                  deleteEmployeeMutation.mutate(employeeToDelete.employee_id);
+                }
+              }}
+              disabled={deleteEmployeeMutation.isPending}
+            >
+              {deleteEmployeeMutation.isPending ? 'Removing...' : 'Remove Employee'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

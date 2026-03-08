@@ -5,6 +5,7 @@ import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModa
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { useAuth } from '@/contexts/AuthContext';
 import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
@@ -23,6 +24,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   type InternDashboardStats,
   type InternId,
@@ -47,7 +54,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   Calendar,
@@ -61,6 +68,7 @@ import {
   List,
   Search,
   ThumbsUp,
+  Trash2,
   UserPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -79,7 +87,9 @@ function formatDateTime(dateString: string): string {
 
 export default function AdminInternsPage(): ReactNode {
   const router = useRouter();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isSuperAdmin = user?.role === 'super_admin';
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [schoolFilter, setSchoolFilter] = useState<string>('all');
@@ -92,6 +102,35 @@ export default function AdminInternsPage(): ReactNode {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
   const [selectedEodLog, setSelectedEodLog] = useState<(typeof dailyLogs)[number] | null>(null);
+
+  // Delete intern state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [internToDelete, setInternToDelete] = useState<InternSummary | null>(null);
+
+  const deleteInternMutation = useMutation({
+    mutationFn: async (internshipId: string) => {
+      const response = await fetch(`/api/internships/${internshipId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete intern' }));
+        throw new Error(error.error || 'Failed to delete intern');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['internships'] });
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setDeleteDialogOpen(false);
+      setInternToDelete(null);
+    },
+  });
+
+  const handleDeleteIntern = (intern: InternSummary) => {
+    setInternToDelete(intern);
+    setDeleteDialogOpen(true);
+  };
 
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
@@ -402,6 +441,7 @@ export default function AdminInternsPage(): ReactNode {
             <InternList
               interns={filteredInterns}
               onView={handleViewIntern}
+              {...(isSuperAdmin && { onDelete: handleDeleteIntern })}
               layout="grid"
               emptyMessage={
                 searchQuery ||
@@ -417,7 +457,7 @@ export default function AdminInternsPage(): ReactNode {
               <CardContent className="p-4 space-y-2">
                 {filteredInterns.length > 0 ? (
                   filteredInterns.map((intern) => (
-                    <InternRow key={intern.id} intern={intern} onView={handleViewIntern} />
+                    <InternRow key={intern.id} intern={intern} onView={handleViewIntern} {...(isSuperAdmin && { onDelete: handleDeleteIntern })} />
                   ))
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
@@ -945,6 +985,48 @@ export default function AdminInternsPage(): ReactNode {
         }}
         log={selectedEodLog}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <Trash2 className="h-5 w-5" />
+              Remove Intern
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {internToDelete?.name}
+              </span>
+              ? This will soft-delete their internship and employee records. This can be reversed by a database administrator.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setInternToDelete(null);
+              }}
+              disabled={deleteInternMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (internToDelete) {
+                  deleteInternMutation.mutate(internToDelete.id);
+                }
+              }}
+              disabled={deleteInternMutation.isPending}
+            >
+              {deleteInternMutation.isPending ? 'Removing...' : 'Remove Intern'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

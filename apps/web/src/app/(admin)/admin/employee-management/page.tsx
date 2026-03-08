@@ -1,8 +1,13 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
-import { useProbation } from '@/hooks/useProbation';
+import { type ProbationRecord, useProbation } from '@/hooks/useProbation';
+import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { useTableSort } from '@/hooks/useTableSort';
 import {
   Avatar,
   AvatarFallback,
@@ -15,25 +20,33 @@ import {
   CardHeader,
   CardTitle,
   Input,
-  Progress,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import {
+  AlertCircle,
   AlertTriangle,
   CheckCircle2,
   Clock,
   Eye,
+  FileText,
   LayoutGrid,
   List,
   Search,
   TrendingUp,
   UserCog,
   UserPlus,
-  Users,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
@@ -55,13 +68,6 @@ function formatDate(dateStr: string | null | undefined): string {
   });
 }
 
-function getDaysRemaining(endDate: string | null | undefined): number | null {
-  if (!endDate) return null;
-  const end = new Date(endDate);
-  const now = new Date();
-  return Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 // ── 30/60/90 Stage System ──────────────────────────────────────────────
 
 type ProbationStage = 1 | 2 | 3 | 4;
@@ -73,39 +79,6 @@ const STAGE_LABELS: Record<ProbationStage, { name: string; description: string }
   3: { name: '60–90 Days', description: 'Mid-probation review' },
   4: { name: '90+ Days', description: 'Final evaluation' },
 };
-
-function getStage(dateHired: string, probationEndDate: string): ProbationStage {
-  const start = new Date(dateHired);
-  const end = new Date(probationEndDate);
-  const totalDays = Math.max(
-    1,
-    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
-  );
-  const elapsed = Math.max(
-    0,
-    Math.ceil((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24))
-  );
-  const ratio = elapsed / totalDays;
-
-  if (ratio >= 0.75) return 4;
-  if (ratio >= 0.5) return 3;
-  if (ratio >= 0.25) return 2;
-  return 1;
-}
-
-function getProbationStatus(
-  dateHired: string,
-  probationEndDate: string
-): ProbationStatus {
-  const daysRemaining = getDaysRemaining(probationEndDate);
-  if (daysRemaining !== null && daysRemaining <= 0) return 'completed';
-  // Check if extended beyond 90-day baseline
-  const baselineEnd = new Date(dateHired);
-  baselineEnd.setDate(baselineEnd.getDate() + 90);
-  if (new Date(probationEndDate) > baselineEnd) return 'extended';
-  if (daysRemaining !== null && daysRemaining <= 14) return 'at-risk';
-  return 'on-track';
-}
 
 const STATUS_CONFIG: Record<
   ProbationStatus,
@@ -171,77 +144,32 @@ function StageIndicator({
   );
 }
 
-const SAMPLE_PROBATION_EMPLOYEES: Array<{
-  id: string;
-  user_id: string;
-  first_name: string;
-  last_name: string;
-  position: string;
-  department: string;
-  date_hired: string;
-  probation_end_date: string;
-  avatar_url?: string;
-}> = [
-  {
-    id: 'sample-1',
-    user_id: 'sample-u1',
-    first_name: 'Maria',
-    last_name: 'Santos',
-    position: 'Junior Software Engineer',
-    department: 'Engineering',
-    date_hired: '2025-12-01',
-    probation_end_date: '2026-05-30',
-  },
-  {
-    id: 'sample-2',
-    user_id: 'sample-u2',
-    first_name: 'Carlos',
-    last_name: 'Reyes',
-    position: 'Marketing Associate',
-    department: 'Marketing',
-    date_hired: '2026-01-15',
-    probation_end_date: '2026-07-14',
-  },
-  {
-    id: 'sample-3',
-    user_id: 'sample-u3',
-    first_name: 'Angela',
-    last_name: 'Cruz',
-    position: 'HR Coordinator',
-    department: 'Human Resources',
-    date_hired: '2025-09-15',
-    probation_end_date: '2026-03-14',
-  },
-  {
-    id: 'sample-4',
-    user_id: 'sample-u4',
-    first_name: 'Jerome',
-    last_name: 'Villanueva',
-    position: 'Finance Analyst',
-    department: 'Finance',
-    date_hired: '2025-11-01',
-    probation_end_date: '2026-04-30',
-  },
-  {
-    id: 'sample-5',
-    user_id: 'sample-u5',
-    first_name: 'Patricia',
-    last_name: 'Lim',
-    position: 'UI/UX Designer',
-    department: 'Design',
-    date_hired: '2026-02-01',
-    probation_end_date: '2026-07-31',
-  },
-];
-
 type ProbationView = 'cards' | 'list';
+
+function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
 
 export default function EmployeeManagementPage(): ReactNode {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('probation');
   const [searchTerm, setSearchTerm] = useState('');
   const [probationView, setProbationView] = useState<ProbationView>('cards');
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  // Onboarding modal states
+  const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentData, setAssignmentData] = useState<any | null>(null);
 
   // Probation data
   const { data: probationData, isLoading: probationLoading } = useProbation();
@@ -249,20 +177,35 @@ export default function EmployeeManagementPage(): ReactNode {
   // Onboarding profiles
   const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
     ...(searchTerm && { search: searchTerm }),
+    role: 'employee',
     page: 1,
     pageSize: 50,
   });
 
-  const probationEmployees =
-    probationData?.data && probationData.data.length > 0
-      ? probationData.data
-      : SAMPLE_PROBATION_EMPLOYEES;
+  // Real-time pending approvals for employees
+  const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('employee');
+
+  // Sort state for Pending Approvals table
+  const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const sortedPending = pendingSort.sortItems(pendingApprovals, {
+    employee: (a) => a.full_name?.toLowerCase() ?? '',
+    email: (a) => a.email_address?.toLowerCase() ?? '',
+    position: (a) => a.position?.toLowerCase() ?? '',
+    submitted: (a) => a.completed_at ?? '',
+  });
+  const pendingSortHeadProps = { sortColumn: pendingSort.sortColumn, sortDirection: pendingSort.sortDirection, onSort: pendingSort.handleSort };
+
+  // Sort state for All Submissions table
+  const onboardSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const onboardSortHeadProps = { sortColumn: onboardSort.sortColumn, sortDirection: onboardSort.sortDirection, onSort: onboardSort.handleSort };
+
+  const probationEmployees = probationData?.data || [];
   const onboardingProfiles = onboardingData?.data || [];
 
   const filteredProbation = searchTerm
     ? probationEmployees.filter(
-        (emp: { first_name?: string; last_name?: string; position?: string }) => {
-          const name = `${emp.first_name || ''} ${emp.last_name || ''}`.toLowerCase();
+        (emp: ProbationRecord) => {
+          const name = emp.name.toLowerCase();
           return (
             name.includes(searchTerm.toLowerCase()) ||
             emp.position?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -380,28 +323,9 @@ export default function EmployeeManagementPage(): ReactNode {
               {probationView === 'cards' ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredProbation.map(
-                    (emp: {
-                      id: string;
-                      user_id?: string;
-                      first_name?: string;
-                      last_name?: string;
-                      position?: string;
-                      department?: string;
-                      date_hired?: string;
-                      probation_end_date?: string;
-                      avatar_url?: string;
-                    }) => {
-                      const daysRemaining = getDaysRemaining(emp.probation_end_date);
-                      const isUrgent = daysRemaining !== null && daysRemaining <= 14;
-                      const stage =
-                        emp.date_hired && emp.probation_end_date
-                          ? getStage(emp.date_hired, emp.probation_end_date)
-                          : 1;
-                      const status =
-                        emp.date_hired && emp.probation_end_date
-                          ? getProbationStatus(emp.date_hired, emp.probation_end_date)
-                          : 'on-track';
-                      const statusCfg = STATUS_CONFIG[status];
+                    (emp: ProbationRecord) => {
+                      const isUrgent = emp.daysRemaining <= 14;
+                      const statusCfg = STATUS_CONFIG[emp.status];
                       const StatusIcon = statusCfg.icon;
 
                       return (
@@ -412,14 +336,14 @@ export default function EmployeeManagementPage(): ReactNode {
                           <CardHeader className="pb-3">
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
-                                <AvatarImage src={emp.avatar_url} />
+                                <AvatarImage src={emp.avatarUrl} />
                                 <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                                  {getInitials(`${emp.first_name || ''} ${emp.last_name || ''}`)}
+                                  {getInitials(emp.name)}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="min-w-0 flex-1">
                                 <CardTitle className="text-sm">
-                                  {emp.first_name} {emp.last_name}
+                                  {emp.name}
                                 </CardTitle>
                                 <CardDescription className="text-xs">
                                   {emp.position || 'No position'}
@@ -435,35 +359,35 @@ export default function EmployeeManagementPage(): ReactNode {
                           </CardHeader>
                           <CardContent className="space-y-3">
                             {/* Stage Progress */}
-                            <StageIndicator stage={stage} status={status} />
+                            <StageIndicator stage={emp.stage} status={emp.status} />
 
                             <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                              <span>Hired: {formatDate(emp.date_hired)}</span>
-                              <span>End: {formatDate(emp.probation_end_date)}</span>
+                              <span>Hired: {formatDate(emp.startDate)}</span>
+                              <span>{emp.department || '—'}</span>
                             </div>
-                            {daysRemaining !== null && (
-                              <div className="flex items-center gap-2">
-                                <Clock
-                                  className={`h-3.5 w-3.5 ${isUrgent ? 'text-amber-500' : 'text-zinc-500 dark:text-zinc-400'}`}
-                                  strokeWidth={1.5}
-                                />
-                                <span
-                                  className={`text-xs font-medium ${isUrgent ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-300'}`}
-                                >
-                                  {daysRemaining <= 0
-                                    ? 'Probation ended'
-                                    : `${daysRemaining} days remaining`}
-                                </span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <Clock
+                                className={`h-3.5 w-3.5 ${isUrgent ? 'text-amber-500' : 'text-zinc-500 dark:text-zinc-400'}`}
+                                strokeWidth={1.5}
+                              />
+                              <span
+                                className={`text-xs font-medium ${isUrgent ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-300'}`}
+                              >
+                                {emp.daysRemaining <= 0
+                                  ? 'Probation ended'
+                                  : `${emp.daysRemaining} days remaining`}
+                              </span>
+                            </div>
                             <Button
                               variant="outline"
                               size="sm"
                               className="w-full mt-1"
-                              onClick={() => router.push('/admin/probation')}
+                              asChild
                             >
-                              <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
-                              Evaluate
+                              <Link href="/admin/probation">
+                                <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+                                Evaluate
+                              </Link>
                             </Button>
                           </CardContent>
                         </Card>
@@ -479,33 +403,14 @@ export default function EmployeeManagementPage(): ReactNode {
                       <span>Employee</span>
                       <span>Department</span>
                       <span>Stage</span>
-                      <span>Probation End</span>
+                      <span>Remaining</span>
                       <span>Status</span>
                       <span>Action</span>
                     </div>
                     {filteredProbation.map(
-                      (emp: {
-                        id: string;
-                        user_id?: string;
-                        first_name?: string;
-                        last_name?: string;
-                        position?: string;
-                        department?: string;
-                        date_hired?: string;
-                        probation_end_date?: string;
-                        avatar_url?: string;
-                      }) => {
-                        const daysRemaining = getDaysRemaining(emp.probation_end_date);
-                        const isUrgent = daysRemaining !== null && daysRemaining <= 14;
-                        const stage =
-                          emp.date_hired && emp.probation_end_date
-                            ? getStage(emp.date_hired, emp.probation_end_date)
-                            : 1;
-                        const status =
-                          emp.date_hired && emp.probation_end_date
-                            ? getProbationStatus(emp.date_hired, emp.probation_end_date)
-                            : 'on-track';
-                        const statusCfg = STATUS_CONFIG[status];
+                      (emp: ProbationRecord) => {
+                        const isUrgent = emp.daysRemaining <= 14;
+                        const statusCfg = STATUS_CONFIG[emp.status];
                         const StatusIcon = statusCfg.icon;
 
                         return (
@@ -517,14 +422,14 @@ export default function EmployeeManagementPage(): ReactNode {
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <Avatar className="h-8 w-8 shrink-0">
-                                <AvatarImage src={emp.avatar_url} />
+                                <AvatarImage src={emp.avatarUrl} />
                                 <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                                  {getInitials(`${emp.first_name || ''} ${emp.last_name || ''}`)}
+                                  {getInitials(emp.name)}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="min-w-0">
                                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
-                                  {emp.first_name} {emp.last_name}
+                                  {emp.name}
                                 </p>
                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                                   {emp.position || 'No position'}
@@ -541,12 +446,12 @@ export default function EmployeeManagementPage(): ReactNode {
                                   <div
                                     key={s}
                                     className={`h-1.5 w-5 rounded-full ${
-                                      s < stage
+                                      s < emp.stage
                                         ? 'bg-emerald-500 dark:bg-emerald-400'
-                                        : s === stage
-                                          ? status === 'at-risk'
+                                        : s === emp.stage
+                                          ? emp.status === 'at-risk'
                                             ? 'bg-amber-500'
-                                            : status === 'extended'
+                                            : emp.status === 'extended'
                                               ? 'bg-orange-500'
                                               : 'bg-indigo-500'
                                           : 'bg-zinc-200 dark:bg-zinc-700'
@@ -555,11 +460,11 @@ export default function EmployeeManagementPage(): ReactNode {
                                 ))}
                               </div>
                               <span className="text-[10px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                {STAGE_LABELS[stage].name}
+                                {STAGE_LABELS[emp.stage].name}
                               </span>
                             </div>
                             <span className="text-xs text-zinc-600 dark:text-zinc-300">
-                              {formatDate(emp.probation_end_date)}
+                              {emp.daysRemaining <= 0 ? 'Ended' : `${emp.daysRemaining}d left`}
                             </span>
                             <span
                               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${statusCfg.badgeClass}`}
@@ -571,10 +476,12 @@ export default function EmployeeManagementPage(): ReactNode {
                               variant="ghost"
                               size="sm"
                               className="h-7 px-2 text-xs"
-                              onClick={() => router.push('/admin/probation')}
+                              asChild
                             >
-                              <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
-                              View
+                              <Link href="/admin/probation">
+                                <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
+                                View
+                              </Link>
                             </Button>
                           </div>
                         );
@@ -588,86 +495,261 @@ export default function EmployeeManagementPage(): ReactNode {
         </TabsContent>
 
         {/* Onboarding Tab */}
-        <TabsContent value="onboarding" className="mt-4">
-          {onboardingLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-            </div>
-          ) : onboardingProfiles.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Users
-                  className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3"
-                  strokeWidth={1.5}
-                />
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  No pending onboarding profiles
-                </p>
+        <TabsContent value="onboarding" className="mt-4 space-y-6">
+          {/* Real-time Connection Status */}
+          {isSubscribed && (
+            <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                  <div className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
+                  Real-time monitoring active
+                </div>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {onboardingProfiles.map(
-                (profile: {
-                  id: string;
-                  user_id: string;
-                  first_name?: string;
-                  last_name?: string;
-                  is_completed?: boolean;
-                  completed_steps?: number;
-                  total_steps?: number;
-                  created_at?: string;
-                  avatar_url?: string;
-                }) => {
-                  const progress =
-                    profile.total_steps && profile.total_steps > 0
-                      ? Math.round(((profile.completed_steps || 0) / profile.total_steps) * 100)
-                      : 0;
-
-                  return (
-                    <Card key={profile.id}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={profile.avatar_url} />
-                            <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
-                              {getInitials(
-                                `${profile.first_name || ''} ${profile.last_name || ''}`
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <CardTitle className="text-sm">
-                              {profile.first_name} {profile.last_name}
-                            </CardTitle>
-                            <CardDescription className="text-xs">
-                              Started {formatDate(profile.created_at)}
-                            </CardDescription>
-                          </div>
-                          {profile.is_completed && (
-                            <Badge variant="default" className="ml-auto text-xs">
-                              Completed
-                            </Badge>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                            <span>
-                              {profile.completed_steps || 0} / {profile.total_steps || 0} steps
-                            </span>
-                            <span>{progress}%</span>
-                          </div>
-                          <Progress value={progress} className="h-2" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                }
-              )}
-            </div>
           )}
+
+          {/* Approval Stats */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Awaiting Approval</p>
+                    <p className="text-2xl font-bold">{pendingApprovals.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Submissions</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.total ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.completed ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pending Approvals Alert */}
+          {pendingApprovals.length > 0 && (
+            <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                      {pendingApprovals.length} Onboarding Submission
+                      {pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
+                    </h3>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                      Review and approve employee onboarding submissions to activate their accounts.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pending Approvals Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pending Approvals</CardTitle>
+              <CardDescription>
+                Employees who have completed onboarding and are waiting for approval
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableTableHead column="employee" {...pendingSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="email" {...pendingSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="position" {...pendingSortHeadProps}>Position</SortableTableHead>
+                    <SortableTableHead column="submitted" {...pendingSortHeadProps}>Submitted</SortableTableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingApprovals.length > 0 ? (
+                    sortedPending.map((approval) => (
+                      <TableRow
+                        key={approval.id}
+                        className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5"
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+                                {approval.full_name
+                                  ?.split(' ')
+                                  .map((n: string) => n[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2) || 'NA'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{approval.full_name || 'Unnamed'}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {approval.email_address || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {approval.position || 'Not specified'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDateTime(approval.completed_at)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => setSelectedApproval(approval)}
+                          >
+                            <CheckCircle2 className="mr-1 h-4 w-4" />
+                            Review & Approve
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No pending approvals</p>
+                        <p className="text-sm mt-1">
+                          All onboarding submissions have been processed
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* All Onboarding Submissions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">All Onboarding Submissions</CardTitle>
+              <CardDescription>Complete history of employee onboarding data</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableTableHead column="employee" {...onboardSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="email" {...onboardSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="department" {...onboardSortHeadProps}>Department</SortableTableHead>
+                    <SortableTableHead column="status" {...onboardSortHeadProps}>Status</SortableTableHead>
+                    <SortableTableHead column="step" {...onboardSortHeadProps}>Current Step</SortableTableHead>
+                    <SortableTableHead column="submitted" {...onboardSortHeadProps}>Submitted</SortableTableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {onboardingData?.data && onboardingData.data.length > 0 ? (
+                    onboardSort.sortItems([...onboardingData.data], {
+                      employee: (p: any) => p.full_name?.toLowerCase() ?? '',
+                      email: (p: any) => p.email_address?.toLowerCase() ?? '',
+                      department: (p: any) => {
+                        const dept = Array.isArray(p.departments) ? p.departments[0]?.name : p.departments?.name;
+                        return dept?.toLowerCase() ?? '';
+                      },
+                      status: (p: any) => p.status ?? '',
+                      step: (p: any) => p.current_step ?? '',
+                      submitted: (p: any) => p.created_at ?? '',
+                    }).map((profile: any) => {
+                      const department = Array.isArray(profile.departments)
+                        ? profile.departments[0]?.name
+                        : profile.departments?.name;
+
+                      return (
+                        <TableRow key={profile.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarFallback className="text-xs">
+                                  {profile.full_name
+                                    ?.split(' ')
+                                    .map((n: string) => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2) || 'NA'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{profile.full_name || 'Unnamed'}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {profile.email_address || 'N/A'}
+                          </TableCell>
+                          <TableCell>{department || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
+                              {profile.status === 'completed' ? 'Completed' : 'In Progress'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {profile.current_step.replace('_', ' ')}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(profile.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {onboardingLoading
+                          ? 'Loading onboarding data...'
+                          : 'No employee onboarding submissions found'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
 
@@ -677,6 +759,28 @@ export default function EmployeeManagementPage(): ReactNode {
         open={inviteModalOpen}
         onOpenChange={setInviteModalOpen}
         defaultRole="employee"
+      />
+
+      <ApproveOnboardingModal
+        open={!!selectedApproval}
+        onOpenChange={(open) => !open && setSelectedApproval(null)}
+        onboarding={selectedApproval}
+        onApprovalSuccess={(data) => {
+          setAssignmentData(data);
+          setAssignmentModalOpen(true);
+        }}
+      />
+
+      <AssignEmployeeModal
+        open={assignmentModalOpen}
+        onOpenChange={setAssignmentModalOpen}
+        assignmentData={assignmentData}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
+          queryClient.invalidateQueries({ queryKey: ['probation'] });
+          setAssignmentData(null);
+          setAssignmentModalOpen(false);
+        }}
       />
     </div>
   );

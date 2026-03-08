@@ -39,7 +39,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import { Calendar, LayoutGrid, List, Plus } from 'lucide-react';
+import { Calendar, LayoutGrid, List, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
 
@@ -180,7 +180,7 @@ export default function TaskManagementPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Task Management</h1>
+          <h1 className="text-2xl font-bold text-foreground">Task Management</h1>
           <p className="text-sm text-muted-foreground">
             Create and assign tasks to employees and interns
           </p>
@@ -242,12 +242,15 @@ export default function TaskManagementPage() {
           </div>
 
           {/* Search */}
-          <Input
-            placeholder="Search tasks..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="max-w-xs"
-          />
+          <div className="relative max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search tasks..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
 
         {/* List View */}

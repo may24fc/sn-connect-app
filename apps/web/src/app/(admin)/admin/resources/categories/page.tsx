@@ -484,7 +484,7 @@ export default function ResourceCategoriesPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-headline">Resource Categories</h1>
+            <h1 className="text-2xl font-bold text-foreground">Resource Categories</h1>
             <p className="text-muted-foreground">
               Manage categories and subcategories for resources
             </p>
