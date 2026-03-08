@@ -315,6 +315,7 @@ export const queryKeys = {
   probation: {
     all: ['probation'] as const,
     list: () => [...queryKeys.probation.all, 'list'] as const,
+    me: () => [...queryKeys.probation.all, 'me'] as const,
   },
 
   internships: {

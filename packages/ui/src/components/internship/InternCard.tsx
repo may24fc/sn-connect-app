@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Mail,
   MoreVertical,
+  Trash2,
   User,
 } from 'lucide-react';
 import type * as React from 'react';
@@ -32,6 +33,7 @@ interface InternCardProps {
   onView?: (intern: InternSummary) => void;
   onViewReports?: (intern: InternSummary) => void;
   onContact?: (intern: InternSummary) => void;
+  onDelete?: (intern: InternSummary) => void;
   className?: string;
 }
 
@@ -49,6 +51,7 @@ export function InternCard({
   onView,
   onViewReports,
   onContact,
+  onDelete,
   className,
 }: InternCardProps): React.ReactNode {
   const daysRemaining = getDaysRemaining(intern.endDate);
@@ -92,6 +95,15 @@ export function InternCard({
                   <DropdownMenuItem onClick={() => onContact(intern)}>
                     <Mail className="mr-2 h-4 w-4" />
                     Contact Intern
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem
+                    onClick={() => onDelete(intern)}
+                    className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Remove Intern
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -154,6 +166,7 @@ interface InternListProps {
   onView?: (intern: InternSummary) => void;
   onViewReports?: (intern: InternSummary) => void;
   onContact?: (intern: InternSummary) => void;
+  onDelete?: (intern: InternSummary) => void;
   emptyMessage?: string;
   layout?: 'grid' | 'list';
   className?: string;
@@ -164,6 +177,7 @@ export function InternList({
   onView,
   onViewReports,
   onContact,
+  onDelete,
   emptyMessage = 'No interns found',
   layout = 'grid',
   className,
@@ -193,6 +207,7 @@ export function InternList({
           {...(onView && { onView })}
           {...(onViewReports && { onViewReports })}
           {...(onContact && { onContact })}
+          {...(onDelete && { onDelete })}
         />
       ))}
     </div>
@@ -202,10 +217,11 @@ export function InternList({
 interface InternRowProps {
   intern: InternSummary;
   onView?: (intern: InternSummary) => void;
+  onDelete?: (intern: InternSummary) => void;
   className?: string;
 }
 
-export function InternRow({ intern, onView, className }: InternRowProps): React.ReactNode {
+export function InternRow({ intern, onView, onDelete, className }: InternRowProps): React.ReactNode {
   const daysRemaining = getDaysRemaining(intern.endDate);
 
   return (
@@ -245,6 +261,20 @@ export function InternRow({ intern, onView, className }: InternRowProps): React.
           <p className="text-xs text-muted-foreground">{daysRemaining} days left</p>
         </div>
         <InternshipStatusBadge status={intern.status} />
+        {onDelete && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+            title="Remove Intern"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(intern);
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
         {onView && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
       </div>
     </div>
