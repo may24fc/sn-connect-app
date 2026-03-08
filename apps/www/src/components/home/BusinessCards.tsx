@@ -60,7 +60,6 @@ export function BusinessCards(): ReactNode {
   };
 
   const unit = BUSINESS_UNITS[active]!;
-  const Icon = unit.icon;
 
   return (
     <section className="py-20 lg:py-28">

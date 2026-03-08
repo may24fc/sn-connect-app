@@ -3,7 +3,6 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-import Image from 'next/image';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 
 const WHY_ITEMS = [

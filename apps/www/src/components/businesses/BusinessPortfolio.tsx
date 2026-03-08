@@ -50,7 +50,6 @@ export function BusinessPortfolio(): ReactNode {
       {view === 'grid' ? (
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {units.map((unit, i) => {
-            const Icon = unit.icon;
             return (
               <ScrollReveal key={unit.slug} delay={i * 0.1}>
                 <Link
