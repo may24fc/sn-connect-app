@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, type ReactNode } from 'react';
+import { useState, useMemo, useRef, type ReactNode, useId } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
 interface TeamMember {
@@ -16,16 +17,6 @@ interface TeamGridProps {
   members: TeamMember[];
 }
 
-const DEPT_BADGE: Record<string, string> = {
-  SFO: 'bg-amber-50 text-amber-700 border-amber-200',
-  UHP: 'bg-blue-50 text-blue-700 border-blue-200',
-  '24 Fit Club': 'bg-rose-50 text-rose-700 border-rose-200',
-  'SN Construction': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  Corporate: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-};
-
-const DEFAULT_BADGE = 'bg-zinc-50 text-zinc-600 border-zinc-200';
-
 function getInitials(name: string): string {
   return name
     .split(' ')
@@ -35,8 +26,72 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+function MemberCell({
+  member,
+  index,
+}: {
+  member: TeamMember;
+  index: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-40px' });
+
+  return (
+    <motion.div
+      ref={ref}
+      layout
+      initial={{ opacity: 0, y: 24 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      exit={{ opacity: 0, y: 12, transition: { duration: 0.2 } }}
+      transition={{
+        duration: 0.55,
+        delay: (index % 4) * 0.08,
+        ease: [0.25, 0.4, 0.25, 1],
+      }}
+      className="group"
+    >
+      {/* Square portrait */}
+      <div className="relative aspect-square w-full overflow-hidden bg-zinc-100">
+        {member.image ? (
+          <Image
+            src={member.image}
+            alt={member.name}
+            fill
+            className="object-cover object-top transition-transform duration-500 ease-out group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-zinc-50">
+            <span className="text-5xl font-black tracking-tighter text-zinc-200 select-none">
+              {getInitials(member.name)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Metadata */}
+      <div className="mt-3.5">
+        <h3 className="text-sm font-bold text-zinc-900 transition-colors duration-200 group-hover:text-indigo-600 leading-snug">
+          {member.name}
+        </h3>
+        <p className="mt-0.5 text-xs font-normal text-zinc-500 leading-snug">
+          {member.title}
+        </p>
+        {/* Business unit with vertical accent divider */}
+        <div className="mt-2 flex items-center gap-2">
+          <span className="block h-3.5 w-0.5 shrink-0 bg-indigo-600" aria-hidden="true" />
+          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-zinc-400">
+            {member.department}
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function TeamGrid({ members }: TeamGridProps): ReactNode {
   const [activeFilter, setActiveFilter] = useState('All');
+  const underlineId = useId();
 
   const departments = useMemo(() => {
     const depts = Array.from(new Set(members.map((m) => m.department)));
@@ -53,88 +108,66 @@ export function TeamGrid({ members }: TeamGridProps): ReactNode {
 
   return (
     <div>
-      {/* Department filter tabs */}
-      <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
+      {/* Filter bar — underline style */}
+      <div className="mb-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-b border-zinc-200">
         {departments.map((dept) => (
           <button
             key={dept}
             type="button"
             onClick={() => setActiveFilter(dept)}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+            className={`relative pb-3 text-sm font-medium transition-colors duration-200 ${
               activeFilter === dept
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                ? 'text-zinc-900'
+                : 'text-zinc-400 hover:text-zinc-700'
             }`}
           >
             {dept}
+            <AnimatePresence>
+              {activeFilter === dept && (
+                <motion.span
+                  layoutId={underlineId}
+                  className="absolute bottom-0 left-0 h-0.5 w-full bg-indigo-600"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                />
+              )}
+            </AnimatePresence>
           </button>
         ))}
       </div>
 
-      {/* Grid */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Gallery grid */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
         <AnimatePresence mode="popLayout">
-          {filtered.map((member) => {
-            const badge = DEPT_BADGE[member.department] ?? DEFAULT_BADGE;
-            return (
-              <motion.article
-                key={member.name}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-                whileHover={{ y: -6 }}
-                className="group relative overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-card hover:shadow-mega"
-              >
-                {/* Brand accent bar */}
-                <div className="h-1 w-full bg-indigo-600 transition-all duration-300 group-hover:h-1.5" />
+          {filtered.map((member, i) => (
+            <MemberCell key={member.name} member={member} index={i} />
+          ))}
 
-                <div className="flex flex-col items-center px-4 pb-5 pt-5">
-                  {/* Initials avatar */}
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-indigo-50 text-base font-bold text-indigo-600 shadow-sm">
-                    {getInitials(member.name)}
-                  </div>
-
-                  <h3 className="mt-3 text-center text-sm font-bold leading-snug text-zinc-900">
-                    {member.name}
-                  </h3>
-                  <p className="mt-0.5 text-center text-xs leading-tight text-zinc-500">
-                    {member.title}
-                  </p>
-
-                  {/* Dept badge */}
-                  <span
-                    className={`mt-3 inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badge}`}
-                  >
-                    {member.department}
-                  </span>
-                </div>
-              </motion.article>
-            );
-          })}
-
-          {/* Join Our Team CTA card */}
+          {/* Join Our Team CTA cell */}
           <motion.div
-            layout
             key="join-cta"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.25, ease: 'easeOut', delay: 0.1 }}
+            layout
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="group"
           >
-            <Link
-              href="/careers"
-              className="group flex h-full min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 p-6 text-center transition-all duration-300 hover:border-indigo-400 hover:bg-indigo-50 hover:shadow-card"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 transition-transform duration-300 group-hover:scale-110">
-                <ArrowRight className="h-6 w-6" />
+            <Link href="/careers" className="block">
+              {/* Dashed square */}
+              <div className="relative aspect-square w-full border border-dashed border-zinc-300 transition-colors duration-300 group-hover:border-indigo-400 flex items-center justify-center bg-transparent">
+                <ArrowRight className="h-5 w-5 text-zinc-300 transition-colors duration-300 group-hover:text-indigo-500" />
               </div>
-              <h3 className="mt-3 text-sm font-bold text-indigo-700">
-                Join Our Team
-              </h3>
-              <p className="mt-1 text-xs text-indigo-500">
-                Explore open positions
-              </p>
+              <div className="mt-3.5">
+                <h3 className="text-sm font-bold text-zinc-400 transition-colors duration-200 group-hover:text-indigo-600 leading-snug">
+                  Join Our Team
+                </h3>
+                <p className="mt-0.5 text-xs font-normal text-zinc-400 leading-snug">
+                  Explore open positions
+                </p>
+              </div>
             </Link>
           </motion.div>
         </AnimatePresence>

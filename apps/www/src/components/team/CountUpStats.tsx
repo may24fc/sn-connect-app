@@ -48,9 +48,9 @@ function StatCard({ stat }: { stat: StatItem }) {
   return (
     <div
       ref={ref}
-      className="rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-card transition-shadow duration-300 hover:shadow-mega"
+      className="p-8 text-center duration-300"
     >
-      <p className="text-4xl font-bold text-indigo-600">
+      <p className="text-4xl font-bold text-zinc-900 hover:text-indigo-600 transition-colors duration-300">
         {count}
         {stat.suffix}
       </p>
