@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { getAuthCallbackUrl } from '@/lib/auth/redirect-config';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -30,7 +29,6 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
@@ -462,39 +460,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     [MOCK_USERS, queryClient, router, supabase, syncAuthState, useMock]
   );
 
-  const signup = React.useCallback(
-    async (email: string, password: string, fullName: string): Promise<void> => {
-      if (useMock) {
-        throw new Error('Signup is not available in mock auth mode.');
-      }
-
-      if (!supabase) {
-        throw new Error('Authentication service is not configured.');
-      }
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-          emailRedirectTo: getAuthCallbackUrl(),
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Invalidate stale caches and refresh router state so the UI
-      // reflects the new signup without requiring a manual page refresh.
-      await queryClient.invalidateQueries();
-      router.refresh();
-    },
-    [queryClient, router, supabase, useMock]
-  );
-
   const logout = React.useCallback(async (): Promise<void> => {
     setIsLoading(true);
     try {
@@ -538,12 +503,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       user,
       isLoading,
       login,
-      signup,
       logout,
       refreshUser,
       isAuthenticated: !!user,
     }),
-    [user, isLoading, login, signup, logout, refreshUser]
+    [user, isLoading, login, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

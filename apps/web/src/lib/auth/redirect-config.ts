@@ -138,17 +138,6 @@ export function getPostLoginRedirect(role?: string, returnTo?: string | null): s
 }
 
 /**
- * Returns the redirect URL after a successful signup.
- * Typically this is the email confirmation page, not the app itself
- * (since the user still needs to verify their email).
- *
- * @param email - The email address that was signed up.
- */
-export function getPostSignupRedirect(email: string): string {
-  return `/signup/confirmation?email=${encodeURIComponent(email)}`;
-}
-
-/**
  * Returns the redirect URL for the password reset flow.
  * This is passed to `supabase.auth.resetPasswordForEmail()` as `redirectTo`.
  */
