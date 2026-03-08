@@ -151,13 +151,6 @@ export function BusinessCards(): ReactNode {
                       />
                       {/* Subtle gradient at bottom */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                      {/* Icon badge */}
-                      <div
-                        className="absolute bottom-4 left-4 flex h-12 w-12 items-center justify-center rounded-xl shadow-lg"
-                        style={{ backgroundColor: `${unit.color}ee` }}
-                      >
-                        <Icon className="h-6 w-6 text-white" />
-                      </div>
                     </div>
 
                     {/* Content */}
