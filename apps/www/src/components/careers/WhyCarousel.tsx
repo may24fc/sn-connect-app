@@ -2,16 +2,8 @@
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  ChevronUp,
-  ChevronDown,
-  TrendingUp,
-  Star,
-  BookOpen,
-  Heart,
-  Users,
-  Zap,
-} from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+import Image from 'next/image';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 
 const WHY_ITEMS = [
@@ -19,59 +11,118 @@ const WHY_ITEMS = [
     title: 'Growth Opportunities',
     desc: 'Clear career paths and cross-functional mobility across all business units.',
     stat: '85% internal promotion rate',
-    icon: TrendingUp,
+    image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=96&q=80&auto=format&fit=crop',
+    imageAlt: 'Team collaborating at work',
   },
   {
     title: 'Competitive Benefits',
     desc: 'Comprehensive compensation, health coverage, and performance bonuses.',
-    stat: 'Above-market compensation + HMO',
-    icon: Star,
+    stat: 'Above-market pay + full HMO coverage',
+    image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=96&q=80&auto=format&fit=crop',
+    imageAlt: 'Employees in the workplace',
   },
   {
     title: 'Learning & Development',
     desc: 'Access to training programs, workshops, and mentorship opportunities.',
     stat: '200+ training hours per employee per year',
-    icon: BookOpen,
+    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=96&q=80&auto=format&fit=crop',
+    imageAlt: 'Professional training session',
   },
   {
     title: 'Work-Life Balance',
     desc: 'Flexible arrangements, wellness programs, and team activities.',
     stat: 'Hybrid work + wellness stipend',
-    icon: Heart,
+    image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=96&q=80&auto=format&fit=crop',
+    imageAlt: 'Modern collaborative office',
   },
   {
     title: 'Inclusive Culture',
     desc: 'A diverse and supportive environment where every voice matters.',
     stat: '50+ nationalities across business units',
-    icon: Users,
+    image: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=96&q=80&auto=format&fit=crop',
+    imageAlt: 'Diverse team working together',
   },
   {
     title: 'Impact & Purpose',
     desc: 'Work that makes a real difference in communities across the Philippines.',
     stat: '10,000+ community beneficiaries',
-    icon: Zap,
+    image: 'https://images.unsplash.com/photo-1531545514256-b1400bc00f31?w=96&q=80&auto=format&fit=crop',
+    imageAlt: 'Community impact project',
   },
 ];
 
 const TOTAL = WHY_ITEMS.length;
-const CARD_SPACING = 178;
+const CARD_SPACING = 172;
 
 function getItemState(itemIndex: number, active: number) {
   const dist = ((itemIndex - active) % TOTAL + TOTAL) % TOTAL;
   if (dist === 0) {
-    return { y: 0, scale: 1, opacity: 1, zIndex: 10, pointerEvents: 'auto' as const };
+    return {
+      y: 0,
+      scale: 1.05,
+      opacity: 1,
+      filter: 'grayscale(0) blur(0px)',
+      boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+      zIndex: 10,
+      pointerEvents: 'auto' as const,
+    };
   }
   if (dist === 1) {
-    return { y: CARD_SPACING, scale: 0.85, opacity: 0.5, zIndex: 5, pointerEvents: 'auto' as const };
+    return {
+      y: CARD_SPACING,
+      scale: 0.91,
+      opacity: 0.6,
+      filter: 'grayscale(0.9) blur(3px)',
+      boxShadow: '0 0 0px 0px rgba(99,102,241,0)',
+      zIndex: 5,
+      pointerEvents: 'auto' as const,
+    };
   }
   if (dist === TOTAL - 1) {
-    return { y: -CARD_SPACING, scale: 0.85, opacity: 0.5, zIndex: 5, pointerEvents: 'auto' as const };
+    return {
+      y: -CARD_SPACING,
+      scale: 0.91,
+      opacity: 0.6,
+      filter: 'grayscale(0.9) blur(3px)',
+      boxShadow: '0 0 0px 0px rgba(99,102,241,0)',
+      zIndex: 5,
+      pointerEvents: 'auto' as const,
+    };
   }
-  // Far items go off-screen in the appropriate direction
   if (dist <= Math.floor(TOTAL / 2)) {
-    return { y: CARD_SPACING * 2, scale: 0.72, opacity: 0, zIndex: 0, pointerEvents: 'none' as const };
+    return {
+      y: CARD_SPACING * 2.3,
+      scale: 0.78,
+      opacity: 0,
+      filter: 'grayscale(1) blur(6px)',
+      boxShadow: '0 0 0px 0px rgba(99,102,241,0)',
+      zIndex: 0,
+      pointerEvents: 'none' as const,
+    };
   }
-  return { y: -CARD_SPACING * 2, scale: 0.72, opacity: 0, zIndex: 0, pointerEvents: 'none' as const };
+  return {
+    y: -CARD_SPACING * 2.3,
+    scale: 0.78,
+    opacity: 0,
+    filter: 'grayscale(1) blur(6px)',
+    boxShadow: '0 0 0px 0px rgba(99,102,241,0)',
+    zIndex: 0,
+    pointerEvents: 'none' as const,
+  };
+}
+
+function StatDisplay({ stat }: { stat: string }): ReactNode {
+  const match = stat.match(/^([\d,]+[+%]?)/);
+  const leading = match?.[1];
+  if (leading) {
+    return (
+      <span>
+        <span className="font-bold text-indigo-600">{leading}</span>
+        {stat.slice(leading.length)}
+      </span>
+    );
+  }
+  return <span className="font-semibold text-indigo-600">{stat}</span>;
 }
 
 export function WhyCarousel(): ReactNode {
@@ -111,22 +162,21 @@ export function WhyCarousel(): ReactNode {
             We invest in our people because they&apos;re the foundation of everything we build.
           </p>
 
-          {/* Up/down nav */}
+          {/* Up/down nav — ghost buttons */}
           <div className="mt-8 flex items-center gap-3">
             <button
               type="button"
               onClick={prev}
               aria-label="Previous reason"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-transparent text-zinc-600 transition-all duration-200 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white"
             >
               <ChevronUp className="h-5 w-5" />
             </button>
-
             <button
               type="button"
               onClick={next}
               aria-label="Next reason"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-transparent text-zinc-600 transition-all duration-200 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white"
             >
               <ChevronDown className="h-5 w-5" />
             </button>
@@ -149,19 +199,12 @@ export function WhyCarousel(): ReactNode {
         </ScrollReveal>
       </div>
 
-      {/* Right ─ vertical carousel */}
+      {/* Right ─ vertical focus-scroll carousel */}
       <div className="flex-1">
-        {/* Outer fade masks for top/bottom bleed effect */}
         <div className="relative h-[400px]">
-          {/* Top fade */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-20 bg-gradient-to-b from-zinc-50 to-transparent" />
-          {/* Bottom fade */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-20 bg-gradient-to-t from-zinc-50 to-transparent" />
-
-          <div className="relative h-full">
+          <div className="relative h-full ">
             {WHY_ITEMS.map((item, i) => {
               const state = getItemState(i, active);
-              const Icon = item.icon;
               const isActive = i === active;
 
               return (
@@ -171,43 +214,41 @@ export function WhyCarousel(): ReactNode {
                   style={{ zIndex: state.zIndex, pointerEvents: 'none' }}
                 >
                   <motion.div
-                    initial={getItemState(i, 0)}
+                    initial={false}
                     animate={{
                       y: state.y,
                       scale: state.scale,
                       opacity: state.opacity,
+                      filter: state.filter,
+                      boxShadow: state.boxShadow,
                     }}
                     transition={{ duration: 0.5, ease: [0.25, 0.4, 0.25, 1] }}
                     style={{ pointerEvents: state.pointerEvents }}
+                    className="rounded-2xl overflow-hidden"
                   >
                     <div
-                      className={`rounded-xl border bg-white p-6 transition-all ${
+                      className={`rounded-2xl border p-5 transition-colors ${
                         isActive
-                          ? 'border-indigo-200 shadow-card-hover'
-                          : 'border-zinc-200 shadow-card cursor-pointer hover:border-indigo-100'
+                          ? 'border-indigo-200/70 bg-white'
+                          : 'cursor-pointer border-transparent bg-transparent'
                       }`}
                       onClick={!isActive ? () => goTo(i) : undefined}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-                          <Icon className="h-6 w-6 text-zinc-900" />
-                        </div>
-                        <div className="min-w-0">
+                      <div className="flex items-center gap-4">
+                        <div className="min-w-0 flex-1">
                           <h3
-                            className={`font-semibold ${
+                            className={`text-lg font-bold tracking-tight ${
                               isActive ? 'text-zinc-900' : 'text-zinc-700'
                             }`}
                           >
                             {item.title}
                           </h3>
-                          <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">
+                          <p className="mt-1 text-sm leading-relaxed text-zinc-500">
                             {item.desc}
                           </p>
-                          {isActive && (
-                            <p className="mt-2 text-xs font-semibold text-indigo-600">
-                              {item.stat}
-                            </p>
-                          )}
+                          <p className="mt-2 text-xs leading-snug text-zinc-500">
+                            <StatDisplay stat={item.stat} />
+                          </p>
                         </div>
                       </div>
                     </div>

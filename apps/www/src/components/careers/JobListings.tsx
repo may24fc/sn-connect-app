@@ -1,10 +1,10 @@
 'use client';
 
 import { type ReactNode, useState, useMemo, useEffect, useRef } from 'react';
-import { MapPin, Clock, Building2, Briefcase, Search, Users, ArrowRight, LinkIcon, Flame, CalendarDays, BadgeDollarSign } from 'lucide-react';
+import { MapPin, Clock, Building2, Briefcase, Search, Users, ArrowRight, Flame, CalendarDays, BadgeDollarSign, SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
-import { BUSINESS_UNITS, PLACEHOLDER_JOBS } from '@/data/placeholder';
+import { BUSINESS_UNITS } from '@/data/placeholder';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const EMPLOYMENT_TYPES = ['All', 'Full-time', 'Part-time', 'Contract', 'Internship'];
@@ -76,6 +76,7 @@ export function JobListings(): ReactNode {
   const [unitFilter, setUnitFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('All');
   const [dbJobs, setDbJobs] = useState<NormalizedJob[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   // Real-time applicant counts: { [job_posting_id]: count }
   const [liveCounts, setLiveCounts] = useState<Record<string, number>>({});
   const [countsReady, setCountsReady] = useState(false);
@@ -86,12 +87,13 @@ export function JobListings(): ReactNode {
     fetch('/api/jobs')
       .then((res) => (res.ok ? res.json() : null))
       .then((data: DbJob[] | null) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setDbJobs(data.map(normalizeDbJob));
-        }
+        setDbJobs(Array.isArray(data) ? data.map(normalizeDbJob) : []);
       })
       .catch(() => {
-        // Fall back to placeholders silently
+        setDbJobs([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, []);
 
@@ -130,8 +132,7 @@ export function JobListings(): ReactNode {
     };
   }, []);
 
-  // Use DB jobs if available, otherwise fall back to placeholders
-  const jobs: NormalizedJob[] = dbJobs ?? PLACEHOLDER_JOBS;
+  const jobs: NormalizedJob[] = dbJobs ?? [];
 
   const filtered = useMemo(() => {
     return jobs.filter((job) => {
@@ -190,17 +191,60 @@ export function JobListings(): ReactNode {
 
       {/* Results */}
       <div className="mt-8 space-y-4">
-        {filtered.length === 0 ? (
-          <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-zinc-100">
-              <Briefcase className="h-10 w-10 text-zinc-400" />
+        {isLoading ? (
+          /* Skeleton loader */
+          <div className="space-y-4" aria-busy="true" aria-label="Loading job listings">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-zinc-200 bg-white p-6">
+                <div className="flex gap-4">
+                  <div className="hidden sm:block h-11 w-11 shrink-0 rounded-xl bg-zinc-100" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-5 w-2/5 rounded-md bg-zinc-100" />
+                    <div className="flex gap-3">
+                      <div className="h-4 w-24 rounded-md bg-zinc-100" />
+                      <div className="h-4 w-20 rounded-md bg-zinc-100" />
+                      <div className="h-4 w-16 rounded-md bg-zinc-100" />
+                    </div>
+                    <div className="h-4 w-full rounded-md bg-zinc-100" />
+                    <div className="h-4 w-4/5 rounded-md bg-zinc-100" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : jobs.length === 0 ? (
+          /* No open positions at all */
+          <div className="rounded-xl border border-zinc-200 bg-white px-8 py-20 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-zinc-50 ring-1 ring-zinc-200">
+              <Briefcase className="h-9 w-9 text-zinc-400" />
             </div>
-            <p className="mt-4 text-lg font-medium text-zinc-700">No positions found</p>
-            <p className="mt-1 text-sm text-zinc-500">Try adjusting your filters or check back later.</p>
+            <h3 className="mt-5 text-lg font-semibold text-zinc-800">No open positions right now</h3>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500">
+              We don&apos;t have any active listings at the moment, but we&apos;re always
+              growing. Check back soon or reach out to express your interest.
+            </p>
+            <Link
+              href="/contact"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            >
+              Get in touch
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        ) : filtered.length === 0 ? (
+          /* Active filters returned no results */
+          <div className="rounded-xl border border-zinc-200 bg-white px-8 py-20 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-zinc-50 ring-1 ring-zinc-200">
+              <SlidersHorizontal className="h-9 w-9 text-zinc-400" />
+            </div>
+            <h3 className="mt-5 text-lg font-semibold text-zinc-800">No matching positions</h3>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-500">
+              No roles match your current search or filters. Try broadening your criteria.
+            </p>
             <button
               type="button"
               onClick={() => { setSearch(''); setUnitFilter('all'); setTypeFilter('All'); }}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
             >
               Clear all filters
             </button>
@@ -271,20 +315,6 @@ export function JobListings(): ReactNode {
                   </div>
 
                   <div className="shrink-0 flex items-center gap-2 self-start">
-                    {/* Share button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const url = `${window.location.origin}/careers/${job.id}`;
-                        navigator.clipboard.writeText(url);
-                      }}
-                      aria-label={`Copy link for ${job.title}`}
-                      className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-200 text-zinc-400 transition-colors hover:border-indigo-200 hover:text-indigo-600 hover:bg-indigo-50"
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                    </button>
                     <div className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-indigo-500 flex items-center gap-1.5">
                       Apply Now
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
