@@ -32,10 +32,8 @@ import {
 } from '@hr-portal/ui';
 import type { FilterOption } from '@hr-portal/ui';
 import {
-  BookOpen,
   ChevronLeft,
   ChevronRight,
-  Megaphone,
   Search,
   Star,
 } from 'lucide-react';
@@ -181,9 +179,10 @@ export default function InformationHubPage() {
         </p>
       </div>
 
-      <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-3">
-        <Search className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          className="pl-10"
           placeholder="Search announcements and resources"
           value={search}
           onChange={(event) => {
@@ -196,14 +195,8 @@ export default function InformationHubPage() {
 
       <Tabs defaultValue="announcements" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="announcements">
-            <Megaphone className="mr-2 h-4 w-4" />
-            Announcements
-          </TabsTrigger>
-          <TabsTrigger value="resources">
-            <BookOpen className="mr-2 h-4 w-4" />
-            Resources
-          </TabsTrigger>
+          <TabsTrigger value="announcements">Announcements</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
         </TabsList>
 
         <TabsContent value="announcements" className="space-y-4">

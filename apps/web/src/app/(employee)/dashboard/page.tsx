@@ -12,6 +12,7 @@ import {
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
+import { useMyProbation } from '@/hooks/useMyProbation';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useRoleMetadata';
 import { useTasks } from '@/hooks/useTasks';
@@ -126,6 +127,11 @@ export default function DashboardPage(): ReactNode {
       });
   })();
 
+  // Probation status
+  const { data: probationResponse, isLoading: isProbationLoading } = useMyProbation(Boolean(user?.id));
+  const probationData = probationResponse?.data ?? null;
+  const isOnProbation = probationResponse?.onProbation ?? false;
+
   // Onboarding profile — hide sections when completed
   const { data: onboardingProfileData, isLoading: isOnboardingLoading } = useOnboardingProfile();
   const onboardingProfile = onboardingProfileData?.data ?? null;
@@ -202,8 +208,25 @@ export default function DashboardPage(): ReactNode {
           )}
           <StatCard
             label="Probation"
-            value="N/A"
-            trend={{ direction: 'stable', value: 'No active period' }}
+            value={
+              isProbationLoading
+                ? '—'
+                : isOnProbation && probationData
+                  ? `${probationData.daysRemaining}d`
+                  : 'N/A'
+            }
+            trend={{
+              direction: isOnProbation && probationData
+                ? probationData.status === 'at-risk'
+                  ? 'down'
+                  : 'up'
+                : 'stable',
+              value: isProbationLoading
+                ? 'Loading…'
+                : isOnProbation && probationData
+                  ? `${probationData.status === 'at-risk' ? 'At risk — ' : probationData.status === 'extended' ? 'Extended — ' : ''}${probationData.progressPercent}% complete`
+                  : 'No active period',
+            }}
             icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard

@@ -31,7 +31,7 @@ import {
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useTableSort } from '@/hooks/useTableSort';
-import { ClipboardList, LayoutGrid, List } from 'lucide-react';
+import { ClipboardList, LayoutGrid, List, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -96,7 +96,7 @@ export default function MyTasksPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">My Tasks</h1>
+          <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
           <p className="text-sm text-muted-foreground">Track and update your assigned tasks</p>
         </div>
       </div>
@@ -169,12 +169,15 @@ export default function MyTasksPage() {
 
           {/* Filters */}
           <div className="flex flex-wrap gap-2">
-            <Input
-              className="w-[200px]"
-              placeholder="Search tasks..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="w-[200px] pl-10"
+                placeholder="Search tasks..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Status" />
