@@ -13,7 +13,7 @@ export {
 } from './ResourceFilters';
 export { ResourceUploader, type ResourceUploaderProps } from './ResourceUploader';
 export { ResourcePreview, type ResourcePreviewProps } from './ResourcePreview';
-export { VideoPlayer, type VideoPlayerProps } from './VideoPlayer';
+export { VideoPlayer, type VideoPlayerProps, type ResourceAccessLevel } from './VideoPlayer';
 export { DocumentViewer, type DocumentViewerProps } from './DocumentViewer';
 export { ResourceAnalytics, type ResourceAnalyticsProps } from './ResourceAnalytics';
 export {

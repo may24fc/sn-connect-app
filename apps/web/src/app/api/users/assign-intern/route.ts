@@ -1,4 +1,4 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -57,15 +57,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, department, startDate, endDate, requiredHours, school, program } =
-      parsed.data;
+    const { userId, department, startDate, endDate, requiredHours, school, program } = parsed.data;
 
     // Validate date range
     if (new Date(endDate) <= new Date(startDate)) {
-      return NextResponse.json(
-        { error: 'End date must be after start date' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'End date must be after start date' }, { status: 400 });
     }
 
     // Get the employee record (interns are also in the employees table)
@@ -78,10 +74,7 @@ export async function POST(request: NextRequest) {
 
     if (employeeError) {
       console.error('Failed to fetch employee:', employeeError);
-      return NextResponse.json(
-        { error: 'Failed to fetch employee record' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to fetch employee record' }, { status: 500 });
     }
 
     if (!employee) {
@@ -102,10 +95,7 @@ export async function POST(request: NextRequest) {
 
     if (updateEmployeeError) {
       console.error('Failed to update employee:', updateEmployeeError);
-      return NextResponse.json(
-        { error: 'Failed to update employee department' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update employee department' }, { status: 500 });
     }
 
     // Check if internship record already exists

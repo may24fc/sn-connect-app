@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
     // employees_immediate_head_fkey: employee's manager (optional)
     let query = supabase
       .from('employees')
-      .select('*, users!employees_user_id_fkey(*), manager:users!employees_immediate_head_fkey(*)', { count: 'exact' })
+      .select(
+        '*, users!employees_user_id_fkey(*), manager:users!employees_immediate_head_fkey(*)',
+        { count: 'exact' }
+      )
       .is('deleted_at', null);
 
     // Apply filters
@@ -42,6 +45,12 @@ export async function GET(request: NextRequest) {
       query = query.or(
         `first_name.ilike.%${search}%,last_name.ilike.%${search}%,employee_number.ilike.%${search}%`
       );
+    }
+
+    // Filter by user_id (for current user lookup)
+    const userId = searchParams.get('userId') || '';
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
 
     if (department) {

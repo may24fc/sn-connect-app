@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
  * Create Admin Test Accounts
- * 
+ *
  * Creates test accounts with admin-level roles for testing
  * the reports management and other admin features.
- * 
+ *
  * After role consolidation, the available roles are:
  * - employee, intern, admin, super_admin
- * 
+ *
  * Usage:
  *   node scripts/create-admin-test-accounts.mjs
- * 
+ *
  * Creates the following accounts:
  * - admin@test.com (role: admin)
  * - superadmin@test.com (role: super_admin)
- * 
+ *
  * All accounts use password: password
  */
 
@@ -130,8 +130,8 @@ async function main() {
           password: account.password,
           email_confirm: true,
           user_metadata: { full_name: account.fullName },
-          app_metadata: { 
-            provider: 'email', 
+          app_metadata: {
+            provider: 'email',
             providers: ['email'],
             db_role: account.role, // Embed role in JWT
           },
@@ -157,7 +157,11 @@ async function main() {
         updateUrl.searchParams.set('id', `eq.${authUserId}`);
         await fetchJson(updateUrl.toString(), {
           method: 'PATCH',
-          headers: { ...adminHeaders, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          headers: {
+            ...adminHeaders,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
           body: JSON.stringify({ role: account.role, status: 'active' }),
         });
         console.log(`   ✅ Updated role to '${account.role}'`);
@@ -225,14 +229,19 @@ async function main() {
   console.log('✅ All admin test accounts are ready!');
   console.log('═'.repeat(70));
   console.log('\n📝 Test Account Summary:\n');
-  
+
   for (const account of ADMIN_ACCOUNTS) {
-    const uiRole = account.role === 'cos' ? 'super_admin (via option-b)' : 
-                   ['admin', 'hr', 'ceo'].includes(account.role) ? 'admin' : 
-                   account.role;
-    console.log(`  • ${account.email.padEnd(25)} | DB role: ${account.role.padEnd(6)} | UI role: ${uiRole}`);
+    const uiRole =
+      account.role === 'cos'
+        ? 'super_admin (via option-b)'
+        : ['admin', 'hr', 'ceo'].includes(account.role)
+          ? 'admin'
+          : account.role;
+    console.log(
+      `  • ${account.email.padEnd(25)} | DB role: ${account.role.padEnd(6)} | UI role: ${uiRole}`
+    );
   }
-  
+
   console.log('\n🔑 Password for all accounts: password');
   console.log('\n💡 These accounts can now:');
   console.log('  - View all reports from all employees (RLS allows admin/hr/cos/ceo)');

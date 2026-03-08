@@ -1,10 +1,12 @@
 'use client';
 
+import { useExtendInternship } from '@/hooks/useIndividualPerformance';
 import {
   useInternship,
   useUpdateInternDailyLog,
   useUpdateInternship,
 } from '@/hooks/useInternships';
+import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
 import {
   Avatar,
   AvatarFallback,
@@ -30,9 +32,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HoursProgressCard,
+  Input,
+  InternHoursProgressBar,
   type InternId,
   type InternshipPeriodId,
   InternshipStatusBadge,
+  Label,
   Progress,
   Tabs,
   TabsContent,
@@ -59,7 +64,7 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, use, useState } from 'react';
+import { type ReactNode, use, useCallback, useState } from 'react';
 
 function getInitials(name: string): string {
   return name
@@ -78,10 +83,14 @@ export default function InternDetailPage({
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [feedback, setFeedback] = useState('');
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+  const [newEndDate, setNewEndDate] = useState('');
+  const [extendReason, setExtendReason] = useState('');
 
   const internshipQuery = useInternship(id);
   const updateLogMutation = useUpdateInternDailyLog();
   const updateInternshipMutation = useUpdateInternship();
+  const extendMutation = useExtendInternship();
 
   const intern = internshipQuery.data?.data;
   const reports = intern?.recentReports || [];
@@ -110,11 +119,38 @@ export default function InternDetailPage({
   }
 
   const daysRemaining = getDaysRemaining(intern.endDate);
-  const progressPercentage = calculateHoursProgress(
-    intern.completedHours,
-    intern.requiredHours
-  );
+  const progressPercentage = calculateHoursProgress(intern.completedHours, intern.requiredHours);
   const pendingReports = uiReports.filter((r) => r.status === 'submitted').length;
+
+  const handleExportReport = useCallback((): void => {
+    if (!intern) return;
+
+    // Export intern profile info and daily reports
+    const profileData = [
+      {
+        field: 'Name',
+        value: intern.name,
+      },
+      { field: 'Email', value: intern.email },
+      { field: 'Phone', value: intern.phone || 'N/A' },
+      { field: 'School', value: intern.school },
+      { field: 'Program', value: intern.program },
+      { field: 'Department', value: intern.department },
+      { field: 'Supervisor', value: intern.supervisor },
+      { field: 'Start Date', value: formatDateForCsv(intern.startDate) },
+      { field: 'End Date', value: formatDateForCsv(intern.endDate) },
+      { field: 'Required Hours', value: String(intern.requiredHours) },
+      { field: 'Completed Hours', value: String(intern.completedHours) },
+      { field: 'Progress', value: formatPercentageForCsv(progressPercentage) },
+      { field: 'Status', value: intern.status },
+    ];
+
+    exportToCsv(profileData, {
+      filename: `intern-${intern.name.replace(/\s+/g, '-').toLowerCase()}`,
+      headers: ['Field', 'Value'],
+      rowMapper: (item) => [item.field, item.value],
+    });
+  }, [intern, progressPercentage]);
 
   const handleProvideFeedback = (report: DailyReport): void => {
     setSelectedReport(report);
@@ -137,6 +173,18 @@ export default function InternDetailPage({
     setFeedbackDialogOpen(false);
     setSelectedReport(null);
     setFeedback('');
+  };
+
+  const handleExtendInternship = async (): Promise<void> => {
+    if (!newEndDate.trim() || !extendReason.trim()) return;
+    await extendMutation.mutateAsync({
+      internshipId: id,
+      newEndDate: newEndDate,
+      reason: extendReason,
+    });
+    setExtendDialogOpen(false);
+    setNewEndDate('');
+    setExtendReason('');
   };
 
   const handleCompleteInternship = async (): Promise<void> => {
@@ -176,7 +224,7 @@ export default function InternDetailPage({
                 <Edit2 className="mr-2 h-4 w-4" />
                 Edit Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportReport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export Report
               </DropdownMenuItem>
@@ -184,6 +232,17 @@ export default function InternDetailPage({
                 <Award className="mr-2 h-4 w-4" />
                 Generate Certificate
               </DropdownMenuItem>
+              {intern.status === 'active' && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setNewEndDate(intern.endDate);
+                    setExtendDialogOpen(true);
+                  }}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Extend Internship
+                </DropdownMenuItem>
+              )}
               {intern.status === 'active' && progressPercentage >= 100 && (
                 <DropdownMenuItem onClick={() => setCompleteDialogOpen(true)}>
                   <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -275,6 +334,14 @@ export default function InternDetailPage({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
+          {/* Hours Progress Bar - V2-2.6 */}
+          <InternHoursProgressBar
+            completedHours={intern.completedHours}
+            requiredHours={intern.requiredHours}
+            startDate={intern.startDate}
+            endDate={intern.endDate}
+          />
+
           <div className="grid gap-6 lg:grid-cols-2">
             <HoursProgressCard
               completedHours={intern.completedHours}
@@ -327,7 +394,8 @@ export default function InternDetailPage({
                         style={{
                           width: `${Math.min(
                             ((new Date().getTime() - new Date(intern.startDate).getTime()) /
-                              (new Date(intern.endDate).getTime() - new Date(intern.startDate).getTime())) *
+                              (new Date(intern.endDate).getTime() -
+                                new Date(intern.startDate).getTime())) *
                               100,
                             100
                           )}%`,
@@ -460,9 +528,62 @@ export default function InternDetailPage({
             <Button variant="outline" onClick={() => setFeedbackDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmitFeedback} disabled={!feedback.trim() || updateLogMutation.isPending}>
+            <Button
+              onClick={handleSubmitFeedback}
+              disabled={!feedback.trim() || updateLogMutation.isPending}
+            >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Submit Feedback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Extend Internship Dialog - V2-2.6 */}
+      <Dialog open={extendDialogOpen} onOpenChange={setExtendDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Extend Internship
+            </DialogTitle>
+            <DialogDescription>
+              Extend {intern.name}'s internship end date. Current end date:{' '}
+              {new Date(intern.endDate).toLocaleDateString()}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-end-date">New End Date</Label>
+              <Input
+                id="new-end-date"
+                type="date"
+                value={newEndDate}
+                onChange={(e) => setNewEndDate(e.target.value)}
+                min={intern.endDate}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="extend-reason">Reason for Extension</Label>
+              <Textarea
+                id="extend-reason"
+                placeholder="Explain why the internship is being extended..."
+                value={extendReason}
+                onChange={(e) => setExtendReason(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExtendDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExtendInternship}
+              disabled={!newEndDate.trim() || !extendReason.trim() || extendMutation.isPending}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Extend Internship
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -489,7 +610,10 @@ export default function InternDetailPage({
             <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCompleteInternship} disabled={updateInternshipMutation.isPending}>
+            <Button
+              onClick={handleCompleteInternship}
+              disabled={updateInternshipMutation.isPending}
+            >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Complete Internship
             </Button>

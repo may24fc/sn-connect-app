@@ -91,7 +91,8 @@ export function StepReview({
           Review Your Information
         </p>
         <p className="text-sm text-indigo-700 dark:text-indigo-300">
-          Please review all your information carefully before submitting. You can go back to make changes if needed.
+          Please review all your information carefully before submitting. You can go back to make
+          changes if needed.
         </p>
       </div>
 

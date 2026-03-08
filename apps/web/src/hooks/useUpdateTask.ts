@@ -40,9 +40,9 @@ export function useUpdateTask(taskId: string) {
         };
       });
 
-      // Optimistically update list views
-      queryClient.setQueriesData({ queryKey: queryKeys.tasks.all }, (old: any) => {
-        if (!old?.data) return old;
+      // Optimistically update list views (use .lists() to avoid matching detail queries)
+      queryClient.setQueriesData({ queryKey: queryKeys.tasks.lists() }, (old: any) => {
+        if (!old?.data || !Array.isArray(old.data)) return old;
         return {
           ...old,
           data: old.data.map((task: TaskRecord) =>

@@ -14,6 +14,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Input,
   ResourceAnalytics,
   ResourceTargetingSelector,
@@ -24,6 +29,7 @@ import {
   TagInput,
   Textarea,
 } from '@hr-portal/ui';
+import { Archive, ArrowLeft, MoreHorizontal, Send, Star, StarOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -96,22 +102,41 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resource.title}</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Resource ID: {resource.id}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => publishResource.mutate(resource.id)}>
-            Publish
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => toggleFeatured.mutate({ id: resource.id, featured: !resource.is_featured })}
-          >
-            {resource.is_featured ? 'Unfeature' : 'Feature'}
-          </Button>
-          <Button variant="outline" onClick={() => archiveResource.mutate(resource.id)}>
-            Archive
-          </Button>
-          <Button variant="outline" onClick={() => router.push('/admin/resources')}>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => router.push('/admin/resources')}>
+            <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <MoreHorizontal className="h-4 w-4 mr-1.5" />
+                Actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => publishResource.mutate(resource.id)}>
+                <Send className="mr-2 h-4 w-4" />
+                Publish
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  toggleFeatured.mutate({ id: resource.id, featured: !resource.is_featured })
+                }
+              >
+                {resource.is_featured ? (
+                  <><StarOff className="mr-2 h-4 w-4" />Unfeature</>
+                ) : (
+                  <><Star className="mr-2 h-4 w-4" />Feature</>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => archiveResource.mutate(resource.id)}>
+                <Archive className="mr-2 h-4 w-4" />
+                Archive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -130,7 +155,10 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
             </CardHeader>
             <CardContent className="space-y-3">
               <Input value={title} onChange={(event) => setTitle(event.target.value)} />
-              <Textarea value={description} onChange={(event) => setDescription(event.target.value)} />
+              <Textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
               <TagInput value={tags} onChange={setTags} />
               <Button onClick={saveDetails} disabled={updateResource.isPending}>
                 Save Changes
@@ -161,12 +189,12 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
             bookmarkCount={analyticsData?.data?.bookmarkCount ?? resource.bookmark_count}
             avgDurationSeconds={analyticsData?.data?.avgDurationSeconds ?? null}
             completionRate={analyticsData?.data?.completionRate ?? null}
-            viewTrend={
-              (analyticsData?.data?.timeSeries || []).map((item: { date: string; views: number }) => ({
+            viewTrend={(analyticsData?.data?.timeSeries || []).map(
+              (item: { date: string; views: number }) => ({
                 date: item.date,
                 count: item.views,
-              }))
-            }
+              })
+            )}
           />
         </TabsContent>
 
@@ -178,7 +206,8 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
             <CardContent className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
               <p>Current Version: v{resource.version}</p>
               <p>
-                Previous Version ID: {resource.previous_version_id ? resource.previous_version_id : 'None'}
+                Previous Version ID:{' '}
+                {resource.previous_version_id ? resource.previous_version_id : 'None'}
               </p>
               <Button variant="outline" disabled>
                 Restore Previous Version

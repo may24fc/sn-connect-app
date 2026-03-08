@@ -1,7 +1,4 @@
-import {
-  createInternshipSchema,
-  internshipFiltersSchema,
-} from '@/lib/schemas/internship.schema';
+import { createInternshipSchema, internshipFiltersSchema } from '@/lib/schemas/internship.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedInternshipContext, isInternshipAdmin, resolveEmployeeByUserId } from './_lib';
 
@@ -127,39 +124,45 @@ export async function GET(request: NextRequest) {
 
     const employeeIds = Array.from(new Set(internships.map((item) => item.employee_id)));
     const supervisorIds = Array.from(
-      new Set(internships.map((item) => item.supervisor_id).filter((value): value is string => !!value))
+      new Set(
+        internships.map((item) => item.supervisor_id).filter((value): value is string => !!value)
+      )
     );
     const internshipIds = internships.map((item) => item.id);
 
-    const [{ data: employeeRows }, { data: supervisorRows }, { data: logRows }] = await Promise.all([
-      supabase
-        .from('employees')
-        .select('id, user_id, first_name, last_name, company_email, department')
-        .in('id', employeeIds)
-        .is('deleted_at', null),
-      supervisorIds.length > 0
-        ? supabase
-            .from('employees')
-            .select('user_id, first_name, last_name')
-            .in('user_id', supervisorIds)
-            .is('deleted_at', null)
-        : Promise.resolve({ data: [] }),
-      supabase
-        .from('intern_daily_logs')
-        .select('internship_id, log_date, is_approved, hours_worked')
-        .in('internship_id', internshipIds)
-        .order('log_date', { ascending: false }),
-    ]);
+    const [{ data: employeeRows }, { data: supervisorRows }, { data: logRows }] = await Promise.all(
+      [
+        supabase
+          .from('employees')
+          .select('id, user_id, first_name, last_name, company_email, department')
+          .in('id', employeeIds)
+          .is('deleted_at', null),
+        supervisorIds.length > 0
+          ? supabase
+              .from('employees')
+              .select('user_id, first_name, last_name')
+              .in('user_id', supervisorIds)
+              .is('deleted_at', null)
+          : Promise.resolve({ data: [] }),
+        supabase
+          .from('intern_daily_logs')
+          .select('internship_id, log_date, is_approved, hours_worked')
+          .in('internship_id', internshipIds)
+          .order('log_date', { ascending: false }),
+      ]
+    );
 
-    const employeeMap = new Map((employeeRows as Array<EmployeeRow> | null)?.map((item) => [item.id, item]));
+    const employeeMap = new Map(
+      (employeeRows as Array<EmployeeRow> | null)?.map((item) => [item.id, item])
+    );
     const supervisorMap = new Map(
-      (supervisorRows as Array<{ user_id: string; first_name: string; last_name: string }> | null)?.map(
-        (item) => [item.user_id, `${item.first_name} ${item.last_name}`]
-      )
+      (
+        supervisorRows as Array<{ user_id: string; first_name: string; last_name: string }> | null
+      )?.map((item) => [item.user_id, `${item.first_name} ${item.last_name}`])
     );
 
     const logsByInternship = new Map<string, Array<InternDailyLogRow>>();
-    for (const log of ((logRows as Array<InternDailyLogRow> | null) || [])) {
+    for (const log of (logRows as Array<InternDailyLogRow> | null) || []) {
       const list = logsByInternship.get(log.internship_id) || [];
       list.push(log);
       logsByInternship.set(log.internship_id, list);
@@ -198,7 +201,9 @@ export async function GET(request: NextRequest) {
           school: row.school || 'N/A',
           program: row.program || 'N/A',
           department: row.department || employee.department,
-          supervisor: row.supervisor_id ? supervisorMap.get(row.supervisor_id) || 'Unassigned' : 'Unassigned',
+          supervisor: row.supervisor_id
+            ? supervisorMap.get(row.supervisor_id) || 'Unassigned'
+            : 'Unassigned',
           supervisorId: row.supervisor_id,
           startDate: row.start_date,
           endDate: row.end_date,
@@ -232,7 +237,9 @@ export async function GET(request: NextRequest) {
     const reportsThisWeek = normalized.reduce((sum, item) => sum + item.reportsThisWeek, 0);
     const averageProgress =
       totalInterns > 0
-        ? Math.round(normalized.reduce((sum, item) => sum + item.progressPercentage, 0) / totalInterns)
+        ? Math.round(
+            normalized.reduce((sum, item) => sum + item.progressPercentage, 0) / totalInterns
+          )
         : 0;
 
     return NextResponse.json({

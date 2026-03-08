@@ -1,3 +1,4 @@
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { z } from 'zod';
 
 /** Optional email: accepts a valid email, empty string, null, or undefined */
@@ -6,9 +7,7 @@ const optionalEmail = z
   .optional();
 
 /** Optional URL: accepts a valid URL, empty string, null, or undefined */
-const optionalUrl = z
-  .union([z.string().url(), z.literal(''), z.null(), z.undefined()])
-  .optional();
+const optionalUrl = z.union([z.string().url(), z.literal(''), z.null(), z.undefined()]).optional();
 
 /** Optional date string: accepts YYYY-MM-DD, empty string, null, or undefined */
 const optionalDate = z
@@ -20,13 +19,19 @@ const optionalUuid = z
   .union([z.string().uuid(), z.literal(''), z.null(), z.undefined()])
   .optional();
 
-/** Phone number validation: Philippine format (+63 or 09) */
+/** Phone number validation: supports international formats via libphonenumber-js */
 const phoneNumber = z
   .string()
   .min(1, 'Contact number is required')
-  .regex(
-    /^(\+63|0)?9\d{9}$/,
-    'Invalid phone number. Use format: 09XXXXXXXXX or +639XXXXXXXXX'
+  .refine(
+    (val) => {
+      try {
+        return isValidPhoneNumber(val);
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Invalid phone number. Include country code (e.g., +63 for PH, +39 for IT)' }
   );
 
 export const onboardingStepSchema = z.enum([
@@ -48,8 +53,16 @@ export const personalInfoSchema = z.object({
   middleName: z.union([z.string().max(120), z.literal(''), z.null(), z.undefined()]).optional(),
   lastName: z.string().min(1, 'Last name is required').max(120),
   position: z.string().min(1, 'Position is required').max(150),
-  personalEmail: z.string().email('Valid personal email is required').min(1, 'Personal email is required').max(150),
-  companyEmail: z.string().email('Valid company email is required').min(1, 'Company email is required').max(150),
+  personalEmail: z
+    .string()
+    .email('Valid personal email is required')
+    .min(1, 'Personal email is required')
+    .max(150),
+  companyEmail: z
+    .string()
+    .email('Valid company email is required')
+    .min(1, 'Company email is required')
+    .max(150),
   departmentId: optionalUuid,
   startDate: optionalDate,
   nationality: z.string().min(1, 'Nationality is required').max(120),
@@ -65,15 +78,22 @@ export const personalInfoSchema = z.object({
   emergencyContactName: z.string().min(1, 'Emergency contact name is required').max(120),
   emergencyContactNumber: phoneNumber,
   emergencyContactEmail: optionalEmail,
-  emergencyContactRelationship: z.string().min(1, 'Emergency contact relationship is required').max(80),
+  emergencyContactRelationship: z
+    .string()
+    .min(1, 'Emergency contact relationship is required')
+    .max(80),
   linkedinProfileUrl: optionalUrl,
 });
 
 export const paymentInfoSchema = z.object({
   paymentAccountName: z.string().min(1, 'Account name is required').max(150),
   paymentAccountNumber: z.string().min(1, 'Account number is required').max(30),
-  paymentEmail: z.string().email('Valid payment email is required').min(1, 'Payment email is required').max(150),
-  paymentPhoneNumber: z.string().min(1, 'Phone number is required').max(30),
+  paymentEmail: z
+    .string()
+    .email('Valid payment email is required')
+    .min(1, 'Payment email is required')
+    .max(150),
+  paymentPhoneNumber: phoneNumber,
   paymentAddress: z.string().min(1, 'Address is required').max(500),
   paymentCity: z.string().min(1, 'City is required').max(100),
   paymentProvince: z.string().min(1, 'Province is required').max(100),

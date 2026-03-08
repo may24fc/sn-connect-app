@@ -1,82 +1,44 @@
 'use client';
 
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
-import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
-import { useBookmarkResource, useRemoveBookmark, useResourceBookmarks } from '@/hooks/useResourceBookmarks';
-import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
 import type { AnnouncementRecord } from '@/hooks/useAnnouncements';
+import { useMarkAnnouncementRead } from '@/hooks/useMarkAnnouncementRead';
 import {
+  useBookmarkResource,
+  useRemoveBookmark,
+  useResourceBookmarks,
+} from '@/hooks/useResourceBookmarks';
+import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
+import { formatDate } from '@/lib/format';
+import {
+  ActiveFilterBadges,
+  AnnouncementCard,
   AnnouncementDetailDialog,
-  Badge,
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CategoryBrowser,
   Input,
-  Progress,
+  MultiSelectFilter,
   ResourceCard,
   ResourceGrid,
+  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
+import type { FilterOption } from '@hr-portal/ui';
 import {
-  ArrowRight,
-  Award,
-  BookOpen,
-  Megaphone,
+  ChevronLeft,
+  ChevronRight,
   Search,
   Star,
-  Target,
-  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-
-interface GrowthItem {
-  id: string;
-  title: string;
-  description: string;
-  progress: number;
-  dueDate?: string;
-  type: 'course' | 'goal' | 'achievement';
-}
-
-const growthItems: Array<GrowthItem> = [
-  {
-    id: '1',
-    title: 'Leadership Fundamentals',
-    description: 'Complete the leadership training course',
-    progress: 75,
-    dueDate: 'Feb 28, 2026',
-    type: 'course',
-  },
-  {
-    id: '2',
-    title: 'Q1 Performance Goals',
-    description: 'Achieve quarterly performance targets',
-    progress: 40,
-    dueDate: 'Mar 31, 2026',
-    type: 'goal',
-  },
-  {
-    id: '3',
-    title: 'Communication Skills',
-    description: 'Complete the effective communication workshop',
-    progress: 100,
-    type: 'course',
-  },
-];
-
-const typeIcons: Record<GrowthItem['type'], typeof BookOpen> = {
-  course: BookOpen,
-  goal: Target,
-  achievement: Award,
-};
 
 const categoryLabels: Record<string, string> = {
   onboarding: 'Onboarding',
@@ -91,10 +53,30 @@ const categoryLabels: Record<string, string> = {
   emergency: 'Emergency',
 };
 
+const announcementCategoryLabels: Record<string, string> = {
+  hr_updates: 'HR Updates',
+  benefits: 'Benefits',
+  events: 'Events',
+  performance: 'Performance',
+  training: 'Training',
+  policy: 'Policy',
+  general: 'General',
+  emergency: 'Emergency',
+};
+
+const announcementCategoryOptions: Array<FilterOption> = Object.entries(
+  announcementCategoryLabels
+).map(([value, label]) => ({ value, label }));
+
+const readStatusOptions: Array<FilterOption> = [
+  { value: 'unread', label: 'Unread' },
+  { value: 'read', label: 'Read' },
+];
+
 export default function InformationHubPage() {
   const [search, setSearch] = useState('');
-  const [announcementCategory, setAnnouncementCategory] = useState('all');
-  const [readStatus, setReadStatus] = useState<'all' | 'read' | 'unread'>('all');
+  const [selectedCategories, setSelectedCategories] = useState<Array<string>>([]);
+  const [selectedReadStatuses, setSelectedReadStatuses] = useState<Array<string>>([]);
   const [announcementPage, setAnnouncementPage] = useState(1);
   const [resourcePage, setResourcePage] = useState(1);
   const [selectedResourceCategory, setSelectedResourceCategory] = useState<string>('');
@@ -103,8 +85,8 @@ export default function InformationHubPage() {
 
   const { data: announcementData, isLoading: isAnnouncementsLoading } = useAnnouncementFeed({
     ...(search ? { search } : {}),
-    ...(announcementCategory !== 'all' ? { category: announcementCategory as never } : {}),
-    readStatus,
+    ...(selectedCategories.length > 0 ? { categories: selectedCategories } : {}),
+    ...(selectedReadStatuses.length > 0 ? { readStatuses: selectedReadStatuses } : {}),
     page: announcementPage,
     pageSize: 10,
   });
@@ -131,11 +113,6 @@ export default function InformationHubPage() {
   const bookmarkIds = useMemo(
     () => new Set(bookmarks.map((bookmark) => bookmark.resource_id)),
     [bookmarks]
-  );
-
-  const announcementCategories = useMemo(
-    () => ['all', ...new Set(announcements.map((announcement) => announcement.category))],
-    [announcements]
   );
 
   const resourceCategoryItems = useMemo(() => {
@@ -166,8 +143,15 @@ export default function InformationHubPage() {
   const urgentAnnouncements = announcements.filter(
     (announcement) => announcement.priority === 'urgent'
   );
-
-  const completedCourses = growthItems.filter((item) => item.progress === 100).length;
+  const pinnedOrUrgentIds = useMemo(
+    () =>
+      new Set([...pinnedAnnouncements.map((a) => a.id), ...urgentAnnouncements.map((a) => a.id)]),
+    [pinnedAnnouncements, urgentAnnouncements]
+  );
+  const regularAnnouncements = useMemo(
+    () => announcements.filter((a) => !pinnedOrUrgentIds.has(a.id)),
+    [announcements, pinnedOrUrgentIds]
+  );
 
   const handleBookmarkToggle = (resourceId: string): void => {
     if (bookmarkIds.has(resourceId)) {
@@ -191,13 +175,14 @@ export default function InformationHubPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Information Hub</h1>
         <p className="text-muted-foreground">
-          Stay updated with announcements, resources, and your growth plans
+          Stay updated with announcements and resources
         </p>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 flex items-center gap-3">
-        <Search className="h-4 w-4 text-zinc-500" />
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          className="pl-10"
           placeholder="Search announcements and resources"
           value={search}
           onChange={(event) => {
@@ -210,129 +195,191 @@ export default function InformationHubPage() {
 
       <Tabs defaultValue="announcements" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="announcements">
-            <Megaphone className="mr-2 h-4 w-4" />
-            Announcements
-          </TabsTrigger>
-          <TabsTrigger value="resources">
-            <BookOpen className="mr-2 h-4 w-4" />
-            Resources
-          </TabsTrigger>
-          <TabsTrigger value="growth">
-            <TrendingUp className="mr-2 h-4 w-4" />
-            My Growth
-          </TabsTrigger>
+          <TabsTrigger value="announcements">Announcements</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
         </TabsList>
 
         <TabsContent value="announcements" className="space-y-4">
-          <div className="flex flex-wrap gap-2 items-center">
-            {announcementCategories.map((item) => (
-              <Button
-                key={item}
-                variant={announcementCategory === item ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setAnnouncementCategory(item);
+          {/* Filters & Pagination */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <MultiSelectFilter
+                label="Category"
+                options={announcementCategoryOptions}
+                selected={selectedCategories}
+                onSelectionChange={(values) => {
+                  setSelectedCategories(values);
                   setAnnouncementPage(1);
                 }}
-              >
-                {item}
-              </Button>
-            ))}
-            <Button
-              variant={readStatus === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setReadStatus('all')}
-            >
-              All
-            </Button>
-            <Button
-              variant={readStatus === 'unread' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setReadStatus('unread')}
-            >
-              Unread
-            </Button>
-            <Button
-              variant={readStatus === 'read' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setReadStatus('read')}
-            >
-              Read
-            </Button>
+              />
+              <MultiSelectFilter
+                label="Status"
+                options={readStatusOptions}
+                selected={selectedReadStatuses}
+                onSelectionChange={(values) => {
+                  setSelectedReadStatuses(values);
+                  setAnnouncementPage(1);
+                }}
+              />
+              <ActiveFilterBadges
+                options={[...announcementCategoryOptions, ...readStatusOptions]}
+                selected={[...selectedCategories, ...selectedReadStatuses]}
+                onRemove={(value) => {
+                  if (selectedCategories.includes(value)) {
+                    setSelectedCategories((prev) => prev.filter((v) => v !== value));
+                  } else {
+                    setSelectedReadStatuses((prev) => prev.filter((v) => v !== value));
+                  }
+                  setAnnouncementPage(1);
+                }}
+              />
+            </div>
+            {/* Pagination - Gmail style at top */}
+            {(announcementData?.pagination.totalPages ?? 1) > 1 && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {(announcementPage - 1) * 10 + 1}-
+                  {Math.min(announcementPage * 10, announcementData?.pagination.total ?? 0)} of {announcementData?.pagination.total ?? 0}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label="Previous page"
+                    disabled={announcementPage <= 1}
+                    onClick={() => setAnnouncementPage((value) => Math.max(1, value - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label="Next page"
+                    disabled={(announcementData?.pagination.totalPages || 1) <= announcementPage}
+                    onClick={() => setAnnouncementPage((value) => value + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {urgentAnnouncements.map((announcement) => (
-            <div
+            <AnnouncementCard
               key={`urgent-${announcement.id}`}
-              className="bg-rose-50 dark:bg-rose-950/30 border-l-4 border-rose-600 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+              title={announcement.title}
+              excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
+              category={announcementCategoryLabels[announcement.category] || announcement.category}
+              priority={announcement.priority}
+              dateLabel={formatDate(announcement.published_at || announcement.created_at)}
+              isRead={announcement.is_read}
               onClick={() => handleAnnouncementClick(announcement)}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
-                <Badge variant="destructive">Urgent</Badge>
-              </div>
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1">
-                {announcement.excerpt || announcement.content.slice(0, 200)}
-              </p>
-            </div>
+            />
           ))}
 
           {pinnedAnnouncements.map((announcement) => (
-            <div
+            <AnnouncementCard
               key={`pinned-${announcement.id}`}
-              className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 border-l-4 border-indigo-600 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow"
+              title={announcement.title}
+              excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
+              category={announcementCategoryLabels[announcement.category] || announcement.category}
+              priority={announcement.priority}
+              dateLabel={formatDate(announcement.published_at || announcement.created_at)}
+              isPinned
+              isRead={announcement.is_read}
               onClick={() => handleAnnouncementClick(announcement)}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
-                <Badge>Pinned</Badge>
-              </div>
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-1">
-                {announcement.excerpt || announcement.content.slice(0, 200)}
-              </p>
-            </div>
+            />
           ))}
 
           {isAnnouncementsLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  // biome-ignore lint: skeleton placeholder
+                  key={i}
+                  className="bg-card border border-border rounded-lg p-4 space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
+                </div>
+              ))}
+            </div>
+          ) : regularAnnouncements.length === 0 &&
+            pinnedAnnouncements.length === 0 &&
+            urgentAnnouncements.length === 0 ? (
             <Card>
-              <CardContent className="p-6 text-sm text-zinc-600 dark:text-zinc-400">
-                Loading announcements...
+              <CardContent className="p-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                No announcements found.
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {announcements.map((announcement) => (
-                <div
+            <div className="space-y-3">
+              {regularAnnouncements.map((announcement) => (
+                <AnnouncementCard
                   key={announcement.id}
-                  className={
-                    announcement.is_read
-                      ? 'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 opacity-75 cursor-pointer hover:shadow-md transition-shadow'
-                      : 'bg-white dark:bg-zinc-900 border-l-4 border-indigo-600 border-r border-t border-b border-zinc-200 dark:border-zinc-800 rounded-lg p-4 cursor-pointer hover:shadow-md transition-shadow'
-                  }
+                  title={announcement.title}
+                  excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
+                  category={announcementCategoryLabels[announcement.category] || announcement.category}
+                  priority={announcement.priority}
+                  dateLabel={formatDate(announcement.published_at || announcement.created_at)}
+                  isRead={announcement.is_read}
                   onClick={() => handleAnnouncementClick(announcement)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{announcement.title}</h3>
-                    {!announcement.is_read ? <Badge>Unread</Badge> : <Badge variant="secondary">Read</Badge>}
-                  </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-3">
-                    {announcement.excerpt || announcement.content.slice(0, 200)}
-                  </p>
-                </div>
+                />
               ))}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-6">
+          {/* Pagination - Gmail style at top */}
+          {(resourceData?.pagination.totalPages ?? 1) > 1 && (
+            <div className="flex items-center justify-end gap-3">
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                {(resourcePage - 1) * 12 + 1}-
+                {Math.min(resourcePage * 12, resourceData?.pagination.total ?? 0)} of {resourceData?.pagination.total ?? 0}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Previous page"
+                  disabled={resourcePage <= 1}
+                  onClick={() => setResourcePage((value) => Math.max(1, value - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Next page"
+                  disabled={(resourceData?.pagination.totalPages || 1) <= resourcePage}
+                  onClick={() => setResourcePage((value) => value + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {featuredResources.length > 0 ? (
             <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3 flex items-center gap-2">
                 <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                 Featured Resources
               </h3>
-              <ResourceGrid columns={4} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <ResourceGrid
+                columns={4}
+                className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+              >
                 {featuredResources.slice(0, 4).map((resource) => (
                   <ResourceCard
                     key={resource.id}
@@ -350,7 +397,7 @@ export default function InformationHubPage() {
                     isFeatured={resource.is_featured}
                     isPinned={resource.is_pinned}
                     isBookmarked={bookmarkIds.has(resource.id)}
-                    dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+                    dateLabel={formatDate(resource.published_at || resource.created_at)}
                     onClick={() => {
                       window.location.href = `/information-hub/resources/${resource.id}`;
                     }}
@@ -377,7 +424,10 @@ export default function InformationHubPage() {
               </CardContent>
             </Card>
           ) : (
-            <ResourceGrid columns={4} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <ResourceGrid
+              columns={4}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            >
               {resources.map((resource) => (
                 <ResourceCard
                   key={resource.id}
@@ -395,7 +445,7 @@ export default function InformationHubPage() {
                   isFeatured={resource.is_featured}
                   isPinned={resource.is_pinned}
                   isBookmarked={bookmarkIds.has(resource.id)}
-                  dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+                  dateLabel={formatDate(resource.published_at || resource.created_at)}
                   onClick={() => {
                     window.location.href = `/information-hub/resources/${resource.id}`;
                   }}
@@ -425,110 +475,9 @@ export default function InformationHubPage() {
               </CardContent>
             </Card>
           ) : null}
-
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              disabled={resourcePage <= 1}
-              onClick={() => setResourcePage((value) => Math.max(1, value - 1))}
-            >
-              Previous
-            </Button>
-            <span className="text-sm text-zinc-500 dark:text-zinc-400">Page {resourcePage}</span>
-            <Button
-              variant="outline"
-              disabled={(resourceData?.pagination.totalPages || 1) <= resourcePage}
-              onClick={() => setResourcePage((value) => value + 1)}
-            >
-              Next
-            </Button>
-          </div>
         </TabsContent>
 
-        <TabsContent value="growth" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Active Items</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{growthItems.length}</p>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Completed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {completedCourses}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Avg Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {Math.round(
-                    growthItems.reduce((sum, item) => sum + item.progress, 0) / growthItems.length
-                  )}
-                  %
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4">
-            {growthItems.map((item) => {
-              const Icon = typeIcons[item.type];
-
-              return (
-                <Card key={item.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Icon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                          {item.title}
-                        </CardTitle>
-                        <CardDescription>{item.description}</CardDescription>
-                      </div>
-                      <Badge
-                        variant={
-                          item.progress === 100
-                            ? 'success'
-                            : item.progress >= 60
-                              ? 'warning'
-                              : 'secondary'
-                        }
-                      >
-                        {item.progress}%
-                      </Badge>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-3">
-                    <Progress value={item.progress} className="h-2" />
-
-                    <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
-                      <span>{item.type.charAt(0).toUpperCase() + item.type.slice(1)}</span>
-                      {item.dueDate ? <span>Due: {item.dueDate}</span> : null}
-                    </div>
-
-                    <Button variant="ghost" size="sm" className="w-full justify-between">
-                      Continue
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
       </Tabs>
 
       {/* Announcement Detail Dialog */}

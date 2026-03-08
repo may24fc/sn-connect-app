@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle } from 'lucide-react';
 import type * as React from 'react';
 import {
   Controller,
@@ -31,6 +32,8 @@ export interface FormFieldProps<
   required?: boolean | undefined;
   className?: string | undefined;
   id?: string | undefined;
+  /** Optional icon to display before the label */
+  icon?: React.ReactNode;
   children: (props: FormFieldRenderProps<TFieldValues, TName>) => React.ReactNode;
 }
 
@@ -41,6 +44,7 @@ export const FormField = <TFieldValues extends FieldValues, TName extends FieldP
   required,
   className,
   id,
+  icon,
   children,
 }: FormFieldProps<TFieldValues, TName>) => {
   const { control } = useFormContext<TFieldValues>();
@@ -50,27 +54,55 @@ export const FormField = <TFieldValues extends FieldValues, TName extends FieldP
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState }) => (
-        <div className={cn('space-y-1.5', className)}>
-          {label ? (
-            <Label htmlFor={fieldId}>
-              {label}
-              {required ? <span className="text-rose-600"> *</span> : null}
-            </Label>
-          ) : null}
-          {children({
-            field: { ...field, id: fieldId },
-            fieldState,
-            id: fieldId,
-          })}
-          {description ? (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">{description}</p>
-          ) : null}
-          {fieldState.error?.message ? (
-            <p className="text-xs text-rose-600">{fieldState.error.message}</p>
-          ) : null}
-        </div>
-      )}
+      render={({ field, fieldState }) => {
+        const hasError = !!fieldState.error?.message;
+
+        return (
+          <div className={cn('space-y-2', className)}>
+            {label ? (
+              <Label
+                htmlFor={fieldId}
+                className={cn(
+                  'flex items-center gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300',
+                  hasError && 'text-rose-600 dark:text-rose-400'
+                )}
+              >
+                {icon ? <span className="text-zinc-400 dark:text-zinc-500">{icon}</span> : null}
+                {label}
+                {required ? (
+                  <span className="text-rose-500 dark:text-rose-400" aria-label="required">
+                    *
+                  </span>
+                ) : (
+                  <span className="text-zinc-400 dark:text-zinc-500 text-xs font-normal ml-1">
+                    (optional)
+                  </span>
+                )}
+              </Label>
+            ) : null}
+            {children({
+              field: { ...field, id: fieldId },
+              fieldState,
+              id: fieldId,
+            })}
+            {description && !hasError ? (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                {description}
+              </p>
+            ) : null}
+            {hasError ? (
+              <div
+                className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-1 fade-in duration-200"
+                role="alert"
+                aria-live="polite"
+              >
+                <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>{fieldState.error?.message}</span>
+              </div>
+            ) : null}
+          </div>
+        );
+      }}
     />
   );
 };

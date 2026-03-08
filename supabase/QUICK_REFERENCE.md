@@ -1,5 +1,24 @@
 # Quick Reference Guide - HR Portal Database
 
+## Table of Contents
+
+- [User Management](#user-management)
+- [Employee Management](#employee-management)
+- [Department Management](#department-management)
+- [Manager/Reports Relationships](#managerreports-relationships)
+- [Document Management](#document-management)
+- [Notifications](#notifications)
+- [Resource Categories](#resource-categories)
+- [Reports & Hierarchy](#reports--hierarchy)
+- [Knowledge Base & Versioning](#knowledge-base--versioning)
+- [Performance](#performance)
+- [Tasks](#tasks)
+- [Directory & Views](#directory--views)
+- [Role Metadata & KPI Entries](#role-metadata--kpi-entries)
+- [Audit Log Queries](#audit-log-queries)
+- [Soft Delete Operations](#soft-delete-operations)
+- [TypeScript/JavaScript Usage](#typescriptjavascript-usage-supabase-client)
+
 ## Common SQL Queries
 
 ### User Management
@@ -297,13 +316,206 @@ WHERE deleted_at < now() - INTERVAL '7 years'
 AND deleted_at IS NOT NULL;
 ```
 
+### Notifications
+
+```sql
+-- Get unread notifications for a user
+SELECT id, type, title, message, link, created_at
+FROM public.notifications
+WHERE user_id = '<user-id>'
+  AND is_read = false
+  AND (expires_at IS NULL OR expires_at > now())
+ORDER BY created_at DESC;
+
+-- Mark notification as read
+UPDATE public.notifications
+SET is_read = true, read_at = now()
+WHERE id = '<notification-id>'
+  AND user_id = '<user-id>';
+
+-- Mark all as read for a user
+UPDATE public.notifications
+SET is_read = true, read_at = now()
+WHERE user_id = '<user-id>'
+  AND is_read = false;
+
+-- Get notification counts by type
+SELECT type, COUNT(*) as count
+FROM public.notifications
+WHERE user_id = '<user-id>'
+  AND is_read = false
+GROUP BY type;
+```
+
+### Resource Categories
+
+```sql
+-- Get full category tree with resource counts
+SELECT * FROM public.get_resource_category_tree();
+
+-- Get active top-level categories
+SELECT id, name, slug, icon, display_order
+FROM public.resource_categories
+WHERE parent_id IS NULL
+  AND is_active = true
+ORDER BY display_order;
+
+-- Get resources by category
+SELECT r.id, r.title, r.description, r.access_level, rc.name as category_name
+FROM public.resources r
+JOIN public.resource_categories rc ON r.category_id = rc.id
+WHERE rc.slug = 'onboarding'
+  AND r.deleted_at IS NULL
+ORDER BY r.created_at DESC;
+```
+
+### Reports & Hierarchy
+
+```sql
+-- Get child reports
+SELECT * FROM public.get_report_children('<report-id>');
+
+-- Get full report tree from a root
+SELECT * FROM public.get_report_tree('<root-report-id>');
+
+-- Get all root (top-level) reports with child counts
+SELECT * FROM public.root_reports
+ORDER BY created_at DESC;
+
+-- Get reports by group
+SELECT id, report_group, hierarchy_path, status, period_start, period_end
+FROM public.reports
+WHERE report_group = 'campaign'
+  AND deleted_at IS NULL
+ORDER BY created_at DESC;
+```
+
+### Knowledge Base & Versioning
+
+```sql
+-- Get version history for a knowledge source
+SELECT * FROM public.get_knowledge_source_versions('<source-id>');
+
+-- Restore a knowledge source to a previous version
+SELECT * FROM public.restore_knowledge_source_version('<source-id>', 3);
+
+-- Semantic search across knowledge embeddings
+SELECT * FROM public.match_knowledge_embeddings(
+  '<query-embedding-vector>'::vector,
+  0.7,  -- match threshold
+  10    -- max results
+);
+
+-- Get knowledge sources with version info
+SELECT id, title, source_type, current_version, created_at, updated_at
+FROM public.knowledge_sources
+WHERE deleted_at IS NULL
+ORDER BY updated_at DESC;
+```
+
+### Performance
+
+```sql
+-- Get individual performance summary (aggregated view)
+SELECT *
+FROM public.individual_performance_summary
+WHERE department = 'Engineering';
+
+-- Get KPIs with auto-calculated progress
+SELECT id, employee_id, name, target_value, current_value, progress_pct
+FROM public.kpis
+WHERE employee_id = '<employee-id>'
+  AND deleted_at IS NULL;
+
+-- Get OKRs (progress auto-updates on key_results change)
+SELECT id, employee_id, title, progress, key_results
+FROM public.okrs
+WHERE employee_id = '<employee-id>'
+  AND deleted_at IS NULL;
+```
+
+### Tasks
+
+```sql
+-- Get tasks with tags
+SELECT id, title, status, priority, category, tags
+FROM public.tasks
+WHERE assignee_id = '<user-id>'
+  AND deleted_at IS NULL
+ORDER BY due_date;
+
+-- Search tasks by tag
+SELECT id, title, status, tags
+FROM public.tasks
+WHERE tags @> ARRAY['marketing']
+  AND deleted_at IS NULL;
+
+-- Get tasks by category
+SELECT id, title, status, category
+FROM public.tasks
+WHERE category = 'launch'
+  AND deleted_at IS NULL;
+```
+
+### Directory & Views
+
+```sql
+-- Query the employee directory view
+SELECT user_id, full_name, role, department, position, status
+FROM public.employee_directory
+WHERE status = 'active'
+ORDER BY full_name;
+
+-- Search directory by name
+SELECT *
+FROM public.employee_directory
+WHERE full_name ILIKE '%search%';
+
+-- Get directory filtered by department
+SELECT user_id, full_name, position, avatar_url
+FROM public.employee_directory
+WHERE department = 'Engineering'
+  AND status = 'active';
+```
+
+### Role Metadata & KPI Entries
+
+```sql
+-- Get role metadata for a user
+SELECT role_type, metadata
+FROM public.user_role_metadata
+WHERE user_id = '<user-id>';
+
+-- Upsert role metadata (e.g., Google Ads specialist config)
+INSERT INTO public.user_role_metadata (user_id, role_type, metadata)
+VALUES (
+  '<user-id>',
+  'google_ads_specialist',
+  '{"accounts": ["acc-123"], "certifications": ["search", "display"]}'::jsonb
+)
+ON CONFLICT (user_id, role_type)
+DO UPDATE SET metadata = EXCLUDED.metadata, updated_at = now();
+
+-- Log a daily KPI entry
+INSERT INTO public.role_kpi_entries (user_id, role_type, kpi_name, kpi_value, kpi_unit, notes)
+VALUES ('<user-id>', 'developer', 'lines_of_code', 450, 'lines', 'Feature X implementation');
+
+-- Get KPI entries for a date range
+SELECT entry_date, kpi_name, kpi_value, kpi_unit, notes
+FROM public.role_kpi_entries
+WHERE user_id = '<user-id>'
+  AND role_type = 'developer'
+  AND entry_date BETWEEN '2026-02-01' AND '2026-02-28'
+ORDER BY entry_date DESC, kpi_name;
+```
+
 ## TypeScript/JavaScript Usage (Supabase Client)
 
 ### Authentication & User Setup
 
 ```typescript
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/packages/database';
+import type { Database } from '@hr-portal/database';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -461,4 +673,4 @@ const { error } = await supabase
 - Validate all inputs at database level
 
 ---
-**Last Updated**: 2026-01-23
+**Last Updated**: 2026-02-27

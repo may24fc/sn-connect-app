@@ -1,10 +1,6 @@
 import { createOKRSchema, updateOKRSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import {
-  getAuthedPerformanceContext,
-  isPerformanceAdmin,
-  resolveEmployeeIdForUser,
-} from '../_lib';
+import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +25,11 @@ export async function GET(request: NextRequest) {
 
     // Use admin client to bypass RLS cross-table subquery failures.
     // App-level auth scopes non-admin users to their own employee_id above.
-    let query = supabaseAdmin.from('okrs').select('*').order('created_at', { ascending: false });
+    let query = supabaseAdmin
+      .from('okrs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
@@ -65,7 +65,10 @@ export async function POST(request: NextRequest) {
     const parsed = createOKRSchema.safeParse(body);
 
     if (!parsed.success) {
-      console.error('POST /api/performance/okrs validation error:', JSON.stringify(parsed.error.flatten()));
+      console.error(
+        'POST /api/performance/okrs validation error:',
+        JSON.stringify(parsed.error.flatten())
+      );
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
@@ -82,7 +85,10 @@ export async function POST(request: NextRequest) {
       }
       employeeId = ownEmployeeId;
     } else if (!employeeId) {
-      return NextResponse.json({ error: 'employeeId is required for admin-created OKRs' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'employeeId is required for admin-created OKRs' },
+        { status: 400 }
+      );
     }
 
     const { data, error: insertError } = await supabaseAdmin
@@ -91,9 +97,11 @@ export async function POST(request: NextRequest) {
         employee_id: employeeId,
         cycle_id: parsed.data.cycleId || null,
         objective: parsed.data.objective,
+        description: parsed.data.description || null,
         key_results: parsed.data.keyResults,
         progress: parsed.data.progress,
         status: parsed.data.status,
+        weight: parsed.data.weight ?? 1,
       })
       .select('*')
       .single();
@@ -128,9 +136,11 @@ export async function PATCH(request: NextRequest) {
 
     const payload: Record<string, unknown> = {};
     if (parsed.data.objective !== undefined) payload.objective = parsed.data.objective;
+    if (parsed.data.description !== undefined) payload.description = parsed.data.description;
     if (parsed.data.keyResults !== undefined) payload.key_results = parsed.data.keyResults;
     if (parsed.data.progress !== undefined) payload.progress = parsed.data.progress;
     if (parsed.data.status !== undefined) payload.status = parsed.data.status;
+    if (parsed.data.weight !== undefined) payload.weight = parsed.data.weight;
     if (parsed.data.adminRating !== undefined) payload.admin_rating = parsed.data.adminRating;
     if (parsed.data.adminComments !== undefined) payload.admin_comments = parsed.data.adminComments;
     if (parsed.data.evaluatedBy !== undefined) payload.evaluated_by = parsed.data.evaluatedBy;

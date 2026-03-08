@@ -1,10 +1,10 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@hr-portal/ui';
 import { CheckCircle2, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type ReactNode } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import type { ReactNode } from 'react';
 
 export default function AwaitingApprovalPage(): ReactNode {
   const router = useRouter();

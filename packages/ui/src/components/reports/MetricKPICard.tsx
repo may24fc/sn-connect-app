@@ -2,7 +2,6 @@
 
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import type * as React from 'react';
-import { Card, CardContent } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 
 export interface MetricKPICardProps {
@@ -17,48 +16,18 @@ export interface MetricKPICardProps {
   className?: string;
 }
 
-const COLOR_VARIANTS = {
-  blue: {
-    border: 'border-l-blue-500',
-    icon: 'text-blue-600',
-    value: 'text-blue-900',
-    bg: 'bg-blue-50',
-  },
-  green: {
-    border: 'border-l-green-500',
-    icon: 'text-green-600',
-    value: 'text-green-900',
-    bg: 'bg-green-50',
-  },
-  orange: {
-    border: 'border-l-orange-500',
-    icon: 'text-orange-600',
-    value: 'text-orange-900',
-    bg: 'bg-orange-50',
-  },
-  red: {
-    border: 'border-l-red-500',
-    icon: 'text-red-600',
-    value: 'text-red-900',
-    bg: 'bg-red-50',
-  },
-} as const;
-
 const TREND_CONFIG = {
   up: {
     icon: ArrowUp,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
+    color: 'text-green-600 dark:text-green-400',
   },
   down: {
     icon: ArrowDown,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
+    color: 'text-red-600 dark:text-red-400',
   },
   stable: {
     icon: Minus,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-50',
+    color: 'text-zinc-400 dark:text-zinc-500',
   },
 } as const;
 
@@ -90,50 +59,34 @@ export function MetricKPICard({
   label,
   value,
   change,
-  color,
   className,
 }: MetricKPICardProps): React.ReactElement {
-  const colorVariant = COLOR_VARIANTS[color];
   const trendConfig = TREND_CONFIG[change.trend];
   const TrendIcon = trendConfig.icon;
 
   return (
-    <Card
-      className={cn('border-l-4 transition-all hover:shadow-md', colorVariant.border, className)}
+    <div
+      className={cn(
+        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-3',
+        className
+      )}
     >
-      <CardContent className="pt-6">
-        <div className="space-y-2">
-          {/* Label */}
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-            {label}
-          </p>
-
-          {/* Primary Value */}
-          <div className="space-y-1">
-            <p className={cn('text-4xl font-bold tracking-tight font-mono', colorVariant.value)}>
-              {value}
-            </p>
-
-            {/* Change Indicator */}
-            <div
-              className={cn(
-                'inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-semibold',
-                trendConfig.bgColor,
-                trendConfig.color
-              )}
-            >
-              <TrendIcon className="h-4 w-4" aria-hidden="true" />
-              <span className="font-mono">
-                {change.absolute}
-                {change.percent !== undefined && (
-                  <span className="ml-1">({change.percent.toFixed(1)}%)</span>
-                )}
-              </span>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+        {label}
+      </p>
+      <p className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        {value}
+      </p>
+      <div className={cn('flex items-center gap-1 text-xs', trendConfig.color)}>
+        <TrendIcon className="h-3 w-3" aria-hidden="true" />
+        <span>
+          {change.absolute}
+          {change.percent !== undefined && (
+            <span className="ml-0.5">({change.percent.toFixed(1)}%)</span>
+          )}
+        </span>
+      </div>
+    </div>
   );
 }
 

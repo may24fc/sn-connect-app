@@ -37,13 +37,13 @@ This document describes all environment variables required by the HR Portal appl
 |----------|-------------|----------|
 | `JWT_SECRET` | Secret key used to sign and verify JSON Web Tokens. Must be at least 32 characters long. Generate a secure random string (e.g., `openssl rand -base64 32`). | Yes |
 
-### n8n
+### Edge Functions & Cron
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `N8N_WEBHOOK_URL` | The base URL for n8n webhooks. Used to trigger automated workflows. | Yes |
-| `N8N_API_KEY` | API key for authenticating with n8n. Used for secure communication with n8n workflows. | Yes |
-| `N8N_WEBHOOK_SECRET` | Secret key for verifying n8n webhook requests. Used to validate incoming webhook calls. | Yes |
+| `RESEND_API_KEY` | API key for Resend transactional email service. Must start with `re_`. Used by Edge Functions to send emails. Obtain from [Resend Dashboard](https://resend.com/api-keys). | Yes |
+| `CRON_SECRET` | Secret used by Vercel to authenticate cron job requests. Must be at least 16 characters. Set in Vercel project settings. | Yes |
+| `ADMIN_SECRET_KEY` | Secret key for manual Edge Function invocation via `X-Admin-Key` header. Must be at least 32 characters. Generate with `openssl rand -base64 32`. | No |
 
 ### Application
 

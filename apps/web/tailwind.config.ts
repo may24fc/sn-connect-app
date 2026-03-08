@@ -57,20 +57,32 @@ const config: Config = {
           foreground: '#FFFFFF',
         },
 
-        // Neutral - Zinc Scale
-        background: '#FAFAFA',
-        foreground: '#09090B',
+        // Neutral - Zinc Scale (use CSS variables so dark mode switches automatically)
+        background: 'rgb(var(--background) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground) / <alpha-value>)',
         muted: {
-          DEFAULT: '#F4F4F5',
-          foreground: '#71717A',
+          DEFAULT: 'rgb(var(--muted) / <alpha-value>)',
+          foreground: 'rgb(var(--muted-foreground) / <alpha-value>)',
         },
         card: {
-          DEFAULT: '#FFFFFF',
-          foreground: '#18181B',
+          DEFAULT: 'rgb(var(--card) / <alpha-value>)',
+          foreground: 'rgb(var(--card-foreground) / <alpha-value>)',
         },
-        border: '#E4E4E7',
-        input: '#E4E4E7',
-        ring: '#4F46E5',
+        popover: {
+          DEFAULT: 'rgb(var(--popover) / <alpha-value>)',
+          foreground: 'rgb(var(--popover-foreground) / <alpha-value>)',
+        },
+        accent: {
+          DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+          foreground: 'rgb(var(--accent-foreground) / <alpha-value>)',
+        },
+        destructive: {
+          DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+          foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
+        },
+        border: 'rgb(var(--border) / <alpha-value>)',
+        input: 'rgb(var(--input) / <alpha-value>)',
+        ring: 'rgb(var(--ring) / <alpha-value>)',
       },
 
       fontFamily: {
@@ -119,6 +131,10 @@ const config: Config = {
         'fade-in': 'fade-in 0.15s ease-out',
         'slide-in': 'slide-in 0.2s ease-out',
         'slide-up': 'slide-up 0.2s ease-out',
+        'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'slide-out-right': 'slide-out-right 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+        'overlay-in': 'overlay-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+        'overlay-out': 'overlay-out 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         skeleton: 'skeleton 1.5s ease-in-out infinite',
         shimmer: 'shimmer 2s infinite',
       },
@@ -135,6 +151,22 @@ const config: Config = {
         'slide-up': {
           '0%': { transform: 'translateY(8px)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'slide-out-right': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        'overlay-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'overlay-out': {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
         },
         skeleton: {
           '0%, 100%': { opacity: '1' },

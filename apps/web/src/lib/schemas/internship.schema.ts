@@ -57,3 +57,18 @@ export type CreateInternshipInput = z.infer<typeof createInternshipSchema>;
 export type UpdateInternshipInput = z.infer<typeof updateInternshipSchema>;
 export type CreateInternDailyLogInput = z.infer<typeof createInternDailyLogSchema>;
 export type UpdateInternDailyLogInput = z.infer<typeof updateInternDailyLogSchema>;
+
+/**
+ * Schema for intern self-initialization.
+ * Validates the payload sent by an intern to create their own internship record.
+ */
+export const initializeInternshipSchema = z.object({
+  startDate: isoDateSchema,
+  endDate: isoDateSchema,
+  department: z.string().trim().min(1, 'Department is required'),
+  school: z.string().trim().min(1, 'School is required'),
+  program: z.string().trim().min(1, 'Program is required'),
+  requiredHours: z.coerce.number().int().min(1).max(20000).default(480),
+});
+
+export type InitializeInternshipInput = z.infer<typeof initializeInternshipSchema>;

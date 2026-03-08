@@ -11,7 +11,14 @@ const publicPaths = new Set<string>([
 ]);
 
 const publicPrefixes = ['/api/auth'];
-const protectedPrefixes = ['/dashboard', '/intern', '/admin', '/super-admin', '/information-hub', '/onboarding'];
+const protectedPrefixes = [
+  '/dashboard',
+  '/intern',
+  '/admin',
+  '/super-admin',
+  '/information-hub',
+  '/onboarding',
+];
 
 /**
  * Next.js Middleware for Supabase session refresh + route protection.
@@ -27,16 +34,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
   if (supabase) {
     try {
-      // Refresh the session to ensure cookies are up-to-date
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (!sessionError && sessionData.session) {
-        // Session exists and is valid
-        data = { user: sessionData.session.user };
+      // SECURITY: Use getUser() to validate JWT with Supabase Auth server.
+      // getSession() only reads from cookies and could be tampered with.
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+
+      if (!userError && userData.user) {
+        data = { user: userData.user };
       } else {
-        // No valid session, try getUser as fallback
-        const result = await supabase.auth.getUser();
-        data = result.data ?? null;
+        data = null;
       }
     } catch (err) {
       // If server-side Supabase call fails, fall back to client-side auth
@@ -66,9 +71,17 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const onboardingExemptPaths = ['/onboarding/setup', '/onboarding/complete'];
   const onboardingGatePaths = ['/dashboard', '/intern/dashboard'];
 
+  // Paths that are exempt from the intern setup redirect
+  const internSetupExemptPaths = ['/intern/setup', '/api/internships/initialize'];
+  const internSetupGatePaths = ['/intern/dashboard'];
+
   const isOnboardingExempt =
     onboardingExemptPaths.some((path) => pathname.startsWith(path)) ||
     pathname.startsWith('/api/onboarding');
+
+  const isInternSetupExempt =
+    internSetupExemptPaths.some((path) => pathname.startsWith(path)) ||
+    pathname.startsWith('/onboarding');
 
   if (supabase && data && (data as any).user && !isOnboardingExempt) {
     const authUser = (data as any).user as {
@@ -100,7 +113,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         .maybeSingle();
 
       if (onboardingError) {
-        console.warn('Skipping onboarding gate; failed to fetch onboarding status:', onboardingError);
+        console.warn(
+          'Skipping onboarding gate; failed to fetch onboarding status:',
+          onboardingError
+        );
         return response;
       }
 
@@ -110,6 +126,38 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       if (!isOnboardingComplete && shouldGateCurrentPath) {
         const redirectUrl = new URL('/onboarding/setup', request.url);
         return NextResponse.redirect(redirectUrl);
+      }
+
+      // Intern setup gate: redirect interns without an active internship record
+      // to the setup flow so they can self-initialize their record.
+      if (
+        role === 'intern' &&
+        isOnboardingComplete &&
+        !isInternSetupExempt &&
+        internSetupGatePaths.some((path) => pathname.startsWith(path))
+      ) {
+        const { data: activeInternship, error: internshipError } = await supabase
+          .from('internships')
+          .select('id')
+          .eq(
+            'employee_id',
+            (
+              await supabase
+                .from('employees')
+                .select('id')
+                .eq('user_id', authUser.id)
+                .is('deleted_at', null)
+                .maybeSingle()
+            ).data?.id ?? ''
+          )
+          .eq('status', 'active')
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        if (!internshipError && !activeInternship) {
+          const redirectUrl = new URL('/intern/setup', request.url);
+          return NextResponse.redirect(redirectUrl);
+        }
       }
     }
   }

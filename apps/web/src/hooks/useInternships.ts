@@ -1,6 +1,32 @@
 import { type InternshipFilters, queryKeys } from '@/lib/query-keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+// ── Intern self-initialization types ──
+
+export interface InitializeInternshipPayload {
+  startDate: string;
+  endDate: string;
+  department: string;
+  school: string;
+  program: string;
+  requiredHours?: number;
+}
+
+interface InitializeInternshipResponse {
+  data: {
+    id: string;
+    employee_id: string;
+    start_date: string;
+    end_date: string;
+    required_hours: number;
+    completed_hours: number;
+    status: string;
+    department: string;
+    school: string | null;
+    program: string | null;
+  };
+}
+
 export interface InternshipSummaryRecord {
   id: string;
   internshipId: string;
@@ -161,7 +187,9 @@ export function useInternshipLogs(id: string | null, enabled = true) {
     queryFn: async (): Promise<InternshipLogsResponse> => {
       const response = await fetch(`/api/internships/${id}/logs`);
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to fetch internship logs' }));
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to fetch internship logs' }));
         throw new Error(error.error || 'Failed to fetch internship logs');
       }
 
@@ -203,7 +231,9 @@ export function useCreateInternDailyLog() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.internships.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.internships.logs(variables.internshipId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.logs(variables.internshipId),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.internships.detail(variables.internshipId),
       });
@@ -239,7 +269,9 @@ export function useUpdateInternDailyLog() {
       return response.json();
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.internships.logs(variables.internshipId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.logs(variables.internshipId),
+      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.internships.detail(variables.internshipId),
       });
@@ -274,6 +306,40 @@ export function useUpdateInternship() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.internships.detail(variables.internshipId),
       });
+    },
+  });
+}
+
+/**
+ * Mutation hook for intern self-initialization.
+ * Creates an internship record for the authenticated intern user
+ * who does not yet have one.
+ */
+export function useInitializeInternship() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      payload: InitializeInternshipPayload
+    ): Promise<InitializeInternshipResponse> => {
+      const response = await fetch('/api/internships/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to initialize internship' }));
+        throw new Error(error.error || 'Failed to initialize internship');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate all internship queries so the dashboard picks up the new record
+      queryClient.invalidateQueries({ queryKey: queryKeys.internships.all });
     },
   });
 }

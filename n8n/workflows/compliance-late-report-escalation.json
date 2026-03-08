@@ -1,0 +1,230 @@
+{
+  "name": "compliance-late-report-escalation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 1 * * *"
+            }
+          ]
+        }
+      },
+      "id": "trigger-daily",
+      "name": "Daily Trigger (01:00 UTC)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.SUPABASE_URL}}/functions/v1/check-late-reports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "invoke-edge-function",
+      "name": "Invoke check-late-reports",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.data.lateEmployees > 0 || $json.data.lateInterns > 0}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-has-late",
+      "name": "Has Late Reports?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "escalationEmployees",
+              "value": "={{$json.data.summary.employees.filter(e => e.daysLate >= 7).map(e => e.name).join(', ')}}"
+            },
+            {
+              "name": "firmEmployees",
+              "value": "={{$json.data.summary.employees.filter(e => e.daysLate >= 3 && e.daysLate < 7).map(e => e.name).join(', ')}}"
+            },
+            {
+              "name": "gentleEmployees",
+              "value": "={{$json.data.summary.employees.filter(e => e.daysLate < 3).map(e => e.name).join(', ')}}"
+            }
+          ],
+          "number": [
+            {
+              "name": "totalLate",
+              "value": "={{$json.data.lateEmployees + $json.data.lateInterns}}"
+            }
+          ]
+        }
+      },
+      "id": "categorize",
+      "name": "Categorize by Severity",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.escalationEmployees}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "check-escalation",
+      "name": "Has Day-7+ Escalations?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1130, 200]
+    },
+    {
+      "parameters": {
+        "channel": "#hr-alerts",
+        "text": "🚨 *Report Escalation Alert*\n\nThe following employees are 7+ days late on their reports and require manager/HR intervention:\n\n{{$json.escalationEmployees}}\n\nPlease follow up immediately.",
+        "otherOptions": {}
+      },
+      "id": "slack-escalation",
+      "name": "Slack: Escalation Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1350, 100]
+    },
+    {
+      "parameters": {
+        "fromEmail": "hr@snconnect.com",
+        "toEmail": "={{$env.HR_ADMIN_EMAIL}}",
+        "subject": "⚠️ Late Report Escalation - {{$json.totalLate}} employee(s)",
+        "text": "Daily Late Report Summary\n\nEscalation (7+ days): {{$json.escalationEmployees || 'None'}}\nFirm Reminder (3-6 days): {{$json.firmEmployees || 'None'}}\nGentle Reminder (1-2 days): {{$json.gentleEmployees || 'None'}}\n\nTotal late: {{$json.totalLate}}\n\nPlease review at: {{$env.APP_URL}}/admin/reports?tab=submissions",
+        "options": {}
+      },
+      "id": "email-summary",
+      "name": "Email: Daily Summary to HR",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [1130, 400]
+    },
+    {
+      "parameters": {},
+      "id": "no-action",
+      "name": "No Late Reports",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [910, 400]
+    }
+  ],
+  "connections": {
+    "Daily Trigger (01:00 UTC)": {
+      "main": [
+        [
+          {
+            "node": "Invoke check-late-reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoke check-late-reports": {
+      "main": [
+        [
+          {
+            "node": "Has Late Reports?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Late Reports?": {
+      "main": [
+        [
+          {
+            "node": "Categorize by Severity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Late Reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Categorize by Severity": {
+      "main": [
+        [
+          {
+            "node": "Has Day-7+ Escalations?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email: Daily Summary to HR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Day-7+ Escalations?": {
+      "main": [
+        [
+          {
+            "node": "Slack: Escalation Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "compliance"
+    },
+    {
+      "name": "reports"
+    },
+    {
+      "name": "notifications"
+    }
+  ]
+}

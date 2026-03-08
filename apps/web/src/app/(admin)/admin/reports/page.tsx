@@ -8,14 +8,33 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import { ReportsAnalyticsTab } from './components/ReportsAnalyticsTab';
+
+// Lazy-load the analytics tab (contains recharts / D3)
+const ReportsAnalyticsTab = dynamic(
+  () =>
+    import('./components/ReportsAnalyticsTab').then((m) => ({ default: m.ReportsAnalyticsTab })),
+  {
+    loading: () => (
+      <div className="space-y-4 py-4">
+        <Skeleton className="h-64 w-full rounded-lg" />
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-48 w-full rounded-lg" />
+          <Skeleton className="h-48 w-full rounded-lg" />
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
 import { ReportsCompareTab } from './components/ReportsCompareTab';
 import { ReportsSubmissionsTab } from './components/ReportsSubmissionsTab';
 
@@ -39,7 +58,7 @@ export default function AdminReportsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-headline">Reports Management</h1>
+          <h1 className="text-2xl font-bold text-foreground">Reports Management</h1>
           <p className="text-muted-foreground">Review submissions, analytics, and comparisons</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

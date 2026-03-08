@@ -1,7 +1,12 @@
+import {
+  createNotificationsForUsers,
+  getAdminUserIds,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { completeOnboardingSchema } from '@/lib/schemas/onboarding.schema';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedOnboardingContext } from '../../_lib';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,6 +76,18 @@ export async function POST(request: NextRequest) {
       console.error('Failed to update user status to awaiting_approval:', statusUpdateError);
       // Continue anyway - the profile is marked complete
     }
+
+    // Notify admins that a user has completed onboarding
+    const userName = await getUserDisplayName(user.id);
+    const adminIds = await getAdminUserIds();
+
+    createNotificationsForUsers(adminIds, {
+      type: 'onboarding_step',
+      title: 'Onboarding Completed',
+      message: `${userName} has completed their onboarding and is awaiting approval`,
+      link: `/admin/onboarding`,
+      metadata: { profileId: updatedProfile.id, userId: user.id },
+    });
 
     return NextResponse.json({ data: updatedProfile });
   } catch (error) {

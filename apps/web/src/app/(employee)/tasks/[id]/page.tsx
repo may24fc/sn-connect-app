@@ -2,8 +2,8 @@
 
 import { useTask } from '@/hooks/useTask';
 import { useUpdateTask } from '@/hooks/useUpdateTask';
+import { formatDate } from '@/lib/format';
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -15,21 +15,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  TaskPriorityBadge,
+  TaskStatusBadge,
   useToast,
 } from '@hr-portal/ui';
+import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { use } from 'react';
-
-const statusVariant: Record<
-  'pending' | 'in_progress' | 'completed' | 'cancelled',
-  'secondary' | 'pending' | 'approved' | 'error'
-> = {
-  pending: 'secondary',
-  in_progress: 'pending',
-  completed: 'approved',
-  cancelled: 'error',
-};
 
 export default function TaskDetailPage({
   params,
@@ -65,7 +58,7 @@ export default function TaskDetailPage({
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <CardTitle>{task.title}</CardTitle>
-            <Badge variant={statusVariant[task.status]}>{task.status}</Badge>
+            <TaskStatusBadge status={task.status as TaskStatus} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -74,20 +67,20 @@ export default function TaskDetailPage({
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2 text-sm">
-            <p>
-              <span className="text-muted-foreground">Priority:</span> {task.priority}
+            <p className="flex items-center gap-2">
+              <span className="text-muted-foreground">Priority:</span>{' '}
+              <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
             </p>
             <p>
-              <span className="text-muted-foreground">Due Date:</span>{' '}
-              {task.due_date ? task.due_date.slice(0, 10) : '-'}
+              <span className="text-muted-foreground">Due Date:</span> {formatDate(task.due_date)}
             </p>
             <p>
               <span className="text-muted-foreground">Assigned To:</span>{' '}
-              {task.assignee_name || '-'}
+              {task.assignee_name || '—'}
             </p>
             <p>
               <span className="text-muted-foreground">Assigned By:</span>{' '}
-              {task.assigner_name || '-'}
+              {task.assigner_name || '—'}
             </p>
           </div>
 
@@ -110,7 +103,8 @@ export default function TaskDetailPage({
                     onError: (error) => {
                       addToast({
                         title: 'Error',
-                        description: error instanceof Error ? error.message : 'Failed to update task',
+                        description:
+                          error instanceof Error ? error.message : 'Failed to update task',
                         variant: 'error',
                       });
                     },

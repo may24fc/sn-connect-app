@@ -67,10 +67,7 @@ export async function POST(request: NextRequest) {
 
     if (employeeError) {
       console.error('Failed to fetch employee:', employeeError);
-      return NextResponse.json(
-        { error: 'Failed to fetch employee record' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to fetch employee record' }, { status: 500 });
     }
 
     if (!employee) {

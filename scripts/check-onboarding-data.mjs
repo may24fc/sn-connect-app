@@ -19,7 +19,10 @@ try {
     if (key && valueParts.length > 0) {
       let value = valueParts.join('=').trim();
       // Remove surrounding quotes
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
         value = value.slice(1, -1);
       }
       process.env[key.trim()] = value;
@@ -41,16 +44,13 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 console.log('🔍 Checking onboarding data for test accounts...\n');
 
 // First, fetch the auth users
-const authUsersResponse = await fetch(
-  `${SUPABASE_URL}/auth/v1/admin/users`,
-  {
-    headers: {
-      apikey: SUPABASE_SERVICE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-      'Content-Type': 'application/json',
-    },
-  }
-);
+const authUsersResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+  headers: {
+    apikey: SUPABASE_SERVICE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+    'Content-Type': 'application/json',
+  },
+});
 
 if (!authUsersResponse.ok) {
   console.error('❌ Failed to fetch auth users:', authUsersResponse.statusText);
@@ -62,8 +62,8 @@ if (!authUsersResponse.ok) {
 const authUsersData = await authUsersResponse.json();
 const authUsers = authUsersData.users || [];
 
-const testUsers = authUsers.filter((u) =>
-  u.email === 'employee@example.com' || u.email === 'intern@example.com'
+const testUsers = authUsers.filter(
+  (u) => u.email === 'employee@example.com' || u.email === 'intern@example.com'
 );
 
 if (testUsers.length === 0) {

@@ -27,7 +27,7 @@ export function UploadProgress({
 
   return (
     <div
-      className={cn('rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm', className)}
+      className={cn('rounded-xl border border-border bg-card p-4 space-y-3 shadow-card', className)}
     >
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-foreground truncate pr-2">{fileName}</p>

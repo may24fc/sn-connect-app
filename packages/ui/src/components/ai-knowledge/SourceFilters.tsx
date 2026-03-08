@@ -10,14 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../primitives/select';
-import type { FilterOption } from '../../types/ai-knowledge.types';
+import type { KnowledgeFilterOption } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 
 export interface SourceFiltersProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  filterOption: FilterOption;
-  onFilterChange: (option: FilterOption) => void;
+  filterOption: KnowledgeFilterOption;
+  onFilterChange: (option: KnowledgeFilterOption) => void;
   className?: string;
 }
 
@@ -44,7 +44,7 @@ export function SourceFilters({
       </div>
 
       {/* Filter Dropdown */}
-      <Select value={filterOption} onValueChange={(value) => onFilterChange(value as FilterOption)}>
+      <Select value={filterOption} onValueChange={(value) => onFilterChange(value as KnowledgeFilterOption)}>
         <SelectTrigger className="w-full sm:w-36 h-10 rounded-lg border-border/60">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground/70" />

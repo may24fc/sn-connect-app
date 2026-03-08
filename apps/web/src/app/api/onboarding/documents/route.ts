@@ -61,10 +61,20 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file');
     const documentTypeRaw = formData.get('documentType');
 
-    console.log('Upload request - documentType:', documentTypeRaw, 'file type:', file?.constructor.name);
+    console.log(
+      'Upload request - documentType:',
+      documentTypeRaw,
+      'file type:',
+      file?.constructor.name
+    );
 
     if (!(file instanceof File) || typeof documentTypeRaw !== 'string') {
-      console.error('Invalid request - file instanceof File:', file instanceof File, 'documentTypeRaw type:', typeof documentTypeRaw);
+      console.error(
+        'Invalid request - file instanceof File:',
+        file instanceof File,
+        'documentTypeRaw type:',
+        typeof documentTypeRaw
+      );
       return NextResponse.json({ error: 'file and documentType are required' }, { status: 400 });
     }
 

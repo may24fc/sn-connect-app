@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Badge } from '../../primitives/badge';
-import type { AccessLevel, FilterOption, KnowledgeSource } from '../../types/ai-knowledge.types';
+import type { AccessLevel, KnowledgeFilterOption, KnowledgeSource } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { SourceFilters } from './SourceFilters';
 import { SourceRow } from './SourceRow';
@@ -10,16 +10,18 @@ import { SourceRow } from './SourceRow';
 export interface SourcesInventoryProps {
   sources: Array<KnowledgeSource>;
   onAccessChange: (sourceId: string, accessLevel: AccessLevel) => void;
+  onDeleteSource?: (sourceId: string) => void;
   className?: string;
 }
 
 export function SourcesInventory({
   sources,
   onAccessChange,
+  onDeleteSource,
   className,
 }: SourcesInventoryProps): React.ReactNode {
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [filterOption, setFilterOption] = React.useState<FilterOption>('all');
+  const [filterOption, setFilterOption] = React.useState<KnowledgeFilterOption>('all');
 
   const filteredSources = React.useMemo(() => {
     let filtered = sources;
@@ -65,7 +67,12 @@ export function SourcesInventory({
         <div className="space-y-1">
           {filteredSources.length > 0 ? (
             filteredSources.map((source) => (
-              <SourceRow key={source.id} source={source} onAccessChange={onAccessChange} />
+              <SourceRow
+                key={source.id}
+                source={source}
+                onAccessChange={onAccessChange}
+                {...(onDeleteSource && { onDelete: () => onDeleteSource(source.id) })}
+              />
             ))
           ) : (
             <div className="text-center py-12 text-muted-foreground">

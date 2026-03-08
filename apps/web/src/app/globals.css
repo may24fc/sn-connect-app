@@ -152,7 +152,7 @@
 
   /* Sidebar Container */
   .sidebar {
-    @apply h-screen w-64 flex-shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900;
+    @apply h-screen w-64 flex-shrink-0 border-r border-border bg-card;
   }
 
   .sidebar-collapsed {
@@ -170,7 +170,7 @@
 
   /* Card Styles - Crisp 1px lift */
   .card-surface {
-    @apply bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg;
+    @apply bg-card border border-border rounded-lg;
     box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03);
   }
 

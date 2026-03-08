@@ -1,11 +1,15 @@
+import {
+  createNotification,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { taskCreateSchema } from '@/lib/schemas/task.schema';
+import { type NextRequest, NextResponse } from 'next/server';
 import {
   TASK_ASSIGNER_ROLE,
   getTaskAuthedContext,
   getTaskWriteErrorMessage,
   validateTaskAssignee,
 } from './_lib';
-import { type NextRequest, NextResponse } from 'next/server';
 
 interface TaskRow {
   id: string;
@@ -202,6 +206,19 @@ export async function POST(request: NextRequest) {
     if (error || !data) {
       console.error('Error creating task:', error);
       return NextResponse.json({ error: getTaskWriteErrorMessage(error) }, { status: 500 });
+    }
+
+    // Notify assignee about the new task
+    if (data.assigned_to) {
+      const assignerName = await getUserDisplayName(user.id);
+      createNotification({
+        userId: data.assigned_to,
+        type: 'task_assigned',
+        title: 'New Task Assigned',
+        message: `${assignerName} assigned you a task: "${data.title}"`,
+        link: `/tasks`,
+        metadata: { taskId: data.id, assignedBy: user.id },
+      });
     }
 
     return NextResponse.json({ data }, { status: 201 });

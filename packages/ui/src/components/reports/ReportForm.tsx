@@ -1,9 +1,10 @@
 'use client';
 
-import { Save, Send, Upload, X } from 'lucide-react';
+import { Save, Send, X } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '../../primitives/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
+import { FileDropZone } from '../../primitives/file-drop-zone';
 import { Input } from '../../primitives/input';
 import { Label } from '../../primitives/label';
 import { Separator } from '../../primitives/separator';
@@ -80,10 +81,8 @@ export function ReportForm({
     setMetrics(updatedMetrics);
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    if (event.target.files) {
-      setAttachments(Array.from(event.target.files));
-    }
+  const handleFileChange = (files: Array<File>): void => {
+    setAttachments((prev) => [...prev, ...files]);
   };
 
   const handleRemoveFile = (index: number): void => {
@@ -296,37 +295,17 @@ export function ReportForm({
           <CardDescription>Upload receipts, screenshots, or supporting documents</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Input
-              type="file"
-              id="file-upload"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <Button variant="outline" size="sm" asChild>
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <Upload className="h-4 w-4 mr-2" />
-                Choose Files
-              </label>
-            </Button>
-          </div>
-
-          {attachments.length > 0 && (
-            <div className="space-y-2">
-              {attachments.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 bg-muted rounded-md"
-                >
-                  <span className="text-sm">{file.name}</span>
-                  <Button variant="ghost" size="icon" onClick={() => handleRemoveFile(index)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
+          <FileDropZone
+            onFilesSelected={handleFileChange}
+            multiple
+            maxFiles={10}
+            maxSizeMB={10}
+            compact
+            label="Drop receipts, screenshots, or documents"
+            formatHint="All file types — max 10 MB each (up to 10 files)"
+            selectedFiles={attachments}
+            onRemoveFile={handleRemoveFile}
+          />
         </CardContent>
       </Card>
 

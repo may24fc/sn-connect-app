@@ -5,6 +5,10 @@ export type OKRId = string & { __brand: 'OKRId' };
 export type KeyResultId = string & { __brand: 'KeyResultId' };
 export type KPIId = string & { __brand: 'KPIId' };
 export type ReviewId = string & { __brand: 'ReviewId' };
+export type OKRTargetId = string & { __brand: 'OKRTargetId' };
+
+// Target Metric Types
+export type TargetMetricType = 'number' | 'boolean' | 'currency' | 'tasks';
 
 // Performance Cycle Types
 export type CycleStatus = 'draft' | 'active' | 'closed';
@@ -19,6 +23,28 @@ export interface PerformanceCycle {
   kpiSubmissionDeadline?: string;
   selfAssessmentDeadline?: string;
   managerReviewDeadline?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// OKR Target (replaces both KeyResult and standalone KPI)
+export interface OKRTarget {
+  id: OKRTargetId;
+  okrId: OKRId;
+  employeeId: EmployeeId;
+  cycleId: CycleId | null;
+  name: string;
+  description?: string | undefined;
+  metricType: TargetMetricType;
+  startValue: number;
+  targetValue: number;
+  currentValue: number;
+  unit?: string | undefined;
+  weight: number;
+  sortOrder: number;
+  progressPercentage: number; // Computed client-side
+  adminRating?: PerformanceRating;
+  adminComments?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,21 +70,24 @@ export interface OKR {
   employeeId: EmployeeId;
   cycleId: CycleId;
   objective: string;
-  description?: string;
+  description?: string | undefined;
   status: OKRStatus;
+  weight: number;
   progressPercentage: number;
+  targets: Array<OKRTarget>;
+  /** @deprecated Use targets instead */
   keyResults: Array<KeyResult>;
   createdAt: string;
   updatedAt: string;
 }
 
-// KPI Types
+// KPI Types (kept for backward compat, but deprecated in favor of OKRTarget)
 export interface KPI {
   id: KPIId;
   employeeId: EmployeeId;
   cycleId: CycleId;
   name: string;
-  description?: string;
+  description?: string | undefined;
   target: number;
   actual: number;
   unit: string;

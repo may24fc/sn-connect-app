@@ -1,9 +1,15 @@
 {
-  "buildCommand": "pnpm build:web",
+  "buildCommand": "pnpm build:www",
   "devCommand": "pnpm dev",
   "installCommand": "pnpm install",
   "framework": "nextjs",
-  "outputDirectory": "apps/web/.next",
+  "outputDirectory": "apps/www/.next",
+  "crons": [
+    {
+      "path": "/api/cron/probation-check",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

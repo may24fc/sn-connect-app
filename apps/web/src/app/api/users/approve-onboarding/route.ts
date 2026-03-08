@@ -1,4 +1,4 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -67,10 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (targetUser.status !== 'awaiting_approval') {
-      return NextResponse.json(
-        { error: 'User is not awaiting approval' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'User is not awaiting approval' }, { status: 400 });
     }
 
     if (approved) {
@@ -149,7 +146,7 @@ export async function POST(request: NextRequest) {
       }
 
       // TODO: Send approval email notification to user
-      
+
       return NextResponse.json({
         message: 'Onboarding approved and user activated successfully',
         data: { userId, status: 'active' },
@@ -157,7 +154,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Reject: Update status back to pending_onboarding or keep awaiting_approval
       // For now, we'll keep them as awaiting_approval with notes
-      
+
       // TODO: Send rejection email notification to user with notes
 
       return NextResponse.json({

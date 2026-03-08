@@ -118,7 +118,9 @@ async function main() {
     console.log(`   Auth ID: ${authUser.id}`);
     console.log(`   Public Role: ${publicUser?.role || '❌ NOT FOUND'}`);
     console.log(`   Status: ${publicUser?.status || 'N/A'}`);
-    console.log(`   Employee Record: ${employee ? `✅ ${employee.employee_number} (${employee.first_name} ${employee.last_name})` : '❌ NOT FOUND'}`);
+    console.log(
+      `   Employee Record: ${employee ? `✅ ${employee.employee_number} (${employee.first_name} ${employee.last_name})` : '❌ NOT FOUND'}`
+    );
     console.log();
   }
 
@@ -135,7 +137,9 @@ async function main() {
   if (superAdminUser) {
     console.log(`✅ Super-admin role: ${superAdminUser.role}`);
     console.log(`   Expected: 'super_admin'`);
-    console.log(`   Match: ${superAdminUser.role === 'super_admin' ? '✅ YES' : '❌ NO - THIS IS THE PROBLEM!'}`);
+    console.log(
+      `   Match: ${superAdminUser.role === 'super_admin' ? '✅ YES' : '❌ NO - THIS IS THE PROBLEM!'}`
+    );
     console.log();
   } else {
     console.log('❌ super-admin@example.com not found in public.users');
@@ -147,7 +151,9 @@ async function main() {
   assignableUsers.forEach((u) => {
     const authUser = authUsers.find((au) => au.id === u.id);
     const emp = employeeByUserId.get(u.id);
-    console.log(`   - ${authUser?.email || 'unknown'} (role: ${u.role}, employee: ${emp ? '✅' : '❌'})`);
+    console.log(
+      `   - ${authUser?.email || 'unknown'} (role: ${u.role}, employee: ${emp ? '✅' : '❌'})`
+    );
   });
 
   console.log();

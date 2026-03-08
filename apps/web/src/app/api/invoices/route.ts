@@ -60,8 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Resolve user role for authorization scoping
-    const role =
-      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const adminRoles = ['admin', 'super_admin'];
     const isAdmin = adminRoles.includes(role ?? '');
 
@@ -162,8 +161,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the employee actually belongs to the authenticated user (unless admin)
-    const role =
-      typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
     const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
 
     if (!isAdmin && resolvedEmployeeId !== employeeData?.id) {
@@ -171,6 +169,19 @@ export async function POST(request: NextRequest) {
         { error: 'Cannot create invoices for other employees' },
         { status: 403 }
       );
+    }
+
+    // Auto-generate invoice number: INV-YYYYMMDD-XXXX
+    let invoiceNumber = parsed.data.invoiceNumber;
+    if (!invoiceNumber) {
+      const today = new Date();
+      const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+      const { count } = await supabaseAdmin
+        .from('invoices')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', today.toISOString().slice(0, 10));
+      const seq = String((count ?? 0) + 1).padStart(4, '0');
+      invoiceNumber = `INV-${dateStr}-${seq}`;
     }
 
     // Use the same admin client for the insert to bypass RLS. Security is enforced
@@ -182,7 +193,7 @@ export async function POST(request: NextRequest) {
       .from('invoices')
       .insert({
         employee_id: resolvedEmployeeId,
-        invoice_number: parsed.data.invoiceNumber,
+        invoice_number: invoiceNumber,
         period_start: parsed.data.periodStart,
         period_end: parsed.data.periodEnd,
         gross_amount: parsed.data.grossAmount,

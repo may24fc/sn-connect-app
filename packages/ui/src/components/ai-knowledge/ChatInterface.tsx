@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, Loader2, Send } from 'lucide-react';
+import { AlertCircle, Loader2, Send, Sparkles, StopCircle } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../../primitives/avatar';
 import { Button } from '../../primitives/button';
@@ -12,124 +12,41 @@ import type {
 import { cn } from '../../utils/cn';
 import { ChatMessage } from './ChatMessage';
 
+export interface ChatInterfaceMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  sources?: Array<SourceAttribution>;
+  isStreaming?: boolean;
+}
+
 export interface ChatInterfaceProps {
   debugMode: boolean;
+  /** External messages (from useAIChat hook). Falls back to internal mock state when undefined. */
+  messages?: Array<ChatInterfaceMessage>;
+  /** External send handler (from useAIChat hook) */
+  onSendMessage?: (content: string) => Promise<void>;
+  /** External loading state */
+  isLoading?: boolean;
+  /** External error */
+  error?: string | null;
+  /** Called to abort an in-flight request */
+  onAbort?: () => void;
   className?: string;
 }
 
-// Mock chat responses
-function getMockResponse(userMessage: string): {
-  content: string;
-  sources: Array<SourceAttribution>;
-} {
-  const lowerMessage = userMessage.toLowerCase();
-
-  if (lowerMessage.includes('vacation') || lowerMessage.includes('pto')) {
-    return {
-      content: `According to our PTO policy, employees are entitled to:
-
-- 15 days of paid vacation per year
-- Accrual starts after 3 months of employment
-- Requests must be submitted at least 2 weeks in advance
-- Maximum carryover of 5 days to the next year
-
-Would you like more specific information about requesting time off?`,
-      sources: [
-        {
-          sourceId: '1',
-          fileName: 'Employee_Handbook_2024.pdf',
-          pageNumber: 23,
-          chunkPreview:
-            'Employees are entitled to fifteen (15) days of paid vacation per calendar year...',
-        },
-        {
-          sourceId: '4',
-          fileName: 'PTO_Policy_Updates.pdf',
-          pageNumber: 2,
-          chunkPreview:
-            'Recent updates: Maximum carryover increased from 3 to 5 days effective Q1 2024...',
-        },
-      ],
-    };
-  }
-
-  if (
-    lowerMessage.includes('remote') ||
-    lowerMessage.includes('work from home') ||
-    lowerMessage.includes('wfh')
-  ) {
-    return {
-      content: `Our remote work policy includes:
-
-- Hybrid schedule: 3 days in office, 2 days remote
-- Fully remote options available for specific roles
-- Home office stipend: $500 annually
-- Core hours: 10 AM - 3 PM in your timezone
-- Required: stable internet (min 25 Mbps) and dedicated workspace
-
-Need help setting up remote work arrangements?`,
-      sources: [
-        {
-          sourceId: '5',
-          fileName: 'Remote_Work_Guidelines.pdf',
-          pageNumber: 4,
-          chunkPreview:
-            'All remote employees must maintain a dedicated workspace with reliable internet connectivity...',
-        },
-        {
-          sourceId: '5',
-          fileName: 'Remote_Work_Guidelines.pdf',
-          pageNumber: 7,
-          chunkPreview:
-            'The company provides an annual home office stipend of $500 to cover equipment and supplies...',
-        },
-      ],
-    };
-  }
-
-  if (
-    lowerMessage.includes('benefit') ||
-    lowerMessage.includes('insurance') ||
-    lowerMessage.includes('health')
-  ) {
-    return {
-      content: `Our comprehensive benefits package includes:
-
-- Health insurance: Medical, dental, and vision coverage
-- 401(k) matching: Up to 4% of salary
-- Life insurance: 2x annual salary
-- Wellness program: Gym membership reimbursement
-- Professional development: $1,500 annual budget
-
-Which benefit would you like to learn more about?`,
-      sources: [
-        {
-          sourceId: '2',
-          fileName: 'Benefits_Overview_Q1.docx',
-          pageNumber: 1,
-          chunkPreview:
-            'Our benefits package is designed to support your health, financial security, and professional growth...',
-        },
-      ],
-    };
-  }
-
-  return {
-    content: `I'm here to help you with HR-related questions. I can provide information about:
-
-- Time off policies (PTO, sick leave, holidays)
-- Remote work guidelines and hybrid schedules
-- Employee benefits and insurance
-- Company policies and procedures
-- Onboarding and training resources
-
-What specific information are you looking for?`,
-    sources: [],
-  };
-}
-
-export function ChatInterface({ debugMode, className }: ChatInterfaceProps): React.ReactNode {
-  const [messages, setMessages] = React.useState<Array<ChatMessageType>>([
+export function ChatInterface({
+  debugMode,
+  messages: externalMessages,
+  onSendMessage,
+  isLoading: externalIsLoading,
+  error,
+  onAbort,
+  className,
+}: ChatInterfaceProps): React.ReactNode {
+  // Internal state for standalone/mock mode
+  const [internalMessages, setInternalMessages] = React.useState<Array<ChatMessageType>>([
     {
       id: '1',
       role: 'assistant',
@@ -138,10 +55,14 @@ export function ChatInterface({ debugMode, className }: ChatInterfaceProps): Rea
       timestamp: new Date(),
     },
   ]);
+  const [internalIsLoading, setInternalIsLoading] = React.useState(false);
   const [inputValue, setInputValue] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const isControlled = externalMessages !== undefined;
+  const messages = isControlled ? externalMessages : internalMessages;
+  const isLoading = isControlled ? (externalIsLoading ?? false) : internalIsLoading;
 
   const scrollToBottom = (): void => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -154,32 +75,36 @@ export function ChatInterface({ debugMode, className }: ChatInterfaceProps): Rea
   const handleSendMessage = async (): Promise<void> => {
     if (!inputValue.trim() || isLoading) return;
 
-    const userMessage: ChatMessageType = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputValue.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    const value = inputValue.trim();
     setInputValue('');
-    setIsLoading(true);
 
-    // Simulate AI processing delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (onSendMessage) {
+      await onSendMessage(value);
+    } else {
+      // Fallback mock behavior
+      const userMessage: ChatMessageType = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: value,
+        timestamp: new Date(),
+      };
 
-    const { content, sources } = getMockResponse(userMessage.content);
+      setInternalMessages((prev) => [...prev, userMessage]);
+      setInternalIsLoading(true);
 
-    const assistantMessage: ChatMessageType = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content,
-      timestamp: new Date(),
-      ...(sources.length > 0 && { sources }),
-    };
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    setMessages((prev) => [...prev, assistantMessage]);
-    setIsLoading(false);
+      const assistantMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content:
+          "I'm here to help you with HR-related questions. I can provide information about time off policies, remote work guidelines, employee benefits, company policies, onboarding, and training resources.",
+        timestamp: new Date(),
+      };
+
+      setInternalMessages((prev) => [...prev, assistantMessage]);
+      setInternalIsLoading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -189,25 +114,55 @@ export function ChatInterface({ debugMode, className }: ChatInterfaceProps): Rea
     }
   };
 
+  // Determine if the last message is streaming
+  const lastMessage = messages[messages.length - 1];
+  const isStreaming =
+    lastMessage?.role === 'assistant' && (lastMessage as ChatInterfaceMessage).isStreaming;
+
   return (
     <div className={cn('flex flex-col h-full overflow-hidden bg-muted/20', className)}>
+      {/* Error Banner */}
+      {error && (
+        <div className="flex-shrink-0 mx-6 mt-4 flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+        </div>
+      )}
+
       {/* Messages Area - Scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5 custom-scrollbar">
-        {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} showDebug={debugMode} />
-        ))}
+        {messages.map((message) => {
+          // Convert to ChatMessageType for the ChatMessage component
+          const chatMsg: ChatMessageType = {
+            id: message.id,
+            role: message.role,
+            content: message.content,
+            timestamp: message.timestamp,
+            ...(message.sources !== undefined && { sources: message.sources }),
+          };
+          return <ChatMessage key={message.id} message={chatMsg} showDebug={debugMode} />;
+        })}
 
-        {isLoading && (
+        {/* Loading indicator (only when no streaming message visible) */}
+        {isLoading && !isStreaming && (
           <div className="flex gap-3">
             <Avatar className="h-9 w-9 flex-shrink-0">
               <AvatarFallback className="bg-primary text-primary-foreground">
-                <Bot className="h-4 w-4" />
+                <Sparkles className="h-4 w-4" />
               </AvatarFallback>
             </Avatar>
             <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-card border border-border px-4 py-3">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
               <span className="text-sm text-muted-foreground">Thinking...</span>
             </div>
+          </div>
+        )}
+
+        {/* Streaming cursor indicator */}
+        {isStreaming && lastMessage?.content && (
+          <div className="flex items-center gap-2 px-1">
+            <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-xs text-muted-foreground">Generating response...</span>
           </div>
         )}
 
@@ -226,17 +181,31 @@ export function ChatInterface({ debugMode, className }: ChatInterfaceProps): Rea
             disabled={isLoading}
             className="min-h-[44px] max-h-28 resize-none text-sm py-3 rounded-xl border-border/60 focus:border-primary/40"
             rows={1}
+            aria-label="Type your message"
           />
-          <Button
-            type="button"
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
-            size="icon"
-            className="h-11 w-11 flex-shrink-0 rounded-xl"
-            aria-label="Send message"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          {isStreaming && onAbort ? (
+            <Button
+              type="button"
+              onClick={onAbort}
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 flex-shrink-0 rounded-xl border-red-300 dark:border-red-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+              aria-label="Stop generating"
+            >
+              <StopCircle className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleSendMessage}
+              disabled={!inputValue.trim() || isLoading}
+              size="icon"
+              className="h-11 w-11 flex-shrink-0 rounded-xl"
+              aria-label="Send message"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground/70 text-center">
           Press{' '}
@@ -269,5 +238,3 @@ export function ChatInterface({ debugMode, className }: ChatInterfaceProps): Rea
     </div>
   );
 }
-
-// Missing imports for Avatar fallback in loading state

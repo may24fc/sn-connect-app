@@ -1,6 +1,9 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useApproveInvoice, useInvoices } from '@/hooks/useInvoices';
+import { useTableSort } from '@/hooks/useTableSort';
+import { formatDate, formatLabel } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -29,10 +32,22 @@ const statusVariant: Record<
   rejected: 'error',
 };
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-PH', {
+const CURRENCY_LOCALES: Record<string, string> = {
+  PHP: 'en-PH',
+  USD: 'en-US',
+  EUR: 'de-DE',
+  AUD: 'en-AU',
+  GBP: 'en-GB',
+  SGD: 'en-SG',
+  JPY: 'ja-JP',
+};
+
+const formatCurrency = (value: number, currencyCode = 'PHP') =>
+  new Intl.NumberFormat(CURRENCY_LOCALES[currencyCode] || 'en-US', {
     style: 'currency',
-    currency: 'PHP',
+    currency: currencyCode,
+    minimumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
+    maximumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
   }).format(value || 0);
 
 export default function PayrollApprovalsPage() {
@@ -41,6 +56,11 @@ export default function PayrollApprovalsPage() {
   const [notesById, setNotesById] = useState<Record<string, string>>({});
 
   const invoices = data?.data || [];
+
+  const pendingSort = useTableSort({ initialColumn: 'employee' });
+  const processedSort = useTableSort({ initialColumn: 'approved_at', initialDirection: 'desc' });
+
+  const invoiceStatusOrder: Record<string, number> = { approved: 0, paid: 1, rejected: 2, draft: 3 };
 
   const pending = useMemo(
     () => invoices.filter((invoice) => invoice.status === 'submitted'),
@@ -61,6 +81,23 @@ export default function PayrollApprovalsPage() {
     };
   }, [invoices, pending]);
 
+  const sortedPending = pendingSort.sortItems(pending, {
+    employee: (i) => i.employees ? `${i.employees.first_name} ${i.employees.last_name}`.toLowerCase() : '',
+    invoice_number: (i) => i.invoice_number,
+    period: (i) => i.period_start ?? '',
+    amount: (i) => Number(i.net_amount || 0),
+  });
+  const pendingSortHeadProps = { sortColumn: pendingSort.sortColumn, sortDirection: pendingSort.sortDirection, onSort: pendingSort.handleSort };
+
+  const sortedProcessed = processedSort.sortItems(processed, {
+    employee: (i) => i.employees ? `${i.employees.first_name} ${i.employees.last_name}`.toLowerCase() : '',
+    invoice_number: (i) => i.invoice_number,
+    status: (i) => invoiceStatusOrder[i.status] ?? 99,
+    amount: (i) => Number(i.net_amount || 0),
+    approved_at: (i) => i.approved_at ?? '',
+  });
+  const processedSortHeadProps = { sortColumn: processedSort.sortColumn, sortDirection: processedSort.sortDirection, onSort: processedSort.handleSort };
+
   const handleAction = (id: string, action: 'approved' | 'rejected') => {
     approveInvoice.mutate({
       id,
@@ -74,7 +111,7 @@ export default function PayrollApprovalsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-headline">Payroll Approvals</h1>
+        <h1 className="text-2xl font-bold text-foreground">Payroll Approvals</h1>
         <p className="text-muted-foreground">Review and approve submitted invoices</p>
       </div>
 
@@ -133,10 +170,10 @@ export default function PayrollApprovalsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <SortableTableHead column="employee" {...pendingSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="invoice_number" {...pendingSortHeadProps}>Invoice #</SortableTableHead>
+                    <SortableTableHead column="period" {...pendingSortHeadProps}>Period</SortableTableHead>
+                    <SortableTableHead column="amount" {...pendingSortHeadProps}>Amount</SortableTableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -149,7 +186,7 @@ export default function PayrollApprovalsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    pending.map((invoice) => (
+                    sortedPending.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell>
                           {invoice.employees
@@ -157,10 +194,29 @@ export default function PayrollApprovalsPage() {
                             : '-'}
                         </TableCell>
                         <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
-                        <TableCell>
-                          {invoice.period_start} to {invoice.period_end}
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(invoice.period_start)} – {formatDate(invoice.period_end)}
                         </TableCell>
-                        <TableCell>{formatCurrency(Number(invoice.net_amount || 0))}</TableCell>
+                        <TableCell>
+                          {(() => {
+                            const inv = invoice as unknown as Record<string, unknown>;
+                            const srcCurrency = (inv.source_currency as string) || 'PHP';
+                            const tgtCurrency = (inv.target_currency as string) || 'PHP';
+                            const convertedAmt = inv.converted_amount as number | null;
+                            return (
+                              <div>
+                                <span>
+                                  {formatCurrency(Number(invoice.net_amount || 0), srcCurrency)}
+                                </span>
+                                {convertedAmt && srcCurrency !== tgtCurrency && (
+                                  <span className="block text-xs text-muted-foreground">
+                                    ≈ {formatCurrency(Number(convertedAmt || 0), tgtCurrency)}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell className="min-w-[220px]">
                           <Textarea
                             rows={2}
@@ -209,11 +265,11 @@ export default function PayrollApprovalsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Invoice #</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Approved At</TableHead>
+                    <SortableTableHead column="employee" {...processedSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="invoice_number" {...processedSortHeadProps}>Invoice #</SortableTableHead>
+                    <SortableTableHead column="status" {...processedSortHeadProps}>Status</SortableTableHead>
+                    <SortableTableHead column="amount" {...processedSortHeadProps}>Amount</SortableTableHead>
+                    <SortableTableHead column="approved_at" {...processedSortHeadProps}>Approved At</SortableTableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -224,7 +280,7 @@ export default function PayrollApprovalsPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    processed.map((invoice) => (
+                    sortedProcessed.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell>
                           {invoice.employees
@@ -233,11 +289,13 @@ export default function PayrollApprovalsPage() {
                         </TableCell>
                         <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                         <TableCell>
-                          <Badge variant={statusVariant[invoice.status]}>{invoice.status}</Badge>
+                          <Badge variant={statusVariant[invoice.status]}>
+                            {formatLabel(invoice.status)}
+                          </Badge>
                         </TableCell>
                         <TableCell>{formatCurrency(Number(invoice.net_amount || 0))}</TableCell>
-                        <TableCell>
-                          {invoice.approved_at ? invoice.approved_at.slice(0, 10) : '-'}
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(invoice.approved_at)}
                         </TableCell>
                       </TableRow>
                     ))

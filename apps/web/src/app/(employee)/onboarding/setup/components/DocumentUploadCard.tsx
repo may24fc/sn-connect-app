@@ -1,13 +1,21 @@
 'use client';
 
-import { Button, Card, CardContent } from '@hr-portal/ui';
+import { Card, CardContent, FileDropZone } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
+import { useCallback, useState } from 'react';
 
 const labels: Record<'valid_id' | 'profile_photo' | 'cv' | 'birth_certificate', string> = {
   valid_id: 'Valid ID',
   profile_photo: 'Profile Photo',
   cv: 'CV',
   birth_certificate: 'Birth Certificate',
+};
+
+const acceptMap: Record<string, string> = {
+  valid_id: 'image/jpeg,image/png,application/pdf',
+  profile_photo: 'image/jpeg,image/png,image/webp',
+  cv: '.pdf,.doc,.docx',
+  birth_certificate: 'image/jpeg,image/png,application/pdf',
 };
 
 export function DocumentUploadCard({
@@ -19,30 +27,45 @@ export function DocumentUploadCard({
   uploading: boolean;
   onUpload: (type: 'valid_id' | 'profile_photo' | 'cv' | 'birth_certificate', file: File) => void;
 }): ReactNode {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFiles = useCallback(
+    (files: Array<File>) => {
+      const file = files[0];
+      if (file) {
+        setSelectedFile(file);
+        onUpload(type, file);
+      }
+    },
+    [type, onUpload]
+  );
+
+  const handleClearFile = useCallback(() => {
+    setSelectedFile(null);
+  }, []);
+
   return (
     <Card>
-      <CardContent className="flex items-center justify-between gap-4 p-4">
+      <CardContent className="p-4 space-y-2">
         <div>
-          <p className="font-medium">{labels[type]}</p>
-          <p className="text-sm text-muted-foreground">Upload the required file</p>
+          <p className="text-sm font-medium">{labels[type]}</p>
+          <p className="text-xs text-muted-foreground">Upload the required file</p>
         </div>
-        <div>
-          <input
-            id={`upload-${type}`}
-            type="file"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.currentTarget.files?.[0];
-              if (file) onUpload(type, file);
-              e.currentTarget.value = '';
-            }}
-          />
-          <Button asChild variant="outline" disabled={uploading}>
-            <label htmlFor={`upload-${type}`} className="cursor-pointer">
-              {uploading ? 'Uploading...' : 'Upload'}
-            </label>
-          </Button>
-        </div>
+        <FileDropZone
+          onFilesSelected={handleFiles}
+          accept={acceptMap[type] ?? '*'}
+          maxSizeMB={10}
+          isUploading={uploading}
+          compact
+          label={`Drop your ${labels[type].toLowerCase()} here`}
+          formatHint={
+            type === 'profile_photo'
+              ? 'JPG, PNG, WebP — max 10 MB'
+              : 'PDF, Images, Word — max 10 MB'
+          }
+          selectedFiles={selectedFile ? [selectedFile] : undefined}
+          onRemoveFile={uploading ? undefined : handleClearFile}
+        />
       </CardContent>
     </Card>
   );

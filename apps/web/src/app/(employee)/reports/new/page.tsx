@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  FormGroup,
   Input,
   Label,
   Select,
@@ -19,7 +20,7 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Calendar, FileText, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -138,8 +139,45 @@ export default function NewReportPage() {
     return parts.join('\n\n');
   };
 
+  const validateRequiredSections = (): string | null => {
+    const filledAccomplishments = accomplishments.filter((a) => a.trim());
+    if (filledAccomplishments.length === 0) {
+      return 'Please add at least one accomplishment.';
+    }
+
+    const filledChallenges = challenges.filter((c) => c.trim());
+    if (filledChallenges.length === 0) {
+      return 'Please add at least one challenge.';
+    }
+
+    const filledPlans = nextWeekPlans.filter((p) => p.trim());
+    if (filledPlans.length === 0) {
+      return 'Please add at least one plan for next week.';
+    }
+
+    const filledMetrics = metrics.filter((m) => m.name.trim());
+    if (filledMetrics.length === 0) {
+      return 'Please add at least one metric.';
+    }
+
+    return null;
+  };
+
   const handleSubmit = async (asDraft: boolean) => {
     setErrorMessage(null);
+
+    if (!asDraft) {
+      const validationError = validateRequiredSections();
+      if (validationError) {
+        setErrorMessage(validationError);
+        addToast({
+          title: 'Validation Error',
+          description: validationError,
+          variant: 'error',
+        });
+        return;
+      }
+    }
 
     try {
       const validMetrics = metrics
@@ -188,34 +226,44 @@ export default function NewReportPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-headline">Create Report</h1>
+          <h1 className="text-2xl font-bold text-foreground">Create Report</h1>
           <p className="text-muted-foreground">Submit a weekly, monthly, or marketing report</p>
         </div>
       </div>
 
+      <form
+        className="space-y-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit(false);
+        }}
+      >
       {/* Report Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Report Details</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-indigo-600" />
+            Report Details
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            className="space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void handleSubmit(false);
-            }}
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Report Type</Label>
+          <div className="space-y-5">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FormGroup
+                label="Report Type"
+                htmlFor="reportType"
+                required
+                showOptional={false}
+                description={typeInfo?.description}
+                icon={<FileText className="h-3.5 w-3.5" />}
+              >
                 <Select
                   value={reportType}
                   onValueChange={(value) =>
                     setReportType(value as 'weekly' | 'monthly' | 'marketing')
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="reportType" className="h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -224,64 +272,62 @@ export default function NewReportPage() {
                     <SelectItem value="marketing">Marketing</SelectItem>
                   </SelectContent>
                 </Select>
-                {typeInfo && (
-                  <p className="text-xs text-muted-foreground">{typeInfo.description}</p>
-                )}
-              </div>
+              </FormGroup>
               <div />
-              <div className="space-y-2">
-                <Label>Period Start</Label>
+              <FormGroup
+                label="Period Start"
+                htmlFor="periodStart"
+                required
+                showOptional={false}
+                icon={<Calendar className="h-3.5 w-3.5" />}
+              >
                 <Input
+                  id="periodStart"
                   type="date"
                   value={periodStart}
                   onChange={(event) => setPeriodStart(event.target.value)}
                   required
+                  className="h-10"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label>Period End</Label>
+              </FormGroup>
+              <FormGroup
+                label="Period End"
+                htmlFor="periodEnd"
+                required
+                showOptional={false}
+                icon={<Calendar className="h-3.5 w-3.5" />}
+              >
                 <Input
+                  id="periodEnd"
                   type="date"
                   value={periodEnd}
                   onChange={(event) => setPeriodEnd(event.target.value)}
                   required
+                  className="h-10"
                 />
-              </div>
+              </FormGroup>
             </div>
 
-            <div className="space-y-2">
-              <Label>Notes</Label>
+            <FormGroup label="Notes" htmlFor="notes">
               <Textarea
+                id="notes"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 rows={3}
                 placeholder="General notes about this report period..."
+                className="resize-none"
               />
-            </div>
-
-            {errorMessage && <p className="text-sm text-error">{errorMessage}</p>}
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={createReport.isPending}
-                onClick={() => void handleSubmit(true)}
-              >
-                Save Draft
-              </Button>
-              <Button type="submit" disabled={createReport.isPending}>
-                Submit Report
-              </Button>
-            </div>
-          </form>
+            </FormGroup>
+          </div>
         </CardContent>
       </Card>
 
       {/* Accomplishments */}
       <Card>
         <CardHeader>
-          <CardTitle>Accomplishments</CardTitle>
+          <CardTitle>
+            Accomplishments <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>List key accomplishments for this reporting period</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -298,6 +344,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove accomplishment"
                   onClick={() => handleRemoveItem(index, setAccomplishments)}
                 >
                   <X className="h-4 w-4" />
@@ -320,7 +367,9 @@ export default function NewReportPage() {
       {/* Challenges */}
       <Card>
         <CardHeader>
-          <CardTitle>Challenges</CardTitle>
+          <CardTitle>
+            Challenges <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>Note any challenges or blockers encountered</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -337,6 +386,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove challenge"
                   onClick={() => handleRemoveItem(index, setChallenges)}
                 >
                   <X className="h-4 w-4" />
@@ -359,7 +409,9 @@ export default function NewReportPage() {
       {/* Next Week Plans */}
       <Card>
         <CardHeader>
-          <CardTitle>Next Week Plans</CardTitle>
+          <CardTitle>
+            Next Week Plans <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>Outline priorities and goals for the coming week</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -376,6 +428,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove plan"
                   onClick={() => handleRemoveItem(index, setNextWeekPlans)}
                 >
                   <X className="h-4 w-4" />
@@ -398,7 +451,9 @@ export default function NewReportPage() {
       {/* Metrics */}
       <Card>
         <CardHeader>
-          <CardTitle>Metrics</CardTitle>
+          <CardTitle>
+            Metrics <span className="text-rose-500">*</span>
+          </CardTitle>
           <CardDescription>
             Add quantitative metrics to your report (e.g. clicks, impressions, cost)
           </CardDescription>
@@ -437,6 +492,7 @@ export default function NewReportPage() {
                   type="button"
                   variant="ghost"
                   size="icon"
+                  aria-label="Remove metric"
                   onClick={() => handleRemoveMetric(index)}
                 >
                   <X className="h-4 w-4" />
@@ -453,6 +509,37 @@ export default function NewReportPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
+          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 pt-4 pb-8 border-t border-zinc-200 dark:border-zinc-800">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={createReport.isPending}
+          onClick={() => void handleSubmit(true)}
+        >
+          Save Draft
+        </Button>
+        <Button type="submit" disabled={createReport.isPending} className="min-w-[120px]">
+          {createReport.isPending ? (
+            <span className="flex items-center gap-2">
+              <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Submitting...
+            </span>
+          ) : (
+            'Submit Report'
+          )}
+        </Button>
+      </div>
+      </form>
     </div>
   );
 }

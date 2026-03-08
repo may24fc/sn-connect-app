@@ -47,7 +47,7 @@ export function StatCard({
   return (
     <div
       className={cn(
-        'relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg',
+        'relative bg-card border border-border rounded-lg',
         compact ? 'p-4' : 'p-5',
         className
       )}
@@ -55,7 +55,7 @@ export function StatCard({
     >
       {/* Icon - positioned top-right, no background */}
       {icon && (
-        <div className="absolute top-4 right-4 text-zinc-400 dark:text-zinc-500">{icon}</div>
+        <div className="absolute top-4 right-4 text-zinc-500 dark:text-zinc-400">{icon}</div>
       )}
 
       <div className="space-y-1">

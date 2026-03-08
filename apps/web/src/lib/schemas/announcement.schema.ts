@@ -76,9 +76,9 @@ export const updateAnnouncementSchema = z
 export const announcementFiltersSchema = z.object({
   search: z.string().optional(),
   status: announcementStatusSchema.optional(),
-  category: announcementCategorySchema.optional(),
+  category: z.string().optional(),
   priority: announcementPrioritySchema.optional(),
-  readStatus: z.enum(['all', 'read', 'unread']).optional(),
+  readStatus: z.string().optional(),
   authorId: z.string().uuid().optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),

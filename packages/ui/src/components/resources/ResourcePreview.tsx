@@ -1,4 +1,4 @@
-import { Bookmark, Download, Eye, ExternalLink, FileText, Star } from 'lucide-react';
+import { Bookmark, Download, ExternalLink, Eye, FileText, Star } from 'lucide-react';
 import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
@@ -64,13 +64,13 @@ export function ResourcePreview({
 }: ResourcePreviewProps): React.ReactNode {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+      <DialogContent className="max-w-lg bg-background border border-border">
         <DialogHeader>
           <DialogTitle className="text-base font-medium tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
             {title}
             {isFeatured ? <Star className="h-4 w-4 text-amber-500 fill-amber-500" /> : null}
           </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-500">
+          <DialogDescription className="text-xs text-muted-foreground">
             {authorName ? `By ${authorName}` : ''} {dateLabel}
           </DialogDescription>
         </DialogHeader>
@@ -91,7 +91,7 @@ export function ResourcePreview({
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
           ) : null}
 
-          <div className="flex items-center gap-4 text-xs text-zinc-500">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Eye className="h-3.5 w-3.5" /> {viewCount} views
             </span>

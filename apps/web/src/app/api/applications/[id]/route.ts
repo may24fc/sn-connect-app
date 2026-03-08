@@ -1,0 +1,102 @@
+import { type NextRequest, NextResponse } from 'next/server';
+import { updateApplicationStatusSchema } from '@/lib/schemas/job.schema';
+import { getAuthedSupabase, isJobAdmin, isSuperAdmin } from '../../jobs/_lib';
+
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
+export async function GET(_request: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params;
+    const { supabase, user, role, error } = await getAuthedSupabase();
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isJobAdmin(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { data, error: fetchError } = await supabase
+      .from('job_applications')
+      .select('*, job_postings(id, title, department, location, employment_type)')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
+
+    if (fetchError || !data) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error('Error in GET /api/applications/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params;
+    const { supabase, user, role, error } = await getAuthedSupabase();
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isJobAdmin(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const parsed = updateApplicationStatusSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid request body', details: parsed.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const { status: newStatus, notes } = parsed.data;
+
+    // Only super_admin can set status to 'approved'
+    if (newStatus === 'approved' && !isSuperAdmin(role)) {
+      return NextResponse.json(
+        { error: 'Only super admins can approve applications' },
+        { status: 403 }
+      );
+    }
+
+    const updatePayload: Record<string, unknown> = {
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+    };
+
+    if (notes !== undefined) {
+      updatePayload.notes = notes;
+    }
+
+    const { data, error: updateError } = await supabase
+      .from('job_applications')
+      .update(updatePayload)
+      .eq('id', id)
+      .is('deleted_at', null)
+      .select('*, job_postings(id, title)')
+      .single();
+
+    if (updateError || !data) {
+      console.error('Error updating application:', updateError);
+      return NextResponse.json({ error: 'Failed to update application' }, { status: 500 });
+    }
+
+    return NextResponse.json({ data });
+  } catch (error) {
+    console.error('Error in PATCH /api/applications/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

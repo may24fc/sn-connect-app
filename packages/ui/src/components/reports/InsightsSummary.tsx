@@ -1,9 +1,7 @@
 'use client';
 
-import { AlertCircle, CheckCircle2, Lightbulb, TrendingUp } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import type * as React from 'react';
-import { Badge } from '../../primitives/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 
 export interface KeyFinding {
@@ -20,39 +18,6 @@ export interface InsightsSummaryProps {
   className?: string;
 }
 
-/**
- * InsightsSummary - Displays AI-generated or structured narrative insights
- *
- * Features:
- * - Title and summary text
- * - Key findings with metric + insight pairs
- * - Optional recommendations section
- * - Highlighted findings with visual emphasis
- * - Responsive layout
- *
- * @example
- * ```tsx
- * <InsightsSummary
- *   title="Weekly Performance Summary"
- *   summary="Overall performance improved by 15% this week with strong marketing results."
- *   keyFindings={[
- *     {
- *       metric: "Revenue",
- *       insight: "Increased by $12,500 due to successful campaign launch",
- *       highlight: true
- *     },
- *     {
- *       metric: "Expenses",
- *       insight: "Within budget, 5% lower than projected"
- *     }
- *   ]}
- *   recommendations={[
- *     "Continue Facebook ad optimization",
- *     "Consider expanding to Instagram platform"
- *   ]}
- * />
- * ```
- */
 export function InsightsSummary({
   title,
   summary,
@@ -61,98 +26,66 @@ export function InsightsSummary({
   className,
 }: InsightsSummaryProps): React.ReactElement {
   return (
-    <Card className={cn('border-l-4 border-l-blue-500', className)}>
-      <CardHeader>
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-blue-100 p-2">
-            <Lightbulb className="h-5 w-5 text-blue-600" aria-hidden="true" />
-          </div>
-          <div className="flex-1 space-y-1">
-            <CardTitle className="text-xl">{title}</CardTitle>
-            <p className="text-sm text-muted-foreground leading-relaxed">{summary}</p>
+    <div
+      className={cn(
+        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg',
+        className
+      )}
+    >
+      {/* Header */}
+      <div className="p-4 space-y-1">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="h-4 w-4 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{title}</h3>
+        </div>
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed">{summary}</p>
+      </div>
+
+      {/* Key Findings */}
+      {keyFindings.length > 0 && (
+        <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Key Findings</p>
+          <div className="space-y-1.5">
+            {keyFindings.map((finding, index) => (
+              <div
+                key={index}
+                className="flex items-baseline gap-2 text-sm"
+              >
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full shrink-0 mt-1.5',
+                    finding.highlight
+                      ? 'bg-amber-500'
+                      : 'bg-zinc-300 dark:bg-zinc-600'
+                  )}
+                />
+                <span className="text-zinc-600 dark:text-zinc-400">
+                  <span className="font-medium text-zinc-900 dark:text-zinc-200">
+                    {finding.metric}:
+                  </span>{' '}
+                  {finding.insight}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
-      </CardHeader>
+      )}
 
-      <CardContent className="space-y-6">
-        {/* Key Findings Section */}
-        {keyFindings.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
-                Key Findings
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              {keyFindings.map((finding, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    'flex items-start gap-3 p-3 rounded-lg border transition-colors',
-                    finding.highlight
-                      ? 'bg-amber-50 border-amber-200 hover:bg-amber-100'
-                      : 'bg-muted/30 border-muted hover:bg-muted/50'
-                  )}
-                >
-                  {finding.highlight ? (
-                    <AlertCircle
-                      className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0"
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <CheckCircle2
-                      className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'font-mono text-xs',
-                          finding.highlight
-                            ? 'border-amber-300 bg-amber-100 text-amber-900'
-                            : 'border-muted-foreground/30'
-                        )}
-                      >
-                        {finding.metric}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-foreground leading-relaxed">{finding.insight}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Recommendations Section */}
-        {recommendations && recommendations.length > 0 && (
-          <div className="space-y-3 pt-4 border-t">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
-                Recommendations
-              </h3>
-            </div>
-
-            <ul className="space-y-2">
-              {recommendations.map((recommendation, index) => (
-                <li key={index} className="flex items-start gap-2 text-sm text-foreground">
-                  <span className="text-blue-600 font-bold mt-0.5 flex-shrink-0" aria-hidden="true">
-                    →
-                  </span>
-                  <span className="leading-relaxed">{recommendation}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {/* Recommendations */}
+      {recommendations && recommendations.length > 0 && (
+        <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Recommendations</p>
+          <ul className="space-y-1">
+            {recommendations.map((recommendation, index) => (
+              <li key={index} className="text-sm text-zinc-600 dark:text-zinc-400 flex items-start gap-2">
+                <span className="text-zinc-400 dark:text-zinc-500 shrink-0">→</span>
+                <span>{recommendation}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 }
 

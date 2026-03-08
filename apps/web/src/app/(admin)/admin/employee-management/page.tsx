@@ -1,0 +1,787 @@
+'use client';
+
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
+import { type ProbationRecord, useProbation } from '@/hooks/useProbation';
+import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { useTableSort } from '@/hooks/useTableSort';
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@hr-portal/ui';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Eye,
+  FileText,
+  LayoutGrid,
+  List,
+  Search,
+  TrendingUp,
+  UserCog,
+  UserPlus,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useState } from 'react';
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+// ── 30/60/90 Stage System ──────────────────────────────────────────────
+
+type ProbationStage = 1 | 2 | 3 | 4;
+type ProbationStatus = 'on-track' | 'at-risk' | 'completed' | 'extended';
+
+const STAGE_LABELS: Record<ProbationStage, { name: string; description: string }> = {
+  1: { name: '0–30 Days', description: 'Orientation & settling in' },
+  2: { name: '30–60 Days', description: 'Early performance assessment' },
+  3: { name: '60–90 Days', description: 'Mid-probation review' },
+  4: { name: '90+ Days', description: 'Final evaluation' },
+};
+
+const STATUS_CONFIG: Record<
+  ProbationStatus,
+  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+> = {
+  'on-track': {
+    label: 'On Track',
+    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
+    icon: TrendingUp,
+  },
+  'at-risk': {
+    label: 'At Risk',
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+    icon: AlertTriangle,
+  },
+  completed: {
+    label: 'Completed',
+    badgeClass: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
+    icon: CheckCircle2,
+  },
+  extended: {
+    label: 'Extended',
+    badgeClass: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+    icon: Clock,
+  },
+};
+
+function StageIndicator({
+  stage,
+  status,
+}: { stage: ProbationStage; status: ProbationStatus }): ReactNode {
+  const stages: ProbationStage[] = [1, 2, 3, 4];
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1">
+        {stages.map((s) => (
+          <div
+            key={s}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              s < stage
+                ? 'bg-emerald-500 dark:bg-emerald-400'
+                : s === stage
+                  ? status === 'at-risk'
+                    ? 'bg-amber-500 dark:bg-amber-400'
+                    : status === 'extended'
+                      ? 'bg-orange-500 dark:bg-orange-400'
+                      : 'bg-indigo-500 dark:bg-indigo-400'
+                  : 'bg-zinc-200 dark:bg-zinc-700'
+            }`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+          {STAGE_LABELS[stage].name}
+        </span>
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          {STAGE_LABELS[stage].description}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+type ProbationView = 'cards' | 'list';
+
+function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
+
+export default function EmployeeManagementPage(): ReactNode {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('probation');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [probationView, setProbationView] = useState<ProbationView>('cards');
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
+  // Onboarding modal states
+  const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentData, setAssignmentData] = useState<any | null>(null);
+
+  // Probation data
+  const { data: probationData, isLoading: probationLoading } = useProbation();
+
+  // Onboarding profiles
+  const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
+    ...(searchTerm && { search: searchTerm }),
+    role: 'employee',
+    page: 1,
+    pageSize: 50,
+  });
+
+  // Real-time pending approvals for employees
+  const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('employee');
+
+  // Sort state for Pending Approvals table
+  const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const sortedPending = pendingSort.sortItems(pendingApprovals, {
+    employee: (a) => a.full_name?.toLowerCase() ?? '',
+    email: (a) => a.email_address?.toLowerCase() ?? '',
+    position: (a) => a.position?.toLowerCase() ?? '',
+    submitted: (a) => a.completed_at ?? '',
+  });
+  const pendingSortHeadProps = { sortColumn: pendingSort.sortColumn, sortDirection: pendingSort.sortDirection, onSort: pendingSort.handleSort };
+
+  // Sort state for All Submissions table
+  const onboardSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const onboardSortHeadProps = { sortColumn: onboardSort.sortColumn, sortDirection: onboardSort.sortDirection, onSort: onboardSort.handleSort };
+
+  const probationEmployees = probationData?.data || [];
+  const onboardingProfiles = onboardingData?.data || [];
+
+  const filteredProbation = searchTerm
+    ? probationEmployees.filter(
+        (emp: ProbationRecord) => {
+          const name = emp.name.toLowerCase();
+          return (
+            name.includes(searchTerm.toLowerCase()) ||
+            emp.position?.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+      )
+    : probationEmployees;
+
+  return (
+    <div className="flex flex-col gap-6 p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <UserCog className="h-5 w-5 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              Employee Management
+            </h1>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Manage employee probation, onboarding, and directory access
+          </p>
+        </div>
+        <Button onClick={() => setInviteModalOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite Employee
+        </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+          strokeWidth={1.5}
+        />
+        <Input
+          placeholder="Search employees..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="probation">
+            Probation
+            {probationEmployees.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {probationEmployees.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="onboarding">
+            Onboarding
+            {onboardingProfiles.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {onboardingProfiles.length}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Probation Tab */}
+        <TabsContent value="probation" className="mt-4">
+          {probationLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+            </div>
+          ) : filteredProbation.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CheckCircle2
+                  className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3"
+                  strokeWidth={1.5}
+                />
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  No employees on probation
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* View Toggle */}
+              <div className="flex items-center justify-end mb-4">
+                <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setProbationView('cards')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      probationView === 'cards'
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    }`}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    Cards
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProbationView('list')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      probationView === 'list'
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    List
+                  </button>
+                </div>
+              </div>
+
+              {probationView === 'cards' ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredProbation.map(
+                    (emp: ProbationRecord) => {
+                      const isUrgent = emp.daysRemaining <= 14;
+                      const statusCfg = STATUS_CONFIG[emp.status];
+                      const StatusIcon = statusCfg.icon;
+
+                      return (
+                        <Card
+                          key={emp.id}
+                          className={isUrgent ? 'border-amber-300 dark:border-amber-700' : ''}
+                        >
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={emp.avatarUrl} />
+                                <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                                  {getInitials(emp.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <CardTitle className="text-sm">
+                                  {emp.name}
+                                </CardTitle>
+                                <CardDescription className="text-xs">
+                                  {emp.position || 'No position'}
+                                </CardDescription>
+                              </div>
+                              <span
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusCfg.badgeClass}`}
+                              >
+                                <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
+                                {statusCfg.label}
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            {/* Stage Progress */}
+                            <StageIndicator stage={emp.stage} status={emp.status} />
+
+                            <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                              <span>Hired: {formatDate(emp.startDate)}</span>
+                              <span>{emp.department || '—'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock
+                                className={`h-3.5 w-3.5 ${isUrgent ? 'text-amber-500' : 'text-zinc-500 dark:text-zinc-400'}`}
+                                strokeWidth={1.5}
+                              />
+                              <span
+                                className={`text-xs font-medium ${isUrgent ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-300'}`}
+                              >
+                                {emp.daysRemaining <= 0
+                                  ? 'Probation ended'
+                                  : `${emp.daysRemaining} days remaining`}
+                              </span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-1"
+                              asChild
+                            >
+                              <Link href="/admin/probation">
+                                <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+                                Evaluate
+                              </Link>
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
+                  )}
+                </div>
+              ) : (
+                <Card>
+                  <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    {/* List Header */}
+                    <div className="grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/30">
+                      <span>Employee</span>
+                      <span>Department</span>
+                      <span>Stage</span>
+                      <span>Remaining</span>
+                      <span>Status</span>
+                      <span>Action</span>
+                    </div>
+                    {filteredProbation.map(
+                      (emp: ProbationRecord) => {
+                        const isUrgent = emp.daysRemaining <= 14;
+                        const statusCfg = STATUS_CONFIG[emp.status];
+                        const StatusIcon = statusCfg.icon;
+
+                        return (
+                          <div
+                            key={emp.id}
+                            className={`grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-3 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors ${
+                              isUrgent ? 'bg-amber-50/50 dark:bg-amber-950/10' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Avatar className="h-8 w-8 shrink-0">
+                                <AvatarImage src={emp.avatarUrl} />
+                                <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                                  {getInitials(emp.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
+                                  {emp.name}
+                                </p>
+                                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                                  {emp.position || 'No position'}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">
+                              {emp.department || '—'}
+                            </span>
+                            {/* Stage mini-indicator */}
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-0.5">
+                                {([1, 2, 3, 4] as ProbationStage[]).map((s) => (
+                                  <div
+                                    key={s}
+                                    className={`h-1.5 w-5 rounded-full ${
+                                      s < emp.stage
+                                        ? 'bg-emerald-500 dark:bg-emerald-400'
+                                        : s === emp.stage
+                                          ? emp.status === 'at-risk'
+                                            ? 'bg-amber-500'
+                                            : emp.status === 'extended'
+                                              ? 'bg-orange-500'
+                                              : 'bg-indigo-500'
+                                          : 'bg-zinc-200 dark:bg-zinc-700'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                                {STAGE_LABELS[emp.stage].name}
+                              </span>
+                            </div>
+                            <span className="text-xs text-zinc-600 dark:text-zinc-300">
+                              {emp.daysRemaining <= 0 ? 'Ended' : `${emp.daysRemaining}d left`}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${statusCfg.badgeClass}`}
+                            >
+                              <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
+                              {statusCfg.label}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                              asChild
+                            >
+                              <Link href="/admin/probation">
+                                <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
+                                View
+                              </Link>
+                            </Button>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+        </TabsContent>
+
+        {/* Onboarding Tab */}
+        <TabsContent value="onboarding" className="mt-4 space-y-6">
+          {/* Real-time Connection Status */}
+          {isSubscribed && (
+            <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+                  <div className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
+                  Real-time monitoring active
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Approval Stats */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Awaiting Approval</p>
+                    <p className="text-2xl font-bold">{pendingApprovals.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Submissions</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.total ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
+                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Completed</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.completed ?? 0}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pending Approvals Alert */}
+          {pendingApprovals.length > 0 && (
+            <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                      {pendingApprovals.length} Onboarding Submission
+                      {pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
+                    </h3>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                      Review and approve employee onboarding submissions to activate their accounts.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Pending Approvals Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pending Approvals</CardTitle>
+              <CardDescription>
+                Employees who have completed onboarding and are waiting for approval
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableTableHead column="employee" {...pendingSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="email" {...pendingSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="position" {...pendingSortHeadProps}>Position</SortableTableHead>
+                    <SortableTableHead column="submitted" {...pendingSortHeadProps}>Submitted</SortableTableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingApprovals.length > 0 ? (
+                    sortedPending.map((approval) => (
+                      <TableRow
+                        key={approval.id}
+                        className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5"
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
+                                {approval.full_name
+                                  ?.split(' ')
+                                  .map((n: string) => n[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2) || 'NA'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{approval.full_name || 'Unnamed'}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {approval.email_address || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {approval.position || 'Not specified'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDateTime(approval.completed_at)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => setSelectedApproval(approval)}
+                          >
+                            <CheckCircle2 className="mr-1 h-4 w-4" />
+                            Review & Approve
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No pending approvals</p>
+                        <p className="text-sm mt-1">
+                          All onboarding submissions have been processed
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* All Onboarding Submissions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">All Onboarding Submissions</CardTitle>
+              <CardDescription>Complete history of employee onboarding data</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableTableHead column="employee" {...onboardSortHeadProps}>Employee</SortableTableHead>
+                    <SortableTableHead column="email" {...onboardSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="department" {...onboardSortHeadProps}>Department</SortableTableHead>
+                    <SortableTableHead column="status" {...onboardSortHeadProps}>Status</SortableTableHead>
+                    <SortableTableHead column="step" {...onboardSortHeadProps}>Current Step</SortableTableHead>
+                    <SortableTableHead column="submitted" {...onboardSortHeadProps}>Submitted</SortableTableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {onboardingData?.data && onboardingData.data.length > 0 ? (
+                    onboardSort.sortItems([...onboardingData.data], {
+                      employee: (p: any) => p.full_name?.toLowerCase() ?? '',
+                      email: (p: any) => p.email_address?.toLowerCase() ?? '',
+                      department: (p: any) => {
+                        const dept = Array.isArray(p.departments) ? p.departments[0]?.name : p.departments?.name;
+                        return dept?.toLowerCase() ?? '';
+                      },
+                      status: (p: any) => p.status ?? '',
+                      step: (p: any) => p.current_step ?? '',
+                      submitted: (p: any) => p.created_at ?? '',
+                    }).map((profile: any) => {
+                      const department = Array.isArray(profile.departments)
+                        ? profile.departments[0]?.name
+                        : profile.departments?.name;
+
+                      return (
+                        <TableRow key={profile.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarFallback className="text-xs">
+                                  {profile.full_name
+                                    ?.split(' ')
+                                    .map((n: string) => n[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2) || 'NA'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{profile.full_name || 'Unnamed'}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {profile.email_address || 'N/A'}
+                          </TableCell>
+                          <TableCell>{department || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
+                              {profile.status === 'completed' ? 'Completed' : 'In Progress'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {profile.current_step.replace('_', ' ')}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(profile.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {onboardingLoading
+                          ? 'Loading onboarding data...'
+                          : 'No employee onboarding submissions found'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
+      </Tabs>
+
+      <InviteUserModal
+        open={inviteModalOpen}
+        onOpenChange={setInviteModalOpen}
+        defaultRole="employee"
+      />
+
+      <ApproveOnboardingModal
+        open={!!selectedApproval}
+        onOpenChange={(open) => !open && setSelectedApproval(null)}
+        onboarding={selectedApproval}
+        onApprovalSuccess={(data) => {
+          setAssignmentData(data);
+          setAssignmentModalOpen(true);
+        }}
+      />
+
+      <AssignEmployeeModal
+        open={assignmentModalOpen}
+        onOpenChange={setAssignmentModalOpen}
+        assignmentData={assignmentData}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
+          queryClient.invalidateQueries({ queryKey: ['probation'] });
+          setAssignmentData(null);
+          setAssignmentModalOpen(false);
+        }}
+      />
+    </div>
+  );
+}

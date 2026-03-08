@@ -9,11 +9,7 @@ import {
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
-import {
-  useCreateInternDailyLog,
-  useInternship,
-  useInternships,
-} from '@/hooks/useInternships';
+import { useCreateInternDailyLog, useInternship, useInternships } from '@/hooks/useInternships';
 import {
   Badge,
   Button,
@@ -25,6 +21,12 @@ import {
   type InternId,
   type InternshipPeriodId,
   Progress,
+  SlidePanel,
+  SlidePanelBody,
+  SlidePanelContent,
+  SlidePanelDescription,
+  SlidePanelHeader,
+  SlidePanelTitle,
   getDaysRemaining,
 } from '@hr-portal/ui';
 import {
@@ -39,7 +41,8 @@ import {
   User,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 export default function InternDashboardPage(): ReactNode {
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +88,8 @@ export default function InternDashboardPage(): ReactNode {
       logDate: data.date,
       hoursWorked: data.hoursLogged,
       tasksCompleted: data.tasksCompleted,
-      ...(data.learnings ? { learnings: data.learnings } : {}),
+      // Map focusTomorrow -> learnings (same DB column)
+      ...(data.focusTomorrow ? { learnings: data.focusTomorrow } : {}),
       ...(data.challenges ? { challenges: data.challenges } : {}),
     };
 
@@ -111,208 +115,10 @@ export default function InternDashboardPage(): ReactNode {
   }
 
   if (!profile) {
-    // Show UI layout with empty/placeholder data
-    const placeholderProfile = {
-      name: '—',
-      program: '—',
-      school: '—',
-      department: '—',
-      supervisor: '—',
-      completedHours: 0,
-      requiredHours: 0,
-      startDate: new Date().toISOString(),
-      endDate: new Date().toISOString(),
-    };
-
-    return (
-      <div className="h-full space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              Intern Dashboard
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Track your internship progress and submit daily reports.
-            </p>
-          </div>
-          <Button disabled>
-            <FileText className="mr-2 h-4 w-4" strokeWidth={1.5} />
-            Submit EOD Report
-          </Button>
-        </div>
-
-        {/* No Data Message */}
-        <div
-          className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg p-4"
-          style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
-        >
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            No active internship record found. Contact your supervisor to set up your internship profile.
-          </p>
-        </div>
-
-        {/* Profile Card - Placeholder */}
-        <div
-          className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
-          style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <GraduationCap className="h-5 w-5 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
-              <div>
-                <h2 className="text-lg font-semibold text-zinc-400 dark:text-zinc-500">
-                  {placeholderProfile.name}
-                </h2>
-                <p className="text-sm text-zinc-400 dark:text-zinc-500">
-                  {placeholderProfile.program} - {placeholderProfile.school}
-                </p>
-                <div className="flex items-center gap-4 mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-                  <span className="flex items-center gap-1">
-                    <Building2 className="h-3 w-3" strokeWidth={1.5} />
-                    {placeholderProfile.department}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <User className="h-3 w-3" strokeWidth={1.5} />
-                    {placeholderProfile.supervisor}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">No Active Internship</Badge>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <StatCardGrid columns={4}>
-          <StatCard
-            label="Hours Logged"
-            value={0}
-            trend={{ direction: 'stable', value: '0% complete' }}
-            icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
-          />
-          <StatCard
-            label="Required Hours"
-            value={0}
-            trend={{ direction: 'stable', value: 'Target' }}
-            icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
-          />
-          <StatCard
-            label="Reports Submitted"
-            value={0}
-            trend={{ direction: 'stable', value: 'This period' }}
-            icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
-          />
-          <StatCard
-            label="Days Remaining"
-            value={0}
-            trend={{ direction: 'stable', value: 'Until completion' }}
-            icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}
-          />
-        </StatCardGrid>
-
-        {/* Main Bento Grid */}
-        <BentoGrid columns={4}>
-          {/* Hours Progress Card */}
-          <BentoCard colSpan={2}>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}>
-                Hours Progress
-              </BentoCardTitle>
-              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                0%
-              </span>
-            </BentoCardHeader>
-            <BentoCardContent>
-              <div className="space-y-4">
-                <Progress value={0} className="h-3" />
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                    <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                      Completed
-                    </p>
-                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                      0 hrs
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                    <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                      Remaining
-                    </p>
-                    <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                      0 hrs
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </BentoCardContent>
-          </BentoCard>
-
-          {/* Today's Status Card */}
-          <BentoCard colSpan={2}>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
-                Today's Status
-              </BentoCardTitle>
-            </BentoCardHeader>
-            <BentoCardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800">
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
-                    <div>
-                      <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                        No Active Internship
-                      </p>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Set up your internship profile to start logging hours
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Internship Timeline - Placeholder */}
-                <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-zinc-500 dark:text-zinc-400">Internship Period</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-zinc-400 dark:text-zinc-500 tabular-nums">—</span>
-                    <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-zinc-300 dark:bg-zinc-700 rounded-full" style={{ width: '0%' }} />
-                    </div>
-                    <span className="text-zinc-400 dark:text-zinc-500 tabular-nums">—</span>
-                  </div>
-                </div>
-              </div>
-            </BentoCardContent>
-          </BentoCard>
-        </BentoGrid>
-
-        {/* Recent Reports Card */}
-        <BentoCard colSpan={4}>
-          <BentoCardHeader>
-            <BentoCardTitle icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}>
-              Recent Reports
-            </BentoCardTitle>
-            <Link href="/reports">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                View All
-                <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
-              </Button>
-            </Link>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
-              <FileText className="h-5 w-5 mx-auto mb-3 opacity-50" strokeWidth={1.5} />
-              <p>No reports submitted yet</p>
-            </div>
-          </BentoCardContent>
-        </BentoCard>
-      </div>
-    );
+    // Redirect to setup flow instead of showing a dead-end placeholder.
+    // The useEffect is intentional — we want the redirect to happen after
+    // queries have resolved to confirm no active internship exists.
+    return <InternSetupRedirect />;
   }
 
   return (
@@ -323,11 +129,11 @@ export default function InternDashboardPage(): ReactNode {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
             Intern Dashboard
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
             Track your internship progress and submit daily reports.
           </p>
         </div>
-        {!(todayReport || showForm) && (
+        {!todayReport && (
           <Button onClick={() => setShowForm(true)}>
             <FileText className="mr-2 h-4 w-4" strokeWidth={1.5} />
             Submit EOD Report
@@ -342,7 +148,10 @@ export default function InternDashboardPage(): ReactNode {
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <GraduationCap className="h-5 w-5 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+            <GraduationCap
+              className="h-5 w-5 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+              strokeWidth={1.5}
+            />
             <div>
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                 {profile.name}
@@ -370,32 +179,34 @@ export default function InternDashboardPage(): ReactNode {
       </div>
 
       {/* Stats Row */}
-      <StatCardGrid columns={4}>
-        <StatCard
-          label="Hours Logged"
-          value={profile.completedHours}
-          trend={{ direction: 'up', value: `${progressPercentage}% complete` }}
-          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Required Hours"
-          value={profile.requiredHours}
-          trend={{ direction: 'stable', value: 'Target' }}
-          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Reports Submitted"
-          value={uiReports.length}
-          trend={{ direction: 'up', value: 'This period' }}
-          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Days Remaining"
-          value={daysRemaining}
-          trend={{ direction: 'down', value: 'Until completion' }}
-          icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+      <div data-tour="stat-cards">
+        <StatCardGrid columns={4}>
+          <StatCard
+            label="Hours Logged"
+            value={profile.completedHours}
+            trend={{ direction: 'up', value: `${progressPercentage}% complete` }}
+            icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Required Hours"
+            value={profile.requiredHours}
+            trend={{ direction: 'stable', value: 'Target' }}
+            icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Reports Submitted"
+            value={uiReports.length}
+            trend={{ direction: 'up', value: 'This period' }}
+            icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Days Remaining"
+            value={daysRemaining}
+            trend={{ direction: 'down', value: 'Until completion' }}
+            icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
+      </div>
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
@@ -446,7 +257,10 @@ export default function InternDashboardPage(): ReactNode {
               {todayReport ? (
                 <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800">
                   <div className="flex items-center gap-3">
-                    <FileText className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                    <FileText
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                      strokeWidth={1.5}
+                    />
                     <div>
                       <p className="font-medium text-zinc-900 dark:text-zinc-100">
                         EOD Report Submitted
@@ -458,7 +272,7 @@ export default function InternDashboardPage(): ReactNode {
                   </div>
                   <Badge variant="success">Submitted</Badge>
                 </div>
-              ) : showForm ? null : (
+              ) : (
                 <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800">
                   <div className="flex items-center gap-3">
                     <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" strokeWidth={1.5} />
@@ -467,7 +281,7 @@ export default function InternDashboardPage(): ReactNode {
                         No Report Today
                       </p>
                       <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Don't forget to submit your EOD report
+                        Don&apos;t forget to submit your EOD report
                       </p>
                     </div>
                   </div>
@@ -491,8 +305,7 @@ export default function InternDashboardPage(): ReactNode {
                       className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
                       style={{
                         width: `${Math.min(
-                          ((new Date().getTime() -
-                            new Date(profile.startDate).getTime()) /
+                          ((new Date().getTime() - new Date(profile.startDate).getTime()) /
                             (new Date(profile.endDate).getTime() -
                               new Date(profile.startDate).getTime())) *
                             100,
@@ -511,10 +324,29 @@ export default function InternDashboardPage(): ReactNode {
         </BentoCard>
       </BentoGrid>
 
-      {/* EOD Report Form */}
-      {showForm && !todayReport && (
-        <EODReportForm onSubmit={handleSubmitReport} isSubmitting={createLogMutation.isPending} />
-      )}
+      {/* EOD Report — Slide Panel */}
+      <SlidePanel open={showForm && !todayReport} onOpenChange={setShowForm}>
+        <SlidePanelContent size="2xl">
+          <SlidePanelHeader>
+            <SlidePanelTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <FileText className="h-4 w-4 text-primary" strokeWidth={1.5} />
+              </div>
+              End of Day Report
+            </SlidePanelTitle>
+            <SlidePanelDescription>
+              Submit your daily progress report for today.
+            </SlidePanelDescription>
+          </SlidePanelHeader>
+          <SlidePanelBody className="p-0">
+            <EODReportForm
+              onSubmit={handleSubmitReport}
+              isSubmitting={createLogMutation.isPending}
+              className="border-0 shadow-none rounded-none"
+            />
+          </SlidePanelBody>
+        </SlidePanelContent>
+      </SlidePanel>
 
       {/* Recent Reports Card */}
       <BentoCard colSpan={4}>
@@ -537,6 +369,35 @@ export default function InternDashboardPage(): ReactNode {
           </div>
         </BentoCardContent>
       </BentoCard>
+    </div>
+  );
+}
+
+/**
+ * Redirects the intern to the setup flow when no internship record exists.
+ * Rendered as a component so the redirect happens via useEffect after queries resolve.
+ */
+function InternSetupRedirect(): ReactNode {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.push('/intern/setup');
+  }, [router]);
+
+  return (
+    <div className="h-full flex flex-col items-center justify-center gap-4">
+      <GraduationCap
+        className="h-10 w-10 text-indigo-600 dark:text-indigo-400 animate-pulse"
+        strokeWidth={1.5}
+      />
+      <div className="text-center">
+        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          Setting up your internship profile...
+        </p>
+        <p className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
+          Redirecting to the setup wizard
+        </p>
+      </div>
     </div>
   );
 }

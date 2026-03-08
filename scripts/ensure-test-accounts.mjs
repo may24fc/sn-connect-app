@@ -136,7 +136,11 @@ async function main() {
         updateUrl.searchParams.set('id', `eq.${authUserId}`);
         await fetchJson(updateUrl.toString(), {
           method: 'PATCH',
-          headers: { ...adminHeaders, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          headers: {
+            ...adminHeaders,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
           body: JSON.stringify({ role: account.role, status: 'active' }),
         });
         console.log(`   ✅ Updated role to '${account.role}'`);

@@ -48,7 +48,9 @@ export async function getAuthedInternshipContext() {
 export async function resolveEmployeeByUserId(supabase: any, userId: string) {
   return supabase
     .from('employees')
-    .select('id, user_id, first_name, last_name, company_email, department, position, immediate_head')
+    .select(
+      'id, user_id, first_name, last_name, company_email, department, position, immediate_head'
+    )
     .eq('user_id', userId)
     .is('deleted_at', null)
     .maybeSingle();
@@ -59,7 +61,11 @@ export async function canAccessInternship(
   internshipId: string,
   userId: string,
   role: string | null
-): Promise<{ allowed: boolean; internship: Record<string, unknown> | null; employeeId: string | null }> {
+): Promise<{
+  allowed: boolean;
+  internship: Record<string, unknown> | null;
+  employeeId: string | null;
+}> {
   const { data: internship, error: internshipError } = await supabase
     .from('internships')
     .select('*')
@@ -81,7 +87,8 @@ export async function canAccessInternship(
     };
   }
 
-  const supervisorId = typeof internship.supervisor_id === 'string' ? internship.supervisor_id : null;
+  const supervisorId =
+    typeof internship.supervisor_id === 'string' ? internship.supervisor_id : null;
   if (supervisorId === userId) {
     return {
       allowed: true,
@@ -103,7 +110,9 @@ export async function canAccessInternship(
   };
 }
 
-export function toInternshipStatusBadge(status: string): 'active' | 'completed' | 'terminated' | 'on_hold' {
+export function toInternshipStatusBadge(
+  status: string
+): 'active' | 'completed' | 'terminated' | 'on_hold' {
   if (status === 'active' || status === 'completed' || status === 'terminated') {
     return status;
   }

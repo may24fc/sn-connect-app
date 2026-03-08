@@ -1,7 +1,4 @@
-import {
-  createReviewCycleSchema,
-  updateReviewCycleSchema,
-} from '@/lib/schemas/performance.schema';
+import { createReviewCycleSchema, updateReviewCycleSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin } from '../_lib';
 
@@ -15,7 +12,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') || undefined;
 
-    let query = supabase.from('review_cycles').select('*').order('start_date', { ascending: false });
+    let query = supabase
+      .from('review_cycles')
+      .select('*')
+      .order('start_date', { ascending: false });
 
     if (status) {
       query = query.eq('status', status);

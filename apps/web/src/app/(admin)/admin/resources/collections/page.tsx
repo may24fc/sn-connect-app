@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  useDeleteCollection,
-  useResourceCollections,
-} from '@/hooks/useResourceCollections';
+import { useDeleteCollection, useResourceCollections } from '@/hooks/useResourceCollections';
 import { Button, Card, CardContent, Input } from '@hr-portal/ui';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -23,7 +20,9 @@ export default function AdminCollectionsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Resource Collections</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+            Resource Collections
+          </h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Group resources into curated learning paths
           </p>
@@ -69,7 +68,9 @@ export default function AdminCollectionsPage() {
             <Card key={collection.id}>
               <CardContent className="p-4 space-y-3">
                 <div>
-                  <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{collection.title}</h3>
+                  <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">
+                    {collection.title}
+                  </h3>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2">
                     {collection.description || 'No description'}
                   </p>

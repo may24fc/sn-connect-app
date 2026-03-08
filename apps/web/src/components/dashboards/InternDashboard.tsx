@@ -272,9 +272,9 @@ export default function InternDashboard(): ReactNode {
         </CardHeader>
         <CardContent className="space-y-2">
           {mockRecentReports.length > 0 ? (
-            mockRecentReports.slice(0, 5).map((report) => (
-              <DailyReportSummary key={report.id} report={report} />
-            ))
+            mockRecentReports
+              .slice(0, 5)
+              .map((report) => <DailyReportSummary key={report.id} report={report} />)
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="h-5 w-5 mx-auto mb-3 opacity-50" />

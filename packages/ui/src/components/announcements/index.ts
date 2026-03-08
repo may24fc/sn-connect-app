@@ -7,6 +7,7 @@ export {
   AnnouncementFilters,
   type AnnouncementFiltersProps,
   type AnnouncementFiltersValue,
+  type AnnouncementViewType,
 } from './AnnouncementFilters';
 export { AnnouncementEditor, type AnnouncementEditorProps } from './AnnouncementEditor';
 export {
@@ -20,3 +21,8 @@ export {
   AnnouncementAnalytics,
   type AnnouncementAnalyticsProps,
 } from './AnnouncementAnalytics';
+export {
+  AnnouncementAnalyticsDashboard,
+  type AnnouncementAnalyticsDashboardProps,
+  type AnnouncementAnalyticsData,
+} from './AnnouncementAnalyticsDashboard';

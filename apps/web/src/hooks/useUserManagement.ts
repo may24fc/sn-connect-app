@@ -21,7 +21,7 @@ interface InviteUserResponse {
 
 export function useInviteUser() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (payload: InviteUserPayload): Promise<InviteUserResponse> => {
       const response = await fetch('/api/users/invite', {
@@ -61,7 +61,7 @@ interface ApproveOnboardingResponse {
 
 export function useApproveOnboarding() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (payload: ApproveOnboardingPayload): Promise<ApproveOnboardingResponse> => {
       const response = await fetch('/api/users/approve-onboarding', {
@@ -71,7 +71,9 @@ export function useApproveOnboarding() {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to approve onboarding' }));
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to approve onboarding' }));
         throw new Error(error.error || 'Failed to approve onboarding');
       }
 

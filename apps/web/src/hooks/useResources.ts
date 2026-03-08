@@ -46,6 +46,7 @@ export interface ResourceRecord {
   bookmark_count: number;
   version: number;
   previous_version_id: string | null;
+  access_level?: 'full' | 'view_only';
   author_id: string;
   created_at: string;
   updated_at: string;

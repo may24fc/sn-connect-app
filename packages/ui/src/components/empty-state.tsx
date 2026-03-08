@@ -1,8 +1,8 @@
 'use client';
 
-import { LucideIcon } from 'lucide-react';
-import { cn } from '../utils/cn';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '../primitives/button';
+import { cn } from '../utils/cn';
 
 export interface EmptyStateProps {
   icon?: LucideIcon;
@@ -15,13 +15,7 @@ export interface EmptyStateProps {
   className?: string;
 }
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-  className,
-}: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
   return (
     <div
       className={cn(
@@ -36,9 +30,7 @@ export function EmptyState({
       )}
       <h3 className="mb-2 text-sm font-medium tracking-tight">{title}</h3>
       {description && (
-        <p className="mb-4 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-          {description}
-        </p>
+        <p className="mb-4 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{description}</p>
       )}
       {action && (
         <Button onClick={action.onClick} size="sm">

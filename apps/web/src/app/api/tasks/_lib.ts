@@ -13,8 +13,7 @@ export interface TaskAuthedContext {
 }
 
 export async function getTaskAuthedContext(): Promise<
-  | { ok: true; context: TaskAuthedContext }
-  | { ok: false; status: number; error: string }
+  { ok: true; context: TaskAuthedContext } | { ok: false; status: number; error: string }
 > {
   const supabase = await createSupabaseServerClient();
   const supabaseAdmin = createSupabaseAdminClient();
@@ -59,10 +58,7 @@ export async function getTaskAuthedContext(): Promise<
 export async function validateTaskAssignee(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   assigneeId: string
-): Promise<
-  | { ok: true; role: TaskAssignableRole }
-  | { ok: false; status: number; error: string }
-> {
+): Promise<{ ok: true; role: TaskAssignableRole } | { ok: false; status: number; error: string }> {
   const { data: assignee, error } = await supabase
     .from('users')
     .select('id, role')
@@ -89,7 +85,9 @@ export async function validateTaskAssignee(
   return { ok: true, role: assignee.role as TaskAssignableRole };
 }
 
-export function getTaskWriteErrorMessage(error: { code?: string; message?: string } | null): string {
+export function getTaskWriteErrorMessage(
+  error: { code?: string; message?: string } | null
+): string {
   if (!error) {
     return 'Task operation failed';
   }

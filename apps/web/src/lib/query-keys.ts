@@ -15,11 +15,12 @@
 
 // Filter type definitions
 export interface EmployeeFilters {
-  search?: string;
-  department?: string;
-  status?: 'active' | 'on_leave' | 'probation' | 'terminated';
-  page?: number;
-  pageSize?: number;
+  search?: string | undefined;
+  userId?: string | undefined;
+  department?: string | undefined;
+  status?: 'active' | 'on_leave' | 'probation' | 'terminated' | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 }
 
 export interface DepartmentFilters {
@@ -42,6 +43,11 @@ export interface ReportFilters {
   status?: 'draft' | 'submitted' | 'approved' | 'rejected';
   reportType?: string;
   employeeId?: string;
+  groupBy?: 'report_group' | 'hierarchy';
+  parentReportId?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  department?: string;
   page?: number;
   pageSize?: number;
 }
@@ -54,28 +60,22 @@ export interface InvoiceFilters {
 }
 
 export interface DocumentFilters {
-  search?: string;
-  employeeId?: string;
-  documentType?: string;
-  isConfidential?: boolean;
-  page?: number;
-  pageSize?: number;
+  search?: string | undefined;
+  employeeId?: string | undefined;
+  documentType?: string | undefined;
+  isConfidential?: boolean | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 }
 
 export interface AnnouncementFilters {
   search?: string;
   status?: 'draft' | 'scheduled' | 'published' | 'expired' | 'archived';
-  category?:
-    | 'hr_updates'
-    | 'benefits'
-    | 'events'
-    | 'performance'
-    | 'training'
-    | 'policy'
-    | 'general'
-    | 'emergency';
+  category?: string;
+  categories?: string[];
   priority?: 'low' | 'normal' | 'high' | 'urgent';
-  readStatus?: 'all' | 'read' | 'unread';
+  readStatus?: string;
+  readStatuses?: string[];
   authorId?: string;
   startDate?: string;
   endDate?: string;
@@ -125,6 +125,14 @@ export interface CollectionFilters {
   pageSize?: number;
 }
 
+export interface AISourceFilters {
+  search?: string;
+  status?: 'scanning' | 'chunking' | 'indexing' | 'ready' | 'error';
+  accessLevel?: 'all' | 'admin';
+  page?: number;
+  pageSize?: number;
+}
+
 export interface AnalyticsParams {
   startDate?: string;
   endDate?: string;
@@ -149,6 +157,46 @@ export interface InternshipFilters {
   school?: string;
   supervisorId?: string;
   employeeId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface DirectoryFilters {
+  search?: string;
+  role?: string;
+  department?: string;
+  status?: string;
+  employmentType?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface MilestoneFilters {
+  days?: number;
+  type?: 'birthday' | 'anniversary' | 'all';
+}
+
+export interface NotificationFilters {
+  page?: number;
+  pageSize?: number;
+  isRead?: boolean | 'all';
+  type?: string;
+}
+
+export interface JobFilters {
+  search?: string;
+  employmentType?: 'full-time' | 'part-time' | 'internship' | 'contract';
+  isActive?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ApplicationFiltersQuery {
+  search?: string;
+  status?: 'pending' | 'reviewed' | 'shortlisted' | 'interview' | 'rejected' | 'approved' | 'hired';
+  jobPostingId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -203,7 +251,10 @@ export const queryKeys = {
   aiKnowledge: {
     all: ['ai-knowledge'] as const,
     sources: () => [...queryKeys.aiKnowledge.all, 'sources'] as const,
+    sourcesList: (filters: AISourceFilters) =>
+      [...queryKeys.aiKnowledge.sources(), 'list', filters] as const,
     source: (id: string) => [...queryKeys.aiKnowledge.sources(), id] as const,
+    chat: () => [...queryKeys.aiKnowledge.all, 'chat'] as const,
   },
 
   // Dashboard
@@ -222,6 +273,10 @@ export const queryKeys = {
     cycle: (id: string) => [...queryKeys.performance.cycles(), id] as const,
     kpis: () => [...queryKeys.performance.all, 'kpis'] as const,
     okrs: () => [...queryKeys.performance.all, 'okrs'] as const,
+    okrTargets: (okrId?: string) =>
+      [...queryKeys.performance.all, 'okr-targets', okrId || 'all'] as const,
+    individual: (employeeId: string) =>
+      [...queryKeys.performance.all, 'individual', employeeId] as const,
   },
 
   // Payroll
@@ -260,6 +315,7 @@ export const queryKeys = {
   probation: {
     all: ['probation'] as const,
     list: () => [...queryKeys.probation.all, 'list'] as const,
+    me: () => [...queryKeys.probation.all, 'me'] as const,
   },
 
   internships: {
@@ -310,6 +366,66 @@ export const queryKeys = {
     details: () => [...queryKeys.collections.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.collections.details(), id] as const,
     resources: (id: string) => [...queryKeys.collections.all, 'resources', id] as const,
+  },
+
+  // Directory
+  directory: {
+    all: ['directory'] as const,
+    lists: () => [...queryKeys.directory.all, 'list'] as const,
+    list: (filters: DirectoryFilters) => [...queryKeys.directory.lists(), filters] as const,
+    details: () => [...queryKeys.directory.all, 'detail'] as const,
+    detail: (userId: string) => [...queryKeys.directory.details(), userId] as const,
+    export: (filters: DirectoryFilters) => [...queryKeys.directory.all, 'export', filters] as const,
+  },
+
+  // Profile Change Requests
+  profileChangeRequests: {
+    all: ['profile-change-requests'] as const,
+    lists: () => [...queryKeys.profileChangeRequests.all, 'list'] as const,
+    list: (filters: { employeeId?: string; status?: string; page?: number }) =>
+      [...queryKeys.profileChangeRequests.lists(), filters] as const,
+    pending: () => [...queryKeys.profileChangeRequests.all, 'pending'] as const,
+  },
+
+  // Milestones (Birthdays & Anniversaries)
+  milestones: {
+    all: ['milestones'] as const,
+    lists: () => [...queryKeys.milestones.all, 'list'] as const,
+    list: (filters: MilestoneFilters) => [...queryKeys.milestones.lists(), filters] as const,
+  },
+
+  // Notifications
+  notifications: {
+    all: ['notifications'] as const,
+    lists: () => [...queryKeys.notifications.all, 'list'] as const,
+    list: (filters: NotificationFilters) => [...queryKeys.notifications.lists(), filters] as const,
+    unreadCount: () => [...queryKeys.notifications.all, 'unread-count'] as const,
+    detail: (id: string) => [...queryKeys.notifications.all, 'detail', id] as const,
+  },
+
+  // Pending Approvals (Dashboard)
+  pendingApprovals: {
+    all: ['pending-approvals'] as const,
+    counts: () => [...queryKeys.pendingApprovals.all, 'counts'] as const,
+  },
+
+  // Job Postings
+  jobs: {
+    all: ['jobs'] as const,
+    lists: () => [...queryKeys.jobs.all, 'list'] as const,
+    list: (filters: JobFilters) => [...queryKeys.jobs.lists(), filters] as const,
+    details: () => [...queryKeys.jobs.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.jobs.details(), id] as const,
+  },
+
+  // Job Applications
+  applications: {
+    all: ['applications'] as const,
+    lists: () => [...queryKeys.applications.all, 'list'] as const,
+    list: (filters: ApplicationFiltersQuery) =>
+      [...queryKeys.applications.lists(), filters] as const,
+    details: () => [...queryKeys.applications.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.applications.details(), id] as const,
   },
 } as const;
 

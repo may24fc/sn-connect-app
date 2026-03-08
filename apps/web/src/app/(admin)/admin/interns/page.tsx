@@ -1,12 +1,19 @@
 'use client';
 
+import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
+import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { useAuth } from '@/contexts/AuthContext';
 import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
-import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
-import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
-import { type InternshipFilters } from '@/lib/query-keys';
-import { useQueryClient } from '@tanstack/react-query';
+import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
+import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
+import { useTableSort } from '@/hooks/useTableSort';
+import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
+import type { InternshipFilters } from '@/lib/query-keys';
 import {
   Avatar,
   AvatarFallback,
@@ -17,10 +24,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
   type InternDashboardStats,
   type InternId,
@@ -45,26 +54,25 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertCircle,
+  Calendar,
   CheckCircle2,
   Clock,
   Download,
   Eye,
   FileText,
-  Filter,
   GraduationCap,
+  LayoutGrid,
+  List,
   Search,
-  UserPlus,
-  AlertCircle,
-  Calendar,
   ThumbsUp,
-  MessageSquare,
+  Trash2,
+  UserPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useMemo, useState } from 'react';
-import { InviteUserModal } from '@/components/admin/InviteUserModal';
-import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
-import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -79,27 +87,89 @@ function formatDateTime(dateString: string): string {
 
 export default function AdminInternsPage(): ReactNode {
   const router = useRouter();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const isSuperAdmin = user?.role === 'super_admin';
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [schoolFilter, setSchoolFilter] = useState<string>('all');
   const [supervisorFilter, setSupervisorFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
+
   // Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
+  const [selectedEodLog, setSelectedEodLog] = useState<(typeof dailyLogs)[number] | null>(null);
+
+  // Delete intern state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [internToDelete, setInternToDelete] = useState<InternSummary | null>(null);
+
+  const deleteInternMutation = useMutation({
+    mutationFn: async (internshipId: string) => {
+      const response = await fetch(`/api/internships/${internshipId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete intern' }));
+        throw new Error(error.error || 'Failed to delete intern');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['internships'] });
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setDeleteDialogOpen(false);
+      setInternToDelete(null);
+    },
+  });
+
+  const handleDeleteIntern = (intern: InternSummary) => {
+    setInternToDelete(intern);
+    setDeleteDialogOpen(true);
+  };
 
   // Real-time approvals hook
   const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
-  
+
   // Real-time internships hook
-  const { internships: _realtimeInternships, isSubscribed: _isInternshipsSubscribed } = useRealtimeInternships();
-  
+  const { internships: _realtimeInternships, isSubscribed: _isInternshipsSubscribed } =
+    useRealtimeInternships();
+
   // Real-time daily logs hook
   const { dailyLogs, isSubscribed: isDailyLogsSubscribed } = useRealtimeInternDailyLogs();
+
+  // Sort state for Pending Approvals table
+  const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const sortedPending = pendingSort.sortItems(pendingApprovals, {
+    intern: (a) => a.full_name?.toLowerCase() ?? '',
+    email: (a) => a.email_address?.toLowerCase() ?? '',
+    position: (a) => a.position?.toLowerCase() ?? '',
+    submitted: (a) => a.completed_at ?? '',
+  });
+  const pendingSortHeadProps = { sortColumn: pendingSort.sortColumn, sortDirection: pendingSort.sortDirection, onSort: pendingSort.handleSort };
+
+  // Sort state for EOD Reports table
+  const eodSort = useTableSort({ initialColumn: 'date', initialDirection: 'desc' });
+  const sortedDailyLogs = eodSort.sortItems(dailyLogs, {
+    intern: (l) => {
+      const emp = l.internship?.employee;
+      return emp ? `${emp.first_name} ${emp.last_name}`.toLowerCase() : '';
+    },
+    date: (l) => l.log_date ?? '',
+    school: (l) => l.internship?.school?.toLowerCase() ?? '',
+    department: (l) => l.internship?.department?.toLowerCase() ?? '',
+    hours: (l) => l.hours_worked ?? 0,
+    status: (l) => (l.is_approved ? 1 : 0),
+  });
+  const eodSortHeadProps = { sortColumn: eodSort.sortColumn, sortDirection: eodSort.sortDirection, onSort: eodSort.handleSort };
+
+  // Sort state for Onboarding Submissions table
+  const onboardSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
+  const onboardSortHeadProps = { sortColumn: onboardSort.sortColumn, sortDirection: onboardSort.sortDirection, onSort: onboardSort.handleSort };
 
   const internshipFilters: InternshipFilters = {
     page: 1,
@@ -176,6 +246,47 @@ export default function AdminInternsPage(): ReactNode {
     return matchesSearch && matchesStatus && matchesSchool && matchesSupervisor;
   });
 
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportReport = useCallback((): void => {
+    setExporting(true);
+    try {
+      exportToCsv(filteredInterns, {
+        filename: 'interns-report',
+        headers: [
+          'Name',
+          'Email',
+          'School',
+          'Program',
+          'Department',
+          'Supervisor',
+          'Start Date',
+          'End Date',
+          'Required Hours',
+          'Completed Hours',
+          'Progress',
+          'Status',
+        ],
+        rowMapper: (intern) => [
+          intern.name,
+          intern.email,
+          intern.school,
+          intern.program,
+          intern.department,
+          intern.supervisor,
+          formatDateForCsv(intern.startDate),
+          formatDateForCsv(intern.endDate),
+          intern.requiredHours,
+          intern.completedHours,
+          formatPercentageForCsv(intern.progressPercentage),
+          intern.status,
+        ],
+      });
+    } finally {
+      setExporting(false);
+    }
+  }, [filteredInterns]);
+
   const handleViewIntern = (intern: InternSummary): void => {
     router.push(`/admin/interns/${intern.id}`);
   };
@@ -191,9 +302,9 @@ export default function AdminInternsPage(): ReactNode {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportReport} disabled={exporting}>
             <Download className="mr-2 h-4 w-4" />
-            Export Report
+            {exporting ? 'Exporting...' : 'Export Report'}
           </Button>
           <Button onClick={() => setInviteModalOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
@@ -208,9 +319,9 @@ export default function AdminInternsPage(): ReactNode {
           <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
           <TabsTrigger value="eod-reports">
             EOD Reports
-            {dailyLogs.filter(log => !log.is_approved).length > 0 && (
+            {dailyLogs.filter((log) => !log.is_approved).length > 0 && (
               <Badge variant="destructive" className="ml-2">
-                {dailyLogs.filter(log => !log.is_approved).length}
+                {dailyLogs.filter((log) => !log.is_approved).length}
               </Badge>
             )}
           </TabsTrigger>
@@ -220,15 +331,7 @@ export default function AdminInternsPage(): ReactNode {
           {/* Summary Cards */}
           <InternshipSummaryCards stats={stats} />
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Filter className="h-4 w-4" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+          {/* Filters */}
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -300,100 +403,114 @@ export default function AdminInternsPage(): ReactNode {
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+           
 
-      {/* View Toggle */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Interns ({filteredInterns.length})</h2>
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-          >
-            Grid
-          </Button>
-          <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('list')}
-          >
-            List
-          </Button>
-        </div>
-      </div>
-
-      {/* Interns Display */}
-      {viewMode === 'grid' ? (
-        <InternList
-          interns={filteredInterns}
-          onView={handleViewIntern}
-          layout="grid"
-          emptyMessage={
-            searchQuery ||
-            statusFilter !== 'all' ||
-            schoolFilter !== 'all' ||
-            supervisorFilter !== 'all'
-              ? 'No interns match the selected filters'
-              : 'No interns found'
-          }
-        />
-      ) : (
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            {filteredInterns.length > 0 ? (
-              filteredInterns.map((intern) => (
-                <InternRow key={intern.id} intern={intern} onView={handleViewIntern} />
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>
-                  {searchQuery ||
-                  statusFilter !== 'all' ||
-                  schoolFilter !== 'all' ||
-                  supervisorFilter !== 'all'
-                    ? 'No interns match the selected filters'
-                    : 'No interns found'}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pending Reports Alert */}
-      {stats.pendingReports > 0 && (
-        <Card className="border-warning/50 bg-warning/5">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                <FileText className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  There are {stats.pendingReports} daily reports waiting for supervisor review.
-                  Timely feedback helps interns improve their performance.
-                </p>
-              </div>
+          {/* View Toggle */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Interns ({filteredInterns.length})</h2>
+            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                List
+              </button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      {internshipsQuery.isLoading && (
-        <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">Loading interns...</CardContent>
-        </Card>
-      )}
+          {/* Interns Display */}
+          {viewMode === 'grid' ? (
+            <InternList
+              interns={filteredInterns}
+              onView={handleViewIntern}
+              {...(isSuperAdmin && { onDelete: handleDeleteIntern })}
+              layout="grid"
+              emptyMessage={
+                searchQuery ||
+                statusFilter !== 'all' ||
+                schoolFilter !== 'all' ||
+                supervisorFilter !== 'all'
+                  ? 'No interns match the selected filters'
+                  : 'No interns found'
+              }
+            />
+          ) : (
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                {filteredInterns.length > 0 ? (
+                  filteredInterns.map((intern) => (
+                    <InternRow key={intern.id} intern={intern} onView={handleViewIntern} {...(isSuperAdmin && { onDelete: handleDeleteIntern })} />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>
+                      {searchQuery ||
+                      statusFilter !== 'all' ||
+                      schoolFilter !== 'all' ||
+                      supervisorFilter !== 'all'
+                        ? 'No interns match the selected filters'
+                        : 'No interns found'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-      {internshipsQuery.error && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardContent className="p-6 text-sm text-destructive">Failed to load interns.</CardContent>
-        </Card>
-      )}
+          {/* Pending Reports Alert */}
+          {stats.pendingReports > 0 && (
+            <Card className="border-warning/50 bg-warning/5">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <FileText className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      There are {stats.pendingReports} daily reports waiting for supervisor review.
+                      Timely feedback helps interns improve their performance.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {internshipsQuery.isLoading && (
+            <Card>
+              <CardContent className="p-6 text-sm text-muted-foreground">
+                Loading interns...
+              </CardContent>
+            </Card>
+          )}
+
+          {internshipsQuery.error && (
+            <Card className="border-destructive/50 bg-destructive/5">
+              <CardContent className="p-6 text-sm text-destructive">
+                Failed to load interns.
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-6">
@@ -462,7 +579,8 @@ export default function AdminInternsPage(): ReactNode {
                   </div>
                   <div>
                     <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
-                      {pendingApprovals.length} Onboarding Submission{pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
+                      {pendingApprovals.length} Onboarding Submission
+                      {pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
                     </h3>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                       Review and approve intern onboarding submissions to activate their accounts.
@@ -485,24 +603,27 @@ export default function AdminInternsPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Intern</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <SortableTableHead column="intern" {...pendingSortHeadProps}>Intern</SortableTableHead>
+                    <SortableTableHead column="email" {...pendingSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="position" {...pendingSortHeadProps}>Position</SortableTableHead>
+                    <SortableTableHead column="submitted" {...pendingSortHeadProps}>Submitted</SortableTableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingApprovals.length > 0 ? (
-                    pendingApprovals.map((approval) => (
-                      <TableRow key={approval.id} className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5">
+                    sortedPending.map((approval) => (
+                      <TableRow
+                        key={approval.id}
+                        className="hover:bg-yellow-50/50 dark:hover:bg-yellow-900/5"
+                      >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
                               <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                                 {approval.full_name
                                   ?.split(' ')
-                                  .map((n) => n[0])
+                                  .map((n: string) => n[0])
                                   .join('')
                                   .toUpperCase()
                                   .slice(0, 2) || 'NA'}
@@ -537,10 +658,7 @@ export default function AdminInternsPage(): ReactNode {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={5}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No pending approvals</p>
                         <p className="text-sm mt-1">
@@ -564,18 +682,28 @@ export default function AdminInternsPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Intern</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Current Step</TableHead>
-                    <TableHead>Submitted</TableHead>
+                    <SortableTableHead column="intern" {...onboardSortHeadProps}>Intern</SortableTableHead>
+                    <SortableTableHead column="email" {...onboardSortHeadProps}>Email</SortableTableHead>
+                    <SortableTableHead column="department" {...onboardSortHeadProps}>Department</SortableTableHead>
+                    <SortableTableHead column="status" {...onboardSortHeadProps}>Status</SortableTableHead>
+                    <SortableTableHead column="step" {...onboardSortHeadProps}>Current Step</SortableTableHead>
+                    <SortableTableHead column="submitted" {...onboardSortHeadProps}>Submitted</SortableTableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {onboardingData?.data && onboardingData.data.length > 0 ? (
-                    onboardingData.data.map((profile) => {
+                    onboardSort.sortItems([...onboardingData.data], {
+                      intern: (p: any) => p.full_name?.toLowerCase() ?? '',
+                      email: (p: any) => p.email_address?.toLowerCase() ?? '',
+                      department: (p: any) => {
+                        const dept = Array.isArray(p.departments) ? p.departments[0]?.name : p.departments?.name;
+                        return dept?.toLowerCase() ?? '';
+                      },
+                      status: (p: any) => p.status ?? '',
+                      step: (p: any) => p.current_step ?? '',
+                      submitted: (p: any) => p.created_at ?? '',
+                    }).map((profile: any) => {
                       const department = Array.isArray(profile.departments)
                         ? profile.departments[0]?.name
                         : profile.departments?.name;
@@ -588,7 +716,7 @@ export default function AdminInternsPage(): ReactNode {
                                 <AvatarFallback className="text-xs">
                                   {profile.full_name
                                     ?.split(' ')
-                                    .map((n) => n[0])
+                                    .map((n: string) => n[0])
                                     .join('')
                                     .toUpperCase()
                                     .slice(0, 2) || 'NA'}
@@ -604,9 +732,7 @@ export default function AdminInternsPage(): ReactNode {
                           </TableCell>
                           <TableCell>{department || 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge
-                              variant={profile.status === 'completed' ? 'success' : 'warning'}
-                            >
+                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
                               {profile.status === 'completed' ? 'Completed' : 'In Progress'}
                             </Badge>
                           </TableCell>
@@ -631,10 +757,7 @@ export default function AdminInternsPage(): ReactNode {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         {onboardingLoading
                           ? 'Loading onboarding data...'
                           : 'No intern onboarding submissions found'}
@@ -646,7 +769,7 @@ export default function AdminInternsPage(): ReactNode {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* EOD Reports Tab */}
         <TabsContent value="eod-reports" className="space-y-6">
           <Card>
@@ -661,7 +784,8 @@ export default function AdminInternsPage(): ReactNode {
                 )}
               </CardTitle>
               <CardDescription>
-                Monitor daily reports submitted by interns. Pending approvals require supervisor review.
+                Monitor daily reports submitted by interns. Pending approvals require supervisor
+                review.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -689,7 +813,7 @@ export default function AdminInternsPage(): ReactNode {
                         </div>
                         <div>
                           <p className="text-2xl font-bold">
-                            {dailyLogs.filter(log => !log.is_approved).length}
+                            {dailyLogs.filter((log) => !log.is_approved).length}
                           </p>
                           <p className="text-sm text-muted-foreground">Pending Approval</p>
                         </div>
@@ -704,7 +828,7 @@ export default function AdminInternsPage(): ReactNode {
                         </div>
                         <div>
                           <p className="text-2xl font-bold">
-                            {dailyLogs.filter(log => log.is_approved).length}
+                            {dailyLogs.filter((log) => log.is_approved).length}
                           </p>
                           <p className="text-sm text-muted-foreground">Approved</p>
                         </div>
@@ -717,22 +841,22 @@ export default function AdminInternsPage(): ReactNode {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Intern</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>School</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Hours</TableHead>
-                      <TableHead>Status</TableHead>
+                      <SortableTableHead column="intern" {...eodSortHeadProps}>Intern</SortableTableHead>
+                      <SortableTableHead column="date" {...eodSortHeadProps}>Date</SortableTableHead>
+                      <SortableTableHead column="school" {...eodSortHeadProps}>School</SortableTableHead>
+                      <SortableTableHead column="department" {...eodSortHeadProps}>Department</SortableTableHead>
+                      <SortableTableHead column="hours" {...eodSortHeadProps}>Hours</SortableTableHead>
+                      <SortableTableHead column="status" {...eodSortHeadProps}>Status</SortableTableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dailyLogs.length > 0 ? (
-                      dailyLogs.map((log) => {
+                      sortedDailyLogs.map((log) => {
                         const internName = log.internship?.employee
                           ? `${log.internship.employee.first_name} ${log.internship.employee.last_name}`
                           : 'Unknown Intern';
-                        
+
                         return (
                           <TableRow key={log.id}>
                             <TableCell>
@@ -741,7 +865,7 @@ export default function AdminInternsPage(): ReactNode {
                                   <AvatarFallback className="text-xs">
                                     {internName
                                       .split(' ')
-                                      .map((n) => n[0])
+                                      .map((n: string) => n[0])
                                       .join('')
                                       .toUpperCase()
                                       .slice(0, 2)}
@@ -790,59 +914,27 @@ export default function AdminInternsPage(): ReactNode {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      // Navigate to detailed view with the log
-                                      router.push(`/admin/interns/${log.internship_id}#daily-logs`);
-                                    }}
-                                  >
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  {!log.is_approved && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        // TODO: Quick approve action
-                                        console.log('Quick approve:', log.id);
-                                      }}
-                                    >
-                                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                                      Quick Approve
-                                    </DropdownMenuItem>
-                                  )}
-                                  {log.is_approved && log.supervisor_notes && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        alert(`Supervisor Notes: ${log.supervisor_notes}`);
-                                      }}
-                                    >
-                                      <MessageSquare className="mr-2 h-4 w-4" />
-                                      View Notes
-                                    </DropdownMenuItem>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedEodLog(log)}
+                                title="View report details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
                       })
                     ) : (
                       <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center py-12 text-muted-foreground"
-                        >
+                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                           <div className="flex flex-col items-center gap-2">
                             <FileText className="h-12 w-12 text-muted-foreground/50" />
                             <p>No daily reports found</p>
-                            <p className="text-sm">Reports will appear here when interns submit their EOD forms</p>
+                            <p className="text-sm">
+                              Reports will appear here when interns submit their EOD forms
+                            </p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -861,7 +953,7 @@ export default function AdminInternsPage(): ReactNode {
         onOpenChange={setInviteModalOpen}
         defaultRole="intern"
       />
-      
+
       <ApproveOnboardingModal
         open={!!selectedApproval}
         onOpenChange={(open) => !open && setSelectedApproval(null)}
@@ -871,7 +963,7 @@ export default function AdminInternsPage(): ReactNode {
           setAssignmentModalOpen(true);
         }}
       />
-      
+
       <AssignEmployeeModal
         open={assignmentModalOpen}
         onOpenChange={setAssignmentModalOpen}
@@ -885,6 +977,56 @@ export default function AdminInternsPage(): ReactNode {
           setAssignmentModalOpen(false);
         }}
       />
+
+      <EODReportDetailModal
+        open={!!selectedEodLog}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEodLog(null);
+        }}
+        log={selectedEodLog}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <Trash2 className="h-5 w-5" />
+              Remove Intern
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {internToDelete?.name}
+              </span>
+              ? This will soft-delete their internship and employee records. This can be reversed by a database administrator.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setInternToDelete(null);
+              }}
+              disabled={deleteInternMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (internToDelete) {
+                  deleteInternMutation.mutate(internToDelete.id);
+                }
+              }}
+              disabled={deleteInternMutation.isPending}
+            >
+              {deleteInternMutation.isPending ? 'Removing...' : 'Remove Intern'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

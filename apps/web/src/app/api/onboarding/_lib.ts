@@ -23,7 +23,7 @@ export async function getAuthedOnboardingContext() {
     console.error('Auth error in getAuthedOnboardingContext:', error);
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
-  
+
   if (!user) {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }

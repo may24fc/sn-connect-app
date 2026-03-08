@@ -11,9 +11,14 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
+import { useMyProbation } from '@/hooks/useMyProbation';
+import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
+import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useRoleMetadata';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
-import { Badge, Button, Progress } from '@hr-portal/ui';
+import { Badge, Button, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
+import type { KPICardData } from '@hr-portal/ui';
 import {
   Bell,
   Calendar,
@@ -74,16 +79,88 @@ export default function DashboardPage(): ReactNode {
     { enabled: Boolean(user?.id) }
   );
 
-  useTasksRealtime({ scope: 'assigned', ...(user?.id ? { userId: user.id } : {}), enabled: Boolean(user?.id) });
+  useTasksRealtime({
+    scope: 'assigned',
+    ...(user?.id ? { userId: user.id } : {}),
+    enabled: Boolean(user?.id),
+  });
 
   const assignedTasks = tasksResponse?.data || [];
   const tasksDueCount = assignedTasks.filter((task) => task.status !== 'completed').length;
 
-  // Data would come from API hooks - showing UI structure without data
-  const onboardingProgress = 0;
-  const hasOnboardingData = false;
-  const announcements: Array<{ id: string; title: string; date: string; category: string }> = [];
+  // Role-specific KPI data (V2-4.2)
+  const { data: metadataRecords = [] } = useRoleMetadata(user?.id);
+  const roleTypesWithKPIs = metadataRecords
+    .map((r) => r.role_type)
+    .filter((rt) => {
+      const config = ROLE_TYPE_REGISTRY[rt as keyof typeof ROLE_TYPE_REGISTRY];
+      return config?.kpiMetrics && config.kpiMetrics.length > 0;
+    });
+  const primaryKPIRole = roleTypesWithKPIs.length > 0 ? (roleTypesWithKPIs[0] as string) : '';
+  const kpiFilters: { role_type?: string } = primaryKPIRole ? { role_type: primaryKPIRole } : {};
+  const { data: kpiEntries = [] } = useKPIEntries(user?.id, kpiFilters);
+
+  // Build KPI card data from latest entries (deduplicated by kpi_name)
+  const kpiCardData: KPICardData[] = (() => {
+    if (!primaryKPIRole) return [];
+    const config = ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY];
+    if (!config?.kpiMetrics) return [];
+
+    const latestByName = new Map<string, (typeof kpiEntries)[number]>();
+    for (const entry of kpiEntries) {
+      const existing = latestByName.get(entry.kpi_name);
+      if (!existing || entry.entry_date > existing.entry_date) {
+        latestByName.set(entry.kpi_name, entry);
+      }
+    }
+
+    return config.kpiMetrics
+      .filter((m) => latestByName.has(m.name))
+      .map((m) => {
+        const entry = latestByName.get(m.name)!;
+        return {
+          name: m.name,
+          label: m.label,
+          value: entry.kpi_value,
+          unit: m.unit,
+        };
+      });
+  })();
+
+  // Probation status
+  const { data: probationResponse, isLoading: isProbationLoading } = useMyProbation(Boolean(user?.id));
+  const probationData = probationResponse?.data ?? null;
+  const isOnProbation = probationResponse?.onProbation ?? false;
+
+  // Onboarding profile — hide sections when completed
+  const { data: onboardingProfileData, isLoading: isOnboardingLoading } = useOnboardingProfile();
+  const onboardingProfile = onboardingProfileData?.data ?? null;
+  const isOnboardingCompleted = onboardingProfile?.is_completed === true;
+
+  const onboardingStepWeights: Record<string, number> = {
+    personal_info: 25,
+    payment_info: 50,
+    documents: 75,
+    review: 90,
+  };
+  const onboardingProgress = isOnboardingCompleted
+    ? 100
+    : onboardingProfile?.current_step
+      ? (onboardingStepWeights[onboardingProfile.current_step] ?? 0)
+      : 0;
+  const hasOnboardingData = onboardingProfile !== null;
+
+  // Announcements — live data from feed API
+  const { data: announcementFeedData, isLoading: isAnnouncementsLoading } = useAnnouncementFeed({
+    page: 1,
+    pageSize: 5,
+  });
+  const announcements = announcementFeedData?.data ?? [];
+
   const upcomingEvents: Array<{ title: string; date: string; time: string }> = [];
+
+  // Stat card columns adjust when onboarding is hidden
+  const statColumns = isOnboardingCompleted ? 3 : 4;
 
   return (
     <div className="h-full space-y-6">
@@ -106,103 +183,131 @@ export default function DashboardPage(): ReactNode {
       </div>
 
       {/* Stats Row */}
-      <StatCardGrid columns={4}>
-        <StatCard
-          label="Onboarding"
-          value={hasOnboardingData ? `${onboardingProgress}%` : '0%'}
-          trend={{ direction: 'stable', value: 'Not started' }}
-          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Probation"
-          value="N/A"
-          trend={{ direction: 'stable', value: 'No active period' }}
-          icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Tasks Due"
-          value={String(tasksDueCount)}
-          trend={{
-            direction: 'stable',
-            value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
-          }}
-          icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Notifications"
-          value="0"
-          trend={{ direction: 'stable', value: 'No new notifications' }}
-          icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+      <div data-tour="stat-cards">
+        <StatCardGrid columns={statColumns as 3 | 4}>
+          {!isOnboardingCompleted && (
+            <StatCard
+              label="Onboarding"
+              value={
+                isOnboardingLoading
+                  ? '—'
+                  : hasOnboardingData
+                    ? `${onboardingProgress}%`
+                    : '0%'
+              }
+              trend={{
+                direction: 'stable',
+                value: isOnboardingLoading
+                  ? 'Loading…'
+                  : hasOnboardingData
+                    ? 'In progress'
+                    : 'Not started',
+              }}
+              icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          )}
+          <StatCard
+            label="Probation"
+            value={
+              isProbationLoading
+                ? '—'
+                : isOnProbation && probationData
+                  ? `${probationData.daysRemaining}d`
+                  : 'N/A'
+            }
+            trend={{
+              direction: isOnProbation && probationData
+                ? probationData.status === 'at-risk'
+                  ? 'down'
+                  : 'up'
+                : 'stable',
+              value: isProbationLoading
+                ? 'Loading…'
+                : isOnProbation && probationData
+                  ? `${probationData.status === 'at-risk' ? 'At risk — ' : probationData.status === 'extended' ? 'Extended — ' : ''}${probationData.progressPercent}% complete`
+                  : 'No active period',
+            }}
+            icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Tasks Due"
+            value={String(tasksDueCount)}
+            trend={{
+              direction: 'stable',
+              value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
+            }}
+            icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Notifications"
+            value="0"
+            trend={{ direction: 'stable', value: 'No new notifications' }}
+            icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
+      </div>
 
-      {/* Main Bento Grid */}
+      {/* Row 1: Onboarding Progress (only if not completed) */}
+      {!isOnboardingCompleted && (
+        <BentoGrid columns={4}>
+          <BentoCard colSpan={4}>
+            <BentoCardHeader>
+              <BentoCardTitle icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}>
+                Onboarding Progress
+              </BentoCardTitle>
+              <Badge variant="secondary">
+                {isOnboardingLoading
+                  ? 'Loading…'
+                  : hasOnboardingData
+                    ? 'In Progress'
+                    : 'Not Started'}
+              </Badge>
+            </BentoCardHeader>
+            <BentoCardContent>
+              {isOnboardingLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-2 w-full" />
+                  <Skeleton className="h-4 w-1/3" />
+                </div>
+              ) : hasOnboardingData ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-zinc-500 dark:text-zinc-400">Overall completion</span>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
+                        {onboardingProgress}%
+                      </span>
+                    </div>
+                    <Progress value={onboardingProgress} className="h-2" />
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                      Tasks remaining
+                    </span>
+                    <Link
+                      href="/onboarding"
+                      className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                    >
+                      View checklist
+                      <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={ClipboardCheck}
+                  title="No onboarding in progress"
+                  description="Your onboarding tasks will appear here when available"
+                  action={{ label: 'View Onboarding', href: '/onboarding' }}
+                />
+              )}
+            </BentoCardContent>
+          </BentoCard>
+        </BentoGrid>
+      )}
+
+      {/* Row 2: Upcoming Events + Latest Announcements */}
       <BentoGrid columns={4}>
-        {/* Quick Actions Card */}
-        <BentoCard colSpan={2}>
-          <BentoCardHeader>
-            <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
-              Quick Actions
-            </BentoCardTitle>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {quickActions.map((action) => (
-                <Link key={action.title} href={action.href}>
-                  <div className="flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                    <action.icon className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
-                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {action.title}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </BentoCardContent>
-        </BentoCard>
-
-        {/* Onboarding Progress Card */}
-        <BentoCard colSpan={2}>
-          <BentoCardHeader>
-            <BentoCardTitle icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}>
-              Onboarding Progress
-            </BentoCardTitle>
-            <Badge variant="secondary">Not Started</Badge>
-          </BentoCardHeader>
-          <BentoCardContent>
-            {hasOnboardingData ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-500 dark:text-zinc-400">Overall completion</span>
-                    <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                      {onboardingProgress}%
-                    </span>
-                  </div>
-                  <Progress value={onboardingProgress} className="h-2" />
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">Tasks remaining</span>
-                  <Link
-                    href="/onboarding"
-                    className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-                  >
-                    View checklist
-                    <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <EmptyState
-                icon={ClipboardCheck}
-                title="No onboarding in progress"
-                description="Your onboarding tasks will appear here when available"
-                action={{ label: 'View Onboarding', href: '/onboarding' }}
-              />
-            )}
-          </BentoCardContent>
-        </BentoCard>
-
         {/* Upcoming Events Card */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
@@ -224,7 +329,10 @@ export default function DashboardPage(): ReactNode {
                     className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                   >
                     <div className="flex items-center gap-3">
-                      <Calendar className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+                      <Calendar
+                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                        strokeWidth={1.5}
+                      />
                       <div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                           {event.title}
@@ -247,44 +355,62 @@ export default function DashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
 
-        {/* Announcements Card */}
-        <BentoCard colSpan={2}>
+        {/* Latest Announcements Card — connected to feed API */}
+        <BentoCard colSpan={2} data-tour="announcements">
           <BentoCardHeader>
             <BentoCardTitle icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}>
               Latest Announcements
             </BentoCardTitle>
-            <Link href="/announcements">
+            <Link href="/information-hub">
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
                 View All
               </Button>
             </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            {announcements.length > 0 ? (
+            {isAnnouncementsLoading ? (
               <div className="space-y-3">
-                {announcements.map((announcement) => (
-                  <div
-                    key={announcement.id}
-                    className="flex items-start justify-between p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                        {announcement.title}
-                      </p>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-start justify-between p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-4 w-3/4" />
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs h-5">
-                          {announcement.category}
-                        </Badge>
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {announcement.date}
-                        </span>
+                        <Skeleton className="h-5 w-16" />
+                        <Skeleton className="h-3 w-20" />
                       </div>
                     </div>
-                    <ChevronRight
-                      className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-1"
-                      strokeWidth={1.5}
-                    />
                   </div>
+                ))}
+              </div>
+            ) : announcements.length > 0 ? (
+              <div className="space-y-3">
+                {announcements.map((announcement) => (
+                  <Link
+                    key={announcement.id}
+                    href={`/information-hub?announcement=${announcement.id}`}
+                  >
+                    <div className="flex items-start justify-between p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {announcement.title}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs h-5">
+                            {announcement.category.replace(/_/g, ' ')}
+                          </Badge>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {announcement.published_at
+                              ? new Date(announcement.published_at).toLocaleDateString()
+                              : new Date(announcement.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight
+                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 mt-1"
+                        strokeWidth={1.5}
+                      />
+                    </div>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -297,6 +423,46 @@ export default function DashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>
+
+      {/* Row 3: Quick Actions — full width */}
+      <BentoGrid columns={4}>
+        <BentoCard colSpan={4} data-tour="quick-actions">
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
+              Quick Actions
+            </BentoCardTitle>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {quickActions.map((action) => (
+                <Link key={action.title} href={action.href}>
+                  <div className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
+                    <action.icon
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                      strokeWidth={1.5}
+                    />
+                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {action.title}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </BentoCardContent>
+        </BentoCard>
+      </BentoGrid>
+
+      {/* Role-Specific KPI Dashboard (V2-4.2) */}
+      {primaryKPIRole && kpiCardData.length > 0 && (
+        <RoleDashboardWidget
+          roleType={primaryKPIRole}
+          roleLabel={
+            ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY]?.label ??
+            primaryKPIRole
+          }
+          kpiData={kpiCardData}
+        />
+      )}
     </div>
   );
 }

@@ -25,6 +25,8 @@ All endpoints require authentication via Supabase Auth (JWT in cookie). Admin en
 - [Upload File](#upload-file)
 - [Bulk Upload](#bulk-upload)
 - [Download Resource](#download-resource)
+- [Stream Resource](#stream-resource)
+- [Resource Categories](#resource-categories)
 - [Error Response Format](#error-response-format)
 - [Rate Limiting](#rate-limiting)
 
@@ -572,6 +574,90 @@ Returns a signed download URL (15-minute expiry) for file resources, or the exte
 
 ---
 
+## Stream Resource
+
+```
+GET /api/resources/:id/stream
+```
+
+Stream the resource file content directly. Returns the raw file bytes with appropriate `Content-Type` header set from the stored file metadata. Useful for inline preview of documents, images, and videos.
+
+**Errors:** 400 (no file path), 401, 404, 500
+
+---
+
+## Resource Categories
+
+Dynamic resource category management. Categories are stored in `resource_categories` table and support hierarchical structure via `get_resource_category_tree()`.
+
+### List Categories
+
+```
+GET /api/resources/categories
+```
+
+Returns the category tree with nested children and resource counts. Any authenticated user can access.
+
+**Response (200):**
+```json
+{
+  "data": [
+    {
+      "id": "uuid",
+      "name": "Onboarding",
+      "slug": "onboarding",
+      "parent_id": null,
+      "resource_count": 12,
+      "children": []
+    }
+  ]
+}
+```
+
+### Create Category
+
+```
+POST /api/resources/categories
+```
+
+Admin only. Creates a new resource category.
+
+**Body:**
+```json
+{
+  "name": "Training Materials",
+  "slug": "training-materials",
+  "description": "Internal training resources",
+  "parent_id": null
+}
+```
+
+### Update Category
+
+```
+PATCH /api/resources/categories
+```
+
+Admin only. Update category fields.
+
+**Body:**
+```json
+{
+  "id": "uuid",
+  "name": "Updated Name"
+}
+```
+
+### Delete Category
+
+```
+DELETE /api/resources/categories?id=<uuid>
+```
+
+Admin only. Delete a category (must have no resources assigned).
+
+---
+
 ## Error Response Format
 
 All error responses follow a consistent structure:
@@ -608,6 +694,10 @@ Per CLAUDE.md project standards (to be implemented):
 
 **ResourceType:** `video` | `document` | `image` | `link` | `presentation` | `interactive`
 
-**ResourceCategory:** `onboarding` | `training` | `policies` | `benefits` | `tools` | `culture` | `department_specific` | `forms_templates` | `performance` | `emergency`
+**ResourceCategory:** Dynamic — managed via `/api/resources/categories`
 
 **ResourceStatus:** `draft` | `published` | `archived`
+
+---
+
+*Last updated: 2026-03-08*

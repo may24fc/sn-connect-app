@@ -34,13 +34,15 @@ interface BentoCardProps {
   children: React.ReactNode;
   className?: string;
   /** Column span on large screens */
-  colSpan?: 1 | 2 | 3 | 4;
+  colSpan?: 1 | 2 | 3 | 4 | undefined;
   /** Row span (default: 1) */
-  rowSpan?: 1 | 2;
+  rowSpan?: 1 | 2 | undefined;
   /** Whether to add hover effect */
-  interactive?: boolean;
+  interactive?: boolean | undefined;
   /** Click handler */
-  onClick?: () => void;
+  onClick?: (() => void) | undefined;
+  /** Data-tour attribute for guided tour targeting */
+  'data-tour'?: string | undefined;
 }
 
 const colSpanClasses = {
@@ -62,14 +64,16 @@ export function BentoCard({
   rowSpan = 1,
   interactive = false,
   onClick,
+  'data-tour': dataTour,
 }: BentoCardProps): React.ReactNode {
   const Component = onClick ? 'button' : 'div';
 
   return (
     <Component
       onClick={onClick}
+      data-tour={dataTour}
       className={cn(
-        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-5',
+        'bg-card border border-border rounded-lg p-5',
         colSpanClasses[colSpan],
         rowSpanClasses[rowSpan],
         interactive &&
@@ -112,7 +116,7 @@ export function BentoCardTitle({
         className
       )}
     >
-      {icon && <span className="text-zinc-400 dark:text-zinc-500">{icon}</span>}
+      {icon && <span className="text-zinc-500 dark:text-zinc-400">{icon}</span>}
       {children}
     </h3>
   );

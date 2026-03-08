@@ -10,6 +10,7 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
 import { Badge, Button, Progress } from '@hr-portal/ui';
 import {
   Activity,
@@ -25,14 +26,7 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-// TODO: Replace with actual API data
-const systemStats = {
-  totalUsers: 0,
-  activeUsers: 0,
-  systemUptime: 0,
-  auditLogs: 0,
-};
-
+// Security alerts remain placeholder until an alerting system is implemented
 const securityAlerts: Array<{
   id: string;
   type: string;
@@ -41,20 +35,7 @@ const securityAlerts: Array<{
   timestamp: string;
 }> = [];
 
-const userRoleDistribution: Array<{
-  role: string;
-  count: number;
-  percentage: number;
-}> = [];
-
-const recentAuditLogs: Array<{
-  id: string;
-  user: string;
-  action: string;
-  details: string;
-  timestamp: string;
-}> = [];
-
+// System health remains placeholder until monitoring is implemented
 const systemHealth: Array<{
   component: string;
   status: 'healthy' | 'degraded';
@@ -99,6 +80,15 @@ export default function SuperAdminDashboardPage(): ReactNode {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
+  const { data: statsData, isLoading } = useSuperAdminStats();
+
+  const systemStats = {
+    totalUsers: statsData?.totalUsers ?? 0,
+    activeUsers: statsData?.activeUsers ?? 0,
+    auditLogs: statsData?.auditLogsCount ?? 0,
+  };
+  const userRoleDistribution = statsData?.userRoleDistribution ?? [];
+  const recentAuditLogs = statsData?.recentAuditLogs ?? [];
 
   return (
     <div className="h-full space-y-6">
@@ -108,7 +98,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
             {greeting}, {firstName}
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
             Complete system overview and control.
           </p>
         </div>
@@ -121,32 +111,40 @@ export default function SuperAdminDashboardPage(): ReactNode {
       </div>
 
       {/* Stats Row */}
-      <StatCardGrid columns={4}>
-        <StatCard
-          label="Total Users"
-          value={systemStats.totalUsers}
-          trend={{ direction: 'up', value: `${systemStats.activeUsers} active` }}
-          icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="System Uptime"
-          value={`${systemStats.systemUptime}%`}
-          trend={{ direction: 'up', value: 'Last 30 days' }}
-          icon={<Activity className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Security Alerts"
-          value={securityAlerts.length}
-          trend={{ direction: 'down', value: 'Requires attention' }}
-          icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Audit Logs"
-          value={systemStats.auditLogs}
-          trend={{ direction: 'stable', value: 'This month' }}
-          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+      <div data-tour="stat-cards">
+        <StatCardGrid columns={4}>
+          <StatCard
+            label="Total Users"
+            value={isLoading ? '—' : systemStats.totalUsers}
+            trend={{
+              direction: systemStats.activeUsers > 0 ? 'up' : 'stable',
+              value: isLoading ? 'Loading...' : `${systemStats.activeUsers} active`,
+            }}
+            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="System Uptime"
+            value="—"
+            trend={{ direction: 'stable', value: 'Monitoring not configured' }}
+            icon={<Activity className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Security Alerts"
+            value={securityAlerts.length}
+            trend={{ direction: 'stable', value: 'No alerts configured' }}
+            icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Audit Logs"
+            value={isLoading ? '—' : systemStats.auditLogs}
+            trend={{
+              direction: systemStats.auditLogs > 0 ? 'up' : 'stable',
+              value: isLoading ? 'Loading...' : 'This month',
+            }}
+            icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
+      </div>
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
@@ -173,7 +171,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                             ? 'text-rose-500'
                             : alert.severity === 'medium'
                               ? 'text-amber-500'
-                              : 'text-zinc-400'
+                              : 'text-muted-foreground'
                         }`}
                         strokeWidth={1.5}
                       />
@@ -184,7 +182,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
                           {alert.description}
                         </p>
-                        <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 dark:text-zinc-500 mt-0.5">
                           {alert.timestamp}
                         </p>
                       </div>
@@ -204,7 +202,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No security alerts</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No security alerts
+                </p>
               )}
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/super-admin/audit-logs">
@@ -238,7 +238,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                         {component.component}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
                           {component.uptime}% uptime
                         </span>
                         <Badge
@@ -253,7 +253,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No system health data available</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No system health data available
+                </p>
               )}
             </div>
           </BentoCardContent>
@@ -276,7 +278,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                         {roleData.role}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-zinc-500 dark:text-zinc-400 tabular-nums">
+                        <span className="text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
                           {roleData.count} users
                         </span>
                         <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
@@ -288,7 +290,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No role distribution data available</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No role distribution data available
+                </p>
               )}
             </div>
           </BentoCardContent>
@@ -316,7 +320,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   >
                     <div className="flex items-start gap-3">
                       <Lock
-                        className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5"
+                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 mt-0.5"
                         strokeWidth={1.5}
                       />
                       <div>
@@ -324,17 +328,16 @@ export default function SuperAdminDashboardPage(): ReactNode {
                           {log.action}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          By: {log.user} - {log.details}
+                          {log.details ? `${log.details} • ` : ''}{new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
-                      {log.timestamp}
-                    </span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">No recent audit logs</p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
+                  No recent audit logs
+                </p>
               )}
             </div>
           </BentoCardContent>
@@ -342,21 +345,27 @@ export default function SuperAdminDashboardPage(): ReactNode {
       </BentoGrid>
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-4 gap-4" data-tour="quick-actions">
         {quickActions.map((action) => (
           <Link key={action.title} href={action.href}>
             <div
-              className="flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
+              className="group flex items-center gap-3 p-4 rounded-lg bg-card border border-border hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
               style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
             >
-              <action.icon className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+              <action.icon
+                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                strokeWidth={1.5}
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   {action.title}
                 </p>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">{action.description}</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-zinc-400 flex-shrink-0" strokeWidth={1.5} />
+              <ChevronRight
+                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                strokeWidth={1.5}
+              />
             </div>
           </Link>
         ))}

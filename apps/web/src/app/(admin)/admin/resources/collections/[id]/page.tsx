@@ -8,6 +8,7 @@ import {
   useUpdateCollection,
 } from '@/hooks/useResourceCollections';
 import { useResources } from '@/hooks/useResources';
+import { formatDate } from '@/lib/format';
 import {
   Button,
   Card,
@@ -58,7 +59,10 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
     setDepartmentsCsv((collection.target_departments || []).join(', '));
   }, [collection]);
 
-  const memberIds = useMemo(() => new Set(collectionResources.map((item) => item.id)), [collectionResources]);
+  const memberIds = useMemo(
+    () => new Set(collectionResources.map((item) => item.id)),
+    [collectionResources]
+  );
 
   const save = async (): Promise<void> => {
     await updateCollection.mutateAsync({
@@ -97,7 +101,11 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
           <CardTitle>Collection Settings</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" />
+          <Input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Title"
+          />
           <Textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
@@ -136,11 +144,18 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
         </CardHeader>
         <CardContent className="space-y-4">
           {isCollectionResourcesLoading ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading collection resources...</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Loading collection resources...
+            </p>
           ) : collectionResources.length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">No resources in this collection yet.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              No resources in this collection yet.
+            </p>
           ) : (
-            <ResourceGrid columns={4} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <ResourceGrid
+              columns={4}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            >
               {collectionResources.map((resource) => (
                 <div key={resource.id} className="space-y-2">
                   <ResourceCard
@@ -155,7 +170,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
                     viewCount={resource.view_count}
                     downloadCount={resource.download_count}
                     bookmarkCount={resource.bookmark_count}
-                    dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+                    dateLabel={formatDate(resource.published_at || resource.created_at)}
                     onClick={() => {
                       router.push(`/admin/resources/${resource.id}`);
                     }}
@@ -180,7 +195,10 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
           <CardTitle>Add Resources</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResourceGrid columns={4} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <ResourceGrid
+            columns={4}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          >
             {resources
               .filter((resource) => !memberIds.has(resource.id))
               .map((resource) => (
@@ -197,7 +215,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
                     viewCount={resource.view_count}
                     downloadCount={resource.download_count}
                     bookmarkCount={resource.bookmark_count}
-                    dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+                    dateLabel={formatDate(resource.published_at || resource.created_at)}
                     onClick={() => {
                       router.push(`/admin/resources/${resource.id}`);
                     }}

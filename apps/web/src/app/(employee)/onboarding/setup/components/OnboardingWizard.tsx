@@ -4,7 +4,15 @@ import { useCreateOnboardingProfile } from '@/hooks/useCreateOnboardingProfile';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { useUpdateOnboardingProfile } from '@/hooks/useUpdateOnboardingProfile';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, useToast } from '@hr-portal/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  useToast,
+} from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -41,7 +49,11 @@ export function OnboardingWizard(): ReactNode {
     }
 
     // Only sync step from server on initial load to avoid race conditions
-    if (!initialSyncDone.current && profile.current_step && profile.current_step !== draft.currentStep) {
+    if (
+      !initialSyncDone.current &&
+      profile.current_step &&
+      profile.current_step !== draft.currentStep
+    ) {
       setStep(profile.current_step);
     }
 
@@ -320,6 +332,10 @@ export function OnboardingWizard(): ReactNode {
     return <StepReview personalInfo={draft.personalInfo} paymentInfo={draft.paymentInfo} />;
   };
 
+  // Onboarding is mandatory when the profile is not completed.
+  // Hide the Exit button in that case so users cannot bypass the flow.
+  const isMandatory = !profileQuery.data?.data?.is_completed;
+
   return (
     <Card className="w-full max-w-5xl">
       <CardHeader className="space-y-4">
@@ -330,9 +346,11 @@ export function OnboardingWizard(): ReactNode {
               Fill out all required onboarding data. You can continue where you left off.
             </CardDescription>
           </div>
-          <Button variant="outline" onClick={() => router.push('/dashboard')}>
-            Exit
-          </Button>
+          {!isMandatory && (
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              Exit
+            </Button>
+          )}
         </div>
         <ProgressStepper currentStep={draft.currentStep as Step} />
       </CardHeader>

@@ -1,6 +1,6 @@
 # SN Connect HR Portal — User Testing Guide
 
-**Date:** February 2026 | **Version:** 1.0
+**Date:** February 2026 | **Version:** 1.0 | **Developer:** Ceferino Jumao-as V
 
 Welcome! This guide helps you explore and test the SN Connect HR Portal. No technical knowledge required — just follow the steps below for your role.
 
@@ -17,9 +17,12 @@ Welcome! This guide helps you explore and test the SN Connect HR Portal. No tech
 | Role | Email | Password |
 |------|-------|----------|
 | Employee | `employee@example.com` | `SamplePass!234` |
+| Employee | `testing@gmail.com` | `RB&c3JJkw2tt` |
 | Intern | `intern@example.com` | `SamplePass!234` |
-| Admin (HR) | `admin@example.com` | `Sample!234` |
-| Super Admin | `super-admin@example.com` | `Sample!234` |
+| Intern | `meme@gmail.com` | `T#cFwAydC4q#` |
+| Admin (HR) | `admin@example.com` | `SamplePass!234` |
+| Super Admin (COS/CEO) | `super-admin@example.com` | `SamplePass!234` |
+
 
 > **Tip:** Use different browsers or private/incognito tabs to test multiple roles at the same time.
 
@@ -31,19 +34,19 @@ Welcome! This guide helps you explore and test the SN Connect HR Portal. No tech
 - After login, you land on your **Dashboard**
 - Review the greeting, your stats (onboarding progress, tasks due, notifications), and the quick actions grid
 
-### My Tasks (`/tasks`)
+### Tasks (`/tasks`)
 1. Click **Tasks** in the left sidebar
 2. Browse tasks using the **All / Pending / In Progress / Completed / Blocked** tabs
 3. Use the search bar or priority filter to narrow results
 4. Click a task card to view its details
 
-### My Profile (`/profile`)
+### Profile (`/profile`)
 1. Click **Profile** in the sidebar
 2. Browse the **Personal Info**, **Emergency Contact**, and **Security** tabs
 3. Click **Edit Profile** to update your name, phone, address, etc.
 4. Click **Save Changes** — a confirmation message should appear
 
-### Documents / 201 Files (`/files`)
+### Documents (`/files`)
 1. Click **Documents** in the sidebar
 2. View the document completion progress bar at the top
 3. Find a document with status **Not Uploaded** and click its action menu → **Upload**
@@ -207,7 +210,6 @@ These features exist as UI screens but are **not fully functional yet:**
 
 | Feature | Status |
 |---------|--------|
-| Document approval/rejection by HR | Not implemented — documents can be uploaded but HR cannot approve or reject them yet |
 | Profile picture upload | UI placeholder only — upload does not save |
 | Emergency contact editing | Form exists but may not save all fields correctly |
 | Department management page | No admin UI to create/edit departments |

@@ -3,17 +3,32 @@
 import type * as React from 'react';
 import { Label } from '../../primitives/label';
 import { cn } from '../../utils/cn';
-import { ChatInterface } from './ChatInterface';
+import { ChatInterface, type ChatInterfaceMessage } from './ChatInterface';
 
 export interface PlaygroundPanelProps {
   debugMode: boolean;
   onDebugModeChange: (enabled: boolean) => void;
+  /** External chat messages from useAIChat hook */
+  messages?: Array<ChatInterfaceMessage>;
+  /** External send handler from useAIChat hook */
+  onSendMessage?: (content: string) => Promise<void>;
+  /** External loading state */
+  isLoading?: boolean;
+  /** External error */
+  error?: string | null;
+  /** Called to abort an in-flight request */
+  onAbort?: () => void;
   className?: string;
 }
 
 export function PlaygroundPanel({
   debugMode,
   onDebugModeChange,
+  messages,
+  onSendMessage,
+  isLoading,
+  error,
+  onAbort,
   className,
 }: PlaygroundPanelProps): React.ReactNode {
   return (
@@ -59,7 +74,15 @@ export function PlaygroundPanel({
 
       {/* Chat Interface */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <ChatInterface debugMode={debugMode} className="h-full" />
+        <ChatInterface
+          debugMode={debugMode}
+          {...(messages !== undefined && { messages })}
+          {...(onSendMessage !== undefined && { onSendMessage })}
+          {...(isLoading !== undefined && { isLoading })}
+          {...(error !== undefined && { error })}
+          {...(onAbort !== undefined && { onAbort })}
+          className="h-full"
+        />
       </div>
     </div>
   );

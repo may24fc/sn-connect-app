@@ -1,6 +1,15 @@
 'use client';
 
-import { AlertCircle, BookOpen, Calendar, Clock, Send } from 'lucide-react';
+import {
+  AlertCircle,
+  Calendar,
+  CheckSquare,
+  Clock,
+  Plus,
+  Send,
+  Target,
+  X,
+} from 'lucide-react';
 import * as React from 'react';
 import { Button } from '../../primitives/button';
 import {
@@ -13,9 +22,110 @@ import {
 } from '../../primitives/card';
 import { Input } from '../../primitives/input';
 import { Label } from '../../primitives/label';
-import { Textarea } from '../../primitives/textarea';
 import type { EODReportFormData } from '../../types/internship.types';
 import { cn } from '../../utils/cn';
+
+// ─── Multi-Entry Input ───────────────────────────────────────────────────────
+// A reusable sub-component: renders a list of short text inputs with add/remove.
+
+interface MultiEntryFieldProps {
+  entries: string[];
+  onChange: (entries: string[]) => void;
+  placeholder: string;
+  addLabel: string;
+  error?: string | undefined;
+  minEntries?: number | undefined;
+}
+
+function MultiEntryField({
+  entries,
+  onChange,
+  placeholder,
+  addLabel,
+  error,
+  minEntries = 1,
+}: MultiEntryFieldProps): React.ReactNode {
+  const lastInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleEntryChange = (index: number, value: string): void => {
+    const updated = [...entries];
+    updated[index] = value;
+    onChange(updated);
+  };
+
+  const handleAddEntry = (): void => {
+    onChange([...entries, '']);
+    // Focus the new input after render
+    requestAnimationFrame(() => {
+      lastInputRef.current?.focus();
+    });
+  };
+
+  const handleRemoveEntry = (index: number): void => {
+    if (entries.length <= minEntries) return;
+    onChange(entries.filter((_, i) => i !== index));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number): void => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // If current field has text, add a new entry
+      if (entries[index]?.trim()) {
+        handleAddEntry();
+      }
+    }
+    // Backspace on empty field removes it (if not the last required one)
+    if (e.key === 'Backspace' && !entries[index]?.trim() && entries.length > minEntries) {
+      e.preventDefault();
+      handleRemoveEntry(index);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {entries.map((entry, index) => (
+        <div key={`entry-${index}`} className="flex items-center gap-2">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+            {index + 1}
+          </span>
+          <Input
+            ref={index === entries.length - 1 ? lastInputRef : undefined}
+            value={entry}
+            onChange={(e) => handleEntryChange(index, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+            placeholder={index === 0 ? placeholder : 'Add another...'}
+            className={cn(
+              'h-9 text-sm',
+              error && index === 0 && !entry.trim() ? 'border-error' : ''
+            )}
+          />
+          {entries.length > minEntries && (
+            <button
+              type="button"
+              onClick={() => handleRemoveEntry(index)}
+              className="shrink-0 rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={handleAddEntry}
+        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        {addLabel}
+      </button>
+
+      {error && <p className="text-xs text-error">{error}</p>}
+    </div>
+  );
+}
+
+// ─── EOD Report Form ─────────────────────────────────────────────────────────
 
 interface EODReportFormProps {
   onSubmit: (data: EODReportFormData) => void | Promise<void>;
@@ -33,39 +143,39 @@ export function EODReportForm({
   className,
 }: EODReportFormProps): React.ReactNode {
   const initialDate = defaultDate ?? new Date().toISOString().split('T')[0]!;
-  const [formData, setFormData] = React.useState<EODReportFormData>({
-    date: initialDate,
-    tasksCompleted: '',
-    hoursLogged: 8,
-    learnings: '',
-    challenges: '',
-  });
+
+  // Multi-entry arrays for each text field
+  const [date, setDate] = React.useState(initialDate);
+  const [hoursLogged, setHoursLogged] = React.useState(8);
+  const [challengeEntries, setChallengeEntries] = React.useState<string[]>(['']);
+  const [taskEntries, setTaskEntries] = React.useState<string[]>(['']);
+  const [focusEntries, setFocusEntries] = React.useState<string[]>(['']);
 
   const [errors, setErrors] = React.useState<Partial<Record<keyof EODReportFormData, string>>>({});
+
+  // Join non-empty entries with newlines for the final string output
+  const joinEntries = (entries: string[]): string =>
+    entries
+      .map((e) => e.trim())
+      .filter(Boolean)
+      .join('\n');
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof EODReportFormData, string>> = {};
 
-    if (!formData.date) {
+    if (!date) {
       newErrors.date = 'Date is required';
     }
 
-    if (!formData.tasksCompleted.trim()) {
-      newErrors.tasksCompleted = 'Please describe the tasks you completed';
-    } else if (formData.tasksCompleted.length < 20) {
-      newErrors.tasksCompleted = 'Please provide more detail (at least 20 characters)';
-    }
-
-    if (formData.hoursLogged <= 0) {
+    if (hoursLogged <= 0) {
       newErrors.hoursLogged = 'Hours must be greater than 0';
-    } else if (formData.hoursLogged > maxHoursPerDay) {
+    } else if (hoursLogged > maxHoursPerDay) {
       newErrors.hoursLogged = `Maximum ${maxHoursPerDay} hours per day`;
     }
 
-    if (!formData.learnings.trim()) {
-      newErrors.learnings = 'Please share what you learned today';
-    } else if (formData.learnings.length < 10) {
-      newErrors.learnings = 'Please provide more detail (at least 10 characters)';
+    const tasks = joinEntries(taskEntries);
+    if (!tasks) {
+      newErrors.tasksCompleted = 'Add at least one task you completed';
     }
 
     setErrors(newErrors);
@@ -75,15 +185,44 @@ export function EODReportForm({
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (validateForm()) {
+      const challenges = joinEntries(challengeEntries);
+      const focusTomorrow = joinEntries(focusEntries);
+      const formData: EODReportFormData = {
+        date,
+        hoursLogged,
+        tasksCompleted: joinEntries(taskEntries),
+        ...(challenges ? { challenges } : {}),
+        ...(focusTomorrow ? { focusTomorrow } : {}),
+      };
       await onSubmit(formData);
     }
   };
 
-  const handleChange = (field: keyof EODReportFormData, value: string | number): void => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
+  const handleClear = (): void => {
+    setDate(initialDate);
+    setHoursLogged(8);
+    setChallengeEntries(['']);
+    setTaskEntries(['']);
+    setFocusEntries(['']);
+    setErrors({});
+  };
+
+  // Clear individual field errors when user types
+  const handleTaskChange = (entries: string[]): void => {
+    setTaskEntries(entries);
+    if (errors.tasksCompleted) {
+      const { tasksCompleted: _, ...rest } = errors;
+      setErrors(rest);
+    }
+  };
+
+  const clearError = (field: keyof EODReportFormData): void => {
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [field]: _, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
@@ -105,24 +244,27 @@ export function EODReportForm({
         <CardContent className="space-y-6">
           {/* Date and Hours Row */}
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="date" className="flex items-center gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="date" className="flex items-center gap-2 text-sm font-medium">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 Date
               </Label>
               <Input
                 id="date"
                 type="date"
-                value={formData.date}
-                onChange={(e) => handleChange('date', e.target.value)}
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  clearError('date');
+                }}
                 max={new Date().toISOString().split('T')[0]}
-                className={errors.date ? 'border-error' : ''}
+                className={cn('h-9', errors.date ? 'border-error' : '')}
               />
               {errors.date && <p className="text-xs text-error">{errors.date}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="hours" className="flex items-center gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="hours" className="flex items-center gap-2 text-sm font-medium">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 Hours Logged
               </Label>
@@ -132,79 +274,77 @@ export function EODReportForm({
                 min="0.5"
                 max={maxHoursPerDay}
                 step="0.5"
-                value={formData.hoursLogged}
-                onChange={(e) =>
-                  handleChange('hoursLogged', Number.parseFloat(e.target.value) || 0)
-                }
-                className={errors.hoursLogged ? 'border-error' : ''}
+                value={hoursLogged}
+                onChange={(e) => {
+                  setHoursLogged(Number.parseFloat(e.target.value) || 0);
+                  clearError('hoursLogged');
+                }}
+                className={cn('h-9', errors.hoursLogged ? 'border-error' : '')}
               />
               {errors.hoursLogged && <p className="text-xs text-error">{errors.hoursLogged}</p>}
             </div>
           </div>
 
-          {/* Tasks Completed */}
+          {/* Challenges/Blockers — multi-entry (optional) */}
           <div className="space-y-2">
-            <Label htmlFor="tasks" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-              Tasks Completed *
-            </Label>
-            <Textarea
-              id="tasks"
-              placeholder="Describe the tasks you worked on today. Be specific about what you accomplished..."
-              value={formData.tasksCompleted}
-              onChange={(e) => handleChange('tasksCompleted', e.target.value)}
-              className={cn('min-h-[100px]', errors.tasksCompleted ? 'border-error' : '')}
-            />
-            {errors.tasksCompleted && <p className="text-xs text-error">{errors.tasksCompleted}</p>}
-          </div>
-
-          {/* Key Learnings */}
-          <div className="space-y-2">
-            <Label htmlFor="learnings" className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-              Key Learnings *
-            </Label>
-            <Textarea
-              id="learnings"
-              placeholder="What did you learn today? What new skills or knowledge did you gain?"
-              value={formData.learnings}
-              onChange={(e) => handleChange('learnings', e.target.value)}
-              className={cn('min-h-[80px]', errors.learnings ? 'border-error' : '')}
-            />
-            {errors.learnings && <p className="text-xs text-error">{errors.learnings}</p>}
-          </div>
-
-          {/* Challenges (Optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="challenges" className="flex items-center gap-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
               <AlertCircle className="h-4 w-4 text-muted-foreground" />
-              Challenges Faced (Optional)
+              Challenges / Blockers
+              <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
             </Label>
-            <Textarea
-              id="challenges"
-              placeholder="Did you face any challenges or blockers today? How did you address them?"
-              value={formData.challenges || ''}
-              onChange={(e) => handleChange('challenges', e.target.value)}
-              className="min-h-[80px]"
+            <p className="text-xs text-muted-foreground -mt-0.5">
+              Any blockers or difficulties you encountered today?
+            </p>
+            <MultiEntryField
+              entries={challengeEntries}
+              onChange={setChallengeEntries}
+              placeholder="What blocked or slowed you down?"
+              addLabel="Add another blocker"
+              minEntries={0}
+            />
+          </div>
+
+          {/* Tasks Completed — multi-entry */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <CheckSquare className="h-4 w-4 text-muted-foreground" />
+              Tasks Completed
+              <span className="text-error">*</span>
+            </Label>
+            <p className="text-xs text-muted-foreground -mt-0.5">
+              What did you accomplish today? One task per line.
+            </p>
+            <MultiEntryField
+              entries={taskEntries}
+              onChange={handleTaskChange}
+              placeholder="Completed task..."
+              addLabel="Add another task"
+              error={errors.tasksCompleted}
+            />
+          </div>
+
+          {/* Focus Tomorrow — multi-entry (optional) */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Target className="h-4 w-4 text-muted-foreground" />
+              Focus Tomorrow
+              <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+            </Label>
+            <p className="text-xs text-muted-foreground -mt-0.5">
+              What will you focus on tomorrow?
+            </p>
+            <MultiEntryField
+              entries={focusEntries}
+              onChange={setFocusEntries}
+              placeholder="Tomorrow I will..."
+              addLabel="Add another focus item"
+              minEntries={0}
             />
           </div>
         </CardContent>
 
         <CardFooter className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setFormData({
-                date: initialDate,
-                tasksCompleted: '',
-                hoursLogged: 8,
-                learnings: '',
-                challenges: '',
-              });
-              setErrors({});
-            }}
-          >
+          <Button type="button" variant="outline" onClick={handleClear}>
             Clear
           </Button>
           <Button type="submit" disabled={isSubmitting}>

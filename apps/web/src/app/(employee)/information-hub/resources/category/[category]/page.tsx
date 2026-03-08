@@ -1,7 +1,14 @@
 'use client';
 
 import { useResourceFeed } from '@/hooks/useResourceFeed';
-import { Button, ResourceCard, ResourceFilters, ResourceGrid, type ResourceFiltersValue } from '@hr-portal/ui';
+import { formatDate } from '@/lib/format';
+import {
+  Button,
+  ResourceCard,
+  ResourceFilters,
+  type ResourceFiltersValue,
+  ResourceGrid,
+} from '@hr-portal/ui';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -11,7 +18,9 @@ export default function ResourceCategoryPage({
   params: Promise<{ category: string }>;
 }) {
   const [category, setCategory] = useState('');
-  const [sortBy, setSortBy] = useState<'newest' | 'most_viewed' | 'most_downloaded' | 'title'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'most_viewed' | 'most_downloaded' | 'title'>(
+    'newest'
+  );
   const [filters, setFilters] = useState<ResourceFiltersValue>({
     search: '',
     status: 'all',
@@ -61,7 +70,11 @@ export default function ResourceCategoryPage({
           categories={[{ value: category, label: category }]}
         />
         <div className="flex items-center gap-2">
-          <Button variant={sortBy === 'newest' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('newest')}>
+          <Button
+            variant={sortBy === 'newest' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('newest')}
+          >
             Newest
           </Button>
           <Button
@@ -78,7 +91,11 @@ export default function ResourceCategoryPage({
           >
             Most Downloaded
           </Button>
-          <Button variant={sortBy === 'title' ? 'default' : 'outline'} size="sm" onClick={() => setSortBy('title')}>
+          <Button
+            variant={sortBy === 'title' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortBy('title')}
+          >
             Title
           </Button>
         </div>
@@ -87,7 +104,10 @@ export default function ResourceCategoryPage({
       {isLoading ? (
         <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading resources...</div>
       ) : (
-        <ResourceGrid columns={4} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <ResourceGrid
+          columns={4}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        >
           {resources.map((resource) => (
             <ResourceCard
               key={resource.id}
@@ -102,7 +122,7 @@ export default function ResourceCategoryPage({
               viewCount={resource.view_count}
               downloadCount={resource.download_count}
               bookmarkCount={resource.bookmark_count}
-              dateLabel={(resource.published_at || resource.created_at).slice(0, 10)}
+              dateLabel={formatDate(resource.published_at || resource.created_at)}
               onClick={() => {
                 window.location.href = `/information-hub/resources/${resource.id}`;
               }}

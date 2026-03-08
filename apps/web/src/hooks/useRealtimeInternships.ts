@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 
 export interface ActiveInternship {
@@ -42,10 +42,10 @@ const internshipPayloadSchema = z.object({
 
 /**
  * Real-time hook for Active Internships
- * 
+ *
  * Subscribes to internships table CDC events and invalidates TanStack Query cache.
  * RLS policies ensure only admins can subscribe to this channel.
- * 
+ *
  * Events monitored:
  * - INSERT: New internship created (e.g., from intern assignment)
  * - UPDATE: Internship modified (e.g., hours logged, supervisor assigned)

@@ -1,9 +1,24 @@
 'use client';
 
+import { TourProvider, useTour } from '@/components/TourProvider';
 import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
-import { AIChatbot, Header, Sidebar, ToastProvider } from '@hr-portal/ui';
+import {
+  useDeleteNotification,
+  useMarkAllRead,
+  useMarkNotificationRead,
+  useNotifications,
+  useUnreadCount,
+} from '@/hooks/useNotifications';
+import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
+import { useTheme } from 'next-themes';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
+
+// Lazy-load the chatbot — it's interactive and only opened on demand
+const AIChatbot = dynamic(() => import('@hr-portal/ui').then((m) => ({ default: m.AIChatbot })), {
+  ssr: false,
+});
 
 export default function EmployeeLayout({
   children,
@@ -39,18 +54,64 @@ export default function EmployeeLayout({
     router.push('/profile');
   };
 
+  return (
+    <ToastProvider>
+      <TourProvider>
+        <EmployeeLayoutInner
+          user={user}
+          pathname={pathname}
+          sidebarCollapsed={sidebarCollapsed}
+          setSidebarCollapsed={setSidebarCollapsed}
+          mobileMenuOpen={mobileMenuOpen}
+          setMobileMenuOpen={setMobileMenuOpen}
+          onNavigate={handleNavigate}
+          onLogout={handleLogout}
+          onProfileClick={handleProfileClick}
+        >
+          {children}
+        </EmployeeLayoutInner>
+      </TourProvider>
+    </ToastProvider>
+  );
+}
+
+function EmployeeLayoutInner({
+  user,
+  pathname,
+  sidebarCollapsed,
+  setSidebarCollapsed,
+  mobileMenuOpen,
+  setMobileMenuOpen,
+  onNavigate,
+  onLogout,
+  onProfileClick,
+  children,
+}: {
+  user: NonNullable<ReturnType<typeof useRequireAuth>>;
+  pathname: string;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (v: boolean) => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (v: boolean) => void;
+  onNavigate: (href: string) => void;
+  onLogout: () => void;
+  onProfileClick: () => void;
+  children: ReactNode;
+}): ReactNode {
+  const { startTour, currentGroup } = useTour();
+  const { theme, setTheme } = useTheme();
+
   // Determine sidebar variant based on user role
   const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
 
   return (
-    <ToastProvider>
-      <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block flex-shrink-0">
         <Sidebar
           variant={sidebarVariant}
           currentPath={pathname}
-          onNavigate={handleNavigate}
+          onNavigate={onNavigate}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
@@ -61,7 +122,7 @@ export default function EmployeeLayout({
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
           <div className="relative z-10 flex-shrink-0">
-            <Sidebar variant={sidebarVariant} currentPath={pathname} onNavigate={handleNavigate} />
+            <Sidebar variant={sidebarVariant} currentPath={pathname} onNavigate={onNavigate} />
           </div>
         </div>
       )}
@@ -71,21 +132,40 @@ export default function EmployeeLayout({
         <Header
           user={user}
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-          onLogout={handleLogout}
-          onProfileClick={handleProfileClick}
-          notificationCount={3}
-          onNotificationsClick={() => {
-            // TODO: Open notifications panel
-          }}
+          onLogout={onLogout}
+          onProfileClick={onProfileClick}
+          onHelpClick={currentGroup ? startTour : undefined}
+          notificationSlot={<EmployeeNotificationBell />}
+          aiChatSlot={<AIChatbot />}
+          theme={theme ?? 'light'}
+          onThemeChange={setTheme}
         />
 
         {/* Scrollable Content Area */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
+    </div>
+  );
+}
 
-      {/* AI Chatbot */}
-      <AIChatbot />
-      </div>
-    </ToastProvider>
+/** Wires real notification data into the NotificationBell component */
+function EmployeeNotificationBell(): ReactNode {
+  const router = useRouter();
+  const { data } = useNotifications({ page: 1, pageSize: 5 });
+  const { data: unreadCount } = useUnreadCount();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllRead();
+  const deleteNotification = useDeleteNotification();
+
+  return (
+    <NotificationBell
+      notifications={data?.data ?? []}
+      unreadCount={unreadCount ?? 0}
+      onMarkRead={(id) => markRead.mutate(id)}
+      onMarkAllRead={() => markAllRead.mutate()}
+      onDelete={(id) => deleteNotification.mutate(id)}
+      onNavigate={(path) => router.push(path)}
+      onViewAll={() => router.push('/notifications')}
+    />
   );
 }

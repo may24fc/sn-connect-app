@@ -18,8 +18,16 @@ export function useAnnouncementFeed(filters: AnnouncementFilters = {}) {
     queryFn: async (): Promise<AnnouncementFeedResponse> => {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
-      if (filters.category) params.append('category', filters.category);
-      if (filters.readStatus) params.append('readStatus', filters.readStatus);
+      if (filters.categories && filters.categories.length > 0) {
+        params.append('category', filters.categories.join(','));
+      } else if (filters.category) {
+        params.append('category', filters.category);
+      }
+      if (filters.readStatuses && filters.readStatuses.length > 0) {
+        params.append('readStatus', filters.readStatuses.join(','));
+      } else if (filters.readStatus) {
+        params.append('readStatus', filters.readStatus);
+      }
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
 

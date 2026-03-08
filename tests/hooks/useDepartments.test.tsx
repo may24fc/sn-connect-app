@@ -299,9 +299,7 @@ describe('useCreateDepartment', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
 
-    expect(result.current.error).toEqual(
-      new Error('Department with this name already exists')
-    );
+    expect(result.current.error).toEqual(new Error('Department with this name already exists'));
   });
 
   it('should handle validation error', async () => {
@@ -407,9 +405,7 @@ describe('useCreateDepartment', () => {
       name: 'Operations',
     };
 
-    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-      new Error('Network error')
-    );
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useCreateDepartment(), {
       wrapper: createWrapper(),

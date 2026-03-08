@@ -1,3 +1,7 @@
+import {
+  createNotification,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -65,6 +69,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (error || !data) {
       console.error('Error approving report:', error);
       return NextResponse.json({ error: 'Failed to update report status' }, { status: 500 });
+    }
+
+    // Notify the report owner about the approval/rejection
+    if (data.created_by && data.created_by !== user.id) {
+      const reviewerName = await getUserDisplayName(user.id);
+      const isApproved = parsed.data.action === 'approved';
+
+      createNotification({
+        userId: data.created_by,
+        type: isApproved ? 'report_approved' : 'report_rejected',
+        title: isApproved ? 'Report Approved' : 'Report Rejected',
+        message: `${reviewerName} ${isApproved ? 'approved' : 'rejected'} your ${data.report_type?.replace(/_/g, ' ') ?? 'report'}${parsed.data.notes ? `: ${parsed.data.notes}` : ''}`,
+        link: `/reports`,
+        metadata: { reportId: id, reviewedBy: user.id, action: parsed.data.action },
+      });
     }
 
     return NextResponse.json({ data });

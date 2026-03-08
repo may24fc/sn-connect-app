@@ -7,7 +7,14 @@ export { Input, type InputProps } from './primitives/input';
 export { PasswordInput, type PasswordInputProps } from './primitives/password-input';
 export { Textarea, type TextareaProps } from './primitives/textarea';
 export { Skeleton, type SkeletonProps } from './primitives/skeleton';
-export { Toast, ToastProvider, useToast, type ToastProps, type ToastVariant } from './primitives/toast';
+export {
+  Toast,
+  ToastProvider,
+  useToast,
+  type ToastProps,
+  type ToastState,
+  type ToastVariant,
+} from './primitives/toast';
 export { Label } from './primitives/label';
 export {
   Card,
@@ -20,6 +27,7 @@ export {
 export { Badge, badgeVariants, type BadgeProps } from './primitives/badge';
 export { Avatar, AvatarImage, AvatarFallback } from './primitives/avatar';
 export { Progress } from './primitives/progress';
+export { FileDropZone, type FileDropZoneProps } from './primitives/file-drop-zone';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './primitives/tabs';
 export {
   Dialog,
@@ -63,6 +71,20 @@ export {
 } from './primitives/dropdown-menu';
 export { Separator } from './primitives/separator';
 export {
+  SlidePanel,
+  SlidePanelTrigger,
+  SlidePanelClose,
+  SlidePanelOverlay,
+  SlidePanelContent,
+  SlidePanelHeader,
+  SlidePanelTitle,
+  SlidePanelDescription,
+  SlidePanelBody,
+  SlidePanelFooter,
+  SlidePanelSection,
+  type SlidePanelContentProps,
+} from './primitives/slide-panel';
+export {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
@@ -86,22 +108,45 @@ export { Sidebar } from './layout/Sidebar';
 export { Header } from './layout/Header';
 // Shared Components
 export { EmptyState, type EmptyStateProps } from './components/empty-state';
+export {
+  MultiSelectFilter,
+  ActiveFilterBadges,
+  type FilterOption,
+  type MultiSelectFilterProps,
+} from './components/MultiSelectFilter';
+// Document Components
+export { FullScreenPreview, type FullScreenPreviewProps } from './components/documents';
 // Components
 export { AIChatbot, type ChatMessage, type AIChatbotProps } from './components/AIChatbot';
 export {
   Form,
+  FormErrorMessage,
   FormField,
+  FormGroup,
   FormInput,
+  FormLabel,
   FormSelect,
   FormTextarea,
+  PhoneInput,
+  CurrencySelector,
+  BankSelector,
 } from './components/forms';
 export type {
   FormProps,
+  FormErrorMessageProps,
   FormFieldProps,
+  FormGroupProps,
   FormInputProps,
+  FormLabelProps,
   FormSelectOption,
   FormSelectProps,
   FormTextareaProps,
+  PhoneInputProps,
+  PhoneCountry,
+  CurrencySelectorProps,
+  CurrencyOption,
+  BankSelectorProps,
+  BankOption,
 } from './components/forms';
 
 // AI Knowledge Components
@@ -118,6 +163,7 @@ export {
   ChatMessage as AIKnowledgeChatMessage,
   DebugPanel,
   AccessToggle,
+  VersionHistory,
 } from './components/ai-knowledge';
 export type {
   AIKnowledgeManagerProps,
@@ -129,9 +175,12 @@ export type {
   SourceRowProps,
   SourceFiltersProps,
   ChatInterfaceProps,
+  ChatInterfaceMessage,
   ChatMessageProps as AIKnowledgeChatMessageProps,
   DebugPanelProps,
   AccessToggleProps,
+  VersionHistoryProps,
+  VersionRecord,
 } from './components/ai-knowledge';
 
 // Performance Components
@@ -171,6 +220,44 @@ export {
   InternPersonalStats,
 } from './components/internship/InternshipSummaryCards';
 export { EODReportForm } from './components/internship/EODReportForm';
+export {
+  InternHoursProgressBar,
+  type InternHoursProgressBarProps,
+} from './components/internship/InternHoursProgressBar';
+
+// Dashboard Components
+export {
+  MilestoneFeed,
+  type MilestoneFeedProps,
+  type MilestoneItem,
+} from './components/dashboard/MilestoneFeed';
+export {
+  RoleDashboardWidget,
+  type RoleDashboardWidgetProps,
+  type KPICardData,
+} from './components/dashboard/RoleDashboardWidget';
+export {
+  PendingApprovalsCard,
+  type PendingApprovalsCardProps,
+} from './components/dashboard/PendingApprovalsCard';
+
+// Profile Components
+export {
+  RoleMetadataForm,
+  RoleMetadataFormContainer,
+  type RoleMetadataFormProps,
+  type RoleMetadataFormContainerProps,
+  type RoleMetadataFieldConfig,
+  type RoleTypeConfig,
+} from './components/profile/RoleMetadataForm';
+
+// Notification Components
+export {
+  NotificationBell,
+  type NotificationBellProps,
+  type NotificationItem,
+  type NotificationType,
+} from './components/notifications/NotificationBell';
 
 // Reports Components
 export {
@@ -249,11 +336,14 @@ export type {
   KeyResultId,
   KPIId,
   ReviewId,
+  OKRTargetId,
+  TargetMetricType,
   CycleStatus,
   PerformanceCycle,
   OKRStatus,
   KeyResult,
   OKR,
+  OKRTarget,
   KPI,
   ReviewStatus,
   PerformanceRating,
@@ -300,6 +390,7 @@ export type {
   TaskAssignmentId,
   TaskPriority,
   TaskStatus,
+  TaskCategory,
   Task,
   TaskAssignee,
   TaskFormData,
@@ -309,6 +400,7 @@ export type {
 export {
   TASK_PRIORITY_CONFIG,
   TASK_STATUS_CONFIG,
+  TASK_CATEGORIES,
   isTaskOverdue,
   getDaysUntilDue,
   formatDueDate,
@@ -323,6 +415,7 @@ export {
   AnnouncementPreview,
   AttachmentUploader,
   AnnouncementAnalytics,
+  AnnouncementAnalyticsDashboard,
   AnnouncementDetailDialog,
 } from './components/announcements';
 export type {
@@ -335,6 +428,8 @@ export type {
   AnnouncementPreviewProps,
   AttachmentUploaderProps,
   AnnouncementAnalyticsProps,
+  AnnouncementAnalyticsDashboardProps,
+  AnnouncementAnalyticsData,
   AnnouncementDetailDialogProps,
 } from './components/announcements';
 
@@ -363,6 +458,7 @@ export type {
   ResourceUploaderProps,
   ResourcePreviewProps,
   VideoPlayerProps,
+  ResourceAccessLevel,
   DocumentViewerProps,
   ResourceAnalyticsProps,
   ResourceTargetingSelectorProps,
@@ -380,5 +476,5 @@ export type {
   ChatMessage as AIKnowledgeChatMessageType,
   SourceAttribution,
   UploadProgress as UploadProgressType,
-  FilterOption,
+  KnowledgeFilterOption,
 } from './types/ai-knowledge.types';

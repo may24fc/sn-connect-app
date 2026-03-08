@@ -1,21 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useApproveOnboarding } from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  CheckCircle,
-  Loader2,
-  XCircle,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Briefcase,
-  Calendar,
-  FileText,
-} from 'lucide-react';
+import { Button } from '@hr-portal/ui/primitives/button';
 import {
   Dialog,
   DialogContent,
@@ -23,11 +10,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@hr-portal/ui/primitives/dialog';
-import { Button } from '@hr-portal/ui/primitives/button';
 import { Label } from '@hr-portal/ui/primitives/label';
-import { Textarea } from '@hr-portal/ui/primitives/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hr-portal/ui/primitives/tabs';
-import { useApproveOnboarding } from '@/hooks/useUserManagement';
+import { Textarea } from '@hr-portal/ui/primitives/textarea';
+import {
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  FileText,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  XCircle,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 const approvalSchema = z.object({
   notes: z.string().optional(),
@@ -152,8 +152,8 @@ export function ApproveOnboardingModal({
             Review Onboarding Submission
           </DialogTitle>
           <DialogDescription>
-            Review the submitted information and approve or reject this{' '}
-            {onboarding.role} onboarding.
+            Review the submitted information and approve or reject this {onboarding.role}{' '}
+            onboarding.
           </DialogDescription>
         </DialogHeader>
 
@@ -168,11 +168,11 @@ export function ApproveOnboardingModal({
                 </p>
                 <div className="mt-2 flex items-center gap-4 text-sm">
                   <span className="inline-flex items-center gap-1">
-                    <Briefcase className="h-3.5 w-3.5 text-zinc-500" />
+                    <Briefcase className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                     {onboarding.position || 'No position specified'}
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-zinc-500" />
+                    <Calendar className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                     Submitted {formatDate(onboarding.completed_at)}
                   </span>
                 </div>
@@ -208,11 +208,7 @@ export function ApproveOnboardingModal({
               <InfoField
                 icon={<Calendar className="h-4 w-4" />}
                 label="Birth Date"
-                value={
-                  onboarding.birthday
-                    ? formatDate(onboarding.birthday)
-                    : 'Not provided'
-                }
+                value={onboarding.birthday ? formatDate(onboarding.birthday) : 'Not provided'}
               />
               <InfoField
                 icon={<Mail className="h-4 w-4" />}
@@ -286,9 +282,7 @@ export function ApproveOnboardingModal({
                 {...register('notes')}
                 disabled={approveOnboarding.isPending}
               />
-              {errors.notes && (
-                <p className="text-sm text-red-600">{errors.notes.message}</p>
-              )}
+              {errors.notes && <p className="text-sm text-red-600">{errors.notes.message}</p>}
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-700">
@@ -368,7 +362,7 @@ function InfoField({
 }) {
   return (
     <div className="flex items-start gap-3">
-      {icon && <div className="text-zinc-500 mt-0.5">{icon}</div>}
+      {icon && <div className="text-zinc-500 dark:text-zinc-400 mt-0.5">{icon}</div>}
       <div className="flex-1 min-w-0">
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">{label}</p>
         <p className="text-sm font-medium break-words">{value}</p>

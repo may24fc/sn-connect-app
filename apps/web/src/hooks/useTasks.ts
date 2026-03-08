@@ -1,3 +1,4 @@
+import { STALE_TIMES } from '@/lib/query-client';
 import { type TaskFilters, queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
 
@@ -55,5 +56,6 @@ export function useTasks(filters: TaskFilters = {}, options: UseTasksOptions = {
       return response.json();
     },
     enabled: options.enabled ?? true,
+    staleTime: STALE_TIMES.dynamic,
   });
 }

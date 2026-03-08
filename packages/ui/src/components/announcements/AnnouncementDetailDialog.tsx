@@ -1,5 +1,6 @@
 'use client';
 
+import { Calendar, Clock } from 'lucide-react';
 import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
 import {
@@ -10,7 +11,6 @@ import {
   DialogTitle,
 } from '../../primitives/dialog';
 import { Separator } from '../../primitives/separator';
-import { Calendar, Clock } from 'lucide-react';
 
 export interface AnnouncementDetailDialogProps {
   open: boolean;
@@ -91,9 +91,7 @@ export function AnnouncementDetailDialog({
                     Pinned
                   </Badge>
                 )}
-                {announcement.status && (
-                  <Badge variant="secondary">{announcement.status}</Badge>
-                )}
+                {announcement.status && <Badge variant="secondary">{announcement.status}</Badge>}
               </div>
             </div>
           </div>

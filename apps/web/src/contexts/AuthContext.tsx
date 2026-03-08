@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Type definitions
 export type UserRoleType = 'employee' | 'intern' | 'admin' | 'super_admin';
@@ -28,8 +29,8 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const [isLoading, setIsLoading] = React.useState(true);
   const userRef = React.useRef<User | null>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const supabase = React.useMemo(() => createSupabaseBrowserClient(), []);
   const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
   const useMock = enableMockAuth || !supabase;
@@ -381,7 +383,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
               router.push(mock.user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
               break;
             case 'intern':
-              router.push(mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
+              router.push(
+                mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup'
+              );
               break;
             case 'admin':
               router.push('/admin/dashboard');
@@ -415,6 +419,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           throw new Error('Unable to load user profile.');
         }
 
+        // Invalidate all stale queries after login to ensure fresh data
+        await queryClient.invalidateQueries();
+        // Refresh router to clear Next.js server-side cache (fixes stale
+        // state after signup → email confirmation → login flow)
+        router.refresh();
+
         // Handle pending_onboarding status - redirect to onboarding
         if (nextUser.status === 'pending_onboarding') {
           router.push('/onboarding/setup');
@@ -447,38 +457,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         setIsLoading(false);
       }
     },
-    [MOCK_USERS, router, supabase, syncAuthState, useMock]
-  );
-
-  const signup = React.useCallback(
-    async (email: string, password: string, fullName: string): Promise<void> => {
-      if (useMock) {
-        throw new Error('Signup is not available in mock auth mode.');
-      }
-
-      if (!supabase) {
-        throw new Error('Authentication service is not configured.');
-      }
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // After signup, the user must confirm their email. The caller is responsible
-      // for redirecting to the confirmation page.
-    },
-    [supabase, useMock]
+    [MOCK_USERS, queryClient, router, supabase, syncAuthState, useMock]
   );
 
   const logout = React.useCallback(async (): Promise<void> => {
@@ -508,16 +487,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     }
   }, [router, supabase, useMock]);
 
+  const refreshUser = React.useCallback(async () => {
+    if (useMock || !supabase) return;
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) return;
+      await syncAuthState(data.user);
+    } catch (err) {
+      console.warn('Failed to refresh user:', err);
+    }
+  }, [supabase, syncAuthState, useMock]);
+
   const value = React.useMemo(
     () => ({
       user,
       isLoading,
       login,
-      signup,
       logout,
+      refreshUser,
       isAuthenticated: !!user,
     }),
-    [user, isLoading, login, signup, logout]
+    [user, isLoading, login, logout, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

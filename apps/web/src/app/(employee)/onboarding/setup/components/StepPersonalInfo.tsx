@@ -3,6 +3,7 @@
 import {
   Input,
   Label,
+  PhoneInput,
   Select,
   SelectContent,
   SelectItem,
@@ -198,12 +199,13 @@ export function StepPersonalInfo({
             <Label htmlFor="contactNumber">
               Contact Number <span className="text-rose-500">*</span>
             </Label>
-            <Input
+            <PhoneInput
               id="contactNumber"
-              type="tel"
               value={get('contactNumber')}
-              onChange={(e) => update('contactNumber', e.target.value)}
-              placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+              onChange={(val) => update('contactNumber', val)}
+              countryCode={get('contactCountryCode') || 'PH'}
+              onCountryChange={(code) => update('contactCountryCode', code)}
+              placeholder="Enter phone number"
               required
             />
           </div>
@@ -261,12 +263,13 @@ export function StepPersonalInfo({
             <Label htmlFor="emergencyContactNumber">
               Contact Number <span className="text-rose-500">*</span>
             </Label>
-            <Input
+            <PhoneInput
               id="emergencyContactNumber"
-              type="tel"
               value={get('emergencyContactNumber')}
-              onChange={(e) => update('emergencyContactNumber', e.target.value)}
-              placeholder="09XXXXXXXXX or +639XXXXXXXXX"
+              onChange={(val) => update('emergencyContactNumber', val)}
+              countryCode={get('emergencyContactCountryCode') || 'PH'}
+              onCountryChange={(code) => update('emergencyContactCountryCode', code)}
+              placeholder="Enter phone number"
               required
             />
           </div>

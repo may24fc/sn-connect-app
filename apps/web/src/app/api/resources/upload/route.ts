@@ -1,6 +1,6 @@
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isResourceAdmin } from '../_lib';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 const ALLOWED_MIME_TYPES = [
   'video/mp4',

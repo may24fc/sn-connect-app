@@ -1,10 +1,6 @@
 import { createKPISchema, updateKPISchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import {
-  getAuthedPerformanceContext,
-  isPerformanceAdmin,
-  resolveEmployeeIdForUser,
-} from '../_lib';
+import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +23,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Use admin client to bypass RLS cross-table subquery failures.
-    let query = supabaseAdmin.from('kpis').select('*').order('created_at', { ascending: false });
+    let query = supabaseAdmin
+      .from('kpis')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
 
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
     const parsed = createKPISchema.safeParse(body);
 
     if (!parsed.success) {
-      console.error('POST /api/performance/kpis validation error:', JSON.stringify(parsed.error.flatten()));
+      console.error(
+        'POST /api/performance/kpis validation error:',
+        JSON.stringify(parsed.error.flatten())
+      );
       return NextResponse.json(
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }

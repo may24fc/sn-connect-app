@@ -1,11 +1,15 @@
+import {
+  createNotification,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { taskUpdateSchema } from '@/lib/schemas/task.schema';
+import { type NextRequest, NextResponse } from 'next/server';
 import {
   TASK_ASSIGNER_ROLE,
   getTaskAuthedContext,
   getTaskWriteErrorMessage,
   validateTaskAssignee,
 } from '../_lib';
-import { type NextRequest, NextResponse } from 'next/server';
 
 interface EmployeeNameRow {
   user_id: string;
@@ -137,6 +141,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       updates.completed_at = null;
     }
 
+    // Fetch existing task data before update for comparison
+    const { data: existingTask } = await supabase
+      .from('tasks')
+      .select('title, status, assigned_to, assigned_by')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
+
     const { data, error } = await supabase
       .from('tasks')
       .update(updates)
@@ -148,6 +160,62 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (error || !data) {
       console.error('Error updating task:', error);
       return NextResponse.json({ error: getTaskWriteErrorMessage(error) }, { status: 500 });
+    }
+
+    // Send notifications based on what changed
+    const updaterName = await getUserDisplayName(user.id);
+    const taskTitle = data.title;
+
+    // If task was re-assigned to a new person, notify the new assignee
+    if (
+      parsed.data.assignedTo &&
+      parsed.data.assignedTo !== existingTask?.assigned_to
+    ) {
+      createNotification({
+        userId: parsed.data.assignedTo,
+        type: 'task_assigned',
+        title: 'Task Assigned to You',
+        message: `${updaterName} assigned you a task: "${taskTitle}"`,
+        link: `/tasks`,
+        metadata: { taskId: id, assignedBy: user.id },
+      });
+    }
+
+    // If status changed, notify relevant parties
+    if (parsed.data.status && parsed.data.status !== existingTask?.status) {
+      const statusLabels: Record<string, string> = {
+        pending: 'Pending',
+        in_progress: 'In Progress',
+        completed: 'Completed',
+        cancelled: 'Cancelled',
+      };
+      const statusLabel = statusLabels[parsed.data.status] ?? parsed.data.status;
+
+      // If an employee/intern updated the status, notify the assigner (admin)
+      if (role !== TASK_ASSIGNER_ROLE && data.assigned_by) {
+        createNotification({
+          userId: data.assigned_by,
+          type: parsed.data.status === 'completed' ? 'system' : 'system',
+          title: parsed.data.status === 'completed'
+            ? 'Task Completed'
+            : 'Task Status Updated',
+          message: `${updaterName} updated "${taskTitle}" to ${statusLabel}`,
+          link: `/admin/tasks`,
+          metadata: { taskId: id, newStatus: parsed.data.status },
+        });
+      }
+
+      // If admin updated the status, notify the assignee
+      if (role === TASK_ASSIGNER_ROLE && data.assigned_to && data.assigned_to !== user.id) {
+        createNotification({
+          userId: data.assigned_to,
+          type: 'system',
+          title: 'Task Status Updated',
+          message: `${updaterName} updated "${taskTitle}" to ${statusLabel}`,
+          link: `/tasks`,
+          metadata: { taskId: id, newStatus: parsed.data.status },
+        });
+      }
     }
 
     return NextResponse.json({ data });

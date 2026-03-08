@@ -1,3 +1,4 @@
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { updateInternshipSchema } from '@/lib/schemas/internship.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -71,27 +72,28 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       updated_at: string;
     };
 
-    const [{ data: internEmployee }, { data: supervisorEmployee }, { data: logs }] = await Promise.all([
-      supabase
-        .from('employees')
-        .select('id, user_id, first_name, last_name, company_email, phone, department')
-        .eq('id', internship.employee_id)
-        .is('deleted_at', null)
-        .single(),
-      internship.supervisor_id
-        ? supabase
-            .from('employees')
-            .select('user_id, first_name, last_name, company_email')
-            .eq('user_id', internship.supervisor_id)
-            .is('deleted_at', null)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase
-        .from('intern_daily_logs')
-        .select('*')
-        .eq('internship_id', internship.id)
-        .order('log_date', { ascending: false }),
-    ]);
+    const [{ data: internEmployee }, { data: supervisorEmployee }, { data: logs }] =
+      await Promise.all([
+        supabase
+          .from('employees')
+          .select('id, user_id, first_name, last_name, company_email, phone, department')
+          .eq('id', internship.employee_id)
+          .is('deleted_at', null)
+          .single(),
+        internship.supervisor_id
+          ? supabase
+              .from('employees')
+              .select('user_id, first_name, last_name, company_email')
+              .eq('user_id', internship.supervisor_id)
+              .is('deleted_at', null)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        supabase
+          .from('intern_daily_logs')
+          .select('*')
+          .eq('internship_id', internship.id)
+          .order('log_date', { ascending: false }),
+      ]);
 
     if (!internEmployee) {
       return NextResponse.json({ error: 'Intern profile not found' }, { status: 404 });
@@ -161,10 +163,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const { supabase, user, role, error } = await getAuthedInternshipContext();
@@ -223,6 +222,87 @@ export async function PATCH(
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/internships/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/internships/[id]
+ * Soft delete internship and associated employee record
+ * Permissions: Super Admin only
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createSupabaseServerClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check role permission - super_admin only
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (userData.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Fetch the internship to get the employee_id
+    const { data: internship, error: fetchError } = await supabase
+      .from('internships')
+      .select('id, employee_id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
+
+    if (fetchError || !internship) {
+      return NextResponse.json({ error: 'Internship not found' }, { status: 404 });
+    }
+
+    // Soft delete the internship
+    const { error: deleteError } = await supabase
+      .from('internships')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('deleted_at', null);
+
+    if (deleteError) {
+      console.error('Error deleting internship:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete internship' }, { status: 500 });
+    }
+
+    // Also soft delete the associated employee record
+    if (internship.employee_id) {
+      const { error: empDeleteError } = await supabase
+        .from('employees')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', internship.employee_id)
+        .is('deleted_at', null);
+
+      if (empDeleteError) {
+        console.error('Error deleting associated employee:', empDeleteError);
+      }
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Unexpected error in DELETE /api/internships/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
