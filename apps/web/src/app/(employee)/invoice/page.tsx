@@ -4,6 +4,7 @@ import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateRange, formatLabel } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import {
   Badge,
   Button,
@@ -29,7 +30,7 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, Download, Eye, EyeOff } from 'lucide-react';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
@@ -81,51 +82,173 @@ function InvoiceDetailDialog({
   const amount = (v: number) => (showAmounts ? formatCurrency(v) : MASKED_AMOUNT);
   if (!invoice) return null;
 
+  const statusBadge: Record<string, { label: string; cls: string }> = {
+    draft:     { label: 'DRAFT',     cls: 'bg-zinc-600 text-zinc-100' },
+    submitted: { label: 'PENDING',   cls: 'bg-amber-500 text-white' },
+    approved:  { label: 'APPROVED',  cls: 'bg-emerald-500 text-white' },
+    paid:      { label: 'PAID',      cls: 'bg-emerald-600 text-white' },
+    rejected:  { label: 'REJECTED',  cls: 'bg-red-500 text-white' },
+  };
+  const badge = statusBadge[invoice.status] ?? { label: 'DRAFT', cls: 'bg-zinc-600 text-zinc-100' };
+
+  const timelineSteps = [
+    { label: 'Created',   date: invoice.created_at,   done: true },
+    { label: 'Submitted', date: invoice.submitted_at, done: !!invoice.submitted_at },
+    { label: 'Approved',  date: invoice.approved_at,  done: !!invoice.approved_at },
+    ...(invoice.paid_at ? [{ label: 'Paid', date: invoice.paid_at, done: true }] : []),
+  ];
+
+  const handleDownloadPDF = () => { window.print(); };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Invoice Details</DialogTitle>
-          <DialogDescription className="sr-only">
-            Details for invoice {invoice.invoice_number}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className="sm:max-w-md p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60"
+      >
+        {/* Accessibility tokens — visually hidden */}
+        <DialogTitle className="sr-only">
+          Invoice Details — {invoice.invoice_number}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Details for invoice {invoice.invoice_number}
+        </DialogDescription>
 
-        <div className="space-y-1">
-          <DetailRow label="Invoice #" value={invoice.invoice_number} />
-          <DetailRow label="Status" value={formatLabel(invoice.status)} />
-          <Separator className="my-2" />
-          <DetailRow
-            label="Period"
-            value={formatDateRange(invoice.period_start, invoice.period_end)}
-          />
-          <DetailRow
-            label="Gross Amount"
-            value={amount(Number(invoice.gross_amount || 0))}
-          />
-          <DetailRow label="Deductions" value={amount(Number(invoice.deductions || 0))} />
-          <Separator className="my-2" />
-          <DetailRow
-            label="Net Amount"
-            value={amount(Number(invoice.net_amount || 0))}
-          />
-          {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
-          <Separator className="my-2" />
-          <DetailRow label="Created" value={formatDate(invoice.created_at)} />
-          {invoice.submitted_at && (
-            <DetailRow label="Submitted" value={formatDate(invoice.submitted_at)} />
-          )}
-          {invoice.approved_at && (
-            <DetailRow label="Approved" value={formatDate(invoice.approved_at)} />
-          )}
-          {invoice.paid_at && <DetailRow label="Paid" value={formatDate(invoice.paid_at)} />}
+        {/* ── Dark Header ── */}
+        <div className="bg-zinc-900 px-6 pt-5 pb-5 pr-14">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1.5">
+                Net Amount
+              </p>
+              <p className="text-3xl font-bold text-white font-mono tabular-nums leading-tight">
+                {amount(Number(invoice.net_amount || 0))}
+              </p>
+              <p className="mt-2 text-sm text-zinc-400 font-mono tracking-tight">
+                {invoice.invoice_number}
+              </p>
+            </div>
+            <span
+              className={cn(
+                'shrink-0 mt-0.5 rounded px-2.5 py-1 text-[10px] font-bold tracking-widest uppercase',
+                badge.cls,
+              )}
+            >
+              {badge.label}
+            </span>
+          </div>
+          <p className="mt-3 text-xs text-zinc-500">
+            Period: {formatDateRange(invoice.period_start, invoice.period_end)}
+          </p>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        {/* ── Body ── */}
+        <div className="px-6 py-5 space-y-5">
+
+          {/* Financial Summary Card */}
+          <div className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 px-4 py-3 space-y-2">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+              Financial Summary
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Gross Amount</span>
+              <span className="text-sm font-medium font-mono tabular-nums">
+                {amount(Number(invoice.gross_amount || 0))}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Deductions</span>
+              <span className="text-sm font-medium font-mono tabular-nums text-red-600 dark:text-red-400">
+                {showAmounts
+                  ? `\u2212${formatCurrency(Number(invoice.deductions || 0))}`
+                  : MASKED_AMOUNT}
+              </span>
+            </div>
+            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex items-center justify-between">
+              <span className="text-sm font-semibold">Net Amount</span>
+              <span className="text-sm font-bold font-mono tabular-nums text-indigo-600 dark:text-indigo-400">
+                {amount(Number(invoice.net_amount || 0))}
+              </span>
+            </div>
+          </div>
+
+          {/* Notes */}
+          {invoice.notes && (
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3">
+              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1">
+                Notes
+              </p>
+              <p className="text-sm text-foreground">{invoice.notes}</p>
+            </div>
+          )}
+
+          {/* Timeline */}
+          <div>
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">
+              Timeline
+            </p>
+            <div className="relative">
+              {timelineSteps.map((step, index) => (
+                <div key={step.label} className="flex gap-3">
+                  {/* Dot + vertical line column */}
+                  <div className="relative flex flex-col items-center">
+                    <div
+                      className={cn(
+                        'relative z-10 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full',
+                        step.done
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-zinc-200 dark:bg-zinc-700',
+                      )}
+                    >
+                      {step.done ? (
+                        <CheckCircle2 className="h-3 w-3" />
+                      ) : (
+                        <div className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
+                      )}
+                    </div>
+                    {index < timelineSteps.length - 1 && (
+                      <div
+                        className={cn(
+                          'w-px flex-1 mt-1 min-h-[1.5rem]',
+                          step.done ? 'bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700',
+                        )}
+                      />
+                    )}
+                  </div>
+                  {/* Step text */}
+                  <div className={cn('min-w-0', index < timelineSteps.length - 1 ? 'pb-4' : 'pb-0')}>
+                    <p
+                      className={cn(
+                        'text-sm font-medium leading-tight',
+                        step.done ? 'text-foreground' : 'text-muted-foreground',
+                      )}
+                    >
+                      {step.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono tabular-nums mt-0.5">
+                      {step.date ? formatDate(step.date) : '\u2014'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Footer ── */}
+        <div className="flex items-center justify-between gap-2 px-6 py-4 border-t border-border">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground"
+            onClick={handleDownloadPDF}
+          >
+            <Download className="h-4 w-4" />
+            Download PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
