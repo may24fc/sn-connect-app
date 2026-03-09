@@ -5,7 +5,7 @@ import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModa
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
-import { type ProbationRecord, useProbation } from '@/hooks/useProbation';
+import { type ProbationRecord, useCompleteProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { useTableSort } from '@/hooks/useTableSort';
 import {
@@ -19,7 +19,19 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Input,
+  Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -30,6 +42,8 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -42,11 +56,12 @@ import {
   LayoutGrid,
   List,
   Search,
+  Star,
   TrendingUp,
   UserCog,
   UserPlus,
+  X,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
@@ -146,6 +161,74 @@ function StageIndicator({
 
 type ProbationView = 'cards' | 'list';
 
+type PerformanceRating =
+  | 'exceptional'
+  | 'exceeds'
+  | 'meets'
+  | 'needs_improvement'
+  | 'unsatisfactory';
+
+const ratingConfig: Record<
+  PerformanceRating,
+  { label: string; description: string; color: string }
+> = {
+  exceptional: {
+    label: 'Exceptional',
+    description: 'Outstanding performance that far exceeds expectations',
+    color: 'bg-emerald-500',
+  },
+  exceeds: {
+    label: 'Exceeds Expectations',
+    description: 'Consistently performs above the expected level',
+    color: 'bg-green-500',
+  },
+  meets: {
+    label: 'Meets Expectations',
+    description: 'Performs at the expected level for their role',
+    color: 'bg-blue-500',
+  },
+  needs_improvement: {
+    label: 'Needs Improvement',
+    description: 'Performance is below expectations in some areas',
+    color: 'bg-yellow-500',
+  },
+  unsatisfactory: {
+    label: 'Unsatisfactory',
+    description: 'Performance does not meet minimum requirements',
+    color: 'bg-red-500',
+  },
+};
+
+function StarRating({
+  value,
+  onChange,
+  readonly = false,
+}: {
+  value: number;
+  onChange?: (rating: number) => void;
+  readonly?: boolean;
+}): ReactNode {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          onClick={() => onChange?.(star)}
+          className={`transition-colors ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'}`}
+        >
+          <Star
+            className={`h-6 w-6 ${
+              star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -161,6 +244,7 @@ function formatDateTime(dateString: string): string {
 export default function EmployeeManagementPage(): ReactNode {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('probation');
   const [searchTerm, setSearchTerm] = useState('');
   const [probationView, setProbationView] = useState<ProbationView>('cards');
@@ -170,6 +254,50 @@ export default function EmployeeManagementPage(): ReactNode {
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
+
+  // Appraisal dialog state
+  const [appraisalDialogOpen, setAppraisalDialogOpen] = useState(false);
+  const [selectedProbationEmp, setSelectedProbationEmp] = useState<ProbationRecord | null>(null);
+  const [overallRating, setOverallRating] = useState<PerformanceRating>('meets');
+  const [starRating, setStarRating] = useState(3);
+  const [appraisalFeedback, setAppraisalFeedback] = useState('');
+  const [okrRatings, setOkrRatings] = useState<Record<string, number>>({});
+  const [kpiRatings, setKpiRatings] = useState<Record<string, number>>({});
+  const completeProbation = useCompleteProbation();
+
+  const handleOpenAppraisal = (emp: ProbationRecord): void => {
+    setSelectedProbationEmp(emp);
+    setAppraisalDialogOpen(true);
+    setOverallRating('meets');
+    setStarRating(3);
+    setAppraisalFeedback('');
+    setOkrRatings({});
+    setKpiRatings({});
+  };
+
+  const handleSubmitAppraisal = async (): Promise<void> => {
+    if (!selectedProbationEmp) return;
+    try {
+      await completeProbation.mutateAsync({
+        employeeId: selectedProbationEmp.id,
+        finalRating: starRating,
+        comments: appraisalFeedback,
+      });
+      addToast({
+        title: 'Probation completed',
+        description: `${selectedProbationEmp.name} has successfully passed probation`,
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to complete probation',
+        variant: 'error',
+      });
+    }
+    setAppraisalDialogOpen(false);
+    setSelectedProbationEmp(null);
+  };
 
   // Probation data
   const { data: probationData, isLoading: probationLoading } = useProbation();
@@ -382,12 +510,10 @@ export default function EmployeeManagementPage(): ReactNode {
                               variant="outline"
                               size="sm"
                               className="w-full mt-1"
-                              asChild
+                              onClick={() => handleOpenAppraisal(emp)}
                             >
-                              <Link href="/admin/probation">
-                                <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
-                                Evaluate
-                              </Link>
+                              <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+                              Evaluate
                             </Button>
                           </CardContent>
                         </Card>
@@ -476,12 +602,10 @@ export default function EmployeeManagementPage(): ReactNode {
                               variant="ghost"
                               size="sm"
                               className="h-7 px-2 text-xs"
-                              asChild
+                              onClick={() => handleOpenAppraisal(emp)}
                             >
-                              <Link href="/admin/probation">
-                                <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
-                                View
-                              </Link>
+                              <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
+                              View
                             </Button>
                           </div>
                         );
@@ -782,6 +906,244 @@ export default function EmployeeManagementPage(): ReactNode {
           setAssignmentModalOpen(false);
         }}
       />
+
+      {/* Performance Appraisal Dialog */}
+      <Dialog open={appraisalDialogOpen} onOpenChange={setAppraisalDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Performance Appraisal</DialogTitle>
+            <DialogDescription>
+              Review and rate {selectedProbationEmp?.name}&apos;s performance based on their OKRs
+              and KPIs
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedProbationEmp && (
+            <div className="space-y-6">
+              {/* Employee Info */}
+              <div className="flex items-center gap-4 rounded-lg bg-muted/50 p-4">
+                <Avatar className="h-14 w-14">
+                  <AvatarImage src={selectedProbationEmp.avatarUrl} />
+                  <AvatarFallback className="text-lg">
+                    {getInitials(selectedProbationEmp.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{selectedProbationEmp.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedProbationEmp.position} — {selectedProbationEmp.department}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Manager: {selectedProbationEmp.manager}
+                  </p>
+                </div>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CONFIG[selectedProbationEmp.status].badgeClass}`}
+                >
+                  {STATUS_CONFIG[selectedProbationEmp.status].label}
+                </span>
+              </div>
+
+              <Tabs defaultValue="okrs" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="okrs">OKRs</TabsTrigger>
+                  <TabsTrigger value="kpis">KPIs</TabsTrigger>
+                  <TabsTrigger value="rating">Overall Rating</TabsTrigger>
+                </TabsList>
+
+                {/* OKRs Tab */}
+                <TabsContent value="okrs" className="space-y-4">
+                  {selectedProbationEmp.okrs.length === 0 ? (
+                    <Card>
+                      <CardContent className="p-6 text-center text-muted-foreground">
+                        No OKRs submitted yet
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    selectedProbationEmp.okrs.map((okr) => (
+                      <Card key={okr.id}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="text-base">{okr.objective}</CardTitle>
+                              <CardDescription>
+                                Status:{' '}
+                                <Badge variant="secondary" className="ml-1">
+                                  {okr.status.replace('_', ' ')}
+                                </Badge>
+                              </CardDescription>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-muted-foreground mb-1">Rate this OKR</p>
+                              <StarRating
+                                value={okrRatings[okr.id] || 0}
+                                onChange={(rating) =>
+                                  setOkrRatings((prev) => ({ ...prev, [okr.id]: rating }))
+                                }
+                              />
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {okr.keyResults.map((kr) => (
+                            <div key={kr.id} className="rounded-lg border p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm font-medium">{kr.description}</p>
+                                <span className="text-sm font-semibold text-primary">
+                                  {kr.progress}%
+                                </span>
+                              </div>
+                              <Progress value={kr.progress} className="h-2" />
+                              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                                <span>Current: {kr.current}</span>
+                                <span>Target: {kr.target}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </TabsContent>
+
+                {/* KPIs Tab */}
+                <TabsContent value="kpis" className="space-y-4">
+                  {selectedProbationEmp.kpis.length === 0 ? (
+                    <Card>
+                      <CardContent className="p-6 text-center text-muted-foreground">
+                        No KPIs defined yet
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    selectedProbationEmp.kpis.map((kpi) => (
+                      <Card key={kpi.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{kpi.name}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {kpi.description}
+                              </p>
+                              <div className="flex gap-6 mt-3">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Target</p>
+                                  <p className="font-semibold">{kpi.target}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Actual</p>
+                                  <p className="font-semibold">{kpi.actual}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Score</p>
+                                  <p
+                                    className={`font-semibold ${
+                                      kpi.score >= 100
+                                        ? 'text-success'
+                                        : kpi.score >= 80
+                                          ? 'text-warning'
+                                          : 'text-error'
+                                    }`}
+                                  >
+                                    {kpi.score}%
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-muted-foreground mb-1">Rate</p>
+                              <StarRating
+                                value={kpiRatings[kpi.id] || 0}
+                                onChange={(rating) =>
+                                  setKpiRatings((prev) => ({ ...prev, [kpi.id]: rating }))
+                                }
+                              />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </TabsContent>
+
+                {/* Overall Rating Tab */}
+                <TabsContent value="rating" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Overall Performance Rating</CardTitle>
+                      <CardDescription>
+                        Select the overall rating based on OKR and KPI performance
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center justify-center gap-4 py-4">
+                        <StarRating value={starRating} onChange={setStarRating} />
+                        <span className="text-2xl font-bold">{starRating}/5</span>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Rating Category</label>
+                        <Select
+                          value={overallRating}
+                          onValueChange={(value) => setOverallRating(value as PerformanceRating)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(ratingConfig).map(([key, config]) => (
+                              <SelectItem key={key} value={key}>
+                                <div className="flex items-center gap-2">
+                                  <div className={`h-3 w-3 rounded-full ${config.color}`} />
+                                  {config.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground">
+                          {ratingConfig[overallRating].description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Feedback & Comments</CardTitle>
+                      <CardDescription>
+                        Provide detailed feedback for {selectedProbationEmp.name}&apos;s performance
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Textarea
+                        placeholder={`Provide specific feedback on ${selectedProbationEmp.name}'s progress, areas of strength, and areas for improvement...`}
+                        value={appraisalFeedback}
+                        onChange={(e) => setAppraisalFeedback(e.target.value)}
+                        className="min-h-[150px]"
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setAppraisalDialogOpen(false)}>
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleSubmitAppraisal();
+              }}
+              disabled={completeProbation.isPending}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Submit Appraisal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
