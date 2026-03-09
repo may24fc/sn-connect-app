@@ -27,6 +27,7 @@ import {
   TableRow,
   TaskPriorityBadge,
   TaskStatusBadge,
+  useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
@@ -37,6 +38,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 export default function MyTasksPage() {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
   const [priority, setPriority] = useState<string>('all');
@@ -84,13 +86,16 @@ export default function MyTasksPage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to update task');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update task');
       }
+      addToast({ title: 'Task status updated', description: `Changed to ${newStatus.replace('_', ' ')}`, variant: 'success' });
+    } catch (err) {
+      addToast({ title: 'Failed to update task', description: err instanceof Error ? err.message : 'An error occurred', variant: 'error' });
     } finally {
       setUpdatingTaskId(null);
     }
-  }, []);
+  }, [addToast]);
 
   return (
     <div className="space-y-6">

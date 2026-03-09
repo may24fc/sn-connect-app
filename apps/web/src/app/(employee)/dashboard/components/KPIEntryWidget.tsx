@@ -22,6 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useToast,
 } from '@hr-portal/ui';
 import { BarChart3, Calendar, Check, Loader2, Plus, TrendingUp } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -38,6 +39,7 @@ export default function KPIEntryWidget(): ReactNode {
   const { user } = useAuth();
   const { data: metadataRecords = [] } = useRoleMetadata(user?.id);
   const createEntry = useCreateKPIEntry(user?.id);
+  const { addToast } = useToast();
 
   // Determine which role types have KPI metrics
   const roleTypesWithKPIs = useMemo(() => {
@@ -147,7 +149,7 @@ export default function KPIEntryWidget(): ReactNode {
       await createEntry.mutateAsync(payload);
       setSavedIndices((prev) => new Set(prev).add(index));
     } catch {
-      // Error handled by mutation
+      addToast({ title: 'Failed to save KPI entry', variant: 'error' });
     } finally {
       setSavingIndex(null);
     }

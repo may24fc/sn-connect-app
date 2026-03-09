@@ -22,6 +22,7 @@ import {
   CardContent,
   RoleMetadataFormContainer,
   Skeleton,
+  useToast,
 } from '@hr-portal/ui';
 import {
   Building2,
@@ -88,6 +89,7 @@ export default function ProfilePage() {
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const updateProfileInfo = useUpdateProfileInfo();
+  const { addToast } = useToast();
 
   // Role metadata hooks (must be called before any early returns)
   const { data: metadataRecords = [], isLoading: isMetadataLoading } = useRoleMetadata(user?.id);
@@ -96,16 +98,26 @@ export default function ProfilePage() {
 
   const handleSaveMetadata = useCallback(
     async (roleType: string, metadata: Record<string, unknown>) => {
-      await updateMetadata.mutateAsync({ role_type: roleType, metadata });
+      try {
+        await updateMetadata.mutateAsync({ role_type: roleType, metadata });
+        addToast({ title: 'Role details saved', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to save role details', variant: 'error' });
+      }
     },
-    [updateMetadata]
+    [updateMetadata, addToast]
   );
 
   const handleDeleteMetadata = useCallback(
     async (roleType: string) => {
-      await deleteMetadata.mutateAsync(roleType);
+      try {
+        await deleteMetadata.mutateAsync(roleType);
+        addToast({ title: 'Role details removed', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to remove role details', variant: 'error' });
+      }
     },
-    [deleteMetadata]
+    [deleteMetadata, addToast]
   );
 
   const handleAvatarChange = useCallback(
@@ -126,13 +138,16 @@ export default function ProfilePage() {
         setAvatarPreview(result.data.avatar_url);
         // Refresh auth context so the new URL persists across page refreshes
         await refreshUser();
+        addToast({ title: 'Profile picture updated', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to upload profile picture', variant: 'error' });
       } finally {
         setShowAvatarModal(false);
         setPendingAvatarFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
-    [uploadAvatar, refreshUser]
+    [uploadAvatar, refreshUser, addToast]
   );
 
   const handleAvatarModalClose = useCallback(() => {
@@ -170,9 +185,14 @@ export default function ProfilePage() {
   /** Save handler for each editable section */
   const handleSectionSave = useCallback(
     async (updates: Record<string, string>) => {
-      await updateProfileInfo.mutateAsync(updates);
+      try {
+        await updateProfileInfo.mutateAsync(updates);
+        addToast({ title: 'Profile updated', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to update profile', variant: 'error' });
+      }
     },
-    [updateProfileInfo]
+    [updateProfileInfo, addToast]
   );
 
   if (isLoading) {

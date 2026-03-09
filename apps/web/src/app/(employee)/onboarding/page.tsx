@@ -10,10 +10,11 @@ import {
   CardHeader,
   CardTitle,
   Progress,
+  useToast,
 } from '@hr-portal/ui';
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, Circle } from 'lucide-react';
-import { type ReactNode, useMemo } from 'react';
+import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
+import { type ReactNode, useMemo, useState } from 'react';
 
 interface OnboardingTask {
   id: string;
@@ -30,6 +31,8 @@ interface OnboardingChecklist {
 }
 
 export default function OnboardingPage(): ReactNode {
+  const { addToast } = useToast();
+  const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
   const onboardingQuery = useQuery({
     queryKey: queryKeys.onboarding.tasks(),
     queryFn: async (): Promise<{ data: Array<OnboardingChecklist> }> => {
@@ -52,12 +55,24 @@ export default function OnboardingPage(): ReactNode {
 
   const toggleTask = async (task: OnboardingTask): Promise<void> => {
     if (!checklist?.id) return;
-    await fetch(`/api/onboarding/${checklist.id}/tasks`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ taskId: task.id, isCompleted: !task.is_completed }),
-    });
-    await onboardingQuery.refetch();
+    setTogglingTaskId(task.id);
+    try {
+      const response = await fetch(`/api/onboarding/${checklist.id}/tasks`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: task.id, isCompleted: !task.is_completed }),
+      });
+      if (!response.ok) throw new Error('Failed to update task');
+      await onboardingQuery.refetch();
+      addToast({
+        title: task.is_completed ? 'Task marked as incomplete' : 'Task completed',
+        variant: 'success',
+      });
+    } catch {
+      addToast({ title: 'Failed to update task', variant: 'error' });
+    } finally {
+      setTogglingTaskId(null);
+    }
   };
 
   return (
@@ -125,7 +140,15 @@ export default function OnboardingPage(): ReactNode {
                   </Badge>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => void toggleTask(task)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void toggleTask(task)}
+                disabled={togglingTaskId === task.id}
+              >
+                {togglingTaskId === task.id ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : null}
                 {task.is_completed ? 'Undo' : 'Mark Done'}
               </Button>
             </div>

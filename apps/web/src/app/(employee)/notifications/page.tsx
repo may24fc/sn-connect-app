@@ -19,6 +19,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useToast,
 } from '@hr-portal/ui';
 import {
   Bell,
@@ -133,6 +134,7 @@ export default function NotificationsPage(): ReactNode {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllRead();
   const deleteNotification = useDeleteNotification();
+  const { addToast } = useToast();
 
   const notifications = data?.data ?? [];
   const pagination = data?.pagination ?? { page: 1, pageSize: 20, total: 0, totalPages: 0 };
@@ -172,17 +174,21 @@ export default function NotificationsPage(): ReactNode {
   };
 
   const handleBulkMarkRead = (): void => {
+    const count = selectedIds.size;
     for (const id of selectedIds) {
       markRead.mutate(id);
     }
     setSelectedIds(new Set());
+    addToast({ title: `${count} notification${count > 1 ? 's' : ''} marked as read`, variant: 'success' });
   };
 
   const handleBulkDelete = (): void => {
+    const count = selectedIds.size;
     for (const id of selectedIds) {
       deleteNotification.mutate(id);
     }
     setSelectedIds(new Set());
+    addToast({ title: `${count} notification${count > 1 ? 's' : ''} deleted`, variant: 'success' });
   };
 
   return (
@@ -204,7 +210,11 @@ export default function NotificationsPage(): ReactNode {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => markAllRead.mutate()}
+              onClick={() => {
+                markAllRead.mutate(undefined, {
+                  onSuccess: () => addToast({ title: 'All notifications marked as read', variant: 'success' }),
+                });
+              }}
               disabled={markAllRead.isPending}
             >
               <CheckCircle className="mr-2 h-4 w-4" strokeWidth={1.5} />

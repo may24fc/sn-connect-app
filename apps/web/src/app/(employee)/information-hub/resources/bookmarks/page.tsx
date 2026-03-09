@@ -10,12 +10,21 @@ import {
   CardTitle,
   ResourceCard,
   ResourceGrid,
+  useToast,
 } from '@hr-portal/ui';
 import Link from 'next/link';
 
 export default function ResourceBookmarksPage() {
   const { data, isLoading } = useResourceBookmarks();
   const removeBookmark = useRemoveBookmark();
+  const { addToast } = useToast();
+
+  const handleRemoveBookmark = (resourceId: string): void => {
+    removeBookmark.mutate(resourceId, {
+      onSuccess: () => addToast({ title: 'Bookmark removed', variant: 'success' }),
+      onError: () => addToast({ title: 'Failed to remove bookmark', variant: 'error' }),
+    });
+  };
 
   const bookmarks = data?.data || [];
 
@@ -71,7 +80,7 @@ export default function ResourceBookmarksPage() {
                     onClick={() => {
                       window.location.href = `/information-hub/resources/${bookmark.resource_id}`;
                     }}
-                    onBookmark={() => removeBookmark.mutate(bookmark.resource_id)}
+                    onBookmark={() => handleRemoveBookmark(bookmark.resource_id)}
                   />
 
                   <Card>
@@ -86,7 +95,7 @@ export default function ResourceBookmarksPage() {
                         className="mt-3"
                         size="sm"
                         variant="outline"
-                        onClick={() => removeBookmark.mutate(bookmark.resource_id)}
+                        onClick={() => handleRemoveBookmark(bookmark.resource_id)}
                       >
                         Remove Bookmark
                       </Button>

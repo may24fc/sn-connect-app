@@ -51,6 +51,7 @@ import {
   DollarSign,
   Hash,
   ListChecks,
+  Loader2,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -419,8 +420,17 @@ export default function OKRDetailPage(): ReactNode {
               </div>
 
               {okr.status !== 'completed' && (
-                <Button variant="outline" size="sm" onClick={() => void handleMarkComplete()}>
-                  <Check className="mr-1 h-4 w-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleMarkComplete()}
+                  disabled={updateOKR.isPending}
+                >
+                  {updateOKR.isPending ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="mr-1 h-4 w-4" />
+                  )}
                   Complete
                 </Button>
               )}

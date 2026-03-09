@@ -88,6 +88,7 @@ export default function TaskDetailPage({
             <Label>Update Status</Label>
             <Select
               value={task.status}
+              disabled={updateTask.isPending}
               onValueChange={(value) => {
                 const newStatus = value as 'pending' | 'in_progress' | 'completed' | 'cancelled';
                 updateTask.mutate(

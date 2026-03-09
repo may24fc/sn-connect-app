@@ -2,7 +2,7 @@
 
 import { useOnboardingDocuments } from '@/hooks/useOnboardingDocuments';
 import { useUploadOnboardingDocument } from '@/hooks/useUploadOnboardingDocument';
-import { Badge } from '@hr-portal/ui';
+import { Badge, useToast } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { DocumentUploadCard } from './DocumentUploadCard';
@@ -14,6 +14,7 @@ type DocumentType = (typeof requiredTypes)[number];
 export function StepDocuments(): ReactNode {
   const { data, isLoading } = useOnboardingDocuments();
   const upload = useUploadOnboardingDocument();
+  const { addToast } = useToast();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadingTypes, setUploadingTypes] = useState<Set<DocumentType>>(new Set());
 
@@ -29,6 +30,7 @@ export function StepDocuments(): ReactNode {
         onError: (error) => {
           const message = error instanceof Error ? error.message : 'Failed to upload document';
           setUploadError(message);
+          addToast({ title: 'Upload failed', description: message, variant: 'error' });
           setUploadingTypes((prev) => {
             const next = new Set(prev);
             next.delete(type);
@@ -37,6 +39,7 @@ export function StepDocuments(): ReactNode {
         },
         onSuccess: () => {
           setUploadError(null);
+          addToast({ title: 'Document uploaded', variant: 'success' });
           setUploadingTypes((prev) => {
             const next = new Set(prev);
             next.delete(type);

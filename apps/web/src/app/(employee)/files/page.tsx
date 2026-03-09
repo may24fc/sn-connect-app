@@ -21,6 +21,7 @@ import {
   DialogTitle,
   FileDropZone,
   FullScreenPreview,
+  useToast,
 } from '@hr-portal/ui';
 import {
   Download,
@@ -147,6 +148,7 @@ export default function FilesPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const { addToast } = useToast();
 
   // Fetch the current user's employee record by user_id
   const { data: empLookup } = useEmployees({
@@ -193,8 +195,9 @@ export default function FilesPage() {
       }
       setUploadOpen(false);
       setSelectedFiles([]);
-    } catch (e) {
-      console.error(e);
+      addToast({ title: `${selectedFiles.length} document${selectedFiles.length > 1 ? 's' : ''} uploaded`, variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to upload documents', variant: 'error' });
     } finally {
       setIsUploading(false);
     }
@@ -213,8 +216,8 @@ export default function FilesPage() {
       const data = await preview.mutateAsync(documentId);
       setPreviewData(data);
       setPreviewOpen(true);
-    } catch (e) {
-      console.error('Failed to load preview:', e);
+    } catch {
+      addToast({ title: 'Failed to load preview', variant: 'error' });
     } finally {
       setPreviewLoading(false);
     }

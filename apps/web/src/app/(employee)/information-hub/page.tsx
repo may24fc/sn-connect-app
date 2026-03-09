@@ -29,6 +29,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  useToast,
 } from '@hr-portal/ui';
 import type { FilterOption } from '@hr-portal/ui';
 import {
@@ -103,6 +104,7 @@ export default function InformationHubPage() {
   const markRead = useMarkAnnouncementRead();
   const addBookmark = useBookmarkResource();
   const removeBookmark = useRemoveBookmark();
+  const { addToast } = useToast();
 
   const announcements = announcementData?.data || [];
   const resources = resourceData?.data || [];
@@ -155,11 +157,15 @@ export default function InformationHubPage() {
 
   const handleBookmarkToggle = (resourceId: string): void => {
     if (bookmarkIds.has(resourceId)) {
-      removeBookmark.mutate(resourceId);
+      removeBookmark.mutate(resourceId, {
+        onSuccess: () => addToast({ title: 'Bookmark removed', variant: 'success' }),
+      });
       return;
     }
 
-    addBookmark.mutate({ resourceId });
+    addBookmark.mutate({ resourceId }, {
+      onSuccess: () => addToast({ title: 'Resource bookmarked', variant: 'success' }),
+    });
   };
 
   const handleAnnouncementClick = (announcement: AnnouncementRecord): void => {

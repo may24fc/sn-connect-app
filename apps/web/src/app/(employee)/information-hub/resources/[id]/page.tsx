@@ -16,6 +16,7 @@ import {
   ResourceCard,
   ResourceGrid,
   VideoPlayer,
+  useToast,
 } from '@hr-portal/ui';
 import { Bookmark, CheckCircle2, Download } from 'lucide-react';
 import Link from 'next/link';
@@ -37,6 +38,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
   const bookmarkResource = useBookmarkResource();
   const removeBookmark = useRemoveBookmark();
   const trackView = useTrackResourceView();
+  const { addToast } = useToast();
 
   const resource = data?.data;
   const bookmarkIds = useMemo(
@@ -96,7 +98,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
     if (!response.ok) {
       const payload = await response.json();
       if (response.status === 403) {
-        alert(payload?.error ?? 'This resource is view-only and cannot be downloaded.');
+        addToast({ title: 'Download restricted', description: payload?.error ?? 'This resource is view-only and cannot be downloaded.', variant: 'error' });
         return;
       }
       return;
@@ -105,7 +107,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
     if (payload?.data?.url) {
       window.open(payload.data.url, '_blank', 'noopener,noreferrer');
     }
-  }, [resource.id]);
+  }, [resource.id, addToast]);
 
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden -m-4 lg:-m-6">
@@ -164,9 +166,13 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
               onClick={() => {
                 if (isBookmarked) {
-                  removeBookmark.mutate(resource.id);
+                  removeBookmark.mutate(resource.id, {
+                    onSuccess: () => addToast({ title: 'Bookmark removed', variant: 'success' }),
+                  });
                 } else {
-                  bookmarkResource.mutate({ resourceId: resource.id });
+                  bookmarkResource.mutate({ resourceId: resource.id }, {
+                    onSuccess: () => addToast({ title: 'Resource bookmarked', variant: 'success' }),
+                  });
                 }
               }}
             >
@@ -188,7 +194,10 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
             <Button
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md"
               onClick={() =>
-                trackView.mutate({ resourceId: resource.id, completed: true, durationSeconds })
+                trackView.mutate(
+                  { resourceId: resource.id, completed: true, durationSeconds },
+                  { onSuccess: () => addToast({ title: 'Marked as completed', variant: 'success' }) }
+                )
               }
             >
               <CheckCircle2 className="h-4 w-4" />
