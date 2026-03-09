@@ -1,15 +1,21 @@
 import { reportMetricSchema, reportSchema } from '@/lib/schemas/report.schema';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * GET /api/reports/[id]
- * Get single report details
+ * Get single report details.
+ *
+ * Uses the admin client for the data query to bypass RLS cross-table join
+ * issues (same pattern as GET /api/reports list route). Authorization is
+ * enforced at the application layer: non-admin users may only access their
+ * own reports.
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -20,10 +26,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data, error } = await supabase
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isAdmin = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+
+    const { data, error } = await supabaseAdmin
       .from('reports')
       .select(
-        '*, employees!inner(id, user_id, first_name, last_name, department), report_metrics(*)'
+        '*, employees(id, user_id, first_name, last_name, department), report_metrics(*)'
       )
       .eq('id', id)
       .is('deleted_at', null)
@@ -31,6 +40,14 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     if (error || !data) {
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+    }
+
+    // Non-admin users may only access their own reports
+    if (!isAdmin) {
+      const employeeData = data.employees as { user_id: string } | null;
+      if (!employeeData || employeeData.user_id !== user.id) {
+        return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+      }
     }
 
     return NextResponse.json({ data });
