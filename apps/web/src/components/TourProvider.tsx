@@ -61,6 +61,10 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
       if (tourClientRef.current?.isVisible) {
         void tourClientRef.current.exit();
       }
+      document.querySelectorAll('.tg-dialog, .tg-backdrop').forEach((el) => el.remove());
+      document.body.classList.remove('tg-no-interaction');
+      document.body.style.removeProperty('pointer-events');
+      document.body.style.removeProperty('overflow');
     };
   }, []);
 
@@ -125,13 +129,23 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
 
     tourClientRef.current = tg;
 
+    const cleanupTourDOM = (): void => {
+      document.querySelectorAll('.tg-dialog, .tg-backdrop').forEach((el) => el.remove());
+      document.body.classList.remove('tg-no-interaction');
+      document.body.style.removeProperty('pointer-events');
+      document.body.style.removeProperty('overflow');
+      tourClientRef.current = null;
+    };
+
     tg.onFinish(() => {
       markTourCompleted(currentGroup);
       setIsActive(false);
+      cleanupTourDOM();
     });
 
     tg.onAfterExit(() => {
       setIsActive(false);
+      cleanupTourDOM();
     });
 
     setIsActive(true);
