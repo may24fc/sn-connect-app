@@ -101,12 +101,6 @@ export default function AdminDashboardPage(): ReactNode {
             Here is your HR overview for today.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/admin/employees">
-            <Users className="mr-2 h-4 w-4" strokeWidth={1.5} />
-            Manage Employees
-          </Link>
-        </Button>
       </div>
 
       {/* Pending Approvals */}
