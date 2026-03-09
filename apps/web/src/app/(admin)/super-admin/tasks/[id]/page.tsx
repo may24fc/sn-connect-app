@@ -2,6 +2,7 @@
 
 import { Button, TaskDetailView } from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { ArrowLeft, Edit, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -65,6 +66,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { addToast } = useToast();
 
   useEffect(() => {
     // TODO: Replace with actual API call
@@ -75,9 +77,11 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
         if (response.ok) {
           const data = await response.json();
           setTask(toTaskDetailViewModel(data.data as ApiTaskPayload));
+        } else {
+          addToast({ title: 'Failed to load task', variant: 'error' });
         }
-      } catch (error) {
-        console.error('Failed to fetch task:', error);
+      } catch {
+        addToast({ title: 'Failed to load task', variant: 'error' });
       } finally {
         setIsLoading(false);
       }
@@ -96,9 +100,10 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           status,
           updatedAt: new Date().toISOString(),
         });
+        addToast({ title: `Task status updated to ${status.replace('_', ' ')}`, variant: 'success' });
       }
-    } catch (error) {
-      console.error('Failed to update task status:', error);
+    } catch {
+      addToast({ title: 'Failed to update task status', variant: 'error' });
     } finally {
       setIsUpdating(false);
     }
@@ -109,6 +114,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   const handleDelete = (): void => {
     if (confirm('Are you sure you want to delete this task?')) {
       // TODO: Implement delete API call
+      addToast({ title: 'Task deleted', variant: 'success' });
       router.push('/super-admin/tasks');
     }
   };

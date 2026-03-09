@@ -19,6 +19,7 @@ import {
   TableRow,
   Textarea,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { useMemo, useState } from 'react';
 
 const statusVariant: Record<
@@ -54,6 +55,7 @@ export default function PayrollApprovalsPage() {
   const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 200 });
   const approveInvoice = useApproveInvoice();
   const [notesById, setNotesById] = useState<Record<string, string>>({});
+  const { addToast } = useToast();
 
   const invoices = data?.data || [];
 
@@ -105,6 +107,9 @@ export default function PayrollApprovalsPage() {
         action,
         notes: notesById[id] || undefined,
       },
+    }, {
+      onSuccess: () => addToast({ title: `Invoice ${action}`, variant: action === 'approved' ? 'success' : 'default' }),
+      onError: () => addToast({ title: `Failed to ${action === 'approved' ? 'approve' : 'reject'} invoice`, variant: 'error' }),
     });
   };
 
