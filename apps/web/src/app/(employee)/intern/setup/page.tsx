@@ -18,6 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useToast,
 } from '@hr-portal/ui';
 import {
   AlertCircle,
@@ -106,6 +107,7 @@ export default function InternSetupPage(): ReactNode {
   const { user } = useAuth();
   const router = useRouter();
   const initializeMutation = useInitializeInternship();
+  const { addToast } = useToast();
 
   const [form, setForm] = useState<FormState>({
     startDate: '',
@@ -150,6 +152,7 @@ export default function InternSetupPage(): ReactNode {
       });
 
       setIsSuccess(true);
+      addToast({ title: 'Internship profile created', variant: 'success' });
 
       // Redirect to dashboard after brief success message
       setTimeout(() => {

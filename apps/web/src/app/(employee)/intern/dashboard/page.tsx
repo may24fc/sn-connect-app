@@ -28,6 +28,7 @@ import {
   SlidePanelHeader,
   SlidePanelTitle,
   getDaysRemaining,
+  useToast,
 } from '@hr-portal/ui';
 import {
   Building2,
@@ -51,6 +52,7 @@ export default function InternDashboardPage(): ReactNode {
   const activeInternshipId = listQuery.data?.data?.[0]?.id || null;
   const detailQuery = useInternship(activeInternshipId, !!activeInternshipId);
   const createLogMutation = useCreateInternDailyLog();
+  const { addToast } = useToast();
 
   const profile = detailQuery.data?.data;
   const reports = profile?.recentReports || [];
@@ -93,9 +95,13 @@ export default function InternDashboardPage(): ReactNode {
       ...(data.challenges ? { challenges: data.challenges } : {}),
     };
 
-    await createLogMutation.mutateAsync(payload);
-
-    setShowForm(false);
+    try {
+      await createLogMutation.mutateAsync(payload);
+      addToast({ title: 'EOD report submitted', description: `${data.hoursLogged} hours logged`, variant: 'success' });
+      setShowForm(false);
+    } catch {
+      addToast({ title: 'Failed to submit report', variant: 'error' });
+    }
   };
 
   if (isLoading) {
@@ -354,7 +360,7 @@ export default function InternDashboardPage(): ReactNode {
           <BentoCardTitle icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}>
             Recent Reports
           </BentoCardTitle>
-          <Link href="/reports">
+          <Link href="/intern/reports">
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
               View All
               <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
