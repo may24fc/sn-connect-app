@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { AlertTriangle, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -108,6 +109,7 @@ export function ReportsSubmissionsTab({
   const [showLateOnly, setShowLateOnly] = useState(false);
   const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   // Calculate period dates for API filtering
   const periodDates = useMemo(() => {
@@ -185,12 +187,16 @@ export function ReportsSubmissionsTab({
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
     setWorkingId(id);
     try {
-      await fetch(`/api/reports/${id}/approve`, {
+      const res = await fetch(`/api/reports/${id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, notes: actionNotes[id] || undefined }),
       });
+      if (!res.ok) throw new Error('Request failed');
+      addToast({ title: `Report ${action}`, variant: 'success' });
       await refetch();
+    } catch {
+      addToast({ title: `Failed to ${action === 'approved' ? 'approve' : 'reject'} report`, variant: 'error' });
     } finally {
       setWorkingId(null);
     }

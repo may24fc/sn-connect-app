@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import {
   Bell,
   BookOpen,
@@ -133,6 +134,7 @@ export default function AdminNotificationsPage(): ReactNode {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllRead();
   const deleteNotification = useDeleteNotification();
+  const { addToast } = useToast();
 
   const notifications = data?.data ?? [];
   const pagination = data?.pagination ?? { page: 1, pageSize: 20, total: 0, totalPages: 0 };
@@ -176,6 +178,7 @@ export default function AdminNotificationsPage(): ReactNode {
       markRead.mutate(id);
     }
     setSelectedIds(new Set());
+    addToast({ title: `${selectedIds.size} notification(s) marked as read`, variant: 'success' });
   };
 
   const handleBulkDelete = (): void => {
@@ -183,6 +186,7 @@ export default function AdminNotificationsPage(): ReactNode {
       deleteNotification.mutate(id);
     }
     setSelectedIds(new Set());
+    addToast({ title: `${selectedIds.size} notification(s) deleted`, variant: 'success' });
   };
 
   return (
@@ -204,7 +208,10 @@ export default function AdminNotificationsPage(): ReactNode {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => markAllRead.mutate()}
+              onClick={() => markAllRead.mutate(undefined, {
+                onSuccess: () => addToast({ title: 'All notifications marked as read', variant: 'success' }),
+                onError: () => addToast({ title: 'Failed to mark all as read', variant: 'error' }),
+              })}
               disabled={markAllRead.isPending}
             >
               <CheckCircle className="mr-2 h-4 w-4" strokeWidth={1.5} />
@@ -448,7 +455,10 @@ export default function AdminNotificationsPage(): ReactNode {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteNotification.mutate(notification.id);
+                            deleteNotification.mutate(notification.id, {
+                              onSuccess: () => addToast({ title: 'Notification deleted', variant: 'success' }),
+                              onError: () => addToast({ title: 'Failed to delete notification', variant: 'error' }),
+                            });
                         }}
                         className="p-1.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700"
                         aria-label="Delete notification"

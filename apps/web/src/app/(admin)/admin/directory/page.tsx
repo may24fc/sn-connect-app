@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -102,6 +103,7 @@ export default function AdminDirectoryPage(): ReactNode {
   // Delete employee state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<DirectoryEntry | null>(null);
+  const { addToast } = useToast();
 
   const deleteEmployeeMutation = useMutation({
     mutationFn: async (employeeId: string) => {
@@ -119,6 +121,10 @@ export default function AdminDirectoryPage(): ReactNode {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       setDeleteDialogOpen(false);
       setEmployeeToDelete(null);
+      addToast({ title: 'Employee deleted', variant: 'success' });
+    },
+    onError: () => {
+      addToast({ title: 'Failed to delete employee', variant: 'error' });
     },
   });
 
@@ -148,8 +154,9 @@ export default function AdminDirectoryPage(): ReactNode {
     setExporting(true);
     try {
       await exportCsv();
+      addToast({ title: 'Export complete', variant: 'success' });
     } catch {
-      // silently fail
+      addToast({ title: 'Failed to export CSV', variant: 'error' });
     } finally {
       setExporting(false);
     }

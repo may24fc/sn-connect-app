@@ -47,6 +47,7 @@ import {
   calculateHoursProgress,
   getDaysRemaining,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import {
   ArrowLeft,
   Award,
@@ -91,6 +92,7 @@ export default function InternDetailPage({
   const updateLogMutation = useUpdateInternDailyLog();
   const updateInternshipMutation = useUpdateInternship();
   const extendMutation = useExtendInternship();
+  const { addToast } = useToast();
 
   const intern = internshipQuery.data?.data;
   const reports = intern?.recentReports || [];
@@ -163,37 +165,51 @@ export default function InternDetailPage({
       return;
     }
 
-    await updateLogMutation.mutateAsync({
-      internshipId: id,
-      logId: selectedReport.id,
-      supervisorNotes: feedback.trim(),
-      isApproved: true,
-    });
+    try {
+      await updateLogMutation.mutateAsync({
+        internshipId: id,
+        logId: selectedReport.id,
+        supervisorNotes: feedback.trim(),
+        isApproved: true,
+      });
 
-    setFeedbackDialogOpen(false);
-    setSelectedReport(null);
-    setFeedback('');
+      setFeedbackDialogOpen(false);
+      setSelectedReport(null);
+      setFeedback('');
+      addToast({ title: 'Feedback submitted', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to submit feedback', variant: 'error' });
+    }
   };
 
   const handleExtendInternship = async (): Promise<void> => {
     if (!newEndDate.trim() || !extendReason.trim()) return;
-    await extendMutation.mutateAsync({
-      internshipId: id,
-      newEndDate: newEndDate,
-      reason: extendReason,
-    });
-    setExtendDialogOpen(false);
-    setNewEndDate('');
-    setExtendReason('');
+    try {
+      await extendMutation.mutateAsync({
+        internshipId: id,
+        newEndDate: newEndDate,
+        reason: extendReason,
+      });
+      setExtendDialogOpen(false);
+      setNewEndDate('');
+      setExtendReason('');
+      addToast({ title: 'Internship extended', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to extend internship', variant: 'error' });
+    }
   };
 
   const handleCompleteInternship = async (): Promise<void> => {
-    await updateInternshipMutation.mutateAsync({
-      internshipId: id,
-      updates: { status: 'completed' },
-    });
-
-    setCompleteDialogOpen(false);
+    try {
+      await updateInternshipMutation.mutateAsync({
+        internshipId: id,
+        updates: { status: 'completed' },
+      });
+      setCompleteDialogOpen(false);
+      addToast({ title: 'Internship marked as completed', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to complete internship', variant: 'error' });
+    }
   };
 
   return (

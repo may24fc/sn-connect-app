@@ -2,12 +2,14 @@
 
 import { useCreateCollection } from '@/hooks/useResourceCollections';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Textarea } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function NewCollectionPage() {
   const router = useRouter();
   const createCollection = useCreateCollection();
+  const { addToast } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -16,21 +18,26 @@ export default function NewCollectionPage() {
   const [departmentsCsv, setDepartmentsCsv] = useState('');
 
   const create = async (): Promise<void> => {
-    const result = await createCollection.mutateAsync({
-      title,
-      description: description || null,
-      isPublic,
-      targetRoles: rolesCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      targetDepartments: departmentsCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-    });
+    try {
+      const result = await createCollection.mutateAsync({
+        title,
+        description: description || null,
+        isPublic,
+        targetRoles: rolesCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        targetDepartments: departmentsCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+      });
 
-    router.push(`/admin/resources/collections/${result.data.id}`);
+      addToast({ title: 'Collection created', variant: 'success' });
+      router.push(`/admin/resources/collections/${result.data.id}`);
+    } catch {
+      addToast({ title: 'Failed to create collection', variant: 'error' });
+    }
   };
 
   return (

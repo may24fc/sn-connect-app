@@ -20,6 +20,7 @@ import {
   ResourceGrid,
   Textarea,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -39,6 +40,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
   const updateCollection = useUpdateCollection(collectionId);
   const addResource = useAddResourceToCollection(collectionId);
   const removeResource = useRemoveResourceFromCollection(collectionId);
+  const { addToast } = useToast();
 
   const collection = data?.data;
   const collectionResources = collectionResourcesData?.data || [];
@@ -65,19 +67,24 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
   );
 
   const save = async (): Promise<void> => {
-    await updateCollection.mutateAsync({
-      title,
-      description: description || null,
-      isPublic,
-      targetRoles: rolesCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      targetDepartments: departmentsCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-    });
+    try {
+      await updateCollection.mutateAsync({
+        title,
+        description: description || null,
+        isPublic,
+        targetRoles: rolesCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        targetDepartments: departmentsCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+      });
+      addToast({ title: 'Collection updated', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to update collection', variant: 'error' });
+    }
   };
 
   if (isLoading || !collection) {
@@ -178,7 +185,10 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => removeResource.mutate(resource.id)}
+                    onClick={() => removeResource.mutate(resource.id, {
+                      onSuccess: () => addToast({ title: 'Resource removed from collection', variant: 'success' }),
+                      onError: () => addToast({ title: 'Failed to remove resource', variant: 'error' }),
+                    })}
                     disabled={removeResource.isPending}
                   >
                     Remove
@@ -226,6 +236,9 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
                       addResource.mutate({
                         resourceId: resource.id,
                         displayOrder: collectionResources.length,
+                      }, {
+                        onSuccess: () => addToast({ title: 'Resource added to collection', variant: 'success' }),
+                        onError: () => addToast({ title: 'Failed to add resource', variant: 'error' }),
                       })
                     }
                     disabled={addResource.isPending}

@@ -23,6 +23,7 @@ import {
   TableRow,
   Textarea,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { ArrowLeft, ListChecks } from 'lucide-react';
 import Link from 'next/link';
 import { use, useState } from 'react';
@@ -48,6 +49,7 @@ export default function AdminReportDetailPage({
   const { data, isLoading, error } = useReport(id);
   const [actionNotes, setActionNotes] = useState('');
   const [workingAction, setWorkingAction] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const report = data?.data;
 
@@ -55,13 +57,16 @@ export default function AdminReportDetailPage({
     if (!report) return;
     setWorkingAction(action);
     try {
-      await fetch(`/api/reports/${report.id}/approve`, {
+      const res = await fetch(`/api/reports/${report.id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, notes: actionNotes || undefined }),
       });
-      // Reload to reflect updated status
+      if (!res.ok) throw new Error('Request failed');
+      addToast({ title: `Report ${action}`, variant: 'success' });
       window.location.reload();
+    } catch {
+      addToast({ title: `Failed to ${action === 'approved' ? 'approve' : 'reject'} report`, variant: 'error' });
     } finally {
       setWorkingAction(null);
     }

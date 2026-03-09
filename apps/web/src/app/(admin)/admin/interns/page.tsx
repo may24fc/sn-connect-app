@@ -54,6 +54,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
@@ -106,6 +107,7 @@ export default function AdminInternsPage(): ReactNode {
   // Delete intern state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [internToDelete, setInternToDelete] = useState<InternSummary | null>(null);
+  const { addToast } = useToast();
 
   const deleteInternMutation = useMutation({
     mutationFn: async (internshipId: string) => {
@@ -124,6 +126,10 @@ export default function AdminInternsPage(): ReactNode {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       setDeleteDialogOpen(false);
       setInternToDelete(null);
+      addToast({ title: 'Intern deleted', variant: 'success' });
+    },
+    onError: () => {
+      addToast({ title: 'Failed to delete intern', variant: 'error' });
     },
   });
 

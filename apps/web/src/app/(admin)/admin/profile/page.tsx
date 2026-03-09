@@ -23,6 +23,7 @@ import {
   RoleMetadataFormContainer,
   Skeleton,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import {
   Building2,
   Calendar,
@@ -93,19 +94,30 @@ export default function AdminProfilePage() {
   const { data: metadataRecords = [], isLoading: isMetadataLoading } = useRoleMetadata(user?.id);
   const updateMetadata = useUpdateRoleMetadata(user?.id);
   const deleteMetadata = useDeleteRoleMetadata(user?.id);
+  const { addToast } = useToast();
 
   const handleSaveMetadata = useCallback(
     async (roleType: string, metadata: Record<string, unknown>) => {
-      await updateMetadata.mutateAsync({ role_type: roleType, metadata });
+      try {
+        await updateMetadata.mutateAsync({ role_type: roleType, metadata });
+        addToast({ title: 'Role metadata saved', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to save role metadata', variant: 'error' });
+      }
     },
-    [updateMetadata]
+    [updateMetadata, addToast]
   );
 
   const handleDeleteMetadata = useCallback(
     async (roleType: string) => {
-      await deleteMetadata.mutateAsync(roleType);
+      try {
+        await deleteMetadata.mutateAsync(roleType);
+        addToast({ title: 'Role metadata deleted', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to delete role metadata', variant: 'error' });
+      }
     },
-    [deleteMetadata]
+    [deleteMetadata, addToast]
   );
 
   const handleAvatarChange = useCallback(
@@ -124,13 +136,16 @@ export default function AdminProfilePage() {
         const result = await uploadAvatar.mutateAsync(file);
         setAvatarPreview(result.data.avatar_url);
         await refreshUser();
+        addToast({ title: 'Profile photo updated', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to upload profile photo', variant: 'error' });
       } finally {
         setShowAvatarModal(false);
         setPendingAvatarFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
-    [uploadAvatar, refreshUser]
+    [uploadAvatar, refreshUser, addToast]
   );
 
   const handleAvatarModalClose = useCallback(() => {
@@ -168,9 +183,14 @@ export default function AdminProfilePage() {
   /** Save handler for each editable section */
   const handleSectionSave = useCallback(
     async (updates: Record<string, string>) => {
-      await updateProfileInfo.mutateAsync(updates);
+      try {
+        await updateProfileInfo.mutateAsync(updates);
+        addToast({ title: 'Profile updated', variant: 'success' });
+      } catch {
+        addToast({ title: 'Failed to update profile', variant: 'error' });
+      }
     },
-    [updateProfileInfo]
+    [updateProfileInfo, addToast]
   );
 
   if (isLoading) {

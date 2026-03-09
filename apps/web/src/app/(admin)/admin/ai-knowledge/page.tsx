@@ -9,6 +9,7 @@ import {
 } from '@/hooks/useAISources';
 import { AIKnowledgeManager, type ChatInterfaceMessage } from '@hr-portal/ui';
 import type { AccessLevel, FileStatus } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import * as React from 'react';
 
 interface UploadingFile {
@@ -25,6 +26,7 @@ export default function AdminAIKnowledgePage(): React.ReactNode {
   const { messages, sendMessage, isLoading: isChatLoading, error: chatError, abort } = useAIChat();
 
   const [uploadingFiles, setUploadingFiles] = React.useState<UploadingFile[]>([]);
+  const { addToast } = useToast();
 
   const sources = sourcesResponse?.data ?? [];
 
@@ -41,6 +43,9 @@ export default function AdminAIKnowledgePage(): React.ReactNode {
                 setUploadingFiles((prev) => prev.map((u) => (u.id === id ? { ...u, stage } : u)));
               },
             });
+            addToast({ title: `"${file.name}" uploaded successfully`, variant: 'success' });
+          } catch {
+            addToast({ title: `Failed to upload "${file.name}"`, variant: 'error' });
           } finally {
             setUploadingFiles((prev) => prev.filter((u) => u.id !== id));
           }
@@ -52,14 +57,20 @@ export default function AdminAIKnowledgePage(): React.ReactNode {
 
   const handleAccessChange = React.useCallback(
     (sourceId: string, accessLevel: AccessLevel): void => {
-      updateSource.mutate({ id: sourceId, accessLevel });
+      updateSource.mutate({ id: sourceId, accessLevel }, {
+        onSuccess: () => addToast({ title: 'Access level updated', variant: 'success' }),
+        onError: () => addToast({ title: 'Failed to update access level', variant: 'error' }),
+      });
     },
     [updateSource]
   );
 
   const handleDeleteSource = React.useCallback(
     (sourceId: string): void => {
-      deleteSource.mutate(sourceId);
+      deleteSource.mutate(sourceId, {
+        onSuccess: () => addToast({ title: 'Source deleted', variant: 'success' }),
+        onError: () => addToast({ title: 'Failed to delete source', variant: 'error' }),
+      });
     },
     [deleteSource]
   );

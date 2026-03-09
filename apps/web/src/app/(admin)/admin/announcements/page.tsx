@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { Archive, MoreHorizontal, Pin, PinOff, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -111,6 +112,7 @@ export default function AdminAnnouncementsPage() {
   const { data, isLoading, error } = useAnnouncements(queryFilters);
   const archiveAnnouncement = useArchiveAnnouncement();
   const togglePin = useToggleAnnouncementPin();
+  const { addToast } = useToast();
 
   const announcements = data?.data || [];
 
@@ -290,6 +292,9 @@ export default function AdminAnnouncementsPage() {
                             togglePin.mutate({
                               id: announcement.id,
                               pinned: !announcement.is_pinned,
+                            }, {
+                              onSuccess: () => addToast({ title: announcement.is_pinned ? 'Unpinned' : 'Pinned', variant: 'success' }),
+                              onError: () => addToast({ title: 'Failed to update pin', variant: 'error' }),
                             })
                           }
                           title={announcement.is_pinned ? 'Unpin' : 'Pin'}
@@ -303,7 +308,10 @@ export default function AdminAnnouncementsPage() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => archiveAnnouncement.mutate(announcement.id)}
+                          onClick={() => archiveAnnouncement.mutate(announcement.id, {
+                            onSuccess: () => addToast({ title: 'Announcement archived', variant: 'success' }),
+                            onError: () => addToast({ title: 'Failed to archive', variant: 'error' }),
+                          })}
                           title="Archive"
                         >
                           <Archive className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
@@ -344,6 +352,9 @@ export default function AdminAnnouncementsPage() {
                         togglePin.mutate({
                           id: announcement.id,
                           pinned: !announcement.is_pinned,
+                        }, {
+                          onSuccess: () => addToast({ title: announcement.is_pinned ? 'Unpinned' : 'Pinned', variant: 'success' }),
+                          onError: () => addToast({ title: 'Failed to update pin', variant: 'error' }),
                         })
                       }
                     >
@@ -356,7 +367,10 @@ export default function AdminAnnouncementsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => archiveAnnouncement.mutate(announcement.id)}
+                      onClick={() => archiveAnnouncement.mutate(announcement.id, {
+                        onSuccess: () => addToast({ title: 'Announcement archived', variant: 'success' }),
+                        onError: () => addToast({ title: 'Failed to archive', variant: 'error' }),
+                      })}
                     >
                       <Archive className="mr-1 h-3.5 w-3.5" /> Archive
                     </Button>

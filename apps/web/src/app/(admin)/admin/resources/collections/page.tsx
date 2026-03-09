@@ -2,6 +2,7 @@
 
 import { useDeleteCollection, useResourceCollections } from '@/hooks/useResourceCollections';
 import { Button, Card, CardContent, Input } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -13,6 +14,7 @@ export default function AdminCollectionsPage() {
     pageSize: 100,
   });
   const deleteCollection = useDeleteCollection();
+  const { addToast } = useToast();
 
   const collections = data?.data || [];
 
@@ -85,7 +87,10 @@ export default function AdminCollectionsPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => deleteCollection.mutate(collection.id)}
+                    onClick={() => deleteCollection.mutate(collection.id, {
+                      onSuccess: () => addToast({ title: 'Collection deleted', variant: 'success' }),
+                      onError: () => addToast({ title: 'Failed to delete collection', variant: 'error' }),
+                    })}
                     disabled={deleteCollection.isPending}
                   >
                     Delete

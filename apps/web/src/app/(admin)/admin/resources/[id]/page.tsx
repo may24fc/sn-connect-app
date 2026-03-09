@@ -29,6 +29,7 @@ import {
   TagInput,
   Textarea,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { Archive, ArrowLeft, MoreHorizontal, Send, Star, StarOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -47,6 +48,7 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
   const publishResource = usePublishResource();
   const archiveResource = useArchiveResource();
   const toggleFeatured = useToggleResourceFeatured();
+  const { addToast } = useToast();
 
   const resource = data?.data;
 
@@ -76,23 +78,28 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
   }
 
   const saveDetails = async (): Promise<void> => {
-    await updateResource.mutateAsync({
-      title,
-      description,
-      tags,
-      targetRoles: targeting.rolesCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      targetDepartments: targeting.departmentsCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      targetEmployees: targeting.employeesCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-    });
+    try {
+      await updateResource.mutateAsync({
+        title,
+        description,
+        tags,
+        targetRoles: targeting.rolesCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        targetDepartments: targeting.departmentsCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        targetEmployees: targeting.employeesCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+      });
+      addToast({ title: 'Resource updated', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to update resource', variant: 'error' });
+    }
   };
 
   return (
@@ -115,13 +122,19 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => publishResource.mutate(resource.id)}>
+              <DropdownMenuItem onClick={() => publishResource.mutate(resource.id, {
+                onSuccess: () => addToast({ title: 'Resource published', variant: 'success' }),
+                onError: () => addToast({ title: 'Failed to publish resource', variant: 'error' }),
+              })}>
                 <Send className="mr-2 h-4 w-4" />
                 Publish
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  toggleFeatured.mutate({ id: resource.id, featured: !resource.is_featured })
+                  toggleFeatured.mutate({ id: resource.id, featured: !resource.is_featured }, {
+                    onSuccess: () => addToast({ title: resource.is_featured ? 'Resource unfeatured' : 'Resource featured', variant: 'success' }),
+                    onError: () => addToast({ title: 'Failed to update feature status', variant: 'error' }),
+                  })
                 }
               >
                 {resource.is_featured ? (
@@ -131,7 +144,13 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
                 )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => archiveResource.mutate(resource.id)}>
+              <DropdownMenuItem onClick={() => archiveResource.mutate(resource.id, {
+                onSuccess: () => {
+                  addToast({ title: 'Resource archived', variant: 'success' });
+                  router.push('/admin/resources');
+                },
+                onError: () => addToast({ title: 'Failed to archive resource', variant: 'error' }),
+              })}>
                 <Archive className="mr-2 h-4 w-4" />
                 Archive
               </DropdownMenuItem>

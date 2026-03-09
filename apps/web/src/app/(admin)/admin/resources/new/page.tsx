@@ -14,6 +14,7 @@ import {
   TagInput,
   Textarea,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -66,6 +67,7 @@ export default function NewResourcePage() {
   const router = useRouter();
   const uploadResource = useUploadResource();
   const createResource = useCreateResource();
+  const { addToast } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -96,56 +98,61 @@ export default function NewResourcePage() {
   };
 
   const create = async (publishImmediately: boolean): Promise<void> => {
-    const created = await createResource.mutateAsync({
-      title,
-      description,
-      resourceType: resourceType as
-        | 'link'
-        | 'video'
-        | 'document'
-        | 'image'
-        | 'presentation'
-        | 'interactive',
-      category: category as
-        | 'benefits'
-        | 'performance'
-        | 'training'
-        | 'emergency'
-        | 'onboarding'
-        | 'policies'
-        | 'tools'
-        | 'culture'
-        | 'department_specific'
-        | 'forms_templates',
-      tags,
-      filePath: filePath || undefined,
-      externalUrl: externalUrl || undefined,
-      fileSize: fileMeta?.fileSize,
-      mimeType: fileMeta?.mimeType,
-      isPublic,
-      targetRoles: targeting.rolesCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      targetDepartments: targeting.departmentsCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      targetEmployees: targeting.employeesCsv
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean),
-      publishedAt: publishImmediately ? new Date().toISOString() : undefined,
-      isFeatured: false,
-      isPinned: false,
-      displayOrder: 0,
-    });
+    try {
+      const created = await createResource.mutateAsync({
+        title,
+        description,
+        resourceType: resourceType as
+          | 'link'
+          | 'video'
+          | 'document'
+          | 'image'
+          | 'presentation'
+          | 'interactive',
+        category: category as
+          | 'benefits'
+          | 'performance'
+          | 'training'
+          | 'emergency'
+          | 'onboarding'
+          | 'policies'
+          | 'tools'
+          | 'culture'
+          | 'department_specific'
+          | 'forms_templates',
+        tags,
+        filePath: filePath || undefined,
+        externalUrl: externalUrl || undefined,
+        fileSize: fileMeta?.fileSize,
+        mimeType: fileMeta?.mimeType,
+        isPublic,
+        targetRoles: targeting.rolesCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        targetDepartments: targeting.departmentsCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        targetEmployees: targeting.employeesCsv
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        publishedAt: publishImmediately ? new Date().toISOString() : undefined,
+        isFeatured: false,
+        isPinned: false,
+        displayOrder: 0,
+      });
 
-    if (publishImmediately) {
-      await fetch(`/api/resources/${created.data.id}/publish`, { method: 'POST' });
+      if (publishImmediately) {
+        await fetch(`/api/resources/${created.data.id}/publish`, { method: 'POST' });
+      }
+
+      addToast({ title: publishImmediately ? 'Resource published' : 'Resource saved as draft', variant: 'success' });
+      router.push(`/admin/resources/${created.data.id}`);
+    } catch {
+      addToast({ title: 'Failed to create resource', variant: 'error' });
     }
-
-    router.push(`/admin/resources/${created.data.id}`);
   };
 
   const isExternalLink = resourceType === 'link';

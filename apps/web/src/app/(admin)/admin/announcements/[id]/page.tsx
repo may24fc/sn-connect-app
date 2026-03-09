@@ -29,6 +29,7 @@ import {
   TabsTrigger,
   TargetingSelector,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import { useQuery } from '@tanstack/react-query';
 import { Archive, ArrowLeft, MoreHorizontal, Pencil, Pin, PinOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -76,6 +77,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
   const publishAnnouncement = usePublishAnnouncement();
   const archiveAnnouncement = useArchiveAnnouncement();
   const pinAnnouncement = useToggleAnnouncementPin();
+  const { addToast } = useToast();
 
   const analyticsQuery = useQuery({
     queryKey: ['announcements', 'analytics', announcementId],
@@ -127,7 +129,9 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
       {
         onSuccess: () => {
           setMode('preview');
+          addToast({ title: 'Changes saved', variant: 'success' });
         },
+        onError: () => addToast({ title: 'Failed to save changes', variant: 'error' }),
       }
     );
   };
@@ -151,7 +155,9 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
       {
         onSuccess: () => {
           setMode('preview');
+          addToast({ title: 'Targeting saved', variant: 'success' });
         },
+        onError: () => addToast({ title: 'Failed to save targeting', variant: 'error' }),
       }
     );
   };
@@ -223,7 +229,10 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
             <Button
               size="sm"
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              onClick={() => publishAnnouncement.mutate(announcement.id)}
+              onClick={() => publishAnnouncement.mutate(announcement.id, {
+                onSuccess: () => addToast({ title: 'Announcement published', variant: 'success' }),
+                onError: () => addToast({ title: 'Failed to publish', variant: 'error' }),
+              })}
               disabled={publishAnnouncement.isPending || announcement.status === 'published'}
             >
               {publishAnnouncement.isPending ? 'Publishing...' : 'Publish'}
@@ -237,7 +246,10 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() =>
-                    pinAnnouncement.mutate({ id: announcement.id, pinned: !announcement.is_pinned })
+                    pinAnnouncement.mutate({ id: announcement.id, pinned: !announcement.is_pinned }, {
+                      onSuccess: () => addToast({ title: announcement.is_pinned ? 'Unpinned' : 'Pinned', variant: 'success' }),
+                      onError: () => addToast({ title: 'Failed to update pin', variant: 'error' }),
+                    })
                   }
                   disabled={pinAnnouncement.isPending}
                 >
@@ -249,7 +261,10 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => archiveAnnouncement.mutate(announcement.id)}
+                  onClick={() => archiveAnnouncement.mutate(announcement.id, {
+                    onSuccess: () => addToast({ title: 'Announcement archived', variant: 'success' }),
+                    onError: () => addToast({ title: 'Failed to archive', variant: 'error' }),
+                  })}
                   disabled={archiveAnnouncement.isPending}
                 >
                   <Archive className="mr-2 h-4 w-4" />
@@ -409,7 +424,10 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           <Button
             size="sm"
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            onClick={() => publishAnnouncement.mutate(announcement.id)}
+            onClick={() => publishAnnouncement.mutate(announcement.id, {
+              onSuccess: () => addToast({ title: 'Announcement published', variant: 'success' }),
+              onError: () => addToast({ title: 'Failed to publish', variant: 'error' }),
+            })}
             disabled={publishAnnouncement.isPending || announcement.status === 'published'}
           >
             {publishAnnouncement.isPending ? 'Publishing...' : 'Publish'}
@@ -418,7 +436,10 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
             variant="outline"
             size="sm"
             onClick={() =>
-              pinAnnouncement.mutate({ id: announcement.id, pinned: !announcement.is_pinned })
+              pinAnnouncement.mutate({ id: announcement.id, pinned: !announcement.is_pinned }, {
+                onSuccess: () => addToast({ title: announcement.is_pinned ? 'Unpinned' : 'Pinned', variant: 'success' }),
+                onError: () => addToast({ title: 'Failed to update pin', variant: 'error' }),
+              })
             }
             disabled={pinAnnouncement.isPending}
           >
@@ -427,7 +448,10 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           <Button
             variant="outline"
             size="sm"
-            onClick={() => archiveAnnouncement.mutate(announcement.id)}
+            onClick={() => archiveAnnouncement.mutate(announcement.id, {
+              onSuccess: () => addToast({ title: 'Announcement archived', variant: 'success' }),
+              onError: () => addToast({ title: 'Failed to archive', variant: 'error' }),
+            })}
             disabled={archiveAnnouncement.isPending}
           >
             Archive
@@ -481,13 +505,19 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
         <TabsContent value="attachments" className="mt-4 space-y-4">
           <AttachmentUploader
             onFileSelected={async (file) => {
-              const formData = new FormData();
-              formData.append('file', file);
-              await fetch(`/api/announcements/${announcementId}/attachments`, {
-                method: 'POST',
-                body: formData,
-              });
-              await uploadAttachment.refetch();
+              try {
+                const formData = new FormData();
+                formData.append('file', file);
+                const res = await fetch(`/api/announcements/${announcementId}/attachments`, {
+                  method: 'POST',
+                  body: formData,
+                });
+                if (!res.ok) throw new Error('Upload failed');
+                await uploadAttachment.refetch();
+                addToast({ title: 'Attachment uploaded', variant: 'success' });
+              } catch {
+                addToast({ title: 'Failed to upload attachment', variant: 'error' });
+              }
             }}
           />
           <div className="space-y-2">
@@ -510,13 +540,19 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                       variant="outline"
                       size="sm"
                       onClick={async () => {
-                        await fetch(
-                          `/api/announcements/${announcementId}/attachments/${attachment.id}`,
-                          {
-                            method: 'DELETE',
-                          }
-                        );
-                        await uploadAttachment.refetch();
+                        try {
+                          const res = await fetch(
+                            `/api/announcements/${announcementId}/attachments/${attachment.id}`,
+                            {
+                              method: 'DELETE',
+                            }
+                          );
+                          if (!res.ok) throw new Error('Delete failed');
+                          await uploadAttachment.refetch();
+                          addToast({ title: 'Attachment deleted', variant: 'success' });
+                        } catch {
+                          addToast({ title: 'Failed to delete attachment', variant: 'error' });
+                        }
                       }}
                     >
                       Delete

@@ -29,6 +29,7 @@ import {
   TabsTrigger,
   Textarea,
 } from '@hr-portal/ui';
+import { useToast } from '@hr-portal/ui';
 import {
   AlertCircle,
   ArrowLeft,
@@ -209,6 +210,7 @@ function ReviewDialog({
 }): ReactNode {
   const [reviewNote, setReviewNote] = useState('');
   const reviewMutation = useReviewProfileChangeRequest();
+  const { addToast } = useToast();
 
   const handleAction = (action: 'approve' | 'reject') => {
     if (!request) return;
@@ -218,6 +220,10 @@ function ReviewDialog({
         onSuccess: () => {
           setReviewNote('');
           onClose();
+          addToast({ title: `Change request ${action === 'approve' ? 'approved' : 'rejected'}`, variant: 'success' });
+        },
+        onError: () => {
+          addToast({ title: `Failed to ${action} change request`, variant: 'error' });
         },
       }
     );
