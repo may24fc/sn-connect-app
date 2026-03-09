@@ -9,7 +9,7 @@ import { NAV_LINKS, BUSINESS_UNITS } from '@/data/placeholder';
 import { MegaMenu } from './MegaMenu';
 import { MobileMenu } from './MobileMenu';
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001';
 
 export function Header(): ReactNode {
   const pathname = usePathname();
@@ -120,7 +120,7 @@ export function Header(): ReactNode {
             {/* Login / Sign Up */}
             <div className="hidden items-center gap-2 lg:flex">
               <a
-                href={`${PORTAL_URL}/login`}
+                href={`${APP_URL}/login`}
                 className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 hover:bg-zinc-50"
               >
                 Log in
