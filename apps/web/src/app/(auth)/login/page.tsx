@@ -17,16 +17,40 @@ import {
 } from '@hr-portal/ui';
 import { AlertCircle, Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, type ReactNode, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
+
+function getDefaultDashboard(role: string): string {
+  switch (role) {
+    case 'admin':
+      return '/admin/dashboard';
+    case 'super_admin':
+      return '/super-admin/dashboard';
+    case 'intern':
+      return '/intern/dashboard';
+    default:
+      return '/dashboard';
+  }
+}
 
 export default function LoginPage(): ReactNode {
-  const { login } = useAuth();
+  const { login, user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
+
+  // If user is already authenticated, redirect away from login
+  useEffect(() => {
+    if (!authLoading && user) {
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get('returnTo') || params.get('redirect');
+      router.replace(returnTo || getDefaultDashboard(user.role));
+    }
+  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
