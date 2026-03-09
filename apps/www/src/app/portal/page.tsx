@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     'Access SN Connect HR Portal. Login or sign up to manage your account.',
 };
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001';
+const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001';
 
 const FEATURES = [
   { icon: CreditCard, title: 'View Pay Slips', description: 'Access your salary records and payroll history anytime.' },
