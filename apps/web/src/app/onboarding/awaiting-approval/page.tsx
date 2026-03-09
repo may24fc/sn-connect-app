@@ -25,7 +25,7 @@ export default function AwaitingApprovalPage(): ReactNode {
           <CardTitle className="text-2xl">Onboarding Submitted!</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
-          <div className="flex items-center justify-center gap-2 text-success">
+          <div className="flex items-start justify-center text-success">
             <CheckCircle2 className="h-5 w-5" />
             <p className="font-medium">Your onboarding form has been submitted successfully.</p>
           </div>

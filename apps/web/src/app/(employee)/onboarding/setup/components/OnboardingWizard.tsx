@@ -13,6 +13,7 @@ import {
   CardTitle,
   useToast,
 } from '@hr-portal/ui';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -26,6 +27,30 @@ const steps = ['personal_info', 'payment_info', 'documents', 'review'] as const;
 
 type Step = (typeof steps)[number];
 
+const COUNTRY_DIAL_CODES: Record<string, string> = {
+  PH: '+63',
+  US: '+1',
+  IT: '+39',
+  AU: '+61',
+  GB: '+44',
+  DE: '+49',
+  SG: '+65',
+  JP: '+81',
+  KR: '+82',
+  IN: '+91',
+};
+
+/** Prepend the dial code to a local phone number if it doesn't already have one. */
+function formatPhoneWithDialCode(phone: string, countryCode: string): string {
+  const cleaned = phone.trim();
+  if (!cleaned) return cleaned;
+  if (cleaned.startsWith('+')) return cleaned;
+  const dial = COUNTRY_DIAL_CODES[countryCode] || '+63';
+  // Strip leading 0 (common local prefix in PH and many countries)
+  const stripped = cleaned.startsWith('0') ? cleaned.slice(1) : cleaned;
+  return `${dial}${stripped}`;
+}
+
 export function OnboardingWizard(): ReactNode {
   const router = useRouter();
   const { addToast } = useToast();
@@ -38,13 +63,19 @@ export function OnboardingWizard(): ReactNode {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const initialSyncDone = useRef(false);
+  // Prevents the is_completed guard from overriding the post-submit navigation
+  // to /onboarding/awaiting-approval when the profile query refetches after the
+  // complete endpoint marks is_completed = true.
+  const submittedRef = useRef(false);
 
   useEffect(() => {
     const profile = profileQuery.data?.data;
     if (!profile) return;
 
     if (profile.is_completed) {
-      router.replace('/dashboard');
+      if (!submittedRef.current) {
+        router.replace('/dashboard');
+      }
       return;
     }
 
@@ -108,11 +139,25 @@ export function OnboardingWizard(): ReactNode {
     }
 
     if (step === 'personal_info') {
-      await updateStep.mutateAsync({ step, data: draft.personalInfo });
+      const data = { ...draft.personalInfo };
+      data.contactNumber = formatPhoneWithDialCode(
+        String(data.contactNumber ?? ''),
+        String(data.contactCountryCode ?? 'PH')
+      );
+      data.emergencyContactNumber = formatPhoneWithDialCode(
+        String(data.emergencyContactNumber ?? ''),
+        String(data.emergencyContactCountryCode ?? 'PH')
+      );
+      await updateStep.mutateAsync({ step, data });
     }
 
     if (step === 'payment_info') {
-      await updateStep.mutateAsync({ step, data: draft.paymentInfo });
+      const data = { ...draft.paymentInfo };
+      data.paymentPhoneNumber = formatPhoneWithDialCode(
+        String(data.paymentPhoneNumber ?? ''),
+        String(data.paymentPhoneCountryCode ?? 'PH')
+      );
+      await updateStep.mutateAsync({ step, data });
     }
 
     if (step === 'documents') {
@@ -167,16 +212,24 @@ export function OnboardingWizard(): ReactNode {
         return 'Please enter a valid emergency contact email address.';
       }
 
-      // Phone number validation
-      const phoneRegex = /^(\+63|0)?9\d{9}$/;
+      // Phone number validation – build full international number before checking
       const contactNumber = String(draft.personalInfo.contactNumber ?? '').trim();
       const emergencyContactNumber = String(draft.personalInfo.emergencyContactNumber ?? '').trim();
 
-      if (!phoneRegex.test(contactNumber)) {
-        return 'Please enter a valid contact number (09XXXXXXXXX or +639XXXXXXXXX).';
+      const fullContact = formatPhoneWithDialCode(
+        contactNumber,
+        String(draft.personalInfo.contactCountryCode ?? 'PH')
+      );
+      if (!isValidPhoneNumber(fullContact)) {
+        return 'Please enter a valid contact number.';
       }
-      if (!phoneRegex.test(emergencyContactNumber)) {
-        return 'Please enter a valid emergency contact number (09XXXXXXXXX or +639XXXXXXXXX).';
+
+      const fullEmergency = formatPhoneWithDialCode(
+        emergencyContactNumber,
+        String(draft.personalInfo.emergencyContactCountryCode ?? 'PH')
+      );
+      if (!isValidPhoneNumber(fullEmergency)) {
+        return 'Please enter a valid emergency contact number.';
       }
     }
 
@@ -279,6 +332,7 @@ export function OnboardingWizard(): ReactNode {
           variant: 'success',
         });
 
+        submittedRef.current = true;
         clearDraft();
         router.push('/onboarding/awaiting-approval');
         return;
@@ -329,7 +383,13 @@ export function OnboardingWizard(): ReactNode {
       return <StepDocuments />;
     }
 
-    return <StepReview personalInfo={draft.personalInfo} paymentInfo={draft.paymentInfo} />;
+    return (
+      <StepReview
+        personalInfo={draft.personalInfo}
+        paymentInfo={draft.paymentInfo}
+        onEditStep={setStep}
+      />
+    );
   };
 
   // Onboarding is mandatory when the profile is not completed.
@@ -356,8 +416,21 @@ export function OnboardingWizard(): ReactNode {
       </CardHeader>
       <CardContent className="space-y-6">
         {errorMessage && (
-          <div className="rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 p-3 text-sm text-rose-700 dark:text-rose-300">
-            {errorMessage}
+          <div className="rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 p-4 text-sm text-rose-700 dark:text-rose-300 flex items-start gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="h-5 w-5 shrink-0 mt-0.5"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span>{errorMessage}</span>
           </div>
         )}
         {renderStep()}

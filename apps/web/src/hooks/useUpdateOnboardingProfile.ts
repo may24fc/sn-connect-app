@@ -22,8 +22,38 @@ export function useUpdateOnboardingProfile() {
         // Build a human-readable message from the Zod field errors when available
         const fieldErrors = body?.details?.fieldErrors as Record<string, string[]> | undefined;
         if (fieldErrors) {
+          const FIELD_LABELS: Record<string, string> = {
+            firstName: 'First Name',
+            middleName: 'Middle Name',
+            lastName: 'Last Name',
+            position: 'Position',
+            personalEmail: 'Personal Email',
+            companyEmail: 'Company Email',
+            contactNumber: 'Contact Number',
+            emergencyContactNumber: 'Emergency Contact Number',
+            emergencyContactName: 'Emergency Contact Name',
+            emergencyContactEmail: 'Emergency Contact Email',
+            emergencyContactRelationship: 'Emergency Contact Relationship',
+            address: 'Address',
+            birthday: 'Birthday',
+            nationality: 'Nationality',
+            education: 'Education',
+            major: 'Major',
+            paymentAccountName: 'Account Name',
+            paymentAccountNumber: 'Account Number',
+            paymentEmail: 'Payment Email',
+            paymentPhoneNumber: 'Payment Phone Number',
+            paymentAddress: 'Payment Address',
+            paymentCity: 'City',
+            paymentProvince: 'Province',
+            paymentZipcode: 'Zip Code',
+          };
+
           const messages = Object.entries(fieldErrors)
-            .map(([field, errs]) => `${field}: ${(errs as string[]).join(', ')}`)
+            .map(([field, errs]) => {
+              const label = FIELD_LABELS[field] || field;
+              return `${label}: ${(errs as string[]).join(', ')}`;
+            })
             .join('; ');
           throw new Error(messages || body.error || 'Validation failed');
         }
