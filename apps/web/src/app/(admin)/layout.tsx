@@ -9,7 +9,7 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/hooks/useNotifications';
-import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
+import { Header, NotificationBell, Sidebar, ToastProvider, useToast } from '@hr-portal/ui';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
@@ -148,6 +148,7 @@ function AdminLayoutInner({
 /** Wires real notification data into the NotificationBell component */
 function AdminNotificationBell(): ReactNode {
   const router = useRouter();
+  const { addToast } = useToast();
   const { data } = useNotifications({ page: 1, pageSize: 5 });
   const { data: unreadCount } = useUnreadCount();
   const markRead = useMarkNotificationRead();
@@ -159,8 +160,14 @@ function AdminNotificationBell(): ReactNode {
       notifications={data?.data ?? []}
       unreadCount={unreadCount ?? 0}
       onMarkRead={(id) => markRead.mutate(id)}
-      onMarkAllRead={() => markAllRead.mutate()}
-      onDelete={(id) => deleteNotification.mutate(id)}
+      onMarkAllRead={() => markAllRead.mutate(undefined, {
+        onSuccess: () => addToast({ title: 'All notifications marked as read', variant: 'success' }),
+        onError: () => addToast({ title: 'Failed to mark all as read', variant: 'error' }),
+      })}
+      onDelete={(id) => deleteNotification.mutate(id, {
+        onSuccess: () => addToast({ title: 'Notification deleted', variant: 'success' }),
+        onError: () => addToast({ title: 'Failed to delete notification', variant: 'error' }),
+      })}
       onNavigate={(path) => router.push(path)}
       onViewAll={() => router.push('/admin/notifications')}
     />
