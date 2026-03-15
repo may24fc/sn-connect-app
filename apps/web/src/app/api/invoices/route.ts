@@ -240,6 +240,8 @@ export async function POST(request: NextRequest) {
         invoice_number: invoiceNumber,
         period_start: parsed.data.periodStart,
         period_end: parsed.data.periodEnd,
+        hourly_rate: parsed.data.hourlyRate ?? null,
+        hours_worked: parsed.data.hoursWorked ?? null,
         gross_amount: parsed.data.grossAmount,
         deductions: parsed.data.deductions,
         net_amount: parsed.data.netAmount,

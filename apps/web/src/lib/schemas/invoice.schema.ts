@@ -16,6 +16,8 @@ export const invoiceCreateSchema = z.object({
   invoiceNumber: z.string().optional(),
   periodStart: dateSchema,
   periodEnd: dateSchema,
+  hourlyRate: z.number().nonnegative().optional().nullable(),
+  hoursWorked: z.number().nonnegative().optional().nullable(),
   grossAmount: z.number().nonnegative(),
   deductions: z.number().nonnegative().default(0),
   netAmount: z.number().nonnegative(),
