@@ -29,6 +29,19 @@ import { cn } from '../../utils/cn';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
 
+const TASK_CATEGORY_STYLES: Record<string, string> = {
+  launch: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+  optimization: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  maintenance: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  research: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  administrative: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  other: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+};
+
+function formatTaskCategory(category: string): string {
+  return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
+}
+
 export interface TaskDetailViewProps {
   task: Task;
   onStatusChange?: (status: TaskStatus, note?: string) => void;
@@ -102,7 +115,11 @@ export function TaskDetailView({
                 Overdue
               </Badge>
             )}
-            {task.category && <Badge variant="outline">{task.category}</Badge>}
+            {task.category && (
+              <Badge className={cn('border-0', TASK_CATEGORY_STYLES[task.category])}>
+                {formatTaskCategory(task.category)}
+              </Badge>
+            )}
           </div>
 
           {/* Title */}
@@ -149,6 +166,22 @@ export function TaskDetailView({
                 Category
               </div>
               <p className="text-sm font-medium pl-6">{task.category}</p>
+            </div>
+          )}
+
+          {task.tags && task.tags.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Tag className="h-4 w-4" />
+                Tags
+              </div>
+              <div className="flex flex-wrap gap-2 pl-6">
+                {task.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
 

@@ -10,6 +10,8 @@ export interface TaskRecord {
   assigned_by: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  category: 'launch' | 'optimization' | 'maintenance' | 'research' | 'administrative' | 'other' | null;
+  tags: string[] | null;
   due_date: string | null;
   completed_at: string | null;
   created_at: string;
@@ -43,6 +45,8 @@ export function useTasks(filters: TaskFilters = {}, options: UseTasksOptions = {
       if (filters.search) params.append('search', filters.search);
       if (filters.status) params.append('status', filters.status);
       if (filters.priority) params.append('priority', filters.priority);
+      if (filters.category) params.append('category', filters.category);
+      if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','));
       if (filters.assigneeId) params.append('assigneeId', filters.assigneeId);
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));

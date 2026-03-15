@@ -2,6 +2,7 @@
 
 import { ClipboardList, Edit, Eye, Loader2, MoreVertical, Trash2 } from 'lucide-react';
 import type * as React from 'react';
+import { Badge } from '../../primitives/badge';
 import { Button } from '../../primitives/button';
 import { Card, CardContent } from '../../primitives/card';
 import { Checkbox } from '../../primitives/checkbox';
@@ -26,6 +27,19 @@ import { cn } from '../../utils/cn';
 import { TaskCard } from './TaskCard';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
+
+const TASK_CATEGORY_STYLES: Record<string, string> = {
+  launch: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+  optimization: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  maintenance: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  research: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  administrative: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  other: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+};
+
+function formatTaskCategory(category: string): string {
+  return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
+}
 
 export interface TaskListProps {
   tasks: Array<Task>;
@@ -179,7 +193,21 @@ export function TaskList({
                           {task.description}
                         </p>
                         {task.category && (
-                          <p className="text-xs text-muted-foreground">{task.category}</p>
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            <Badge
+                              className={cn(
+                                'border-0 text-[11px]',
+                                TASK_CATEGORY_STYLES[task.category]
+                              )}
+                            >
+                              {formatTaskCategory(task.category)}
+                            </Badge>
+                            {task.tags?.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-[11px]">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </TableCell>

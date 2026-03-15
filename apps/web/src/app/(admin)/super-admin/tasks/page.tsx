@@ -43,6 +43,17 @@ import { Calendar, LayoutGrid, List, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
 
+type TaskCategoryValue = (typeof TASK_CATEGORY_OPTIONS)[number]['value'];
+
+const TASK_CATEGORY_OPTIONS = [
+  { value: 'launch', label: 'Launch' },
+  { value: 'optimization', label: 'Optimization' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'research', label: 'Research' },
+  { value: 'administrative', label: 'Administrative' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 type ViewMode = 'list' | 'board';
 
 const formatDate = (value: string | null | undefined): string => {
@@ -71,7 +82,11 @@ export default function TaskManagementPage() {
   const [description, setDescription] = useState('');
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
+  const [category, setCategory] = useState<TaskCategoryValue | ''>('');
+  const [tagInput, setTagInput] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState('');
 
   const taskFilters: TaskFilters = {
     page: 1,
@@ -80,6 +95,16 @@ export default function TaskManagementPage() {
 
   if (search) {
     taskFilters.search = search;
+  }
+  if (categoryFilter !== 'all') {
+    taskFilters.category = categoryFilter;
+  }
+  const normalizedTagFilter = tagFilter
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  if (normalizedTagFilter.length > 0) {
+    taskFilters.tags = normalizedTagFilter;
   }
 
   const { data: tasksData, isLoading, error } = useTasks(taskFilters);
@@ -149,6 +174,11 @@ export default function TaskManagementPage() {
         assignedTo: assignedTo || undefined,
         priority,
         status: 'pending',
+        category: category || undefined,
+        tags: tagInput
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
         dueDate: dueDate || undefined,
       });
 
@@ -163,6 +193,8 @@ export default function TaskManagementPage() {
       setDescription('');
       setAssignedTo('');
       setPriority('medium');
+      setCategory('');
+      setTagInput('');
       setDueDate('');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create task';
@@ -251,6 +283,27 @@ export default function TaskManagementPage() {
               className="pl-10"
             />
           </div>
+          <div className="flex flex-wrap gap-2">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {TASK_CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              value={tagFilter}
+              onChange={(event) => setTagFilter(event.target.value)}
+              placeholder="Tags: onboarding, urgent"
+              className="w-[220px]"
+            />
+          </div>
         </div>
 
         {/* List View */}
@@ -321,8 +374,8 @@ export default function TaskManagementPage() {
               />
             </div>
 
-            {/* Grid: Priority + Due Date */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* Grid: Priority + Category + Due Date */}
+            <div className="grid gap-4 sm:grid-cols-3">
               {/* Priority - Required */}
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">
@@ -366,6 +419,28 @@ export default function TaskManagementPage() {
                 </Select>
               </div>
 
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Category</Label>
+                <Select
+                  value={category || 'uncategorized'}
+                  onValueChange={(value) =>
+                    setCategory(value === 'uncategorized' ? '' : (value as TaskCategoryValue))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="uncategorized">No category</SelectItem>
+                    {TASK_CATEGORY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Due Date - Optional */}
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">
@@ -379,6 +454,15 @@ export default function TaskManagementPage() {
                   min={new Date().toISOString().slice(0, 10)}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Tags</Label>
+              <Input
+                value={tagInput}
+                onChange={(event) => setTagInput(event.target.value)}
+                placeholder="Comma-separated tags"
+              />
             </div>
 
             {/* Assignee - Optional */}
@@ -501,6 +585,7 @@ function TaskListView({
     },
     priority: (t) => priorityOrder[t.priority] ?? 99,
     status: (t) => statusOrder[t.status] ?? 99,
+    category: (t) => t.category ?? '',
     due_date: (t) => t.due_date ?? '',
   });
 
@@ -543,6 +628,18 @@ function TaskListView({
                         {task.description}
                       </p>
                     )}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {task.category && (
+                        <Badge variant="outline" className="text-[11px] capitalize">
+                          {task.category.replace(/_/g, ' ')}
+                        </Badge>
+                      )}
+                      {task.tags?.slice(0, 2).map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-[11px]">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="flex items-center gap-2 text-sm">

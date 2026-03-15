@@ -6,6 +6,7 @@ import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import { formatDate } from '@/lib/format';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -36,12 +37,23 @@ import { ClipboardList, LayoutGrid, List, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 
+const TASK_CATEGORY_OPTIONS = [
+  { value: 'launch', label: 'Launch' },
+  { value: 'optimization', label: 'Optimization' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'research', label: 'Research' },
+  { value: 'administrative', label: 'Administrative' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 export default function MyTasksPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
   const [priority, setPriority] = useState<string>('all');
+  const [category, setCategory] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState('');
   const [activeView, setActiveView] = useState<'list' | 'board'>('list');
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
@@ -51,6 +63,15 @@ export default function MyTasksPage() {
       ? { status: status as 'pending' | 'in_progress' | 'completed' | 'cancelled' }
       : {}),
     ...(priority !== 'all' ? { priority: priority as 'low' | 'medium' | 'high' | 'urgent' } : {}),
+    ...(category !== 'all' ? { category } : {}),
+    ...(tagFilter.trim()
+      ? {
+          tags: tagFilter
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+        }
+      : {}),
     ...(user?.id ? { assigneeId: user.id } : {}),
     page: 1,
     pageSize: 100,
@@ -207,6 +228,25 @@ export default function MyTasksPage() {
                 <SelectItem value="urgent">Urgent</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {TASK_CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              className="w-[220px]"
+              placeholder="Tags: onboarding, urgent"
+              value={tagFilter}
+              onChange={(event) => setTagFilter(event.target.value)}
+            />
           </div>
         </div>
 
@@ -329,6 +369,8 @@ interface TaskListViewProps {
     description: string | null;
     priority: string;
     status: string;
+    category?: string | null;
+    tags?: string[] | null;
     due_date: string | null;
     assigner_name?: string | null;
   }>;
@@ -346,6 +388,7 @@ function TaskListView({ tasks }: TaskListViewProps) {
     status: (t) => statusOrder[t.status] ?? 99,
     due_date: (t) => t.due_date ?? '',
     assigner_name: (t) => t.assigner_name ?? '',
+    category: (t) => t.category ?? '',
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
@@ -407,6 +450,18 @@ function TaskListView({ tasks }: TaskListViewProps) {
                       {task.description}
                     </p>
                   )}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {task.category && (
+                      <Badge variant="outline" className="text-[11px] capitalize">
+                        {task.category.replace(/_/g, ' ')}
+                      </Badge>
+                    )}
+                    {task.tags?.slice(0, 2).map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-[11px]">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />

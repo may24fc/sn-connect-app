@@ -19,6 +19,19 @@ import { cn } from '../../utils/cn';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
 import { TaskStatusBadge } from './TaskStatusBadge';
 
+const TASK_CATEGORY_STYLES: Record<string, string> = {
+  launch: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
+  optimization: 'bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
+  maintenance: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+  research: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
+  administrative: 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  other: 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
+};
+
+function formatTaskCategory(category: string): string {
+  return category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ');
+}
+
 export interface TaskCardProps {
   task: Task;
   variant?: 'default' | 'compact';
@@ -112,8 +125,8 @@ export function TaskCard({
                 </Badge>
               )}
               {task.category && (
-                <Badge variant="outline" className="text-xs">
-                  {task.category}
+                <Badge className={cn('text-xs border-0', TASK_CATEGORY_STYLES[task.category])}>
+                  {formatTaskCategory(task.category)}
                 </Badge>
               )}
             </div>
@@ -142,6 +155,16 @@ export function TaskCard({
       <CardContent className="space-y-4">
         {/* Description Preview */}
         <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>
+
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {task.tags.slice(0, 4).map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                #{tag}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         {/* Metadata Grid */}
         <div className="grid gap-3 text-sm">

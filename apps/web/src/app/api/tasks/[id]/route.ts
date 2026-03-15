@@ -102,7 +102,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       );
     }
 
-    const updates: Record<string, string | null> = {};
+    const updates: Record<string, string | string[] | null> = {};
 
     if (parsed.data.title !== undefined) updates.title = parsed.data.title;
     if (parsed.data.description !== undefined) {
@@ -131,6 +131,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
     if (parsed.data.priority !== undefined) updates.priority = parsed.data.priority;
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
+    if (parsed.data.category !== undefined) updates.category = parsed.data.category || null;
+    if (parsed.data.tags !== undefined) updates.tags = parsed.data.tags;
     if (parsed.data.dueDate !== undefined) {
       updates.due_date = parsed.data.dueDate || null;
     }

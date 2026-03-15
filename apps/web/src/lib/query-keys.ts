@@ -34,6 +34,8 @@ export interface TaskFilters {
   status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   assigneeId?: string;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
+  category?: string;
+  tags?: string[];
   page?: number;
   pageSize?: number;
 }
@@ -255,6 +257,11 @@ export const queryKeys = {
       [...queryKeys.aiKnowledge.sources(), 'list', filters] as const,
     source: (id: string) => [...queryKeys.aiKnowledge.sources(), id] as const,
     chat: () => [...queryKeys.aiKnowledge.all, 'chat'] as const,
+    conversationsList: () => [...queryKeys.aiKnowledge.all, 'conversations'] as const,
+    conversations: (limit: number, offset: number) =>
+      [...queryKeys.aiKnowledge.conversationsList(), limit, offset] as const,
+    conversationMessages: (id: string) =>
+      [...queryKeys.aiKnowledge.conversationsList(), id, 'messages'] as const,
   },
 
   // Dashboard
@@ -277,6 +284,7 @@ export const queryKeys = {
       [...queryKeys.performance.all, 'okr-targets', okrId || 'all'] as const,
     individual: (employeeId: string) =>
       [...queryKeys.performance.all, 'individual', employeeId] as const,
+    team: () => [...queryKeys.performance.all, 'team'] as const,
   },
 
   // Payroll

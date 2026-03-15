@@ -19,6 +19,8 @@ interface TaskRow {
   assigned_by: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  category: 'launch' | 'optimization' | 'maintenance' | 'research' | 'administrative' | 'other' | null;
+  tags: string[] | null;
   due_date: string | null;
   completed_at: string | null;
   created_at: string;
@@ -51,6 +53,11 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
     const priority = searchParams.get('priority') || '';
+    const category = searchParams.get('category') || '';
+    const tags = (searchParams.get('tags') || '')
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
     const assigneeId = searchParams.get('assigneeId') || '';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const pageSize = Number.parseInt(searchParams.get('pageSize') || '10', 10);
@@ -73,6 +80,14 @@ export async function GET(request: NextRequest) {
 
     if (priority) {
       query = query.eq('priority', priority);
+    }
+
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    if (tags.length > 0) {
+      query = query.overlaps('tags', tags);
     }
 
     if (assigneeId) {
@@ -197,6 +212,8 @@ export async function POST(request: NextRequest) {
         assigned_by: user.id,
         priority: parsed.data.priority,
         status: parsed.data.status,
+        category: parsed.data.category || null,
+        tags: parsed.data.tags ?? [],
         due_date: parsed.data.dueDate || null,
         created_by: user.id,
       })

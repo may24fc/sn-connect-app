@@ -47,6 +47,7 @@ export function TaskFilters({
     filters.status ||
     filters.priority ||
     filters.category ||
+    (filters.tags && filters.tags.length > 0) ||
     filters.assigneeId ||
     filters.dateFrom ||
     filters.dateTo;
@@ -163,6 +164,28 @@ export function TaskFilters({
             </Select>
           </div>
         )}
+
+        <div className="w-full sm:w-[220px]">
+          <Label htmlFor="tags" className="sr-only">
+            Filter by tags
+          </Label>
+          <Input
+            id="tags"
+            type="text"
+            placeholder="Tags: onboarding, urgent"
+            value={filters.tags?.join(', ') || ''}
+            onChange={(e) => {
+              const tags = e.target.value
+                .split(',')
+                .map((tag) => tag.trim())
+                .filter(Boolean);
+              onFiltersChange({
+                ...filters,
+                tags: tags.length > 0 ? tags : undefined,
+              });
+            }}
+          />
+        </div>
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
