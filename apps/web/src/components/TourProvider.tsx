@@ -53,7 +53,25 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
   const tourClientRef = useRef<InstanceType<
     typeof import('@sjmc11/tourguidejs').TourGuideClient
   > | null>(null);
+  const failsafeTimerRef = useRef<number | null>(null);
   const currentGroup = getTourGroupForPath(pathname);
+
+  /**
+   * Forcefully remove all TourGuideJS overlay remnants from the DOM.
+   * This prevents the "frozen UI" bug where orphaned overlays block interaction.
+   */
+  const forceCleanupTourDOM = useCallback(() => {
+    document.querySelectorAll('.tg-dialog, .tg-backdrop, .tg-overlay, [class*="tg-"]').forEach((el) => el.remove());
+    document.body.classList.remove('tg-no-interaction');
+    document.body.style.removeProperty('pointer-events');
+    document.body.style.removeProperty('overflow');
+    // Also reset any element-level pointer-events that the library may set
+    document.querySelectorAll('[style*="pointer-events: none"]').forEach((el) => {
+      if (el instanceof HTMLElement && el !== document.body) {
+        el.style.removeProperty('pointer-events');
+      }
+    });
+  }, []);
 
   // Clean up tour instance on unmount
   useEffect(() => {
@@ -61,12 +79,13 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
       if (tourClientRef.current?.isVisible) {
         void tourClientRef.current.exit();
       }
-      document.querySelectorAll('.tg-dialog, .tg-backdrop').forEach((el) => el.remove());
-      document.body.classList.remove('tg-no-interaction');
-      document.body.style.removeProperty('pointer-events');
-      document.body.style.removeProperty('overflow');
+      forceCleanupTourDOM();
+      if (failsafeTimerRef.current) {
+        clearTimeout(failsafeTimerRef.current);
+        failsafeTimerRef.current = null;
+      }
     };
-  }, []);
+  }, [forceCleanupTourDOM]);
 
   const startTour = useCallback(async () => {
     if (!currentGroup) return;
@@ -106,8 +125,7 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
     }
 
     // Remove any stale TourGuideJS DOM elements from previous instances
-    document.querySelectorAll('.tg-dialog, .tg-backdrop').forEach((el) => el.remove());
-    document.body.classList.remove('tg-no-interaction');
+    forceCleanupTourDOM();
 
     const tg = new TourGuideClient({
       backdropColor: 'rgba(0, 0, 0, 0.5)',
@@ -129,28 +147,39 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
 
     tourClientRef.current = tg;
 
-    const cleanupTourDOM = (): void => {
-      document.querySelectorAll('.tg-dialog, .tg-backdrop').forEach((el) => el.remove());
-      document.body.classList.remove('tg-no-interaction');
-      document.body.style.removeProperty('pointer-events');
-      document.body.style.removeProperty('overflow');
+    const onTourEnd = (): void => {
+      setIsActive(false);
+      forceCleanupTourDOM();
       tourClientRef.current = null;
+      // Clear failsafe timer if it's still pending
+      if (failsafeTimerRef.current) {
+        clearTimeout(failsafeTimerRef.current);
+        failsafeTimerRef.current = null;
+      }
     };
 
     tg.onFinish(() => {
       markTourCompleted(currentGroup);
-      setIsActive(false);
-      cleanupTourDOM();
+      onTourEnd();
     });
 
     tg.onAfterExit(() => {
-      setIsActive(false);
-      cleanupTourDOM();
+      onTourEnd();
     });
 
     setIsActive(true);
     await tg.start(currentGroup);
-  }, [currentGroup]);
+
+    // Failsafe: if overlay/backdrop still present 3 seconds after tour
+    // callbacks fire or if tour gets stuck, force-remove everything.
+    // This catches edge cases like rapid clicking or browser back during tour.
+    failsafeTimerRef.current = window.setTimeout(() => {
+      if (!tourClientRef.current?.isVisible) {
+        forceCleanupTourDOM();
+        setIsActive(false);
+      }
+    }, 3000);
+  }, [currentGroup, forceCleanupTourDOM]);
 
   // Auto-start on first visit
   useEffect(() => {
@@ -166,6 +195,26 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
     // Only re-run when the page changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, autoStart]);
+
+  // Force-exit tour on route change (prevents orphaned overlays when user
+  // clicks a link or presses the browser back button during an active tour)
+  useEffect(() => {
+    if (!isActive) return;
+    // pathname changed while tour was active → cleanup
+    if (tourClientRef.current) {
+      try {
+        if (tourClientRef.current.isVisible) {
+          void tourClientRef.current.exit();
+        }
+      } catch {
+        // ignore
+      }
+      tourClientRef.current = null;
+    }
+    forceCleanupTourDOM();
+    setIsActive(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const handleStartTour = useCallback(() => {
     if (currentGroup) {
