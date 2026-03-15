@@ -3,6 +3,45 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
+interface DirectoryRow {
+  full_name: string | null;
+  email: string | null;
+  position: string | null;
+  role: string | null;
+  department_name: string | null;
+  status: string | null;
+  employment_type: string | null;
+}
+
+interface DirectorySearchResult {
+  entry: DirectoryRow;
+  score: number;
+}
+
+function fuzzyScore(entry: DirectoryRow, rawSearch: string): number {
+  const search = rawSearch.trim().toLowerCase();
+  if (!search) return 0;
+
+  const haystacks = [entry.full_name, entry.email, entry.position]
+    .map((value) => (value || '').toLowerCase())
+    .filter(Boolean);
+
+  let bestScore = -1;
+  for (const haystack of haystacks) {
+    if (haystack === search) bestScore = Math.max(bestScore, 100);
+    if (haystack.startsWith(search)) bestScore = Math.max(bestScore, 80);
+    if (haystack.includes(search)) bestScore = Math.max(bestScore, 60);
+
+    const terms = search.split(/\s+/).filter(Boolean);
+    const matchedTerms = terms.filter((term) => haystack.includes(term)).length;
+    if (matchedTerms > 0) {
+      bestScore = Math.max(bestScore, 40 + matchedTerms * 10);
+    }
+  }
+
+  return bestScore;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -37,7 +76,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const roleFilter = searchParams.get('role') || '';
+    const roleFilters = (searchParams.get('roles') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const department = searchParams.get('department') || '';
+    const departmentFilters = (searchParams.get('departments') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const status = searchParams.get('status') || '';
     const employmentType = searchParams.get('employment_type') || '';
     const sortBy = searchParams.get('sort_by') || 'full_name';
@@ -48,21 +95,20 @@ export async function GET(request: NextRequest) {
     // Build query on the employee_directory view
     let query = supabase.from('employee_directory').select('*', { count: 'exact' });
 
-    // Search filter
-    if (search) {
-      query = query.or(
-        `full_name.ilike.%${search}%,email.ilike.%${search}%,position.ilike.%${search}%`
-      );
-    }
-
     // Role filter
     if (roleFilter) {
       query = query.eq('role', roleFilter);
+    }
+    if (roleFilters.length > 0) {
+      query = query.in('role', roleFilters);
     }
 
     // Department filter
     if (department) {
       query = query.eq('department_name', department);
+    }
+    if (departmentFilters.length > 0) {
+      query = query.in('department_name', departmentFilters);
     }
 
     // Status filter (supports comma-separated values for multi-status filtering)
@@ -103,12 +149,34 @@ export async function GET(request: NextRequest) {
     const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'full_name';
     query = query.order(sortColumn, { ascending: sortOrder });
 
-    // Pagination
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to);
+    let data;
+    let count = 0;
+    let error;
 
-    const { data, error, count } = await query;
+    if (search) {
+      const result = await query;
+      data = (result.data || [])
+        .map((entry: DirectoryRow): DirectorySearchResult => ({
+          entry,
+          score: fuzzyScore(entry, search),
+        }))
+        .filter((item: DirectorySearchResult) => item.score >= 0)
+        .sort((left: DirectorySearchResult, right: DirectorySearchResult) => right.score - left.score)
+        .map((item: DirectorySearchResult) => item.entry);
+      count = data.length;
+
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize;
+      data = data.slice(from, to);
+      error = result.error;
+    } else {
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      const result = await query.range(from, to);
+      data = result.data;
+      error = result.error;
+      count = result.count || 0;
+    }
 
     if (error) {
       return NextResponse.json(
@@ -120,7 +188,23 @@ export async function GET(request: NextRequest) {
     // Get aggregate metadata
     const { data: allData } = await supabase
       .from('employee_directory')
-      .select('role, status, internship_status, employment_type');
+      .select('role, status, internship_status, employment_type, department_name');
+
+    const availableDepartments = Array.from(
+      new Set(
+        (allData || [])
+          .map((entry: { department_name: string | null }) => entry.department_name)
+          .filter((value: string | null): value is string => Boolean(value))
+      )
+    ).sort();
+
+    const availableRoles = Array.from(
+      new Set(
+        (allData || [])
+          .map((entry: { role: string | null }) => entry.role)
+          .filter((value: string | null): value is string => Boolean(value))
+      )
+    ).sort();
 
     const metadata = {
       total: count || 0,
@@ -128,6 +212,8 @@ export async function GET(request: NextRequest) {
       interns: allData?.filter((e: { role: string | null }) => e.role === 'intern').length || 0,
       onLeave: allData?.filter((e: { status: string | null }) => e.status === 'on_leave').length || 0,
       probation: allData?.filter((e: { employment_type: string | null }) => e.employment_type === 'probationary').length || 0,
+      availableDepartments,
+      availableRoles,
     };
 
     return NextResponse.json({

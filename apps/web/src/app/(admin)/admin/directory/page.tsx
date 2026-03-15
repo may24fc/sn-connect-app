@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  MultiSelectFilter,
   Select,
   SelectContent,
   SelectItem,
@@ -91,8 +92,8 @@ export default function AdminDirectoryPage(): ReactNode {
   const queryClient = useQueryClient();
   const isSuperAdmin = user?.role === 'super_admin';
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [departmentFilter, _setDepartmentFilter] = useState('');
+  const [roleFilters, setRoleFilters] = useState<string[]>([]);
+  const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('');
   const [sortBy, setSortBy] = useState('full_name');
@@ -139,14 +140,14 @@ export default function AdminDirectoryPage(): ReactNode {
     page,
     pageSize,
     ...(search && { search }),
-    ...(roleFilter && { role: roleFilter }),
-    ...(departmentFilter && { department: departmentFilter }),
+    ...(roleFilters.length > 0 && { roles: roleFilters }),
+    ...(departmentFilters.length > 0 && { departments: departmentFilters }),
     ...(statusFilter && { status: statusFilter }),
     ...(employmentTypeFilter && { employmentType: employmentTypeFilter }),
   };
 
   const { data, isLoading, isError } = useDirectory(filters);
-  const { exportCsv } = useDirectoryExport(filters);
+  const { exportCsv, exportExcel } = useDirectoryExport(filters);
 
   const [exporting, setExporting] = useState(false);
 
@@ -157,6 +158,18 @@ export default function AdminDirectoryPage(): ReactNode {
       addToast({ title: 'Export complete', variant: 'success' });
     } catch {
       addToast({ title: 'Failed to export CSV', variant: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      await exportExcel();
+      addToast({ title: 'Export complete', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to export Excel', variant: 'error' });
     } finally {
       setExporting(false);
     }
@@ -175,6 +188,14 @@ export default function AdminDirectoryPage(): ReactNode {
   const entries = data?.data || [];
   const metadata = data?.metadata;
   const pagination = data?.pagination;
+  const departmentOptions = (metadata?.availableDepartments || []).map((department) => ({
+    value: department,
+    label: department,
+  }));
+  const roleOptions = (metadata?.availableRoles || []).map((role) => ({
+    value: role,
+    label: role.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
+  }));
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -188,10 +209,16 @@ export default function AdminDirectoryPage(): ReactNode {
             Master directory of all employees and interns
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
-          <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
-          {exporting ? 'Exporting...' : 'Export CSV'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+            <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportExcel} disabled={exporting}>
+            <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
+            {exporting ? 'Exporting...' : 'Export Excel'}
+          </Button>
+        </div>
       </div>
 
       {/* Summary Stats */}
@@ -264,24 +291,24 @@ export default function AdminDirectoryPage(): ReactNode {
                 className="pl-10"
               />
             </div>
-            <Select
-              value={roleFilter}
-              onValueChange={(v) => {
-                setRoleFilter(v === 'all' ? '' : v);
+            <MultiSelectFilter
+              label="Roles"
+              options={roleOptions}
+              selected={roleFilters}
+              onSelectionChange={(selected) => {
+                setRoleFilters(selected);
                 setPage(1);
               }}
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="employee">Employee</SelectItem>
-                <SelectItem value="intern">Intern</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
-              </SelectContent>
-            </Select>
+            />
+            <MultiSelectFilter
+              label="Departments"
+              options={departmentOptions}
+              selected={departmentFilters}
+              onSelectionChange={(selected) => {
+                setDepartmentFilters(selected);
+                setPage(1);
+              }}
+            />
             <Select
               value={statusFilter}
               onValueChange={(v) => {

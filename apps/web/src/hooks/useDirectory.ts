@@ -4,7 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 export interface DirectoryFilters {
   search?: string;
   role?: string;
+  roles?: string[];
   department?: string;
+  departments?: string[];
   status?: string;
   employmentType?: string;
   sortBy?: string;
@@ -67,6 +69,8 @@ export interface DirectoryResponse {
     interns: number;
     onLeave: number;
     probation: number;
+    availableDepartments: string[];
+    availableRoles: string[];
   };
   pagination: {
     page: number;
@@ -83,7 +87,9 @@ export function useDirectory(filters: DirectoryFilters = {}) {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
       if (filters.role) params.append('role', filters.role);
+      if (filters.roles?.length) params.append('roles', filters.roles.join(','));
       if (filters.department) params.append('department', filters.department);
+      if (filters.departments?.length) params.append('departments', filters.departments.join(','));
       if (filters.status) params.append('status', filters.status);
       if (filters.employmentType) params.append('employment_type', filters.employmentType);
       if (filters.sortBy) params.append('sort_by', filters.sortBy);
@@ -105,29 +111,34 @@ export function useDirectory(filters: DirectoryFilters = {}) {
 }
 
 export function useDirectoryExport(filters: DirectoryFilters = {}) {
+  const exportFile = async (format: 'csv' | 'xlsx') => {
+    const params = new URLSearchParams();
+    params.append('format', format);
+    if (filters.role) params.append('role', filters.role);
+    if (filters.roles?.length) params.append('roles', filters.roles.join(','));
+    if (filters.department) params.append('department', filters.department);
+    if (filters.departments?.length) params.append('departments', filters.departments.join(','));
+    if (filters.status) params.append('status', filters.status);
+
+    const response = await fetch(`/api/directory/export?${params.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Failed to export directory as ${format.toUpperCase()}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `employee-directory-${new Date().toISOString().split('T')[0]}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return {
-    exportCsv: async () => {
-      const params = new URLSearchParams();
-      params.append('format', 'csv');
-      if (filters.role) params.append('role', filters.role);
-      if (filters.department) params.append('department', filters.department);
-      if (filters.status) params.append('status', filters.status);
-
-      const response = await fetch(`/api/directory/export?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to export directory');
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `employee-directory-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    },
+    exportCsv: () => exportFile('csv'),
+    exportExcel: () => exportFile('xlsx'),
   };
 }
 

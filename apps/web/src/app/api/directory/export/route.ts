@@ -1,7 +1,20 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import * as XLSX from 'xlsx';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
+
+interface DirectoryExportRow {
+  full_name: string | null;
+  role: string | null;
+  department_name: string | null;
+  position: string | null;
+  status: string | null;
+  employment_type: string | null;
+  start_date: string | null;
+  email: string | null;
+  contact_number: string | null;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +50,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'csv';
     const roleFilter = searchParams.get('role') || '';
+    const roleFilters = (searchParams.get('roles') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const department = searchParams.get('department') || '';
+    const departmentFilters = (searchParams.get('departments') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const status = searchParams.get('status') || '';
 
     // Fetch all directory data for export
@@ -49,7 +70,9 @@ export async function GET(request: NextRequest) {
       .order('full_name', { ascending: true });
 
     if (roleFilter) query = query.eq('role', roleFilter);
+  if (roleFilters.length > 0) query = query.in('role', roleFilters);
     if (department) query = query.eq('department_name', department);
+  if (departmentFilters.length > 0) query = query.in('department_name', departmentFilters);
     if (status) query = query.eq('status', status);
 
     const { data, error } = await query;
@@ -61,7 +84,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const rows = data || [];
+    const rows: DirectoryExportRow[] = data || [];
 
     if (format === 'csv') {
       const headers = [
@@ -76,17 +99,7 @@ export async function GET(request: NextRequest) {
         'Contact Number',
       ];
 
-      const csvRows = (rows as Array<{
-        full_name: string | null;
-        role: string | null;
-        department_name: string | null;
-        position: string | null;
-        status: string | null;
-        employment_type: string | null;
-        start_date: string | null;
-        email: string | null;
-        contact_number: string | null;
-      }>).map((row) =>
+      const csvRows = rows.map((row) =>
         [
           escapeCsv(row.full_name),
           escapeCsv(row.role),
@@ -107,6 +120,34 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'text/csv',
           'Content-Disposition': `attachment; filename="employee-directory-${new Date().toISOString().split('T')[0]}.csv"`,
+        },
+      });
+    }
+
+    if (format === 'xlsx') {
+      const worksheet = XLSX.utils.json_to_sheet(
+        rows.map((row: DirectoryExportRow) => ({
+          'Full Name': row.full_name || '',
+          Role: row.role || '',
+          Department: row.department_name || '',
+          Position: row.position || '',
+          Status: row.status || '',
+          'Employment Type': row.employment_type || '',
+          'Start Date': row.start_date || '',
+          Email: row.email || '',
+          'Contact Number': row.contact_number || '',
+        }))
+      );
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Directory');
+      const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+      return new NextResponse(buffer, {
+        status: 200,
+        headers: {
+          'Content-Type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="employee-directory-${new Date().toISOString().split('T')[0]}.xlsx"`,
         },
       });
     }
