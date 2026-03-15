@@ -12,6 +12,7 @@ import {
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
+import { useCalendarEvents } from '@/hooks/useGoogleCalendar';
 import { useMyProbation } from '@/hooks/useMyProbation';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useRoleMetadata';
@@ -32,7 +33,7 @@ import {
   Upload,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 // Quick actions configuration
 const quickActions = [
@@ -182,28 +183,39 @@ export default function DashboardPage(): ReactNode {
   });
   const announcements = announcementFeedData?.data ?? [];
 
-  const upcomingEvents: Array<{ title: string; date: string; time: string }> = [];
+  // Google Calendar — upcoming events
+  // useMemo with [] ensures the time range is computed once on mount, not on every render.
+  // Without this, new Date() produces a different string each render → different query key → infinite refetch loop.
+  const [calendarTimeMin, calendarTimeMax] = useMemo(() => {
+    const now = new Date();
+    return [now.toISOString(), new Date(now.getTime() + 7 * 86400000).toISOString()];
+  }, []);
+  const { data: calendarData, isLoading: isCalendarLoading } = useCalendarEvents(calendarTimeMin, calendarTimeMax);
+  const isCalendarConnected = calendarData?.connected ?? false;
+  const calendarEvents = calendarData?.data ?? [];
 
   // Stat card columns adjust when onboarding is hidden
   const statColumns = isOnboardingCompleted ? 3 : 4;
 
   return (
-    <div className="h-full space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            {greeting}, {firstName}
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-            Here is what is happening with your HR journey today.
-          </p>
+    <div className="h-full space-y-0">
+      {/* ── Section 1: Quick Stats ── */}
+      <div className="rounded-xl bg-white dark:bg-zinc-900 p-6 space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              {greeting}, {firstName}
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              Here is what is happening with your HR journey today.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Stats Row */}
-      <div data-tour="stat-cards">
-        <StatCardGrid columns={statColumns as 3 | 4}>
+        {/* Stats Row */}
+        <div data-tour="stat-cards">
+          <StatCardGrid columns={statColumns as 3 | 4}>
           {!isOnboardingCompleted && (
             <StatCard
               label="Onboarding"
@@ -265,6 +277,10 @@ export default function DashboardPage(): ReactNode {
           />
         </StatCardGrid>
       </div>
+      </div>
+
+      {/* ── Section 2: Onboarding & Activity ── */}
+      <div className="rounded-xl bg-zinc-50/80 dark:bg-zinc-800/30 p-6 space-y-6 mt-4">
 
       {/* Row 1: Onboarding Progress (only if not completed) */}
       {!isOnboardingCompleted && (
@@ -340,11 +356,24 @@ export default function DashboardPage(): ReactNode {
             </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            {upcomingEvents.length > 0 ? (
+            {isCalendarLoading ? (
               <div className="space-y-3">
-                {upcomingEvents.map((event, index) => (
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-14 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : !isCalendarConnected ? (
+              <EmptyState
+                icon={Calendar}
+                title="Calendar not connected"
+                description="Connect your Google Calendar to see upcoming events"
+                action={{ label: 'Connect Calendar', href: '/calendar' }}
+              />
+            ) : calendarEvents.length > 0 ? (
+              <div className="space-y-3">
+                {calendarEvents.filter(e => e.start).slice(0, 5).map((event) => (
                   <div
-                    key={index}
+                    key={event.id}
                     className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                   >
                     <div className="flex items-center gap-3">
@@ -357,7 +386,9 @@ export default function DashboardPage(): ReactNode {
                           {event.title}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {event.date} at {event.time}
+                          {event.allDay
+                            ? new Date(event.start!).toLocaleDateString()
+                            : `${new Date(event.start!).toLocaleDateString()} at ${new Date(event.start!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                         </p>
                       </div>
                     </div>
@@ -442,6 +473,10 @@ export default function DashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>
+      </div>
+
+      {/* ── Section 3: Quick Actions ── */}
+      <div className="rounded-xl bg-white dark:bg-zinc-900 p-6 mt-4">
 
       {/* Row 3: Quick Actions — full width */}
       <BentoGrid columns={4}>
@@ -470,9 +505,12 @@ export default function DashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>
+      </div>
 
+      {/* ── Section 4: KPI Dashboard ── */}
       {/* Role-Specific KPI Dashboard (V2-4.2) */}
       {primaryKPIRole && kpiCardData.length > 0 && (
+        <div className="rounded-xl bg-zinc-50/80 dark:bg-zinc-800/30 p-6 mt-4">
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <RoleDashboardWidget
             roleType={primaryKPIRole}
@@ -483,6 +521,7 @@ export default function DashboardPage(): ReactNode {
             kpiData={kpiCardData}
           />
           <KPIEntryWidget />
+        </div>
         </div>
       )}
     </div>
