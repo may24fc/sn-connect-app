@@ -4,6 +4,7 @@ import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useReport } from '@/hooks/useReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
+import { getReportTypeLabel, getReportTypeDescription, parseNoteSections } from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -156,8 +157,11 @@ export default function AdminReportDetailPage({
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{report.report_type}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{getReportTypeLabel(report.report_type)} Report</h1>
             <p className="text-muted-foreground">
+              {getReportTypeDescription(report.report_type) && (
+                <span className="block text-xs mb-0.5">{getReportTypeDescription(report.report_type)}</span>
+              )}
               {formatDate(report.period_start)} – {formatDate(report.period_end)}
             </p>
           </div>
@@ -346,53 +350,4 @@ export default function AdminReportDetailPage({
       )}
     </div>
   );
-}
-
-/**
- * Parse structured sections from report notes.
- * Supports sections marked with headers like "Accomplishments:", "Challenges:", "Next Week Plans:"
- */
-function parseNoteSections(notes: string): {
-  summary: string;
-  accomplishments: Array<string>;
-  challenges: Array<string>;
-  nextWeekPlans: Array<string>;
-} {
-  const result = {
-    summary: '',
-    accomplishments: [] as Array<string>,
-    challenges: [] as Array<string>,
-    nextWeekPlans: [] as Array<string>,
-  };
-
-  if (!notes) return result;
-
-  const sections = notes.split(/\n(?=(?:accomplishments|challenges|next\s*week\s*plans):)/i);
-
-  for (const section of sections) {
-    const trimmed = section.trim();
-    if (/^accomplishments:/i.test(trimmed)) {
-      result.accomplishments = parseListItems(trimmed.replace(/^accomplishments:\s*/i, ''));
-    } else if (/^challenges:/i.test(trimmed)) {
-      result.challenges = parseListItems(trimmed.replace(/^challenges:\s*/i, ''));
-    } else if (/^next\s*week\s*plans:/i.test(trimmed)) {
-      result.nextWeekPlans = parseListItems(trimmed.replace(/^next\s*week\s*plans:\s*/i, ''));
-    } else if (!result.summary) {
-      result.summary = trimmed;
-    }
-  }
-
-  // If no structured sections found, use the whole thing as summary
-  if (!result.summary && result.accomplishments.length === 0) {
-    result.summary = notes;
-  }
-
-  return result;
-}
-
-function parseListItems(text: string): Array<string> {
-  return text
-    .split(/\n/)
-    .map((line) => line.replace(/^[-*\u2022]\s*/, '').trim())
-    .filter(Boolean);
 }
