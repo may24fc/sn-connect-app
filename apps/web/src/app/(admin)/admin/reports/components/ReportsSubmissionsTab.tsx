@@ -4,6 +4,7 @@ import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useReports } from '@/hooks/useReports';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
+import { getReportTypeLabel, getReportTypeDescription } from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -302,7 +303,12 @@ export function ReportsSubmissionsTab({
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-error">Failed to load reports.</CardContent>
+          <CardContent className="p-6 text-center space-y-3">
+            <p className="text-sm text-destructive">Failed to load reports. Please try again.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </CardContent>
         </Card>
       ) : (
         <Card>
@@ -336,7 +342,22 @@ export function ReportsSubmissionsTab({
                           : '-'}
                       </TableCell>
                       <TableCell>{report.employees?.department || '—'}</TableCell>
-                      <TableCell>{report.report_type}</TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help border-b border-dotted border-muted-foreground/40">
+                                {getReportTypeLabel(report.report_type)}
+                              </span>
+                            </TooltipTrigger>
+                            {getReportTypeDescription(report.report_type) && (
+                              <TooltipContent side="right" className="max-w-xs">
+                                <p>{getReportTypeDescription(report.report_type)}</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[report.status]}>
                           {formatLabel(report.status)}

@@ -2,6 +2,7 @@
 
 import {
   Briefcase,
+  Calendar,
   CheckSquare,
   ChevronLeft,
   ChevronRight,
@@ -51,7 +52,9 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Reports', href: '/reports', icon: FileText },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Documents', href: '/files', icon: FolderOpen },
-  { label: 'Information Hub', href: '/information-hub', icon: Megaphone },
+  { label: 'Calendar', href: '/calendar', icon: Calendar },
+  { label: 'Announcements', href: '/announcements', icon: Megaphone },
+  { label: 'Information Hub', href: '/information-hub', icon: Library },
 ];
 
 // Intern navigation - same as employee except different dashboard and no payroll
@@ -60,8 +63,11 @@ const internNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
+  { label: 'Reports', href: '/intern/reports', icon: FileText },
   { label: 'Documents', href: '/files', icon: FolderOpen },
-  { label: 'Information Hub', href: '/information-hub', icon: Megaphone },
+  { label: 'Calendar', href: '/calendar', icon: Calendar },
+  { label: 'Announcements', href: '/announcements', icon: Megaphone },
+  { label: 'Information Hub', href: '/information-hub', icon: Library },
 ];
 
 // Admin (HR) navigation - includes team management features
@@ -72,6 +78,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Calendar', href: '/admin/calendar', icon: Calendar },
   { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
@@ -86,10 +93,11 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
   { label: 'Performance', href: '/admin/performance', icon: Target },
   { label: 'Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Calendar', href: '/admin/calendar', icon: Calendar },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
-  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
+  { label: 'AI Knowledge', href: '/super-admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
 ];
 
@@ -149,6 +157,9 @@ export function Sidebar({
               const isActive =
                 currentPath === item.href ||
                 (item.href !== '/dashboard' &&
+                  item.href !== '/intern/dashboard' &&
+                  item.href !== '/admin/dashboard' &&
+                  item.href !== '/super-admin/dashboard' &&
                   item.href !== '/' &&
                   currentPath.startsWith(item.href));
               const Icon = item.icon;

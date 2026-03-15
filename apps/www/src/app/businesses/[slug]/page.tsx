@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Star, ArrowRight, Quote } from 'lucide-react';
+import { ArrowLeft, Star, ArrowRight, Quote, ExternalLink } from 'lucide-react';
 import { BUSINESS_UNITS, slugify } from '@/data/placeholder';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
@@ -121,6 +121,17 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               <p className="mt-4 max-w-2xl text-lg text-zinc-600">
                 {unit.description}
               </p>
+              {unit.website_url && (
+                <a
+                  href={unit.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-5 inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 backdrop-blur-sm transition-colors hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Visit Website
+                </a>
+              )}
             </div>
           </div>
 
@@ -294,6 +305,17 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               <CTAButton href={`mailto:${unit.contact.email}`}>
                 Contact Us
               </CTAButton>
+              {unit.website_url && (
+                <a
+                  href={unit.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-5 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Visit Website
+                </a>
+              )}
               <a
                 href={`tel:${unit.contact.phone}`}
                 className="text-sm font-semibold text-zinc-600 hover:text-indigo-600 transition-colors"

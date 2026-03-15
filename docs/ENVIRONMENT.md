@@ -50,6 +50,7 @@ This document describes all environment variables required by the HR Portal appl
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `NEXT_PUBLIC_ENABLE_MOCK_AUTH` | Enable mock authentication for local development. Set to `true` to bypass Supabase Auth and use test accounts. Set to `false` for production. | No | `false` |
+| `NEXT_PUBLIC_SITE_URL` | The canonical base URL of the deployed app (e.g., `https://app.sngroup.com.au`). Takes priority over Vercel's auto-set URL for auth redirects. **Required in production.** | No | — |
 | `NEXT_PUBLIC_ROLE_MAPPING_MODE` | Role mapping strategy for UI roles. Options: `option-a`, `option-b`, or `option-c`. See [ADR-001-role-mapping.md](adr/ADR-001-role-mapping.md) for details. | No | `option-a` |
 
 ## Local Development with Mock Auth

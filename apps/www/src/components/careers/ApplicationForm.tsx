@@ -92,7 +92,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
       setSelectedFile(null);
       setStep(0);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Something went wrong');
+      setSubmitError(e instanceof Error ? e.message : 'Unable to submit your application. Please check your connection and try again.');
     }
   }
 

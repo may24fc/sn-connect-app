@@ -12,6 +12,8 @@ export interface InvoiceRecord {
   invoice_number: string;
   period_start: string;
   period_end: string;
+  hourly_rate: number | null;
+  hours_worked: number | null;
   gross_amount: number;
   deductions: number;
   net_amount: number;

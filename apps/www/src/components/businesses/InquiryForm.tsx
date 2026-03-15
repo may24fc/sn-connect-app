@@ -44,7 +44,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
       setSubmitted(true);
       reset();
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Something went wrong');
+      setSubmitError(e instanceof Error ? e.message : 'Unable to submit your inquiry. Please check your connection and try again.');
     }
   }
 

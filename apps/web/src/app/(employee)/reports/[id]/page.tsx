@@ -5,6 +5,7 @@ import { useReport } from '@/hooks/useReport';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
+import { getReportTypeLabel, getReportTypeDescription, parseNoteSections } from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -16,6 +17,8 @@ import {
   type KeyFinding,
   MetricKPICard,
   MetricKPICardGrid,
+  ProgressTimeline,
+  ReportMetricsChart,
   Table,
   TableBody,
   TableCell,
@@ -24,9 +27,10 @@ import {
   TableRow,
   useToast,
 } from '@hr-portal/ui';
-import { ArrowLeft, ListChecks } from 'lucide-react';
+import type { ProgressTimelineStep } from '@hr-portal/ui';
+import { ArrowLeft, BarChart3, ListChecks, TableIcon } from 'lucide-react';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useState } from 'react';
 
 const statusVariant: Record<
   'draft' | 'submitted' | 'approved' | 'rejected',
@@ -50,6 +54,8 @@ export default function ReportDetailPage({
   const { data, isLoading, error } = useReport(id);
   const submitReport = useSubmitReport();
 
+  const [metricsView, setMetricsView] = useState<'table' | 'chart'>('table');
+
   const report = data?.data;
 
   if (isLoading) {
@@ -57,7 +63,25 @@ export default function ReportDetailPage({
   }
 
   if (error || !report) {
-    return <div className="text-sm text-error">Failed to load report.</div>;
+    return (
+      <div className="mx-auto max-w-4xl space-y-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/reports">
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Back to Reports
+          </Link>
+        </Button>
+        <Card>
+          <CardContent className="p-6 text-center space-y-2">
+            <p className="text-sm text-destructive">
+              {error?.message?.includes('permission') || error?.message?.includes('403')
+                ? 'You do not have permission to view this report.'
+                : 'Failed to load report. Please try again.'}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const metrics = report.report_metrics || [];
@@ -104,8 +128,11 @@ export default function ReportDetailPage({
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{report.report_type}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{getReportTypeLabel(report.report_type)} Report</h1>
             <p className="text-muted-foreground">
+              {getReportTypeDescription(report.report_type) && (
+                <span className="block text-xs mb-0.5">{getReportTypeDescription(report.report_type)}</span>
+              )}
               {formatDate(report.period_start)} – {formatDate(report.period_end)}
             </p>
           </div>
@@ -148,6 +175,40 @@ export default function ReportDetailPage({
           ))}
         </MetricKPICardGrid>
       )}
+
+      {/* Report Progress Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProgressTimeline
+            steps={(() => {
+              const isRejected = report.status === 'rejected';
+              const steps: ProgressTimelineStep[] = [
+                {
+                  label: 'Created',
+                  description: formatDateTime(report.created_at),
+                  status: 'completed',
+                },
+                {
+                  label: 'Submitted',
+                  description: report.submitted_at ? formatDateTime(report.submitted_at) : undefined,
+                  status: report.submitted_at ? 'completed'
+                    : report.status === 'draft' ? 'current' : 'upcoming',
+                },
+                {
+                  label: isRejected ? 'Rejected' : 'Approved',
+                  description: report.reviewed_at ? formatDateTime(report.reviewed_at) : undefined,
+                  status: report.reviewed_at ? 'completed'
+                    : report.status === 'submitted' ? 'current' : 'upcoming',
+                },
+              ];
+              return steps;
+            })()}
+          />
+        </CardContent>
+      </Card>
 
       {/* Summary Card */}
       <Card>
@@ -194,43 +255,92 @@ export default function ReportDetailPage({
         />
       )}
 
-      {/* Metrics Table */}
+      {/* Metrics Table / Chart Toggle */}
       <Card>
         <CardHeader>
-          <CardTitle>Metrics</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Metrics</CardTitle>
+            {metrics.length > 0 && (
+              <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setMetricsView('table')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    metricsView === 'table'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  <TableIcon className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Table
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMetricsView('chart')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    metricsView === 'chart'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  <BarChart3 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Chart
+                </button>
+              </div>
+            )}
+          </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableTableHead column="metric_name" {...sortHeadProps}>Metric</SortableTableHead>
-                <SortableTableHead column="metric_value" {...sortHeadProps}>Value</SortableTableHead>
-                <SortableTableHead column="metric_unit" {...sortHeadProps}>Unit</SortableTableHead>
-                <TableHead>Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {metrics.length === 0 ? (
+        {metricsView === 'chart' && metrics.length > 0 ? (
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              <ReportMetricsChart
+                data={metrics.map((m) => ({ name: m.metric_name, value: m.metric_value, unit: m.metric_unit }))}
+                chartType="bar"
+                title="Bar Chart"
+                description="Metric values comparison"
+              />
+              <ReportMetricsChart
+                data={metrics.map((m) => ({ name: m.metric_name, value: m.metric_value, unit: m.metric_unit }))}
+                chartType="pie"
+                title="Distribution"
+                description="Metric value distribution"
+              />
+            </div>
+          </CardContent>
+        ) : (
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    No metrics attached.
-                  </TableCell>
+                  <SortableTableHead column="metric_name" {...sortHeadProps}>Metric</SortableTableHead>
+                  <SortableTableHead column="metric_value" {...sortHeadProps}>Value</SortableTableHead>
+                  <SortableTableHead column="metric_unit" {...sortHeadProps}>Unit</SortableTableHead>
+                  <TableHead>Notes</TableHead>
                 </TableRow>
-              ) : (
-                sortedMetrics.map((metric) => (
-                  <TableRow key={metric.id}>
-                    <TableCell className="font-medium">{metric.metric_name}</TableCell>
-                    <TableCell className="font-mono">
-                      {metric.metric_value.toLocaleString()}
+              </TableHeader>
+              <TableBody>
+                {metrics.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      No metrics attached.
                     </TableCell>
-                    <TableCell>{metric.metric_unit || '—'}</TableCell>
-                    <TableCell>{metric.notes || '—'}</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
+                ) : (
+                  sortedMetrics.map((metric) => (
+                    <TableRow key={metric.id}>
+                      <TableCell className="font-medium">{metric.metric_name}</TableCell>
+                      <TableCell className="font-mono">
+                        {metric.metric_value.toLocaleString()}
+                      </TableCell>
+                      <TableCell>{metric.metric_unit || '—'}</TableCell>
+                      <TableCell>{metric.notes || '—'}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        )}
       </Card>
 
       {/* Next Steps */}
@@ -258,53 +368,4 @@ export default function ReportDetailPage({
       )}
     </div>
   );
-}
-
-/**
- * Parse structured sections from report notes.
- * Supports sections marked with headers like "Accomplishments:", "Challenges:", "Next Week Plans:"
- */
-function parseNoteSections(notes: string): {
-  summary: string;
-  accomplishments: Array<string>;
-  challenges: Array<string>;
-  nextWeekPlans: Array<string>;
-} {
-  const result = {
-    summary: '',
-    accomplishments: [] as Array<string>,
-    challenges: [] as Array<string>,
-    nextWeekPlans: [] as Array<string>,
-  };
-
-  if (!notes) return result;
-
-  const sections = notes.split(/\n(?=(?:accomplishments|challenges|next\s*week\s*plans):)/i);
-
-  for (const section of sections) {
-    const trimmed = section.trim();
-    if (/^accomplishments:/i.test(trimmed)) {
-      result.accomplishments = parseListItems(trimmed.replace(/^accomplishments:\s*/i, ''));
-    } else if (/^challenges:/i.test(trimmed)) {
-      result.challenges = parseListItems(trimmed.replace(/^challenges:\s*/i, ''));
-    } else if (/^next\s*week\s*plans:/i.test(trimmed)) {
-      result.nextWeekPlans = parseListItems(trimmed.replace(/^next\s*week\s*plans:\s*/i, ''));
-    } else if (!result.summary) {
-      result.summary = trimmed;
-    }
-  }
-
-  // If no structured sections found, use the whole thing as summary
-  if (!result.summary && result.accomplishments.length === 0) {
-    result.summary = notes;
-  }
-
-  return result;
-}
-
-function parseListItems(text: string): Array<string> {
-  return text
-    .split(/\n/)
-    .map((line) => line.replace(/^[-*•]\s*/, '').trim())
-    .filter(Boolean);
 }

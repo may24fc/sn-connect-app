@@ -27,6 +27,11 @@ export {
 export { Badge, badgeVariants, type BadgeProps } from './primitives/badge';
 export { Avatar, AvatarImage, AvatarFallback } from './primitives/avatar';
 export { Progress } from './primitives/progress';
+export {
+  ProgressTimeline,
+  type ProgressTimelineStep,
+  type ProgressTimelineProps,
+} from './primitives/progress-timeline';
 export { FileDropZone, type FileDropZoneProps } from './primitives/file-drop-zone';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './primitives/tabs';
 export {
@@ -304,11 +309,17 @@ export {
   SpendByCategoryChart,
   ROIByDepartmentChart,
   WeeklyTrendsChart,
+  ReportMetricsChart,
+  StatusBreakdownChart,
   MetricKPICard,
   MetricKPICardGrid,
   InsightsSummary,
   InsightsSummaryList,
 } from './components/reports';
+
+// Feedback
+export { ComingSoonDialog } from './components/feedback/ComingSoonDialog';
+
 export type {
   MetricKPICardProps,
   InsightsSummaryProps,
@@ -327,6 +338,10 @@ export {
   TaskList,
   TaskDetailView,
 } from './components/tasks';
+
+// Invoice Components
+export { InvoiceStatusBadge } from './components/invoices';
+export type { InvoiceStatusBadgeProps, InvoiceStatus } from './components/invoices';
 export type {
   ReportId,
   ReportTypeId,

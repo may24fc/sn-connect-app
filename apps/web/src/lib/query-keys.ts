@@ -203,6 +203,13 @@ export interface ApplicationFiltersQuery {
   pageSize?: number;
 }
 
+export interface LeaveRequestFilters {
+  status?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  userId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export const queryKeys = {
   // Employees
   employees: {
@@ -434,6 +441,31 @@ export const queryKeys = {
       [...queryKeys.applications.lists(), filters] as const,
     details: () => [...queryKeys.applications.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.applications.details(), id] as const,
+  },
+
+  // Google Calendar
+  calendar: {
+    all: ['calendar'] as const,
+    events: (timeMin?: string, timeMax?: string) =>
+      [...queryKeys.calendar.all, 'events', timeMin, timeMax] as const,
+    authUrl: () => [...queryKeys.calendar.all, 'auth-url'] as const,
+  },
+
+  // Leave Requests
+  leaveRequests: {
+    all: ['leave-requests'] as const,
+    lists: () => [...queryKeys.leaveRequests.all, 'list'] as const,
+    list: (filters: LeaveRequestFilters) => [...queryKeys.leaveRequests.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.leaveRequests.all, 'detail', id] as const,
+  },
+
+  // Company Events
+  companyEvents: {
+    all: ['company-events'] as const,
+    lists: () => [...queryKeys.companyEvents.all, 'list'] as const,
+    list: (timeMin?: string, timeMax?: string, category?: string) =>
+      [...queryKeys.companyEvents.lists(), timeMin, timeMax, category] as const,
+    detail: (id: string) => [...queryKeys.companyEvents.all, 'detail', id] as const,
   },
 } as const;
 

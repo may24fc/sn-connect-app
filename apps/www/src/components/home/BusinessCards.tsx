@@ -3,7 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { BUSINESS_UNITS } from '@/data/placeholder';
@@ -181,6 +181,20 @@ export function BusinessCards(): ReactNode {
                       </span>
                     </div>
                   </Link>
+
+                  {unit.website_url && (
+                    <a
+                      href={unit.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50"
+                      onClick={(e) => e.stopPropagation()}
+                      draggable={false}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Visit Website
+                    </a>
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>

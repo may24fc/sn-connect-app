@@ -224,7 +224,7 @@ export default function AdminJobsPage() {
         addToast({
           variant: 'error',
           title: 'Failed to archive posting',
-          description: 'Something went wrong. Please try again.',
+          description: 'Could not archive the job posting. Please try again.',
         }),
     });
   }

@@ -172,12 +172,7 @@ export async function POST(request: NextRequest) {
 
     const { supabaseAdmin, user, role } = auth.context;
 
-    if (role !== TASK_ASSIGNER_ROLE) {
-      return NextResponse.json(
-        { error: 'Only super-admin can assign tasks to employee or intern accounts' },
-        { status: 403 }
-      );
-    }
+    const isAssigner = role === TASK_ASSIGNER_ROLE;
 
     const body = await request.json();
     const parsed = taskCreateSchema.safeParse(body);
@@ -189,9 +184,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (parsed.data.assignedTo) {
+    // Non-admin users can only self-assign
+    let assignedTo = parsed.data.assignedTo || null;
+    if (!isAssigner) {
+      assignedTo = user.id;
+    }
+
+    if (assignedTo && isAssigner) {
       // Use admin client for assignee validation too (users table may have RLS)
-      const assigneeValidation = await validateTaskAssignee(supabaseAdmin, parsed.data.assignedTo);
+      const assigneeValidation = await validateTaskAssignee(supabaseAdmin, assignedTo);
       if (!assigneeValidation.ok) {
         return NextResponse.json(
           { error: assigneeValidation.error },
@@ -208,7 +209,7 @@ export async function POST(request: NextRequest) {
       .insert({
         title: parsed.data.title,
         description: parsed.data.description || null,
-        assigned_to: parsed.data.assignedTo || null,
+        assigned_to: assignedTo,
         assigned_by: user.id,
         priority: parsed.data.priority,
         status: parsed.data.status,

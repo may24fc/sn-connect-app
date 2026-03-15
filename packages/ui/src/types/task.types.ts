@@ -4,7 +4,7 @@ export type TaskAssignmentId = string & { __brand: 'TaskAssignmentId' };
 
 // Task Status and Priority Types
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'blocked';
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'blocked';
 
 // Task Interfaces
 export type TaskCategory =
@@ -100,13 +100,14 @@ export const TASK_STATUS_CONFIG: Record<
   TaskStatus,
   {
     label: string;
-    variant: 'secondary' | 'default' | 'success' | 'error';
+    variant: 'secondary' | 'default' | 'success' | 'error' | 'warning';
     icon: string;
   }
 > = {
-  pending: { label: 'Pending', variant: 'secondary', icon: 'Clock' },
+  pending: { label: 'Pending', variant: 'warning', icon: 'Clock' },
   in_progress: { label: 'In Progress', variant: 'default', icon: 'ArrowRight' },
   completed: { label: 'Completed', variant: 'success', icon: 'Check' },
+  cancelled: { label: 'Cancelled', variant: 'secondary', icon: 'Ban' },
   blocked: { label: 'Blocked', variant: 'error', icon: 'X' },
 };
 

@@ -12,6 +12,7 @@ import {
   CardTitle,
   Input,
   Label,
+  OKRStatusBadge,
   Progress,
   ProgressGauge,
   Select,
@@ -357,20 +358,10 @@ export default function PerformancePage(): ReactNode {
                               </p>
                             )}
                             <div className="flex items-center gap-3 mt-2">
-                              <Badge
-                                variant={
-                                  okr.status === 'completed'
-                                    ? 'success'
-                                    : okr.status === 'in_progress'
-                                      ? 'warning'
-                                      : 'secondary'
-                                }
+                              <OKRStatusBadge
+                                status={okr.status as 'draft' | 'submitted' | 'approved' | 'in_progress' | 'completed'}
                                 className="text-xs"
-                              >
-                                {okr.status === 'in_progress'
-                                  ? 'In Progress'
-                                  : okr.status.charAt(0).toUpperCase() + okr.status.slice(1)}
-                              </Badge>
+                              />
                               <span className="text-xs text-muted-foreground">
                                 Weight: {weightPct}%
                               </span>

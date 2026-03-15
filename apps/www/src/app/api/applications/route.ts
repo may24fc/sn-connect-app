@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sendApplicationConfirmation } from '@/lib/email';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = [
@@ -131,6 +132,23 @@ export async function POST(request: NextRequest) {
       console.error('Application insert error:', insertError.message);
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 });
     }
+
+    // Send confirmation email (non-blocking — failure won't affect the response)
+    let positionTitle = 'the position you applied for';
+    const { data: jobData } = await supabase
+      .from('job_postings')
+      .select('title')
+      .eq('id', parsed.data.job_posting_id)
+      .single();
+    if (jobData?.title) {
+      positionTitle = jobData.title;
+    }
+
+    sendApplicationConfirmation({
+      to: parsed.data.email,
+      applicantName: parsed.data.full_name,
+      positionTitle,
+    });
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch {

@@ -58,7 +58,7 @@ export default function TaskDetailPage({
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <CardTitle>{task.title}</CardTitle>
-            <TaskStatusBadge status={task.status as TaskStatus} />
+            <TaskStatusBadge status={task.status as TaskStatus} dueDate={task.due_date ?? undefined} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

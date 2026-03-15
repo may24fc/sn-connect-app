@@ -32,7 +32,7 @@ const PUBLIC_ROUTES = new Set([
 ]);
 
 // Prefixes that are always public (auth callback, API health, static assets).
-const PUBLIC_PREFIXES = ['/auth/', '/api/health', '/_next/', '/favicon.ico', '/api/webhooks/', '/api/inngest'];
+const PUBLIC_PREFIXES = ['/auth/', '/api/health', '/_next/', '/favicon.ico', '/api/webhooks/', '/api/inngest', '/api/calendar/callback'];
 
 function isPublicRoute(pathname: string): boolean {
   if (PUBLIC_ROUTES.has(pathname)) return true;

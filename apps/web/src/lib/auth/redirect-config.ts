@@ -31,8 +31,9 @@ const ALLOWED_ORIGIN_PATTERNS: readonly string[] = [
   'http://localhost:3000',
   'http://localhost:3001',
   'https://*.vercel.app',
-  // Add your production domain(s) below:
-  // 'https://your-production-domain.com',
+  'https://app.sngroup.com.au',
+  'https://sngroup.com.au',
+  'https://www.sngroup.com.au',
 ] as const;
 
 /**

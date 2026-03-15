@@ -3,7 +3,7 @@
 import { type ReactNode, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { LayoutGrid, List, ArrowRight } from 'lucide-react';
+import { LayoutGrid, List, ArrowRight, ExternalLink } from 'lucide-react';
 import { BUSINESS_UNITS } from '@/data/placeholder';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { cn } from '@/lib/utils';
@@ -94,6 +94,18 @@ export function BusinessPortfolio(): ReactNode {
                     <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 group-hover:gap-2 transition-all">
                       Learn more <ArrowRight className="h-3.5 w-3.5" />
                     </span>
+                    {unit.website_url && (
+                      <a
+                        href={unit.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-indigo-600"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        Visit Website
+                      </a>
+                    )}
                   </div>
                 </Link>
               </ScrollReveal>
@@ -178,6 +190,17 @@ export function BusinessPortfolio(): ReactNode {
                     >
                       Learn more <ArrowRight className="h-4 w-4" />
                     </Link>
+                    {unit.website_url && (
+                      <a
+                        href={unit.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-indigo-600"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Visit Website
+                      </a>
+                    )}
                   </div>
                 </div>
               </ScrollReveal>

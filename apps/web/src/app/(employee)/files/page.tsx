@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import {
+  useDeleteDocument,
   useDocuments,
   useDownloadDocument,
   usePreviewDocument,
@@ -16,6 +17,7 @@ import {
   CardContent,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -25,6 +27,7 @@ import {
 } from '@hr-portal/ui';
 import {
   Download,
+  ExternalLink,
   Eye,
   FileImage,
   FileSpreadsheet,
@@ -33,6 +36,7 @@ import {
   List,
   Loader2,
   Presentation,
+  Trash2,
   Upload,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -148,6 +152,8 @@ export default function FilesPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const { addToast } = useToast();
 
   // Fetch the current user's employee record by user_id
@@ -164,6 +170,7 @@ export default function FilesPage() {
   const upload = useUploadDocument();
   const download = useDownloadDocument();
   const preview = usePreviewDocument();
+  const deleteDoc = useDeleteDocument();
 
   const documents = docsData?.data ?? [];
 
@@ -231,6 +238,39 @@ export default function FilesPage() {
   const canPreview = (mimeType: string | null): boolean => {
     if (!mimeType) return false;
     return mimeType === 'application/pdf' || mimeType.startsWith('image/');
+  };
+
+  const canDelete = (doc: Document): boolean => {
+    if (!user) return false;
+    if (user.role === 'admin' || user.role === 'super_admin') return true;
+    return doc.uploaded_by === user.id;
+  };
+
+  const handleDeleteClick = (doc: Document) => {
+    setDocumentToDelete(doc);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!documentToDelete) return;
+    try {
+      await deleteDoc.mutateAsync(documentToDelete.id);
+      addToast({ title: 'Document deleted', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to delete document', variant: 'error' });
+    } finally {
+      setDeleteConfirmOpen(false);
+      setDocumentToDelete(null);
+    }
+  };
+
+  const handleOpenInNewTab = async (documentId: string) => {
+    try {
+      const data = await preview.mutateAsync(documentId);
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch {
+      addToast({ title: 'Failed to open document', variant: 'error' });
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, documentId: string, mimeType: string | null) => {
@@ -433,18 +473,44 @@ export default function FilesPage() {
                     {ext}
                   </span>
 
-                  {/* Download button — appears top-right on hover */}
-                  <button
-                    type="button"
-                    title="Download"
-                    className="absolute top-2 right-2 z-10 h-7 w-7 rounded-md bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-white dark:hover:bg-zinc-800"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      download.mutateAsync(d.id);
-                    }}
-                  >
-                    <Download className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-300" />
-                  </button>
+                  {/* Action buttons — appear top-right on hover */}
+                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      title="Open in New Tab"
+                      className="h-7 w-7 rounded-md bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-sm hover:bg-white dark:hover:bg-zinc-800"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenInNewTab(d.id);
+                      }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-300" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Download"
+                      className="h-7 w-7 rounded-md bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-sm hover:bg-white dark:hover:bg-zinc-800"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        download.mutateAsync(d.id);
+                      }}
+                    >
+                      <Download className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-300" />
+                    </button>
+                    {canDelete(d) && (
+                      <button
+                        type="button"
+                        title="Delete"
+                        className="h-7 w-7 rounded-md bg-white/90 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-sm hover:bg-red-50 dark:hover:bg-red-950/50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(d);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Confidential badge */}
                   {d.is_confidential && (
@@ -551,11 +617,31 @@ export default function FilesPage() {
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0"
+                        onClick={() => handleOpenInNewTab(d.id)}
+                        title="Open in New Tab"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
                         onClick={() => download.mutateAsync(d.id)}
                         title="Download"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
+                      {canDelete(d) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+                          onClick={() => handleDeleteClick(d)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </button>
                 );
@@ -608,6 +694,37 @@ export default function FilesPage() {
         mimeType={previewData?.mimeType ?? null}
         isLoading={previewLoading}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &ldquo;{documentToDelete?.file_name}&rdquo;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setDocumentToDelete(null);
+              }}
+              disabled={deleteDoc.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteDoc.isPending}
+            >
+              {deleteDoc.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

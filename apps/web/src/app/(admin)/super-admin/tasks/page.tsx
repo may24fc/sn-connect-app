@@ -658,7 +658,7 @@ function TaskListView({
                     <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
                   </TableCell>
                   <TableCell>
-                    <TaskStatusBadge status={task.status as TaskStatus} size="sm" />
+                    <TaskStatusBadge status={task.status as TaskStatus} size="sm" dueDate={task.due_date ?? undefined} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(task.due_date)}

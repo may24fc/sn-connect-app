@@ -73,10 +73,22 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     icon: 'BarChart3',
     fields: [
       {
+        key: 'primary_platform',
+        label: 'Primary Platform',
+        type: 'select',
+        options: ['Meta Ads', 'Google Ads', 'TikTok Ads', 'LinkedIn Ads', 'Other'],
+      },
+      {
         key: 'primary_platforms',
-        label: 'Primary Platforms',
+        label: 'All Platforms',
         type: 'tags',
         options: ['Google Ads', 'Meta Ads', 'LinkedIn Ads', 'TikTok Ads', 'Twitter Ads'],
+      },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['PPC', 'Display Ads', 'Video Ads', 'Shopping Ads', 'Analytics', 'Reporting', 'A/B Testing', 'Copywriting'],
       },
       {
         key: 'certifications',
@@ -155,6 +167,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         options: ['Canva', 'Premiere Pro', 'Final Cut Pro', 'Figma', 'WordPress', 'Buffer'],
       },
       { key: 'portfolio_url', label: 'Portfolio URL', type: 'url', placeholder: 'https://...' },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Content Strategy', 'SEO Writing', 'Video Editing', 'Graphic Design', 'Social Media', 'Copywriting'],
+      },
     ],
     kpiMetrics: [
       { name: 'posts_published', label: 'Posts Published', unit: 'count' },
@@ -188,6 +206,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         ],
       },
       { key: 'github_username', label: 'GitHub Username', type: 'text', placeholder: 'username' },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['React', 'Node.js', 'PostgreSQL', 'Docker', 'AWS', 'CI/CD', 'Testing', 'System Design'],
+      },
     ],
     kpiMetrics: [
       { name: 'prs_merged', label: 'PRs Merged', unit: 'count' },
@@ -213,6 +237,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         options: ['UI/UX', 'Branding', 'Motion Graphics', 'Print', 'Web Design', 'Product Design'],
       },
       { key: 'portfolio_url', label: 'Portfolio URL', type: 'url', placeholder: 'https://...' },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Prototyping', 'User Research', 'Design Systems', 'Typography', 'Illustration', 'Animation'],
+      },
     ],
   },
   project_manager: {
@@ -237,6 +267,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         label: 'PMP Certified',
         type: 'select',
         options: ['Yes', 'No', 'In Progress'],
+      },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Stakeholder Management', 'Risk Assessment', 'Budgeting', 'Team Leadership', 'Sprint Planning'],
       },
     ],
   },
@@ -264,6 +300,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         type: 'tags',
         options: ['SHRM-CP', 'SHRM-SCP', 'PHR', 'SPHR'],
       },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Talent Acquisition', 'Employee Engagement', 'Compliance', 'HRIS', 'Onboarding', 'Performance Management'],
+      },
     ],
   },
   finance: {
@@ -289,6 +331,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         type: 'tags',
         options: ['QuickBooks', 'SAP', 'Oracle', 'Excel Advanced', 'Xero'],
       },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Financial Analysis', 'Forecasting', 'Compliance', 'Budgeting', 'Reconciliation'],
+      },
     ],
   },
   sales: {
@@ -308,6 +356,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         type: 'tags',
         options: ['Salesforce', 'HubSpot', 'Pipedrive', 'Close.io'],
       },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Negotiation', 'Lead Qualification', 'Pipeline Management', 'Forecasting', 'Presentation'],
+      },
     ],
     kpiMetrics: [
       { name: 'deals_closed', label: 'Deals Closed', unit: 'count' },
@@ -320,6 +374,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     description: 'Marketing strategy and execution',
     icon: 'Megaphone',
     fields: [
+      {
+        key: 'primary_platform',
+        label: 'Primary Platform',
+        type: 'select',
+        options: ['Meta Ads', 'Google Ads', 'TikTok Ads', 'LinkedIn Ads', 'Other'],
+      },
       {
         key: 'specializations',
         label: 'Specializations',
@@ -338,6 +398,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         label: 'Tools',
         type: 'tags',
         options: ['Google Analytics', 'Mailchimp', 'SEMrush', 'Ahrefs', 'Marketo'],
+      },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Campaign Management', 'Analytics', 'Copywriting', 'ABM', 'Content Marketing', 'Lead Generation'],
       },
     ],
     kpiMetrics: [
@@ -369,6 +435,12 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
         type: 'tags',
         options: ['Six Sigma', 'Lean', 'PMP', 'ITIL'],
       },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+        options: ['Process Optimization', 'Inventory Management', 'Data Analysis', 'Automation', 'Vendor Relations'],
+      },
     ],
   },
   other: {
@@ -378,6 +450,11 @@ export const ROLE_TYPE_REGISTRY: Record<RoleType, RoleTypeConfig> = {
     fields: [
       { key: 'specializations', label: 'Specializations', type: 'tags' },
       { key: 'tools', label: 'Tools & Technologies', type: 'tags' },
+      {
+        key: 'skills',
+        label: 'Skills / Tags',
+        type: 'tags',
+      },
       {
         key: 'notes',
         label: 'Additional Notes',

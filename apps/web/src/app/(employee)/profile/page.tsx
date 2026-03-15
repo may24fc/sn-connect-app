@@ -420,6 +420,31 @@ export default function ProfilePage() {
               <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
                 <Badge variant="secondary">{department}</Badge>
                 <Badge variant="outline">{employeeNumber}</Badge>
+                {/* Show primary platform & skills from role metadata */}
+                {formattedMetadata.map((r) => {
+                  const platform = r.metadata.primary_platform;
+                  if (typeof platform === 'string' && platform) {
+                    return (
+                      <Badge key={`platform-${r.role_type}`} variant="secondary" className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                        {platform}
+                      </Badge>
+                    );
+                  }
+                  return null;
+                })}
+                {formattedMetadata.flatMap((r) => {
+                  const skills = r.metadata.skills;
+                  if (Array.isArray(skills)) {
+                    return skills.slice(0, 3).map((skill: unknown) =>
+                      typeof skill === 'string' ? (
+                        <Badge key={`skill-${skill}`} variant="outline" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ) : null
+                    );
+                  }
+                  return [];
+                })}
               </div>
               {!employee && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">

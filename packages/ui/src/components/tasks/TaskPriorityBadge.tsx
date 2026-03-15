@@ -21,14 +21,16 @@ const PRIORITY_ICONS: Record<TaskPriority, React.ElementType> = {
   urgent: AlertCircle,
 };
 
+const FALLBACK_CONFIG = { label: 'Unknown', variant: 'secondary' as const, icon: 'Circle' };
+
 export function TaskPriorityBadge({
   priority,
   size = 'default',
   showIcon = true,
   className,
 }: TaskPriorityBadgeProps): React.ReactNode {
-  const config = TASK_PRIORITY_CONFIG[priority];
-  const Icon = PRIORITY_ICONS[priority];
+  const config = TASK_PRIORITY_CONFIG[priority] ?? FALLBACK_CONFIG;
+  const Icon = PRIORITY_ICONS[priority] ?? Circle;
 
   return (
     <Badge
