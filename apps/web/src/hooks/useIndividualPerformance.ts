@@ -95,6 +95,17 @@ export interface IndividualPerformanceData {
   latestReview: unknown | null;
 }
 
+export interface ManagerTeamPerformanceEntry {
+  employeeId: string;
+  userId: string;
+  fullName: string;
+  position: string | null;
+  department: string | null;
+  okrProgress: number;
+  kpiProgress: number;
+  reviewCount: number;
+}
+
 export function useIndividualPerformance(employeeId: string | null) {
   return useQuery({
     queryKey: queryKeys.performance.individual(employeeId || ''),
@@ -111,6 +122,25 @@ export function useIndividualPerformance(employeeId: string | null) {
       return response.json();
     },
     enabled: !!employeeId,
+  });
+}
+
+export function useManagerTeamPerformance() {
+  return useQuery({
+    queryKey: queryKeys.performance.team(),
+    queryFn: async (): Promise<Array<ManagerTeamPerformanceEntry>> => {
+      const response = await fetch('/api/performance/team');
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to fetch manager team performance' }));
+        throw new Error(error.error || 'Failed to fetch manager team performance');
+      }
+
+      const payload = (await response.json()) as { data: Array<ManagerTeamPerformanceEntry> };
+      return payload.data || [];
+    },
   });
 }
 

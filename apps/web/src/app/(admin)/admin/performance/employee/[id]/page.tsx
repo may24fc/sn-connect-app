@@ -50,9 +50,18 @@ import {
   ToggleLeft,
   Weight,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -387,6 +396,19 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
     );
   }, [objectives]);
 
+  const reviewTrendData = useMemo(() => {
+    if (!data) return [];
+    return [...data.reviews]
+      .filter((review) => review.review_cycles?.name)
+      .reverse()
+      .map((review) => ({
+        cycle: review.review_cycles?.name || 'Review',
+        selfRating: review.self_rating,
+        managerRating: review.manager_rating,
+        finalRating: review.final_rating,
+      }));
+  }, [data]);
+
   const toggleOkrExpanded = (okrId: string): void => {
     setExpandedOkrs((prev) => {
       const next = new Set(prev);
@@ -492,12 +514,10 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Back button */}
-      <Link href="/admin/performance">
-        <Button variant="ghost" size="sm" className="w-fit">
+      <Button variant="ghost" size="sm" className="w-fit" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" strokeWidth={1.5} />
-          Back to Performance
-        </Button>
-      </Link>
+          Back
+      </Button>
 
       {/* Employee Header */}
       <Card>
@@ -529,6 +549,56 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Review Trend</CardTitle>
+          <CardDescription>Historical review scores across completed review cycles.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {reviewTrendData.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+              No review trend data is available yet.
+            </div>
+          ) : (
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={reviewTrendData} margin={{ top: 12, right: 12, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis dataKey="cycle" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis domain={[0, 5]} tickCount={6} tickLine={false} axisLine={false} fontSize={12} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="selfRating"
+                    name="Self"
+                    stroke="#64748b"
+                    strokeWidth={2}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="managerRating"
+                    name="Manager"
+                    stroke="#4f46e5"
+                    strokeWidth={2}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="finalRating"
+                    name="Final"
+                    stroke="#059669"
+                    strokeWidth={2}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
 

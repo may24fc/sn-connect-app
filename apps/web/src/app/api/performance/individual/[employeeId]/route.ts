@@ -36,6 +36,17 @@ export async function GET(
 
     const { employeeId } = await params;
 
+    const { data: requestedEmployee } = await supabaseAdmin
+      .from('employees')
+      .select('id, user_id')
+      .eq('id', employeeId)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (!requestedEmployee) {
+      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+    }
+
     // Non-admins can only view their own data
     if (!ADMIN_ROLES.includes(role || '')) {
       const { data: ownEmployee } = await supabaseAdmin
@@ -46,7 +57,17 @@ export async function GET(
         .maybeSingle();
 
       if (!ownEmployee || ownEmployee.id !== employeeId) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        const { data: managesEmployee, error: managerCheckError } = await supabaseAdmin.rpc(
+          'is_manager_of',
+          {
+            manager_id: user.id,
+            employee_user_id: requestedEmployee.user_id,
+          }
+        );
+
+        if (managerCheckError || !managesEmployee) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
       }
     }
 
