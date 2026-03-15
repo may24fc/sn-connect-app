@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase, isAnnouncementAdmin } from '../../_lib';
+import {
+  getAuthedSupabase,
+  isAnnouncementAdmin,
+  resolveAnnouncementTargetUserIds,
+} from '../../_lib';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -108,28 +112,8 @@ export async function GET(_: NextRequest, context: RouteContext) {
       }
     }
 
-    // Calculate targeted users count (approximate)
-    let totalTargeted = 0;
-    const hasTargeting =
-      announcement.target_roles?.length > 0 ||
-      announcement.target_departments?.length > 0 ||
-      announcement.target_employees?.length > 0;
-
-    if (hasTargeting) {
-      // Count targeted users from employees/roles/departments
-      const { count: targetedCount } = await supabase
-        .from('users')
-        .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null);
-      totalTargeted = targetedCount ?? 0;
-    } else {
-      // If no targeting, all active users are targeted
-      const { count: allUsersCount } = await supabase
-        .from('users')
-        .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null);
-      totalTargeted = allUsersCount ?? 0;
-    }
+    const targetedUserIds = await resolveAnnouncementTargetUserIds(supabase, announcement);
+    const totalTargeted = targetedUserIds.length;
 
     const readRate = totalTargeted > 0 ? Math.round((uniqueReaders / totalTargeted) * 100) : 0;
 

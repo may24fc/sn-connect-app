@@ -8,7 +8,7 @@ import {
 } from '@/hooks/usePublishAnnouncement';
 import { useUpdateAnnouncement } from '@/hooks/useUpdateAnnouncement';
 import {
-  AnnouncementAnalytics,
+  AnnouncementAnalyticsDashboard,
   AnnouncementEditor,
   AttachmentUploader,
   Badge,
@@ -30,7 +30,7 @@ import {
   TargetingSelector,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Archive, ArrowLeft, MoreHorizontal, Pencil, Pin, PinOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -101,6 +101,33 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const remindAnnouncement = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/announcements/${announcementId}/remind`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ error: 'Failed to send reminder' }));
+        throw new Error(errorBody.error || 'Failed to send reminder');
+      }
+
+      return response.json();
+    },
+    onSuccess: (result) => {
+      const notified = result?.data?.notified ?? 0;
+      addToast({
+        title: notified > 0 ? 'Reminder sent' : 'No reminders sent',
+        description:
+          notified > 0
+            ? `Notified ${notified} unread recipient${notified === 1 ? '' : 's'}.`
+            : 'Everyone in the targeted audience has already read this announcement.',
+        variant: 'success',
+      });
+      analyticsQuery.refetch();
+    },
+    onError: () => addToast({ title: 'Failed to send reminder', variant: 'error' }),
+  });
   const [targeting, setTargeting] = useState({
     rolesCsv: '',
     departmentsCsv: '',
@@ -398,10 +425,11 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
           <TabsContent value="analytics" className="mt-4">
-            <AnnouncementAnalytics
-              readCount={analyticsQuery.data?.data?.readCount || 0}
-              uniqueReaders={analyticsQuery.data?.data?.uniqueReaders || 0}
-              timeSeries={analyticsQuery.data?.data?.timeSeries || []}
+            <AnnouncementAnalyticsDashboard
+              data={analyticsQuery.data?.data ?? null}
+              isLoading={analyticsQuery.isLoading}
+              onSendReminder={() => remindAnnouncement.mutate()}
+              isReminding={remindAnnouncement.isPending}
             />
           </TabsContent>
         </Tabs>

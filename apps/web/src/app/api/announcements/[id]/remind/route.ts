@@ -1,6 +1,10 @@
-import { createNotification } from '@/lib/notifications/create';
+import { createBulkNotifications } from '@/lib/notifications/create';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase, isAnnouncementAdmin } from '../../_lib';
+import {
+  getAuthedSupabase,
+  isAnnouncementAdmin,
+  resolveAnnouncementTargetUserIds,
+} from '../../_lib';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -48,19 +52,14 @@ export async function POST(_: NextRequest, context: RouteContext): Promise<NextR
 
     const readUserIds = new Set((readRecords ?? []).map((r: { user_id: string }) => r.user_id));
 
-    // Get all active users (simplified — in production, filter by target_roles/departments)
-    const { data: allUsers } = await supabase
-      .from('users')
-      .select('id')
-      .is('deleted_at', null)
-      .neq('status', 'terminated');
+    const targetedUserIds = await resolveAnnouncementTargetUserIds(supabase, announcement);
 
-    if (!allUsers || allUsers.length === 0) {
+    if (targetedUserIds.length === 0) {
       return NextResponse.json({ data: { notified: 0 } });
     }
 
     // Filter to unread users
-    const unreadUserIds = allUsers.map((u: { id: string }) => u.id).filter((uid: string) => !readUserIds.has(uid));
+    const unreadUserIds = targetedUserIds.filter((uid: string) => !readUserIds.has(uid));
 
     if (unreadUserIds.length === 0) {
       return NextResponse.json({
@@ -68,19 +67,14 @@ export async function POST(_: NextRequest, context: RouteContext): Promise<NextR
       });
     }
 
-    // Create reminder notifications for each unread user
-    let notified = 0;
-    for (const userId of unreadUserIds) {
-      const result = await createNotification({
-        userId,
-        type: 'reminder',
-        title: `Reminder: ${announcement.title}`,
-        message: 'You have an unread announcement. Please review it.',
-        link: `/announcements/${id}`,
-        metadata: { announcementId: id, reminderSentBy: user.id },
-      });
-      if (result) notified++;
-    }
+    const notified = await createBulkNotifications({
+      userIds: unreadUserIds,
+      type: 'reminder',
+      title: `Reminder: ${announcement.title}`,
+      message: 'You have an unread announcement. Please review it.',
+      link: `/announcements/${id}`,
+      metadata: { announcementId: id, reminderSentBy: user.id },
+    });
 
     return NextResponse.json({
       data: {
