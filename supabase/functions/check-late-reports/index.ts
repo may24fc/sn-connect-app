@@ -12,6 +12,7 @@ import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
 interface LateEmployee {
   id: string;
   user_id: string;
+  manager_id: string | null;
   first_name: string;
   last_name: string;
   work_email: string;
@@ -23,6 +24,7 @@ interface LateEmployee {
 interface LateIntern {
   employee_id: string;
   user_id: string;
+  supervisor_id: string | null;
   first_name: string;
   last_name: string;
   work_email: string;
@@ -77,7 +79,7 @@ serve(async (req: Request): Promise<Response> => {
     // Get all active employees
     const { data: activeEmployees, error: empError } = await supabase
       .from('employees')
-      .select('id, user_id, first_name, last_name, work_email')
+      .select('id, user_id, first_name, last_name, work_email, users!employees_user_id_fkey(manager_id)')
       .is('deleted_at', null)
       .not('user_id', 'is', null);
 
@@ -125,6 +127,7 @@ serve(async (req: Request): Promise<Response> => {
             lateEmployees.push({
               id: emp.id,
               user_id: emp.user_id!,
+              manager_id: emp.users?.manager_id ?? null,
               first_name: emp.first_name,
               last_name: emp.last_name,
               work_email: emp.work_email ?? '',
@@ -143,7 +146,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const { data: activeInternships } = await supabase
       .from('internships')
-      .select('employee_id')
+      .select('employee_id, supervisor_id')
       .eq('status', 'active');
 
     const lateInterns: LateIntern[] = [];
@@ -172,6 +175,7 @@ serve(async (req: Request): Promise<Response> => {
             lateInterns.push({
               employee_id: internship.employee_id,
               user_id: empData.user_id,
+              supervisor_id: internship.supervisor_id ?? null,
               first_name: empData.first_name,
               last_name: empData.last_name,
               work_email: empData.work_email ?? '',
@@ -194,15 +198,12 @@ serve(async (req: Request): Promise<Response> => {
       let message: string;
 
       if (emp.days_late <= 1) {
-        // Day 1: Gentle reminder
         title = 'Report Reminder';
         message = `Your weekly report is due. Please submit it at your earliest convenience.`;
       } else if (emp.days_late <= 3) {
-        // Day 3: Firmer reminder
         title = 'Report Overdue';
         message = `Your weekly report is ${emp.days_late} days overdue. Please submit as soon as possible.`;
       } else {
-        // Day 7+: Escalation
         title = 'Report Significantly Overdue';
         message = `Your weekly report is ${emp.days_late} days overdue. This has been escalated to your manager.`;
       }
@@ -221,6 +222,23 @@ serve(async (req: Request): Promise<Response> => {
         },
       });
       notificationsSent++;
+
+      if (emp.days_late >= 7 && emp.manager_id) {
+        await createInAppNotification(supabase, {
+          userId: emp.manager_id,
+          type: 'system',
+          title: 'Direct Report Escalation',
+          message: `${emp.first_name} ${emp.last_name} has a weekly report overdue by ${emp.days_late} days.`,
+          link: '/admin/reports?tab=submissions&late=true',
+          metadata: {
+            employeeId: emp.id,
+            employeeUserId: emp.user_id,
+            escalationLevel: 'manager',
+            daysLate: emp.days_late,
+          },
+        });
+        notificationsSent++;
+      }
     }
 
     // Notify late interns
@@ -237,6 +255,22 @@ serve(async (req: Request): Promise<Response> => {
         },
       });
       notificationsSent++;
+
+      if (intern.supervisor_id) {
+        await createInAppNotification(supabase, {
+          userId: intern.supervisor_id,
+          type: 'system',
+          title: 'Intern EOD Missing',
+          message: `${intern.first_name} ${intern.last_name} did not submit an EOD report for ${yesterdayStr}.`,
+          link: '/admin/interns?tab=eod-reports',
+          metadata: {
+            employeeId: intern.employee_id,
+            missingDate: yesterdayStr,
+            escalationLevel: 'supervisor',
+          },
+        });
+        notificationsSent++;
+      }
     }
 
     // -----------------------------------------------------------------------
@@ -298,7 +332,7 @@ serve(async (req: Request): Promise<Response> => {
         employees: lateEmployees.map((e) => ({
           name: `${e.first_name} ${e.last_name}`,
           daysLate: e.days_late,
-          escalation: e.days_late <= 1 ? 'gentle' : e.days_late <= 3 ? 'firm' : 'escalation',
+          escalation: e.days_late <= 1 ? 'day_1' : e.days_late <= 3 ? 'day_3' : 'day_7',
         })),
         interns: lateInterns.map((i) => ({
           name: `${i.first_name} ${i.last_name}`,

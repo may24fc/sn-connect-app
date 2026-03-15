@@ -13,9 +13,9 @@
         }
       },
       "id": "trigger-daily",
-      "name": "Daily Trigger (01:00 UTC)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1,
+      "name": "Daily Trigger (00:30 UTC)",
+                            "field": "cronExpression",
+                            "expression": "30 0 * * *"
       "position": [250, 300]
     },
     {
@@ -72,6 +72,10 @@
             {
               "name": "gentleEmployees",
               "value": "={{$json.data.summary.employees.filter(e => e.daysLate < 3).map(e => e.name).join(', ')}}"
+            },
+            {
+              "name": "lateInterns",
+              "value": "={{$json.data.summary.interns.map(i => i.name).join(', ')}}"
             }
           ],
           "number": [
@@ -108,7 +112,7 @@
     {
       "parameters": {
         "channel": "#hr-alerts",
-        "text": "🚨 *Report Escalation Alert*\n\nThe following employees are 7+ days late on their reports and require manager/HR intervention:\n\n{{$json.escalationEmployees}}\n\nPlease follow up immediately.",
+        "text": "Report Escalation Alert\n\nThe following employees are 7+ days late on their reports and require manager and HR follow-up:\n\n{{$json.escalationEmployees}}\n\nLate interns missing EOD reports: {{$json.lateInterns || 'None'}}",
         "otherOptions": {}
       },
       "id": "slack-escalation",
@@ -121,8 +125,8 @@
       "parameters": {
         "fromEmail": "hr@snconnect.com",
         "toEmail": "={{$env.HR_ADMIN_EMAIL}}",
-        "subject": "⚠️ Late Report Escalation - {{$json.totalLate}} employee(s)",
-        "text": "Daily Late Report Summary\n\nEscalation (7+ days): {{$json.escalationEmployees || 'None'}}\nFirm Reminder (3-6 days): {{$json.firmEmployees || 'None'}}\nGentle Reminder (1-2 days): {{$json.gentleEmployees || 'None'}}\n\nTotal late: {{$json.totalLate}}\n\nPlease review at: {{$env.APP_URL}}/admin/reports?tab=submissions",
+        "subject": "Late Report Escalation Summary - {{$json.totalLate}} records",
+        "text": "Daily Late Report Summary\n\nDay 7 escalations: {{$json.escalationEmployees || 'None'}}\nDay 3 reminders: {{$json.firmEmployees || 'None'}}\nDay 1 reminders: {{$json.gentleEmployees || 'None'}}\nIntern EOD misses: {{$json.lateInterns || 'None'}}\n\nTotal late: {{$json.totalLate}}\n\nReview at: {{$env.APP_URL}}/admin/reports?tab=submissions",
         "options": {}
       },
       "id": "email-summary",
@@ -141,7 +145,7 @@
     }
   ],
   "connections": {
-    "Daily Trigger (01:00 UTC)": {
+    "Daily Trigger (00:30 UTC)": {
       "main": [
         [
           {
