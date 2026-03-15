@@ -27,14 +27,15 @@ sn-hr-portal/
 │       └── src/
 │           └── app/            # App router pages
 │               ├── (auth)/     # Authentication routes
-│               ├── (employee)/ # Employee portal routes
-│               └── (admin)/    # HR Admin & COS routes
+│               ├── (employee)/ # Employee & Intern portal routes
+│               └── (admin)/    # Admin & Super Admin routes
+│                   └── super-admin/ # Super Admin-only routes (passthrough layout)
 ├── packages/
 │   └── ui/                     # Shared UI component library
 │       └── src/
 │           ├── primitives/     # Base shadcn/ui components
-│           ├── components/     # Domain-specific components
-│           ├── layout/         # Layout components
+│           ├── components/     # Domain-specific components (by folder)
+│           ├── layout/         # Layout components (Sidebar, Header, ToastProvider)
 │           └── types/          # Shared TypeScript types
 └── docs/
     └── guides/                 # User and developer documentation
@@ -51,8 +52,8 @@ Next.js route groups organize pages by user role:
 | Route Group | Path Prefix | Layout | User Roles |
 |-------------|-------------|--------|------------|
 | `(auth)` | `/` | Auth layout | Unauthenticated |
-| `(employee)` | `/` | Employee layout | Employee, Manager, Intern |
-| `(admin)` | `/` | Admin layout | HR Admin, COS (Super Admin) |
+| `(employee)` | `/` | Employee layout | Employee, Intern |
+| `(admin)` | `/` | Admin layout | Admin, Super Admin |
 
 ### Complete Route Map
 
@@ -137,16 +138,19 @@ Each route group has a corresponding layout component that provides:
 
 ```typescript
 export default function EmployeeLayout({ children }: { children: ReactNode }) {
+  const user = useRequireAuth(['employee', 'intern']);
+  const sidebarVariant = user?.role === 'intern' ? 'intern' : 'employee';
+
   return (
     <div className="flex h-screen bg-muted/30">
-      <Sidebar variant="employee" ... />
+      <Sidebar variant={sidebarVariant} ... />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header ... />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {children}
         </main>
       </div>
-      <AIChatbot />
+      <AIChatbot /> {/* Lazy-loaded */}
     </div>
   );
 }
@@ -154,14 +158,19 @@ export default function EmployeeLayout({ children }: { children: ReactNode }) {
 
 #### Admin Layout (`apps/web/src/app/(admin)/layout.tsx`)
 
-Same structure as employee layout but uses role-based sidebar variant:
-- When user role is `'admin'`: `variant="admin"` (no Invoice Approvals)
-- When user role is `'cos'`: `variant="cos"` (includes Invoice Approvals)
+Same structure as employee layout but serves both admin and super_admin roles:
+- When user role is `'admin'`: `variant="admin"`
+- When user role is `'super_admin'`: `variant="super_admin"`
 
 ```typescript
 // The sidebar variant is determined by user role
+const user = useRequireAuth(['admin', 'super_admin']);
 <Sidebar variant={user.role} ... />
 ```
+
+#### Super Admin Passthrough Layout (`apps/web/src/app/(admin)/super-admin/layout.tsx`)
+
+A passthrough layout that enforces `super_admin` role access for all `/super-admin/*` routes. Does not render additional UI — just validates and passes children through.
 
 ### Sidebar Variants
 
@@ -169,17 +178,16 @@ The `Sidebar` component accepts a `variant` prop that determines navigation item
 
 | Variant | Navigation Items |
 |---------|-----------------|
-| `employee` | Home, My 201 Files, Onboarding, Performance, Payroll, Information Hub, Profile |
-| `manager` | Employee items + Team Performance |
-| `intern` | Dashboard, My 201 Files, Onboarding, My Reports, Performance, Information Hub, Profile (**NO Payroll**) |
-| `admin` | Probation Tracker, Performance, **Team Performance**, **Employee Reviews**, Intern Management |
-| `cos` | Probation Tracker, Performance, **Team Performance**, **Employee Reviews**, Intern Management, **Invoice Approvals** |
+| `employee` | Dashboard, Profile, Tasks, Performance Reviews, Reports, Invoice, Documents, Information Hub |
+| `intern` | Profile, Dashboard, Tasks, Performance Reviews, Documents, Information Hub (**NO Invoice or Reports**) |
+| `admin` | Dashboard, Directory, Employee Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources |
+| `super_admin` | Dashboard, Directory, Employee Management, Task Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Payroll Approvals |
 
 ```typescript
-type SidebarVariant = 'employee' | 'admin' | 'cos' | 'manager' | 'intern';
+export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
 ```
 
-**Note:** Admin and COS share the same routes under `(admin)` layout. The layout dynamically selects the sidebar variant based on user role. Only COS users see the Invoice Approvals navigation item.
+**Note:** Admin and Super Admin share the same `(admin)` layout. The layout dynamically selects the sidebar variant based on user role. Super Admin has additional routes for Task Management and Payroll Approvals.
 
 ---
 
@@ -211,47 +219,54 @@ Base UI components built on shadcn/ui:
 
 | Component | File | Usage |
 |-----------|------|-------|
+| Avatar | `avatar.tsx` | User avatars |
+| Badge | `badge.tsx` | Status indicators |
 | Button | `button.tsx` | Actions, links |
 | Card | `card.tsx` | Content containers |
-| Badge | `badge.tsx` | Status indicators |
-| Input | `input.tsx` | Text input fields |
-| Select | `select.tsx` | Dropdown selection |
+| Checkbox | `checkbox.tsx` | Boolean inputs |
 | Dialog | `dialog.tsx` | Modal windows |
+| DropdownMenu | `dropdown-menu.tsx` | Context menus |
+| FileDropZone | `file-drop-zone.tsx` | Drag-and-drop file upload |
+| Input | `input.tsx` | Text input fields |
+| Label | `label.tsx` | Form labels |
+| PasswordInput | `password-input.tsx` | Password fields with toggle |
+| Progress | `progress.tsx` | Progress bars |
+| Select | `select.tsx` | Dropdown selection |
+| Separator | `separator.tsx` | Visual dividers |
+| Skeleton | `skeleton.tsx` | Loading placeholders |
+| SlidePanel | `slide-panel.tsx` | Sliding panel overlays |
 | Table | `table.tsx` | Data tables |
 | Tabs | `tabs.tsx` | Tabbed content |
-| Progress | `progress.tsx` | Progress bars |
-| Avatar | `avatar.tsx` | User avatars |
-| Checkbox | `checkbox.tsx` | Boolean inputs |
 | Textarea | `textarea.tsx` | Multi-line text |
+| Toast | `toast.tsx` | Toast notifications |
 | Tooltip | `tooltip.tsx` | Hover hints |
-| DropdownMenu | `dropdown-menu.tsx` | Context menus |
-| Separator | `separator.tsx` | Visual dividers |
-| Label | `label.tsx` | Form labels |
 
-#### Performance Components (`packages/ui/src/components/performance/`)
+#### Domain Components (`packages/ui/src/components/`)
 
-Domain-specific components for performance management:
+Organized by domain:
+
+| Directory | Purpose |
+|-----------|---------|
+| `ai-knowledge/` | RAG chat, embeddings UI |
+| `announcements/` | Announcement cards, detail dialogs |
+| `dashboard/` | Dashboard-specific components |
+| `documents/` | File list, upload components |
+| `forms/` | Reusable form components |
+| `internship/` | Intern cards, EOD report form, hours tracking |
+| `notifications/` | Notification UI |
+| `performance/` | OKR/KPI cards, performance charts, summary cards |
+| `profile/` | Profile-related UI |
+| `reports/` | Report components |
+| `resources/` | Resource grid, cards |
+| `tasks/` | Task list, cards |
+
+#### Standalone Components
 
 | Component | Purpose |
 |-----------|---------|
-| `OKRCard` | Display objective with key results |
-| `KPICard` | Display KPI metric with target/actual |
-| `PerformanceCharts` | Visual charts for metrics |
-| `PerformanceSummaryCards` | Overview statistics |
-| `PerformanceStatusBadge` | Status indicators |
-
-#### Internship Components (`packages/ui/src/components/internship/`)
-
-Domain-specific components for intern management:
-
-| Component | Purpose |
-|-----------|---------|
-| `InternCard` | Individual intern display |
-| `InternStatusBadge` | Status indicators |
-| `HoursProgressCard` | Hours tracking progress |
-| `DailyReportCard` | EOD report display |
-| `EODReportForm` | Report submission form |
-| `InternshipSummaryCards` | Overview statistics |
+| `AIChatbot` | AI assistant chat interface (lazy-loaded) |
+| `empty-state` | Empty state display |
+| `MultiSelectFilter` | Multi-select filter component |
 
 #### Layout Components (`packages/ui/src/layout/`)
 
@@ -259,12 +274,7 @@ Domain-specific components for intern management:
 |-----------|---------|
 | `Sidebar` | Role-based navigation |
 | `Header` | Top navigation bar |
-
-#### Shared Components (`packages/ui/src/components/`)
-
-| Component | Purpose |
-|-----------|---------|
-| `AIChatbot` | AI assistant chat interface |
+| `ToastProvider` | Toast notification provider |
 
 ---
 
@@ -438,7 +448,7 @@ Each component exports its props interface:
 
 ```typescript
 export interface SidebarProps {
-  variant: 'employee' | 'admin' | 'cos' | 'manager' | 'intern';
+  variant: UserRole;                    // 'employee' | 'intern' | 'admin' | 'super_admin'
   currentPath: string;
   onNavigate: (href: string) => void;
   logoUrl?: string;

@@ -20,17 +20,18 @@ You will be redirected to your role-specific dashboard automatically.
 
 **Your Navigation:**
 - Home (Dashboard)
-- My 201 Files (Documents)
-- Onboarding (Task checklists)
-- Performance (OKRs, KPIs, Reviews)
-- Payroll (Invoice submission)
-- Information Hub (Announcements)
 - Profile (Personal info)
+- Tasks (Assigned tasks)
+- Performance Reviews (OKRs, Reviews)
+- Reports (Weekly submissions)
+- Invoice (Invoice submission)
+- Documents (My 201 Files)
+- Information Hub (Announcements & Resources)
 
 **First Steps:**
 1. Check your dashboard for pending tasks
-2. Upload any missing documents in My 201 Files
-3. Complete onboarding checklist items
+2. Upload any missing documents in Documents
+3. Complete onboarding checklist items (if applicable)
 4. Review your performance objectives
 
 ### Manager
@@ -46,9 +47,12 @@ You will be redirected to your role-specific dashboard automatically.
 ### Intern
 
 **Your Navigation:**
-- Dashboard (Progress overview)
-- My Reports (Daily submissions)
 - Profile (Personal info)
+- Dashboard (Progress overview)
+- Tasks (Assigned tasks)
+- Performance Reviews (OKRs, Reviews)
+- Documents (My 201 Files)
+- Information Hub (Announcements & Resources)
 
 **Daily Workflow:**
 1. Log your hours daily
@@ -58,24 +62,44 @@ You will be redirected to your role-specific dashboard automatically.
 ### HR Administrator
 
 **Your Navigation:**
-- Probation Tracker (Employee monitoring)
-- Performance (Organization settings)
-- Intern Management (All interns)
+- Dashboard (HR overview)
+- Directory (Employee directory)
+- Employee Management (Manage records)
+- Interns (Intern management)
+- Performance (Organization metrics & cycles)
+- Reports (Staff submission tracking & analytics)
+- Jobs (Recruitment pipeline)
+- Announcements (Company announcements)
+- AI Knowledge (AI assistant knowledge base)
+- Resources (Company resources)
 
 **Key Tasks:**
 1. Monitor employees on probation
 2. Conduct performance appraisals
 3. Oversee intern progress
+4. Manage announcements and resources
 
-### COS Approver
+### Super Admin
 
 **Your Navigation:**
-- Invoice Approvals
+- Dashboard (System overview)
+- Directory (Employee directory)
+- Employee Management (Manage records)
+- Task Management (Create & assign tasks)
+- Interns (Intern management)
+- Performance (Organization metrics & cycles)
+- Reports (Staff submission tracking & analytics)
+- Jobs (Recruitment pipeline)
+- Announcements (Company announcements)
+- AI Knowledge (AI assistant knowledge base)
+- Resources (Company resources)
+- Payroll Approvals (Approve/reject invoices)
 
 **Key Tasks:**
-1. Review pending invoices
-2. Approve or reject with notes
-3. Track processed invoices
+1. Review and approve/reject pending invoices
+2. Create and assign tasks to team members
+3. Monitor system health and security alerts
+4. All Admin tasks
 
 ---
 
@@ -83,7 +107,7 @@ You will be redirected to your role-specific dashboard automatically.
 
 ### Upload a Document
 
-1. Go to **My 201 Files**
+1. Go to **Documents** (My 201 Files)
 2. Find the document card (shows "Not Uploaded")
 3. Click **Upload Document** button
 4. Drag and drop your file or click **Choose File**
@@ -91,7 +115,7 @@ You will be redirected to your role-specific dashboard automatically.
 
 ### Submit an Invoice
 
-1. Go to **Payroll**
+1. Go to **Invoice**
 2. Click **Submit Invoice**
 3. Select the pay period
 4. Enter the amount
@@ -117,16 +141,16 @@ You will be redirected to your role-specific dashboard automatically.
 
 ### Review Team Performance (Managers)
 
-1. Go to **Team Performance**
+1. Go to **Team Performance** (available to employees flagged as managers)
 2. Find team member with "Pending My Review" status
 3. Click **Review** button
 4. Rate OKRs and KPIs
 5. Provide overall rating and feedback
 6. Click **Submit Appraisal**
 
-### Approve/Reject an Invoice (COS)
+### Approve/Reject an Invoice (Super Admin)
 
-1. Go to **Invoice Approvals**
+1. Go to **Payroll Approvals**
 2. Use the carousel or table to find pending invoice
 3. Click **View Document** to review
 4. Click **Approve** or **Reject**

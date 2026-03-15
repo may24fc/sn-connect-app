@@ -43,16 +43,18 @@ The portal supports four distinct user roles, each with specific navigation and 
 
 | Role | Primary Functions | Navigation Items |
 |------|-------------------|------------------|
-| **Employee** | Self-service HR tasks, document management, performance tracking, reports | Dashboard, My Tasks, My Profile, My 201 Files, Payroll, Reports, Performance Reviews, Announcements |
-| **Intern** | Task tracking, document management, performance | Dashboard, My Tasks, My Profile, My 201 Files, Performance Reviews, Announcements |
-| **Admin (HR)** | HR administration, performance management, intern oversight, reporting analytics | Dashboard, Interns, Reports, Performance, Probation, AI Knowledge |
-| **Super Admin** | Full system control, task management, payroll approvals, system monitoring | Dashboard, Task Management, Interns, Reports, Performance, Probation, AI Knowledge, Payroll Approvals |
+| **Employee** | Self-service HR tasks, document management, performance tracking, reports | Dashboard, Profile, Tasks, Performance Reviews, Reports, Invoice, Documents, Information Hub |
+| **Intern** | Task tracking, document management, performance | Dashboard, Profile, Tasks, Performance Reviews, Documents, Information Hub |
+| **Admin (HR)** | HR administration, performance management, intern oversight, reporting analytics | Dashboard, Directory, Employee Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources |
+| **Super Admin** | Full system control, task management, payroll approvals, system monitoring | Dashboard, Directory, Employee Management, Task Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Payroll Approvals |
 
 ### Manager Access
 
 Employees with manager responsibilities have access to additional features:
 - Team Performance (`/manager/team-performance`)
 - Pending Reviews (`/manager/reviews`)
+
+> **Note:** These pages are accessible only to employees flagged as managers in the database.
 
 ---
 
@@ -243,9 +245,11 @@ Document management interface for employment records.
 - Government (SSS E1, PhilHealth MDR, Pag-IBIG MID, TIN)
 - Education (Diploma/TOR)
 
-### Payroll (`/payroll`)
+### Payroll (`/invoice`)
 
 Submit and track invoice submissions.
+
+> **Note:** The route is `/invoice` (not `/payroll`).
 
 **Features:**
 
@@ -361,15 +365,17 @@ Track objectives, KPIs, and performance reviews.
 - KPIs (`/performance/kpis`) - Track key performance indicators
 - Review (`/performance/review`) - Complete self-assessment
 
-### Announcements / Information Hub (`/announcements`)
+### Announcements / Information Hub (`/information-hub`)
 
-Stay updated with company news and track personal growth.
+Stay updated with company news and browse resources.
+
+> **Note:** The route `/announcements` redirects to `/information-hub`.
 
 **Features:**
 
 1. **Tab Navigation**
    - Announcements tab
-   - My Growth tab
+   - Resources tab
 
 2. **Announcements Tab**
    - Category filter buttons (All, HR Updates, Benefits, Events, Performance, Training)
@@ -380,13 +386,12 @@ Stay updated with company news and track personal growth.
      - Posted date
      - Click to view details
 
-3. **My Growth Tab**
-   - **Stats Cards**: Completed courses, In Progress items, Learning Hours
-   - **Learning & Development List**:
-     - Course/goal cards with progress bars
-     - Completion status badges
-     - Due dates
-     - View details button
+3. **Resources Tab**
+   - Featured resources section
+   - Resource grid with search and category browser
+   - Bookmark resources with star/bookmark icon
+   - Resource collections
+   - Sub-route: `/information-hub/resources/` for detailed resource views
 
 ### Onboarding (`/onboarding`)
 
@@ -523,14 +528,18 @@ Central hub for intern activities.
 ### Intern Navigation
 
 Interns have access to:
+- Profile (`/profile`)
 - Dashboard (`/intern/dashboard`)
 - My Tasks (`/tasks`)
-- My Profile (`/profile`)
-- My 201 Files (`/files`)
 - Performance Reviews (`/performance`)
-- Announcements (`/announcements`)
+- My 201 Files (`/files`)
+- Information Hub (`/information-hub`)
 
-Note: Interns do not have access to Payroll or Reports features.
+**Intern-specific routes:**
+- Daily Reports (`/intern/reports`)
+- Intern Profile (`/intern/profile`)
+
+Note: Interns do not have access to Invoice or Reports features.
 
 ---
 
@@ -578,6 +587,24 @@ HR overview and quick actions hub.
    - Performance (Reviews & OKRs)
    - Recruitment (Open positions)
    - Reports (Analytics & insights)
+
+### Directory (`/admin/directory`)
+
+Organization-wide employee directory.
+
+**Features:**
+- Browse all employees across departments
+- Search and filter by name, department, role, or status
+- View employee profiles
+
+### Employee Management (`/admin/employee-management`)
+
+Manage employee records and administration.
+
+**Features:**
+- View and manage employee records
+- Update employee details
+- Handle employee lifecycle events
 
 ### Reports Tracking (`/admin/reports`)
 
@@ -806,11 +833,20 @@ Manage the AI assistant's knowledge base.
 - Enable/disable entries
 - Preview AI responses
 
+### Jobs (`/admin/jobs`)
+
+Manage job postings and recruitment pipeline.
+
+**Features:**
+- View and manage open positions
+- Track recruitment pipeline
+- Post new job listings
+
 ---
 
 ## Super Admin Workflows
 
-Super administrators have full system access plus additional control features.
+Super administrators have full system access plus additional control features. Super Admin routes live under the `(admin)` route group with a passthrough layout at `/super-admin/` that enforces `super_admin` role access.
 
 ### Super Admin Dashboard (`/super-admin/dashboard`)
 
@@ -989,11 +1025,17 @@ Review and approve contractor invoice submissions.
 ### Super Admin Additional Access
 
 Super Admins also have access to:
-- All Admin features (Interns, Reports, Performance, Probation, AI Knowledge)
-- System Settings (`/super-admin/settings`)
-- User Management (`/super-admin/users`)
-- Role Management (`/super-admin/roles`)
-- Audit Logs (`/super-admin/audit-logs`)
+- All Admin features (Directory, Employee Management, Interns, Reports, Performance, Jobs, AI Knowledge)
+- Their own versions of: Announcements (`/super-admin/announcements`), Resources (`/super-admin/resources`), AI Knowledge (`/super-admin/ai-knowledge`)
+
+**Shared Admin routes accessed by Super Admins:**
+- `/admin/directory`
+- `/admin/employee-management`
+- `/admin/interns`
+- `/admin/performance` (including `/cycles/`, `/employee/`, `/evaluations/`, `/individual/`)
+- `/admin/reports` (including `/analytics/`, `/compare/`)
+- `/admin/jobs`
+- `/admin/probation`
 
 ---
 
@@ -1171,6 +1213,7 @@ If you encounter issues or have questions:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.0.0 | Mar 2026 | Updated navigation items, added Directory/Employee Management/Jobs routes, corrected Information Hub routing, updated Known Limitations, reflect ADR changes |
 | 2.0.0 | Feb 2026 | Added task management, weekly reports, AI knowledge management, super admin features, enhanced dashboards |
 | 1.0.0 | 2024 | Initial release with core features |
 

@@ -18,10 +18,10 @@ Click any of the quick login buttons or manually enter:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Employee | employee@test.com | password |
-| Intern | intern@test.com | password |
-| Admin | admin@test.com | password |
-| Super Admin | superadmin@test.com | password |
+| Employee | employee@example.com | SamplePass!234 |
+| Intern | intern@example.com | SamplePass!234 |
+| Admin | admin@example.com | SamplePass!234 |
+| Super Admin | super-admin@example.com | SamplePass!234 |
 
 ### 4. Test Each Role
 
@@ -29,62 +29,69 @@ Click any of the quick login buttons or manually enter:
 - Dashboard: `/dashboard`
 - View personal profile, files
 - Access performance reviews
-- View company announcements
+- View company announcements and resources
 
 **Navigation Items:**
 - Dashboard
-- My Profile
-- My 201 Files
-- Documents
+- Profile
+- Tasks
 - Performance Reviews
-- Announcements
+- Reports
+- Invoice
+- Documents
+- Information Hub
 
 #### Intern Role
 - Dashboard: `/intern/dashboard`
 - Submit daily reports (EOD reports)
 - Track internship hours
-- Access learning resources
-- Connect with mentor
+- Access documents and performance reviews
 
 **Navigation Items:**
-- Dashboard
-- My Tasks
-- Learning Resources
-- Timesheet
-- Mentor Connect
-- Documents
 - Profile
+- Dashboard
+- Tasks
+- Performance Reviews
+- Documents
+- Information Hub
 
 #### Admin Role
 - Dashboard: `/admin/dashboard`
 - Manage employees and teams
-- Access HR reports
-- Manage performance reviews
-- Handle recruitment
+- Access HR reports and analytics
+- Manage performance reviews and cycles
 
 **Navigation Items:**
 - Dashboard
+- Directory
 - Employee Management
-- Team Management
+- Interns
+- Performance
 - Reports
-- Performance Management
-- Recruitment
+- Jobs
+- Announcements
+- AI Knowledge
+- Resources
 
 #### Super Admin Role
 - Dashboard: `/super-admin/dashboard`
-- Full system access
-- User and role management
-- View audit logs
-- Configure system settings
-- Access all admin features
+- Full system access including all admin features
+- Task management and payroll approvals
+- System health monitoring
 
 **Navigation Items:**
 - Dashboard
-- User Management
-- System Settings
-- Audit Logs
-- Role Management
-- (Plus all Admin features)
+- Directory
+- Employee Management
+- Task Management
+- Interns
+- Performance
+- Reports
+- Jobs
+- Announcements
+- AI Knowledge
+- Resources
+- Payroll Approvals
 
 ## Adding Auth to a New Page
 
@@ -102,17 +109,21 @@ export default function MyPage() {
 
 ### 2. Protect a Route
 
+Use `useRequireAuth` in a layout file to restrict access:
+
 ```typescript
 import { useRequireAuth } from '@/contexts/AuthContext';
 
-export default function ProtectedPage() {
-  // Only allow employees
-  const user = useRequireAuth(['employee']);
+export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  // Only allow employees and interns
+  const user = useRequireAuth(['employee', 'intern']);
 
-  // Or allow multiple roles
+  // Or allow admin roles
   const user = useRequireAuth(['admin', 'super_admin']);
 
-  return <div>Protected content</div>;
+  if (!user) return null; // Shows loading or redirects
+
+  return <>{children}</>;
 }
 ```
 
@@ -120,11 +131,12 @@ export default function ProtectedPage() {
 
 ```typescript
 import { useAuth } from '@/contexts/AuthContext';
+import type { UserRoleType } from '@/contexts/AuthContext';
 
 export default function ConditionalPage() {
   const { user } = useAuth();
 
-  if (user?.role === 'admin') {
+  if (user?.role === 'admin' || user?.role === 'super_admin') {
     return <AdminView />;
   }
 
@@ -160,30 +172,41 @@ export default function MyComponent() {
 'use client';
 
 import { useRequireAuth, useAuth } from '@/contexts/AuthContext';
-import { Sidebar, Header, AIChatbot } from '@hr-portal/ui';
+import type { UserRoleType } from '@/contexts/AuthContext';
+import { Sidebar, Header } from '@hr-portal/ui';
 
-export default function MyRoleLayout({ children }) {
-  const user = useRequireAuth(['my_role']);
+export default function MyRoleLayout({ children }: { children: React.ReactNode }) {
+  const user = useRequireAuth(['employee', 'intern']);
   const { logout } = useAuth();
 
+  if (!user) return null;
+
+  const sidebarVariant: UserRoleType = user.role === 'intern' ? 'intern' : 'employee';
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-muted/30">
       <Sidebar
-        variant={user.role}
+        variant={sidebarVariant}
         currentPath={pathname}
         onNavigate={handleNavigate}
       />
-      <div className="flex-1">
+      <div className="flex flex-1 flex-col overflow-hidden">
         <Header
           user={user}
           onLogout={logout}
         />
-        <main>{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          {children}
+        </main>
       </div>
-      <AIChatbot />
     </div>
   );
 }
+```
+
+**Sidebar variant types:**
+```typescript
+type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
 ```
 
 ## Common Patterns
