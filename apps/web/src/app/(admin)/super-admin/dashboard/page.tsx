@@ -11,7 +11,7 @@ import {
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
-import { Badge, Button, Progress } from '@hr-portal/ui';
+import { Badge, Button, ComingSoonDialog, Progress } from '@hr-portal/ui';
 import {
   Activity,
   AlertTriangle,
@@ -23,8 +23,7 @@ import {
   Shield,
   Users,
 } from 'lucide-react';
-import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 // Security alerts remain placeholder until an alerting system is implemented
 const securityAlerts: Array<{
@@ -47,25 +46,25 @@ const quickActions = [
     title: 'User Management',
     description: 'Manage all users',
     icon: Users,
-    href: '/super-admin/users',
+    comingSoon: true,
   },
   {
     title: 'Role Management',
     description: 'Configure roles',
     icon: Shield,
-    href: '/super-admin/roles',
+    comingSoon: true,
   },
   {
     title: 'Audit Logs',
     description: 'View all logs',
     icon: FileText,
-    href: '/super-admin/audit-logs',
+    comingSoon: true,
   },
   {
     title: 'System Settings',
     description: 'Configure system',
     icon: Settings,
-    href: '/super-admin/settings',
+    comingSoon: true,
   },
 ];
 
@@ -81,6 +80,13 @@ export default function SuperAdminDashboardPage(): ReactNode {
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
   const { data: statsData, isLoading } = useSuperAdminStats();
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+  const [comingSoonFeature, setComingSoonFeature] = useState<string | undefined>();
+
+  const openComingSoon = (featureName: string): void => {
+    setComingSoonFeature(featureName);
+    setComingSoonOpen(true);
+  };
 
   const systemStats = {
     totalUsers: statsData?.totalUsers ?? 0,
@@ -102,11 +108,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
             Complete system overview and control.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/super-admin/settings">
+        <Button onClick={() => openComingSoon('System Settings')}>
             <Settings className="mr-2 h-4 w-4" strokeWidth={1.5} />
             System Settings
-          </Link>
         </Button>
       </div>
 
@@ -206,11 +210,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   No security alerts
                 </p>
               )}
-              <Button variant="outline" className="w-full" asChild>
-                <Link href="/super-admin/audit-logs">
+              <Button variant="outline" className="w-full" onClick={() => openComingSoon('Audit Logs')}>
                   View All Alerts
                   <ChevronRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
-                </Link>
               </Button>
             </div>
           </BentoCardContent>
@@ -222,11 +224,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Database className="h-4 w-4" strokeWidth={1.5} />}>
               System Health
             </BentoCardTitle>
-            <Link href="/super-admin/settings">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openComingSoon('System Settings')}>
                 Settings
-              </Button>
-            </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             <div className="space-y-4">
@@ -304,11 +304,9 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Lock className="h-4 w-4" strokeWidth={1.5} />}>
               Recent Audit Logs
             </BentoCardTitle>
-            <Link href="/super-admin/audit-logs">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openComingSoon('Audit Logs')}>
                 View All
-              </Button>
-            </Link>
+            </Button>
           </BentoCardHeader>
           <BentoCardContent>
             <div className="space-y-3">
@@ -347,7 +345,12 @@ export default function SuperAdminDashboardPage(): ReactNode {
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-4 gap-4" data-tour="quick-actions">
         {quickActions.map((action) => (
-          <Link key={action.title} href={action.href}>
+          <button
+            key={action.title}
+            type="button"
+            onClick={() => openComingSoon(action.title)}
+            className="text-left"
+          >
             <div
               className="group flex items-center gap-3 p-4 rounded-lg bg-card border border-border hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
               style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
@@ -367,9 +370,15 @@ export default function SuperAdminDashboardPage(): ReactNode {
                 strokeWidth={1.5}
               />
             </div>
-          </Link>
+          </button>
         ))}
       </div>
+
+      <ComingSoonDialog
+        open={comingSoonOpen}
+        onOpenChange={setComingSoonOpen}
+        featureName={comingSoonFeature}
+      />
     </div>
   );
 }
