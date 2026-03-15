@@ -46,6 +46,8 @@ export { ExpenditureVsResultsChart } from './analytics/ExpenditureVsResultsChart
 export { SpendByCategoryChart } from './analytics/SpendByCategoryChart';
 export { ROIByDepartmentChart } from './analytics/ROIByDepartmentChart';
 export { WeeklyTrendsChart } from './analytics/WeeklyTrendsChart';
+export { ReportMetricsChart } from './analytics/ReportMetricsChart';
+export { StatusBreakdownChart } from './analytics/StatusBreakdownChart';
 
 // Export new UI/UX components
 export { MetricKPICard, MetricKPICardGrid } from './MetricKPICard';

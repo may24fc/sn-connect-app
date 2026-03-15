@@ -1,6 +1,7 @@
 'use client';
 
 import { useCreateReport } from '@/hooks/useCreateReport';
+import { REPORT_TYPE_INFO } from '@/lib/report-utils';
 import {
   Button,
   Card,
@@ -25,20 +26,47 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-const REPORT_TYPE_INFO: Record<string, { label: string; description: string }> = {
-  weekly: {
-    label: 'Weekly',
-    description: 'Summarize your weekly activities, accomplishments, and plans for next week.',
+interface ReportTemplate {
+  label: string;
+  description: string;
+  reportType: 'weekly' | 'monthly' | 'marketing';
+  metrics: Array<MetricEntry>;
+}
+
+const REPORT_TEMPLATES: Record<string, ReportTemplate> = {
+  weekly_summary: {
+    label: 'Weekly Summary',
+    description: 'Standard weekly task summary with completion metrics',
+    reportType: 'weekly',
+    metrics: [
+      { name: 'Tasks Completed', value: '0', unit: 'count' },
+      { name: 'Tasks In Progress', value: '0', unit: 'count' },
+      { name: 'Hours Worked', value: '0', unit: 'hours' },
+    ],
   },
-  monthly: {
-    label: 'Monthly',
-    description:
-      'Provide a comprehensive overview of the month including key metrics and milestones.',
+  monthly_summary: {
+    label: 'Monthly Summary',
+    description: 'Aggregated monthly performance overview',
+    reportType: 'monthly',
+    metrics: [
+      { name: 'Tasks Completed', value: '0', unit: 'count' },
+      { name: 'Projects Delivered', value: '0', unit: 'count' },
+      { name: 'Revenue Generated', value: '0', unit: 'PHP' },
+      { name: 'Client Satisfaction', value: '0', unit: '%' },
+    ],
   },
-  marketing: {
-    label: 'Marketing',
-    description:
-      'Track campaign performance metrics like clicks, impressions, conversions, and costs.',
+  campaign_deep_dive: {
+    label: 'Campaign Deep-Dive',
+    description: 'Detailed campaign metrics — impressions, clicks, CTR, conversions, spend, ROAS',
+    reportType: 'marketing',
+    metrics: [
+      { name: 'Impressions', value: '0', unit: 'count' },
+      { name: 'Clicks', value: '0', unit: 'count' },
+      { name: 'CTR', value: '0', unit: '%' },
+      { name: 'Conversions', value: '0', unit: 'count' },
+      { name: 'Spend', value: '0', unit: 'PHP' },
+      { name: 'ROAS', value: '0', unit: 'x' },
+    ],
   },
 };
 
@@ -273,7 +301,35 @@ export default function NewReportPage() {
                   </SelectContent>
                 </Select>
               </FormGroup>
-              <div />
+              <FormGroup
+                label="Template"
+                htmlFor="template"
+                showOptional
+                description="Pre-fill metrics from a template"
+                icon={<FileText className="h-3.5 w-3.5" />}
+              >
+                <Select
+                  value=""
+                  onValueChange={(key) => {
+                    const template = REPORT_TEMPLATES[key];
+                    if (template) {
+                      setReportType(template.reportType);
+                      setMetrics(template.metrics.map((m) => ({ ...m })));
+                    }
+                  }}
+                >
+                  <SelectTrigger id="template" className="h-10">
+                    <SelectValue placeholder="Select template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(REPORT_TEMPLATES).map(([key, tpl]) => (
+                      <SelectItem key={key} value={key}>
+                        {tpl.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormGroup>
               <FormGroup
                 label="Period Start"
                 htmlFor="periodStart"

@@ -5,6 +5,7 @@ import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
+import { getReportTypeLabel, getReportTypeDescription } from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -18,12 +19,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  StatusBreakdownChart,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
   useToast,
 } from '@hr-portal/ui';
 import { ChevronDown, ChevronRight, Layers, List, Plus, Search } from 'lucide-react';
@@ -57,7 +63,7 @@ export default function ReportsPage() {
     pageSize: 50,
   };
 
-  const { data, isLoading, error } = useReports(reportFilters);
+  const { data, isLoading, error, refetch } = useReports(reportFilters);
 
   const submitReport = useSubmitReport();
 
@@ -100,6 +106,13 @@ export default function ReportsPage() {
       approved,
     };
   }, [reports]);
+
+  const statusChartData = useMemo(() => [
+    { status: 'Draft', count: stats.draft, color: '#95A5A6' },
+    { status: 'Submitted', count: stats.submitted, color: '#F39C12' },
+    { status: 'Approved', count: stats.approved, color: '#27AE60' },
+    { status: 'Rejected', count: reports.filter((r) => r.status === 'rejected').length, color: '#E74C3C' },
+  ].filter((d) => d.count > 0), [stats, reports]);
 
   return (
     <div className="space-y-6">
@@ -150,6 +163,15 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Status Distribution Chart */}
+      {statusChartData.length > 0 && (
+        <StatusBreakdownChart
+          data={statusChartData}
+          title="Report Status Overview"
+          description="Distribution of your reports by status"
+        />
+      )}
 
       <div className="flex gap-3">
         <div className="relative flex-1">
@@ -209,7 +231,12 @@ export default function ReportsPage() {
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-error">Failed to load reports.</CardContent>
+          <CardContent className="p-6 text-center space-y-3">
+            <p className="text-sm text-destructive">Failed to load reports. Please try again.</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </CardContent>
         </Card>
       ) : (
         <Card>
@@ -231,9 +258,20 @@ export default function ReportsPage() {
                   <TableRow>
                     <TableCell
                       colSpan={viewMode === 'grouped' ? 7 : 5}
-                      className="text-center text-muted-foreground"
+                      className="text-center py-12"
                     >
-                      No reports found.
+                      <div className="space-y-2">
+                        <p className="text-muted-foreground">No reports found.</p>
+                        <p className="text-sm text-muted-foreground">
+                          Create your first report to get started.
+                        </p>
+                        <Button variant="outline" size="sm" asChild className="mt-2">
+                          <Link href="/reports/new">
+                            <Plus className="mr-1 h-3.5 w-3.5" />
+                            Create Report
+                          </Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : viewMode === 'grouped' ? (
@@ -251,7 +289,22 @@ export default function ReportsPage() {
                 ) : (
                   sortedReports.map((report) => (
                     <TableRow key={report.id}>
-                      <TableCell className="font-medium">{report.report_type}</TableCell>
+                      <TableCell className="font-medium">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="cursor-help border-b border-dotted border-muted-foreground/40">
+                                {getReportTypeLabel(report.report_type)}
+                              </span>
+                            </TooltipTrigger>
+                            {getReportTypeDescription(report.report_type) && (
+                              <TooltipContent side="right" className="max-w-xs">
+                                <p>{getReportTypeDescription(report.report_type)}</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(report.period_start)} – {formatDate(report.period_end)}
                       </TableCell>
@@ -379,7 +432,7 @@ function GroupedReportRow({
         </TableCell>
         <TableCell className="font-medium">
           <span style={{ paddingLeft: `${depth * 16}px` }}>
-            {report.report_type}
+            {getReportTypeLabel(report.report_type)}
             {hasChildren && (
               <Badge variant="secondary" className="ml-2 text-xs">
                 {report.child_count}
