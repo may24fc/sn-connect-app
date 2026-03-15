@@ -5,6 +5,12 @@ import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useOnboardingWizard } from '@/hooks/useOnboardingWizard';
 import { useUpdateOnboardingProfile } from '@/hooks/useUpdateOnboardingProfile';
 import {
+  normalizePhoneNumber,
+  prefixPhoneWithDialCode,
+  validatePhoneNumber,
+  type SupportedCountryCode,
+} from '@/lib/validation/phone';
+import {
   Button,
   Card,
   CardContent,
@@ -13,7 +19,6 @@ import {
   CardTitle,
   useToast,
 } from '@hr-portal/ui';
-import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -26,30 +31,6 @@ import { StepReview } from './StepReview';
 const steps = ['personal_info', 'payment_info', 'documents', 'review'] as const;
 
 type Step = (typeof steps)[number];
-
-const COUNTRY_DIAL_CODES: Record<string, string> = {
-  PH: '+63',
-  US: '+1',
-  IT: '+39',
-  AU: '+61',
-  GB: '+44',
-  DE: '+49',
-  SG: '+65',
-  JP: '+81',
-  KR: '+82',
-  IN: '+91',
-};
-
-/** Prepend the dial code to a local phone number if it doesn't already have one. */
-function formatPhoneWithDialCode(phone: string, countryCode: string): string {
-  const cleaned = phone.trim();
-  if (!cleaned) return cleaned;
-  if (cleaned.startsWith('+')) return cleaned;
-  const dial = COUNTRY_DIAL_CODES[countryCode] || '+63';
-  // Strip leading 0 (common local prefix in PH and many countries)
-  const stripped = cleaned.startsWith('0') ? cleaned.slice(1) : cleaned;
-  return `${dial}${stripped}`;
-}
 
 export function OnboardingWizard(): ReactNode {
   const router = useRouter();
@@ -97,6 +78,7 @@ export function OnboardingWizard(): ReactNode {
       companyEmail: profile.company_email ?? '',
       emailAddress: profile.email_address ?? '',
       contactNumber: profile.contact_number ?? '',
+      contactCountryCode: profile.contact_country_code ?? 'PH',
       address: profile.address ?? '',
       birthday: profile.birthday ?? '',
       nationality: profile.nationality ?? '',
@@ -104,15 +86,20 @@ export function OnboardingWizard(): ReactNode {
       major: profile.major ?? '',
       emergencyContactName: profile.emergency_contact_name ?? '',
       emergencyContactNumber: profile.emergency_contact_number ?? '',
+      emergencyContactCountryCode: profile.emergency_contact_country_code ?? 'PH',
       emergencyContactEmail: profile.emergency_contact_email ?? '',
       emergencyContactRelationship: profile.emergency_contact_relationship ?? '',
     });
 
     updatePaymentInfo({
+      paymentCountryCode: profile.payment_country_code ?? 'PH',
+      paymentBankId: profile.payment_bank_id ?? '',
+      paymentBankName: profile.payment_bank_name ?? '',
       paymentAccountName: profile.payment_account_name ?? '',
       paymentAccountNumber: profile.payment_account_number ?? '',
       paymentEmail: profile.payment_email ?? '',
       paymentPhoneNumber: profile.payment_phone_number ?? '',
+      paymentPhoneCountryCode: profile.payment_phone_country_code ?? 'PH',
       paymentAddress: profile.payment_address ?? '',
       paymentCity: profile.payment_city ?? '',
       paymentProvince: profile.payment_province ?? '',
@@ -140,22 +127,22 @@ export function OnboardingWizard(): ReactNode {
 
     if (step === 'personal_info') {
       const data = { ...draft.personalInfo };
-      data.contactNumber = formatPhoneWithDialCode(
+      data.contactNumber = normalizePhoneNumber(
         String(data.contactNumber ?? ''),
-        String(data.contactCountryCode ?? 'PH')
+        String(data.contactCountryCode ?? 'PH') as SupportedCountryCode
       );
-      data.emergencyContactNumber = formatPhoneWithDialCode(
+      data.emergencyContactNumber = normalizePhoneNumber(
         String(data.emergencyContactNumber ?? ''),
-        String(data.emergencyContactCountryCode ?? 'PH')
+        String(data.emergencyContactCountryCode ?? 'PH') as SupportedCountryCode
       );
       await updateStep.mutateAsync({ step, data });
     }
 
     if (step === 'payment_info') {
       const data = { ...draft.paymentInfo };
-      data.paymentPhoneNumber = formatPhoneWithDialCode(
+      data.paymentPhoneNumber = normalizePhoneNumber(
         String(data.paymentPhoneNumber ?? ''),
-        String(data.paymentPhoneCountryCode ?? 'PH')
+        String(data.paymentPhoneCountryCode ?? 'PH') as SupportedCountryCode
       );
       await updateStep.mutateAsync({ step, data });
     }
@@ -216,19 +203,29 @@ export function OnboardingWizard(): ReactNode {
       const contactNumber = String(draft.personalInfo.contactNumber ?? '').trim();
       const emergencyContactNumber = String(draft.personalInfo.emergencyContactNumber ?? '').trim();
 
-      const fullContact = formatPhoneWithDialCode(
+      const fullContact = prefixPhoneWithDialCode(
         contactNumber,
-        String(draft.personalInfo.contactCountryCode ?? 'PH')
+        String(draft.personalInfo.contactCountryCode ?? 'PH') as SupportedCountryCode
       );
-      if (!isValidPhoneNumber(fullContact)) {
+      if (
+        !validatePhoneNumber(
+          fullContact,
+          String(draft.personalInfo.contactCountryCode ?? 'PH') as SupportedCountryCode
+        )
+      ) {
         return 'Please enter a valid contact number.';
       }
 
-      const fullEmergency = formatPhoneWithDialCode(
+      const fullEmergency = prefixPhoneWithDialCode(
         emergencyContactNumber,
-        String(draft.personalInfo.emergencyContactCountryCode ?? 'PH')
+        String(draft.personalInfo.emergencyContactCountryCode ?? 'PH') as SupportedCountryCode
       );
-      if (!isValidPhoneNumber(fullEmergency)) {
+      if (
+        !validatePhoneNumber(
+          fullEmergency,
+          String(draft.personalInfo.emergencyContactCountryCode ?? 'PH') as SupportedCountryCode
+        )
+      ) {
         return 'Please enter a valid emergency contact number.';
       }
     }
@@ -256,6 +253,28 @@ export function OnboardingWizard(): ReactNode {
       const paymentEmail = String(draft.paymentInfo.paymentEmail ?? '').trim();
       if (!emailRegex.test(paymentEmail)) {
         return 'Please enter a valid payment email address.';
+      }
+
+      const paymentPhone = prefixPhoneWithDialCode(
+        String(draft.paymentInfo.paymentPhoneNumber ?? '').trim(),
+        String(draft.paymentInfo.paymentPhoneCountryCode ?? 'PH') as SupportedCountryCode
+      );
+      if (
+        !validatePhoneNumber(
+          paymentPhone,
+          String(draft.paymentInfo.paymentPhoneCountryCode ?? 'PH') as SupportedCountryCode
+        )
+      ) {
+        return 'Please enter a valid payment phone number.';
+      }
+
+      const paymentBankId = String(draft.paymentInfo.paymentBankId ?? '').trim();
+      const paymentBankName = String(draft.paymentInfo.paymentBankName ?? '').trim();
+      if (!paymentBankId) {
+        return 'Please select a bank.';
+      }
+      if (paymentBankId === 'OTHER' && !paymentBankName) {
+        return 'Please provide the bank name when selecting Other.';
       }
     }
 

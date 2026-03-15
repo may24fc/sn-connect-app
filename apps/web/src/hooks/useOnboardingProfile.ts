@@ -16,6 +16,7 @@ export interface OnboardingProfileRecord {
   start_date: string | null;
   nationality: string | null;
   contact_number: string | null;
+  contact_country_code: string | null;
   email_address: string | null;
   education: string | null;
   major: string | null;
@@ -24,13 +25,18 @@ export interface OnboardingProfileRecord {
   address: string | null;
   emergency_contact_name: string | null;
   emergency_contact_number: string | null;
+  emergency_contact_country_code: string | null;
   emergency_contact_email: string | null;
   emergency_contact_relationship: string | null;
   linkedin_profile_url: string | null;
   payment_account_name: string | null;
   payment_account_number: string | null;
+  payment_country_code: string | null;
+  payment_bank_id: string | null;
+  payment_bank_name: string | null;
   payment_email: string | null;
   payment_phone_number: string | null;
+  payment_phone_country_code: string | null;
   payment_address: string | null;
   payment_city: string | null;
   payment_province: string | null;

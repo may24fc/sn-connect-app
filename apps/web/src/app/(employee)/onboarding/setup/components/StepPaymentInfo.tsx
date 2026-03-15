@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@hr-portal/ui';
 import type { BankOption } from '@hr-portal/ui';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 export function StepPaymentInfo({
   value,
@@ -27,28 +27,7 @@ export function StepPaymentInfo({
   const update = (key: string, val: string) => {
     onChange({ ...value, [key]: val });
   };
-
-  // Default bank data - in production this would come from the API
-  const banks: BankOption[] = [
-    { id: 'bdo', bankName: 'BDO Unibank', bankCode: 'BDO', countryCode: 'PH' },
-    {
-      id: 'bpi',
-      bankName: 'BPI (Bank of the Philippine Islands)',
-      bankCode: 'BPI',
-      countryCode: 'PH',
-    },
-    { id: 'metrobank', bankName: 'Metrobank', bankCode: 'MBTC', countryCode: 'PH' },
-    { id: 'unionbank', bankName: 'UnionBank', bankCode: 'UBP', countryCode: 'PH' },
-    { id: 'gcash', bankName: 'GCash', bankCode: 'GCASH', countryCode: 'PH' },
-    { id: 'maya', bankName: 'PayMaya / Maya', bankCode: 'MAYA', countryCode: 'PH' },
-    { id: 'unicredit', bankName: 'UniCredit', bankCode: 'UCG', countryCode: 'IT' },
-    { id: 'intesa', bankName: 'Intesa Sanpaolo', bankCode: 'ISP', countryCode: 'IT' },
-    { id: 'cba', bankName: 'Commonwealth Bank', bankCode: 'CBA', countryCode: 'AU' },
-    { id: 'westpac', bankName: 'Westpac', bankCode: 'WBC', countryCode: 'AU' },
-    { id: 'wise', bankName: 'Wise (TransferWise)', bankCode: 'WISE', countryCode: 'GLOBAL' },
-    { id: 'revolut', bankName: 'Revolut', bankCode: 'REVOLUT', countryCode: 'GLOBAL' },
-    { id: 'paypal', bankName: 'PayPal', bankCode: 'PAYPAL', countryCode: 'GLOBAL' },
-  ];
+  const [banks, setBanks] = useState<BankOption[]>([]);
 
   const COUNTRIES = [
     { code: 'PH', label: 'Philippines' },
@@ -59,6 +38,65 @@ export function StepPaymentInfo({
     { code: 'DE', label: 'Germany' },
     { code: 'SG', label: 'Singapore' },
   ];
+
+  const paymentCountryCode = get('paymentCountryCode') || 'PH';
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBanks() {
+      try {
+        const response = await fetch(`/api/banks?country_code=${encodeURIComponent(paymentCountryCode)}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch banks');
+        }
+
+        const payload = (await response.json()) as {
+          data?: Array<{
+            id: string;
+            bank_name: string;
+            bank_code: string | null;
+            country_code: string;
+          }>;
+        };
+
+        if (cancelled) return;
+
+        setBanks(
+          (payload.data || []).map((bank) => ({
+            id: bank.id,
+            bankName: bank.bank_name,
+            countryCode: bank.country_code,
+            ...(bank.bank_code ? { bankCode: bank.bank_code } : {}),
+          }))
+        );
+      } catch {
+        if (!cancelled) {
+          setBanks([]);
+        }
+      }
+    }
+
+    void loadBanks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paymentCountryCode]);
+
+  const handleCountryChange = (nextCountryCode: string) => {
+    if (nextCountryCode !== paymentCountryCode) {
+      onChange({
+        ...value,
+        paymentCountryCode: nextCountryCode,
+        paymentBankId: '',
+        paymentBankName: '',
+      });
+      return;
+    }
+
+    update('paymentCountryCode', nextCountryCode);
+  };
 
   return (
     <div className="space-y-6">
@@ -71,8 +109,8 @@ export function StepPaymentInfo({
               Country <span className="text-rose-500">*</span>
             </Label>
             <Select
-              value={get('paymentCountryCode') || 'PH'}
-              onValueChange={(val) => update('paymentCountryCode', val)}
+              value={paymentCountryCode}
+              onValueChange={handleCountryChange}
             >
               <SelectTrigger id="paymentCountryCode">
                 <SelectValue placeholder="Select country" />
@@ -98,7 +136,7 @@ export function StepPaymentInfo({
                 update('paymentBankName', bankName);
               }}
               banks={banks}
-              countryCode={get('paymentCountryCode') || 'PH'}
+              countryCode={paymentCountryCode}
               customBankName={get('paymentBankName')}
               onCustomBankNameChange={(name) => update('paymentBankName', name)}
               allowOther

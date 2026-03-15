@@ -51,6 +51,7 @@ export async function PATCH(request: NextRequest) {
       updatePayload.start_date = payload.startDate ?? null;
       updatePayload.nationality = payload.nationality ?? null;
       updatePayload.contact_number = payload.contactNumber ?? null;
+      updatePayload.contact_country_code = payload.contactCountryCode ?? 'PH';
       updatePayload.email_address = payload.emailAddress ?? null;
       updatePayload.education = payload.education ?? null;
       updatePayload.major = payload.major ?? null;
@@ -59,6 +60,8 @@ export async function PATCH(request: NextRequest) {
       updatePayload.address = payload.address ?? null;
       updatePayload.emergency_contact_name = payload.emergencyContactName ?? null;
       updatePayload.emergency_contact_number = payload.emergencyContactNumber ?? null;
+      updatePayload.emergency_contact_country_code =
+        payload.emergencyContactCountryCode ?? 'PH';
       updatePayload.emergency_contact_email = payload.emergencyContactEmail ?? null;
       updatePayload.emergency_contact_relationship = payload.emergencyContactRelationship ?? null;
       updatePayload.linkedin_profile_url = payload.linkedinProfileUrl ?? null;
@@ -75,10 +78,15 @@ export async function PATCH(request: NextRequest) {
       }
 
       const payload = paymentParsed.data;
+      updatePayload.payment_country_code = payload.paymentCountryCode ?? 'PH';
+      updatePayload.payment_bank_id =
+        payload.paymentBankId && payload.paymentBankId !== 'OTHER' ? payload.paymentBankId : null;
+      updatePayload.payment_bank_name = payload.paymentBankName ?? null;
       updatePayload.payment_account_name = payload.paymentAccountName;
       updatePayload.payment_account_number = payload.paymentAccountNumber;
       updatePayload.payment_email = payload.paymentEmail ?? null;
       updatePayload.payment_phone_number = payload.paymentPhoneNumber ?? null;
+      updatePayload.payment_phone_country_code = payload.paymentPhoneCountryCode ?? 'PH';
       updatePayload.payment_address = payload.paymentAddress ?? null;
       updatePayload.payment_city = payload.paymentCity ?? null;
       updatePayload.payment_province = payload.paymentProvince ?? null;
@@ -122,6 +130,30 @@ export async function PATCH(request: NextRequest) {
       }
 
       saved = updated;
+    }
+
+    if (
+      step === 'payment_info' &&
+      updatePayload.payment_bank_id === null &&
+      typeof updatePayload.payment_bank_name === 'string' &&
+      updatePayload.payment_bank_name.trim().length > 0
+    ) {
+      await supabase.from('audit_logs').insert({
+        table_name: 'onboarding_profiles',
+        record_id: saved.id,
+        operation: 'UPDATE',
+        new_values: {
+          payment_country_code: updatePayload.payment_country_code ?? null,
+          payment_bank_name: updatePayload.payment_bank_name,
+        },
+        performed_by: user.id,
+        action: 'bank_registry_other_selected',
+        metadata: {
+          source: 'onboarding_payment_info',
+          payment_country_code: updatePayload.payment_country_code ?? null,
+          payment_bank_name: updatePayload.payment_bank_name,
+        },
+      });
     }
 
     return NextResponse.json({ data: saved });

@@ -1,4 +1,8 @@
-import { isValidPhoneNumber } from 'libphonenumber-js';
+import {
+  SUPPORTED_COUNTRIES,
+  isSupportedPhoneCountryCode,
+  validatePhoneNumber,
+} from '@/lib/validation/phone';
 import { z } from 'zod';
 
 /** Optional email: accepts a valid email, empty string, null, or undefined */
@@ -19,20 +23,22 @@ const optionalUuid = z
   .union([z.string().uuid(), z.literal(''), z.null(), z.undefined()])
   .optional();
 
+const phoneCountryCodeSchema = z.enum(
+  SUPPORTED_COUNTRIES.map((country) => country.code) as [string, ...string[]]
+);
+
+const bankSelectionSchema = z
+  .union([z.string().uuid(), z.literal('OTHER'), z.literal(''), z.null(), z.undefined()])
+  .optional();
+
+function coercePhoneCountryCode(value: string): (typeof SUPPORTED_COUNTRIES)[number]['code'] {
+  return isSupportedPhoneCountryCode(value) ? value : 'GLOBAL';
+}
+
 /** Phone number validation: supports international formats via libphonenumber-js */
 const phoneNumber = z
   .string()
-  .min(1, 'Contact number is required')
-  .refine(
-    (val) => {
-      try {
-        return isValidPhoneNumber(val);
-      } catch {
-        return false;
-      }
-    },
-    { message: 'Invalid phone number. Include country code (e.g., +63 for PH, +39 for IT)' }
-  );
+  .min(1, 'Contact number is required');
 
 export const onboardingStepSchema = z.enum([
   'personal_info',
@@ -67,6 +73,7 @@ export const personalInfoSchema = z.object({
   startDate: optionalDate,
   nationality: z.string().min(1, 'Nationality is required').max(120),
   contactNumber: phoneNumber,
+  contactCountryCode: phoneCountryCodeSchema.default('PH'),
   emailAddress: optionalEmail,
   education: z.string().min(1, 'Education level is required').max(300),
   major: z.union([z.string().max(200), z.literal(''), z.null(), z.undefined()]).optional(),
@@ -77,15 +84,40 @@ export const personalInfoSchema = z.object({
   address: z.string().min(1, 'Address is required').max(500),
   emergencyContactName: z.string().min(1, 'Emergency contact name is required').max(120),
   emergencyContactNumber: phoneNumber,
+  emergencyContactCountryCode: phoneCountryCodeSchema.default('PH'),
   emergencyContactEmail: optionalEmail,
   emergencyContactRelationship: z
     .string()
     .min(1, 'Emergency contact relationship is required')
     .max(80),
   linkedinProfileUrl: optionalUrl,
+}).superRefine((data, ctx) => {
+  if (!validatePhoneNumber(data.contactNumber, coercePhoneCountryCode(data.contactCountryCode))) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['contactNumber'],
+      message: 'Invalid phone number for the selected country.',
+    });
+  }
+
+  if (
+    !validatePhoneNumber(
+      data.emergencyContactNumber,
+      coercePhoneCountryCode(data.emergencyContactCountryCode)
+    )
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['emergencyContactNumber'],
+      message: 'Invalid phone number for the selected country.',
+    });
+  }
 });
 
 export const paymentInfoSchema = z.object({
+  paymentCountryCode: phoneCountryCodeSchema.default('PH'),
+  paymentBankId: bankSelectionSchema,
+  paymentBankName: z.union([z.string().max(150), z.literal(''), z.null(), z.undefined()]).optional(),
   paymentAccountName: z.string().min(1, 'Account name is required').max(150),
   paymentAccountNumber: z.string().min(1, 'Account number is required').max(30),
   paymentEmail: z
@@ -94,10 +126,32 @@ export const paymentInfoSchema = z.object({
     .min(1, 'Payment email is required')
     .max(150),
   paymentPhoneNumber: phoneNumber,
+  paymentPhoneCountryCode: phoneCountryCodeSchema.default('PH'),
   paymentAddress: z.string().min(1, 'Address is required').max(500),
   paymentCity: z.string().min(1, 'City is required').max(100),
   paymentProvince: z.string().min(1, 'Province is required').max(100),
   paymentZipcode: z.string().max(20).optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (
+    !validatePhoneNumber(
+      data.paymentPhoneNumber,
+      coercePhoneCountryCode(data.paymentPhoneCountryCode)
+    )
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['paymentPhoneNumber'],
+      message: 'Invalid phone number for the selected country.',
+    });
+  }
+
+  if (data.paymentBankId === 'OTHER' && !String(data.paymentBankName ?? '').trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['paymentBankName'],
+      message: 'Please provide the bank name when selecting Other.',
+    });
+  }
 });
 
 export const documentMetadataSchema = z.object({
