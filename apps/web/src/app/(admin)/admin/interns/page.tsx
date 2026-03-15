@@ -7,6 +7,7 @@ import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInternships } from '@/hooks/useInternships';
+import { useMilestones } from '@/hooks/useMilestones';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
 import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
@@ -37,6 +38,7 @@ import {
   InternRow,
   type InternSummary,
   InternshipSummaryCards,
+  MilestoneFeed,
   Select,
   SelectContent,
   SelectItem,
@@ -108,6 +110,7 @@ export default function AdminInternsPage(): ReactNode {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [internToDelete, setInternToDelete] = useState<InternSummary | null>(null);
   const { addToast } = useToast();
+  const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
 
   const deleteInternMutation = useMutation({
     mutationFn: async (internshipId: string) => {
@@ -318,6 +321,30 @@ export default function AdminInternsPage(): ReactNode {
           </Button>
         </div>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Team Milestones</CardTitle>
+              <CardDescription>Upcoming birthdays and anniversaries across the org</CardDescription>
+            </div>
+            {milestonesData?.summary && (
+              <Badge variant="secondary" className="text-xs">
+                {milestonesData.summary.thisWeek} this week
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <MilestoneFeed
+            milestones={milestonesData?.data ?? []}
+            isLoading={milestonesLoading}
+            maxItems={6}
+            {...(milestonesData?.grouped ? { grouped: milestonesData.grouped } : {})}
+          />
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="internships" className="space-y-6">
         <TabsList>

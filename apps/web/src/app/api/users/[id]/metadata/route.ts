@@ -137,6 +137,20 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
+    const { data: existingRecord } = await supabase
+      .from('user_role_metadata')
+      .select('metadata')
+      .eq('user_id', targetUserId)
+      .eq('role_type', role_type)
+      .maybeSingle();
+
+    const mergedMetadata = {
+      ...(existingRecord?.metadata ?? {}),
+      ...Object.fromEntries(
+        Object.entries(metadata).filter(([, value]) => value !== undefined && value !== null)
+      ),
+    };
+
     // Upsert: create or update based on user_id + role_type unique constraint
     const { data, error } = await supabase
       .from('user_role_metadata')
@@ -144,7 +158,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         {
           user_id: targetUserId,
           role_type,
-          metadata,
+          metadata: mergedMetadata,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'user_id,role_type' }

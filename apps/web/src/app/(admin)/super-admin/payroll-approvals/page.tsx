@@ -178,7 +178,9 @@ export default function PayrollApprovalsPage() {
                     <SortableTableHead column="employee" {...pendingSortHeadProps}>Employee</SortableTableHead>
                     <SortableTableHead column="invoice_number" {...pendingSortHeadProps}>Invoice #</SortableTableHead>
                     <SortableTableHead column="period" {...pendingSortHeadProps}>Period</SortableTableHead>
-                    <SortableTableHead column="amount" {...pendingSortHeadProps}>Amount</SortableTableHead>
+                    <SortableTableHead column="amount" {...pendingSortHeadProps}>Original Amount</SortableTableHead>
+                    <TableHead>Source Currency</TableHead>
+                    <TableHead>Converted Amount</TableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -186,7 +188,7 @@ export default function PayrollApprovalsPage() {
                 <TableBody>
                   {pending.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">
                         No pending invoices.
                       </TableCell>
                     </TableRow>
@@ -203,24 +205,19 @@ export default function PayrollApprovalsPage() {
                           {formatDate(invoice.period_start)} – {formatDate(invoice.period_end)}
                         </TableCell>
                         <TableCell>
-                          {(() => {
-                            const inv = invoice as unknown as Record<string, unknown>;
-                            const srcCurrency = (inv.source_currency as string) || 'PHP';
-                            const tgtCurrency = (inv.target_currency as string) || 'PHP';
-                            const convertedAmt = inv.converted_amount as number | null;
-                            return (
-                              <div>
-                                <span>
-                                  {formatCurrency(Number(invoice.net_amount || 0), srcCurrency)}
-                                </span>
-                                {convertedAmt && srcCurrency !== tgtCurrency && (
-                                  <span className="block text-xs text-muted-foreground">
-                                    ≈ {formatCurrency(Number(convertedAmt || 0), tgtCurrency)}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })()}
+                          {formatCurrency(
+                            Number(invoice.net_amount || 0),
+                            invoice.source_currency || 'PHP'
+                          )}
+                        </TableCell>
+                        <TableCell>{invoice.source_currency || 'PHP'}</TableCell>
+                        <TableCell>
+                          {invoice.converted_amount !== null &&
+                          invoice.converted_amount !== undefined &&
+                          invoice.target_currency ?
+                            formatCurrency(Number(invoice.converted_amount || 0), invoice.target_currency)
+                          :
+                            '—'}
                         </TableCell>
                         <TableCell className="min-w-[220px]">
                           <Textarea
@@ -273,14 +270,16 @@ export default function PayrollApprovalsPage() {
                     <SortableTableHead column="employee" {...processedSortHeadProps}>Employee</SortableTableHead>
                     <SortableTableHead column="invoice_number" {...processedSortHeadProps}>Invoice #</SortableTableHead>
                     <SortableTableHead column="status" {...processedSortHeadProps}>Status</SortableTableHead>
-                    <SortableTableHead column="amount" {...processedSortHeadProps}>Amount</SortableTableHead>
+                    <SortableTableHead column="amount" {...processedSortHeadProps}>Original Amount</SortableTableHead>
+                    <TableHead>Source Currency</TableHead>
+                    <TableHead>Converted Amount</TableHead>
                     <SortableTableHead column="approved_at" {...processedSortHeadProps}>Approved At</SortableTableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {processed.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         No processed invoices.
                       </TableCell>
                     </TableRow>
@@ -298,7 +297,21 @@ export default function PayrollApprovalsPage() {
                             {formatLabel(invoice.status)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatCurrency(Number(invoice.net_amount || 0))}</TableCell>
+                        <TableCell>
+                          {formatCurrency(
+                            Number(invoice.net_amount || 0),
+                            invoice.source_currency || 'PHP'
+                          )}
+                        </TableCell>
+                        <TableCell>{invoice.source_currency || 'PHP'}</TableCell>
+                        <TableCell>
+                          {invoice.converted_amount !== null &&
+                          invoice.converted_amount !== undefined &&
+                          invoice.target_currency ?
+                            formatCurrency(Number(invoice.converted_amount || 0), invoice.target_currency)
+                          :
+                            '—'}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatDate(invoice.approved_at)}
                         </TableCell>

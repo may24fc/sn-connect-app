@@ -4,6 +4,7 @@ import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { useMilestones } from '@/hooks/useMilestones';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { type ProbationRecord, useCompleteProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
@@ -26,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
+  MilestoneFeed,
   Progress,
   Select,
   SelectContent,
@@ -243,6 +245,7 @@ function formatDateTime(dateString: string): string {
 
 export default function EmployeeManagementPage(): ReactNode {
   const router = useRouter();
+  const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
   const queryClient = useQueryClient();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('probation');
@@ -376,6 +379,30 @@ export default function EmployeeManagementPage(): ReactNode {
           className="pl-10"
         />
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-base">Upcoming Milestones</CardTitle>
+              <CardDescription>Birthdays and work anniversaries in the next 30 days</CardDescription>
+            </div>
+            {milestonesData?.summary && (
+              <Badge variant="secondary" className="text-xs">
+                {milestonesData.summary.total} upcoming
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <MilestoneFeed
+            milestones={milestonesData?.data ?? []}
+            isLoading={milestonesLoading}
+            maxItems={6}
+            {...(milestonesData?.grouped ? { grouped: milestonesData.grouped } : {})}
+          />
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
