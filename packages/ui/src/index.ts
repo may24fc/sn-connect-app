@@ -102,6 +102,17 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 } from './primitives/select';
+export {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverAnchor,
+} from './primitives/popover';
+export {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+} from './primitives/hover-card';
 
 // Layout components
 export { Sidebar } from './layout/Sidebar';
@@ -117,7 +128,23 @@ export {
 // Document Components
 export { FullScreenPreview, type FullScreenPreviewProps } from './components/documents';
 // Components
-export { AIChatbot, type ChatMessage, type AIChatbotProps } from './components/AIChatbot';
+export { AIChatbot, type ChatMessage, type AIChatbotProps, type ConversationItem } from './components/AIChatbot';
+
+// AI Chat Citation Components
+export {
+  CitationBadge,
+  CitedContent,
+  CitationPanel,
+  parseCitations,
+  getCitationById,
+  getUsedCitationIds,
+  type Citation,
+  type ParsedSegment,
+  type CitationBadgeProps,
+  type CitedContentProps,
+  type CitationPanelProps,
+} from './components/ai-chat';
+
 export {
   Form,
   FormErrorMessage,

@@ -12,18 +12,82 @@ export const SUPPORTED_COUNTRIES = [
   { code: 'JP' as CountryCode, label: 'Japan', dialCode: '+81', flag: '🇯🇵' },
   { code: 'KR' as CountryCode, label: 'South Korea', dialCode: '+82', flag: '🇰🇷' },
   { code: 'IN' as CountryCode, label: 'India', dialCode: '+91', flag: '🇮🇳' },
+  { code: 'GLOBAL' as const, label: 'Global', dialCode: '+', flag: '🌐' },
 ] as const;
 
 export type SupportedCountryCode = (typeof SUPPORTED_COUNTRIES)[number]['code'];
+
+export function isSupportedPhoneCountryCode(value: string): value is SupportedCountryCode {
+  return SUPPORTED_COUNTRIES.some((country) => country.code === value);
+}
+
+export function getDialCode(countryCode?: SupportedCountryCode | CountryCode): string {
+  if (!countryCode) return '+63';
+
+  const match = SUPPORTED_COUNTRIES.find((country) => country.code === countryCode);
+  return match?.dialCode || '+63';
+}
+
+export function prefixPhoneWithDialCode(
+  number: string,
+  countryCode: SupportedCountryCode | CountryCode = 'PH'
+): string {
+  const trimmed = number.trim();
+
+  if (!trimmed) {
+    return countryCode === 'GLOBAL' ? '' : getDialCode(countryCode);
+  }
+
+  if (trimmed.startsWith('+')) {
+    return trimmed;
+  }
+
+  if (countryCode === 'GLOBAL') {
+    return trimmed;
+  }
+
+  const stripped = trimmed.replace(/\s+/g, '').replace(/^0+/, '');
+  return stripped ? `${getDialCode(countryCode)}${stripped}` : getDialCode(countryCode);
+}
+
+export function normalizePhoneNumber(
+  number: string,
+  countryCode: SupportedCountryCode | CountryCode = 'PH'
+): string {
+  const prefixed = prefixPhoneWithDialCode(number, countryCode);
+  if (!prefixed) return prefixed;
+
+  try {
+    if (countryCode === 'GLOBAL') {
+      const parsed = parsePhoneNumber(prefixed);
+      return parsed?.number || prefixed;
+    }
+
+    const parsed = parsePhoneNumber(prefixed, countryCode as CountryCode);
+    return parsed?.number || prefixed;
+  } catch {
+    return prefixed;
+  }
+}
 
 /**
  * Validate a phone number, optionally against a specific country code.
  * Uses libphonenumber-js for industry-standard validation.
  */
-export function validatePhoneNumber(number: string, countryCode?: CountryCode): boolean {
+export function validatePhoneNumber(
+  number: string,
+  countryCode: SupportedCountryCode | CountryCode = 'GLOBAL'
+): boolean {
   if (!number || number.trim().length === 0) return false;
+
+  const normalized = normalizePhoneNumber(number, countryCode);
+
   try {
-    return isValidPhoneNumber(number, countryCode);
+    if (countryCode === 'GLOBAL') {
+      return normalized.startsWith('+') && isValidPhoneNumber(normalized);
+    }
+
+    return isValidPhoneNumber(normalized, countryCode as CountryCode);
   } catch {
     return false;
   }
@@ -33,10 +97,17 @@ export function validatePhoneNumber(number: string, countryCode?: CountryCode): 
  * Format a phone number to international format.
  * Returns the original string if parsing fails.
  */
-export function formatPhoneNumber(number: string, countryCode?: CountryCode): string {
+export function formatPhoneNumber(
+  number: string,
+  countryCode: SupportedCountryCode | CountryCode = 'GLOBAL'
+): string {
   if (!number || number.trim().length === 0) return number;
   try {
-    const parsed = parsePhoneNumber(number, countryCode);
+    const normalized = normalizePhoneNumber(number, countryCode);
+    const parsed =
+      countryCode === 'GLOBAL'
+        ? parsePhoneNumber(normalized)
+        : parsePhoneNumber(normalized, countryCode as CountryCode);
     if (parsed) return parsed.formatInternational();
     return number;
   } catch {

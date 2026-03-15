@@ -73,6 +73,47 @@ export interface RoleMetadataFormContainerProps {
   className?: string;
 }
 
+function titleCaseFromKey(value: string): string {
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function inferFallbackFieldType(value: unknown): RoleMetadataFieldConfig['type'] {
+  if (Array.isArray(value)) return 'tags';
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'string' && /^https?:\/\//.test(value)) return 'url';
+  return 'text';
+}
+
+function createFallbackRoleConfig(
+  roleType: string,
+  metadata: Record<string, unknown>
+): RoleTypeConfig {
+  const keys = Object.keys(metadata);
+
+  return {
+    label: titleCaseFromKey(roleType),
+    description: 'Custom role details preserved from an unregistered role type.',
+    icon: 'Briefcase',
+    fields:
+      keys.length > 0
+        ? keys.map((key) => ({
+            key,
+            label: titleCaseFromKey(key),
+            type: inferFallbackFieldType(metadata[key]),
+          }))
+        : [
+            {
+              key: 'notes',
+              label: 'Notes',
+              type: 'text',
+              placeholder: 'Add role details...',
+            },
+          ],
+  };
+}
+
 // --- Tags Input Sub-Component ---
 
 function TagsInput({
@@ -533,8 +574,7 @@ export function RoleMetadataFormContainer({
       )}
 
       {metadataRecords.map((record) => {
-        const config = roleTypeRegistry[record.role_type];
-        if (!config) return null;
+        const config = roleTypeRegistry[record.role_type] ?? createFallbackRoleConfig(record.role_type, record.metadata);
         return (
           <RoleMetadataForm
             key={record.role_type}

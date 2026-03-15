@@ -48,7 +48,27 @@ const DEFAULT_COUNTRIES: PhoneCountry[] = [
   { code: 'JP', label: 'Japan', dialCode: '+81', flag: '🇯🇵' },
   { code: 'KR', label: 'South Korea', dialCode: '+82', flag: '🇰🇷' },
   { code: 'IN', label: 'India', dialCode: '+91', flag: '🇮🇳' },
+  { code: 'GLOBAL', label: 'Global', dialCode: '+', flag: '🌐' },
 ];
+
+function normalizePhoneValue(value: string, country: PhoneCountry): string {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return country.code === 'GLOBAL' ? '' : country.dialCode;
+  }
+
+  if (trimmed.startsWith('+')) {
+    return trimmed;
+  }
+
+  if (country.code === 'GLOBAL') {
+    return trimmed;
+  }
+
+  const digitsOnly = trimmed.replace(/\s+/g, '').replace(/^0+/, '');
+  return digitsOnly ? `${country.dialCode}${digitsOnly}` : country.dialCode;
+}
 
 export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
   (
@@ -71,7 +91,8 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const [isOpen, setIsOpen] = React.useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-    const selectedCountry = countries.find((c) => c.code === countryCode) || countries[0];
+    const fallbackCountry = countries[0] || DEFAULT_COUNTRIES[0]!;
+    const selectedCountry = countries.find((c) => c.code === countryCode) || fallbackCountry;
     const displayPlaceholder = placeholder || `${selectedCountry?.dialCode || ''} Phone number`;
 
     // Close dropdown on outside click
@@ -87,7 +108,11 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     }, [isOpen]);
 
     const handleCountrySelect = (country: PhoneCountry) => {
+      const normalized = normalizePhoneValue(value, country);
       onCountryChange?.(country.code);
+      if (normalized !== value) {
+        onChange?.(normalized);
+      }
       setIsOpen(false);
     };
 
@@ -96,7 +121,11 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     };
 
     const handleBlur = () => {
-      onBlur?.(value);
+      const normalized = normalizePhoneValue(value, selectedCountry);
+      if (normalized !== value) {
+        onChange?.(normalized);
+      }
+      onBlur?.(normalized);
     };
 
     return (

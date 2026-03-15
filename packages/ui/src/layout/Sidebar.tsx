@@ -88,7 +88,6 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Reports', href: '/admin/reports', icon: FileText },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
-  { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
