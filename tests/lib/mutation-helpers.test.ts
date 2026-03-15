@@ -239,13 +239,13 @@ describe('toastMutation', () => {
         throw new Error('Sensitive error details');
       },
       {
-        error: 'Something went wrong',
+        error: 'Operation failed',
         showErrorDetail: false,
       }
     );
 
     expect(toast.updateToast).toHaveBeenCalledWith('toast-1', {
-      title: 'Something went wrong',
+      title: 'Operation failed',
       variant: 'error',
       duration: 5000,
     });
