@@ -2,6 +2,7 @@
 
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCreateTask } from '@/hooks/useCreateTask';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import { formatDate } from '@/lib/format';
@@ -12,8 +13,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -28,14 +36,15 @@ import {
   TableRow,
   TaskPriorityBadge,
   TaskStatusBadge,
+  Textarea,
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useTableSort } from '@/hooks/useTableSort';
-import { ClipboardList, LayoutGrid, List, Search } from 'lucide-react';
+import { ClipboardList, LayoutGrid, List, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useMemo, useState } from 'react';
 
 const TASK_CATEGORY_OPTIONS = [
   { value: 'launch', label: 'Launch' },
@@ -56,6 +65,53 @@ export default function MyTasksPage() {
   const [tagFilter, setTagFilter] = useState('');
   const [activeView, setActiveView] = useState<'list' | 'board'>('list');
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+
+  // Add Task dialog state
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newCategory, setNewCategory] = useState<string>('');
+  const [newPriority, setNewPriority] = useState<string>('medium');
+  const [newDueDate, setNewDueDate] = useState('');
+  const createTask = useCreateTask();
+
+  const resetAddTaskForm = useCallback(() => {
+    setNewTitle('');
+    setNewDescription('');
+    setNewCategory('');
+    setNewPriority('medium');
+    setNewDueDate('');
+  }, []);
+
+  const handleAddTask = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    try {
+      await createTask.mutateAsync({
+        title: newTitle,
+        description: newDescription || null,
+        category: (newCategory || null) as 'launch' | 'optimization' | 'maintenance' | 'research' | 'administrative' | 'other' | null,
+        priority: newPriority as 'low' | 'medium' | 'high' | 'urgent',
+        dueDate: newDueDate || null,
+        status: 'pending',
+        tags: [],
+      });
+
+      addToast({
+        title: 'Task created',
+        description: 'Your new task has been added successfully.',
+        variant: 'success',
+      });
+      setAddTaskOpen(false);
+      resetAddTaskForm();
+    } catch (err) {
+      addToast({
+        title: 'Failed to create task',
+        description: err instanceof Error ? err.message : 'An error occurred',
+        variant: 'error',
+      });
+    }
+  };
 
   const taskFilters = {
     ...(search ? { search } : {}),
@@ -125,6 +181,10 @@ export default function MyTasksPage() {
           <h1 className="text-2xl font-bold text-foreground">My Tasks</h1>
           <p className="text-sm text-muted-foreground">Track and update your assigned tasks</p>
         </div>
+        <Button onClick={() => setAddTaskOpen(true)} size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Task
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -292,6 +352,90 @@ export default function MyTasksPage() {
           )}
         </div>}
       </div>
+
+      {/* Add Task Dialog */}
+      <Dialog open={addTaskOpen} onOpenChange={(open) => { setAddTaskOpen(open); if (!open) resetAddTaskForm(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Task</DialogTitle>
+            <DialogDescription>
+              Create a new task for yourself. Fill in the details below.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={handleAddTask}>
+            <div className="space-y-2">
+              <Label htmlFor="task-title">Title <span className="text-red-500">*</span></Label>
+              <Input
+                id="task-title"
+                placeholder="Task title (min 3 characters)"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                minLength={3}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-description">Description</Label>
+              <Textarea
+                id="task-description"
+                placeholder="Describe the task..."
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select value={newCategory} onValueChange={setNewCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_CATEGORY_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select value={newPriority} onValueChange={setNewPriority}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-due-date">Due Date</Label>
+              <Input
+                id="task-due-date"
+                type="date"
+                value={newDueDate}
+                onChange={(e) => setNewDueDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => { setAddTaskOpen(false); resetAddTaskForm(); }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createTask.isPending || newTitle.length < 3}>
+                {createTask.isPending ? 'Creating...' : 'Create Task'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -467,7 +611,7 @@ function TaskListView({ tasks }: TaskListViewProps) {
                   <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
                 </TableCell>
                 <TableCell>
-                  <TaskStatusBadge status={task.status as TaskStatus} size="sm" />
+                  <TaskStatusBadge status={task.status as TaskStatus} size="sm" dueDate={task.due_date ?? undefined} />
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {formatDate(task.due_date)}

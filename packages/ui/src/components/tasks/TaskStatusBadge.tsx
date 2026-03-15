@@ -1,10 +1,10 @@
 'use client';
 
-import { ArrowRight, Check, Clock, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Ban, Check, Circle, Clock, X } from 'lucide-react';
 import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
 import type { TaskStatus } from '../../types/task.types';
-import { TASK_STATUS_CONFIG } from '../../types/task.types';
+import { TASK_STATUS_CONFIG, isTaskOverdue } from '../../types/task.types';
 import { cn } from '../../utils/cn';
 
 export interface TaskStatusBadgeProps {
@@ -12,23 +12,34 @@ export interface TaskStatusBadgeProps {
   size?: 'sm' | 'default';
   showIcon?: boolean;
   className?: string;
+  /** Due date for overdue detection (ISO 8601 string) */
+  dueDate?: string | undefined;
 }
 
-const STATUS_ICONS: Record<TaskStatus, React.ElementType> = {
+const STATUS_ICONS: Record<TaskStatus | 'overdue', React.ElementType> = {
   pending: Clock,
   in_progress: ArrowRight,
   completed: Check,
+  cancelled: Ban,
   blocked: X,
+  overdue: AlertTriangle,
 };
+
+const FALLBACK_CONFIG = { label: 'Unknown', variant: 'secondary' as const, icon: 'Circle' };
 
 export function TaskStatusBadge({
   status,
   size = 'default',
   showIcon = true,
   className,
+  dueDate,
 }: TaskStatusBadgeProps): React.ReactNode {
-  const config = TASK_STATUS_CONFIG[status];
-  const Icon = STATUS_ICONS[status];
+  const overdue = dueDate ? isTaskOverdue(dueDate, status) : false;
+
+  const config = overdue
+    ? { label: 'Overdue', variant: 'error' as const, icon: 'AlertTriangle' }
+    : (TASK_STATUS_CONFIG[status] ?? FALLBACK_CONFIG);
+  const Icon = overdue ? STATUS_ICONS.overdue : (STATUS_ICONS[status] ?? Circle);
 
   return (
     <Badge

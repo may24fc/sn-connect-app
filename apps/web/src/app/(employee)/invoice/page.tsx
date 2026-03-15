@@ -4,10 +4,8 @@ import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
 import { convertAmount, getExchangeRateText } from '@/lib/fx/rates';
 import { useTableSort } from '@/hooks/useTableSort';
-import { formatDate, formatDateRange, formatLabel } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { formatDate, formatDateRange } from '@/lib/format';
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -21,7 +19,9 @@ import {
   DialogTitle,
   CurrencySelector,
   Input,
+  InvoiceStatusBadge,
   Label,
+  ProgressTimeline,
   Separator,
   Table,
   TableBody,
@@ -32,22 +32,13 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { CheckCircle2, Download, Eye, EyeOff } from 'lucide-react';
+import type { ProgressTimelineStep } from '@hr-portal/ui';
+import type { InvoiceStatus } from '@hr-portal/ui';
+import { Download, Eye, EyeOff } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
 const MASKED_AMOUNT = '••••••';
-
-const statusVariant: Record<
-  'draft' | 'submitted' | 'approved' | 'paid' | 'rejected',
-  'secondary' | 'pending' | 'approved' | 'error'
-> = {
-  draft: 'secondary',
-  submitted: 'pending',
-  approved: 'approved',
-  paid: 'approved',
-  rejected: 'error',
-};
 
 const CURRENCY_LOCALES: Record<string, string> = {
   PHP: 'en-PH',
@@ -100,21 +91,23 @@ function InvoiceDetailDialog({
   const amount = (v: number, currencyCode = sourceCurrency) =>
     showAmounts ? formatCurrency(v, currencyCode) : MASKED_AMOUNT;
 
-  const statusBadge: Record<string, { label: string; cls: string }> = {
-    draft:     { label: 'DRAFT',     cls: 'bg-zinc-600 text-zinc-100' },
-    submitted: { label: 'PENDING',   cls: 'bg-amber-500 text-white' },
-    approved:  { label: 'APPROVED',  cls: 'bg-emerald-500 text-white' },
-    paid:      { label: 'PAID',      cls: 'bg-emerald-600 text-white' },
-    rejected:  { label: 'REJECTED',  cls: 'bg-red-500 text-white' },
-  };
-  const badge = statusBadge[invoice.status] ?? { label: 'DRAFT', cls: 'bg-zinc-600 text-zinc-100' };
-
-  const timelineSteps = [
+  const rawSteps = [
     { label: 'Created',   date: invoice.created_at,   done: true },
     { label: 'Submitted', date: invoice.submitted_at, done: !!invoice.submitted_at },
     { label: 'Approved',  date: invoice.approved_at,  done: !!invoice.approved_at },
     ...(invoice.paid_at ? [{ label: 'Paid', date: invoice.paid_at, done: true }] : []),
   ];
+
+  const timelineSteps: ProgressTimelineStep[] = rawSteps.map((step, i) => {
+    const nextDone = rawSteps[i + 1]?.done ?? false;
+    return {
+      label: step.label,
+      description: step.date ? formatDate(step.date) : undefined,
+      status: step.done
+        ? (nextDone || i === rawSteps.length - 1 ? 'completed' : 'current')
+        : 'upcoming',
+    };
+  });
 
   const handleDownloadPDF = () => { window.print(); };
 
@@ -138,20 +131,15 @@ function InvoiceDetailDialog({
               <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1.5">
                 Net Amount
               </p>
-              <p className="text-3xl font-bold text-white font-mono tabular-nums leading-tight">
+              <p className="text-3xl font-bold text-white tabular-nums leading-tight">
                 {amount(Number(invoice.net_amount || 0))}
               </p>
-              <p className="mt-2 text-sm text-zinc-400 font-mono tracking-tight">
+              <p className="mt-2 text-sm text-zinc-400 tracking-tight">
                 {invoice.invoice_number}
               </p>
             </div>
-            <span
-              className={cn(
-                'shrink-0 mt-0.5 rounded px-2.5 py-1 text-[10px] font-bold tracking-widest uppercase',
-                badge.cls,
-              )}
-            >
-              {badge.label}
+            <span className="shrink-0 mt-0.5">
+              <InvoiceStatusBadge status={invoice.status as InvoiceStatus} />
             </span>
           </div>
           <p className="mt-3 text-xs text-zinc-500">
@@ -167,15 +155,32 @@ function InvoiceDetailDialog({
             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
               Financial Summary
             </p>
+            {invoice.hourly_rate && invoice.hours_worked && (
+              <>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Hourly Rate</span>
+                  <span className="text-sm font-medium tabular-nums">
+                    {amount(Number(invoice.hourly_rate), sourceCurrency)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Hours Worked</span>
+                  <span className="text-sm font-medium tabular-nums">
+                    {showAmounts ? invoice.hours_worked : MASKED_AMOUNT}
+                  </span>
+                </div>
+                <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2" />
+              </>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Gross Amount</span>
-              <span className="text-sm font-medium font-mono tabular-nums">
+              <span className="text-sm font-medium tabular-nums">
                 {amount(Number(invoice.gross_amount || 0), sourceCurrency)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Deductions</span>
-              <span className="text-sm font-medium font-mono tabular-nums text-red-600 dark:text-red-400">
+              <span className="text-sm font-medium tabular-nums text-red-600 dark:text-red-400">
                 {showAmounts
                   ? `\u2212${formatCurrency(Number(invoice.deductions || 0), sourceCurrency)}`
                   : MASKED_AMOUNT}
@@ -183,14 +188,14 @@ function InvoiceDetailDialog({
             </div>
             <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex items-center justify-between">
               <span className="text-sm font-semibold">Net Amount</span>
-              <span className="text-sm font-bold font-mono tabular-nums text-indigo-600 dark:text-indigo-400">
+              <span className="text-sm font-bold tabular-nums text-indigo-600 dark:text-indigo-400">
                 {amount(Number(invoice.net_amount || 0), sourceCurrency)}
               </span>
             </div>
             {invoice.converted_amount && sourceCurrency !== targetCurrency && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Converted Amount</span>
-                <span className="text-sm font-medium font-mono tabular-nums">
+                <span className="text-sm font-medium tabular-nums">
                   {amount(Number(invoice.converted_amount || 0), targetCurrency)}
                 </span>
               </div>
@@ -212,51 +217,7 @@ function InvoiceDetailDialog({
             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">
               Timeline
             </p>
-            <div className="relative">
-              {timelineSteps.map((step, index) => (
-                <div key={step.label} className="flex gap-3">
-                  {/* Dot + vertical line column */}
-                  <div className="relative flex flex-col items-center">
-                    <div
-                      className={cn(
-                        'relative z-10 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full',
-                        step.done
-                          ? 'bg-emerald-500 text-white'
-                          : 'bg-zinc-200 dark:bg-zinc-700',
-                      )}
-                    >
-                      {step.done ? (
-                        <CheckCircle2 className="h-3 w-3" />
-                      ) : (
-                        <div className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
-                      )}
-                    </div>
-                    {index < timelineSteps.length - 1 && (
-                      <div
-                        className={cn(
-                          'w-px flex-1 mt-1 min-h-[1.5rem]',
-                          step.done ? 'bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700',
-                        )}
-                      />
-                    )}
-                  </div>
-                  {/* Step text */}
-                  <div className={cn('min-w-0', index < timelineSteps.length - 1 ? 'pb-4' : 'pb-0')}>
-                    <p
-                      className={cn(
-                        'text-sm font-medium leading-tight',
-                        step.done ? 'text-foreground' : 'text-muted-foreground',
-                      )}
-                    >
-                      {step.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-mono tabular-nums mt-0.5">
-                      {step.date ? formatDate(step.date) : '\u2014'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProgressTimeline steps={timelineSteps} />
           </div>
         </div>
 
@@ -370,6 +331,8 @@ export default function InvoicePage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
+  const [hourlyRate, setHourlyRate] = useState('');
+  const [hoursWorked, setHoursWorked] = useState('');
   const [grossAmount, setGrossAmount] = useState('0');
   const [deductions, setDeductions] = useState('0');
   const [notes, setNotes] = useState('');
@@ -425,6 +388,8 @@ export default function InvoicePage() {
   const resetForm = useCallback(() => {
     setPeriodStart('');
     setPeriodEnd('');
+    setHourlyRate('');
+    setHoursWorked('');
     setGrossAmount('0');
     setDeductions('0');
     setNotes('');
@@ -434,6 +399,15 @@ export default function InvoicePage() {
     setConvertedAmount(0);
     setExchangeRateText('');
   }, []);
+
+  // Auto-calculate gross amount from hourly rate × hours worked
+  useEffect(() => {
+    const rate = Number(hourlyRate || 0);
+    const hours = Number(hoursWorked || 0);
+    if (rate > 0 && hours > 0) {
+      setGrossAmount(String(Math.round(rate * hours * 100) / 100));
+    }
+  }, [hourlyRate, hoursWorked]);
 
   useEffect(() => {
     let cancelled = false;
@@ -490,6 +464,8 @@ export default function InvoicePage() {
       await createInvoice.mutateAsync({
         periodStart,
         periodEnd,
+        hourlyRate: hourlyRate ? Number(hourlyRate) : null,
+        hoursWorked: hoursWorked ? Number(hoursWorked) : null,
         grossAmount: gross,
         deductions: deductionValue,
         netAmount: net,
@@ -686,9 +662,7 @@ export default function InvoicePage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusVariant[invoice.status]}>
-                          {formatLabel(invoice.status)}
-                        </Badge>
+                        <InvoiceStatusBadge status={invoice.status as InvoiceStatus} size="sm" />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -757,6 +731,28 @@ export default function InvoicePage() {
                 <CurrencySelector value={targetCurrency} onChange={setTargetCurrency} />
               </div>
               <div className="space-y-2">
+                <Label>Hourly Rate</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={hourlyRate}
+                  onChange={(event) => setHourlyRate(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Hours Worked</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0"
+                  value={hoursWorked}
+                  onChange={(event) => setHoursWorked(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>Gross Amount</Label>
                 <Input
                   type="number"
@@ -766,6 +762,11 @@ export default function InvoicePage() {
                   onChange={(event) => setGrossAmount(event.target.value)}
                   required
                 />
+                {Number(hourlyRate || 0) > 0 && Number(hoursWorked || 0) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Auto-calculated: {hourlyRate} × {hoursWorked} hrs
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Deductions</Label>
