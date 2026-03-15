@@ -90,8 +90,16 @@ export function useUploadSource() {
     }): Promise<UploadSourceResponse> => {
       onProgress?.('scanning');
 
+      // Derive a human-readable title from the filename (strip extension, replace separators)
+      const derivedTitle = file.name
+        .replace(/\.[^.]+$/, '')          // remove extension
+        .replace(/[-_]+/g, ' ')           // hyphens/underscores → spaces
+        .replace(/\s+/g, ' ')             // collapse multiple spaces
+        .trim();
+
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('title', derivedTitle || file.name);
       formData.append('access_level', accessLevel);
 
       const response = await fetch('/api/ai/sources/upload', {

@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Loader2, Send, Sparkles, StopCircle } from 'lucide-react';
+import { AlertCircle, Send, Sparkles, StopCircle } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../../primitives/avatar';
 import { Button } from '../../primitives/button';
@@ -11,6 +11,19 @@ import type {
 } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
 import { ChatMessage } from './ChatMessage';
+
+function GeneratingText(): React.ReactNode {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+      <span className="animate-pulse">Generating response</span>
+      <span className="inline-flex gap-0.5 items-end">
+        <span className="h-1 w-1 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
+        <span className="h-1 w-1 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:160ms]" />
+        <span className="h-1 w-1 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:320ms]" />
+      </span>
+    </span>
+  );
+}
 
 export interface ChatInterfaceMessage {
   id: string;
@@ -132,6 +145,10 @@ export function ChatInterface({
       {/* Messages Area - Scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5 custom-scrollbar">
         {messages.map((message) => {
+          // Skip empty assistant messages (placeholder before streaming content arrives)
+          if (message.role === 'assistant' && !message.content && (message as ChatInterfaceMessage).isStreaming) {
+            return null;
+          }
           // Convert to ChatMessageType for the ChatMessage component
           const chatMsg: ChatMessageType = {
             id: message.id,
@@ -143,26 +160,17 @@ export function ChatInterface({
           return <ChatMessage key={message.id} message={chatMsg} showDebug={debugMode} />;
         })}
 
-        {/* Loading indicator (only when no streaming message visible) */}
-        {isLoading && !isStreaming && (
+        {/* Generating indicator – visible from first load until streaming content arrives */}
+        {isLoading && (!isStreaming || !lastMessage?.content) && (
           <div className="flex gap-3">
             <Avatar className="h-9 w-9 flex-shrink-0">
               <AvatarFallback className="bg-primary text-primary-foreground">
                 <Sparkles className="h-4 w-4" />
               </AvatarFallback>
             </Avatar>
-            <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-card border border-border px-4 py-3">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span className="text-sm text-muted-foreground">Thinking...</span>
+            <div className="rounded-2xl rounded-tl-sm bg-card border border-border px-4 py-3">
+              <GeneratingText />
             </div>
-          </div>
-        )}
-
-        {/* Streaming cursor indicator */}
-        {isStreaming && lastMessage?.content && (
-          <div className="flex items-center gap-2 px-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-xs text-muted-foreground">Generating response...</span>
           </div>
         )}
 

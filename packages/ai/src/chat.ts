@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 /**
  * Role of a participant in a chat conversation.
@@ -37,9 +37,9 @@ export interface RetrievedContext {
  * Configuration for the RAG chat service.
  */
 export interface ChatConfig {
-  /** Anthropic API key. Falls back to ANTHROPIC_API_KEY env var. */
+  /** OpenAI API key. Falls back to OPENAI_API_KEY env var. */
   apiKey?: string;
-  /** Model to use for chat completions. Defaults to "claude-sonnet-4-5-20250929". */
+  /** Model to use for chat completions. Defaults to "gpt-4o-mini". */
   model?: string;
   /** Maximum tokens in the response. Defaults to 2048. */
   maxTokens?: number;
@@ -100,7 +100,7 @@ export type ChatStreamEvent =
 
 const DEFAULT_CHAT_CONFIG: Required<ChatConfig> = {
   apiKey: '',
-  model: 'claude-sonnet-4-5-20250929',
+  model: 'gpt-4o-mini',
   maxTokens: 2048,
   temperature: 0.3,
   maxContextChunks: 5,
@@ -197,27 +197,12 @@ function extractCitations(contexts: RetrievedContext[]): SourceCitation[] {
  * Creates an Anthropic client instance.
  *
  * @param apiKey - Optional API key override
- * @returns Configured Anthropic client
+ * @returns Configured OpenAI client
  */
-function createClient(apiKey?: string): Anthropic {
-  return new Anthropic({
-    apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
+function createClient(apiKey?: string): OpenAI {
+  return new OpenAI({
+    apiKey: apiKey || process.env['OPENAI_API_KEY'],
   });
-}
-
-/**
- * Converts chat messages to the Anthropic API message format.
- *
- * @param messages - Chat messages
- * @returns Messages formatted for the Anthropic API
- */
-function toAnthropicMessages(
-  messages: ChatMessage[]
-): Array<{ role: 'user' | 'assistant'; content: string }> {
-  return messages.map((msg) => ({
-    role: msg.role,
-    content: msg.content,
-  }));
 }
 
 /**
@@ -259,23 +244,24 @@ export async function chat(
   const systemPrompt = buildSystemPrompt(filteredContexts, mergedConfig.systemPrompt || undefined);
   const citations = extractCitations(filteredContexts);
 
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model: mergedConfig.model,
     max_tokens: mergedConfig.maxTokens,
     temperature: mergedConfig.temperature,
-    system: systemPrompt,
-    messages: toAnthropicMessages(messages),
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...messages.map((m) => ({ role: m.role, content: m.content })),
+    ],
   });
 
-  const textContent = response.content[0];
-  const message = textContent && textContent.type === 'text' ? textContent.text : '';
+  const message = response.choices[0]?.message?.content ?? '';
 
   return {
     message,
     citations,
     usage: {
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
+      inputTokens: response.usage?.prompt_tokens ?? 0,
+      outputTokens: response.usage?.completion_tokens ?? 0,
     },
     hasContext: filteredContexts.length > 0,
   };
@@ -339,27 +325,35 @@ export async function* chatStream(
   yield { type: 'citations', citations };
 
   try {
-    const stream = client.messages.stream({
+    const stream = await client.chat.completions.create({
       model: mergedConfig.model,
       max_tokens: mergedConfig.maxTokens,
       temperature: mergedConfig.temperature,
-      system: systemPrompt,
-      messages: toAnthropicMessages(messages),
+      stream: true,
+      stream_options: { include_usage: true },
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
     });
 
-    for await (const event of stream) {
-      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-        yield { type: 'text_delta', text: event.delta.text };
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        yield { type: 'text_delta', text: delta };
+      }
+      if (chunk.usage) {
+        inputTokens = chunk.usage.prompt_tokens ?? 0;
+        outputTokens = chunk.usage.completion_tokens ?? 0;
       }
     }
 
-    const finalMessage = await stream.finalMessage();
     yield {
       type: 'done',
-      usage: {
-        inputTokens: finalMessage.usage.input_tokens,
-        outputTokens: finalMessage.usage.output_tokens,
-      },
+      usage: { inputTokens, outputTokens },
     };
   } catch (error) {
     yield {

@@ -2,6 +2,28 @@ import { createKnowledgeSourceSchema, knowledgeSourceFiltersSchema } from '@/lib
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '../_lib';
 
+/** Transform a DB row to the KnowledgeSource shape the frontend expects */
+function toKnowledgeSource(row: Record<string, unknown>) {
+  const fileTypeMap: Record<string, string> = { pdf: 'pdf', docx: 'docx', txt: 'txt' };
+  return {
+    id: row.id,
+    fileName: row.file_name || row.title,
+    fileType: fileTypeMap[row.source_type as string] ?? 'pdf',
+    uploadedAt: row.created_at,
+    uploadedBy: row.created_by ?? 'system',
+    status: row.processing_status ?? 'ready',
+    accessLevel: row.access_level ?? 'all',
+    title: row.title,
+    description: row.description,
+    sourceType: row.source_type,
+    filePath: row.file_path,
+    tags: row.tags ?? [],
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { user, role, error } = await getAuthedSupabase();
@@ -42,7 +64,7 @@ export async function GET(request: NextRequest) {
       .order(filters.sortBy, { ascending: filters.sortOrder === 'asc' });
 
     if (filters.search) {
-      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      query = query.ilike('title', `%${filters.search}%`);
     }
     if (filters.sourceType) {
       query = query.eq('source_type', filters.sourceType);
@@ -61,8 +83,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch knowledge sources' }, { status: 500 });
     }
 
+    const transformed = (data ?? []).map((row) => toKnowledgeSource(row as Record<string, unknown>));
+
     return NextResponse.json({
-      data,
+      data: transformed,
       pagination: {
         page: filters.page,
         pageSize: filters.pageSize,
@@ -109,7 +133,7 @@ export async function POST(request: NextRequest) {
         source_type: payload.sourceType,
         content: payload.content || null,
         file_path: payload.filePath || null,
-        external_url: payload.externalUrl || null,
+        url: payload.url || null,
         tags: payload.tags,
         is_active: payload.isActive,
         created_by: user.id,
@@ -130,7 +154,7 @@ export async function POST(request: NextRequest) {
       details: { title: payload.title, source_type: payload.sourceType },
     });
 
-    return NextResponse.json({ data }, { status: 201 });
+    return NextResponse.json({ data: toKnowledgeSource(data as Record<string, unknown>) }, { status: 201 });
   } catch (error) {
     console.error('Unexpected error in POST /api/ai/sources:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

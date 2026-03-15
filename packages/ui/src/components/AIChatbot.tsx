@@ -1,17 +1,43 @@
 'use client';
 
-import { Loader2, Maximize2, MessageSquare, Minimize2, PanelLeft, Plus, Send, Sparkles, User, X } from 'lucide-react';
+import { BookOpen, Maximize2, MessageSquare, Minimize2, MoreHorizontal, PanelLeft, Pencil, Plus, Send, Sparkles, Trash2, User, X } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../primitives/avatar';
 import { Button } from '../primitives/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../primitives/dropdown-menu';
 import { Input } from '../primitives/input';
 import { cn } from '../utils/cn';
+import { MarkdownContent } from '../utils/markdown';
+import { CitedContent } from './ai-chat/CitedContent';
+import { CitationPanel } from './ai-chat/CitationPanel';
+import type { Citation } from './ai-chat/citation-utils';
+
+function GeneratingText(): React.ReactNode {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+      <span className="animate-pulse">Generating response</span>
+      <span className="inline-flex gap-0.5 items-end">
+        <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:0ms]" />
+        <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:160ms]" />
+        <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:320ms]" />
+      </span>
+    </span>
+  );
+}
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  isStreaming?: boolean;
+  /** Citations for assistant messages */
+  citations?: Citation[];
 }
 
 interface Conversation {
@@ -22,8 +48,38 @@ interface Conversation {
   updatedAt: Date;
 }
 
+export interface ConversationItem {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface AIChatbotProps {
+  /** Legacy: simple request/response handler (fallback if no streaming props given). */
   onSendMessage?: (message: string) => Promise<string>;
+  /** Streaming mode: externally-managed messages array. */
+  messages?: Array<ChatMessage>;
+  /** Streaming mode: send a message through the streaming pipeline. */
+  onStreamMessage?: (content: string) => Promise<void>;
+  /** Streaming mode: is the assistant currently streaming / loading? */
+  isStreamLoading?: boolean;
+  /** Streaming mode: abort current stream. */
+  onAbort?: () => void;
+  /** Streaming mode: clear chat history. */
+  onClearHistory?: () => void;
+  /** Persistent conversations list (from DB). */
+  conversations?: Array<ConversationItem>;
+  /** Currently active conversation ID. */
+  activeConversationId?: string | null;
+  /** Callback when user selects a conversation. */
+  onSelectConversation?: (id: string) => void;
+  /** Callback when user creates a new conversation. */
+  onCreateConversation?: () => void;
+  /** Callback when user renames a conversation. */
+  onRenameConversation?: (id: string, title: string) => void;
+  /** Callback when user deletes a conversation. */
+  onDeleteConversation?: (id: string) => void;
   welcomeMessage?: string;
   placeholder?: string;
   className?: string;
@@ -76,10 +132,26 @@ function groupConversationsByDate(conversations: Array<Conversation>): {
 
 export function AIChatbot({
   onSendMessage,
+  messages: externalMessages,
+  onStreamMessage,
+  isStreamLoading,
+  onAbort,
+  onClearHistory,
+  conversations: externalConversations,
+  activeConversationId: externalActiveConversationId,
+  onSelectConversation,
+  onCreateConversation,
+  onRenameConversation,
+  onDeleteConversation,
   welcomeMessage = defaultWelcomeMessage,
   placeholder = 'Ask me anything about HR...',
   className,
 }: AIChatbotProps): React.ReactNode {
+  // Determine if we're in streaming mode (externally managed messages)
+  const isStreamingMode = !!(externalMessages && onStreamMessage);
+  // Determine if persistence mode is active (externally managed conversations)
+  const isPersistenceMode = !!(externalConversations && onSelectConversation);
+
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(true);
@@ -89,11 +161,27 @@ export function AIChatbot({
   const [activeConversationId, setActiveConversationId] = React.useState('1');
   const [inputValue, setInputValue] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  const [citationPanelOpen, setCitationPanelOpen] = React.useState(false);
+  const [highlightedCitationId, setHighlightedCitationId] = React.useState<number | undefined>();
+  const [activeCitations, setActiveCitations] = React.useState<Citation[]>([]);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
-  const messages = activeConversation?.messages ?? [];
+
+  // In streaming mode, use external messages; otherwise use internal conversation state
+  const welcomeMsg: ChatMessage = React.useMemo(() => ({
+    id: 'welcome',
+    role: 'assistant' as const,
+    content: welcomeMessage,
+    timestamp: new Date(),
+  }), [welcomeMessage]);
+
+  const messages = isStreamingMode
+    ? (externalMessages.length > 0 ? externalMessages : [welcomeMsg])
+    : (activeConversation?.messages ?? []);
+
+  const currentIsLoading = isStreamingMode ? (isStreamLoading ?? false) : isLoading;
 
   const scrollToBottom = (): void => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -115,6 +203,16 @@ export function AIChatbot({
   }, [isFullscreen]);
 
   const handleNewConversation = (): void => {
+    if (isPersistenceMode && onCreateConversation) {
+      onCreateConversation();
+      setInputValue('');
+      return;
+    }
+    if (isStreamingMode && onClearHistory) {
+      onClearHistory();
+      setInputValue('');
+      return;
+    }
     const newConv: Conversation = {
       id: Date.now().toString(),
       title: 'New conversation',
@@ -135,13 +233,26 @@ export function AIChatbot({
   };
 
   const handleSelectConversation = (id: string): void => {
-    setActiveConversationId(id);
+    if (isPersistenceMode && onSelectConversation) {
+      onSelectConversation(id);
+    } else {
+      setActiveConversationId(id);
+    }
     setInputValue('');
   };
 
   const handleSendMessage = async (): Promise<void> => {
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || currentIsLoading) return;
 
+    // Streaming mode — delegate to external handler
+    if (isStreamingMode) {
+      const content = inputValue.trim();
+      setInputValue('');
+      await onStreamMessage(content);
+      return;
+    }
+
+    // Legacy mode — internal state management
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -212,6 +323,12 @@ export function AIChatbot({
     }
   };
 
+  const handleCitationClick = (id: number, citations: Citation[]): void => {
+    setActiveCitations(citations);
+    setHighlightedCitationId(id);
+    setCitationPanelOpen(true);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -225,7 +342,19 @@ export function AIChatbot({
   const formatGroupDate = (date: Date): string =>
     date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  const grouped = groupConversationsByDate(conversations);
+  const grouped = isPersistenceMode
+    ? groupConversationsByDate(
+        externalConversations.map((c) => ({
+          id: c.id,
+          title: c.title,
+          messages: [],
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+        }))
+      )
+    : groupConversationsByDate(conversations);
+
+  const currentActiveId = isPersistenceMode ? (externalActiveConversationId ?? '') : activeConversationId;
 
   return (
     <div className={cn('relative', className)}>
@@ -260,7 +389,7 @@ export function AIChatbot({
             className={cn(
               'flex flex-col flex-shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950',
               'transition-[width,opacity] duration-300 ease-in-out overflow-hidden',
-              showHistory && isFullscreen ? 'w-64 opacity-100' : 'w-0 opacity-0'
+              showHistory ? 'w-64 opacity-100' : 'w-0 opacity-0'
             )}
           >
             {/* Sidebar Header */}
@@ -285,8 +414,10 @@ export function AIChatbot({
                 <ConversationGroup
                   label="Today"
                   conversations={grouped.today}
-                  activeId={activeConversationId}
+                  activeId={currentActiveId}
                   onSelect={handleSelectConversation}
+                  onRename={onRenameConversation}
+                  onDelete={onDeleteConversation}
                   formatDate={formatGroupDate}
                 />
               )}
@@ -294,8 +425,10 @@ export function AIChatbot({
                 <ConversationGroup
                   label="Yesterday"
                   conversations={grouped.yesterday}
-                  activeId={activeConversationId}
+                  activeId={currentActiveId}
                   onSelect={handleSelectConversation}
+                  onRename={onRenameConversation}
+                  onDelete={onDeleteConversation}
                   formatDate={formatGroupDate}
                 />
               )}
@@ -303,8 +436,10 @@ export function AIChatbot({
                 <ConversationGroup
                   label="Older"
                   conversations={grouped.older}
-                  activeId={activeConversationId}
+                  activeId={currentActiveId}
                   onSelect={handleSelectConversation}
+                  onRename={onRenameConversation}
+                  onDelete={onDeleteConversation}
                   formatDate={formatGroupDate}
                 />
               )}
@@ -316,23 +451,21 @@ export function AIChatbot({
             {/* Panel Header */}
             <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 h-14 flex-shrink-0">
               <div className="flex items-center gap-2">
-                {/* History toggle — only visible in fullscreen */}
-                {isFullscreen && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      'h-8 w-8 transition-colors',
-                      showHistory
-                        ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60'
-                        : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                    )}
-                    onClick={() => setShowHistory((v) => !v)}
-                    aria-label="Toggle conversation history"
-                  >
-                    <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                )}
+                {/* History toggle */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    'h-8 w-8 transition-colors',
+                    showHistory
+                      ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60'
+                      : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  )}
+                  onClick={() => setShowHistory((v) => !v)}
+                  aria-label="Toggle conversation history"
+                >
+                  <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
+                </Button>
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600/10 dark:bg-indigo-500/15">
                     <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" strokeWidth={1.5} />
@@ -349,8 +482,8 @@ export function AIChatbot({
               </div>
 
               <div className="flex items-center gap-1">
-                {/* New Chat — only visible in fullscreen when history is hidden */}
-                {isFullscreen && !showHistory && (
+                {/* New Chat — visible when history is hidden */}
+                {!showHistory && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -398,7 +531,12 @@ export function AIChatbot({
             >
               {/* Center messages when fullscreen for readability */}
               <div className={cn(isFullscreen && 'max-w-3xl mx-auto')}>
-                {messages.map((message) => (
+                {messages.map((message) => {
+                  // Skip empty assistant messages (placeholder before streaming content arrives)
+                  if (message.role === 'assistant' && !message.content && message.isStreaming) {
+                    return null;
+                  }
+                  return (
                   <div
                     key={message.id}
                     className={cn(
@@ -436,27 +574,61 @@ export function AIChatbot({
                             : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'
                         )}
                       >
-                        <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                          {message.content}
-                        </p>
+                        {message.role === 'assistant' && message.citations && message.citations.length > 0 ? (
+                          <CitedContent
+                            content={message.content}
+                            citations={message.citations}
+                            onCitationClick={(id) => handleCitationClick(id, message.citations ?? [])}
+                          />
+                        ) : message.role === 'assistant' ? (
+                          <MarkdownContent content={message.content} />
+                        ) : (
+                          <p className="text-sm leading-relaxed">
+                            {message.content}
+                          </p>
+                        )}
                       </div>
+                      {/* Show "View Sources" button for messages with citations */}
+                      {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveCitations(message.citations ?? []);
+                            setHighlightedCitationId(undefined);
+                            setCitationPanelOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 mt-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                        >
+                          <BookOpen className="h-3 w-3" />
+                          View {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
+                        </button>
+                      )}
                       <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
                         {formatTime(message.timestamp)}
                       </p>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
 
-                {isLoading && (
+                {currentIsLoading && !messages.some((m) => m.role === 'assistant' && m.isStreaming && m.content) && (
                   <div className="flex gap-3 mb-5">
                     <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
                       <AvatarFallback className="bg-indigo-600 text-white">
                         <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex items-center gap-2 rounded-xl rounded-tl-sm bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" strokeWidth={1.5} />
-                      <span className="text-sm text-zinc-500 dark:text-zinc-400">Thinking...</span>
+                    <div className="rounded-xl rounded-tl-sm bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5">
+                      <GeneratingText />
+                      {isStreamingMode && onAbort && (
+                        <button
+                          type="button"
+                          onClick={onAbort}
+                          className="mt-1.5 block text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
+                        >
+                          Stop
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -480,7 +652,7 @@ export function AIChatbot({
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
-                    disabled={isLoading}
+                    disabled={currentIsLoading}
                     className={[
                       'flex-1 h-10 px-4 text-sm rounded-xl transition-all',
                       'bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
@@ -491,7 +663,7 @@ export function AIChatbot({
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || isLoading}
+                    disabled={!inputValue.trim() || currentIsLoading}
                     size="icon"
                     className="h-10 w-10 flex-shrink-0 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
@@ -504,6 +676,14 @@ export function AIChatbot({
               </div>
             </div>
           </div>
+
+          {/* ── Citation Panel (flex sibling) ─────────────────── */}
+          <CitationPanel
+            open={citationPanelOpen}
+            onClose={() => setCitationPanelOpen(false)}
+            citations={activeCitations}
+            highlightedId={highlightedCitationId}
+          />
         </div>
       </div>
 
@@ -545,6 +725,8 @@ interface ConversationGroupProps {
   conversations: Array<Conversation>;
   activeId: string;
   onSelect: (id: string) => void;
+  onRename?: ((id: string, title: string) => void) | undefined;
+  onDelete?: ((id: string) => void) | undefined;
   formatDate: (date: Date) => string;
 }
 
@@ -553,20 +735,39 @@ function ConversationGroup({
   conversations,
   activeId,
   onSelect,
+  onRename,
+  onDelete,
   formatDate,
 }: ConversationGroupProps): React.ReactNode {
+  const [renamingId, setRenamingId] = React.useState<string | null>(null);
+  const [renameValue, setRenameValue] = React.useState('');
+  const renameInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (renamingId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingId]);
+
+  const handleRenameSubmit = (id: string): void => {
+    const trimmed = renameValue.trim();
+    if (trimmed && onRename) {
+      onRename(id, trimmed);
+    }
+    setRenamingId(null);
+  };
+
   return (
     <div className="mb-1">
       <p className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
         {label}
       </p>
       {conversations.map((conv) => (
-        <button
+        <div
           key={conv.id}
-          type="button"
-          onClick={() => onSelect(conv.id)}
           className={cn(
-            'w-full flex items-start gap-2.5 px-3 py-2 text-left rounded-md mx-1 transition-colors',
+            'group flex items-center gap-1 px-1 mx-1 rounded-md transition-colors',
             'hover:bg-zinc-200/60 dark:hover:bg-zinc-800',
             activeId === conv.id
               ? 'bg-zinc-200/80 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50'
@@ -574,14 +775,79 @@ function ConversationGroup({
           )}
           style={{ width: 'calc(100% - 8px)' }}
         >
-          <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-muted-foreground" strokeWidth={1.5} />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium truncate leading-snug">{conv.title}</p>
-            <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-              {formatDate(conv.updatedAt)}
-            </p>
-          </div>
-        </button>
+          {renamingId === conv.id ? (
+            <form
+              className="flex-1 py-1 px-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleRenameSubmit(conv.id);
+              }}
+            >
+              <input
+                ref={renameInputRef}
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onBlur={() => handleRenameSubmit(conv.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setRenamingId(null);
+                }}
+                className="w-full bg-white dark:bg-zinc-900 border border-indigo-500 rounded px-2 py-1 text-xs outline-none"
+              />
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onSelect(conv.id)}
+              className="flex-1 flex items-start gap-2.5 px-2 py-2 text-left min-w-0"
+            >
+              <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-muted-foreground" strokeWidth={1.5} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium truncate leading-snug">{conv.title}</p>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                  {formatDate(conv.updatedAt)}
+                </p>
+              </div>
+            </button>
+          )}
+
+          {/* Actions dropdown — only show when rename/delete handlers are provided */}
+          {(onRename || onDelete) && renamingId !== conv.id && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                {onRename && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setRenameValue(conv.title);
+                      setRenamingId(conv.id);
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-2" />
+                    Rename
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem
+                    className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                    onClick={() => onDelete(conv.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       ))}
     </div>
   );

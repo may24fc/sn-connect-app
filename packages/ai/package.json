@@ -20,7 +20,7 @@
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1"
+    "openai": "^4.76.0"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

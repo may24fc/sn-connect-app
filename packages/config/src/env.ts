@@ -6,10 +6,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
 
-  // Anthropic (Claude AI)
-  ANTHROPIC_API_KEY: z
+  // OpenAI
+  OPENAI_API_KEY: z
     .string()
-    .startsWith('sk-ant-', "ANTHROPIC_API_KEY must start with 'sk-ant-'"),
+    .startsWith('sk-', "OPENAI_API_KEY must start with 'sk-'"),
 
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters for security'),

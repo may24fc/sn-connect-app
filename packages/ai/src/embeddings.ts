@@ -1,12 +1,12 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 /**
  * Configuration for the embedding generation service.
  */
 export interface EmbeddingConfig {
-  /** Anthropic API key. Falls back to ANTHROPIC_API_KEY env var. */
+  /** OpenAI API key. Falls back to OPENAI_API_KEY env var. */
   apiKey?: string;
-  /** Model to use for generating embedding representations. Defaults to "claude-sonnet-4-5-20250929". */
+  /** Model to use for generating embeddings. Defaults to "text-embedding-3-small". */
   model?: string;
   /** Embedding vector dimension. Defaults to 1536. */
   dimensions?: number;
@@ -46,63 +46,37 @@ export interface BatchEmbeddingResult {
 
 const DEFAULT_CONFIG: Required<EmbeddingConfig> = {
   apiKey: '',
-  model: 'claude-sonnet-4-5-20250929',
+  model: 'text-embedding-3-small',
   dimensions: 1536,
   maxRetries: 3,
   retryBaseDelayMs: 1000,
 };
 
 /**
- * Generates a deterministic pseudo-embedding vector from text using Claude.
+ * Generates an embedding vector from text using the OpenAI embeddings API.
  *
- * This function asks Claude to produce a numerical representation of the input text
- * as a fixed-dimension vector. For production RAG workloads, consider using a
- * dedicated embedding model (e.g., OpenAI text-embedding-3-small, Cohere embed-v3,
- * or a local sentence-transformers model) and swapping this implementation.
- *
- * @param client - Anthropic SDK client instance
+ * @param client - OpenAI SDK client instance
  * @param text - The text to generate an embedding for
  * @param config - Embedding configuration
  * @returns A normalized embedding vector
  */
 async function generateEmbeddingVector(
-  client: Anthropic,
+  client: OpenAI,
   text: string,
   config: Required<EmbeddingConfig>
 ): Promise<number[]> {
-  const response = await client.messages.create({
+  const response = await client.embeddings.create({
     model: config.model,
-    max_tokens: 4096,
-    system: `You are an embedding generation assistant. Given input text, produce a semantic embedding as a JSON array of exactly ${config.dimensions} floating point numbers between -1 and 1. The numbers should capture the semantic meaning of the text so that similar texts produce similar vectors. Output ONLY the JSON array, nothing else.`,
-    messages: [
-      {
-        role: 'user',
-        content: `Generate a ${config.dimensions}-dimensional semantic embedding vector for the following text. Output ONLY a valid JSON array of numbers.\n\nText: ${text}`,
-      },
-    ],
+    input: text,
+    dimensions: config.dimensions,
   });
 
-  const content = response.content[0];
-  if (!content || content.type !== 'text') {
-    throw new Error('Unexpected response type from Claude API');
+  const embedding = response.data[0]?.embedding;
+  if (!embedding) {
+    throw new Error('No embedding returned from OpenAI API');
   }
 
-  const parsed: unknown = JSON.parse(content.text);
-  if (!Array.isArray(parsed)) {
-    throw new Error('Response is not an array');
-  }
-
-  const vector = parsed as number[];
-  if (vector.length !== config.dimensions) {
-    throw new Error(`Expected ${config.dimensions} dimensions, got ${vector.length}`);
-  }
-
-  // Normalize the vector to unit length
-  const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-  if (magnitude === 0) {
-    return vector;
-  }
-  return vector.map((val) => val / magnitude);
+  return embedding;
 }
 
 /**
@@ -159,14 +133,14 @@ async function withRetry<T>(
 }
 
 /**
- * Creates an Anthropic client instance with the provided or environment API key.
+ * Creates an OpenAI client instance with the provided or environment API key.
  *
  * @param apiKey - Optional API key override
- * @returns Configured Anthropic client
+ * @returns Configured OpenAI client
  */
-function createClient(apiKey?: string): Anthropic {
-  return new Anthropic({
-    apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
+function createClient(apiKey?: string): OpenAI {
+  return new OpenAI({
+    apiKey: apiKey || process.env['OPENAI_API_KEY'],
   });
 }
 

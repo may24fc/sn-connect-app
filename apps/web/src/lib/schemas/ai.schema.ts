@@ -1,18 +1,31 @@
 import { z } from 'zod';
 
+const chatRoleSchema = z.enum(['user', 'assistant']);
+
+const chatHistoryMessageSchema = z.object({
+  role: chatRoleSchema,
+  content: z.string().min(1).max(8000),
+});
+
 export const chatMessageSchema = z.object({
-  message: z.string().min(1, 'Message is required').max(4000, 'Message too long'),
+  /** Single message string (legacy / simple mode) */
+  message: z.string().min(1, 'Message is required').max(4000, 'Message too long').optional(),
+  /** Full conversation history (preferred) */
+  messages: z.array(chatHistoryMessageSchema).min(1).optional(),
   conversationId: z.string().uuid().optional(),
   includeSourceCitations: z.boolean().optional().default(true),
-});
+}).refine(
+  (data) => data.message || data.messages,
+  { message: 'Either "message" or "messages" is required' }
+);
 
 export const createKnowledgeSourceSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
   description: z.string().max(1000).optional(),
-  sourceType: z.enum(['policy', 'handbook', 'faq', 'procedure', 'guideline', 'other']),
+  sourceType: z.enum(['pdf', 'docx', 'txt', 'url', 'manual']),
   content: z.string().min(1, 'Content is required').optional(),
   filePath: z.string().optional(),
-  externalUrl: z.string().url().optional(),
+  url: z.string().url().optional(),
   tags: z.array(z.string()).optional().default([]),
   isActive: z.boolean().optional().default(true),
 });
@@ -20,15 +33,16 @@ export const createKnowledgeSourceSchema = z.object({
 export const updateKnowledgeSourceSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   description: z.string().max(1000).optional(),
-  sourceType: z.enum(['policy', 'handbook', 'faq', 'procedure', 'guideline', 'other']).optional(),
+  sourceType: z.enum(['pdf', 'docx', 'txt', 'url', 'manual']).optional(),
   content: z.string().min(1).optional(),
   tags: z.array(z.string()).optional(),
   isActive: z.boolean().optional(),
+  accessLevel: z.enum(['all', 'admin']).optional(),
 });
 
 export const knowledgeSourceFiltersSchema = z.object({
   search: z.string().optional(),
-  sourceType: z.enum(['policy', 'handbook', 'faq', 'procedure', 'guideline', 'other']).optional(),
+  sourceType: z.enum(['pdf', 'docx', 'txt', 'url', 'manual']).optional(),
   isActive: z
     .string()
     .optional()

@@ -2,6 +2,28 @@ import { updateKnowledgeSourceSchema } from '@/lib/schemas/ai.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '../../_lib';
 
+/** Transform a DB row to the KnowledgeSource shape the frontend expects */
+function toKnowledgeSource(row: Record<string, unknown>) {
+  const fileTypeMap: Record<string, string> = { pdf: 'pdf', docx: 'docx', txt: 'txt' };
+  return {
+    id: row.id,
+    fileName: row.file_name || row.title,
+    fileType: fileTypeMap[row.source_type as string] ?? 'pdf',
+    uploadedAt: row.created_at,
+    uploadedBy: row.created_by ?? 'system',
+    status: row.processing_status ?? 'ready',
+    accessLevel: row.access_level ?? 'all',
+    title: row.title,
+    description: row.description,
+    sourceType: row.source_type,
+    filePath: row.file_path,
+    tags: row.tags ?? [],
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
@@ -40,8 +62,8 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
     return NextResponse.json({
       data: {
-        ...data,
-        chunk_count: chunkCount || 0,
+        ...toKnowledgeSource(data as Record<string, unknown>),
+        chunkCount: chunkCount || 0,
       },
     });
   } catch (error) {
@@ -86,6 +108,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (payload.content !== undefined) updatePayload.content = payload.content;
     if (payload.tags !== undefined) updatePayload.tags = payload.tags;
     if (payload.isActive !== undefined) updatePayload.is_active = payload.isActive;
+    if (payload.accessLevel !== undefined) updatePayload.access_level = payload.accessLevel;
 
     const { data, error: patchError } = await adminClient
       .from('knowledge_sources')
@@ -113,7 +136,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       await adminClient.from('knowledge_embeddings').delete().eq('source_id', id);
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: toKnowledgeSource(data as Record<string, unknown>) });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/ai/sources/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

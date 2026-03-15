@@ -32,3 +32,9 @@ export {
   type DocumentInput,
   type ChunkingResult,
 } from './chunking';
+
+export {
+  chunkText,
+  type ChunkTextOptions,
+  type TextChunk,
+} from './drive-chunking';

@@ -63,13 +63,13 @@ export function AIKnowledgeManager({
   const showPlayground = panelState === 'both' || panelState === 'playground';
 
   return (
-    <div className={cn('bg-muted/30 rounded-lg border text-foreground', className)}>
-      <div className="flex">
+    <div className={cn('bg-muted/30 rounded-lg border text-foreground flex flex-col', className)}>
+      <div className="flex flex-1 min-h-0">
         {/* Left Panel - Knowledge Base */}
         {showKnowledge && (
           <div
             className={cn(
-              'border-r border-border flex flex-col relative',
+              'border-r border-border flex flex-col relative min-h-0',
               panelState === 'both' && 'w-[55%]',
               panelState === 'knowledge' && 'w-full'
             )}
@@ -91,7 +91,7 @@ export function AIKnowledgeManager({
         {showPlayground && (
           <div
             className={cn(
-              'flex flex-col relative',
+              'flex flex-col relative min-h-0',
               panelState === 'both' && 'w-[45%]',
               panelState === 'playground' && 'w-full'
             )}

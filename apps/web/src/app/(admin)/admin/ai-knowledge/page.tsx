@@ -84,11 +84,11 @@ export default function AdminAIKnowledgePage(): React.ReactNode {
         content: m.content,
         timestamp: m.timestamp,
         ...(m.isStreaming !== undefined && { isStreaming: m.isStreaming }),
-        ...(m.sources !== undefined && {
-          sources: m.sources.map((s) => ({
-            sourceId: s.sourceId,
-            fileName: s.title,
-            chunkPreview: s.chunkText,
+        ...(m.citations !== undefined && {
+          sources: m.citations.map((c) => ({
+            sourceId: c.sourceId,
+            fileName: c.sourceName,
+            chunkPreview: c.exactQuote,
           })),
         }),
       })),

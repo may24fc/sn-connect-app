@@ -59,7 +59,8 @@ function getStatusIndicator(status: KnowledgeSource['status']): React.ReactNode 
   }
 }
 
-function formatDate(date: Date): string {
+function formatDate(dateInput: Date | string): string {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));

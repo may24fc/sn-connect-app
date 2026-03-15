@@ -5,6 +5,7 @@ import * as React from 'react';
 import { Avatar, AvatarFallback } from '../../primitives/avatar';
 import type { ChatMessage as ChatMessageType } from '../../types/ai-knowledge.types';
 import { cn } from '../../utils/cn';
+import { MarkdownContent } from '../../utils/markdown';
 import { DebugPanel } from './DebugPanel';
 
 export interface ChatMessageProps {
@@ -50,7 +51,11 @@ export function ChatMessage({ message, showDebug, className }: ChatMessageProps)
               : 'bg-card border border-border text-foreground rounded-tl-sm'
           )}
         >
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+          {isUser ? (
+            <p className="text-sm leading-relaxed">{message.content}</p>
+          ) : (
+            <MarkdownContent content={message.content} />
+          )}
         </div>
 
         <p className={cn('text-xs text-muted-foreground/70 px-1', isUser && 'text-right')}>

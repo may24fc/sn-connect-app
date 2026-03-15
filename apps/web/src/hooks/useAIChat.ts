@@ -8,10 +8,17 @@ import { useCallback, useRef, useState } from 'react';
 // Types
 // ---------------------------------------------------------------------------
 
+/** Source citation matching the API response structure */
 export interface SourceCitation {
+  /** Numeric ID matching the [n] marker in the text (1-indexed) */
+  id: number;
+  /** UUID of the source document */
   sourceId: string;
-  title: string;
-  chunkText: string;
+  /** Display name of the source (e.g., "Employee Handbook.pdf") */
+  sourceName: string;
+  /** Verbatim excerpt from the source document */
+  exactQuote: string;
+  /** Similarity/relevance score (0-1) */
   relevanceScore: number;
 }
 
@@ -19,7 +26,8 @@ export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  sources?: Array<SourceCitation>;
+  /** Citations for this message (for assistant messages) */
+  citations?: Array<SourceCitation>;
   timestamp: Date;
   /** True while the assistant message is still being streamed. */
   isStreaming?: boolean;
@@ -28,18 +36,22 @@ export interface Message {
 export interface UseAIChatOptions {
   /** Seed the conversation with existing messages (e.g. a welcome message). */
   initialMessages?: Array<Message>;
+  /** Conversation ID for database persistence. When set, messages are persisted via the API. */
+  conversationId?: string | null;
   /** Called when a non-recoverable error occurs. */
   onError?: (error: Error) => void;
 }
 
 interface UseAIChatReturn {
   messages: Array<Message>;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, overrideConversationId?: string | null) => Promise<void>;
   isLoading: boolean;
   error: Error | null;
   clearHistory: () => void;
   /** Abort an in-flight streaming response. */
   abort: () => void;
+  /** Load messages from DB for a given conversation */
+  loadMessages: (conversationId: string) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,19 +112,21 @@ function parseSSELine(line: string): StreamChunk | null {
 // ---------------------------------------------------------------------------
 
 export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
-  const { initialMessages = [], onError } = options ?? {};
+  const { initialMessages = [], conversationId, onError } = options ?? {};
 
   const [messages, setMessages] = useState<Array<Message>>(initialMessages);
   const [error, setError] = useState<Error | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const conversationIdRef = useRef<string | null | undefined>(conversationId);
+  conversationIdRef.current = conversationId;
   const queryClient = useQueryClient();
 
   // -----------------------------------------------------------------------
   // Core streaming logic wrapped in useMutation for TanStack Query integration
   // -----------------------------------------------------------------------
-  const mutation = useMutation<void, Error, string>({
-    mutationFn: async (content: string) => {
+  const mutation = useMutation<void, Error, { content: string; conversationId?: string | null }>({
+    mutationFn: async ({ content, conversationId: overrideConversationId }) => {
       setError(null);
 
       // Append the user message immediately (optimistic).
@@ -148,7 +162,12 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: historyForApi }),
+        body: JSON.stringify({
+          messages: historyForApi,
+          ...((overrideConversationId ?? conversationIdRef.current)
+            ? { conversationId: overrideConversationId ?? conversationIdRef.current }
+            : {}),
+        }),
         signal: controller.signal,
       });
 
@@ -169,7 +188,7 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
       const reader = body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let collectedSources: Array<SourceCitation> | undefined;
+      let collectedCitations: Array<SourceCitation> | undefined;
 
       try {
         while (true) {
@@ -199,10 +218,10 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
                 break;
               }
               case 'sources': {
-                collectedSources = chunk.sources;
+                collectedCitations = chunk.sources;
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantMessageId ? { ...m, sources: chunk.sources } : m
+                    m.id === assistantMessageId ? { ...m, citations: chunk.sources } : m
                   )
                 );
                 break;
@@ -218,7 +237,7 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
                       ? {
                           ...m,
                           isStreaming: false,
-                          ...(collectedSources ? { sources: collectedSources } : {}),
+                          ...(collectedCitations ? { citations: collectedCitations } : {}),
                         }
                       : m
                   )
@@ -283,12 +302,12 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
   // -----------------------------------------------------------------------
 
   const sendMessage = useCallback(
-    async (content: string): Promise<void> => {
+    async (content: string, overrideConversationId?: string | null): Promise<void> => {
       const trimmed = content.trim();
       if (!trimmed) return;
       if (mutation.isPending) return;
 
-      await mutation.mutateAsync(trimmed);
+      await mutation.mutateAsync({ content: trimmed, conversationId: overrideConversationId ?? null });
     },
     [mutation]
   );
@@ -304,6 +323,28 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
     abortControllerRef.current?.abort();
   }, []);
 
+  const loadMessages = useCallback(async (convId: string): Promise<void> => {
+    try {
+      const res = await fetch(`/api/ai/conversations/${convId}/messages`);
+      if (!res.ok) {
+        throw new Error('Failed to load messages');
+      }
+      const json = await res.json();
+      const loaded: Array<Message> = (json.data ?? []).map(
+        (m: { id: string; role: 'user' | 'assistant'; content: string; citations?: unknown; created_at: string }) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          citations: m.citations as Array<SourceCitation> | undefined,
+          timestamp: new Date(m.created_at),
+        })
+      );
+      setMessages(loaded);
+    } catch (e) {
+      onError?.(e instanceof Error ? e : new Error('Failed to load messages'));
+    }
+  }, [onError]);
+
   return {
     messages,
     sendMessage,
@@ -311,5 +352,6 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
     error,
     clearHistory,
     abort,
+    loadMessages,
   };
 }
