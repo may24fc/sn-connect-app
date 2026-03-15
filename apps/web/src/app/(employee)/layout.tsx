@@ -2,6 +2,13 @@
 
 import { TourProvider, useTour } from '@/components/TourProvider';
 import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
+import { useAIChat } from '@/hooks/useAIChat';
+import {
+  useConversations,
+  useCreateConversation,
+  useDeleteConversation,
+  useRenameConversation,
+} from '@/hooks/useConversations';
 import {
   useDeleteNotification,
   useMarkAllRead,
@@ -10,10 +17,11 @@ import {
   useUnreadCount,
 } from '@/hooks/useNotifications';
 import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
+import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
 
 // Lazy-load the chatbot — it's interactive and only opened on demand
 const AIChatbot = dynamic(() => import('@hr-portal/ui').then((m) => ({ default: m.AIChatbot })), {
@@ -136,7 +144,7 @@ function EmployeeLayoutInner({
           onProfileClick={onProfileClick}
           onHelpClick={currentGroup ? startTour : undefined}
           notificationSlot={<EmployeeNotificationBell />}
-          aiChatSlot={<AIChatbot />}
+          aiChatSlot={<EmployeeAIChatbot />}
           theme={theme ?? 'light'}
           onThemeChange={setTheme}
         />
@@ -166,6 +174,106 @@ function EmployeeNotificationBell(): ReactNode {
       onDelete={(id) => deleteNotification.mutate(id)}
       onNavigate={(path) => router.push(path)}
       onViewAll={() => router.push('/notifications')}
+    />
+  );
+}
+
+/** Wires useAIChat streaming hook + conversation persistence into the AIChatbot component */
+function EmployeeAIChatbot(): ReactNode {
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+
+  const { messages, sendMessage, isLoading, clearHistory, abort, loadMessages } = useAIChat({
+    conversationId: activeConversationId,
+  });
+
+  const { data: conversationsData } = useConversations();
+  const createConversation = useCreateConversation();
+  const renameConversation = useRenameConversation();
+  const deleteConversation = useDeleteConversation();
+
+  const conversations: ConversationItem[] = (conversationsData?.data ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    createdAt: new Date(c.created_at),
+    updatedAt: new Date(c.updated_at),
+  }));
+
+  const handleCreate = (): void => {
+    createConversation.mutate(undefined, {
+      onSuccess: (conv) => {
+        setActiveConversationId(conv.id);
+        clearHistory();
+      },
+    });
+  };
+
+  const handleSelect = (id: string): void => {
+    setActiveConversationId(id);
+    clearHistory();
+    void loadMessages(id);
+  };
+
+  // Auto-create a DB conversation on the first message if none is active yet,
+  // then pass the new ID directly to sendMessage (before React re-renders).
+  const guardedSendMessage = useCallback(
+    async (content: string): Promise<void> => {
+      if (activeConversationId) {
+        return sendMessage(content);
+      }
+      try {
+        const conv = await createConversation.mutateAsync(undefined);
+        setActiveConversationId(conv.id);
+        return sendMessage(content, conv.id);
+      } catch {
+        return sendMessage(content);
+      }
+    },
+    [activeConversationId, sendMessage, createConversation]
+  );
+
+  const handleRename = (id: string, title: string): void => {
+    renameConversation.mutate({ id, title });
+  };
+
+  const handleDelete = (id: string): void => {
+    deleteConversation.mutate(id, {
+      onSuccess: () => {
+        if (activeConversationId === id) {
+          setActiveConversationId(null);
+          clearHistory();
+        }
+      },
+    });
+  };
+
+  const chatMessages: ChatMessage[] = messages.map((m) => ({
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    timestamp: m.timestamp,
+    isStreaming: m.isStreaming ?? false,
+    citations: m.citations?.map((c) => ({
+      id: c.id,
+      sourceId: c.sourceId,
+      sourceName: c.sourceName,
+      exactQuote: c.exactQuote,
+      relevanceScore: c.relevanceScore,
+    })) ?? [],
+  }));
+
+  return (
+    <AIChatbot
+      messages={chatMessages}
+      onStreamMessage={guardedSendMessage}
+      isStreamLoading={isLoading}
+      onAbort={abort}
+      onClearHistory={clearHistory}
+      conversations={conversations}
+      activeConversationId={activeConversationId}
+      onSelectConversation={handleSelect}
+      onCreateConversation={handleCreate}
+      onRenameConversation={handleRename}
+      onDeleteConversation={handleDelete}
     />
   );
 }

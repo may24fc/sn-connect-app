@@ -17,6 +17,7 @@ import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useRoleMetadata';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
+import KPIEntryWidget from './components/KPIEntryWidget';
 import { Badge, Button, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
 import type { KPICardData } from '@hr-portal/ui';
 import {
@@ -26,7 +27,6 @@ import {
   ClipboardCheck,
   Clock,
   FileText,
-  FolderOpen,
   Target,
   TrendingUp,
   Upload,
@@ -118,11 +118,36 @@ export default function DashboardPage(): ReactNode {
       .filter((m) => latestByName.has(m.name))
       .map((m) => {
         const entry = latestByName.get(m.name)!;
+        const previousEntry = kpiEntries
+          .filter((item) => item.kpi_name === m.name && item.entry_date < entry.entry_date)
+          .sort((left, right) => right.entry_date.localeCompare(left.entry_date))[0];
+
+        let trend:
+          | {
+              direction: 'up' | 'down' | 'stable';
+              value: string;
+            }
+          | undefined;
+
+        if (previousEntry) {
+          const delta = entry.kpi_value - previousEntry.kpi_value;
+          if (delta === 0) {
+            trend = { direction: 'stable', value: 'No change' };
+          } else {
+            const formattedDelta = m.unit === '%' ? `${Math.abs(delta).toFixed(2)}%` : `${Math.abs(delta).toFixed(2)}`;
+            trend = {
+              direction: delta > 0 ? 'up' : 'down',
+              value: `${formattedDelta} vs previous`,
+            };
+          }
+        }
+
         return {
           name: m.name,
           label: m.label,
           value: entry.kpi_value,
           unit: m.unit,
+          ...(trend ? { trend } : {}),
         };
       });
   })();
@@ -174,12 +199,6 @@ export default function DashboardPage(): ReactNode {
             Here is what is happening with your HR journey today.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/files">
-            <FolderOpen className="mr-2 h-4 w-4" strokeWidth={1.5} />
-            View My Files
-          </Link>
-        </Button>
       </div>
 
       {/* Stats Row */}
@@ -454,14 +473,17 @@ export default function DashboardPage(): ReactNode {
 
       {/* Role-Specific KPI Dashboard (V2-4.2) */}
       {primaryKPIRole && kpiCardData.length > 0 && (
-        <RoleDashboardWidget
-          roleType={primaryKPIRole}
-          roleLabel={
-            ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY]?.label ??
-            primaryKPIRole
-          }
-          kpiData={kpiCardData}
-        />
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          <RoleDashboardWidget
+            roleType={primaryKPIRole}
+            roleLabel={
+              ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY]?.label ??
+              primaryKPIRole
+            }
+            kpiData={kpiCardData}
+          />
+          <KPIEntryWidget />
+        </div>
       )}
     </div>
   );
