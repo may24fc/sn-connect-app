@@ -13,6 +13,7 @@ import {
   Card,
   CardContent,
   Input,
+  ProgressTimeline,
   Select,
   SelectContent,
   SelectItem,
@@ -37,6 +38,7 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
+import type { ProgressTimelineStep } from '@hr-portal/ui';
 import {
   ArrowLeft,
   CheckCircle,
@@ -227,7 +229,7 @@ export default function ApplicationsPage() {
       addToast({
         variant: 'error',
         title: 'Failed to update status',
-        description: 'Something went wrong. Please try again.',
+        description: 'Could not update the application status. Please try again.',
       });
     }
   }
@@ -513,6 +515,28 @@ export default function ApplicationsPage() {
 
               <SlidePanelBody>
                 <div className="space-y-6">
+                  {/* Pipeline Progress */}
+                  <SlidePanelSection label="Pipeline Progress">
+                    <ProgressTimeline
+                      size="compact"
+                      steps={PIPELINE_ORDER.map((stage): ProgressTimelineStep => {
+                        const currentIdx = PIPELINE_ORDER.indexOf(selectedApp.status as ApplicationStatus);
+                        const stageIdx = PIPELINE_ORDER.indexOf(stage);
+                        const isRejected = selectedApp.status === 'rejected';
+                        return {
+                          label: STATUS_CONFIG[stage]?.label || stage,
+                          status: isRejected
+                            ? (stageIdx === 0 ? 'completed' : 'upcoming')
+                            : stageIdx < currentIdx
+                              ? 'completed'
+                              : stageIdx === currentIdx
+                                ? 'current'
+                                : 'upcoming',
+                        };
+                      })}
+                    />
+                  </SlidePanelSection>
+
                   {/* Contact Info */}
                   <SlidePanelSection label="Contact Information">
                     <div className="space-y-2">
