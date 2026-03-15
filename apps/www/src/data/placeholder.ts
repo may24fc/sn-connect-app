@@ -22,6 +22,7 @@ export interface BusinessUnit {
   services: { title: string; description: string; image?: string }[];
   testimonials: { name: string; role: string; quote: string; company?: string }[];
   contact: { email: string; phone: string };
+  website_url?: string;
 }
 
 export const COMPANY = {
@@ -61,6 +62,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       { name: 'James Reyes', role: 'Event Coordinator', quote: 'Every event they cater is flawless — from setup to cleanup.' },
     ],
     contact: { email: 'sfo@sninternational.com', phone: '+63 (2) 8123 4568' },
+    website_url: 'https://sfo.sninternational.com',
   },
   {
     slug: 'uhp',
@@ -83,6 +85,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       { name: 'Robert Lim', role: 'Pharmacy Owner', quote: 'Their product range and pricing make them our preferred distributor.' },
     ],
     contact: { email: 'uhp@sninternational.com', phone: '+63 (2) 8123 4569' },
+    website_url: 'https://uhp.sninternational.com',
   },
   {
     slug: '24-fit-club',
@@ -105,6 +108,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       { name: 'Miguel Torres', role: 'Corporate Member', quote: 'Our company wellness program with 24 Fit Club has improved employee morale significantly.' },
     ],
     contact: { email: 'fitclub@sninternational.com', phone: '+63 (2) 8123 4570' },
+    website_url: 'https://24fitclub.com',
   },
   {
     slug: 'construction',
@@ -127,6 +131,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       { name: 'Linda Tan', role: 'Homeowner', quote: 'The quality of workmanship on our home exceeded our expectations.' },
     ],
     contact: { email: 'construction@sninternational.com', phone: '+63 (2) 8123 4571' },
+    website_url: 'https://snproperty.sninternational.com',
   },
 ];
 

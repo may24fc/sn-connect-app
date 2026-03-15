@@ -35,7 +35,7 @@ export function ContactForm(): ReactNode {
       setSubmitted(true);
       reset();
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Something went wrong');
+      setSubmitError(e instanceof Error ? e.message : 'Unable to send your message. Please check your connection and try again.');
     }
   }
 

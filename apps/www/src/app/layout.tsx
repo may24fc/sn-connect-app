@@ -5,6 +5,7 @@ import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
+import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
 import { Providers } from './providers';
 
 const inter = Inter({
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       </head>
       <body className="min-h-screen font-sans antialiased">
         <Providers>
+          <AnnouncementBanner />
           <ScrollProgress />
           <Header />
           <main id="main-content">{children}</main>
