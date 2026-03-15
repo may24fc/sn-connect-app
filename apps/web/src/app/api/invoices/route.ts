@@ -2,6 +2,19 @@ import { invoiceCreateSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+function computeExchangeRate(rates: Record<string, number>, from: string, to: string): number {
+  if (from === to) return 1;
+
+  const fromRate = from === 'USD' ? 1 : rates[from];
+  const toRate = to === 'USD' ? 1 : rates[to];
+
+  if (!fromRate || !toRate) {
+    throw new Error(`Exchange rate not available for ${from}/${to}`);
+  }
+
+  return toRate / fromRate;
+}
+
 /**
  * GET /api/invoices
  * List invoices with pagination and filters.
@@ -184,6 +197,37 @@ export async function POST(request: NextRequest) {
       invoiceNumber = `INV-${dateStr}-${seq}`;
     }
 
+    let exchangeRate = parsed.data.exchangeRate ?? null;
+    let convertedAmount = parsed.data.convertedAmount ?? null;
+
+    if (parsed.data.sourceCurrency !== parsed.data.targetCurrency) {
+      if (exchangeRate === null || convertedAmount === null) {
+        const { data: latestRates, error: ratesError } = await supabaseAdmin
+          .from('fx_rates')
+          .select('rates')
+          .order('fetched_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (ratesError || !latestRates) {
+          return NextResponse.json(
+            { error: 'Exchange rates unavailable for selected currencies' },
+            { status: 400 }
+          );
+        }
+
+        exchangeRate = computeExchangeRate(
+          latestRates.rates as Record<string, number>,
+          parsed.data.sourceCurrency,
+          parsed.data.targetCurrency
+        );
+        convertedAmount = Math.round(parsed.data.netAmount * exchangeRate * 100) / 100;
+      }
+    } else {
+      exchangeRate = 1;
+      convertedAmount = parsed.data.netAmount;
+    }
+
     // Use the same admin client for the insert to bypass RLS. Security is enforced
     // at the application layer above (auth check + employee ownership check).
     // This matches the established pattern used in other API routes (invite,
@@ -199,6 +243,10 @@ export async function POST(request: NextRequest) {
         gross_amount: parsed.data.grossAmount,
         deductions: parsed.data.deductions,
         net_amount: parsed.data.netAmount,
+        source_currency: parsed.data.sourceCurrency,
+        target_currency: parsed.data.targetCurrency,
+        exchange_rate: exchangeRate,
+        converted_amount: convertedAmount,
         status: parsed.data.status,
         notes: parsed.data.notes || null,
         submitted_at: parsed.data.status === 'submitted' ? new Date().toISOString() : null,

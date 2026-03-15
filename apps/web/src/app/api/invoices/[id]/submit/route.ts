@@ -1,6 +1,19 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+function computeExchangeRate(rates: Record<string, number>, from: string, to: string): number {
+  if (from === to) return 1;
+
+  const fromRate = from === 'USD' ? 1 : rates[from];
+  const toRate = to === 'USD' ? 1 : rates[to];
+
+  if (!fromRate || !toRate) {
+    throw new Error(`Exchange rate not available for ${from}/${to}`);
+  }
+
+  return toRate / fromRate;
+}
+
 /**
  * POST /api/invoices/[id]/submit
  * Submit an invoice for approval.
@@ -49,12 +62,45 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Only draft invoices can be submitted' }, { status: 400 });
     }
 
+    const updates: Record<string, string | number | null> = {
+      status: 'submitted',
+      submitted_at: new Date().toISOString(),
+    };
+
+    const sourceCurrency = (invoice.source_currency as string | null) || 'PHP';
+    const targetCurrency = (invoice.target_currency as string | null) || 'PHP';
+    const netAmount = Number(invoice.net_amount || 0);
+
+    if (sourceCurrency === targetCurrency) {
+      updates.exchange_rate = 1;
+      updates.converted_amount = netAmount;
+    } else {
+      const { data: latestRates, error: ratesError } = await supabaseAdmin
+        .from('fx_rates')
+        .select('rates')
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (ratesError || !latestRates) {
+        return NextResponse.json(
+          { error: 'Exchange rates unavailable for selected currencies' },
+          { status: 400 }
+        );
+      }
+
+      const exchangeRate = computeExchangeRate(
+        latestRates.rates as Record<string, number>,
+        sourceCurrency,
+        targetCurrency
+      );
+      updates.exchange_rate = exchangeRate;
+      updates.converted_amount = Math.round(netAmount * exchangeRate * 100) / 100;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('invoices')
-      .update({
-        status: 'submitted',
-        submitted_at: new Date().toISOString(),
-      })
+      .update(updates)
       .eq('id', id)
       .select('*')
       .single();

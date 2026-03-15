@@ -76,6 +76,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (parsed.data.grossAmount !== undefined) updates.gross_amount = parsed.data.grossAmount;
     if (parsed.data.deductions !== undefined) updates.deductions = parsed.data.deductions;
     if (parsed.data.netAmount !== undefined) updates.net_amount = parsed.data.netAmount;
+    if (parsed.data.sourceCurrency !== undefined) updates.source_currency = parsed.data.sourceCurrency;
+    if (parsed.data.targetCurrency !== undefined) updates.target_currency = parsed.data.targetCurrency;
+    if (parsed.data.exchangeRate !== undefined) updates.exchange_rate = parsed.data.exchangeRate;
+    if (parsed.data.convertedAmount !== undefined) updates.converted_amount = parsed.data.convertedAmount;
     if (parsed.data.status !== undefined) updates.status = parsed.data.status;
     if (parsed.data.notes !== undefined) updates.notes = parsed.data.notes || null;
 

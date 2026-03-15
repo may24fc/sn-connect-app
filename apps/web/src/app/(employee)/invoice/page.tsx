@@ -2,6 +2,7 @@
 
 import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
+import { convertAmount, getExchangeRateText } from '@/lib/fx/rates';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateRange, formatLabel } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  CurrencySelector,
   Input,
   Label,
   Separator,
@@ -31,7 +33,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { CheckCircle2, Download, Eye, EyeOff } from 'lucide-react';
-import { type FormEvent, useCallback, useMemo, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
 const MASKED_AMOUNT = '••••••';
@@ -47,10 +49,22 @@ const statusVariant: Record<
   rejected: 'error',
 };
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-PH', {
+const CURRENCY_LOCALES: Record<string, string> = {
+  PHP: 'en-PH',
+  USD: 'en-US',
+  EUR: 'de-DE',
+  AUD: 'en-AU',
+  GBP: 'en-GB',
+  SGD: 'en-SG',
+  JPY: 'ja-JP',
+};
+
+const formatCurrency = (value: number, currencyCode = 'PHP') =>
+  new Intl.NumberFormat(CURRENCY_LOCALES[currencyCode] || 'en-US', {
     style: 'currency',
-    currency: 'PHP',
+    currency: currencyCode,
+    minimumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
+    maximumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
   }).format(value || 0);
 
 /* ------------------------------------------------------------------ */
@@ -79,8 +93,12 @@ function InvoiceDetailDialog({
   onOpenChange: (open: boolean) => void;
   showAmounts: boolean;
 }) {
-  const amount = (v: number) => (showAmounts ? formatCurrency(v) : MASKED_AMOUNT);
   if (!invoice) return null;
+
+  const sourceCurrency = invoice.source_currency || 'PHP';
+  const targetCurrency = invoice.target_currency || 'PHP';
+  const amount = (v: number, currencyCode = sourceCurrency) =>
+    showAmounts ? formatCurrency(v, currencyCode) : MASKED_AMOUNT;
 
   const statusBadge: Record<string, { label: string; cls: string }> = {
     draft:     { label: 'DRAFT',     cls: 'bg-zinc-600 text-zinc-100' },
@@ -152,23 +170,31 @@ function InvoiceDetailDialog({
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Gross Amount</span>
               <span className="text-sm font-medium font-mono tabular-nums">
-                {amount(Number(invoice.gross_amount || 0))}
+                {amount(Number(invoice.gross_amount || 0), sourceCurrency)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Deductions</span>
               <span className="text-sm font-medium font-mono tabular-nums text-red-600 dark:text-red-400">
                 {showAmounts
-                  ? `\u2212${formatCurrency(Number(invoice.deductions || 0))}`
+                  ? `\u2212${formatCurrency(Number(invoice.deductions || 0), sourceCurrency)}`
                   : MASKED_AMOUNT}
               </span>
             </div>
             <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex items-center justify-between">
               <span className="text-sm font-semibold">Net Amount</span>
               <span className="text-sm font-bold font-mono tabular-nums text-indigo-600 dark:text-indigo-400">
-                {amount(Number(invoice.net_amount || 0))}
+                {amount(Number(invoice.net_amount || 0), sourceCurrency)}
               </span>
             </div>
+            {invoice.converted_amount && sourceCurrency !== targetCurrency && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Converted Amount</span>
+                <span className="text-sm font-medium font-mono tabular-nums">
+                  {amount(Number(invoice.converted_amount || 0), targetCurrency)}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Notes */}
@@ -272,8 +298,12 @@ function SubmitConfirmDialog({
   isPending: boolean;
   showAmounts: boolean;
 }) {
-  const amount = (v: number) => (showAmounts ? formatCurrency(v) : MASKED_AMOUNT);
   if (!invoice) return null;
+
+  const sourceCurrency = invoice.source_currency || 'PHP';
+  const targetCurrency = invoice.target_currency || 'PHP';
+  const amount = (v: number, currencyCode = sourceCurrency) =>
+    showAmounts ? formatCurrency(v, currencyCode) : MASKED_AMOUNT;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -294,14 +324,23 @@ function SubmitConfirmDialog({
           />
           <DetailRow
             label="Gross Amount"
-            value={amount(Number(invoice.gross_amount || 0))}
+            value={amount(Number(invoice.gross_amount || 0), sourceCurrency)}
           />
-          <DetailRow label="Deductions" value={amount(Number(invoice.deductions || 0))} />
+          <DetailRow
+            label="Deductions"
+            value={amount(Number(invoice.deductions || 0), sourceCurrency)}
+          />
           <Separator className="my-2" />
           <DetailRow
             label="Net Amount"
-            value={amount(Number(invoice.net_amount || 0))}
+            value={amount(Number(invoice.net_amount || 0), sourceCurrency)}
           />
+          {invoice.converted_amount && sourceCurrency !== targetCurrency && (
+            <DetailRow
+              label="Converted Amount"
+              value={amount(Number(invoice.converted_amount || 0), targetCurrency)}
+            />
+          )}
           {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
         </div>
 
@@ -334,6 +373,11 @@ export default function InvoicePage() {
   const [grossAmount, setGrossAmount] = useState('0');
   const [deductions, setDeductions] = useState('0');
   const [notes, setNotes] = useState('');
+  const [sourceCurrency, setSourceCurrency] = useState('PHP');
+  const [targetCurrency, setTargetCurrency] = useState('PHP');
+  const [exchangeRate, setExchangeRate] = useState<number | null>(1);
+  const [convertedAmount, setConvertedAmount] = useState<number | null>(0);
+  const [exchangeRateText, setExchangeRateText] = useState('');
 
   // Detail / View dialog
   const [detailInvoice, setDetailInvoice] = useState<InvoiceRecord | null>(null);
@@ -384,7 +428,56 @@ export default function InvoicePage() {
     setGrossAmount('0');
     setDeductions('0');
     setNotes('');
+    setSourceCurrency('PHP');
+    setTargetCurrency('PHP');
+    setExchangeRate(1);
+    setConvertedAmount(0);
+    setExchangeRateText('');
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function updateFxPreview() {
+      const netAmount = Math.max(0, Number(grossAmount || 0) - Number(deductions || 0));
+
+      if (sourceCurrency === targetCurrency) {
+        if (!cancelled) {
+          setExchangeRate(1);
+          setConvertedAmount(netAmount);
+          setExchangeRateText(`1 ${sourceCurrency} = 1 ${targetCurrency}`);
+        }
+        return;
+      }
+
+      try {
+        const [text, amount] = await Promise.all([
+          getExchangeRateText(sourceCurrency, targetCurrency),
+          convertAmount(netAmount, sourceCurrency, targetCurrency),
+        ]);
+
+        if (cancelled) return;
+
+        setExchangeRateText(text);
+        setConvertedAmount(amount);
+
+        const rateMatch = text.match(/=\s*([\d.]+)/);
+        setExchangeRate(rateMatch ? Number(rateMatch[1]) : null);
+      } catch {
+        if (!cancelled) {
+          setExchangeRate(null);
+          setConvertedAmount(null);
+          setExchangeRateText('Exchange rates unavailable');
+        }
+      }
+    }
+
+    void updateFxPreview();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [deductions, grossAmount, sourceCurrency, targetCurrency]);
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -403,8 +496,10 @@ export default function InvoicePage() {
         status: 'draft',
         notes: notes || undefined,
         lineItems: [],
-        sourceCurrency: 'PHP',
-        targetCurrency: 'PHP',
+        sourceCurrency,
+        targetCurrency,
+        exchangeRate,
+        convertedAmount,
       });
 
       addToast({
@@ -464,7 +559,8 @@ export default function InvoicePage() {
     setDetailOpen(true);
   };
 
-  const maskedCurrency = (value: number) => (showAmounts ? formatCurrency(value) : MASKED_AMOUNT);
+  const maskedCurrency = (value: number, currencyCode = 'PHP') =>
+    showAmounts ? formatCurrency(value, currencyCode) : MASKED_AMOUNT;
 
   return (
     <div className="space-y-6">
@@ -564,8 +660,31 @@ export default function InvoicePage() {
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDateRange(invoice.period_start, invoice.period_end)}
                       </TableCell>
-                      <TableCell>{maskedCurrency(Number(invoice.gross_amount || 0))}</TableCell>
-                      <TableCell>{maskedCurrency(Number(invoice.net_amount || 0))}</TableCell>
+                      <TableCell>
+                        {maskedCurrency(
+                          Number(invoice.gross_amount || 0),
+                          invoice.source_currency || 'PHP'
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <span>
+                            {maskedCurrency(
+                              Number(invoice.net_amount || 0),
+                              invoice.source_currency || 'PHP'
+                            )}
+                          </span>
+                          {invoice.converted_amount !== null &&
+                            invoice.converted_amount !== undefined &&
+                            invoice.source_currency &&
+                            invoice.target_currency &&
+                            invoice.source_currency !== invoice.target_currency && (
+                              <span className="block text-xs text-muted-foreground">
+                                ≈ {maskedCurrency(Number(invoice.converted_amount || 0), invoice.target_currency)}
+                              </span>
+                            )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[invoice.status]}>
                           {formatLabel(invoice.status)}
@@ -624,6 +743,20 @@ export default function InvoicePage() {
           <form className="space-y-4" onSubmit={handleCreate}>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
+                <Label>Source Currency</Label>
+                <CurrencySelector
+                  value={sourceCurrency}
+                  onChange={setSourceCurrency}
+                  {...(sourceCurrency !== targetCurrency && exchangeRateText
+                    ? { exchangeRateText }
+                    : {})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Base Currency</Label>
+                <CurrencySelector value={targetCurrency} onChange={setTargetCurrency} />
+              </div>
+              <div className="space-y-2">
                 <Label>Gross Amount</Label>
                 <Input
                   type="number"
@@ -675,10 +808,19 @@ export default function InvoicePage() {
                 <span className="text-muted-foreground">Net Amount</span>
                 <span className="font-semibold text-base">
                   {formatCurrency(
-                    Math.max(0, Number(grossAmount || 0) - Number(deductions || 0))
+                    Math.max(0, Number(grossAmount || 0) - Number(deductions || 0)),
+                    sourceCurrency
                   )}
                 </span>
               </div>
+              {convertedAmount !== null && sourceCurrency !== targetCurrency && (
+                <div className="mt-2 flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Converted Amount</span>
+                  <span className="font-semibold text-base">
+                    {formatCurrency(Number(convertedAmount || 0), targetCurrency)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <DialogFooter>

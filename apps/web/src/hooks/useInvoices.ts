@@ -15,6 +15,10 @@ export interface InvoiceRecord {
   gross_amount: number;
   deductions: number;
   net_amount: number;
+  source_currency: string | null;
+  target_currency: string | null;
+  exchange_rate: number | null;
+  converted_amount: number | null;
   status: 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
   submitted_at: string | null;
   approved_by: string | null;
