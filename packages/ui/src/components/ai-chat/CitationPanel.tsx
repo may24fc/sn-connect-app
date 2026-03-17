@@ -54,8 +54,8 @@ export function CitationPanel({
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-            <BookOpen className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/30">
+            <BookOpen className="h-4 w-4 text-slate-700 dark:text-slate-400" />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -96,7 +96,7 @@ export function CitationPanel({
                 className={cn(
                   'rounded-lg border p-4 transition-all duration-200',
                   isHighlighted
-                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 ring-1 ring-indigo-500'
+                    ? 'border-slate-500 bg-slate-50 dark:bg-slate-950/30 ring-1 ring-slate-500'
                     : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50'
                 )}
               >
@@ -106,8 +106,8 @@ export function CitationPanel({
                     className={cn(
                       'flex-shrink-0 flex items-center justify-center h-6 w-6 rounded text-xs font-bold',
                       isHighlighted
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300'
                     )}
                   >
                     {citation.id}
@@ -125,7 +125,7 @@ export function CitationPanel({
                 </div>
 
                 {/* Exact quote */}
-                <div className="relative pl-3 border-l-2 border-indigo-300 dark:border-indigo-700">
+                <div className="relative pl-3 border-l-2 border-slate-300 dark:border-slate-700">
                   <blockquote className="text-[13px] text-zinc-600 dark:text-zinc-300 italic leading-relaxed">
                     "{citation.exactQuote}"
                   </blockquote>

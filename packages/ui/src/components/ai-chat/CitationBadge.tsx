@@ -40,8 +40,8 @@ export function CitationBadge({
         className={cn(
           'inline-flex items-center justify-center',
           'min-w-[1.25rem] h-5 px-1.5 rounded text-[11px] font-medium',
-          'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-          'hover:bg-indigo-200 dark:hover:bg-indigo-900/60',
+          'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
+          'hover:bg-slate-200 dark:hover:bg-slate-900/60',
           'transition-colors cursor-pointer',
           'align-super -translate-y-0.5',
           className
@@ -61,8 +61,8 @@ export function CitationBadge({
           className={cn(
             'inline-flex items-center justify-center',
             'min-w-[1.25rem] h-5 px-1.5 rounded text-[11px] font-medium',
-            'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
-            'hover:bg-indigo-200 dark:hover:bg-indigo-900/60',
+            'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
+            'hover:bg-slate-200 dark:hover:bg-slate-900/60',
             'transition-colors cursor-pointer',
             'align-super -translate-y-0.5',
             className
@@ -90,7 +90,7 @@ export function CitationBadge({
 
           {/* Exact quote */}
           <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500 rounded-full" />
+            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-slate-800 rounded-full" />
             <blockquote className="pl-3 text-[13px] text-zinc-600 dark:text-zinc-300 italic leading-relaxed">
               "{citation.exactQuote}"
             </blockquote>

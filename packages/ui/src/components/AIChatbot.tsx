@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Maximize2, MessageSquare, Minimize2, MoreHorizontal, PanelLeft, Pencil, Plus, Send, Sparkles, Trash2, User, X } from 'lucide-react';
+import { BookOpen, Maximize2, MessageSquare, Minimize2, MoreHorizontal, PanelLeft, Pencil, Plus, Sparkles, Trash2, User, X } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../primitives/avatar';
 import { Button } from '../primitives/button';
@@ -10,9 +10,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../primitives/dropdown-menu';
-import { Input } from '../primitives/input';
 import { cn } from '../utils/cn';
 import { MarkdownContent } from '../utils/markdown';
+import { ChatInput, type AttachedFile } from './ai-chat/ChatInput';
 import { CitedContent } from './ai-chat/CitedContent';
 import { CitationPanel } from './ai-chat/CitationPanel';
 import type { Citation } from './ai-chat/citation-utils';
@@ -159,13 +159,11 @@ export function AIChatbot({
     makeWelcomeConversation(welcomeMessage),
   ]);
   const [activeConversationId, setActiveConversationId] = React.useState('1');
-  const [inputValue, setInputValue] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [citationPanelOpen, setCitationPanelOpen] = React.useState(false);
   const [highlightedCitationId, setHighlightedCitationId] = React.useState<number | undefined>();
   const [activeCitations, setActiveCitations] = React.useState<Citation[]>([]);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
 
@@ -191,12 +189,6 @@ export function AIChatbot({
     scrollToBottom();
   }, [messages]);
 
-  React.useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isOpen, activeConversationId]);
-
   // Auto-show history sidebar when entering fullscreen
   React.useEffect(() => {
     if (isFullscreen) setShowHistory(true);
@@ -205,12 +197,10 @@ export function AIChatbot({
   const handleNewConversation = (): void => {
     if (isPersistenceMode && onCreateConversation) {
       onCreateConversation();
-      setInputValue('');
       return;
     }
     if (isStreamingMode && onClearHistory) {
       onClearHistory();
-      setInputValue('');
       return;
     }
     const newConv: Conversation = {
@@ -229,7 +219,6 @@ export function AIChatbot({
     };
     setConversations((prev) => [newConv, ...prev]);
     setActiveConversationId(newConv.id);
-    setInputValue('');
   };
 
   const handleSelectConversation = (id: string): void => {
@@ -238,17 +227,15 @@ export function AIChatbot({
     } else {
       setActiveConversationId(id);
     }
-    setInputValue('');
   };
 
-  const handleSendMessage = async (): Promise<void> => {
-    if (!inputValue.trim() || currentIsLoading) return;
+  const handleSendMessage = async (messageContent?: string): Promise<void> => {
+    const content = messageContent ?? '';
+    if (!content.trim() || currentIsLoading) return;
 
     // Streaming mode — delegate to external handler
     if (isStreamingMode) {
-      const content = inputValue.trim();
-      setInputValue('');
-      await onStreamMessage(content);
+      await onStreamMessage(content.trim());
       return;
     }
 
@@ -256,7 +243,7 @@ export function AIChatbot({
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue.trim(),
+      content: content.trim(),
       timestamp: new Date(),
     };
 
@@ -276,7 +263,6 @@ export function AIChatbot({
       })
     );
 
-    setInputValue('');
     setIsLoading(true);
 
     try {
@@ -329,11 +315,27 @@ export function AIChatbot({
     setCitationPanelOpen(true);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
+  const handleChatInputSend = React.useCallback(
+    (data: { message: string; files: AttachedFile[] }) => {
+      const content = data.message.trim();
+      if (!content && data.files.length === 0) return;
+      void handleSendMessage(content || 'Attached files');
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isStreamingMode, currentIsLoading, activeConversationId]
+  );
+
+  // Determine if we should show the welcome/empty state
+  const isEmptyState = isStreamingMode
+    ? externalMessages.length === 0
+    : (activeConversation?.messages.length === 1 && activeConversation.messages[0]?.role === 'assistant');
+
+  // Greeting based on time of day
+  const getGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const formatTime = (date: Date): string =>
@@ -458,7 +460,7 @@ export function AIChatbot({
                   className={cn(
                     'h-8 w-8 transition-colors',
                     showHistory
-                      ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60'
+                      ? 'text-slate-700 bg-slate-50 dark:bg-slate-950/60'
                       : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                   )}
                   onClick={() => setShowHistory((v) => !v)}
@@ -467,8 +469,8 @@ export function AIChatbot({
                   <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
                 </Button>
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600/10 dark:bg-indigo-500/15">
-                    <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" strokeWidth={1.5} />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900/10 dark:bg-slate-800/15">
+                    <Sparkles className="h-3.5 w-3.5 text-slate-700 dark:text-slate-400" strokeWidth={1.5} />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
@@ -521,160 +523,176 @@ export function AIChatbot({
               </div>
             </div>
 
-            {/* Messages */}
-            <div
-              className={cn(
-                'flex-1 overflow-y-auto py-6 space-y-5',
-                isFullscreen ? 'px-8' : 'px-5'
-              )}
-              style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgb(228 228 231) transparent' }}
-            >
-              {/* Center messages when fullscreen for readability */}
-              <div className={cn(isFullscreen && 'max-w-3xl mx-auto')}>
-                {messages.map((message) => {
-                  // Skip empty assistant messages (placeholder before streaming content arrives)
-                  if (message.role === 'assistant' && !message.content && message.isStreaming) {
-                    return null;
-                  }
-                  return (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      'flex gap-3 mb-5',
-                      message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                    )}
-                  >
-                    <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
-                      <AvatarFallback
-                        className={cn(
-                          message.role === 'assistant'
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
-                        )}
-                      >
-                        {message.role === 'assistant' ? (
-                          <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        ) : (
-                          <User className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div
-                      className={cn(
-                        'flex flex-col gap-1',
-                        message.role === 'user' ? 'items-end' : 'items-start'
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'rounded-xl px-4 py-2.5',
-                          isFullscreen ? 'max-w-[70%]' : 'max-w-[85%]',
-                          message.role === 'user'
-                            ? 'bg-indigo-600 text-white rounded-tr-sm'
-                            : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'
-                        )}
-                      >
-                        {message.role === 'assistant' && message.citations && message.citations.length > 0 ? (
-                          <CitedContent
-                            content={message.content}
-                            citations={message.citations}
-                            onCitationClick={(id) => handleCitationClick(id, message.citations ?? [])}
-                          />
-                        ) : message.role === 'assistant' ? (
-                          <MarkdownContent content={message.content} />
-                        ) : (
-                          <p className="text-sm leading-relaxed">
-                            {message.content}
-                          </p>
-                        )}
-                      </div>
-                      {/* Show "View Sources" button for messages with citations */}
-                      {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveCitations(message.citations ?? []);
-                            setHighlightedCitationId(undefined);
-                            setCitationPanelOpen(true);
-                          }}
-                          className="flex items-center gap-1.5 mt-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-                        >
-                          <BookOpen className="h-3 w-3" />
-                          View {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
-                        </button>
-                      )}
-                      <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                        {formatTime(message.timestamp)}
-                      </p>
-                    </div>
+            {isEmptyState ? (
+              /* ── Welcome / Empty State ──────────────────────── */
+              <div className="flex-1 flex flex-col items-center justify-center px-6">
+                <div className={cn(isFullscreen && 'max-w-2xl', 'w-full flex flex-col items-center')}>
+                  {/* Logo */}
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900/10 dark:bg-slate-800/20 mb-5">
+                    <Sparkles className="h-7 w-7 text-slate-700 dark:text-slate-400" strokeWidth={1.5} />
                   </div>
-                  );
-                })}
 
-                {currentIsLoading && !messages.some((m) => m.role === 'assistant' && m.isStreaming && m.content) && (
-                  <div className="flex gap-3 mb-5">
-                    <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
-                      <AvatarFallback className="bg-indigo-600 text-white">
-                        <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="rounded-xl rounded-tl-sm bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5">
-                      <GeneratingText />
-                      {isStreamingMode && onAbort && (
-                        <button
-                          type="button"
-                          onClick={onAbort}
-                          className="mt-1.5 block text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
-                        >
-                          Stop
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  {/* Greeting */}
+                  <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight mb-1.5">
+                    {getGreeting()}
+                  </h2>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
+                    How can I help you today?
+                  </p>
 
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-
-            {/* Input */}
-            <div
-              className={cn(
-                'border-t border-zinc-200 dark:border-zinc-800 py-4 flex-shrink-0',
-                isFullscreen ? 'px-8' : 'px-5'
-              )}
-            >
-              <div className={cn(isFullscreen && 'max-w-3xl mx-auto')}>
-                <div className="flex items-center gap-2">
-                  <Input
-                    ref={inputRef}
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
+                  {/* Chat Input */}
+                  <ChatInput
+                    onSendMessage={handleChatInputSend}
+                    isLoading={currentIsLoading}
+                    onAbort={isStreamingMode ? onAbort : undefined}
                     placeholder={placeholder}
-                    disabled={currentIsLoading}
-                    className={[
-                      'flex-1 h-10 px-4 text-sm rounded-xl transition-all',
-                      'bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700',
-                      'placeholder:text-zinc-400 dark:placeholder:text-zinc-500',
-                      'focus:outline-none focus:ring-2 focus:ring-indigo-600/20',
-                      'focus:border-indigo-500 focus:bg-white dark:focus:bg-zinc-900',
-                    ].join(' ')}
+                    autoFocus={isOpen}
+                    className="w-full max-w-lg"
                   />
-                  <Button
-                    onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || currentIsLoading}
-                    size="icon"
-                    className="h-10 w-10 flex-shrink-0 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <Send className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
+
+                  <p className="mt-3 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
+                    AI may make mistakes. Verify important information.
+                  </p>
                 </div>
-                <p className="mt-2.5 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
-                  AI may make mistakes. Verify important information.
-                </p>
               </div>
-            </div>
+            ) : (
+              /* ── Chat Messages + Input ──────────────────────── */
+              <>
+                {/* Messages */}
+                <div
+                  className={cn(
+                    'flex-1 overflow-y-auto py-6 space-y-5',
+                    isFullscreen ? 'px-8' : 'px-5'
+                  )}
+                  style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgb(228 228 231) transparent' }}
+                >
+                  <div className={cn(isFullscreen && 'max-w-3xl mx-auto')}>
+                    {messages.map((message) => {
+                      if (message.role === 'assistant' && !message.content && message.isStreaming) {
+                        return null;
+                      }
+                      return (
+                        <div
+                          key={message.id}
+                          className={cn(
+                            'flex gap-3 mb-5',
+                            message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                          )}
+                        >
+                          <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
+                            <AvatarFallback
+                              className={cn(
+                                message.role === 'assistant'
+                                  ? 'bg-slate-900 text-white'
+                                  : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300'
+                              )}
+                            >
+                              {message.role === 'assistant' ? (
+                                <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
+                              ) : (
+                                <User className="h-3.5 w-3.5" strokeWidth={1.5} />
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div
+                            className={cn(
+                              'flex flex-col gap-1',
+                              message.role === 'user' ? 'items-end' : 'items-start'
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                'rounded-xl px-4 py-2.5',
+                                isFullscreen ? 'max-w-[70%]' : 'max-w-[85%]',
+                                message.role === 'user'
+                                  ? 'bg-slate-900 text-white rounded-tr-sm'
+                                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'
+                              )}
+                            >
+                              {message.role === 'assistant' && message.citations && message.citations.length > 0 ? (
+                                <CitedContent
+                                  content={message.content}
+                                  citations={message.citations}
+                                  onCitationClick={(id) => handleCitationClick(id, message.citations ?? [])}
+                                />
+                              ) : message.role === 'assistant' ? (
+                                <MarkdownContent content={message.content} />
+                              ) : (
+                                <p className="text-sm leading-relaxed">
+                                  {message.content}
+                                </p>
+                              )}
+                            </div>
+                            {message.role === 'assistant' && message.citations && message.citations.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveCitations(message.citations ?? []);
+                                  setHighlightedCitationId(undefined);
+                                  setCitationPanelOpen(true);
+                                }}
+                                className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                              >
+                                <BookOpen className="h-3 w-3" />
+                                View {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
+                              </button>
+                            )}
+                            <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                              {formatTime(message.timestamp)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {currentIsLoading && !messages.some((m) => m.role === 'assistant' && m.isStreaming && m.content) && (
+                      <div className="flex gap-3 mb-5">
+                        <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
+                          <AvatarFallback className="bg-slate-900 text-white">
+                            <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="rounded-xl rounded-tl-sm bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5">
+                          <GeneratingText />
+                          {isStreamingMode && onAbort && (
+                            <button
+                              type="button"
+                              onClick={onAbort}
+                              className="mt-1.5 block text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
+                            >
+                              Stop
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div ref={messagesEndRef} />
+                  </div>
+                </div>
+
+                {/* Input */}
+                <div
+                  className={cn(
+                    'border-t border-zinc-200 dark:border-zinc-800 py-3 flex-shrink-0',
+                    isFullscreen ? 'px-8' : 'px-4'
+                  )}
+                >
+                  <div className={cn(isFullscreen && 'max-w-3xl mx-auto')}>
+                    <ChatInput
+                      onSendMessage={handleChatInputSend}
+                      isLoading={currentIsLoading}
+                      onAbort={isStreamingMode ? onAbort : undefined}
+                      placeholder={placeholder}
+                      autoFocus={isOpen}
+                    />
+                    <p className="mt-2 text-center text-[11px] text-zinc-400 dark:text-zinc-500">
+                      AI may make mistakes. Verify important information.
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* ── Citation Panel (flex sibling) ─────────────────── */}
@@ -697,7 +715,7 @@ export function AIChatbot({
         className={cn(
           'group relative h-9 w-9 transition-colors',
           isOpen
-            ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600'
+            ? 'bg-slate-50 dark:bg-slate-950/60 text-slate-700'
             : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-200'
         )}
       >
@@ -705,13 +723,13 @@ export function AIChatbot({
           className={cn(
             'h-[18px] w-[18px] transition-colors',
             isOpen
-              ? 'text-indigo-600'
+              ? 'text-slate-700'
               : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200'
           )}
           strokeWidth={1.5}
         />
         {isOpen && (
-          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-indigo-500" />
+          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-slate-800" />
         )}
       </Button>
     </div>
@@ -791,7 +809,7 @@ function ConversationGroup({
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setRenamingId(null);
                 }}
-                className="w-full bg-white dark:bg-zinc-900 border border-indigo-500 rounded px-2 py-1 text-xs outline-none"
+                className="w-full bg-white dark:bg-zinc-900 border border-slate-500 rounded px-2 py-1 text-xs outline-none"
               />
             </form>
           ) : (

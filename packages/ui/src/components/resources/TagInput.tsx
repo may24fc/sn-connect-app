@@ -56,12 +56,12 @@ export function TagInput({
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
         {value.map((tag) => (
-          <Badge key={tag} variant="indigo" className="gap-1 pr-1">
+          <Badge key={tag} variant="navy" className="gap-1 pr-1">
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="rounded-full p-0.5 hover:bg-indigo-700/20"
+              className="rounded-full p-0.5 hover:bg-slate-800/20"
             >
               <X className="h-3 w-3" />
             </button>

@@ -27,7 +27,7 @@ import { RATING_CONFIG } from '../../types/performance.types';
 
 // Color palette
 const COLORS = {
-  primary: '#6366f1',
+  primary: '#0f172a',
   success: '#10b981',
   warning: '#f59e0b',
   error: '#ef4444',
@@ -37,7 +37,7 @@ const COLORS = {
 const RATING_COLORS: Record<PerformanceRating, string> = {
   exceptional: '#059669',
   exceeds: '#10b981',
-  meets: '#6366f1',
+  meets: '#0f172a',
   needs_improvement: '#f59e0b',
   unsatisfactory: '#ef4444',
 };

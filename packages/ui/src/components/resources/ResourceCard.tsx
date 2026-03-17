@@ -141,7 +141,7 @@ export function ResourceCard({
                   className={cn(
                     'h-3.5 w-3.5',
                     isBookmarked
-                      ? 'text-indigo-600 fill-indigo-600'
+                      ? 'text-slate-700 fill-slate-600'
                       : 'text-zinc-400 dark:text-zinc-500'
                   )}
                 />
@@ -173,7 +173,7 @@ export function ResourceCard({
           {isPinned && (
             <>
               <span className="text-zinc-300 dark:text-zinc-600" aria-hidden>·</span>
-              <Badge variant="indigo" className="text-[11px] px-1.5 py-0">
+              <Badge variant="navy" className="text-[11px] px-1.5 py-0">
                 Pinned
               </Badge>
             </>

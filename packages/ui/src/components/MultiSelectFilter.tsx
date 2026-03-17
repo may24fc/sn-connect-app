@@ -67,7 +67,7 @@ export function MultiSelectFilter({
           className={cn(
             'h-8 border-zinc-200 dark:border-zinc-800 text-sm font-normal gap-1.5',
             hasSelection &&
-              'border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/30',
+              'border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/30',
             className
           )}
         >

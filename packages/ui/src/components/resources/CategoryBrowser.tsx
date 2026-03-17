@@ -33,7 +33,7 @@ export function CategoryBrowser({
             className={cn(
               'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border transition-colors cursor-pointer',
               isSelected
-                ? 'bg-indigo-600 border-indigo-600 text-white dark:bg-indigo-500 dark:border-indigo-500'
+                ? 'bg-slate-900 border-slate-600 text-white dark:bg-slate-800 dark:border-slate-500'
                 : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100'
             )}
           >

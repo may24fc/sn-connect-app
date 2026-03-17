@@ -150,7 +150,7 @@ function VersionItem({
       <div
         className={`absolute left-0 top-2 h-3 w-3 rounded-full border-2 ${
           isCurrent
-            ? 'border-indigo-500 bg-indigo-500'
+            ? 'border-slate-500 bg-slate-800'
             : 'border-zinc-300 bg-card dark:border-zinc-600'
         }`}
       />
@@ -163,7 +163,7 @@ function VersionItem({
               <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1 text-sm font-medium text-zinc-900 hover:text-indigo-600 dark:text-zinc-100 dark:hover:text-indigo-400"
+                className="flex items-center gap-1 text-sm font-medium text-zinc-900 hover:text-slate-700 dark:text-zinc-100 dark:hover:text-slate-400"
               >
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4" />
@@ -173,7 +173,7 @@ function VersionItem({
                 Version {version.version_number}
               </button>
               {isCurrent && (
-                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
                   Current
                 </span>
               )}
@@ -236,7 +236,7 @@ function VersionItem({
                 type="button"
                 onClick={() => onRestore(version.version_number)}
                 disabled={isRestoring}
-                className="flex items-center gap-1 rounded-md border border-indigo-200 px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
+                className="flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-950/30"
               >
                 <RotateCcw className="h-3 w-3" />
                 Restore

@@ -81,7 +81,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
 };
 
 const NOTIFICATION_COLORS: Record<NotificationType, string> = {
-  task_assigned: 'text-indigo-500',
+  task_assigned: 'text-slate-500',
   task_due: 'text-amber-500',
   report_submitted: 'text-blue-500',
   report_approved: 'text-emerald-500',
@@ -169,7 +169,7 @@ export function NotificationBell({
                 e.stopPropagation();
                 onMarkAllRead();
               }}
-              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+              className="text-xs font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
             >
               Mark All Read
             </button>
@@ -204,7 +204,7 @@ export function NotificationBell({
                     'group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800 last:border-b-0',
                     notification.is_read
                       ? 'bg-card hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                      : 'bg-indigo-50/50 dark:bg-indigo-950/20 hover:bg-indigo-50 dark:hover:bg-indigo-950/30'
+                      : 'bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-50 dark:hover:bg-slate-950/30'
                   )}
                   onClick={() => handleNotificationClick(notification)}
                   onKeyDown={(e) => {
@@ -235,7 +235,7 @@ export function NotificationBell({
                         {notification.title}
                       </p>
                       {!notification.is_read && (
-                        <span className="flex-shrink-0 h-2 w-2 rounded-full bg-indigo-600 mt-1.5" />
+                        <span className="flex-shrink-0 h-2 w-2 rounded-full bg-slate-900 mt-1.5" />
                       )}
                     </div>
                     {notification.message && (
@@ -288,7 +288,7 @@ export function NotificationBell({
               e.stopPropagation();
               onViewAll();
             }}
-            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors py-1"
+            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors py-1"
           >
             View All Notifications
             <ChevronRight className="h-3 w-3" strokeWidth={2} />

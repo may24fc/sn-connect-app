@@ -150,7 +150,7 @@ export function AnnouncementAnalyticsDashboard({
                   </span>
                   <div className="flex-1 h-5 rounded bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                     <div
-                      className="h-full rounded bg-indigo-500 dark:bg-indigo-600 transition-all"
+                      className="h-full rounded bg-slate-800 dark:bg-slate-900 transition-all"
                       style={{ width: `${(entry.count / maxTimeSeries) * 100}%` }}
                     />
                   </div>
@@ -185,7 +185,7 @@ export function AnnouncementAnalyticsDashboard({
                   cy="18"
                   r="15.915"
                   fill="none"
-                  className="stroke-indigo-500"
+                  className="stroke-slate-500"
                   strokeWidth="3"
                   strokeDasharray={`${data.readRate} ${100 - data.readRate}`}
                   strokeLinecap="round"
@@ -200,7 +200,7 @@ export function AnnouncementAnalyticsDashboard({
             <div className="space-y-2 flex-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-slate-800" />
                   <span className="text-sm text-zinc-700 dark:text-zinc-300">Read</span>
                 </div>
                 <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50 tabular-nums">

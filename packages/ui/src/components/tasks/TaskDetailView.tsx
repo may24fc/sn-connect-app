@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Calendar, Clock, FileText, Loader2, Tag, User, Users } from 'lucide-react';
+import { AlertCircle, Calendar, Check, Clock, Copy, FileText, Loader2, Tag, User, Users } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { Badge } from '../../primitives/badge';
@@ -60,6 +60,13 @@ export function TaskDetailView({
   const [selectedStatus, setSelectedStatus] = React.useState<TaskStatus>(task.status);
   const [note, setNote] = React.useState('');
   const [showNoteInput, setShowNoteInput] = React.useState(false);
+  const [copiedId, setCopiedId] = React.useState(false);
+
+  const copyTaskId = (): void => {
+    navigator.clipboard.writeText(task.id).catch(() => undefined);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
 
   const isOverdue = isTaskOverdue(task.dueDate, task.status);
   const assignees = task.assignees || [];
@@ -125,7 +132,22 @@ export function TaskDetailView({
           {/* Title */}
           <div>
             <CardTitle className="text-2xl">{task.title}</CardTitle>
-            <CardDescription className="mt-2 text-base">Task ID: {task.id}</CardDescription>
+            <CardDescription className="mt-1.5 flex items-center gap-2">
+              <span>Task reference</span>
+              <button
+                type="button"
+                onClick={copyTaskId}
+                title="Click to copy full ID"
+                className="inline-flex items-center gap-1 font-mono text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 px-1.5 py-0.5 rounded transition-colors"
+              >
+                #{task.id.slice(0, 8).toUpperCase()}
+                {copiedId ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="h-3 w-3 opacity-60" />
+                )}
+              </button>
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -165,7 +187,7 @@ export function TaskDetailView({
                 <Tag className="h-4 w-4" />
                 Category
               </div>
-              <p className="text-sm font-medium pl-6">{task.category}</p>
+              <p className="text-sm font-medium pl-6">{formatTaskCategory(task.category)}</p>
             </div>
           )}
 

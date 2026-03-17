@@ -88,7 +88,7 @@ export const CurrencySelector = React.forwardRef<HTMLButtonElement, CurrencySele
           disabled={disabled}
           className={cn(
             'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600',
+            'focus:outline-none focus:ring-2 focus:ring-slate-600/20 focus:border-slate-600',
             'disabled:cursor-not-allowed disabled:opacity-50',
             error && 'border-rose-600 focus:ring-rose-600/20'
           )}
@@ -139,7 +139,7 @@ export const CurrencySelector = React.forwardRef<HTMLButtonElement, CurrencySele
                   'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                   'hover:bg-zinc-100 dark:hover:bg-zinc-800',
                   currency.code === value &&
-                    'bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
+                    'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400'
                 )}
               >
                 <span className="text-base">{currency.flag}</span>

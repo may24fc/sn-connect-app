@@ -38,7 +38,7 @@ interface ReportMetricsChartProps {
 }
 
 const CHART_COLORS = [
-  'hsl(239 84% 67%)', // indigo
+  'hsl(215 28% 17%)', // navy
   'hsl(142 71% 45%)', // green
   'hsl(24 95% 53%)',  // orange
   'hsl(0 84% 60%)',   // red

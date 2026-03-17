@@ -126,7 +126,7 @@ export function RoleDashboardWidget({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3
-              className="h-4.5 w-4.5 text-indigo-600 dark:text-indigo-400"
+              className="h-4.5 w-4.5 text-slate-700 dark:text-slate-400"
               strokeWidth={1.5}
             />
             <div>
@@ -149,7 +149,7 @@ export function RoleDashboardWidget({
           <button
             type="button"
             onClick={onManageKPIs}
-            className="mt-3 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+            className="mt-3 text-xs font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
           >
             Log KPI Values →
           </button>

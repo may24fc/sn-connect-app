@@ -34,7 +34,7 @@ export interface AnnouncementDetailDialogProps {
 
 const priorityColors: Record<string, string> = {
   low: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
-  normal: 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400',
+  normal: 'bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400',
   high: 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400',
   urgent: 'bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400',
 };
@@ -87,7 +87,7 @@ export function AnnouncementDetailDialog({
                   {categoryLabels[announcement.category] || announcement.category}
                 </Badge>
                 {announcement.is_pinned && (
-                  <Badge className="bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+                  <Badge className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400">
                     Pinned
                   </Badge>
                 )}

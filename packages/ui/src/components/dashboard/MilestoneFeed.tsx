@@ -55,7 +55,7 @@ function MilestoneAvatar({
   }
 
   return (
-    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-medium ring-2 ring-white dark:ring-zinc-800">
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400 text-xs font-medium ring-2 ring-white dark:ring-zinc-800">
       {initials}
     </div>
   );

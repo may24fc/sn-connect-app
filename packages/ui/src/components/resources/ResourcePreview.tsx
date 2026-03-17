@@ -77,7 +77,7 @@ export function ResourcePreview({
 
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="indigo">{category}</Badge>
+            <Badge variant="navy">{category}</Badge>
             <Badge variant={statusVariants[status]}>{status}</Badge>
             <Badge variant="outline">{resourceType}</Badge>
             {tags.map((tag) => (
@@ -129,7 +129,7 @@ export function ResourcePreview({
             {onBookmark ? (
               <Button size="sm" variant="outline" onClick={onBookmark}>
                 <Bookmark
-                  className={`h-3.5 w-3.5 mr-1.5 ${isBookmarked ? 'fill-indigo-600 text-indigo-600' : ''}`}
+                  className={`h-3.5 w-3.5 mr-1.5 ${isBookmarked ? 'fill-slate-600 text-slate-700' : ''}`}
                 />
                 {isBookmarked ? 'Bookmarked' : 'Bookmark'}
               </Button>

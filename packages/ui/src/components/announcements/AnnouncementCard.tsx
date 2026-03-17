@@ -65,12 +65,12 @@ export function AnnouncementCard({
           </h3>
           <div className="flex items-center gap-1.5 shrink-0">
             {isPinned && (
-              <Badge variant="indigo" className="text-[11px] px-1.5 py-0">
+              <Badge variant="navy" className="text-[11px] px-1.5 py-0">
                 Pinned
               </Badge>
             )}
             {isRead === false && (
-              <span className="h-2 w-2 rounded-full bg-indigo-500" title="Unread" />
+              <span className="h-2 w-2 rounded-full bg-slate-800" title="Unread" />
             )}
           </div>
         </div>
