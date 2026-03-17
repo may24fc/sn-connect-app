@@ -28,7 +28,7 @@ interface StatCardProps {
 
 /**
  * StatCard - A card for displaying key metrics and statistics.
- * Follows the Titanium & Indigo design system with tabular-nums for values.
+ * Follows the Navy & Gold design system with tabular-nums for values.
  *
  * Icons follow strict iconography rules:
  * - strokeWidth={1.5} (fine/elegant)

@@ -52,7 +52,7 @@ const sizeClasses = {
 
 /**
  * EmptyState - A component for displaying empty/no-data states.
- * Follows the Titanium & Indigo design system.
+ * Follows the Navy & Gold design system.
  *
  * Icons follow strict iconography rules:
  * - strokeWidth={1.5} (fine/elegant)
