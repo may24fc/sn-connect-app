@@ -1,8 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin'];
-
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -13,25 +11,6 @@ export async function GET(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check role
-    let role: string | null = null;
-    if (typeof user.app_metadata?.db_role === 'string') {
-      role = user.app_metadata.db_role;
-    }
-    if (!role) {
-      const { data: roleData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      role = roleData?.role ?? null;
-    }
-
-    if (!role || !ADMIN_ROLES.includes(role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

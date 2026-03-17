@@ -1,0 +1,58 @@
+name: Daily Milestone Announcements
+
+# Runs every day at 08:00 UTC (4:00 PM PHT) to send
+# birthday and work-anniversary announcements to all employees.
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Set to true to skip actual announcement creation (logs only)'
+        required: false
+        default: 'false'
+
+jobs:
+  trigger-milestone-edge-function:
+    name: Trigger Milestone Announcements
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Invoke milestone-announcements Edge Function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          BODY=$(printf '{"scheduled":true,"dry_run":%s}' "$DRY_RUN")
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "${SUPABASE_URL}/functions/v1/milestone-announcements" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -d "$BODY")
+
+          HTTP_BODY=$(echo "$RESPONSE" | head -n -1)
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $HTTP_BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Edge function returned non-200 status: $HTTP_CODE"
+            echo "::error::Response: $HTTP_BODY"
+            exit 1
+          fi
+
+          # Extract counts from JSON response for summary
+          CREATED=$(echo "$HTTP_BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('created', 0))")
+          SKIPPED=$(echo "$HTTP_BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('skipped', 0))")
+          MILESTONES=$(echo "$HTTP_BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('milestones_found', 0))")
+
+          echo "### 🎂 Milestone Announcements Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Milestones found today | $MILESTONES |" >> $GITHUB_STEP_SUMMARY
+          echo "| Announcements created  | $CREATED |" >> $GITHUB_STEP_SUMMARY
+          echo "| Skipped (idempotent)   | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
