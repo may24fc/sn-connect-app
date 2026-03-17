@@ -422,7 +422,7 @@ export default function FilesPage() {
               <button
                 key={d.id}
                 type="button"
-                className={`group relative rounded-xl border ${colors.border} bg-white dark:bg-zinc-900 overflow-hidden text-left transition-all hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500`}
+                className={`group relative rounded-xl border ${colors.border} bg-white dark:bg-zinc-900 overflow-hidden text-left transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500`}
                 onDoubleClick={() =>
                   canPreview(d.mime_type) ? handlePreview(d.id) : download.mutateAsync(d.id)
                 }
@@ -558,7 +558,7 @@ export default function FilesPage() {
                   <button
                     key={d.id}
                     type="button"
-                    className="flex w-full items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500"
+                    className="flex w-full items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-500"
                     onDoubleClick={() =>
                       canPreview(d.mime_type) ? handlePreview(d.id) : download.mutateAsync(d.id)
                     }

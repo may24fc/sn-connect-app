@@ -156,7 +156,7 @@ const CATEGORY_BADGE_COLORS: Record<string, string> = {
   holiday: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   meeting: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   deadline: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  company: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  company: 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400',
   team: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   training: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
 };
@@ -403,13 +403,13 @@ export default function CalendarPage(): ReactNode {
                         relative flex flex-col items-center justify-start p-1.5 min-h-[3.5rem]
                         border border-zinc-100 dark:border-zinc-800 transition-colors text-sm
                         ${isCurrentMonth ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-600'}
-                        ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
+                        ${isSelected ? 'bg-slate-50 dark:bg-slate-950/40 border-slate-300 dark:border-slate-700' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}
                       `}
                     >
                       <span
                         className={`
                           inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium
-                          ${isToday ? 'bg-indigo-600 text-white' : ''}
+                          ${isToday ? 'bg-slate-900 text-white' : ''}
                         `}
                       >
                         {date.getDate()}
@@ -419,11 +419,11 @@ export default function CalendarPage(): ReactNode {
                           {dayEvents.slice(0, 3).map((ev) => (
                             <div
                               key={ev.id}
-                              className={`h-1 w-1 rounded-full ${ev.source === 'google' ? 'bg-indigo-500' : 'bg-emerald-500'}`}
+                              className={`h-1 w-1 rounded-full ${ev.source === 'google' ? 'bg-slate-800' : 'bg-emerald-500'}`}
                             />
                           ))}
                           {dayEvents.length > 3 && (
-                            <span className="text-[10px] text-indigo-500 ml-0.5">+{dayEvents.length - 3}</span>
+                            <span className="text-[10px] text-slate-500 ml-0.5">+{dayEvents.length - 3}</span>
                           )}
                         </div>
                       )}
@@ -475,7 +475,7 @@ export default function CalendarPage(): ReactNode {
                           </Badge>
                         )}
                         {event.source === 'google' && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400">
                             Google
                           </Badge>
                         )}
@@ -486,7 +486,7 @@ export default function CalendarPage(): ReactNode {
                             href={buildGCalTemplateUrl(event)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-zinc-400 hover:text-indigo-500 transition-colors"
+                            className="text-zinc-400 hover:text-slate-500 transition-colors"
                             title="Add to Google Calendar"
                           >
                             <CalendarPlus className="h-3.5 w-3.5" />
@@ -497,7 +497,7 @@ export default function CalendarPage(): ReactNode {
                             href={event.htmlLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-zinc-400 hover:text-indigo-500 transition-colors"
+                            className="text-zinc-400 hover:text-slate-500 transition-colors"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>

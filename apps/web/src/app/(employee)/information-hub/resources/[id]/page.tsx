@@ -163,7 +163,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
 
           <div className="flex items-center gap-3 mt-4">
             <Button
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
+              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md"
               onClick={() => {
                 if (isBookmarked) {
                   removeBookmark.mutate(resource.id, {

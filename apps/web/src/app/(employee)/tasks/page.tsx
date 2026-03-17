@@ -210,7 +210,7 @@ export default function MyTasksPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-indigo-600">{stats.inProgress}</p>
+            <p className="text-2xl font-bold text-slate-700">{stats.inProgress}</p>
           </CardContent>
         </Card>
         <Card>

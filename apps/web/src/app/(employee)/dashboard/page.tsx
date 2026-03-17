@@ -13,13 +13,14 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
 import { useCalendarEvents } from '@/hooks/useGoogleCalendar';
+import { useMilestones } from '@/hooks/useMilestones';
 import { useMyProbation } from '@/hooks/useMyProbation';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useRoleMetadata';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import KPIEntryWidget from './components/KPIEntryWidget';
-import { Badge, Button, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
+import { Badge, Button, MilestoneBanner, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
 import type { KPICardData } from '@hr-portal/ui';
 import {
   Bell,
@@ -158,6 +159,10 @@ export default function DashboardPage(): ReactNode {
   const probationData = probationResponse?.data ?? null;
   const isOnProbation = probationResponse?.onProbation ?? false;
 
+  // Milestones — upcoming birthdays & anniversaries
+  const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 14 });
+  const milestones = milestonesData?.data ?? [];
+
   // Onboarding profile — hide sections when completed
   const { data: onboardingProfileData, isLoading: isOnboardingLoading } = useOnboardingProfile();
   const onboardingProfile = onboardingProfileData?.data ?? null;
@@ -212,6 +217,9 @@ export default function DashboardPage(): ReactNode {
             </p>
           </div>
         </div>
+
+        {/* Milestone Banner — upcoming birthdays & anniversaries */}
+        <MilestoneBanner milestones={milestones} isLoading={milestonesLoading} />
 
         {/* Stats Row */}
         <div data-tour="stat-cards">
@@ -321,7 +329,7 @@ export default function DashboardPage(): ReactNode {
                     </span>
                     <Link
                       href="/onboarding"
-                      className="inline-flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                      className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
                     >
                       View checklist
                       <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />

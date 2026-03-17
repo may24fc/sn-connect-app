@@ -5,6 +5,7 @@ import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvo
 import { convertAmount, getExchangeRateText } from '@/lib/fx/rates';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateRange } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import {
   Button,
   Card,
@@ -21,7 +22,6 @@ import {
   Input,
   InvoiceStatusBadge,
   Label,
-  ProgressTimeline,
   Separator,
   Table,
   TableBody,
@@ -32,9 +32,8 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import type { ProgressTimelineStep } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { Download, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, Download, Eye, EyeOff } from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
@@ -91,23 +90,12 @@ function InvoiceDetailDialog({
   const amount = (v: number, currencyCode = sourceCurrency) =>
     showAmounts ? formatCurrency(v, currencyCode) : MASKED_AMOUNT;
 
-  const rawSteps = [
+  const timelineSteps = [
     { label: 'Created',   date: invoice.created_at,   done: true },
     { label: 'Submitted', date: invoice.submitted_at, done: !!invoice.submitted_at },
     { label: 'Approved',  date: invoice.approved_at,  done: !!invoice.approved_at },
     ...(invoice.paid_at ? [{ label: 'Paid', date: invoice.paid_at, done: true }] : []),
   ];
-
-  const timelineSteps: ProgressTimelineStep[] = rawSteps.map((step, i) => {
-    const nextDone = rawSteps[i + 1]?.done ?? false;
-    return {
-      label: step.label,
-      description: step.date ? formatDate(step.date) : undefined,
-      status: step.done
-        ? (nextDone || i === rawSteps.length - 1 ? 'completed' : 'current')
-        : 'upcoming',
-    };
-  });
 
   const handleDownloadPDF = () => { window.print(); };
 
@@ -188,7 +176,7 @@ function InvoiceDetailDialog({
             </div>
             <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex items-center justify-between">
               <span className="text-sm font-semibold">Net Amount</span>
-              <span className="text-sm font-bold tabular-nums text-indigo-600 dark:text-indigo-400">
+              <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-400">
                 {amount(Number(invoice.net_amount || 0), sourceCurrency)}
               </span>
             </div>
@@ -217,7 +205,51 @@ function InvoiceDetailDialog({
             <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">
               Timeline
             </p>
-            <ProgressTimeline steps={timelineSteps} />
+            <div className="relative">
+              {timelineSteps.map((step, index) => (
+                <div key={step.label} className="flex gap-3">
+                  {/* Dot + vertical line column */}
+                  <div className="relative flex flex-col items-center">
+                    <div
+                      className={cn(
+                        'relative z-10 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full',
+                        step.done
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-zinc-200 dark:bg-zinc-700',
+                      )}
+                    >
+                      {step.done ? (
+                        <CheckCircle2 className="h-3 w-3" />
+                      ) : (
+                        <div className="h-1.5 w-1.5 rounded-full bg-zinc-400" />
+                      )}
+                    </div>
+                    {index < timelineSteps.length - 1 && (
+                      <div
+                        className={cn(
+                          'w-px flex-1 mt-1 min-h-[1.5rem]',
+                          step.done ? 'bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700',
+                        )}
+                      />
+                    )}
+                  </div>
+                  {/* Step text */}
+                  <div className={cn('min-w-0', index < timelineSteps.length - 1 ? 'pb-4' : 'pb-0')}>
+                    <p
+                      className={cn(
+                        'text-sm font-medium leading-tight',
+                        step.done ? 'text-foreground' : 'text-muted-foreground',
+                      )}
+                    >
+                      {step.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground tabular-nums mt-0.5">
+                      {step.date ? formatDate(step.date) : '\u2014'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -814,11 +846,13 @@ export default function InvoicePage() {
                   )}
                 </span>
               </div>
-              {convertedAmount !== null && sourceCurrency !== targetCurrency && (
+              {sourceCurrency !== targetCurrency && (
                 <div className="mt-2 flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Converted Amount</span>
                   <span className="font-semibold text-base">
-                    {formatCurrency(Number(convertedAmount || 0), targetCurrency)}
+                    {convertedAmount !== null
+                      ? formatCurrency(Number(convertedAmount || 0), targetCurrency)
+                      : '—'}
                   </span>
                 </div>
               )}

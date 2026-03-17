@@ -73,7 +73,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
 };
 
 const NOTIFICATION_COLORS: Record<NotificationType, string> = {
-  task_assigned: 'text-indigo-500',
+  task_assigned: 'text-slate-500',
   task_due: 'text-amber-500',
   report_submitted: 'text-blue-500',
   report_approved: 'text-emerald-500',
@@ -305,7 +305,7 @@ export default function NotificationsPage(): ReactNode {
                 <button
                   type="button"
                   onClick={toggleSelectAll}
-                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                  className="text-xs text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium"
                 >
                   {selectedIds.size === notifications.length ? 'Deselect All' : 'Select All'}
                 </button>
@@ -379,8 +379,8 @@ export default function NotificationsPage(): ReactNode {
                     className={`group flex items-start gap-3 px-6 py-4 cursor-pointer transition-colors ${
                       notification.is_read
                         ? 'bg-card hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                        : 'bg-indigo-50/30 dark:bg-indigo-950/10 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20'
-                    } ${isSelected ? 'ring-2 ring-inset ring-indigo-500/30' : ''}`}
+                        : 'bg-slate-50/30 dark:bg-slate-950/10 hover:bg-slate-50/50 dark:hover:bg-slate-950/20'
+                    } ${isSelected ? 'ring-2 ring-inset ring-slate-500/30' : ''}`}
                   >
                     {/* Checkbox */}
                     <input
@@ -388,7 +388,7 @@ export default function NotificationsPage(): ReactNode {
                       checked={isSelected}
                       onChange={() => toggleSelect(notification.id)}
                       onClick={(e) => e.stopPropagation()}
-                      className="mt-1 rounded border-zinc-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500"
+                      className="mt-1 rounded border-zinc-300 dark:border-zinc-600 text-slate-700 focus:ring-slate-500"
                     />
 
                     {/* Icon */}
@@ -421,7 +421,7 @@ export default function NotificationsPage(): ReactNode {
                             {notification.title}
                           </p>
                           {!notification.is_read && (
-                            <span className="flex-shrink-0 h-2 w-2 rounded-full bg-indigo-600" />
+                            <span className="flex-shrink-0 h-2 w-2 rounded-full bg-slate-900" />
                           )}
                         </div>
                         <Badge variant="secondary" className="text-xs flex-shrink-0">

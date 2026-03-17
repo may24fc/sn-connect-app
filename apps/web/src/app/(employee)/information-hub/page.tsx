@@ -377,7 +377,7 @@ export default function InformationHubPage() {
           )}
 
           {featuredResources.length > 0 ? (
-            <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-950/50 dark:to-indigo-900/50 rounded-lg p-6 border border-indigo-200 dark:border-indigo-800">
+            <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-950/50 dark:to-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3 flex items-center gap-2">
                 <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
                 Featured Resources
@@ -472,7 +472,7 @@ export default function InformationHubPage() {
                     <span className="text-zinc-700 dark:text-zinc-300">{resource.title}</span>
                     <Link
                       href={`/information-hub/resources/${resource.id}`}
-                      className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                      className="text-slate-700 dark:text-slate-400 hover:underline"
                     >
                       Open
                     </Link>

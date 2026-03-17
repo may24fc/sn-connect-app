@@ -308,7 +308,7 @@ export default function InternDashboardPage(): ReactNode {
                   </span>
                   <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
+                      className="h-full bg-slate-900 dark:bg-slate-800 rounded-full"
                       style={{
                         width: `${Math.min(
                           ((new Date().getTime() - new Date(profile.startDate).getTime()) /
@@ -393,7 +393,7 @@ function InternSetupRedirect(): ReactNode {
   return (
     <div className="h-full flex flex-col items-center justify-center gap-4">
       <GraduationCap
-        className="h-10 w-10 text-indigo-600 dark:text-indigo-400 animate-pulse"
+        className="h-10 w-10 text-slate-700 dark:text-slate-400 animate-pulse"
         strokeWidth={1.5}
       />
       <div className="text-center">

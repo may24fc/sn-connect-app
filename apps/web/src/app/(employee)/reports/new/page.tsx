@@ -270,7 +270,7 @@ export default function NewReportPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-indigo-600" />
+            <FileText className="h-5 w-5 text-slate-700" />
             Report Details
           </CardTitle>
         </CardHeader>
