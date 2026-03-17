@@ -190,7 +190,7 @@ export default function NewResourcePage() {
             <Button
               onClick={() => create(true)}
               disabled={createResource.isPending || !canPublish}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-slate-900 hover:bg-slate-800 text-white"
             >
               <Send className="w-4 h-4 mr-2" />
               {createResource.isPending ? 'Publishing...' : 'Publish'}
@@ -337,7 +337,7 @@ export default function NewResourcePage() {
               onClick={() => setIsPublic((v) => !v)}
               className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
                 isPublic
-                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950 dark:border-indigo-800'
+                  ? 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-950 dark:border-slate-800'
                   : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900'
               }`}
             >

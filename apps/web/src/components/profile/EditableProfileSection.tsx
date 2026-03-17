@@ -63,7 +63,7 @@ function ViewField({ field }: { field: EditableField }): React.ReactNode {
         href={field.href}
         target={field.isExternal ? '_blank' : undefined}
         rel={field.isExternal ? 'noopener noreferrer' : undefined}
-        className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+        className="text-sm text-slate-700 dark:text-slate-400 hover:underline inline-flex items-center gap-1"
       >
         {displayValue}
       </a>

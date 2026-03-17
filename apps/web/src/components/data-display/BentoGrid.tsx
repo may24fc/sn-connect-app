@@ -5,7 +5,7 @@ import type * as React from 'react';
 
 /**
  * BentoGrid - A flexible grid layout for dashboard cards.
- * Follows the Titanium & Indigo design system.
+ * Follows the Navy & Gold design system.
  */
 
 interface BentoGridProps {
@@ -77,7 +77,7 @@ export function BentoCard({
         colSpanClasses[colSpan],
         rowSpanClasses[rowSpan],
         interactive &&
-          'transition-all hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-card-hover cursor-pointer',
+          'transition-all hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-card-hover cursor-pointer',
         onClick && 'text-left w-full',
         className
       )}

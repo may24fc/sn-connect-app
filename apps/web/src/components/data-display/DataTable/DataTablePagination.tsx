@@ -34,7 +34,7 @@ export function DataTablePagination<TData>({
           className={cn(
             'h-7 px-2 text-sm bg-card',
             'border border-border rounded-md',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600'
+            'focus:outline-none focus:ring-2 focus:ring-slate-600/20 focus:border-slate-600'
           )}
         >
           {pageSizeOptions.map((size) => (

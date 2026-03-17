@@ -4,7 +4,6 @@ import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
-import { useMilestones } from '@/hooks/useMilestones';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { type ProbationRecord, useCompleteProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
@@ -27,7 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
   Input,
-  MilestoneFeed,
   Progress,
   Select,
   SelectContent,
@@ -143,7 +141,7 @@ function StageIndicator({
                     ? 'bg-amber-500 dark:bg-amber-400'
                     : status === 'extended'
                       ? 'bg-orange-500 dark:bg-orange-400'
-                      : 'bg-indigo-500 dark:bg-indigo-400'
+                      : 'bg-slate-800 dark:bg-slate-400'
                   : 'bg-zinc-200 dark:bg-zinc-700'
             }`}
           />
@@ -245,7 +243,6 @@ function formatDateTime(dateString: string): string {
 
 export default function EmployeeManagementPage(): ReactNode {
   const router = useRouter();
-  const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
   const queryClient = useQueryClient();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('probation');
@@ -380,30 +377,6 @@ export default function EmployeeManagementPage(): ReactNode {
         />
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-base">Upcoming Milestones</CardTitle>
-              <CardDescription>Birthdays and work anniversaries in the next 30 days</CardDescription>
-            </div>
-            {milestonesData?.summary && (
-              <Badge variant="secondary" className="text-xs">
-                {milestonesData.summary.total} upcoming
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <MilestoneFeed
-            milestones={milestonesData?.data ?? []}
-            isLoading={milestonesLoading}
-            maxItems={6}
-            {...(milestonesData?.grouped ? { grouped: milestonesData.grouped } : {})}
-          />
-        </CardContent>
-      </Card>
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -429,7 +402,7 @@ export default function EmployeeManagementPage(): ReactNode {
         <TabsContent value="probation" className="mt-4">
           {probationLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
             </div>
           ) : filteredProbation.length === 0 ? (
             <Card>
@@ -492,7 +465,7 @@ export default function EmployeeManagementPage(): ReactNode {
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
                                 <AvatarImage src={emp.avatarUrl} />
-                                <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                                <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
                                   {getInitials(emp.name)}
                                 </AvatarFallback>
                               </Avatar>
@@ -576,7 +549,7 @@ export default function EmployeeManagementPage(): ReactNode {
                             <div className="flex items-center gap-3 min-w-0">
                               <Avatar className="h-8 w-8 shrink-0">
                                 <AvatarImage src={emp.avatarUrl} />
-                                <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                                <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
                                   {getInitials(emp.name)}
                                 </AvatarFallback>
                               </Avatar>
@@ -606,7 +579,7 @@ export default function EmployeeManagementPage(): ReactNode {
                                             ? 'bg-amber-500'
                                             : emp.status === 'extended'
                                               ? 'bg-orange-500'
-                                              : 'bg-indigo-500'
+                                              : 'bg-slate-800'
                                           : 'bg-zinc-200 dark:bg-zinc-700'
                                     }`}
                                   />

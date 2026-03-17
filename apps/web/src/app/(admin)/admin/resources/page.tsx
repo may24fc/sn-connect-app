@@ -106,7 +106,7 @@ export default function AdminResourcesPage() {
             </DropdownMenu>
             <Button
               asChild
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
+              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md font-medium"
             >
               <Link href="/admin/resources/new">Create New</Link>
             </Button>

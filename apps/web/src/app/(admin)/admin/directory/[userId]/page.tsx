@@ -184,7 +184,7 @@ function DetailRow({
             href={value}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            className="text-sm text-slate-700 dark:text-slate-400 hover:underline flex items-center gap-1"
           >
             {value}
             <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
@@ -257,7 +257,7 @@ function ReviewDialog({
                     <p className="text-sm text-zinc-600 dark:text-zinc-300">{change.old || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] text-indigo-500">Proposed</p>
+                    <p className="text-[11px] text-slate-500">Proposed</p>
                     <p className="text-sm text-zinc-900 dark:text-zinc-100 font-medium">
                       {change.new || '—'}
                     </p>
@@ -389,7 +389,7 @@ export default function DirectoryDetailPage({
         <div className="flex items-center gap-3 flex-1">
           <Avatar className="h-12 w-12">
             <AvatarImage src={entry.avatar_url || undefined} />
-            <AvatarFallback className="text-sm bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+            <AvatarFallback className="text-sm bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
               {getInitials(entry.full_name || 'U')}
             </AvatarFallback>
           </Avatar>

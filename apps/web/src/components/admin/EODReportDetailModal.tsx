@@ -101,7 +101,7 @@ export function EODReportDetailModal({
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base tracking-tight">
-            <ListChecks className="h-5 w-5 text-indigo-600" />
+            <ListChecks className="h-5 w-5 text-slate-700" />
             End of Day Report
           </DialogTitle>
           <DialogDescription>Submitted on {formatDate(log.log_date)}</DialogDescription>
@@ -111,7 +111,7 @@ export function EODReportDetailModal({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+              <AvatarFallback className="text-xs bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -176,7 +176,7 @@ export function EODReportDetailModal({
         {log.learnings && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-indigo-600" />
+              <BookOpen className="h-4 w-4 text-slate-700" />
               <Label className="text-sm font-medium">Learnings</Label>
             </div>
             <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-3">
@@ -204,10 +204,10 @@ export function EODReportDetailModal({
             <Separator />
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-indigo-600" />
+                <MessageSquare className="h-4 w-4 text-slate-700" />
                 <Label className="text-sm font-medium">Supervisor Notes</Label>
               </div>
-              <div className="rounded-md border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/20 p-3">
+              <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 p-3">
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
                   {log.supervisor_notes}
                 </p>

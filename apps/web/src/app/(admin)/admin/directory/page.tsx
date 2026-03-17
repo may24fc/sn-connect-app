@@ -20,7 +20,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Input,
+  Label,
   MultiSelectFilter,
   Select,
   SelectContent,
@@ -42,12 +48,13 @@ import {
   ChevronRight,
   Download,
   Eye,
+  MoreHorizontal,
+  Pencil,
   Search,
   Target,
   Trash2,
   Users,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
 
@@ -90,7 +97,7 @@ export default function AdminDirectoryPage(): ReactNode {
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const isSuperAdmin = user?.role === 'super_admin';
+  const isAdminOrSuperAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const [search, setSearch] = useState('');
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
@@ -104,16 +111,34 @@ export default function AdminDirectoryPage(): ReactNode {
   // Delete employee state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<DirectoryEntry | null>(null);
+
+  // Edit employee state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<DirectoryEntry | null>(null);
+  const [editDepartment, setEditDepartment] = useState('');
+  const [editPosition, setEditPosition] = useState('');
   const { addToast } = useToast();
 
   const deleteEmployeeMutation = useMutation({
-    mutationFn: async (employeeId: string) => {
-      const response = await fetch(`/api/employees/${employeeId}`, {
+    mutationFn: async (entry: DirectoryEntry) => {
+      // If the user has an employee record, delete that; otherwise delete the user record
+      if (entry.employee_id) {
+        const response = await fetch(`/api/employees/${entry.employee_id}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ error: 'Failed to remove employee' }));
+          throw new Error(error.error || 'Failed to remove employee');
+        }
+        return response.json();
+      }
+      // No employee record – soft-delete the user record
+      const response = await fetch(`/api/users/${entry.user_id}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to delete employee' }));
-        throw new Error(error.error || 'Failed to delete employee');
+        const error = await response.json().catch(() => ({ error: 'Failed to remove user' }));
+        throw new Error(error.error || 'Failed to remove user');
       }
       return response.json();
     },
@@ -129,9 +154,52 @@ export default function AdminDirectoryPage(): ReactNode {
     },
   });
 
+  const updateEmployeeMutation = useMutation({
+    mutationFn: async ({ employeeId, data }: { employeeId: string; data: { department?: string; position?: string } }) => {
+      const response = await fetch(`/api/employees/${employeeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to update employee' }));
+        throw new Error(error.error || 'Failed to update employee');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setEditDialogOpen(false);
+      setEmployeeToEdit(null);
+      addToast({ title: 'Employee updated', variant: 'success' });
+    },
+    onError: () => {
+      addToast({ title: 'Failed to update employee', variant: 'error' });
+    },
+  });
+
   const handleDeleteClick = (entry: DirectoryEntry) => {
     setEmployeeToDelete(entry);
     setDeleteDialogOpen(true);
+  };
+
+  const handleEditClick = (entry: DirectoryEntry) => {
+    setEmployeeToEdit(entry);
+    setEditDepartment(entry.department_name || '');
+    setEditPosition(entry.position || '');
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = () => {
+    if (!employeeToEdit?.employee_id) return;
+    updateEmployeeMutation.mutate({
+      employeeId: employeeToEdit.employee_id,
+      data: {
+        department: editDepartment,
+        position: editPosition,
+      },
+    });
   };
 
   const filters: DirectoryFilters = {
@@ -247,7 +315,7 @@ export default function AdminDirectoryPage(): ReactNode {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-2xl font-semibold text-indigo-600 dark:text-indigo-400 tabular-nums">
+              <p className="text-2xl font-semibold text-slate-700 dark:text-slate-400 tabular-nums">
                 {metadata.interns}
               </p>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">Interns</p>
@@ -397,7 +465,7 @@ export default function AdminDirectoryPage(): ReactNode {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
             </div>
           ) : isError ? (
             <div className="flex items-center justify-center py-12 text-sm text-red-500">
@@ -434,7 +502,7 @@ export default function AdminDirectoryPage(): ReactNode {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={entry.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                            <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
                               {getInitials(entry.full_name || 'U')}
                             </AvatarFallback>
                           </Avatar>
@@ -486,45 +554,60 @@ export default function AdminDirectoryPage(): ReactNode {
                       </TableCell>
                       <TableCell>
                         <div
-                          className="flex items-center gap-1"
+                          className="flex items-center justify-end"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Link href={`/admin/directory/${entry.user_id}`}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0"
-                              title="View Details"
-                            >
-                              <Eye className="h-3.5 w-3.5" strokeWidth={1.5} />
-                            </Button>
-                          </Link>
-                          {entry.employee_id && (
-                            <Link href={`/admin/performance/employee/${entry.employee_id}`}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="h-7 w-7 p-0"
-                                title="View Performance"
+                                title="Actions"
                               >
-                                <Target className="h-3.5 w-3.5" strokeWidth={1.5} />
+                                <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
                               </Button>
-                            </Link>
-                          )}
-                          {isSuperAdmin && entry.employee_id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                              title="Remove Employee"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(entry);
-                              }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                            </Button>
-                          )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => router.push(`/admin/directory/${entry.user_id}`)}
+                              >
+                                <Eye className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                View Details
+                              </DropdownMenuItem>
+                              {entry.employee_id && (
+                                <DropdownMenuItem
+                                  onClick={() => router.push(`/admin/performance/employee/${entry.employee_id}`)}
+                                >
+                                  <Target className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                  View Performance
+                                </DropdownMenuItem>
+                              )}
+                              {isAdminOrSuperAdmin && entry.employee_id && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditClick(entry)}
+                                  >
+                                    <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                    Edit Department & Position
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {isAdminOrSuperAdmin && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                                    onClick={() => handleDeleteClick(entry)}
+                                  >
+                                    <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                    Remove
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -565,13 +648,78 @@ export default function AdminDirectoryPage(): ReactNode {
             <Button
               variant="destructive"
               onClick={() => {
-                if (employeeToDelete?.employee_id) {
-                  deleteEmployeeMutation.mutate(employeeToDelete.employee_id);
+                if (employeeToDelete) {
+                  deleteEmployeeMutation.mutate(employeeToDelete);
                 }
               }}
               disabled={deleteEmployeeMutation.isPending}
             >
               {deleteEmployeeMutation.isPending ? 'Removing...' : 'Remove Employee'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Edit Employee
+            </DialogTitle>
+            <DialogDescription>
+              Update department and position for{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {employeeToEdit?.full_name}
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-department">Department</Label>
+              <Select
+                value={editDepartment}
+                onValueChange={setEditDepartment}
+              >
+                <SelectTrigger id="edit-department">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(metadata?.availableDepartments || []).map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-position">Position</Label>
+              <Input
+                id="edit-position"
+                value={editPosition}
+                onChange={(e) => setEditPosition(e.target.value)}
+                placeholder="Enter position title"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditDialogOpen(false);
+                setEmployeeToEdit(null);
+              }}
+              disabled={updateEmployeeMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditSubmit}
+              disabled={updateEmployeeMutation.isPending}
+            >
+              {updateEmployeeMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

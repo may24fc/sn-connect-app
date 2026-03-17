@@ -275,7 +275,7 @@ export default function AdminReportDetailPage({
             <ul className="space-y-2">
               {noteSections.nextWeekPlans.map((plan, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
-                  <span className="text-indigo-600 font-bold mt-0.5 flex-shrink-0">
+                  <span className="text-slate-700 font-bold mt-0.5 flex-shrink-0">
                     {index + 1}.
                   </span>
                   <span>{plan}</span>

@@ -24,8 +24,8 @@ const STATUS_COLUMNS: Array<{
   {
     value: 'in_progress',
     label: 'In Progress',
-    headerColor: 'bg-indigo-100 dark:bg-indigo-900/50',
-    dropZoneColor: 'bg-indigo-50/30 dark:bg-indigo-950/30',
+    headerColor: 'bg-slate-100 dark:bg-slate-900/50',
+    dropZoneColor: 'bg-slate-50/30 dark:bg-slate-950/30',
   },
   {
     value: 'completed',
@@ -174,7 +174,7 @@ export function TaskKanbanBoard({
             <div
               className={`flex flex-1 flex-col gap-2 rounded-md border-2 p-2 transition-colors min-h-[200px] ${
                 isDropTarget
-                  ? 'border-indigo-400 bg-indigo-50/50 dark:border-indigo-600 dark:bg-indigo-950/30'
+                  ? 'border-slate-400 bg-slate-50/50 dark:border-slate-600 dark:bg-slate-950/30'
                   : `border-zinc-200 dark:border-zinc-800 ${column.dropZoneColor}`
               }`}
               onDragOver={(e) => handleDragOver(e, column.value)}
@@ -237,7 +237,7 @@ function TaskKanbanCard({
                 className="block"
                 onClick={(e) => e.stopPropagation()}
               >
-                <p className="text-sm font-medium leading-tight hover:text-indigo-600 dark:hover:text-indigo-400 line-clamp-2">
+                <p className="text-sm font-medium leading-tight hover:text-slate-700 dark:hover:text-slate-400 line-clamp-2">
                   {task.title}
                 </p>
               </Link>

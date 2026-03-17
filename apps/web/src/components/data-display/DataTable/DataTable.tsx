@@ -22,7 +22,7 @@ import { DataTablePagination } from './DataTablePagination';
 /**
  * A professional-grade data table built on TanStack Table v8.
  * Supports sorting, filtering, row selection, and pagination.
- * Follows the Titanium & Indigo design system.
+ * Follows the Navy & Gold design system.
  */
 export function DataTable<TData>({
   columns,
@@ -188,7 +188,7 @@ export function DataTable<TData>({
                 className={cn(
                   'h-10 transition-colors',
                   onRowClick && 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-                  row.getIsSelected() && 'bg-indigo-50 dark:bg-indigo-950/30'
+                  row.getIsSelected() && 'bg-slate-50 dark:bg-slate-950/30'
                 )}
               >
                 {row.getVisibleCells().map((cell) => (

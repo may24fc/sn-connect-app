@@ -172,7 +172,7 @@ export default function AdminAnnouncementsPage() {
             </DropdownMenu>
             <Button
               asChild
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium"
+              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md font-medium"
             >
               <Link href="/admin/announcements/new">Create New</Link>
             </Button>
@@ -256,7 +256,7 @@ export default function AdminAnnouncementsPage() {
                   >
                     <TableCell className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                       <div className="flex items-center gap-2">
-                        {announcement.is_pinned && <Pin className="h-3.5 w-3.5 text-indigo-600" />}
+                        {announcement.is_pinned && <Pin className="h-3.5 w-3.5 text-slate-700" />}
                         <span className="truncate max-w-[300px]">{announcement.title}</span>
                       </div>
                     </TableCell>

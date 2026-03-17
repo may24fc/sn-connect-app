@@ -14,14 +14,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMilestones } from '@/hooks/useMilestones';
 import { usePendingApprovals } from '@/hooks/usePendingApprovals';
-import { Button, MilestoneFeed, PendingApprovalsCard } from '@hr-portal/ui';
+import { useRecentActivity } from '@/hooks/useRecentActivity';
+import { Button, MilestoneBanner, PendingApprovalsCard } from '@hr-portal/ui';
 import {
-  CalendarDays,
   CheckCircle,
   ChevronRight,
   ClipboardList,
   FileText,
   GraduationCap,
+  Loader2,
   Target,
   Users,
 } from 'lucide-react';
@@ -64,6 +65,18 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
+function formatRelativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 export default function AdminDashboardPage(): ReactNode {
   const { user } = useAuth();
   const router = useRouter();
@@ -73,6 +86,7 @@ export default function AdminDashboardPage(): ReactNode {
   const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
   const { data: pendingData, isLoading: pendingLoading } = usePendingApprovals();
   const { data: statsData, isLoading: statsLoading } = useDashboardStats();
+  const { data: activityData, isLoading: activityLoading } = useRecentActivity(8);
 
   const stats = {
     totalEmployees: statsData?.totalEmployees ?? 0,
@@ -81,13 +95,7 @@ export default function AdminDashboardPage(): ReactNode {
     recentHires: statsData?.recentHires ?? 0,
   };
 
-  // Recent activity placeholder — will be wired when audit_logs API is available
-  const recentActivities: Array<{
-    id: string;
-    action: string;
-    employee: string;
-    timestamp: string;
-  }> = [];
+  const recentActivities = activityData ?? [];
 
   return (
     <div className="h-full space-y-6">
@@ -108,6 +116,12 @@ export default function AdminDashboardPage(): ReactNode {
         data={pendingData ?? null}
         isLoading={pendingLoading}
         onNavigate={(path) => router.push(path)}
+      />
+
+      {/* Milestone Banner — upcoming birthdays & anniversaries */}
+      <MilestoneBanner
+        milestones={milestonesData?.data ?? []}
+        isLoading={milestonesLoading}
       />
 
       {/* Stats Row */}
@@ -157,39 +171,25 @@ export default function AdminDashboardPage(): ReactNode {
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
-        {/* Milestones - Birthdays & Anniversaries */}
-        <BentoCard colSpan={2} data-tour="milestones">
-          <BentoCardHeader>
-            <BentoCardTitle icon={<CalendarDays className="h-4 w-4" strokeWidth={1.5} />}>
-              Events
-            </BentoCardTitle>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <MilestoneFeed
-              milestones={milestonesData?.data || []}
-              {...(milestonesData?.grouped !== undefined && { grouped: milestonesData.grouped })}
-              isLoading={milestonesLoading}
-              maxItems={6}
-              compact
-            />
-          </BentoCardContent>
-        </BentoCard>
-
         {/* Recent Activity Card */}
-        <BentoCard colSpan={2}>
+        <BentoCard colSpan={4}>
           <BentoCardHeader>
             <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
               Recent Activity
             </BentoCardTitle>
-            <Link href="/admin/reports">
+            <Link href="/admin/activity">
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
                 View All
               </Button>
             </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            {recentActivities.length > 0 ? (
-              <div className="space-y-3">
+            {activityLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+              </div>
+            ) : recentActivities.length > 0 ? (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
                 {recentActivities.map((activity) => (
                   <div
                     key={activity.id}
@@ -205,12 +205,12 @@ export default function AdminDashboardPage(): ReactNode {
                           {activity.action}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {activity.employee}
+                          {activity.performedBy}
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 flex-shrink-0">
-                      {activity.timestamp}
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                      {formatRelativeTime(activity.timestamp)}
                     </span>
                   </div>
                 ))}

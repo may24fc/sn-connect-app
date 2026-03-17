@@ -206,7 +206,7 @@ export function AssignEmployeeModal({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-indigo-600" />
+            <Users className="h-5 w-5 text-slate-700" />
             {isEmployee ? 'Assign Employee to Probation Tracker' : 'Assign Intern Details'}
           </DialogTitle>
           <DialogDescription>

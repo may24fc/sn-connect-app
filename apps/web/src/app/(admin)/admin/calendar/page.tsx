@@ -59,7 +59,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   holiday: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   meeting: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   deadline: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  company: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  company: 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400',
   team: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   training: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
 };
@@ -403,7 +403,7 @@ export default function AdminCalendarPage(): ReactNode {
                   updateField('start_time', '');
                   updateField('end_time', '');
                 }}
-                className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-zinc-300 text-slate-700 focus:ring-slate-500"
               />
               <Label htmlFor="evt-allday" className="text-sm">All-day event</Label>
             </div>

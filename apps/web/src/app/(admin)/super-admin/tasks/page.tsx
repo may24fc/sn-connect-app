@@ -39,7 +39,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import { Calendar, LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { Calendar, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
 
@@ -53,6 +53,126 @@ const TASK_CATEGORY_OPTIONS = [
   { value: 'administrative', label: 'Administrative' },
   { value: 'other', label: 'Other' },
 ] as const;
+
+const PRESET_TAGS = [
+  'urgent',
+  'high-priority',
+  'onboarding',
+  'documentation',
+  'review',
+  'follow-up',
+  'blocked',
+  'compliance',
+  'training',
+  'deadline',
+  'meeting',
+  'Q1',
+  'Q2',
+  'Q3',
+  'Q4',
+] as const;
+
+function TagChipsInput({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (tags: string[]) => void;
+}) {
+  const [customInput, setCustomInput] = useState('');
+
+  const togglePreset = (tag: string): void => {
+    if (value.includes(tag)) {
+      onChange(value.filter((t) => t !== tag));
+    } else {
+      onChange([...value, tag]);
+    }
+  };
+
+  const addCustom = (raw: string): void => {
+    const trimmed = raw.trim().toLowerCase().replace(/\s+/g, '-');
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+    }
+    setCustomInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      if (customInput.trim()) addCustom(customInput);
+    } else if (e.key === 'Backspace' && !customInput && value.length > 0) {
+      const last = value[value.length - 1];
+      if (last) onChange(value.slice(0, -1));
+    }
+  };
+
+  const unselectedPresets = PRESET_TAGS.filter((t) => !value.includes(t));
+
+  return (
+    <div className="space-y-3">
+      {/* Selected chips */}
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-950/50 text-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 font-medium"
+            >
+              #{tag}
+              <button
+                type="button"
+                onClick={() => onChange(value.filter((t) => t !== tag))}
+                className="hover:text-slate-900 dark:hover:text-white transition-colors ml-0.5"
+                aria-label={`Remove ${tag}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Preset suggestion chips */}
+      {unselectedPresets.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {unselectedPresets.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => togglePreset(tag)}
+              className="inline-flex items-center gap-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-xs px-2.5 py-1 hover:border-slate-400 hover:text-slate-700 dark:hover:border-slate-500 dark:hover:text-slate-400 transition-colors"
+            >
+              + {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Custom tag input */}
+      <div className="flex items-center gap-2">
+        <Input
+          value={customInput}
+          onChange={(e) => setCustomInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a custom tag and press Enter…"
+          className="h-8 text-xs"
+        />
+        {customInput.trim() && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => addCustom(customInput)}
+            className="h-8 text-xs shrink-0"
+          >
+            Add
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type ViewMode = 'list' | 'board';
 
@@ -83,7 +203,7 @@ export default function TaskManagementPage() {
   const [assignedTo, setAssignedTo] = useState<string>('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [category, setCategory] = useState<TaskCategoryValue | ''>('');
-  const [tagInput, setTagInput] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [tagFilter, setTagFilter] = useState('');
@@ -175,10 +295,7 @@ export default function TaskManagementPage() {
         priority,
         status: 'pending',
         category: category || undefined,
-        tags: tagInput
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
+        tags: selectedTags,
         dueDate: dueDate || undefined,
       });
 
@@ -194,7 +311,7 @@ export default function TaskManagementPage() {
       setAssignedTo('');
       setPriority('medium');
       setCategory('');
-      setTagInput('');
+      setSelectedTags([]);
       setDueDate('');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create task';
@@ -233,7 +350,7 @@ export default function TaskManagementPage() {
         </Badge>
         <Badge variant="secondary">
           In Progress{' '}
-          <span className="ml-1 font-semibold text-indigo-600">{taskStats.in_progress}</span>
+          <span className="ml-1 font-semibold text-slate-700">{taskStats.in_progress}</span>
         </Badge>
         <Badge variant="secondary">
           Cancelled <span className="ml-1 font-semibold text-red-600">{taskStats.cancelled}</span>
@@ -458,11 +575,7 @@ export default function TaskManagementPage() {
 
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">Tags</Label>
-              <Input
-                value={tagInput}
-                onChange={(event) => setTagInput(event.target.value)}
-                placeholder="Comma-separated tags"
-              />
+              <TagChipsInput value={selectedTags} onChange={setSelectedTags} />
             </div>
 
             {/* Assignee - Optional */}
@@ -482,7 +595,7 @@ export default function TaskManagementPage() {
                   {effectiveAssignees.map((assignee) => (
                     <SelectItem key={assignee.id} value={assignee.id}>
                       <span className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-100 text-xs font-medium text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-700 dark:bg-slate-900 dark:text-slate-300">
                           {assignee.name
                             .split(' ')
                             .map((n: string) => n[0])

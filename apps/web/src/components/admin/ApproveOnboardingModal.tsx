@@ -148,7 +148,7 @@ export function ApproveOnboardingModal({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-indigo-600" />
+            <FileText className="h-5 w-5 text-slate-700" />
             Review Onboarding Submission
           </DialogTitle>
           <DialogDescription>

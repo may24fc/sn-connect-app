@@ -89,7 +89,7 @@ function getStatusColor(status: string): string {
       return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20';
     case 'in_progress':
     case 'active':
-      return 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20';
+      return 'text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/20';
     case 'not_started':
     case 'pending':
       return 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800';
@@ -583,7 +583,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                     type="monotone"
                     dataKey="managerRating"
                     name="Manager"
-                    stroke="#4f46e5"
+                    stroke="#0f172a"
                     strokeWidth={2}
                     connectNulls
                   />

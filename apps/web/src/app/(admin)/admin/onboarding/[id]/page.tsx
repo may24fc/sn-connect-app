@@ -80,7 +80,7 @@ export default function OnboardingDetailPage(): ReactNode {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-slate-700" />
       </div>
     );
   }
@@ -131,7 +131,7 @@ export default function OnboardingDetailPage(): ReactNode {
       {/* Header */}
       <div className="flex items-start gap-4">
         <Avatar className="h-14 w-14">
-          <AvatarFallback className="text-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+          <AvatarFallback className="text-lg bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
             {getInitials(fullName)}
           </AvatarFallback>
         </Avatar>

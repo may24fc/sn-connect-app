@@ -268,7 +268,7 @@ export default function ApplicationsPage() {
           ].map((stat) => (
             <Card key={stat.label} className="bg-card border border-border rounded-lg p-4">
               <CardContent className="p-0 flex items-center gap-3">
-                <stat.icon className="h-5 w-5 text-indigo-600" />
+                <stat.icon className="h-5 w-5 text-slate-700" />
                 <div>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">{stat.label}</p>
                   <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50">{stat.value}</p>
@@ -431,7 +431,7 @@ export default function ApplicationsPage() {
                               onClick={() => handleStatusChange(app.id, 'interview')}
                               title="Move to Interview"
                             >
-                              <Users className="h-4 w-4 text-indigo-500" />
+                              <Users className="h-4 w-4 text-slate-500" />
                             </Button>
                           )}
                         </div>
@@ -469,7 +469,7 @@ export default function ApplicationsPage() {
                             {app.full_name}
                           </p>
                           <p className="text-xs text-zinc-500 mt-1">{app.email}</p>
-                          <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                          <p className="text-xs text-slate-700 dark:text-slate-400 mt-1">
                             {app.job_postings?.title || 'Unknown Position'}
                           </p>
                           <p className="text-xs text-zinc-400 mt-2">
@@ -544,7 +544,7 @@ export default function ApplicationsPage() {
                         <span className="text-zinc-500">Email</span>
                         <a
                           href={`mailto:${selectedApp.email}`}
-                          className="text-indigo-600 hover:underline"
+                          className="text-slate-700 hover:underline"
                         >
                           {selectedApp.email}
                         </a>
@@ -593,7 +593,7 @@ export default function ApplicationsPage() {
                               href={resumeSignedUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-indigo-600 hover:underline"
+                              className="text-xs text-slate-700 hover:underline"
                             >
                               Open in new tab ↗
                             </a>
@@ -675,7 +675,7 @@ export default function ApplicationsPage() {
                       size="sm"
                       onClick={() => handleStatusChange(selectedApp.id, 'interview')}
                       disabled={updateStatus.isPending}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                      className="bg-slate-900 hover:bg-slate-800 text-white"
                     >
                       <Users className="h-4 w-4 mr-1" />
                       Move to Interview
@@ -774,7 +774,7 @@ export default function ApplicationsPage() {
                 </Button>
                 <Button
                   onClick={() => setDrawerOpen(false)}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  className="bg-slate-900 hover:bg-slate-800 text-white"
                 >
                   Done
                 </Button>

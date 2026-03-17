@@ -246,7 +246,7 @@ export default function AdminJobsPage() {
             </Button>
             <Button
               onClick={openCreateForm}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-slate-900 hover:bg-slate-800 text-white"
             >
               <Plus className="h-4 w-4 mr-1.5" />
               Create Job
@@ -332,7 +332,7 @@ export default function AdminJobsPage() {
               </p>
               <Button
                 onClick={openCreateForm}
-                className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="mt-2 bg-slate-900 hover:bg-slate-800 text-white"
               >
                 <Plus className="h-4 w-4 mr-1.5" />
                 Create Job
@@ -560,7 +560,7 @@ export default function AdminJobsPage() {
                     id="jp-active"
                     checked={formData.is_active}
                     onChange={(e) => setFormData((p) => ({ ...p, is_active: e.target.checked }))}
-                    className="h-4 w-4 rounded border-zinc-300 text-indigo-600 focus:ring-indigo-500"
+                    className="h-4 w-4 rounded border-zinc-300 text-slate-700 focus:ring-slate-500"
                   />
                   <Label htmlFor="jp-active" className="cursor-pointer">
                     Publish immediately
@@ -576,7 +576,7 @@ export default function AdminJobsPage() {
             <Button
               onClick={handleSubmitForm}
               disabled={!formData.title || !formData.description || createJob.isPending || updateJob.isPending}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-slate-900 hover:bg-slate-800 text-white"
             >
               {createJob.isPending || updateJob.isPending
                 ? 'Saving...'

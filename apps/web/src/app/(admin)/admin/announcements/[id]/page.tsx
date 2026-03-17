@@ -255,7 +255,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
             </Button>
             <Button
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-slate-900 hover:bg-slate-800 text-white"
               onClick={() => publishAnnouncement.mutate(announcement.id, {
                 onSuccess: () => addToast({ title: 'Announcement published', variant: 'success' }),
                 onError: () => addToast({ title: 'Failed to publish', variant: 'error' }),
@@ -321,7 +321,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                   {categoryLabel[announcement.category] ?? announcement.category}
                 </Badge>
                 {announcement.is_pinned && (
-                  <Badge className="bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400">
+                  <Badge className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400">
                     Pinned
                   </Badge>
                 )}
@@ -451,7 +451,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
         <div className="flex gap-2">
           <Button
             size="sm"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="bg-slate-900 hover:bg-slate-800 text-white"
             onClick={() => publishAnnouncement.mutate(announcement.id, {
               onSuccess: () => addToast({ title: 'Announcement published', variant: 'success' }),
               onError: () => addToast({ title: 'Failed to publish', variant: 'error' }),
@@ -502,7 +502,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           <AnnouncementEditor value={content} onChange={setContent} />
           <div className="flex gap-2">
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-slate-900 hover:bg-slate-800 text-white"
               onClick={handleSaveChanges}
               disabled={updateAnnouncement.isPending}
             >
@@ -518,7 +518,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           <TargetingSelector value={targeting} onChange={setTargeting} />
           <div className="flex gap-2">
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-slate-900 hover:bg-slate-800 text-white"
               onClick={handleSaveTargeting}
               disabled={updateAnnouncement.isPending}
             >

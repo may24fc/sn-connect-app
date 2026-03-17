@@ -10,19 +10,24 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRecentActivity } from '@/hooks/useRecentActivity';
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
 import { Badge, Button, ComingSoonDialog, Progress } from '@hr-portal/ui';
+import Link from 'next/link';
 import {
   Activity,
   AlertTriangle,
+  CheckCircle,
   ChevronRight,
+  ClipboardList,
   Database,
   FileText,
-  Lock,
+  Loader2,
   Settings,
   Shield,
   Users,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 // Security alerts remain placeholder until an alerting system is implemented
@@ -46,7 +51,7 @@ const quickActions = [
     title: 'User Management',
     description: 'Manage all users',
     icon: Users,
-    comingSoon: true,
+    href: '/admin/directory',
   },
   {
     title: 'Role Management',
@@ -75,11 +80,27 @@ function getGreeting(): string {
   return 'Good evening';
 }
 
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60_000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHrs = Math.floor(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export default function SuperAdminDashboardPage(): ReactNode {
+  const router = useRouter();
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
   const { data: statsData, isLoading } = useSuperAdminStats();
+  const { data: activityData, isLoading: activityLoading } = useRecentActivity(8);
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [comingSoonFeature, setComingSoonFeature] = useState<string | undefined>();
 
@@ -94,7 +115,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
     auditLogs: statsData?.auditLogsCount ?? 0,
   };
   const userRoleDistribution = statsData?.userRoleDistribution ?? [];
-  const recentAuditLogs = statsData?.recentAuditLogs ?? [];
+  const recentActivities = activityData ?? [];
 
   return (
     <div className="h-full space-y-6">
@@ -161,7 +182,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <Badge variant="warning">{securityAlerts.length}</Badge>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-64 overflow-y-auto">
               {securityAlerts.length > 0 ? (
                 securityAlerts.map((alert) => (
                   <div
@@ -229,7 +250,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
             </Button>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-64 overflow-y-auto">
               {systemHealth.length > 0 ? (
                 systemHealth.map((component) => (
                   <div key={component.component} className="space-y-2">
@@ -298,46 +319,57 @@ export default function SuperAdminDashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
 
-        {/* Recent Audit Logs */}
+        {/* Recent Activity */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
-            <BentoCardTitle icon={<Lock className="h-4 w-4" strokeWidth={1.5} />}>
-              Recent Audit Logs
+            <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
+              Recent Activity
             </BentoCardTitle>
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openComingSoon('Audit Logs')}>
+            <Link href="/super-admin/activity">
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
                 View All
-            </Button>
+              </Button>
+            </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-3">
-              {recentAuditLogs.length > 0 ? (
-                recentAuditLogs.map((log) => (
+            {activityLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+              </div>
+            ) : recentActivities.length > 0 ? (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {recentActivities.map((activity) => (
                   <div
-                    key={log.id}
+                    key={activity.id}
                     className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                   >
                     <div className="flex items-start gap-3">
-                      <Lock
+                      <CheckCircle
                         className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 mt-0.5"
                         strokeWidth={1.5}
                       />
                       <div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                          {log.action}
+                          {activity.action}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {log.details ? `${log.details} • ` : ''}{new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {activity.performedBy}
                         </p>
                       </div>
                     </div>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400 flex-shrink-0">
+                      {formatRelativeTime(activity.timestamp)}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
-                  No recent audit logs
-                </p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <ClipboardList className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" strokeWidth={1.5} />
+                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">No recent activity</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Recent activities will appear here</p>
+              </div>
+            )}
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>
@@ -348,7 +380,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
           <button
             key={action.title}
             type="button"
-            onClick={() => openComingSoon(action.title)}
+            onClick={() => 'href' in action && action.href ? router.push(action.href) : openComingSoon(action.title)}
             className="text-left"
           >
             <div

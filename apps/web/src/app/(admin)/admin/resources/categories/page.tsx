@@ -320,7 +320,7 @@ function CategoryTreeRow({
               <span className="w-5" />
             )}
             {IconComponent && (
-              <IconComponent className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              <IconComponent className="h-4 w-4 text-slate-700 dark:text-slate-400" />
             )}
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{node.name}</span>
             {!node.isActive && (
