@@ -56,7 +56,7 @@ export function ProgressTimeline({
                   step.status === 'completed' &&
                     'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25',
                   step.status === 'current' &&
-                    'border-2 border-indigo-500 bg-indigo-50 dark:bg-indigo-950 shadow-sm shadow-indigo-500/25',
+                    'border-2 border-slate-500 bg-slate-50 dark:bg-slate-950 shadow-sm shadow-slate-500/25',
                   step.status === 'upcoming' &&
                     'border-2 border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800',
                 )}
@@ -68,7 +68,7 @@ export function ProgressTimeline({
                 ) : step.status === 'current' ? (
                   <div
                     className={cn(
-                      'rounded-full bg-indigo-500',
+                      'rounded-full bg-slate-800',
                       isCompact ? 'h-1.5 w-1.5' : 'h-2 w-2',
                     )}
                   />
@@ -103,7 +103,7 @@ export function ProgressTimeline({
                   'leading-tight',
                   isCompact ? 'text-xs' : 'text-sm',
                   step.status === 'completed' && 'font-medium text-foreground',
-                  step.status === 'current' && 'font-semibold text-indigo-600 dark:text-indigo-400',
+                  step.status === 'current' && 'font-semibold text-slate-700 dark:text-slate-400',
                   step.status === 'upcoming' && 'font-medium text-muted-foreground',
                 )}
               >

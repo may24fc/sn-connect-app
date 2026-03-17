@@ -5,11 +5,11 @@ import type * as React from 'react';
 import { cn } from '../utils/cn';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:ring-offset-2',
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600/20 focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-indigo-600 text-white',
+        default: 'border-transparent bg-slate-900 text-white',
         secondary:
           'border-transparent bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
         destructive: 'border-transparent bg-rose-600 text-white',
@@ -25,8 +25,8 @@ const badgeVariants = cva(
           'border-transparent bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400',
         rejected:
           'border-transparent bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
-        indigo:
-          'border-transparent bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400',
+        navy:
+          'border-transparent bg-slate-50 dark:bg-slate-950/50 text-slate-700 dark:text-slate-400',
       },
     },
     defaultVariants: {

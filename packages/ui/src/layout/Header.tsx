@@ -118,7 +118,7 @@ export function Header({
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-80 h-9 pl-9 pr-4 text-sm bg-zinc-100 dark:bg-zinc-800 border-0 rounded-md placeholder:text-zinc-500 focus:ring-2 focus:ring-indigo-600/20 focus:bg-card"
+                className="w-80 h-9 pl-9 pr-4 text-sm bg-zinc-100 dark:bg-zinc-800 border-0 rounded-md placeholder:text-zinc-500 focus:ring-2 focus:ring-slate-600/20 focus:bg-card"
               />
             </div>
           </form>
@@ -178,7 +178,7 @@ export function Header({
             >
               <Avatar className="h-8 w-8">
                 {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
-                <AvatarFallback className="bg-indigo-600 text-white text-xs">
+                <AvatarFallback className="bg-slate-900 text-white text-xs">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>

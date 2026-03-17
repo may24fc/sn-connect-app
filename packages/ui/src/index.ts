@@ -134,6 +134,7 @@ export {
 export { FullScreenPreview, type FullScreenPreviewProps } from './components/documents';
 // Components
 export { AIChatbot, type ChatMessage, type AIChatbotProps, type ConversationItem } from './components/AIChatbot';
+export { ChatInput, type ChatInputProps, type AttachedFile } from './components/ai-chat/ChatInput';
 
 // AI Chat Citation Components
 export {
@@ -258,6 +259,10 @@ export {
 } from './components/internship/InternHoursProgressBar';
 
 // Dashboard Components
+export {
+  MilestoneBanner,
+  type MilestoneBannerProps,
+} from './components/dashboard/MilestoneBanner';
 export {
   MilestoneFeed,
   type MilestoneFeedProps,

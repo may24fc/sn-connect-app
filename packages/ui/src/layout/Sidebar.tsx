@@ -137,7 +137,7 @@ export function Sidebar({
             <img src={logoUrl} alt="Logo" className={cn('h-8 w-auto', collapsed && 'h-6')} />
           ) : (
             <>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white text-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 font-bold text-white text-sm">
                 SN
               </div>
               {!collapsed && (

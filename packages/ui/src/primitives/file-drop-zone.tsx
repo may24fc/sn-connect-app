@@ -440,11 +440,11 @@ export function FileDropZone({
         // Default
         !isDragging &&
           !effectiveDisabled &&
-          'border-zinc-200 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20',
+          'border-zinc-200 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50/40 dark:hover:bg-slate-950/20',
         // Dragging
         isDragging &&
           !effectiveDisabled &&
-          'border-indigo-500 dark:border-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/30 scale-[1.01]',
+          'border-slate-500 dark:border-slate-400 bg-slate-50/60 dark:bg-slate-950/30 scale-[1.01]',
         // Disabled / uploading
         effectiveDisabled &&
           'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 cursor-not-allowed opacity-60',
@@ -485,8 +485,8 @@ export function FileDropZone({
             'flex items-center justify-center rounded-lg transition-all duration-200',
             compact ? 'h-9 w-9 shrink-0' : 'h-12 w-12',
             isDragging && !effectiveDisabled
-              ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400'
-              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/40 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+              ? 'bg-slate-100 dark:bg-slate-900/40 text-slate-700 dark:text-slate-400'
+              : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 group-hover:bg-slate-100 dark:group-hover:bg-slate-900/40 group-hover:text-slate-700 dark:group-hover:text-slate-400'
           )}
         >
           {icon ??
@@ -503,7 +503,7 @@ export function FileDropZone({
             className={cn(
               'text-sm font-medium',
               isDragging && !effectiveDisabled
-                ? 'text-indigo-600 dark:text-indigo-400'
+                ? 'text-slate-700 dark:text-slate-400'
                 : 'text-zinc-700 dark:text-zinc-300'
             )}
           >
@@ -523,7 +523,7 @@ export function FileDropZone({
               'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300',
               'transition-colors',
               !effectiveDisabled &&
-                'group-hover:border-indigo-300 dark:group-hover:border-indigo-700 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                'group-hover:border-slate-300 dark:group-hover:border-slate-700 group-hover:text-slate-700 dark:group-hover:text-slate-400'
             )}
           >
             Browse files
@@ -548,7 +548,7 @@ export function FileDropZone({
         <div className={cn('px-4 pb-3', !compact && 'px-6')}>
           <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
             <div
-              className="h-full rounded-full bg-indigo-600 dark:bg-indigo-500 transition-all duration-300 ease-out"
+              className="h-full rounded-full bg-slate-900 dark:bg-slate-800 transition-all duration-300 ease-out"
               style={{ width: `${Math.min(uploadProgress, 100)}%` }}
             />
           </div>
