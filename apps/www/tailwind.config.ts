@@ -5,20 +5,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary — Indigo (matching apps/web Titanium & Indigo)
+        // Primary — Navy (Trust & Authority brand identity)
         primary: {
-          50: '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          300: '#A5B4FC',
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          700: '#4338CA',
-          800: '#3730A3',
-          900: '#312E81',
-          950: '#1E1B4B',
-          DEFAULT: '#4F46E5',
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#CBD5E1',
+          400: '#94A3B8',
+          500: '#64748B',
+          600: '#475569',
+          700: '#334155',
+          800: '#1E293B',
+          900: '#0F172A',
+          950: '#020617',
+          DEFAULT: '#0F172A',
+        },
+
+        // Accent — Gold (Premium conglomerate accent)
+        accent: {
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#FBBF24',
+          500: '#F59E0B',
+          600: '#CA8A04',
+          700: '#A16207',
+          800: '#854D0E',
+          900: '#713F12',
+          950: '#422006',
+          DEFAULT: '#CA8A04',
         },
 
         // Semantic
@@ -27,17 +43,18 @@ const config: Config = {
         error: { DEFAULT: '#E11D48', foreground: '#FFFFFF' },
 
         // Layout
-        background: '#FAFAFA',
-        foreground: '#09090B',
-        card: { DEFAULT: '#FFFFFF', foreground: '#18181B' },
-        muted: { DEFAULT: '#F4F4F5', foreground: '#71717A' },
-        border: '#E4E4E7',
-        input: '#E4E4E7',
-        ring: '#4F46E5',
+        background: '#F8FAFC',
+        foreground: '#020617',
+        card: { DEFAULT: '#FFFFFF', foreground: '#0F172A' },
+        muted: { DEFAULT: '#F1F5F9', foreground: '#64748B' },
+        border: '#E2E8F0',
+        input: '#E2E8F0',
+        ring: '#0F172A',
       },
 
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Source Sans 3', 'system-ui', '-apple-system', 'sans-serif'],
+        heading: ['Lexend', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
       fontSize: {
@@ -75,7 +92,8 @@ const config: Config = {
         'fade-in': 'fade-in 0.3s ease-out',
         'fade-up': 'fade-up 0.5s ease-out',
         'slide-down': 'slide-down 0.3s ease-out',
-        marquee: 'marquee 30s linear infinite',
+        marquee: 'marquee 35s linear infinite',
+        'marquee-reverse': 'marquee-reverse 28s linear infinite',
       },
 
       keyframes: {
@@ -94,6 +112,10 @@ const config: Config = {
         marquee: {
           '0%': { transform: 'translateX(0%)' },
           '100%': { transform: 'translateX(-50%)' },
+        },
+        'marquee-reverse': {
+          '0%': { transform: 'translateX(-50%)' },
+          '100%': { transform: 'translateX(0%)' },
         },
       },
     },

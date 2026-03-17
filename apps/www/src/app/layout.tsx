@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Source_Sans_3 } from 'next/font/google';
+import { Lexend } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
@@ -7,11 +8,20 @@ import { Footer } from '@/components/layout/Footer';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
 import { Providers } from './providers';
+import { cn } from "@/lib/utils";
 
-const inter = Inter({
+const sourceSans = Source_Sans_3({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-body',
   display: 'swap',
+  weight: ['300', '400', '500', '600', '700'],
+});
+
+const lexend = Lexend({
+  subsets: ['latin'],
+  variable: '--font-heading',
+  display: 'swap',
+  weight: ['300', '400', '500', '600', '700'],
 });
 
 const jsonLd = {
@@ -78,14 +88,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={cn("font-sans", sourceSans.variable, lexend.variable)}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-screen font-sans antialiased">
+      <body className="min-h-screen overflow-x-clip font-sans antialiased">
         <Providers>
           <AnnouncementBanner />
           <ScrollProgress />
