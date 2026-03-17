@@ -99,7 +99,7 @@ export function ErrorFallbackUI({
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/20 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600/20 focus-visible:ring-offset-2"
             >
               <RefreshCw className="h-4 w-4" />
               Try again

@@ -90,7 +90,7 @@ export default function LoginPage(): ReactNode {
         <CardHeader className="space-y-1 text-center pb-2">
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-6">
-            <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-indigo-600 text-white font-bold text-lg mb-4">
+            <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-slate-900 text-white font-bold text-lg mb-4">
               SN
             </div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
@@ -151,7 +151,7 @@ export default function LoginPage(): ReactNode {
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors"
+                  className="text-xs text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -183,7 +183,7 @@ export default function LoginPage(): ReactNode {
 
             <Button
               type="submit"
-              className="h-11 w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-medium rounded-lg transition-all focus:ring-2 focus:ring-indigo-600/20 focus:ring-offset-2 disabled:opacity-60"
+              className="h-11 w-full bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-white text-sm font-medium rounded-lg transition-all focus:ring-2 focus:ring-slate-600/20 focus:ring-offset-2 disabled:opacity-60"
               size="lg"
               disabled={isLoading}
             >
@@ -273,7 +273,7 @@ export default function LoginPage(): ReactNode {
               Need help?{' '}
               <a
                 href="mailto:support@company.com"
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                className="text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
               >
                 Contact IT Support
               </a>
