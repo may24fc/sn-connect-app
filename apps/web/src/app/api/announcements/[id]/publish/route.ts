@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import {
   createNotificationsForUsers,
   getUserDisplayName,
@@ -50,6 +51,14 @@ export async function POST(_: NextRequest, context: RouteContext) {
       message: `${publisherName} published: "${data.title}"`,
       link: `/announcements`,
       metadata: { announcementId: id },
+    });
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'publish_announcement',
+      tableName: 'announcements',
+      recordId: id,
+      metadata: { title: data.title },
     });
 
     return NextResponse.json({ data });

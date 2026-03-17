@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import {
   announcementFiltersSchema,
   createAnnouncementSchema,
@@ -168,6 +169,14 @@ export async function POST(request: NextRequest) {
         metadata: { announcementId: data.id },
       });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'create_announcement',
+      tableName: 'announcements',
+      recordId: data.id,
+      metadata: { title: data.title, status: data.status },
+    });
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

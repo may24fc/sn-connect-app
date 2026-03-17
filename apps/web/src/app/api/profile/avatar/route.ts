@@ -107,6 +107,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Sync avatar_url to public.users so the employee_directory view reflects it for admins
+    await adminClient
+      .from('users')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', user.id);
+
     return NextResponse.json({
       data: { avatar_url: avatarUrl },
     });
@@ -160,6 +166,12 @@ export async function DELETE(): Promise<NextResponse> {
         { status: 500 }
       );
     }
+
+    // Clear avatar_url from public.users so the employee_directory view reflects the removal
+    await adminClient
+      .from('users')
+      .update({ avatar_url: null })
+      .eq('id', user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

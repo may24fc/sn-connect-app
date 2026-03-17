@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import {
   createNotification,
   getUserDisplayName,
@@ -238,6 +239,14 @@ export async function POST(request: NextRequest) {
         metadata: { taskId: data.id, assignedBy: user.id },
       });
     }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'create_task',
+      tableName: 'tasks',
+      recordId: data.id,
+      metadata: { title: data.title, assignedTo: data.assigned_to },
+    });
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

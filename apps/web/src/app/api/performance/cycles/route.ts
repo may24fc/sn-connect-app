@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createReviewCycleSchema, updateReviewCycleSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin } from '../_lib';
@@ -74,6 +75,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create review cycle' }, { status: 500 });
     }
 
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'create_review_cycle',
+      tableName: 'review_cycles',
+      recordId: data.id,
+      metadata: { name: data.name },
+    });
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     console.error('POST /api/performance/cycles error:', error);
@@ -124,6 +133,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update review cycle' }, { status: 500 });
     }
 
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_review_cycle',
+      tableName: 'review_cycles',
+      recordId: parsed.data.id,
+      metadata: { name: data.name },
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('PATCH /api/performance/cycles error:', error);
@@ -152,6 +169,13 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       return NextResponse.json({ error: 'Failed to delete review cycle' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'delete_review_cycle',
+      tableName: 'review_cycles',
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

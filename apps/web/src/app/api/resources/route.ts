@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createResourceSchema, resourceFiltersSchema } from '@/lib/schemas/resource.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isResourceAdmin, normalizeExcerpt } from './_lib';
@@ -150,6 +151,14 @@ export async function POST(request: NextRequest) {
       console.error('Error creating resource:', createError);
       return NextResponse.json({ error: 'Failed to create resource' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'create_resource',
+      tableName: 'resources',
+      recordId: data.id,
+      metadata: { title: data.title, resourceType: data.resource_type },
+    });
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

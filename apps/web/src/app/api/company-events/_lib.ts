@@ -1,6 +1,6 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'] as const;
+const ADMIN_ROLES = ['admin', 'super_admin'] as const;
 
 export interface EventAuthedContext {
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;

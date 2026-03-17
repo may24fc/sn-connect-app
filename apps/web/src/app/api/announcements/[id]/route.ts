@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { updateAnnouncementSchema } from '@/lib/schemas/announcement.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isAnnouncementAdmin, normalizeExcerpt } from '../_lib';
@@ -100,6 +101,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Failed to update announcement' }, { status: 500 });
     }
 
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_announcement',
+      tableName: 'announcements',
+      recordId: id,
+      metadata: { title: data.title },
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/announcements/[id]:', error);
@@ -129,6 +138,13 @@ export async function DELETE(_: NextRequest, context: RouteContext) {
     if (deleteError) {
       return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'delete_announcement',
+      tableName: 'announcements',
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

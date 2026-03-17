@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import {
   createNotification,
   getUserDisplayName,
@@ -85,6 +86,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         metadata: { reportId: id, reviewedBy: user.id, action: parsed.data.action },
       });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: parsed.data.action === 'approved' ? 'approve_report' : 'reject_report',
+      tableName: 'reports',
+      recordId: id,
+      metadata: { reportType: data.report_type, action: parsed.data.action },
+    });
 
     return NextResponse.json({ data });
   } catch (error) {

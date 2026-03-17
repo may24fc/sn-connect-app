@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import {
   createNotification,
   getUserDisplayName,
@@ -220,6 +221,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_task',
+      tableName: 'tasks',
+      recordId: id,
+      metadata: { title: data.title, status: data.status },
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/tasks/[id]:', error);
@@ -255,6 +264,13 @@ export async function DELETE(
       console.error('Error deleting task:', error);
       return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: auth.context.user.id,
+      action: 'delete_task',
+      tableName: 'tasks',
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import {
   createPerformanceReviewSchema,
   updatePerformanceReviewSchema,
@@ -102,6 +103,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create performance review' }, { status: 500 });
     }
 
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'create_performance_review',
+      tableName: 'performance_reviews',
+      recordId: data.id,
+      metadata: { employeeId: data.employee_id, cycleId: data.cycle_id },
+    });
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     console.error('POST /api/performance/reviews error:', error);
@@ -150,6 +159,14 @@ export async function PATCH(request: NextRequest) {
     if (updateError || !data) {
       return NextResponse.json({ error: 'Failed to update performance review' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_performance_review',
+      tableName: 'performance_reviews',
+      recordId: parsed.data.id,
+      metadata: { status: data.status },
+    });
 
     return NextResponse.json({ data });
   } catch (error) {

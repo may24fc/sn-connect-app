@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { updateResourceSchema } from '@/lib/schemas/resource.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isResourceAdmin, normalizeExcerpt } from '../_lib';
@@ -105,6 +106,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Failed to update resource' }, { status: 500 });
     }
 
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_resource',
+      tableName: 'resources',
+      recordId: id,
+      metadata: { title: data.title },
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/resources/[id]:', error);
@@ -135,6 +144,13 @@ export async function DELETE(_: NextRequest, context: RouteContext) {
       console.error('Error deleting resource:', deleteError);
       return NextResponse.json({ error: 'Failed to delete resource' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'delete_resource',
+      tableName: 'resources',
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

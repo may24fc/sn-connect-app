@@ -1,4 +1,5 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { logActivity } from '@/lib/audit';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Employee } from '@hr-portal/database';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -65,8 +66,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Parse request body
     const body: Partial<Employee> = await request.json();
 
-    // Update employee
-    const { data, error } = await supabase
+    // Admin-only fields require role check
+    const adminOnlyFields = ['department', 'position', 'employment_type', 'immediate_head'];
+    const hasAdminFields = adminOnlyFields.some((field) => field in body);
+
+    if (hasAdminFields) {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (userError || !userData) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      if (userData.role !== 'super_admin' && userData.role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden: admin privileges required' }, { status: 403 });
+      }
+    }
+
+    // Update employee (use admin client to bypass RLS)
+    const adminClient = createSupabaseAdminClient();
+    const { data, error } = await adminClient
       .from('employees')
       .update(body)
       .eq('id', id)
@@ -83,6 +105,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_employee',
+      tableName: 'employees',
+      recordId: id,
+      metadata: { employeeId: id },
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/employees/[id]:', error);
@@ -93,7 +123,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 /**
  * DELETE /api/employees/[id]
  * Soft delete employee
- * Permissions: Super Admin only
+ * Permissions: Admin and Super Admin only
  */
 export async function DELETE(
   _request: NextRequest,
@@ -124,12 +154,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (userData.role !== 'super_admin') {
+    if (userData.role !== 'super_admin' && userData.role !== 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Soft delete employee
-    const { error } = await supabase
+    // Soft delete employee (use admin client to bypass RLS)
+    const adminClient = createSupabaseAdminClient();
+    const { error } = await adminClient
       .from('employees')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', id)
@@ -139,6 +170,13 @@ export async function DELETE(
       console.error('Error deleting employee:', error);
       return NextResponse.json({ error: 'Failed to delete employee' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'delete_employee',
+      tableName: 'employees',
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
