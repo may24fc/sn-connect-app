@@ -67,7 +67,7 @@ CREATE POLICY leave_requests_select_own_policy
 CREATE POLICY leave_requests_select_admin_policy
   ON leave_requests FOR SELECT
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
     AND deleted_at IS NULL
   );
 
@@ -86,7 +86,7 @@ CREATE POLICY leave_requests_update_own_policy
 CREATE POLICY leave_requests_update_admin_policy
   ON leave_requests FOR UPDATE
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
     AND deleted_at IS NULL
   );
 
@@ -94,4 +94,4 @@ CREATE POLICY leave_requests_update_admin_policy
 CREATE OR REPLACE TRIGGER leave_requests_updated_at
   BEFORE UPDATE ON leave_requests
   FOR EACH ROW
-  EXECUTE FUNCTION moddatetime(updated_at);
+  EXECUTE FUNCTION public.handle_updated_at();

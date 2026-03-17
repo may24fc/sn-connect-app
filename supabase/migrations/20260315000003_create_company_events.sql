@@ -41,7 +41,7 @@ CREATE INDEX idx_company_events_created_by ON public.company_events (created_by)
 CREATE TRIGGER set_company_events_updated_at
   BEFORE UPDATE ON public.company_events
   FOR EACH ROW
-  EXECUTE FUNCTION moddatetime(updated_at);
+  EXECUTE FUNCTION public.handle_updated_at();
 
 -- ============================================================
 -- RLS policies
@@ -58,22 +58,22 @@ CREATE POLICY company_events_select_all_policy
 CREATE POLICY company_events_insert_admin_policy
   ON public.company_events FOR INSERT
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 -- Only admins can update
 CREATE POLICY company_events_update_admin_policy
   ON public.company_events FOR UPDATE
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   )
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 -- Only admins can delete (soft-delete)
 CREATE POLICY company_events_delete_admin_policy
   ON public.company_events FOR DELETE
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin', 'hr', 'cos', 'ceo']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
