@@ -13,22 +13,12 @@ import {
 import { cn } from '../utils/cn';
 import { MarkdownContent } from '../utils/markdown';
 import { ChatInput, type AttachedFile } from './ai-chat/ChatInput';
+import { TextShimmer } from './ai-chat/TextShimmer';
 import { CitedContent } from './ai-chat/CitedContent';
 import { CitationPanel } from './ai-chat/CitationPanel';
 import type { Citation } from './ai-chat/citation-utils';
 
-function GeneratingText(): React.ReactNode {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
-      <span className="animate-pulse">Generating response</span>
-      <span className="inline-flex gap-0.5 items-end">
-        <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:0ms]" />
-        <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:160ms]" />
-        <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500 animate-bounce [animation-delay:320ms]" />
-      </span>
-    </span>
-  );
-}
+
 
 export interface ChatMessage {
   id: string;
@@ -653,16 +643,13 @@ export function AIChatbot({
                           </AvatarFallback>
                         </Avatar>
                         <div className="rounded-xl rounded-tl-sm bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5">
-                          <GeneratingText />
-                          {isStreamingMode && onAbort && (
-                            <button
-                              type="button"
-                              onClick={onAbort}
-                              className="mt-1.5 block text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 underline"
-                            >
-                              Stop
-                            </button>
-                          )}
+                          <TextShimmer
+                            as="span"
+                            duration={1.8}
+                            className="text-sm font-normal"
+                          >
+                            Generating response
+                          </TextShimmer>
                         </div>
                       </div>
                     )}
