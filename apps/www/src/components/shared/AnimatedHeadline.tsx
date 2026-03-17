@@ -25,7 +25,7 @@ export function AnimatedHeadline(): ReactNode {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -40, opacity: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-          className="inline-block text-indigo-600"
+          className="inline-block text-amber-600"
         >
           {WORDS[index]}
         </motion.span>

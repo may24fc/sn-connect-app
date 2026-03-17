@@ -159,14 +159,14 @@ export function JobListings(): ReactNode {
             placeholder="Search positions..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-4 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+            className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-4 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
           />
         </div>
 
         <select
           value={unitFilter}
           onChange={(e) => setUnitFilter(e.target.value)}
-          className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+          className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
         >
           <option value="all">All Business Units</option>
           {BUSINESS_UNITS.map((u) => (
@@ -179,7 +179,7 @@ export function JobListings(): ReactNode {
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+          className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
         >
           {EMPLOYMENT_TYPES.map((t) => (
             <option key={t} value={t}>
@@ -225,7 +225,7 @@ export function JobListings(): ReactNode {
             </p>
             <Link
               href="/contact"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800"
             >
               Get in touch
               <ArrowRight className="h-4 w-4" />
@@ -260,7 +260,7 @@ export function JobListings(): ReactNode {
             <ScrollReveal key={job.id} delay={index * 0.05}>
               <Link
                 href={`/careers/${job.id}`}
-                className="group block rounded-xl border border-zinc-200 bg-white p-6 shadow-card transition-all hover:shadow-mega hover:border-indigo-200"
+                className="group block rounded-xl border border-zinc-200 bg-white p-6 shadow-card transition-all hover:shadow-mega hover:border-amber-200"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex gap-4 flex-1">
@@ -271,7 +271,7 @@ export function JobListings(): ReactNode {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                      <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-amber-600 transition-colors">
                         {job.title}
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-3 text-sm text-zinc-500">
@@ -304,7 +304,7 @@ export function JobListings(): ReactNode {
                         )}
                         {/* Applicant count with hot badge */}
                         {count > 0 && (
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${isHot ? 'bg-orange-50 text-orange-700' : 'bg-indigo-50 text-indigo-600'}`}>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${isHot ? 'bg-orange-50 text-orange-700' : 'bg-amber-50 text-amber-600'}`}>
                             {isHot ? <Flame className="h-3 w-3" /> : <Users className="h-3 w-3" />}
                             {count} applied{isHot ? ' · Hot' : ''}
                           </span>
@@ -315,7 +315,7 @@ export function JobListings(): ReactNode {
                   </div>
 
                   <div className="shrink-0 flex items-center gap-2 self-start">
-                    <div className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-indigo-500 flex items-center gap-1.5">
+                    <div className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors group-hover:bg-slate-800 flex items-center gap-1.5">
                       Apply Now
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </div>

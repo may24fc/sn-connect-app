@@ -17,7 +17,7 @@ export default function CareersPage() {
       <section className="bg-white py-24">
         <div className="section-max section-padding text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            Build Your <span className="text-indigo-600">Career</span> With Us
+            Build Your <span className="text-amber-600">Career</span> With Us
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-500">
             Join a team passionate about excellence. We&apos;re always looking for talented individuals to help us grow.

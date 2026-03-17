@@ -32,7 +32,7 @@ export default function PortalPage(): ReactNode {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 py-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 py-20">
         {/* Decorative grid pattern */}
         <div
           className="absolute inset-0 opacity-10"
@@ -55,7 +55,7 @@ export default function PortalPage(): ReactNode {
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
               SN Connect Portal
             </h1>
-            <p className="mt-3 text-base text-indigo-100">
+            <p className="mt-3 text-base text-amber-200">
               Your centralized HR dashboard — access files, tasks, performance reviews, and more.
             </p>
 
@@ -63,7 +63,7 @@ export default function PortalPage(): ReactNode {
             <div className="mx-auto mt-8 flex max-w-sm flex-col gap-3">
               <a
                 href={`${APP_URL}/login`}
-                className="flex items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-medium text-indigo-700 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md"
+                className="flex items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-medium text-amber-700 shadow-sm transition-all hover:bg-amber-50 hover:shadow-md"
               >
                 Log in to your account
               </a>
@@ -150,7 +150,7 @@ export default function PortalPage(): ReactNode {
             Need help accessing your account?{' '}
             <Link
               href="/contact"
-              className="text-indigo-600 transition-colors hover:text-indigo-700"
+              className="text-amber-600 transition-colors hover:text-amber-700"
             >
               Contact IT Support
             </Link>

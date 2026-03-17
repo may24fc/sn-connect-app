@@ -15,7 +15,7 @@ export default function BusinessesPage() {
       <section className="bg-white py-24">
         <div className="section-max section-padding text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            Our <span className="text-indigo-600">Businesses</span>
+            Our <span className="text-amber-600">Businesses</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-500">
             A diversified portfolio united by a commitment to excellence, innovation, and community impact.

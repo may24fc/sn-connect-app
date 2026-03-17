@@ -23,6 +23,7 @@ export interface BusinessUnit {
   testimonials: { name: string; role: string; quote: string; company?: string }[];
   contact: { email: string; phone: string };
   website_url?: string;
+  cardBg: string;
 }
 
 export const COMPANY = {
@@ -49,6 +50,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       'SFO is the food service arm of SN International Group, delivering quality meals and catering solutions to corporate clients, institutions, and events across the Philippines.',
     icon: Utensils,
     color: '#C5A059',
+    cardBg: 'bg-amber-100 border-amber-200',
     image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80&auto=format&fit=crop',
     stats: [{ label: 'Meals Served Daily', value: '10,000+' }, { label: 'Client Sites', value: '45+' }],
     services: [
@@ -72,6 +74,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       'UHP is dedicated to making quality healthcare products accessible and affordable. From medical supplies to wellness essentials, UHP partners with healthcare providers and pharmacies nationwide.',
     icon: Building2,
     color: '#2563EB',
+    cardBg: 'bg-blue-100 border-blue-200',
     image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&q=80&auto=format&fit=crop',
     stats: [{ label: 'Healthcare Partners', value: '200+' }, { label: 'Products Distributed', value: '1,500+' }],
     services: [
@@ -95,6 +98,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       '24 Fit Club is a modern fitness brand offering state-of-the-art gym facilities, personal training, and group classes. We believe fitness should be accessible to everyone, anytime.',
     icon: Dumbbell,
     color: '#DC2626',
+    cardBg: 'bg-red-100 border-red-200',
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80&auto=format&fit=crop',
     stats: [{ label: 'Active Members', value: '5,000+' }, { label: 'Locations', value: '12' }],
     services: [
@@ -118,6 +122,7 @@ export const BUSINESS_UNITS: BusinessUnit[] = [
       'SN Construction & Real Estate delivers commercial and residential projects with uncompromising quality. From land development to turnkey construction, we build spaces where people thrive.',
     icon: HardHat,
     color: '#059669',
+    cardBg: 'bg-emerald-100 border-emerald-200',
     image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80&auto=format&fit=crop',
     stats: [{ label: 'Projects Completed', value: '80+' }, { label: 'Sqm Developed', value: '250K+' }],
     services: [
@@ -167,7 +172,7 @@ export const WHATS_NEW: NewsItem[] = [
   { text: '24 Fit Club launches corporate wellness partnerships', category: '24 Fit', categoryColor: '#DC2626', href: '/businesses/24-fit-club', daysAgo: 3 },
   { text: 'SN Construction breaks ground on new residential project', category: 'Construction', categoryColor: '#059669', href: '/businesses/construction', daysAgo: 5 },
   { text: 'UHP expands distribution to Visayas and Mindanao', category: 'UHP', categoryColor: '#2563EB', href: '/businesses/uhp', daysAgo: 7 },
-  { text: 'SN International Group recognized as Top Employer 2026', category: 'Corporate', categoryColor: '#4F46E5', href: '/about', daysAgo: 10 },
+  { text: 'SN International Group recognized as Top Employer 2026', category: 'Corporate', categoryColor: '#0F172A', href: '/about', daysAgo: 10 },
   { text: 'Now hiring across all business units — explore our Careers page', category: 'Careers', categoryColor: '#7C3AED', href: '/careers', daysAgo: 2 },
 ];
 

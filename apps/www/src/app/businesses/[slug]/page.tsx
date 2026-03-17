@@ -6,6 +6,8 @@ import { ArrowLeft, Star, ArrowRight, Quote, ExternalLink } from 'lucide-react';
 import { BUSINESS_UNITS, slugify } from '@/data/placeholder';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
+import { TrustedMarquee } from '@/components/shared/TrustedMarquee';
+import { Testimonials } from '@/components/businesses/Testimonials';
 import { ServicesGrid } from '@/components/businesses/ServicesGrid';
 import { InquiryForm } from '@/components/businesses/InquiryForm';
 import { CTAButton } from '@/components/shared/CTAButton';
@@ -41,7 +43,7 @@ function getInitials(name: string): string {
 
 /** Deterministic avatar color from name */
 const AVATAR_COLORS = [
-  'from-indigo-500 to-violet-500',
+  'from-slate-800 to-slate-800',
   'from-emerald-500 to-teal-500',
   'from-amber-500 to-orange-500',
   'from-rose-500 to-pink-500',
@@ -97,7 +99,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         <div className="section-max section-padding relative py-20 lg:py-28">
           <Link
             href="/businesses"
-            className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 hover:text-indigo-600 transition-colors"
+            className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 hover:text-amber-600 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> All Businesses
           </Link>
@@ -126,7 +128,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   href={unit.website_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-5 inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 backdrop-blur-sm transition-colors hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50"
+                  className="mt-5 inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white/80 px-4 py-2 text-sm font-medium text-zinc-700 backdrop-blur-sm transition-colors hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50"
                 >
                   <ExternalLink className="h-4 w-4" />
                   Visit Website
@@ -153,25 +155,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
       </section>
 
       {/* ─── Trusted Partners ─── */}
-      <section className="border-y border-zinc-100 bg-zinc-50/50 py-10">
-        <div className="section-max section-padding">
-          <p className="text-center text-xs font-semibold uppercase tracking-widest text-zinc-400">
-            Trusted by leading organizations
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-            {['Metro Manila Corp', 'PhilHealth Partners', 'Ayala Group', 'SM Investments', 'JG Summit'].map(
-              (name) => (
-                <span
-                  key={name}
-                  className="text-sm font-semibold tracking-wide text-zinc-300 transition-colors hover:text-zinc-500"
-                >
-                  {name}
-                </span>
-              )
-            )}
-          </div>
-        </div>
-      </section>
+      <TrustedMarquee />
 
       {/* ─── Services — sticky left / scrollable right ─── */}
       <section className="bg-white py-16">
@@ -223,13 +207,13 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   </div>
 
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-amber-600 transition-colors">
                       {service.title}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-zinc-500">
                       {service.description}
                     </p>
-                    <div className="mt-4 flex items-center gap-1 text-sm font-medium text-indigo-600">
+                    <div className="mt-4 flex items-center gap-1 text-sm font-medium text-amber-600">
                       Learn More <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                     </div>
                   </div>
@@ -310,7 +294,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
                   href={unit.website_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-5 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-5 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:border-amber-400 hover:text-amber-600 hover:bg-amber-50"
                 >
                   <ExternalLink className="h-4 w-4" />
                   Visit Website
@@ -318,7 +302,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
               )}
               <a
                 href={`tel:${unit.contact.phone}`}
-                className="text-sm font-semibold text-zinc-600 hover:text-indigo-600 transition-colors"
+                className="text-sm font-semibold text-zinc-600 hover:text-amber-600 transition-colors"
               >
                 Or call {unit.contact.phone}
               </a>

@@ -273,13 +273,13 @@ export default async function ProjectDetailPage({ params }: PageProps) {
                     </div>
 
                     <div className="p-5">
-                      <h3 className="font-semibold text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                      <h3 className="font-semibold text-zinc-900 group-hover:text-amber-600 transition-colors">
                         {proj.title}
                       </h3>
                       <p className="mt-1.5 text-sm text-zinc-500 leading-relaxed line-clamp-2">
                         {proj.description}
                       </p>
-                      <div className="mt-3 flex items-center gap-1 text-sm font-medium text-indigo-600">
+                      <div className="mt-3 flex items-center gap-1 text-sm font-medium text-amber-600">
                         Learn More{' '}
                         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                       </div>
@@ -315,7 +315,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
               </CTAButton>
               <a
                 href={`tel:${unit.contact.phone}`}
-                className="text-sm font-semibold text-zinc-600 hover:text-indigo-600 transition-colors"
+                className="text-sm font-semibold text-zinc-600 hover:text-amber-600 transition-colors"
               >
                 Or call {unit.contact.phone}
               </a>

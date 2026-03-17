@@ -76,7 +76,7 @@ export function MasonryGrid({ photos }: MasonryGridProps): ReactNode {
             onClick={() => handleCategoryChange(cat)}
             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
               activeCategory === cat
-                ? 'bg-indigo-600 text-white shadow-sm'
+                ? 'bg-slate-900 text-white shadow-sm'
                 : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
             }`}
           >
@@ -154,7 +154,7 @@ export function MasonryGrid({ photos }: MasonryGridProps): ReactNode {
 
                         {/* Hover overlay — emphasises title, description, badge over the image */}
                         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/85 via-black/40 to-transparent p-5 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100">
-                          <span className="mb-2 self-start rounded-full bg-indigo-600 px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+                          <span className="mb-2 self-start rounded-full bg-slate-900 px-2.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
                             {photo.category}
                           </span>
                           <h3 className="text-base font-bold leading-tight text-white drop-shadow">
@@ -190,7 +190,7 @@ export function MasonryGrid({ photos }: MasonryGridProps): ReactNode {
               }}
               aria-label={`Go to page ${i + 1}`}
               className={`h-2 rounded-full transition-all duration-300 ${
-                i === page ? 'w-8 bg-indigo-600' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
+                i === page ? 'w-8 bg-slate-900' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
               }`}
             />
           ))}
@@ -202,7 +202,7 @@ export function MasonryGrid({ photos }: MasonryGridProps): ReactNode {
             onClick={() => go(-1)}
             disabled={page === 0}
             aria-label="Previous set"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -211,7 +211,7 @@ export function MasonryGrid({ photos }: MasonryGridProps): ReactNode {
             onClick={() => go(1)}
             disabled={page === totalPages - 1}
             aria-label="Next set"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600 disabled:cursor-not-allowed disabled:opacity-30"
           >
             <ChevronRight className="h-5 w-5" />
           </button>

@@ -21,7 +21,7 @@ function BackToTop() {
     <button
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      className="fixed bottom-20 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-all hover:bg-indigo-700 hover:shadow-xl"
+      className="fixed bottom-20 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition-all hover:bg-slate-800 hover:shadow-xl"
       aria-label="Back to top"
     >
       <ArrowUp className="h-4 w-4" />
@@ -55,11 +55,11 @@ function NewsletterSignup() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Your email"
         required
-        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-400 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-400 transition-colors focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
       />
       <button
         type="submit"
-        className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+        className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800"
       >
         Subscribe
       </button>
@@ -72,7 +72,7 @@ export function Footer(): ReactNode {
     <>
       <footer className="relative overflow-hidden border-t border-zinc-800 bg-zinc-900 text-white">
         {/* Subtle gradient pattern at top */}
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
 
         <div className="section-max section-padding py-14">
           <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -143,7 +143,7 @@ export function Footer(): ReactNode {
             {/* Branding + Newsletter */}
             <div>
               <Link href="/" className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
                   SN
                 </div>
                 <span className="text-sm font-semibold text-white">
@@ -160,7 +160,7 @@ export function Footer(): ReactNode {
                   href={COMPANY.social.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 transition-all hover:bg-indigo-600 hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 transition-all hover:bg-slate-900 hover:text-white"
                   aria-label="Facebook"
                 >
                   <Facebook className="h-4 w-4" />
@@ -169,7 +169,7 @@ export function Footer(): ReactNode {
                   href={COMPANY.social.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 transition-all hover:bg-indigo-600 hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 transition-all hover:bg-slate-900 hover:text-white"
                   aria-label="LinkedIn"
                 >
                   <Linkedin className="h-4 w-4" />
@@ -178,7 +178,7 @@ export function Footer(): ReactNode {
                   href={COMPANY.social.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 transition-all hover:bg-indigo-600 hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 transition-all hover:bg-slate-900 hover:text-white"
                   aria-label="Instagram"
                 >
                   <Instagram className="h-4 w-4" />

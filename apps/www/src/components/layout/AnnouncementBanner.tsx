@@ -29,8 +29,8 @@ export function AnnouncementBanner(): ReactNode {
     <div className="relative z-[60] flex items-center border-b border-zinc-100 bg-white">
       {/* Pinned "What's New" label */}
       <div className="relative z-20 flex shrink-0 items-center gap-3 bg-white pl-5 pr-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600 ring-1 ring-inset ring-indigo-100">
-          <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600 ring-1 ring-inset ring-amber-200">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
           What&apos;s New
         </span>
         <div className="h-4 w-px bg-zinc-200" aria-hidden="true" />

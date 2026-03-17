@@ -19,7 +19,7 @@ export default function ContactPage() {
       <section className="bg-white py-24">
         <div className="section-max section-padding text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            Get in <span className="text-indigo-600">Touch</span>
+            Get in <span className="text-amber-600">Touch</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-500">
             Have a question, proposal, or partnership opportunity? We&apos;d love to hear from you.
@@ -47,7 +47,7 @@ export default function ContactPage() {
                   <p className="text-sm font-medium text-zinc-900">Phone</p>
                   <a
                     href={`tel:${COMPANY.phone}`}
-                    className="text-sm text-zinc-600 hover:text-indigo-600 transition-colors"
+                    className="text-sm text-zinc-600 hover:text-amber-600 transition-colors"
                   >
                     {COMPANY.phone}
                   </a>
@@ -56,7 +56,7 @@ export default function ContactPage() {
                   <p className="text-sm font-medium text-zinc-900">Email</p>
                   <a
                     href={`mailto:${COMPANY.email}`}
-                    className="text-sm text-zinc-600 hover:text-indigo-600 transition-colors"
+                    className="text-sm text-zinc-600 hover:text-amber-600 transition-colors"
                   >
                     {COMPANY.email}
                   </a>

@@ -82,7 +82,7 @@ export default function TermsPage(): ReactNode {
                 For questions about these Terms of Service, please contact us at{' '}
                 <a
                   href={`mailto:${COMPANY.email}`}
-                  className="text-indigo-600 hover:text-indigo-700"
+                  className="text-amber-600 hover:text-amber-700"
                 >
                   {COMPANY.email}
                 </a>

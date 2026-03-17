@@ -24,7 +24,7 @@ export async function sendApplicationConfirmation({
 <head><meta charset="UTF-8" /></head>
 <body style="margin:0;padding:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background-color:#f4f4f5;">
   <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e4e4e7;">
-    <div style="background:#4F46E5;padding:32px 24px;text-align:center;">
+    <div style="background:#0F172A;padding:32px 24px;text-align:center;">
       <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">SN International Group</h1>
     </div>
     <div style="padding:32px 24px;">

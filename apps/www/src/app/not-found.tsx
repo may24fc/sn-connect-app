@@ -5,7 +5,7 @@ export default function NotFound(): ReactNode {
   return (
     <section className="flex min-h-[70vh] items-center justify-center bg-white">
       <div className="section-max section-padding text-center">
-        <p className="text-7xl font-bold text-indigo-600">404</p>
+        <p className="text-7xl font-bold text-amber-600">404</p>
         <h1 className="mt-4 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
           Page not found
         </h1>
@@ -15,7 +15,7 @@ export default function NotFound(): ReactNode {
         <div className="mt-8 flex items-center justify-center gap-3">
           <Link
             href="/"
-            className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800"
           >
             Go home
           </Link>

@@ -16,14 +16,14 @@ export function ContactCards(): ReactNode {
               <div className="mt-2 space-y-2 text-sm text-zinc-600">
                 <a
                   href={`mailto:${unit.contact.email}`}
-                  className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
+                  className="flex items-center gap-2 hover:text-amber-600 transition-colors"
                 >
                   <Mail className="h-3.5 w-3.5 shrink-0" />
                   {unit.contact.email}
                 </a>
                 <a
                   href={`tel:${unit.contact.phone}`}
-                  className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
+                  className="flex items-center gap-2 hover:text-amber-600 transition-colors"
                 >
                   <Phone className="h-3.5 w-3.5 shrink-0" />
                   {unit.contact.phone}

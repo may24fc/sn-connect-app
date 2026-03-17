@@ -49,7 +49,7 @@ export function ContactForm(): ReactNode {
         <p className="mt-2 text-zinc-600">
           Thank you for reaching out. We&apos;ll get back to you within 1–2 business days.
         </p>
-        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600">
+        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-600">
           <Clock className="h-3.5 w-3.5" />
           Estimated response: 24–48 hours
         </div>
@@ -57,7 +57,7 @@ export function ContactForm(): ReactNode {
           <button
             type="button"
             onClick={() => setSubmitted(false)}
-            className="text-sm font-semibold text-indigo-600 hover:underline"
+            className="text-sm font-semibold text-amber-600 hover:underline"
           >
             Send another message
           </button>
@@ -87,7 +87,7 @@ export function ContactForm(): ReactNode {
             <input
               id="contact-name"
               {...register('name')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
             />
           </div>
           {errors.name && (
@@ -106,7 +106,7 @@ export function ContactForm(): ReactNode {
               id="contact-email"
               type="email"
               {...register('email')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
             />
           </div>
           {errors.email && (
@@ -124,7 +124,7 @@ export function ContactForm(): ReactNode {
             <input
               id="contact-phone"
               {...register('phone')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
             />
           </div>
         </div>
@@ -139,7 +139,7 @@ export function ContactForm(): ReactNode {
             <select
               id="contact-bu"
               {...register('business_unit_id')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none appearance-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none appearance-none"
             >
               <option value="">General Inquiry</option>
               {BUSINESS_UNITS.map((u) => (
@@ -161,7 +161,7 @@ export function ContactForm(): ReactNode {
             <input
               id="contact-subject"
               {...register('subject')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
             />
           </div>
           {errors.subject && (
@@ -180,7 +180,7 @@ export function ContactForm(): ReactNode {
               id="contact-message"
               {...register('message')}
               rows={5}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
             />
           </div>
           {errors.message && (
@@ -195,7 +195,7 @@ export function ContactForm(): ReactNode {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
         >
           <Send className="h-4 w-4" />
           {isSubmitting ? 'Sending...' : 'Send Message'}

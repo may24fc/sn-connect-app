@@ -20,7 +20,7 @@ export default function LifeAtSNPage() {
       <section className="bg-white py-24">
         <div className="section-max section-padding text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            Life at <span className="text-indigo-600">{COMPANY.name}</span>
+            Life at <span className="text-amber-600">{COMPANY.name}</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-500">
             More than a workplace — a community of passionate professionals building something meaningful together.
@@ -75,7 +75,7 @@ export default function LifeAtSNPage() {
         <div className="section-max section-padding text-center">
           <ScrollReveal>
             <h2 className="text-3xl font-bold text-zinc-900">
-              Ready to Be Part of <span className="text-indigo-600">Our Story</span>?
+              Ready to Be Part of <span className="text-amber-600">Our Story</span>?
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-zinc-500">
               We&apos;re always looking for talented, passionate people to join our team.

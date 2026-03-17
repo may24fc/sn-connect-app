@@ -25,7 +25,7 @@ export function BusinessPortfolio(): ReactNode {
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
             view === 'grid'
-              ? 'bg-indigo-50 text-indigo-600'
+              ? 'bg-amber-50 text-amber-600'
               : 'text-zinc-400 hover:text-zinc-600'
           )}
         >
@@ -38,7 +38,7 @@ export function BusinessPortfolio(): ReactNode {
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
             view === 'list'
-              ? 'bg-indigo-50 text-indigo-600'
+              ? 'bg-amber-50 text-amber-600'
               : 'text-zinc-400 hover:text-zinc-600'
           )}
         >
@@ -69,7 +69,7 @@ export function BusinessPortfolio(): ReactNode {
                   </div>
 
                   <div className="p-6">
-                    <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="text-lg font-semibold text-zinc-900 group-hover:text-amber-600 transition-colors">
                       {unit.name}
                     </h3>
                     <p className="mt-1 text-xs font-medium text-zinc-500">
@@ -91,7 +91,7 @@ export function BusinessPortfolio(): ReactNode {
                       </div>
                     )}
 
-                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 group-hover:gap-2 transition-all">
+                    <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-amber-600 group-hover:gap-2 transition-all">
                       Learn more <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                     {unit.website_url && (
@@ -100,7 +100,7 @@ export function BusinessPortfolio(): ReactNode {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-indigo-600"
+                        className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-amber-600"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         Visit Website
@@ -148,7 +148,7 @@ export function BusinessPortfolio(): ReactNode {
 
                   {/* Details */}
                   <div className="flex flex-1 flex-col justify-center">
-                    <h3 className="text-2xl font-bold text-zinc-900 group-hover:text-indigo-600 transition-colors">
+                    <h3 className="text-2xl font-bold text-zinc-900 group-hover:text-amber-600 transition-colors">
                       {unit.name}
                     </h3>
                     <p className="mt-1 text-sm font-medium text-zinc-500">
@@ -186,7 +186,7 @@ export function BusinessPortfolio(): ReactNode {
 
                     <Link
                       href={`/businesses/${unit.slug}`}
-                      className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors group-hover:gap-2"
+                      className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors group-hover:gap-2"
                     >
                       Learn more <ArrowRight className="h-4 w-4" />
                     </Link>
@@ -195,7 +195,7 @@ export function BusinessPortfolio(): ReactNode {
                         href={unit.website_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-indigo-600"
+                        className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-500 transition-colors hover:text-amber-600"
                       >
                         <ExternalLink className="h-4 w-4" />
                         Visit Website

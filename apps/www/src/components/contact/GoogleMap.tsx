@@ -23,9 +23,9 @@ export function GoogleMap(): ReactNode {
 
       {/* Office photo placeholder */}
       <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-card">
-        <div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-zinc-50 p-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-100">
-            <Building className="h-8 w-8 text-indigo-600" />
+        <div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-zinc-50 p-6 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
+            <Building className="h-8 w-8 text-amber-600" />
           </div>
           <h3 className="mt-4 text-lg font-semibold text-zinc-900">Our Office</h3>
           <p className="mt-1 text-sm text-zinc-500">
@@ -34,7 +34,7 @@ export function GoogleMap(): ReactNode {
           <p className="text-sm text-zinc-500">
             Bonifacio Global City, Taguig
           </p>
-          <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-indigo-600">
+          <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-amber-600">
             <MapPin className="h-3.5 w-3.5" />
             Metro Manila, Philippines
           </div>

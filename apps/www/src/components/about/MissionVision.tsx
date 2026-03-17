@@ -15,7 +15,7 @@ export function MissionVision(): ReactNode {
               <h3 className="text-2xl font-bold text-zinc-900">
                 Our Mission
               </h3>
-              <div className="mt-2 h-1 w-12 rounded-full bg-indigo-600" />
+              <div className="mt-2 h-1 w-12 rounded-full bg-slate-900" />
               <p className="mt-4 text-zinc-600 leading-relaxed">
                 {MISSION}
               </p>
@@ -27,7 +27,7 @@ export function MissionVision(): ReactNode {
               <h3 className="text-2xl font-bold text-zinc-900">
                 Our Vision
               </h3>
-              <div className="mt-2 h-1 w-12 rounded-full bg-indigo-600" />
+              <div className="mt-2 h-1 w-12 rounded-full bg-slate-900" />
               <p className="mt-4 text-zinc-600 leading-relaxed">
                 {VISION}
               </p>

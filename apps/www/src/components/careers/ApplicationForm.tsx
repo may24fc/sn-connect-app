@@ -130,7 +130,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
         <button
           type="button"
           onClick={() => setSubmitted(false)}
-          className="mt-6 text-sm font-semibold text-indigo-600 hover:underline"
+          className="mt-6 text-sm font-semibold text-amber-600 hover:underline"
         >
           Submit another application
         </button>
@@ -157,9 +157,9 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
                     i < step
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-slate-900 text-white'
                       : i === step
-                        ? 'bg-indigo-600 text-white ring-4 ring-indigo-100'
+                        ? 'bg-slate-900 text-white ring-4 ring-amber-200'
                         : 'bg-zinc-100 text-zinc-400'
                   }`}
                 >
@@ -167,7 +167,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
                 </div>
                 <span
                   className={`mt-1.5 text-[10px] font-medium text-center leading-tight ${
-                    i <= step ? 'text-indigo-600' : 'text-zinc-400'
+                    i <= step ? 'text-amber-600' : 'text-zinc-400'
                   }`}
                 >
                   {s.label}
@@ -176,7 +176,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
               {i < STEPS.length - 1 && (
                 <div
                   className={`mx-2 h-0.5 flex-1 rounded transition-colors ${
-                    i < step ? 'bg-indigo-600' : 'bg-zinc-200'
+                    i < step ? 'bg-slate-900' : 'bg-zinc-200'
                   }`}
                 />
               )}
@@ -197,7 +197,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
               <input
                 id="full_name"
                 {...register('full_name')}
-                className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
               />
             </div>
             {errors.full_name && (
@@ -215,7 +215,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
                 id="email"
                 type="email"
                 {...register('email')}
-                className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
               />
             </div>
             {errors.email && (
@@ -232,7 +232,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
               <input
                 id="phone"
                 {...register('phone')}
-                className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
               />
             </div>
           </div>
@@ -252,7 +252,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
               <select
                 id="job_posting_id"
                 {...register('job_posting_id')}
-                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
               >
                 <option value="">Select a position</option>
                 {jobOptions.map((j) => (
@@ -270,8 +270,8 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
           <div>
             <label className="block text-sm font-medium text-zinc-700">Resume / CV</label>
             {selectedFile ? (
-              <div className="mt-1 flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
-                <FileText className="h-8 w-8 shrink-0 text-indigo-600" />
+              <div className="mt-1 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                <FileText className="h-8 w-8 shrink-0 text-amber-600" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-zinc-900">{selectedFile.name}</p>
                   <p className="text-xs text-zinc-500">{formatFileSize(selectedFile.size)}</p>
@@ -288,7 +288,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
             ) : (
               <label
                 htmlFor="resume-upload"
-                className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-200 px-4 py-6 text-sm text-zinc-500 transition-colors hover:border-indigo-600 hover:bg-indigo-50"
+                className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-200 px-4 py-6 text-sm text-zinc-500 transition-colors hover:border-slate-900 hover:bg-amber-50"
               >
                 <Upload className="h-5 w-5" />
                 Click to upload (PDF, DOC, DOCX — max 5MB)
@@ -322,7 +322,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
               {...register('cover_letter')}
               rows={6}
               placeholder="Tell us why you'd be a great fit..."
-              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
             />
           </div>
         </div>
@@ -388,7 +388,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
           <button
             type="button"
             onClick={goNext}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
+            className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
           >
             Next
             <ChevronRight className="h-4 w-4" />
@@ -398,7 +398,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
             type="button"
             onClick={() => { void handleSubmit(onSubmit)(); }}
             disabled={isSubmitting}
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
             {isSubmitting ? 'Submitting...' : 'Submit Application'}

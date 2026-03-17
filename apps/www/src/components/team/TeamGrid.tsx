@@ -71,7 +71,7 @@ function MemberCell({
 
       {/* Metadata */}
       <div className="mt-3.5">
-        <h3 className="text-sm font-bold text-zinc-900 transition-colors duration-200 group-hover:text-indigo-600 leading-snug">
+        <h3 className="text-sm font-bold text-zinc-900 transition-colors duration-200 group-hover:text-amber-600 leading-snug">
           {member.name}
         </h3>
         <p className="mt-0.5 text-xs font-normal text-zinc-500 leading-snug">
@@ -79,7 +79,7 @@ function MemberCell({
         </p>
         {/* Business unit with vertical accent divider */}
         <div className="mt-2 flex items-center gap-2">
-          <span className="block h-3.5 w-0.5 shrink-0 bg-indigo-600" aria-hidden="true" />
+          <span className="block h-3.5 w-0.5 shrink-0 bg-slate-900" aria-hidden="true" />
           <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-zinc-400">
             {member.department}
           </span>
@@ -126,7 +126,7 @@ export function TeamGrid({ members }: TeamGridProps): ReactNode {
               {activeFilter === dept && (
                 <motion.span
                   layoutId={underlineId}
-                  className="absolute bottom-0 left-0 h-0.5 w-full bg-indigo-600"
+                  className="absolute bottom-0 left-0 h-0.5 w-full bg-slate-900"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
@@ -157,11 +157,11 @@ export function TeamGrid({ members }: TeamGridProps): ReactNode {
           >
             <Link href="/careers" className="block">
               {/* Dashed square */}
-              <div className="relative aspect-square w-full border border-dashed border-zinc-300 transition-colors duration-300 group-hover:border-indigo-400 flex items-center justify-center bg-transparent">
-                <ArrowRight className="h-5 w-5 text-zinc-300 transition-colors duration-300 group-hover:text-indigo-500" />
+              <div className="relative aspect-square w-full border border-dashed border-zinc-300 transition-colors duration-300 group-hover:border-amber-400 flex items-center justify-center bg-transparent">
+                <ArrowRight className="h-5 w-5 text-zinc-300 transition-colors duration-300 group-hover:text-amber-500" />
               </div>
               <div className="mt-3.5">
-                <h3 className="text-sm font-bold text-zinc-400 transition-colors duration-200 group-hover:text-indigo-600 leading-snug">
+                <h3 className="text-sm font-bold text-zinc-400 transition-colors duration-200 group-hover:text-amber-600 leading-snug">
                   Join Our Team
                 </h3>
                 <p className="mt-0.5 text-xs font-normal text-zinc-400 leading-snug">

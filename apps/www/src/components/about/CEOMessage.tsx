@@ -14,12 +14,12 @@ export function CEOMessage(): ReactNode {
             {/* Letter container */}
             <div className="relative rounded-2xl border border-zinc-200 bg-white p-8 shadow-card sm:p-12">
               {/* Decorative quote */}
-              <Quote className="absolute right-8 top-8 h-12 w-12 text-indigo-100 sm:right-12 sm:top-12" />
+              <Quote className="absolute right-8 top-8 h-12 w-12 text-amber-200 sm:right-12 sm:top-12" />
 
               <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
                 A Message from Our CEO
               </h2>
-              <div className="mt-2 h-1 w-16 rounded-full bg-indigo-600" />
+              <div className="mt-2 h-1 w-16 rounded-full bg-slate-900" />
 
               <div className="mt-8 space-y-4 text-zinc-700 leading-relaxed">
                 {CEO_MESSAGE.message.split('\n\n').map((paragraph, i) => (
@@ -36,7 +36,7 @@ export function CEOMessage(): ReactNode {
               <div className="mt-6 border-t border-zinc-200 pt-6">
                 <div className="flex items-center gap-4">
                   {/* Styled portrait with gradient initials */}
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-900 shadow-md">
                     <span className="text-lg font-bold text-white">
                       {CEO_MESSAGE.initials}
                     </span>
@@ -48,7 +48,7 @@ export function CEOMessage(): ReactNode {
                     <p className="text-sm text-zinc-500">
                       {CEO_MESSAGE.title}
                     </p>
-                    <p className="text-sm text-indigo-600">
+                    <p className="text-sm text-amber-600">
                       SN International Group
                     </p>
                   </div>

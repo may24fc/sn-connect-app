@@ -69,7 +69,7 @@ export default function PrivacyPage(): ReactNode {
                 If you have questions about this Privacy Policy, please contact us at{' '}
                 <a
                   href={`mailto:${COMPANY.email}`}
-                  className="text-indigo-600 hover:text-indigo-700"
+                  className="text-amber-600 hover:text-amber-700"
                 >
                   {COMPANY.email}
                 </a>

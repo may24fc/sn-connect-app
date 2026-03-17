@@ -94,7 +94,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         <div className="section-max section-padding">
           <Link
             href="/careers"
-            className="mb-8 inline-flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-indigo-600"
+            className="mb-8 inline-flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-amber-600"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Careers
@@ -154,7 +154,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                     <ul className="mt-4 space-y-2.5">
                       {job.responsibilities.map((r) => (
                         <li key={r} className="flex items-start gap-3">
-                          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500" />
+                          <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                           <span className="text-sm leading-relaxed text-zinc-600">{r}</span>
                         </li>
                       ))}

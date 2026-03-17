@@ -82,7 +82,7 @@ export default async function TeamPage() {
       <section className="bg-white py-24">
         <div className="section-max section-padding text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
-            Meet the <span className="text-indigo-600">Team</span>
+            Meet the <span className="text-amber-600">Team</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-500">
             The people driving innovation, excellence, and impact at {COMPANY.name}.
@@ -106,7 +106,7 @@ export default async function TeamPage() {
       </section>
 
       {/* Management Team */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-zinc-50 to-indigo-50/30 py-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-zinc-50 to-amber-50/30 py-20">
         <div className="section-max section-padding">
           <ScrollReveal>
             <SectionHeading
@@ -127,7 +127,7 @@ export default async function TeamPage() {
           className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage:
-              'radial-gradient(circle, #4F46E5 1px, transparent 1px)',
+              'radial-gradient(circle, #0F172A 1px, transparent 1px)',
             backgroundSize: '24px 24px',
           }}
         />

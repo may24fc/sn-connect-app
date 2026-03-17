@@ -41,7 +41,7 @@ function FAQItem({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between py-4 text-left text-sm font-medium text-zinc-900 transition-colors hover:text-indigo-600"
+        className="flex w-full items-center justify-between py-4 text-left text-sm font-medium text-zinc-900 transition-colors hover:text-amber-600"
       >
         {item.question}
         <ChevronDown

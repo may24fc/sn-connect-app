@@ -27,7 +27,7 @@ function getInitials(name: string): string {
 }
 
 const AVATAR_COLORS = [
-  'bg-indigo-100 text-indigo-700',
+  'bg-amber-100 text-amber-700',
   'bg-emerald-100 text-emerald-700',
   'bg-amber-100 text-amber-700',
   'bg-rose-100 text-rose-700',
@@ -73,7 +73,7 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
             className="p-8 md:p-10"
           >
             {/* Quote icon */}
-            <Quote className="mb-4 h-8 w-8 text-indigo-200" />
+            <Quote className="mb-4 h-8 w-8 text-amber-300" />
 
             {/* Quote text */}
             <p className="text-lg leading-relaxed text-zinc-600 italic md:text-xl">
@@ -92,7 +92,7 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
               <div className="min-w-0 flex-1">
                 <p className="text-lg font-semibold text-zinc-900">{spotlight.name}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
                     <Briefcase className="h-3 w-3" />
                     {spotlight.role}
                   </span>
@@ -124,7 +124,7 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
               }}
               aria-label={`View ${s.name}'s spotlight`}
               className={`h-2 rounded-full transition-all duration-300 ${
-                i === active ? 'w-8 bg-indigo-600' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
+                i === active ? 'w-8 bg-slate-900' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
               }`}
             />
           ))}
@@ -136,7 +136,7 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
             type="button"
             onClick={prev}
             aria-label="Previous spotlight"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -144,7 +144,7 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
             type="button"
             onClick={next}
             aria-label="Next spotlight"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600"
           >
             <ChevronRight className="h-5 w-5" />
           </button>

@@ -116,12 +116,12 @@ function StatDisplay({ stat }: { stat: string }): ReactNode {
   if (leading) {
     return (
       <span>
-        <span className="font-bold text-indigo-600">{leading}</span>
+        <span className="font-bold text-amber-600">{leading}</span>
         {stat.slice(leading.length)}
       </span>
     );
   }
-  return <span className="font-semibold text-indigo-600">{stat}</span>;
+  return <span className="font-semibold text-amber-600">{stat}</span>;
 }
 
 export function WhyCarousel(): ReactNode {
@@ -167,7 +167,7 @@ export function WhyCarousel(): ReactNode {
               type="button"
               onClick={prev}
               aria-label="Previous reason"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-transparent text-zinc-600 transition-all duration-200 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-transparent text-zinc-600 transition-all duration-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white"
             >
               <ChevronUp className="h-5 w-5" />
             </button>
@@ -175,7 +175,7 @@ export function WhyCarousel(): ReactNode {
               type="button"
               onClick={next}
               aria-label="Next reason"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-transparent text-zinc-600 transition-all duration-200 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-transparent text-zinc-600 transition-all duration-200 hover:border-slate-900 hover:bg-slate-900 hover:text-white"
             >
               <ChevronDown className="h-5 w-5" />
             </button>
@@ -190,7 +190,7 @@ export function WhyCarousel(): ReactNode {
                 onClick={() => goTo(i)}
                 aria-label={`Go to ${item.title}`}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === active ? 'w-6 bg-indigo-600' : 'w-1.5 bg-zinc-300 hover:bg-zinc-400'
+                  i === active ? 'w-6 bg-slate-900' : 'w-1.5 bg-zinc-300 hover:bg-zinc-400'
                 }`}
               />
             ))}
@@ -228,7 +228,7 @@ export function WhyCarousel(): ReactNode {
                     <div
                       className={`rounded-2xl border p-5 transition-colors ${
                         isActive
-                          ? 'border-indigo-200/70 bg-white'
+                          ? 'border-amber-200/70 bg-white'
                           : 'cursor-pointer border-transparent bg-transparent'
                       }`}
                       onClick={!isActive ? () => goTo(i) : undefined}

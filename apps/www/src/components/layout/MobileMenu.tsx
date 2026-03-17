@@ -44,7 +44,7 @@ export function MobileMenu({ open, onClose, pathname }: MobileMenuProps): ReactN
                     type="button"
                     className={cn(
                       'flex w-full items-center justify-between rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
-                      isActive ? 'text-indigo-600' : 'text-zinc-700 hover:bg-zinc-50'
+                      isActive ? 'text-amber-600' : 'text-zinc-700 hover:bg-zinc-50'
                     )}
                     onClick={() => setBusinessesExpanded((v) => !v)}
                   >
@@ -89,7 +89,7 @@ export function MobileMenu({ open, onClose, pathname }: MobileMenuProps): ReactN
                 onClick={onClose}
                 className={cn(
                   'rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
-                  isActive ? 'text-indigo-600' : 'text-zinc-700 hover:bg-zinc-50'
+                  isActive ? 'text-amber-600' : 'text-zinc-700 hover:bg-zinc-50'
                 )}
               >
                 {link.label}
@@ -109,7 +109,7 @@ export function MobileMenu({ open, onClose, pathname }: MobileMenuProps): ReactN
             <a
               href={`${PORTAL_URL}/signup`}
               onClick={onClose}
-              className="flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              className="flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800"
             >
               Sign up
             </a>

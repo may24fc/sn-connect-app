@@ -15,7 +15,7 @@ interface CTAButtonProps {
 
 const variants = {
   primary:
-    'bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors',
+    'bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors',
   outline:
     'border border-zinc-300 text-zinc-700 font-medium hover:bg-zinc-50 transition-colors',
   secondary:

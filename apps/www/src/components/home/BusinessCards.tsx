@@ -81,7 +81,7 @@ export function BusinessCards(): ReactNode {
                   type="button"
                   onClick={prev}
                   aria-label="Previous business"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
@@ -90,7 +90,7 @@ export function BusinessCards(): ReactNode {
                   type="button"
                   onClick={next}
                   aria-label="Next business"
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-indigo-500 hover:text-indigo-600"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
@@ -107,7 +107,7 @@ export function BusinessCards(): ReactNode {
                     className="relative h-1.5 flex-1 max-w-12 overflow-hidden rounded-full bg-zinc-200"
                   >
                     <div
-                      className="absolute inset-y-0 left-0 rounded-full bg-indigo-600 transition-all duration-100"
+                      className="absolute inset-y-0 left-0 rounded-full bg-slate-900 transition-all duration-100"
                       style={{
                         width: i === active ? `${progress}%` : i < active ? '100%' : '0%',
                       }}
@@ -136,7 +136,7 @@ export function BusinessCards(): ReactNode {
                 >
                   <Link
                     href={`/businesses/${unit.slug}`}
-                    className="group block overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-card transition-shadow hover:shadow-card-hover"
+                    className={`group block overflow-hidden rounded-2xl border shadow-card transition-shadow hover:shadow-card-hover ${unit.cardBg}`}
                     draggable={false}
                   >
                     {/* Hero image area */}
@@ -154,13 +154,13 @@ export function BusinessCards(): ReactNode {
 
                     {/* Content */}
                     <div className="p-6 sm:p-8">
-                      <h3 className="text-xl font-semibold text-zinc-900 group-hover:text-indigo-600 transition-colors sm:text-2xl">
+                      <h3 className="text-xl font-semibold text-zinc-900 group-hover:text-amber-600 transition-colors sm:text-2xl">
                         {unit.name}
                       </h3>
                       <p className="mt-1 text-sm font-medium text-zinc-500">
                         {unit.tagline}
                       </p>
-                      <p className="mt-3 text-sm leading-relaxed text-zinc-500 line-clamp-3">
+                      <p className="mt-3 text-sm leading-relaxed text-zinc-600 line-clamp-3">
                         {unit.description}
                       </p>
 
@@ -176,7 +176,7 @@ export function BusinessCards(): ReactNode {
                         </div>
                       )}
 
-                      <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 group-hover:gap-2.5 transition-all">
+                      <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 group-hover:gap-2.5 transition-all">
                         Learn more <ArrowRight className="h-4 w-4" />
                       </span>
                     </div>
@@ -187,7 +187,7 @@ export function BusinessCards(): ReactNode {
                       href={unit.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50"
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-amber-300 hover:text-amber-600 hover:bg-amber-50"
                       onClick={(e) => e.stopPropagation()}
                       draggable={false}
                     >

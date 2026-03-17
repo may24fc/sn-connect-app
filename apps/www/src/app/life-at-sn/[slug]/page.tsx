@@ -46,7 +46,7 @@ export default async function LifePhotoPage({ params }: PageProps) {
         <div className="section-max section-padding">
           <Link
             href="/life-at-sn"
-            className="inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-indigo-600"
+            className="inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-amber-600"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Life at SN
@@ -70,7 +70,7 @@ export default async function LifePhotoPage({ params }: PageProps) {
         {/* Title overlay */}
         <div className="absolute bottom-0 left-0 right-0 pb-10">
           <div className="section-max section-padding">
-            <span className="rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">
+            <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
               {photo.category}
             </span>
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
@@ -107,12 +107,12 @@ export default async function LifePhotoPage({ params }: PageProps) {
             {prevPhoto ? (
               <Link
                 href={`/life-at-sn/${prevPhoto.slug}`}
-                className="group flex flex-1 items-center gap-4 py-8 pr-8 transition-colors hover:text-indigo-600"
+                className="group flex flex-1 items-center gap-4 py-8 pr-8 transition-colors hover:text-amber-600"
               >
-                <ArrowLeft className="h-5 w-5 shrink-0 text-zinc-400 transition-colors group-hover:text-indigo-600" />
+                <ArrowLeft className="h-5 w-5 shrink-0 text-zinc-400 transition-colors group-hover:text-amber-600" />
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Previous</p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-zinc-800 group-hover:text-indigo-600">
+                  <p className="mt-0.5 truncate text-sm font-semibold text-zinc-800 group-hover:text-amber-600">
                     {prevPhoto.caption}
                   </p>
                 </div>
@@ -124,15 +124,15 @@ export default async function LifePhotoPage({ params }: PageProps) {
             {nextPhoto && (
               <Link
                 href={`/life-at-sn/${nextPhoto.slug}`}
-                className="group flex flex-1 items-center justify-end gap-4 py-8 pl-8 text-right transition-colors hover:text-indigo-600"
+                className="group flex flex-1 items-center justify-end gap-4 py-8 pl-8 text-right transition-colors hover:text-amber-600"
               >
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Next</p>
-                  <p className="mt-0.5 truncate text-sm font-semibold text-zinc-800 group-hover:text-indigo-600">
+                  <p className="mt-0.5 truncate text-sm font-semibold text-zinc-800 group-hover:text-amber-600">
                     {nextPhoto.caption}
                   </p>
                 </div>
-                <ArrowRight className="h-5 w-5 shrink-0 text-zinc-400 transition-colors group-hover:text-indigo-600" />
+                <ArrowRight className="h-5 w-5 shrink-0 text-zinc-400 transition-colors group-hover:text-amber-600" />
               </Link>
             )}
           </div>
@@ -145,7 +145,7 @@ export default async function LifePhotoPage({ params }: PageProps) {
           <div className="section-max section-padding">
             <ScrollReveal>
               <h2 className="text-xl font-bold text-zinc-900">
-                More from <span className="text-indigo-600">{photo.category}</span>
+                More from <span className="text-amber-600">{photo.category}</span>
               </h2>
             </ScrollReveal>
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -165,10 +165,10 @@ export default async function LifePhotoPage({ params }: PageProps) {
                       />
                     </div>
                     <div className="p-4">
-                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600">
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">
                         {related.category}
                       </span>
-                      <p className="mt-2 text-sm font-semibold text-zinc-800 transition-colors group-hover:text-indigo-600">
+                      <p className="mt-2 text-sm font-semibold text-zinc-800 transition-colors group-hover:text-amber-600">
                         {related.caption}
                       </p>
                       <p className="mt-1 line-clamp-2 text-xs text-zinc-500">{related.description}</p>

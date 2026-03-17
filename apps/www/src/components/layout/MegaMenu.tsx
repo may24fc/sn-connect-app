@@ -38,7 +38,7 @@ export function MegaMenu({ open, onClose, businesses }: MegaMenuProps): ReactNod
               <Link
                 href="/businesses"
                 onClick={onClose}
-                className="text-xs font-medium text-indigo-600 transition-colors hover:text-indigo-700"
+                className="text-xs font-medium text-amber-600 transition-colors hover:text-amber-700"
               >
                 View All
               </Link>
@@ -51,7 +51,7 @@ export function MegaMenu({ open, onClose, businesses }: MegaMenuProps): ReactNod
                   onClick={onClose}
                   className="group rounded-lg p-3 transition-colors hover:bg-zinc-50"
                 >
-                  <p className="text-sm font-semibold text-zinc-900 group-hover:text-indigo-600">
+                  <p className="text-sm font-semibold text-zinc-900 group-hover:text-amber-600">
                     {unit.name}
                   </p>
                   <p className="mt-0.5 text-xs text-zinc-500">

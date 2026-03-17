@@ -42,7 +42,7 @@ export function Header(): ReactNode {
           <div className="flex h-14 items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
                 SN
               </div>
               <span className="text-base font-semibold text-zinc-900">
@@ -70,7 +70,7 @@ export function Header(): ReactNode {
                         className={cn(
                           'relative flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                           isActive
-                            ? 'text-indigo-600'
+                            ? 'text-amber-600'
                             : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
                         )}
                         onClick={() => setMegaOpen((v) => !v)}
@@ -85,7 +85,7 @@ export function Header(): ReactNode {
                           )}
                         />
                         {isActive && (
-                          <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-indigo-600" />
+                          <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-slate-900" />
                         )}
                       </button>
                       <MegaMenu
@@ -104,13 +104,13 @@ export function Header(): ReactNode {
                     className={cn(
                       'relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       isActive
-                        ? 'text-indigo-600'
+                        ? 'text-amber-600'
                         : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
                     )}
                   >
                     {link.label}
                     {isActive && (
-                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-indigo-600" />
+                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-slate-900" />
                     )}
                   </Link>
                 );

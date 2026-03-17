@@ -59,7 +59,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
         }}
         className={cn(
           'fixed right-6 bottom-6 z-30 flex items-center gap-2 rounded-full px-5 py-3 font-semibold shadow-lg transition-all',
-          'bg-indigo-600 text-white hover:bg-indigo-500 hover:scale-105',
+          'bg-slate-900 text-white hover:bg-slate-800 hover:scale-105',
           isOpen && 'hidden'
         )}
       >
@@ -94,7 +94,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="mt-4 text-sm font-medium text-indigo-600 hover:underline"
+                className="mt-4 text-sm font-medium text-amber-600 hover:underline"
               >
                 Close
               </button>
@@ -105,7 +105,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
                 <input
                   {...register('name')}
                   placeholder="Your name"
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
                 />
                 {errors.name && (
                   <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
@@ -116,7 +116,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
                   {...register('email')}
                   type="email"
                   placeholder="Email address"
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
                 />
                 {errors.email && (
                   <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
@@ -126,14 +126,14 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
                 <input
                   {...register('phone')}
                   placeholder="Phone (optional)"
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
                 />
               </div>
               <div>
                 <input
                   {...register('subject')}
                   placeholder="Subject"
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
                 />
                 {errors.subject && (
                   <p className="mt-1 text-xs text-red-500">{errors.subject.message}</p>
@@ -144,7 +144,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
                   {...register('message')}
                   rows={3}
                   placeholder="Your message"
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:outline-none"
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
                 />
                 {errors.message && (
                   <p className="mt-1 text-xs text-red-500">{errors.message.message}</p>
@@ -158,7 +158,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
               >
                 <Send className="h-4 w-4" />
                 {isSubmitting ? 'Sending...' : 'Send Inquiry'}
