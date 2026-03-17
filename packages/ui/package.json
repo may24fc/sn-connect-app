@@ -20,6 +20,7 @@
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
+    "framer-motion": "^11.15.0",
     "react-hook-form": "^7.55.0",
     "recharts": "^2.15.4"
   },
