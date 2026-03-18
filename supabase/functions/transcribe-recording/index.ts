@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from '@supabase/supabase-js';
+import { validateAdminAuth } from '../_shared/auth.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -239,10 +240,10 @@ serve(async (req: Request) => {
   }
 
   try {
-    // Verify authorization
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+    // Validate admin authentication (service role key or admin secret)
+    const auth = validateAdminAuth(req);
+    if (!auth.ok) {
+      return new Response(JSON.stringify({ error: auth.error }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -282,7 +283,7 @@ serve(async (req: Request) => {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Edge function error: ${message}`);
 
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

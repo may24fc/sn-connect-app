@@ -4,6 +4,7 @@
 // Purpose: Fetch latest FX rates from Open Exchange Rates API and cache in database
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0';
+import { validateAdminAuth } from '../_shared/auth.ts';
 
 const OPEN_EXCHANGE_RATES_URL = 'https://openexchangerates.org/api/latest.json';
 
@@ -21,6 +22,15 @@ Deno.serve(async (req: Request) => {
     if (req.method !== 'POST') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate admin authentication (service role key or admin secret)
+    const auth = validateAdminAuth(req);
+    if (!auth.ok) {
+      return new Response(JSON.stringify({ error: auth.error }), {
+        status: 401,
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -80,7 +90,8 @@ Deno.serve(async (req: Request) => {
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: message }), {
+    console.error(`update-fx-rates error: ${message}`);
+    return new Response(JSON.stringify({ error: 'Failed to update FX rates' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

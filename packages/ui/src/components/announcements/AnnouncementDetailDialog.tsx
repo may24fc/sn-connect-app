@@ -126,9 +126,9 @@ export function AnnouncementDetailDialog({
             <div className="prose prose-zinc dark:prose-invert max-w-none">
               <div
                 className="text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap leading-relaxed"
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: Sanitized content from trusted source
-                dangerouslySetInnerHTML={{ __html: announcement.content }}
-              />
+              >
+                {announcement.content}
+              </div>
             </div>
           </div>
         </div>
