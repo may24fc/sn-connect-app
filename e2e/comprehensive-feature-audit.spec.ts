@@ -13,7 +13,7 @@ import * as path from 'node:path';
  * 5. Missing pages referenced in navigation but not implemented
  */
 
-const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
+const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3001';
 const SCREENSHOT_DIR = 'e2e/screenshots/feature-audit';
 
 const testCredentials = {

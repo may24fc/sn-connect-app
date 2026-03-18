@@ -34,7 +34,7 @@ async function captureScreenshot(page: Page, name: string) {
 // Helper to login
 async function loginAsAdmin(page: Page) {
   await page.goto(`${BASE_URL}/login`);
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   // Fill credentials
   const emailInput = page.getByLabel('Email');
@@ -53,7 +53,7 @@ async function loginAsAdmin(page: Page) {
 test.describe('Public Pages Audit', () => {
   test('Login page - UI consistency', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Screenshot
     await captureScreenshot(page, '01-login-page');
@@ -78,7 +78,7 @@ test.describe('Public Pages Audit', () => {
 
   test('Forgot password page - UI consistency', async ({ page }) => {
     await page.goto(`${BASE_URL}/forgot-password`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '03-forgot-password-page');
 
@@ -98,7 +98,7 @@ test.describe('Employee Dashboard Audit', () => {
 
   test('Dashboard - layout and responsiveness', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000); // Let animations settle
 
     await captureScreenshot(page, '10-employee-dashboard');
@@ -127,7 +127,7 @@ test.describe('Employee Dashboard Audit', () => {
 
   test('Profile page - form layout', async ({ page }) => {
     await page.goto(`${BASE_URL}/profile`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '11-profile-page');
 
@@ -138,14 +138,14 @@ test.describe('Employee Dashboard Audit', () => {
 
   test('Files page - 201 file management', async ({ page }) => {
     await page.goto(`${BASE_URL}/files`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '12-files-page');
   });
 
   test('Tasks page - task list and interactions', async ({ page }) => {
     await page.goto(`${BASE_URL}/tasks`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '13-tasks-page');
 
@@ -170,28 +170,28 @@ test.describe('Employee Dashboard Audit', () => {
 
   test('Reports page - report submission', async ({ page }) => {
     await page.goto(`${BASE_URL}/reports`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '14-reports-page');
   });
 
   test('Announcements page - announcement list', async ({ page }) => {
     await page.goto(`${BASE_URL}/announcements`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '15-announcements-page');
   });
 
   test('Notifications page - notification list', async ({ page }) => {
     await page.goto(`${BASE_URL}/notifications`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '16-notifications-page');
   });
 
   test('Information Hub page - resources', async ({ page }) => {
     await page.goto(`${BASE_URL}/information-hub`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '17-information-hub-page');
   });
@@ -208,7 +208,7 @@ test.describe('Performance Module - SlidePanel Analysis', () => {
 
   test('Performance page - OKR creation slide panel sizing', async ({ page }) => {
     await page.goto(`${BASE_URL}/performance`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1000);
 
     await captureScreenshot(page, '20-performance-page');
@@ -246,7 +246,7 @@ test.describe('Performance Module - SlidePanel Analysis', () => {
 
   test('OKRs detail page - key result slide panel', async ({ page }) => {
     await page.goto(`${BASE_URL}/performance/okrs`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '21-okrs-list-page');
 
@@ -254,7 +254,7 @@ test.describe('Performance Module - SlidePanel Analysis', () => {
     const okrLink = page.locator('a[href*="/performance/okrs/"]').first();
     if (await okrLink.isVisible()) {
       await okrLink.click();
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await captureScreenshot(page, '21-okr-detail-page');
 
       // Look for "Add Key Result" button
@@ -279,7 +279,7 @@ test.describe('Admin Pages Audit', () => {
 
   test('Admin Dashboard - overview layout', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '30-admin-dashboard');
 
@@ -290,28 +290,28 @@ test.describe('Admin Pages Audit', () => {
 
   test('Admin Directory - employee list', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/directory`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '31-admin-directory');
   });
 
   test('Admin Employee Management', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/employee-management`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '32-admin-employee-management');
   });
 
   test('Admin Interns - intern management', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/interns`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '33-admin-interns');
   });
 
   test('Admin Jobs - job listings and slide panel', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/jobs`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '34-admin-jobs');
 
@@ -334,7 +334,7 @@ test.describe('Admin Pages Audit', () => {
 
   test('Admin Job Applications - slide panel analysis', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/jobs/applications`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '35-admin-job-applications');
 
@@ -358,35 +358,35 @@ test.describe('Admin Pages Audit', () => {
 
   test('Admin Announcements', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/announcements`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '36-admin-announcements');
   });
 
   test('Admin Reports', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/reports`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '37-admin-reports');
   });
 
   test('Admin Performance', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/performance`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '38-admin-performance');
   });
 
   test('Admin Resources', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/resources`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '39-admin-resources');
   });
 
   test('Admin AI Knowledge', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/ai-knowledge`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '40-admin-ai-knowledge');
   });
@@ -403,28 +403,28 @@ test.describe('Super Admin Pages Audit', () => {
 
   test('Super Admin Dashboard', async ({ page }) => {
     await page.goto(`${BASE_URL}/super-admin/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '50-super-admin-dashboard');
   });
 
   test('Super Admin Payroll Approvals', async ({ page }) => {
     await page.goto(`${BASE_URL}/super-admin/payroll-approvals`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '51-super-admin-payroll-approvals');
   });
 
   test('Super Admin AI Knowledge', async ({ page }) => {
     await page.goto(`${BASE_URL}/super-admin/ai-knowledge`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '52-super-admin-ai-knowledge');
   });
 
   test('Super Admin Tasks', async ({ page }) => {
     await page.goto(`${BASE_URL}/super-admin/tasks`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '53-super-admin-tasks');
   });
@@ -441,7 +441,7 @@ test.describe('Intern Pages Audit', () => {
 
   test('Intern Dashboard - daily log slide panel', async ({ page }) => {
     await page.goto(`${BASE_URL}/intern/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '60-intern-dashboard');
 
@@ -464,7 +464,7 @@ test.describe('Intern Pages Audit', () => {
 
   test('Intern Reports', async ({ page }) => {
     await page.goto(`${BASE_URL}/intern/reports`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '61-intern-reports');
   });
@@ -478,7 +478,7 @@ test.describe('Onboarding Flow Audit', () => {
   test('Onboarding page - step wizard', async ({ page }) => {
     // This may redirect based on user state
     await page.goto(`${BASE_URL}/onboarding`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await captureScreenshot(page, '70-onboarding-flow');
 
@@ -505,7 +505,7 @@ test.describe('UI Consistency Audit', () => {
 
     for (const pagePath of pages) {
       await page.goto(`${BASE_URL}${pagePath}`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
 
       const buttons = await page.locator('button').all();
       for (const btn of buttons.slice(0, 5)) {
@@ -521,7 +521,7 @@ test.describe('UI Consistency Audit', () => {
 
   test('Color consistency - primary color usage', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Check for indigo-600 (primary) usage in buttons
     const primaryButtons = await page.locator('.bg-indigo-600, .text-indigo-600').count();
@@ -530,7 +530,7 @@ test.describe('UI Consistency Audit', () => {
 
   test('Typography consistency', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Check heading hierarchy
     const h1Count = await page.locator('h1').count();
@@ -542,7 +542,7 @@ test.describe('UI Consistency Audit', () => {
 
   test('Form field consistency', async ({ page }) => {
     await page.goto(`${BASE_URL}/profile`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Check for consistent input styling
     const inputs = await page.locator('input[type="text"], input[type="email"]').all();
@@ -570,7 +570,7 @@ test.describe('Accessibility Basics', () => {
 
   test('Focus indicators visible', async ({ page }) => {
     await page.goto(`${BASE_URL}/login`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Tab through the page
     await page.keyboard.press('Tab');
@@ -582,7 +582,7 @@ test.describe('Accessibility Basics', () => {
 
   test('Buttons have accessible names', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const buttons = await page.locator('button').all();
     let buttonsWithoutLabel = 0;
@@ -602,7 +602,7 @@ test.describe('Accessibility Basics', () => {
 
   test('Images have alt text', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const images = await page.locator('img').all();
     let imagesWithoutAlt = 0;
@@ -619,7 +619,7 @@ test.describe('Accessibility Basics', () => {
 
   test('Color contrast - check for low contrast text', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Check for zinc-400/zinc-500 text which might have contrast issues
     const lowContrastElements = await page.locator('.text-zinc-400, .text-zinc-300').count();
@@ -649,7 +649,7 @@ test.describe('SlidePanel Sizing Deep Analysis', () => {
 
     for (const { url, trigger } of pagesWithPanels) {
       await page.goto(`${BASE_URL}${url}`);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await page.waitForTimeout(500);
 
       const btn = page.getByRole('button', { name: trigger }).first();
