@@ -60,7 +60,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch KPI entries', details: error.message },
+        { error: 'Failed to fetch KPI entries' },
         { status: 500 }
       );
     }
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to create KPI entry', details: error.message },
+        { error: 'Failed to create KPI entry' },
         { status: 500 }
       );
     }

@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { invoiceLineItemSchema, invoiceUpdateSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -153,6 +154,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (error || !data) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_invoice',
+      tableName: 'invoices',
+      recordId: id,
+    });
 
     return NextResponse.json({ data });
   } catch (error) {

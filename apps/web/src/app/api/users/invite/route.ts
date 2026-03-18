@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -130,6 +131,14 @@ export async function POST(request: NextRequest) {
       console.error('Error creating onboarding profile:', createProfileError);
       // Continue anyway - the user can create their profile on first login
     }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'invite_user',
+      tableName: 'users',
+      recordId: newAuthUser.user.id,
+      metadata: { email, role },
+    });
 
     return NextResponse.json(
       {

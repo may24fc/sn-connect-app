@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -102,6 +103,14 @@ export async function POST(request: NextRequest) {
       console.error('Error creating document record:', documentError);
       return NextResponse.json({ error: 'Failed to create document record' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'upload_document',
+      tableName: 'documents',
+      recordId: documentData.id,
+      metadata: { employeeId, documentType },
+    });
 
     return NextResponse.json({ data: documentData }, { status: 201 });
   } catch (error) {

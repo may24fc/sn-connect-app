@@ -53,7 +53,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch metadata', details: error.message },
+        { error: 'Failed to fetch metadata' },
         { status: 500 }
       );
     }
@@ -168,7 +168,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to update metadata', details: error.message },
+        { error: 'Failed to update metadata' },
         { status: 500 }
       );
     }
@@ -229,7 +229,7 @@ export async function DELETE(
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to delete metadata', details: error.message },
+        { error: 'Failed to delete metadata' },
         { status: 500 }
       );
     }

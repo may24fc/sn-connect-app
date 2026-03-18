@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -109,6 +110,13 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       console.error('Error submitting invoice:', error);
       return NextResponse.json({ error: 'Failed to submit invoice' }, { status: 500 });
     }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'submit_invoice',
+      tableName: 'invoices',
+      recordId: id,
+    });
 
     return NextResponse.json({ data });
   } catch (error) {

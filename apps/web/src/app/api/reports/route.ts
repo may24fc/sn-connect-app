@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { reportCreateSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -289,6 +290,14 @@ export async function POST(request: NextRequest) {
     if (fullReportError) {
       return NextResponse.json({ data: report }, { status: 201 });
     }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'create_report',
+      tableName: 'reports',
+      recordId: report.id,
+      metadata: { employeeId, reportType: parsed.data.reportType },
+    });
 
     return NextResponse.json({ data: fullReport }, { status: 201 });
   } catch (error) {

@@ -36,6 +36,20 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
+    // Authorization: non-admin users can only view their own record or their reports
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isAdmin = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+
+    if (!isAdmin) {
+      const employeeUserId = (data as { user_id?: string }).user_id;
+      const isOwnRecord = employeeUserId === user.id;
+      const isManager = (data as { immediate_head?: string }).immediate_head === user.id;
+
+      if (!isOwnRecord && !isManager) {
+        return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+      }
+    }
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in GET /api/employees/[id]:', error);

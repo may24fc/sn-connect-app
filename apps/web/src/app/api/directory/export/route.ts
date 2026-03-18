@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import ExcelJS from 'exceljs';
 import { type NextRequest, NextResponse } from 'next/server';
-import * as XLSX from 'xlsx';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to export directory', details: error.message },
+        { error: 'Failed to export directory' },
         { status: 500 }
       );
     }
@@ -125,22 +125,36 @@ export async function GET(request: NextRequest) {
     }
 
     if (format === 'xlsx') {
-      const worksheet = XLSX.utils.json_to_sheet(
-        rows.map((row: DirectoryExportRow) => ({
-          'Full Name': row.full_name || '',
-          Role: row.role || '',
-          Department: row.department_name || '',
-          Position: row.position || '',
-          Status: row.status || '',
-          'Employment Type': row.employment_type || '',
-          'Start Date': row.start_date || '',
-          Email: row.email || '',
-          'Contact Number': row.contact_number || '',
-        }))
-      );
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Directory');
-      const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Directory');
+
+      worksheet.columns = [
+        { header: 'Full Name', key: 'full_name', width: 25 },
+        { header: 'Role', key: 'role', width: 15 },
+        { header: 'Department', key: 'department', width: 20 },
+        { header: 'Position', key: 'position', width: 20 },
+        { header: 'Status', key: 'status', width: 15 },
+        { header: 'Employment Type', key: 'employment_type', width: 18 },
+        { header: 'Start Date', key: 'start_date', width: 15 },
+        { header: 'Email', key: 'email', width: 30 },
+        { header: 'Contact Number', key: 'contact_number', width: 18 },
+      ];
+
+      for (const row of rows) {
+        worksheet.addRow({
+          full_name: row.full_name || '',
+          role: row.role || '',
+          department: row.department_name || '',
+          position: row.position || '',
+          status: row.status || '',
+          employment_type: row.employment_type || '',
+          start_date: row.start_date || '',
+          email: row.email || '',
+          contact_number: row.contact_number || '',
+        });
+      }
+
+      const buffer = await workbook.xlsx.writeBuffer();
 
       return new NextResponse(buffer, {
         status: 200,

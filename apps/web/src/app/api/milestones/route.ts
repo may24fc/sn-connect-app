@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch milestones', details: error.message },
+        { error: 'Failed to fetch milestones' },
         { status: 500 }
       );
     }

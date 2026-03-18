@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { invoiceApprovalSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -67,6 +68,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       console.error('Error approving invoice:', error);
       return NextResponse.json({ error: 'Failed to update invoice status' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: `invoice_${parsed.data.action}`,
+      tableName: 'invoices',
+      recordId: id,
+      metadata: { notes: parsed.data.notes || null },
+    });
 
     return NextResponse.json({ data });
   } catch (error) {

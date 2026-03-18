@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { invoiceCreateSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -289,6 +290,14 @@ export async function POST(request: NextRequest) {
       .select('*, invoice_line_items(*)')
       .eq('id', invoice.id)
       .single();
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'create_invoice',
+      tableName: 'invoices',
+      recordId: invoice.id,
+      metadata: { invoiceNumber, employeeId: resolvedEmployeeId },
+    });
 
     return NextResponse.json({ data: fullInvoice || invoice }, { status: 201 });
   } catch (error) {

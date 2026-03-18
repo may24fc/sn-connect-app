@@ -64,7 +64,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'File exceeds 10MB size limit' }, { status: 400 });
     }
 
-    const filePath = `${id}/${crypto.randomUUID()}-${file.name}`;
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const filePath = `${id}/${crypto.randomUUID()}-${sanitizedFileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('announcement-attachments')

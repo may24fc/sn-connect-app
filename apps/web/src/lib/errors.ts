@@ -80,6 +80,33 @@ function getDefaultAction(code: ErrorCodeValue): string {
 }
 
 /**
+ * Normalise raw Supabase / browser network error messages into friendly text.
+ * Call this before surfacing any auth error to the user.
+ */
+export function normalizeAuthError(message: string): string {
+  const lower = message.toLowerCase();
+
+  // Network / offline errors emitted by different browsers
+  if (
+    lower === 'failed to fetch' ||
+    lower.includes('networkerror') ||
+    lower.includes('network request failed') ||
+    lower.includes('the internet connection appears to be offline') ||
+    lower.includes('load failed') ||
+    lower.includes('the network connection was lost')
+  ) {
+    return 'No internet connection. Please check your network and try again.';
+  }
+
+  // Supabase timeout (our own withTimeout message)
+  if (lower.includes('timed out')) {
+    return 'The request timed out. Please check your connection and try again.';
+  }
+
+  return message;
+}
+
+/**
  * User-facing error messages keyed by error code prefix.
  * Used by the ErrorBoundary and client-side error display.
  */

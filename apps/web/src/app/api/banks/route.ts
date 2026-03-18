@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch banks', details: error.message },
+        { error: 'Failed to fetch banks' },
         { status: 500 }
       );
     }

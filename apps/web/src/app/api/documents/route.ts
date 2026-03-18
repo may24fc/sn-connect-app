@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { DocumentInsert } from '@hr-portal/database';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -116,6 +117,14 @@ export async function POST(request: NextRequest) {
       console.error('Error creating document:', error);
       return NextResponse.json({ error: 'Failed to create document' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'create_document',
+      tableName: 'documents',
+      recordId: data.id,
+      metadata: { employeeId: body.employee_id, documentType: body.document_type },
+    });
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

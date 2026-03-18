@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -147,6 +148,13 @@ export async function POST(request: NextRequest) {
 
       // TODO: Send approval email notification to user
 
+      logActivity(supabase, {
+        userId: user.id,
+        action: 'approve_onboarding',
+        tableName: 'users',
+        recordId: userId,
+      });
+
       return NextResponse.json({
         message: 'Onboarding approved and user activated successfully',
         data: { userId, status: 'active' },
@@ -156,6 +164,14 @@ export async function POST(request: NextRequest) {
       // For now, we'll keep them as awaiting_approval with notes
 
       // TODO: Send rejection email notification to user with notes
+
+      logActivity(supabase, {
+        userId: user.id,
+        action: 'reject_onboarding',
+        tableName: 'users',
+        recordId: userId,
+        metadata: { notes },
+      });
 
       return NextResponse.json({
         message: 'Onboarding rejected. User notified.',

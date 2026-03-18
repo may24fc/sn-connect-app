@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { reportMetricSchema, reportSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -187,6 +188,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Report not found' }, { status: 404 });
     }
 
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'update_report',
+      tableName: 'reports',
+      recordId: id,
+    });
+
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/reports/[id]:', error);
@@ -225,6 +233,13 @@ export async function DELETE(
       console.error('Error deleting report:', error);
       return NextResponse.json({ error: 'Failed to delete report' }, { status: 500 });
     }
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'delete_report',
+      tableName: 'reports',
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

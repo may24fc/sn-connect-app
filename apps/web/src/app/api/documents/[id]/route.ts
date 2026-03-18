@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -90,6 +91,14 @@ export async function DELETE(
         { status: 500 }
       );
     }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'delete_document',
+      tableName: 'documents',
+      recordId: id,
+      metadata: { employeeId: document.employee_id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

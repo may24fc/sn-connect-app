@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       return NextResponse.json(
-        { error: 'Failed to fetch directory', details: error.message },
+        { error: 'Failed to fetch directory' },
         { status: 500 }
       );
     }

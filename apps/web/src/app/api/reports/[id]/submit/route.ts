@@ -1,3 +1,4 @@
+import { logActivity } from '@/lib/audit';
 import {
   createNotificationsForUsers,
   getAdminUserIds,
@@ -51,6 +52,13 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       message: `${submitterName} submitted a ${data.report_type?.replace(/_/g, ' ') ?? 'report'} for review`,
       link: `/admin/reports`,
       metadata: { reportId: id, submittedBy: user.id },
+    });
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'submit_report',
+      tableName: 'reports',
+      recordId: id,
     });
 
     return NextResponse.json({ data });
