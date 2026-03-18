@@ -20,7 +20,8 @@ const GUARDRAIL_SYSTEM_PROMPT = `You are SN Connect, an internal AI HR assistant
 4. PRIVACY GUARDRAIL – CRITICAL: You must NEVER disclose Personally Identifiable Information (PII), salary, performance reviews, or HR records belonging to anyone other than the user asking the question. If a user asks for information about another named individual, colleague, or employee, you must instantly refuse: "For privacy and security reasons, I am only authorized to discuss company-wide policies or your own personal HR data."
 5. Be professional, friendly, and concise.
 6. Format responses with clear paragraphs and bullet points where appropriate.
-7. CITATION FORMAT – CRITICAL: When you reference information from the context blocks, you MUST add an inline citation marker immediately after the relevant fact using square brackets with the context block number (e.g., [1], [2], [3]). Each context block is numbered starting from 1. Example: "Employees are entitled to 15 days of annual leave [1], and sick leave can be taken without prior approval [2]."`;
+7. CITATION FORMAT – CRITICAL: When you reference information from the context blocks, you MUST add an inline citation marker immediately after the relevant fact using square brackets with the context block number (e.g., [1], [2], [3]). Each context block is numbered starting from 1. Example: "Employees are entitled to 15 days of annual leave [1], and sick leave can be taken without prior approval [2]."
+8. CONVERSATION CONTINUITY: When handling follow-up questions about topics already discussed in this conversation, you may reference information from your previous responses to maintain conversational flow. Ensure any facts you reference remain grounded in the provided context blocks.`;
 
 const ROUTER_SYSTEM_PROMPT = `You are a query complexity classifier. Given a user question about HR policies, classify it.
 Output ONLY a valid JSON object with exactly these fields:
@@ -102,15 +103,13 @@ async function lookupCache(
   return { response_text: hit.response_text, source_citations: hit.source_citations, id: hit.id };
 }
 
-// Cache access-level gate — returns false if the cached result used any admin-only
-// knowledge sources and the current user does not have admin access.
+// Cache access-level gate — returns false if the cached result used any
+// soft-deleted knowledge sources OR admin-only sources the user can't access.
 async function isCacheHitAllowed(
   adminClient: ReturnType<typeof getAdminClient>,
   sourceCitations: unknown,
   isAdminRole: boolean
 ): Promise<boolean> {
-  if (isAdminRole) return true;
-
   const citations = Array.isArray(sourceCitations)
     ? (sourceCitations as Array<Record<string, unknown>>)
     : [];
@@ -123,11 +122,19 @@ async function isCacheHitAllowed(
 
   const { data } = await adminClient
     .from('knowledge_sources')
-    .select('access_level')
+    .select('id, access_level, deleted_at, is_active')
     .in('id', sourceIds);
 
+  const rows = (data ?? []) as Array<{ id: string; access_level: string; deleted_at: string | null; is_active: boolean }>;
+
+  // If any cited source was deleted or deactivated, reject this cache hit
+  if (rows.length < sourceIds.length) return false; // source row missing entirely
+  if (rows.some((s) => s.deleted_at !== null || !s.is_active)) return false;
+
   // If any source is admin-only, this cache hit is not safe for non-admins
-  return !(data ?? []).some((s) => (s as { access_level: string }).access_level === 'admin');
+  if (!isAdminRole && rows.some((s) => s.access_level === 'admin')) return false;
+
+  return true;
 }
 
 // Stage 2: Complexity Router
@@ -288,10 +295,25 @@ export async function POST(request: NextRequest) {
     const openai = getOpenAIClient();
     const adminClient = getAdminClient();
 
+    // ── Build context-enhanced search query for follow-up questions ──
+    // When conversation history exists, include recent assistant context so
+    // the embedding captures the topic being discussed (e.g. "tell me more").
+    let searchQuery = latestUserMessage;
+    if (historyMessages && historyMessages.length > 2) {
+      const recentAssistantContext = historyMessages
+        .filter((m) => m.role === 'assistant')
+        .slice(-2)
+        .map((m) => m.content.slice(0, 200))
+        .join(' ');
+      if (recentAssistantContext) {
+        searchQuery = `${recentAssistantContext}\n\nCurrent question: ${latestUserMessage}`;
+      }
+    }
+
     // ── Stage 1: Semantic Cache ──
     let queryEmbedding: number[];
     try {
-      queryEmbedding = await generateQueryEmbedding(openai, latestUserMessage);
+      queryEmbedding = await generateQueryEmbedding(openai, searchQuery);
     } catch (embeddingError) {
       console.error('Embedding generation failed:', embeddingError);
       return NextResponse.json({ error: 'Failed to process query' }, { status: 500 });

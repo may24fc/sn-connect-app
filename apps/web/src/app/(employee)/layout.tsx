@@ -59,7 +59,7 @@ export default function EmployeeLayout({
   };
 
   const handleProfileClick = (): void => {
-    router.push('/profile');
+    router.push(user.role === 'intern' ? '/intern/profile' : '/profile');
   };
 
   return (
@@ -257,6 +257,7 @@ function EmployeeAIChatbot(): ReactNode {
       sourceId: c.sourceId,
       sourceName: c.sourceName,
       exactQuote: c.exactQuote,
+      citedText: c.citedText,
       relevanceScore: c.relevanceScore,
     })) ?? [],
   }));

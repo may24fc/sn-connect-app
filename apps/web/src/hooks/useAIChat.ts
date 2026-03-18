@@ -18,6 +18,8 @@ export interface SourceCitation {
   sourceName: string;
   /** Verbatim excerpt from the source document */
   exactQuote: string;
+  /** The actual text from the AI response that cited this source */
+  citedText?: string;
   /** Similarity/relevance score (0-1) */
   relevanceScore: number;
 }
@@ -107,6 +109,42 @@ function parseSSELine(line: string): StreamChunk | null {
   }
 }
 
+/**
+ * Parse the completed AI response to extract the actual text around each [n]
+ * citation marker. This lets the Sources panel display what the AI wrote when
+ * referencing a source, instead of showing the raw document chunk.
+ */
+function extractCitedTextsFromResponse(response: string): Map<number, string> {
+  const citedTexts = new Map<number, string[]>();
+
+  // Split into sentences — handles period/exclamation/question + newlines
+  const sentences = response.split(/(?<=[.!?])\s+|\n+/).filter((s) => s.trim());
+
+  for (const sentence of sentences) {
+    const matches = [...sentence.matchAll(/\[(\d+)\]/g)];
+    for (const match of matches) {
+      const citId = Number.parseInt(match[1] ?? '0', 10);
+      // Remove ALL citation markers for a clean display sentence
+      const cleanText = sentence.replace(/\s*\[\d+\]/g, '').trim();
+      if (cleanText) {
+        if (!citedTexts.has(citId)) {
+          citedTexts.set(citId, []);
+        }
+        citedTexts.get(citId)?.push(cleanText);
+      }
+    }
+  }
+
+  const result = new Map<number, string>();
+  for (const [id, texts] of citedTexts) {
+    // Deduplicate and show up to 3 cited sentences joined by ellipsis
+    const unique = [...new Set(texts)].slice(0, 3);
+    result.set(id, unique.join(' … '));
+  }
+
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
@@ -189,6 +227,7 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
       const decoder = new TextDecoder();
       let buffer = '';
       let collectedCitations: Array<SourceCitation> | undefined;
+      let fullResponseText = '';
 
       try {
         while (true) {
@@ -209,6 +248,8 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
 
             switch (chunk.type) {
               case 'content': {
+                // Track the full response for cited-text extraction later.
+                fullResponseText += chunk.text;
                 // Append streamed text to the assistant message.
                 setMessages((prev) =>
                   prev.map((m) =>
@@ -252,9 +293,29 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
         if (buffer.trim()) {
           const chunk = parseSSELine(buffer);
           if (chunk?.type === 'content') {
+            fullResponseText += chunk.text;
             setMessages((prev) =>
               prev.map((m) =>
                 m.id === assistantMessageId ? { ...m, content: m.content + chunk.text } : m
+              )
+            );
+          }
+        }
+
+        // Extract which sentences in the response cite each source.
+        // This lets the Sources panel show what the AI actually wrote when
+        // referencing a particular source, instead of the raw document chunk.
+        if (fullResponseText && collectedCitations?.length) {
+          const citedTextMap = extractCitedTextsFromResponse(fullResponseText);
+          if (citedTextMap.size > 0) {
+            const updatedCitations = collectedCitations.map((c) => ({
+              ...c,
+              citedText: citedTextMap.get(c.id),
+            }));
+            collectedCitations = updatedCitations;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMessageId ? { ...m, citations: updatedCitations } : m
               )
             );
           }

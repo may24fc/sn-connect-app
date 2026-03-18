@@ -11,6 +11,8 @@ export interface Citation {
   sourceName: string;
   /** Verbatim excerpt from the source document */
   exactQuote: string;
+  /** The actual text from the AI response that cited this source */
+  citedText?: string;
   /** Similarity/relevance score (0-1) */
   relevanceScore: number;
 }

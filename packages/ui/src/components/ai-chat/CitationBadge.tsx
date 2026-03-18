@@ -88,11 +88,11 @@ export function CitationBadge({
             </div>
           </div>
 
-          {/* Exact quote */}
+          {/* Referenced text */}
           <div className="relative">
             <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-slate-800 rounded-full" />
             <blockquote className="pl-3 text-[13px] text-zinc-600 dark:text-zinc-300 italic leading-relaxed">
-              "{citation.exactQuote}"
+              &ldquo;{citation.citedText || citation.exactQuote}&rdquo;
             </blockquote>
           </div>
         </div>

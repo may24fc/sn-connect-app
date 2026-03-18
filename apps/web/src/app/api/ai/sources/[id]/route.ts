@@ -173,6 +173,14 @@ export async function DELETE(_: NextRequest, context: RouteContext) {
     // Clean up associated embeddings
     await adminClient.from('knowledge_embeddings').delete().eq('source_id', id);
 
+    // Invalidate any cached responses that cited this source so they
+    // don't continue serving stale answers for the deleted content.
+    // source_citations is JSONB — match rows where any citation's sourceId equals the deleted id.
+    await adminClient
+      .from('query_cache')
+      .delete()
+      .contains('source_citations', JSON.stringify([{ sourceId: id }]));
+
     await adminClient.from('audit_logs').insert({
       user_id: user.id,
       action: 'delete_knowledge_source',

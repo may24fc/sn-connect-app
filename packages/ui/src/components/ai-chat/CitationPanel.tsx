@@ -124,11 +124,35 @@ export function CitationPanel({
                   </div>
                 </div>
 
-                {/* Exact quote */}
-                <div className="relative pl-3 border-l-2 border-slate-300 dark:border-slate-700">
-                  <blockquote className="text-[13px] text-zinc-600 dark:text-zinc-300 italic leading-relaxed">
-                    "{citation.exactQuote}"
-                  </blockquote>
+                {/* Referenced text from the AI response */}
+                {citation.citedText && (
+                  <div className="mb-2.5">
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+                      Referenced in response
+                    </p>
+                    <div className="relative pl-3 border-l-2 border-slate-500 dark:border-slate-400">
+                      <p className="text-[13px] text-zinc-700 dark:text-zinc-200 leading-relaxed">
+                        {citation.citedText}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Source excerpt */}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+                    {citation.citedText ? 'From source' : 'Source excerpt'}
+                  </p>
+                  <div className="relative pl-3 border-l-2 border-zinc-300 dark:border-zinc-700">
+                    <blockquote className={cn(
+                      'text-[13px] italic leading-relaxed',
+                      citation.citedText
+                        ? 'text-zinc-400 dark:text-zinc-500'
+                        : 'text-zinc-600 dark:text-zinc-300'
+                    )}>
+                      &ldquo;{citation.exactQuote}&rdquo;
+                    </blockquote>
+                  </div>
                 </div>
               </div>
             );
