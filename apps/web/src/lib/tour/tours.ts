@@ -36,7 +36,7 @@ export const dashboardTourSteps: TourGuideStep[] = [
   {
     title: 'Quick Actions',
     content:
-      'Quickly upload files, submit reports, view your calendar, or request leave from here.',
+      'Quickly upload files, submit reports, or view your calendar from here.',
     target: '[data-tour="quick-actions"]',
     group: 'dashboard',
     order: 3,

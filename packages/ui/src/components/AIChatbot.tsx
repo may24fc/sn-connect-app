@@ -78,7 +78,6 @@ export interface AIChatbotProps {
 const defaultWelcomeMessage = `Hi! I'm SN Connect AI. I can help you with:
 
 - Employee policies and procedures
-- Leave requests and balances
 - Payroll questions
 - Benefits information
 - Onboarding tasks
@@ -862,16 +861,6 @@ function ConversationGroup({
 function getSimulatedResponse(message: string): string {
   const lowerMessage = message.toLowerCase();
 
-  if (lowerMessage.includes('leave') || lowerMessage.includes('vacation')) {
-    return `For leave requests, you can:
-
-1. Go to the Payroll section to submit time-off requests
-2. Check your leave balance in your Profile
-3. View pending requests in your dashboard
-
-Would you like me to help you with a specific leave request?`;
-  }
-
   if (lowerMessage.includes('document') || lowerMessage.includes('201')) {
     return `Your 201 files can be managed in the "My Documents" section. There you can:
 
@@ -909,7 +898,6 @@ You can check your completion percentage on your dashboard.`;
   if (lowerMessage.includes('help') || lowerMessage.includes('support')) {
     return `I can help you with:
 
-- Leave requests and balances
 - Document submissions (201 files)
 - Payroll and invoice questions
 - Onboarding tasks
