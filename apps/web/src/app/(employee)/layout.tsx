@@ -257,7 +257,7 @@ function EmployeeAIChatbot(): ReactNode {
       sourceId: c.sourceId,
       sourceName: c.sourceName,
       exactQuote: c.exactQuote,
-      citedText: c.citedText,
+      ...(c.citedText !== undefined && { citedText: c.citedText }),
       relevanceScore: c.relevanceScore,
     })) ?? [],
   }));

@@ -306,20 +306,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           // SECURITY: Validate the JWT with Supabase servers in the background.
           // If the token was revoked, sign the user out. This is non-blocking
           // so the UI doesn't flash while waiting for the round-trip.
-          supabase.auth.getUser().then(({ data, error: getUserError }) => {
-            if (!isMounted) return;
-            if (getUserError || !data.user) {
-              // Server says session is invalid — clear state
-              console.warn('Background session validation failed:', getUserError?.message);
-              setUser(null);
-            } else {
-              // Sync any updated metadata from the validated session
-              syncAuthState(data.user);
+          void (async () => {
+            try {
+              const { data, error: getUserError } = await supabase.auth.getUser();
+              if (!isMounted) return;
+              if (getUserError || !data.user) {
+                // Server says session is invalid — clear state
+                console.warn('Background session validation failed:', getUserError?.message);
+                setUser(null);
+              } else {
+                // Sync any updated metadata from the validated session
+                syncAuthState(data.user);
+              }
+            } catch {
+              // Network error during background validation — keep current user.
+              // Security is still enforced by RLS at the database level.
             }
-          }).catch(() => {
-            // Network error during background validation — keep current user.
-            // Security is still enforced by RLS at the database level.
-          });
+          })();
           return;
         }
 

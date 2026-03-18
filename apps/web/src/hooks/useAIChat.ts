@@ -308,10 +308,13 @@ export function useAIChat(options?: UseAIChatOptions): UseAIChatReturn {
         if (fullResponseText && collectedCitations?.length) {
           const citedTextMap = extractCitedTextsFromResponse(fullResponseText);
           if (citedTextMap.size > 0) {
-            const updatedCitations = collectedCitations.map((c) => ({
-              ...c,
-              citedText: citedTextMap.get(c.id),
-            }));
+            const updatedCitations = collectedCitations.map((c) => {
+              const citedText = citedTextMap.get(c.id);
+              return {
+                ...c,
+                ...(citedText !== undefined && { citedText }),
+              };
+            });
             collectedCitations = updatedCitations;
             setMessages((prev) =>
               prev.map((m) =>
