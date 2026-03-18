@@ -164,6 +164,7 @@ export default async function BusinessDetailPage({ params }: PageProps) {
             services={unit.services}
             businessName={unit.name}
             subtitle={`What ${unit.name} offers`}
+            cardBg={unit.cardBg}
           />
         </div>
       </section>

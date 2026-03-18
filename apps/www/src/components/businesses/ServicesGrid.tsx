@@ -14,12 +14,15 @@ interface ServicesGridProps {
   services: Service[];
   businessName?: string;
   subtitle?: string;
+  /** Tailwind bg + border classes matching the business brand, e.g. 'bg-amber-100 border-amber-200' */
+  cardBg?: string;
 }
 
 export function ServicesGrid({
   services,
   businessName,
   subtitle,
+  cardBg,
 }: ServicesGridProps): ReactNode {
   return (
     <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
@@ -43,7 +46,7 @@ export function ServicesGrid({
       <div className="flex-1 space-y-6">
         {services.map((service, i) => (
           <ScrollReveal key={service.title} delay={i * 0.1}>
-            <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-card transition-shadow hover:shadow-card-hover">
+            <div className={`overflow-hidden rounded-xl border shadow-card transition-shadow hover:shadow-card-hover ${cardBg ?? 'bg-white border-zinc-200'}`}>
               {service.image && (
                 <div className="relative h-44 w-full overflow-hidden">
                   <Image

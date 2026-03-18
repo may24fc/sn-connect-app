@@ -12,9 +12,9 @@ export function MissionVision(): ReactNode {
         <div className="grid gap-8 md:grid-cols-2">
           <ScrollReveal direction="left">
             <div className="group rounded-xl border border-zinc-200 bg-white p-8 shadow-card transition-shadow hover:shadow-card-hover">
-              <h3 className="text-2xl font-bold text-zinc-900">
+              <h2 className="text-2xl font-bold text-zinc-900">
                 Our Mission
-              </h3>
+              </h2>
               <div className="mt-2 h-1 w-12 rounded-full bg-slate-900" />
               <p className="mt-4 text-zinc-600 leading-relaxed">
                 {MISSION}
@@ -24,9 +24,9 @@ export function MissionVision(): ReactNode {
 
           <ScrollReveal direction="right">
             <div className="group rounded-xl border border-zinc-200 bg-white p-8 shadow-card transition-shadow hover:shadow-card-hover">
-              <h3 className="text-2xl font-bold text-zinc-900">
+              <h2 className="text-2xl font-bold text-zinc-900">
                 Our Vision
-              </h3>
+              </h2>
               <div className="mt-2 h-1 w-12 rounded-full bg-slate-900" />
               <p className="mt-4 text-zinc-600 leading-relaxed">
                 {VISION}

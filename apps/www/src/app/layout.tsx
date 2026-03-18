@@ -97,9 +97,9 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       </head>
       <body className="min-h-screen overflow-x-clip font-sans antialiased">
         <Providers>
-          <AnnouncementBanner />
           <ScrollProgress />
           <Header />
+          <AnnouncementBanner />
           <main id="main-content">{children}</main>
           <Footer />
         </Providers>
