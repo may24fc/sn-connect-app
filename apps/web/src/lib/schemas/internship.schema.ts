@@ -34,12 +34,26 @@ export const updateInternshipSchema = createInternshipSchema
     message: 'At least one field is required',
   });
 
+export const internDailyLogStatusSchema = z.enum(['draft', 'submitted']);
+
 export const createInternDailyLogSchema = z.object({
   logDate: isoDateSchema,
   hoursWorked: z.coerce.number().min(0.25).max(24),
   tasksCompleted: z.string().trim().min(1),
   learnings: z.string().trim().nullable().optional(),
   challenges: z.string().trim().nullable().optional(),
+  status: internDailyLogStatusSchema.default('submitted'),
+});
+
+/** Schema for interns editing their own draft logs. */
+export const updateInternDraftLogSchema = z.object({
+  logId: z.string().uuid(),
+  logDate: isoDateSchema.optional(),
+  hoursWorked: z.coerce.number().min(0.25).max(24).optional(),
+  tasksCompleted: z.string().trim().min(1).optional(),
+  learnings: z.string().trim().nullable().optional(),
+  challenges: z.string().trim().nullable().optional(),
+  status: internDailyLogStatusSchema.optional(),
 });
 
 export const updateInternDailyLogSchema = z

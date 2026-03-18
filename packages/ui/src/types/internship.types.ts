@@ -6,7 +6,7 @@ export type SupervisorId = string & { __brand: 'SupervisorId' };
 
 // Internship Status Types
 export type InternshipStatus = 'active' | 'completed' | 'terminated' | 'on_hold';
-export type ReportStatus = 'submitted' | 'reviewed' | 'needs_revision';
+export type ReportStatus = 'draft' | 'submitted' | 'reviewed' | 'needs_revision';
 
 // Internship Period
 export interface InternshipPeriod {
@@ -128,8 +128,9 @@ export const INTERNSHIP_STATUS_CONFIG: Record<
 
 export const REPORT_STATUS_CONFIG: Record<
   ReportStatus,
-  { label: string; variant: 'success' | 'warning' | 'error' }
+  { label: string; variant: 'success' | 'warning' | 'error' | 'secondary' }
 > = {
+  draft: { label: 'Draft', variant: 'secondary' },
   submitted: { label: 'Submitted', variant: 'warning' },
   reviewed: { label: 'Reviewed', variant: 'success' },
   needs_revision: { label: 'Needs Revision', variant: 'error' },

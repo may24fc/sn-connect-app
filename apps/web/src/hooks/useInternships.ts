@@ -209,6 +209,7 @@ export function useCreateInternDailyLog() {
       tasksCompleted: string;
       learnings?: string;
       challenges?: string;
+      status?: 'draft' | 'submitted';
     }) => {
       const response = await fetch(`/api/internships/${payload.internshipId}/logs`, {
         method: 'POST',
@@ -219,12 +220,61 @@ export function useCreateInternDailyLog() {
           tasksCompleted: payload.tasksCompleted,
           learnings: payload.learnings,
           challenges: payload.challenges,
+          status: payload.status ?? 'submitted',
         }),
       });
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Failed to create daily log' }));
         throw new Error(error.error || 'Failed to create daily log');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.internships.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.logs(variables.internshipId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.detail(variables.internshipId),
+      });
+    },
+  });
+}
+
+/** Update an intern's own draft log (edit content or submit). */
+export function useUpdateInternDraftLog() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      internshipId: string;
+      logId: string;
+      logDate?: string;
+      hoursWorked?: number;
+      tasksCompleted?: string;
+      learnings?: string | null;
+      challenges?: string | null;
+      status?: 'draft' | 'submitted';
+    }) => {
+      const response = await fetch(`/api/internships/${payload.internshipId}/logs`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          logId: payload.logId,
+          logDate: payload.logDate,
+          hoursWorked: payload.hoursWorked,
+          tasksCompleted: payload.tasksCompleted,
+          learnings: payload.learnings,
+          challenges: payload.challenges,
+          status: payload.status,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to update daily log' }));
+        throw new Error(error.error || 'Failed to update daily log');
       }
 
       return response.json();

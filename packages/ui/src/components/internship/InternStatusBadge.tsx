@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, CheckCircle2, Clock, FileText, Pause, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, FileEdit, FileText, Pause, XCircle } from 'lucide-react';
 import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
 import type { InternshipStatus, ReportStatus } from '../../types/internship.types';
@@ -43,6 +43,7 @@ interface ReportStatusBadgeProps {
 }
 
 const REPORT_ICONS: Record<ReportStatus, React.ElementType> = {
+  draft: FileEdit,
   submitted: FileText,
   reviewed: CheckCircle2,
   needs_revision: AlertCircle,

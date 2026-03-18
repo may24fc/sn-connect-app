@@ -1,6 +1,7 @@
 import {
   createInternDailyLogSchema,
   updateInternDailyLogSchema,
+  updateInternDraftLogSchema,
 } from '@/lib/schemas/internship.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { canAccessInternship, getAuthedInternshipContext, isInternshipAdmin } from '../../_lib';
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         tasks_completed: payload.tasksCompleted,
         learnings: payload.learnings || null,
         challenges: payload.challenges || null,
+        status: payload.status ?? 'submitted',
         is_approved: false,
         approved_by: null,
         approved_at: null,
@@ -96,15 +98,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Failed to create daily log' }, { status: 500 });
     }
 
-    const internshipUpdate = await supabase
-      .from('internships')
-      .update({ completed_hours: Number(internship.completed_hours || 0) + payload.hoursWorked })
-      .eq('id', id)
-      .select('id, completed_hours')
-      .single();
+    // Only increment completed hours when the log is submitted
+    if ((payload.status ?? 'submitted') === 'submitted') {
+      const internshipUpdate = await supabase
+        .from('internships')
+        .update({ completed_hours: Number(internship.completed_hours || 0) + payload.hoursWorked })
+        .eq('id', id)
+        .select('id, completed_hours')
+        .single();
 
-    if (internshipUpdate.error) {
-      console.error('Error updating internship completed hours:', internshipUpdate.error);
+      if (internshipUpdate.error) {
+        console.error('Error updating internship completed hours:', internshipUpdate.error);
+      }
     }
 
     return NextResponse.json({ data }, { status: 201 });
@@ -127,15 +132,86 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const internship = access.internship as { supervisor_id: string | null };
+    const internship = access.internship as { supervisor_id: string | null; employee_id: string; completed_hours?: number };
     const isAdmin = isInternshipAdmin(role);
     const isSupervisor = internship.supervisor_id === user.id;
+    const isOwnIntern = access.employeeId !== null && access.employeeId === internship.employee_id;
+
+    const body = await request.json();
+
+    // Intern self-editing their own draft log
+    if (isOwnIntern && !isAdmin && !isSupervisor) {
+      const parsed = updateInternDraftLogSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: 'Invalid request body', details: parsed.error.flatten() },
+          { status: 400 }
+        );
+      }
+
+      const payload = parsed.data;
+
+      // Verify the log exists and is a draft
+      const { data: existingLog } = await supabase
+        .from('intern_daily_logs')
+        .select('id, status, hours_worked')
+        .eq('id', payload.logId)
+        .eq('internship_id', id)
+        .single();
+
+      if (!existingLog) {
+        return NextResponse.json({ error: 'Log not found' }, { status: 404 });
+      }
+
+      if (existingLog.status !== 'draft') {
+        return NextResponse.json(
+          { error: 'Only draft logs can be edited' },
+          { status: 403 }
+        );
+      }
+
+      const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (payload.logDate !== undefined) updates.log_date = payload.logDate;
+      if (payload.hoursWorked !== undefined) updates.hours_worked = payload.hoursWorked;
+      if (payload.tasksCompleted !== undefined) updates.tasks_completed = payload.tasksCompleted;
+      if (payload.learnings !== undefined) updates.learnings = payload.learnings;
+      if (payload.challenges !== undefined) updates.challenges = payload.challenges;
+      if (payload.status !== undefined) updates.status = payload.status;
+
+      const { data, error: updateError } = await supabase
+        .from('intern_daily_logs')
+        .update(updates)
+        .eq('id', payload.logId)
+        .eq('internship_id', id)
+        .select('*')
+        .single();
+
+      if (updateError || !data) {
+        console.error('Error updating draft log:', updateError);
+        return NextResponse.json({ error: 'Failed to update daily log' }, { status: 500 });
+      }
+
+      // If submitting a draft, increment completed hours
+      if (payload.status === 'submitted') {
+        const hoursToAdd = payload.hoursWorked ?? existingLog.hours_worked;
+        const internshipUpdate = await supabase
+          .from('internships')
+          .update({ completed_hours: Number(internship.completed_hours || 0) + Number(hoursToAdd) })
+          .eq('id', id)
+          .select('id, completed_hours')
+          .single();
+
+        if (internshipUpdate.error) {
+          console.error('Error updating internship completed hours:', internshipUpdate.error);
+        }
+      }
+
+      return NextResponse.json({ data });
+    }
 
     if (!isAdmin && !isSupervisor) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    const body = await request.json();
     const parsed = updateInternDailyLogSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

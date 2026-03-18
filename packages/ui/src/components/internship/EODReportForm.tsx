@@ -5,6 +5,7 @@ import {
   Calendar,
   CheckSquare,
   Clock,
+  FileEdit,
   Plus,
   Send,
   Target,
@@ -128,28 +129,44 @@ function MultiEntryField({
 // ─── EOD Report Form ─────────────────────────────────────────────────────────
 
 interface EODReportFormProps {
-  onSubmit: (data: EODReportFormData) => void | Promise<void>;
+  onSubmit: (data: EODReportFormData & { status: 'draft' | 'submitted' }) => void | Promise<void>;
   isSubmitting?: boolean;
+  isSavingDraft?: boolean;
   defaultDate?: string;
   maxHoursPerDay?: number;
   className?: string;
+  /** Pre-fill values when editing a draft */
+  defaultValues?: Partial<EODReportFormData>;
+  /** Show form title as editing mode */
+  editMode?: boolean;
+  onCancel?: () => void;
 }
 
 export function EODReportForm({
   onSubmit,
   isSubmitting = false,
+  isSavingDraft = false,
   defaultDate,
   maxHoursPerDay = 12,
   className,
+  defaultValues,
+  editMode = false,
+  onCancel,
 }: EODReportFormProps): React.ReactNode {
-  const initialDate = defaultDate ?? new Date().toISOString().split('T')[0]!;
+  const initialDate = defaultValues?.date ?? defaultDate ?? new Date().toISOString().split('T')[0]!;
 
   // Multi-entry arrays for each text field
   const [date, setDate] = React.useState(initialDate);
-  const [hoursLogged, setHoursLogged] = React.useState(8);
-  const [challengeEntries, setChallengeEntries] = React.useState<string[]>(['']);
-  const [taskEntries, setTaskEntries] = React.useState<string[]>(['']);
-  const [focusEntries, setFocusEntries] = React.useState<string[]>(['']);
+  const [hoursLogged, setHoursLogged] = React.useState(defaultValues?.hoursLogged ?? 8);
+  const [challengeEntries, setChallengeEntries] = React.useState<string[]>(
+    defaultValues?.challenges ? defaultValues.challenges.split('\n').filter(Boolean) : ['']
+  );
+  const [taskEntries, setTaskEntries] = React.useState<string[]>(
+    defaultValues?.tasksCompleted ? defaultValues.tasksCompleted.split('\n').filter(Boolean) : ['']
+  );
+  const [focusEntries, setFocusEntries] = React.useState<string[]>(
+    defaultValues?.focusTomorrow ? defaultValues.focusTomorrow.split('\n').filter(Boolean) : ['']
+  );
 
   const [errors, setErrors] = React.useState<Partial<Record<keyof EODReportFormData, string>>>({});
 
@@ -187,15 +204,38 @@ export function EODReportForm({
     if (validateForm()) {
       const challenges = joinEntries(challengeEntries);
       const focusTomorrow = joinEntries(focusEntries);
-      const formData: EODReportFormData = {
+      const formData: EODReportFormData & { status: 'draft' | 'submitted' } = {
         date,
         hoursLogged,
         tasksCompleted: joinEntries(taskEntries),
         ...(challenges ? { challenges } : {}),
         ...(focusTomorrow ? { focusTomorrow } : {}),
+        status: 'submitted',
       };
       await onSubmit(formData);
     }
+  };
+
+  const handleSaveDraft = async (): Promise<void> => {
+    // Drafts have relaxed validation — only require date and hours
+    const newErrors: Partial<Record<keyof EODReportFormData, string>> = {};
+    if (!date) newErrors.date = 'Date is required';
+    if (hoursLogged <= 0) newErrors.hoursLogged = 'Hours must be greater than 0';
+    if (hoursLogged > maxHoursPerDay) newErrors.hoursLogged = `Maximum ${maxHoursPerDay} hours per day`;
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    const challenges = joinEntries(challengeEntries);
+    const focusTomorrow = joinEntries(focusEntries);
+    const formData: EODReportFormData & { status: 'draft' | 'submitted' } = {
+      date,
+      hoursLogged,
+      tasksCompleted: joinEntries(taskEntries) || '(draft)',
+      ...(challenges ? { challenges } : {}),
+      ...(focusTomorrow ? { focusTomorrow } : {}),
+      status: 'draft',
+    };
+    await onSubmit(formData);
   };
 
   const handleClear = (): void => {
@@ -231,11 +271,11 @@ export function EODReportForm({
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <Send className="h-5 w-5 text-primary" />
+            {editMode ? <FileEdit className="h-5 w-5 text-primary" /> : <Send className="h-5 w-5 text-primary" />}
           </div>
           <div>
-            <CardTitle>End of Day Report</CardTitle>
-            <CardDescription>Submit your daily progress report</CardDescription>
+            <CardTitle>{editMode ? 'Edit Draft Report' : 'End of Day Report'}</CardTitle>
+            <CardDescription>{editMode ? 'Update your draft and submit when ready' : 'Submit your daily progress report'}</CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -344,10 +384,34 @@ export function EODReportForm({
         </CardContent>
 
         <CardFooter className="flex justify-end gap-3 border-t border-border pt-4">
-          <Button type="button" variant="outline" onClick={handleClear}>
-            Clear
+          {onCancel ? (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" onClick={handleClear}>
+              Clear
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSaveDraft}
+            disabled={isSavingDraft || isSubmitting}
+          >
+            {isSavingDraft ? (
+              <>
+                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <FileEdit className="mr-2 h-4 w-4" />
+                Save as Draft
+              </>
+            )}
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || isSavingDraft}>
             {isSubmitting ? (
               <>
                 <Clock className="mr-2 h-4 w-4 animate-spin" />
