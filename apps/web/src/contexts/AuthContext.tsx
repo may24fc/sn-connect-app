@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { normalizeAuthError } from '@/lib/errors';
 import { useQueryClient } from '@tanstack/react-query';
 
 // Type definitions
@@ -74,7 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
   const router = useRouter();
   const queryClient = useQueryClient();
   const supabase = React.useMemo(() => createSupabaseBrowserClient(), []);
-  const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
+  const enableMockAuth =
+    process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true' &&
+    process.env.NODE_ENV !== 'production';
   const useMock = enableMockAuth || !supabase;
 
   // Mock users for local/dev mode when Supabase is not configured
@@ -286,8 +289,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           return;
         }
 
-        // SECURITY: Use getUser() instead of getSession() to validate JWT with Supabase servers.
-        // getSession() only reads from local storage/cookies and can be spoofed.
+        // FAST PATH: Use getSession() first for instant hydration from cookies.
+        // This prevents the flash-to-login on page refresh by setting user state
+        // before the slower getUser() network call completes.
+        const { data: sessionData } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (sessionData.session?.user) {
+          // Hydrate user immediately from the cookie-based session
+          await syncAuthState(sessionData.session.user);
+          if (!isMounted) return;
+          // Mark loading as done — user is visible, no flash
+          setIsLoading(false);
+
+          // SECURITY: Validate the JWT with Supabase servers in the background.
+          // If the token was revoked, sign the user out. This is non-blocking
+          // so the UI doesn't flash while waiting for the round-trip.
+          supabase.auth.getUser().then(({ data, error: getUserError }) => {
+            if (!isMounted) return;
+            if (getUserError || !data.user) {
+              // Server says session is invalid — clear state
+              console.warn('Background session validation failed:', getUserError?.message);
+              setUser(null);
+            } else {
+              // Sync any updated metadata from the validated session
+              syncAuthState(data.user);
+            }
+          }).catch(() => {
+            // Network error during background validation — keep current user.
+            // Security is still enforced by RLS at the database level.
+          });
+          return;
+        }
+
+        // No session in cookies — try getUser() as final check
         const result = await withTimeout(
           supabase.auth.getUser(),
           AUTH_TIMEOUT_MS,
@@ -295,18 +331,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         );
         const { data, error } = result as any;
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
-        if (error) {
-          console.error('Failed to load session user:', error.message);
+        if (error || !data.user) {
+          // Genuinely no session — user needs to log in
+          setUser(null);
+        } else {
+          await syncAuthState(data.user);
         }
-
-        await syncAuthState(data.user ?? null);
       } catch (error) {
         console.error('Failed to initialize auth state:', error);
-        if (isMounted) {
+        // Only clear user if no user was already set (e.g. by onAuthStateChange)
+        if (isMounted && !userRef.current) {
           setUser(null);
         }
       } finally {
@@ -322,7 +358,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     if (!useMock) {
       const result = supabase?.auth.onAuthStateChange(
         async (
-          _event: string,
+          event: string,
           session: {
             user?: {
               id: string;
@@ -333,7 +369,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           } | null
         ) => {
           try {
-            await syncAuthState(session?.user ?? null);
+            if (event === 'SIGNED_OUT') {
+              // User explicitly signed out — clear state
+              setUser(null);
+              return;
+            }
+
+            // For SIGNED_IN, TOKEN_REFRESHED, INITIAL_SESSION, etc.
+            // only update if the session has a valid user
+            if (session?.user) {
+              await syncAuthState(session.user);
+            }
+            // If session is null on a non-SIGNED_OUT event (e.g. transient
+            // token refresh state), keep the existing user to avoid flicker
           } catch (err) {
             // swallow transient errors to avoid accidental logout
             console.warn('onAuthStateChange handler failed:', err);
@@ -410,7 +458,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         const { data, error } = result as any;
 
         if (error) {
-          throw new Error(error.message);
+          throw new Error(normalizeAuthError(error.message));
         }
 
         const nextUser = await syncAuthState(data.user ?? null);
@@ -528,7 +576,10 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
 
   React.useEffect(() => {
     if (!(isLoading || user)) {
-      router.push('/login');
+      // Preserve the current URL so the user returns here after login
+      const currentPath = window.location.pathname + window.location.search;
+      const returnTo = currentPath && currentPath !== '/' ? `?returnTo=${encodeURIComponent(currentPath)}` : '';
+      router.push(`/login${returnTo}`);
     } else if (user && allowedRoles && !allowedRoles.includes(user.role)) {
       // Redirect to appropriate dashboard if unauthorized
       switch (user.role) {
