@@ -10,6 +10,7 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
 import { Badge, Button, ComingSoonDialog, Progress } from '@hr-portal/ui';
@@ -17,6 +18,7 @@ import Link from 'next/link';
 import {
   Activity,
   AlertTriangle,
+  Calendar,
   CheckCircle,
   ChevronRight,
   ClipboardList,
@@ -316,6 +318,18 @@ export default function SuperAdminDashboardPage(): ReactNode {
                 </p>
               )}
             </div>
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* Company Pulse Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
+              Company Pulse
+            </BentoCardTitle>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <CompanyPulseWidget />
           </BentoCardContent>
         </BentoCard>
 

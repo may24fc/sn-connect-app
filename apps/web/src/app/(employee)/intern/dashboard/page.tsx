@@ -9,6 +9,7 @@ import {
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
+import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useCreateInternDailyLog, useInternship, useInternships } from '@/hooks/useInternships';
 import {
   Badge,
@@ -326,6 +327,18 @@ export default function InternDashboardPage(): ReactNode {
                 </div>
               </div>
             </div>
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* Company Pulse Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
+              Company Pulse
+            </BentoCardTitle>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <CompanyPulseWidget />
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>

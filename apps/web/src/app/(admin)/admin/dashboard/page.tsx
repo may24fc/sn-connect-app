@@ -14,9 +14,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMilestones } from '@/hooks/useMilestones';
 import { usePendingApprovals } from '@/hooks/usePendingApprovals';
+import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 import { Button, MilestoneBanner, PendingApprovalsCard } from '@hr-portal/ui';
 import {
+  Calendar,
   CheckCircle,
   ChevronRight,
   ClipboardList,
@@ -171,8 +173,20 @@ export default function AdminDashboardPage(): ReactNode {
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
+        {/* Company Pulse Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
+              Company Pulse
+            </BentoCardTitle>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <CompanyPulseWidget />
+          </BentoCardContent>
+        </BentoCard>
+
         {/* Recent Activity Card */}
-        <BentoCard colSpan={4}>
+        <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
               Recent Activity

@@ -12,7 +12,7 @@ import {
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
-import { useCalendarEvents } from '@/hooks/useGoogleCalendar';
+import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useMilestones } from '@/hooks/useMilestones';
 import { useMyProbation } from '@/hooks/useMyProbation';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
@@ -27,14 +27,13 @@ import {
   Calendar,
   ChevronRight,
   ClipboardCheck,
-  Clock,
   FileText,
   Target,
   TrendingUp,
   Upload,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 // Quick actions configuration
 const quickActions = [
@@ -47,16 +46,6 @@ const quickActions = [
     title: 'Submit Report',
     icon: FileText,
     href: '/reports/new',
-  },
-  {
-    title: 'View Calendar',
-    icon: Calendar,
-    href: '/calendar',
-  },
-  {
-    title: 'Request Leave',
-    icon: Clock,
-    href: '/leave',
   },
 ];
 
@@ -187,17 +176,6 @@ export default function DashboardPage(): ReactNode {
     pageSize: 5,
   });
   const announcements = announcementFeedData?.data ?? [];
-
-  // Google Calendar — upcoming events
-  // useMemo with [] ensures the time range is computed once on mount, not on every render.
-  // Without this, new Date() produces a different string each render → different query key → infinite refetch loop.
-  const [calendarTimeMin, calendarTimeMax] = useMemo(() => {
-    const now = new Date();
-    return [now.toISOString(), new Date(now.getTime() + 7 * 86400000).toISOString()];
-  }, []);
-  const { data: calendarData, isLoading: isCalendarLoading } = useCalendarEvents(calendarTimeMin, calendarTimeMax);
-  const isCalendarConnected = calendarData?.connected ?? false;
-  const calendarEvents = calendarData?.data ?? [];
 
   // Stat card columns adjust when onboarding is hidden
   const statColumns = isOnboardingCompleted ? 3 : 4;
@@ -349,67 +327,17 @@ export default function DashboardPage(): ReactNode {
         </BentoGrid>
       )}
 
-      {/* Row 2: Upcoming Events + Latest Announcements */}
+      {/* Row 2: Company Pulse + Latest Announcements */}
       <BentoGrid columns={4}>
-        {/* Upcoming Events Card */}
+        {/* Company Pulse Card */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
-              Upcoming Events
+              Company Pulse
             </BentoCardTitle>
-            <Link href="/calendar">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                View All
-              </Button>
-            </Link>
           </BentoCardHeader>
           <BentoCardContent>
-            {isCalendarLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : !isCalendarConnected ? (
-              <EmptyState
-                icon={Calendar}
-                title="Calendar not connected"
-                description="Connect your Google Calendar to see upcoming events"
-                action={{ label: 'Connect Calendar', href: '/calendar' }}
-              />
-            ) : calendarEvents.length > 0 ? (
-              <div className="space-y-3">
-                {calendarEvents.filter(e => e.start).slice(0, 5).map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Calendar
-                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
-                        strokeWidth={1.5}
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                          {event.title}
-                        </p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {event.allDay
-                            ? new Date(event.start!).toLocaleDateString()
-                            : `${new Date(event.start!).toLocaleDateString()} at ${new Date(event.start!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={Calendar}
-                title="No upcoming events"
-                description="Your scheduled events will appear here"
-              />
-            )}
+            <CompanyPulseWidget />
           </BentoCardContent>
         </BentoCard>
 
