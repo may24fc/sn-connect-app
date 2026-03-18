@@ -36,6 +36,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "currency.js": "^2.0.4",
+    "exceljs": "^4.4.0",
+    "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "inngest": "^3.52.6",
     "libphonenumber-js": "^1.12.38",
@@ -50,7 +52,6 @@
     "react-hook-form": "^7.55.0",
     "recharts": "^2.15.4",
     "tailwind-merge": "^2.6.0",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
