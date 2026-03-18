@@ -30,6 +30,8 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  SectionTooltip,
+  HelpLink,
   useToast,
 } from '@hr-portal/ui';
 import { ChevronDown, ChevronRight, Layers, List, Plus, Search } from 'lucide-react';
@@ -118,8 +120,12 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">My Reports</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold text-foreground">My Reports</h1>
+            <SectionTooltip content="View, create, and track all your submitted reports and their approval status." />
+          </div>
           <p className="text-muted-foreground">Create, submit, and track report approvals</p>
+          <HelpLink href="/help/reports" label="Reports FAQ" LinkComponent={Link} />
         </div>
         <Button asChild>
           <Link href="/reports/new">
@@ -132,7 +138,7 @@ export default function ReportsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total Reports</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-1.5">Total Reports <SectionTooltip content="The total number of reports you've created across all statuses." /></CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.total}</p>
@@ -140,7 +146,7 @@ export default function ReportsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Submitted</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-1.5">Submitted <SectionTooltip content="Reports you've submitted and are awaiting review." /></CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.submitted}</p>
@@ -148,7 +154,7 @@ export default function ReportsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Approved</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-1.5">Approved <SectionTooltip content="Reports that have been reviewed and approved." /></CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.approved}</p>

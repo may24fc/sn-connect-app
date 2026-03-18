@@ -123,6 +123,8 @@ export {
 export { Sidebar } from './layout/Sidebar';
 export { Header } from './layout/Header';
 // Shared Components
+export { SectionTooltip } from './components/SectionTooltip';
+export { HelpLink } from './components/HelpLink';
 export { EmptyState, type EmptyStateProps } from './components/empty-state';
 export {
   MultiSelectFilter,

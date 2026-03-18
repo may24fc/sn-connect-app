@@ -30,6 +30,8 @@ import {
   SlidePanelTitle,
   Textarea,
   useToast,
+  SectionTooltip,
+  HelpLink,
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
@@ -160,8 +162,12 @@ export default function PerformancePage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Performance</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold text-foreground">Performance</h1>
+            <SectionTooltip content="Track your OKRs, KPIs, and review scores across performance cycles." />
+          </div>
           <p className="text-muted-foreground">Track your objectives, targets, and KPIs</p>
+          <HelpLink href="/help/performance-reviews" label="Performance FAQ" LinkComponent={Link} />
         </div>
         <Button onClick={handleOpenCreate}>
           <Plus className="mr-2 h-4 w-4" />
@@ -203,7 +209,7 @@ export default function PerformancePage(): ReactNode {
         {/* Overall Weighted Progress */}
         <Card className="lg:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Overall Score</CardTitle>
+            <CardTitle className="text-base flex items-center gap-1.5">Overall Score <SectionTooltip content="Your weighted score based on all objectives in the current cycle." /></CardTitle>
             <CardDescription>Weighted average across all objectives</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col items-center py-4">
@@ -218,7 +224,7 @@ export default function PerformancePage(): ReactNode {
         {/* Stats Grid */}
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Summary</CardTitle>
+            <CardTitle className="text-base flex items-center gap-1.5">Summary <SectionTooltip content="Quick stats: total objectives, completed, and in-progress counts." /></CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 grid-cols-3">
@@ -267,6 +273,7 @@ export default function PerformancePage(): ReactNode {
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <Target className="h-5 w-5" />
             Objectives
+            <SectionTooltip content="OKRs you've set for the current review cycle. Progress auto-calculates from key results." />
           </h2>
           <Select
             value={statusFilter}

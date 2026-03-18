@@ -31,9 +31,12 @@ import {
   TableRow,
   Textarea,
   useToast,
+  SectionTooltip,
+  HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
 import { CheckCircle2, Download, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
@@ -574,8 +577,12 @@ export default function InvoicePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Invoice</h1>
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-bold text-foreground">Invoice</h1>
+            <SectionTooltip content="Create and track payment invoices. Approved invoices proceed to payroll." />
+          </div>
           <p className="text-muted-foreground">Submit and monitor your invoices</p>
+          <HelpLink href="/help/invoices" label="Invoice FAQ" LinkComponent={Link} />
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -594,7 +601,7 @@ export default function InvoicePage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-1.5">Total <SectionTooltip content="Total number of invoices you've created." /></CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.total}</p>
@@ -602,7 +609,7 @@ export default function InvoicePage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Pending Review</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-1.5">Pending Review <SectionTooltip content="Invoices submitted and awaiting admin approval." /></CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.pending}</p>
@@ -610,7 +617,7 @@ export default function InvoicePage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Approved/Paid</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-1.5">Approved/Paid <SectionTooltip content="Invoices that have been approved or already paid out." /></CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats.approved}</p>
@@ -618,7 +625,7 @@ export default function InvoicePage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total Approved</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-1.5">Total Approved <SectionTooltip content="The combined net amount of all approved and paid invoices." /></CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-bold">{maskedCurrency(stats.totalApprovedAmount)}</p>
