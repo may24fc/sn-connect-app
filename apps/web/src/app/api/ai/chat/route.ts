@@ -189,7 +189,7 @@ async function retrieveContext(
       similarity: row.similarity as number,
       metadata: {
         source_id: (meta.source_id as string) ?? (row.source_id as string),
-        source_title: (meta.title as string) ?? (meta.source_title as string) ?? 'Unknown Source',
+        source_title: (row.source_title as string) ?? (meta.title as string) ?? (meta.source_title as string) ?? 'Unknown Source',
         chunk_index: row.chunk_index as number,
       },
     };
