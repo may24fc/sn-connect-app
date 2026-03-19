@@ -1,9 +1,34 @@
 // Usage: node scripts/register-drive-watch.mjs <GOOGLE_DRIVE_FILE_ID>
 // Env vars required: WEBHOOK_BASE_URL, GOOGLE_SERVICE_ACCOUNT_EMAIL,
 //   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY, GOOGLE_DRIVE_WEBHOOK_TOKEN
+// Loads automatically from apps/web/.env.local (no --env-file flag needed).
 
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { google } from 'googleapis';
 import { randomUUID } from 'node:crypto';
+
+// Load apps/web/.env.local so this script works with plain `node` (no Next.js)
+try {
+  const __dir = dirname(fileURLToPath(import.meta.url));
+  const envPath = resolve(__dir, '../apps/web/.env.local');
+  const lines = readFileSync(envPath, 'utf8').split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    // Strip surrounding quotes from the value
+    let value = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+    if (!(key in process.env)) {
+      process.env[key] = value;
+    }
+  }
+} catch {
+  // .env.local not found — rely on env vars already set in the shell
+}
 
 const fileId = process.argv[2];
 if (!fileId) {
