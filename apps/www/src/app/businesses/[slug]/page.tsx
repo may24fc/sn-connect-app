@@ -7,7 +7,6 @@ import { BUSINESS_UNITS, slugify } from '@/data/placeholder';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { TrustedMarquee } from '@/components/shared/TrustedMarquee';
-import { Testimonials } from '@/components/businesses/Testimonials';
 import { ServicesGrid } from '@/components/businesses/ServicesGrid';
 import { InquiryForm } from '@/components/businesses/InquiryForm';
 import { CTAButton } from '@/components/shared/CTAButton';

@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = 'SN International Group <careers@sninternational.com>';
 
 export async function sendApplicationConfirmation({
@@ -14,6 +12,7 @@ export async function sendApplicationConfirmation({
   positionTitle: string;
 }) {
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
