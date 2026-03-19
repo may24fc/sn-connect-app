@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const FROM_EMAIL = 'SN International Group <careers@sninternational.com>';
+const FROM_EMAIL = 'SN International Group <careers@sngroup.com.au>';
 
 export async function sendApplicationConfirmation({
   to,
@@ -12,6 +12,10 @@ export async function sendApplicationConfirmation({
   positionTitle: string;
 }) {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('RESEND_API_KEY is not set — skipping confirmation email');
+      return;
+    }
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: FROM_EMAIL,

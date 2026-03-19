@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       positionTitle = jobData.title;
     }
 
-    sendApplicationConfirmation({
+    await sendApplicationConfirmation({
       to: parsed.data.email,
       applicantName: parsed.data.full_name,
       positionTitle,
