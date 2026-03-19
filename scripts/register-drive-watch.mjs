@@ -20,8 +20,19 @@ try {
     const eqIdx = trimmed.indexOf('=');
     if (eqIdx === -1) continue;
     const key = trimmed.slice(0, eqIdx).trim();
-    // Strip surrounding quotes from the value
-    let value = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+    let raw = trimmed.slice(eqIdx + 1).trim();
+    let value;
+    // If value is quoted, extract only the content between the matching quotes
+    // (ignoring any inline # comment that follows the closing quote)
+    if (raw.startsWith('"') || raw.startsWith("'")) {
+      const quote = raw[0];
+      const closingIdx = raw.indexOf(quote, 1);
+      value = closingIdx !== -1 ? raw.slice(1, closingIdx) : raw.slice(1);
+    } else {
+      // Unquoted: strip inline comment (first unescaped ' #')
+      const commentIdx = raw.search(/ #/);
+      value = commentIdx !== -1 ? raw.slice(0, commentIdx).trim() : raw.trim();
+    }
     if (!(key in process.env)) {
       process.env[key] = value;
     }

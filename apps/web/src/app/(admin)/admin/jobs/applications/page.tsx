@@ -434,6 +434,16 @@ export default function ApplicationsPage() {
                               <Users className="h-4 w-4 text-slate-500" />
                             </Button>
                           )}
+                          {app.status === 'interview' && isSuperAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleStatusChange(app.id, 'approved')}
+                              title="Approve"
+                            >
+                              <UserCheck className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -682,8 +692,22 @@ export default function ApplicationsPage() {
                     </Button>
                   )}
 
-                  {/* SUPER-ADMIN ONLY: Final Approval */}
+                  {/* SUPER-ADMIN ONLY: Approve after interview */}
+                  {isSuperAdmin && selectedApp.status === 'interview' && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleStatusChange(selectedApp.id, 'approved')}
+                      disabled={updateStatus.isPending}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white ml-auto"
+                    >
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                  )}
+
+                  {/* SUPER-ADMIN ONLY: Final Approval override for earlier stages */}
                   {isSuperAdmin &&
+                    selectedApp.status !== 'interview' &&
                     selectedApp.status !== 'approved' &&
                     selectedApp.status !== 'hired' &&
                     selectedApp.status !== 'rejected' && (

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateApplicationStatusSchema } from '@/lib/schemas/job.schema';
+import { sendApplicationStatusUpdate } from '@/lib/email';
 import { getAuthedSupabase, isJobAdmin, isSuperAdmin } from '../../jobs/_lib';
 
 interface Params {
@@ -93,6 +94,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       console.error('Error updating application:', updateError);
       return NextResponse.json({ error: 'Failed to update application' }, { status: 500 });
     }
+
+    // Send status update email to the applicant (non-blocking)
+    const jobTitle = (data as Record<string, unknown> & { job_postings?: { title?: string } }).job_postings?.title ?? 'the position you applied for';
+    sendApplicationStatusUpdate({
+      to: data.email as string,
+      applicantName: data.full_name as string,
+      positionTitle: jobTitle,
+      status: newStatus,
+    }).catch((err) => {
+      console.error('[Email] Unhandled error sending status update:', err);
+    });
 
     return NextResponse.json({ data });
   } catch (error) {
