@@ -24,28 +24,28 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 ## PRIORITY MATRIX
 
-| ID | Pri | Feature | Page |
-|----|-----|---------|------|
-| V3-0.1 | P0 | Global Error Handling Audit | ALL |
-| V3-0.2 | P0 | Password Reset Email Delivery Fix | Auth |
-| V3-0.3 | P0 | SSL / Unprotected Site Warning Fix | ALL |
-| V3-0.4 | P0 | Post-Onboarding UI Freeze Fix | Dashboard |
-| V3-0.5 | P0 | Calendar & Leave Request Error Fix | Dashboard |
-| V3-1.1 | P1 | Hero Section Achievement Display | WWW |
-| V3-1.2 | P1 | Sticky "What's New" Top Banner | WWW |
-| V3-1.3 | P1 | Company "Visit Website" Links | WWW |
-| V3-1.4 | P1 | Application Confirmation Email | WWW |
-| V3-1.5 | P1 | Invoice: Rate, Currency, Auto-Calc | Invoice |
-| V3-1.6 | P1 | Add New Task Button | Tasks |
-| V3-1.7 | P1 | Document Delete + Open in New Tab | Documents |
-| V3-2.1 | P2 | Dashboard Color Separation | Dashboard |
-| V3-2.2 | P2 | Task & Performance Status Colors | Tasks, Perf |
-| V3-2.3 | P2 | Invoice Status Indicators | Invoice |
-| V3-2.4 | P2 | Reports Data Visualization (Charts) | Reports |
-| V3-2.5 | P2 | Profile: Primary Platform Field | Profile |
-| V3-2.6 | P2 | Dead Icon Links Audit & Fix | ALL |
-| V3-3.1 | P3 | Reports Viewing Errors + Type Clarity | Reports |
-| V3-3.2 | P3 | Navbar Route Audit & Fix | Navigation |
+| ID | Pri | Feature | Page | Status |
+|----|-----|---------|------|--------|
+| V3-0.1 | P0 | Global Error Handling Audit | ALL | 🟡 Partial |
+| V3-0.2 | P0 | Password Reset Email Delivery Fix | Auth | 🟡 Partial |
+| V3-0.3 | P0 | SSL / Unprotected Site Warning Fix | ALL | 🟡 Partial |
+| V3-0.4 | P0 | Post-Onboarding UI Freeze Fix | Dashboard | 🟡 Partial |
+| V3-0.5 | P0 | Calendar & Leave Request Error Fix | Dashboard | ⬜ Pending |
+| V3-1.1 | P1 | Hero Section Achievement Display | WWW | ✅ Done |
+| V3-1.2 | P1 | Sticky "What's New" Top Banner | WWW | 🟡 Partial |
+| V3-1.3 | P1 | Company "Visit Website" Links | WWW | 🟡 Partial |
+| V3-1.4 | P1 | Application Confirmation Email | WWW | 🟡 Partial |
+| V3-1.5 | P1 | Invoice: Rate, Currency, Auto-Calc | Invoice | ✅ Done |
+| V3-1.6 | P1 | Add New Task Button | Tasks | 🟡 Partial |
+| V3-1.7 | P1 | Document Delete + Open in New Tab | Documents | 🟡 Partial |
+| V3-2.1 | P2 | Dashboard Color Separation | Dashboard | ⬜ Pending |
+| V3-2.2 | P2 | Task & Performance Status Colors | Tasks, Perf | ✅ Done |
+| V3-2.3 | P2 | Invoice Status Indicators | Invoice | 🟡 Partial |
+| V3-2.4 | P2 | Reports Data Visualization (Charts) | Reports | 🟡 Partial |
+| V3-2.5 | P2 | Profile: Primary Platform Field | Profile | 🟡 Partial |
+| V3-2.6 | P2 | Dead Icon Links Audit & Fix | ALL | 🟡 Partial |
+| V3-3.1 | P3 | Reports Viewing Errors + Type Clarity | Reports | 🟡 Partial |
+| V3-3.2 | P3 | Navbar Route Audit & Fix | Navigation | ⬜ Pending |
 
 ---
 
@@ -59,9 +59,9 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Audit all API route handlers
 
-- [ ] Grep codebase for `Something went wrong`, `error`, `catch` patterns
+- [x] Grep codebase for `Something went wrong`, `error`, `catch` patterns
 - [ ] Map every API endpoint to its failure modes (auth, validation, network, DB)
-- [ ] Create error-code registry: `E001-AUTH`, `E002-VALIDATION`, `E003-NETWORK`, `E004-DB`, `E005-PERMISSION`
+- [x] Create error-code registry: `E001-AUTH`, `E002-VALIDATION`, `E003-NETWORK`, `E004-DB`, `E005-PERMISSION`
 
 **Acceptance Criteria:**
 1. Zero instances of the string "Something went wrong" remain in codebase
@@ -70,7 +70,7 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 2: Implement global ErrorBoundary with contextual recovery
 
-- [ ] Create `<ErrorBoundary>` wrapper — displays: (a) plain-language error, (b) Retry button, (c) Go to Dashboard fallback
+- [x] Create `<ErrorBoundary>` wrapper — displays: (a) plain-language error, (b) Retry button, (c) Go to Dashboard fallback
 - [ ] Add per-page error boundaries so one broken section does not crash the full app
 - [ ] Wire "Report Issue" button → sends error context (page, action, timestamp, role) to admin log table
 
@@ -81,10 +81,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 3: Fix Task Page crash — `l.variant` undefined
 
-- [ ] Reproduce crash: navigate to Task Page with missing/null task data
-- [ ] Add optional chaining (`?.`) to all task object property reads
-- [ ] Add loading skeleton while task data fetches
-- [ ] If user has zero tasks → show empty state with "No tasks yet" + Add Task CTA
+- [x] Reproduce crash: navigate to Task Page with missing/null task data
+- [x] Add optional chaining (`?.`) to all task object property reads
+- [x] Add loading skeleton while task data fetches
+- [x] If user has zero tasks → show empty state with "No tasks yet" + Add Task CTA
 
 **Acceptance Criteria:**
 1. Task Page loads without error when user has zero tasks
@@ -113,7 +113,7 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 2: Add retry and fallback UX
 
-- [ ] Add "Resend Email" button — enabled after 60-second cooldown
+- [x] Add "Resend Email" button — enabled after 60-second cooldown
 - [ ] Add helper text: "Check your spam/junk folder. If you still do not receive it, contact your admin."
 - [ ] Log all password reset requests to admin-visible audit log
 
@@ -145,7 +145,7 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 2: Add health-check endpoint and uptime monitoring
 
-- [ ] Create `GET /api/health` → returns `{ status: "ok", timestamp, version }`
+- [x] Create `GET /api/health` → returns `{ status: "ok", timestamp, version }`
 - [ ] Set up uptime monitor (UptimeRobot free tier) → ping `/api/health` every 5 min
 - [ ] Configure alert to notify admin channel on downtime
 
@@ -164,9 +164,9 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Fix tour overlay cleanup
 
-- [ ] Identify tour library (react-joyride / intro.js / shepherd.js)
-- [ ] Add `onComplete`/`onSkip` callback → explicitly remove all overlay elements, backdrop divs, `pointer-events: none` styles
-- [ ] Add 3-second timeout failsafe: if overlay still present after tour ends, force-remove it
+- [x] Identify tour library (react-joyride / intro.js / shepherd.js)
+- [x] Add `onComplete`/`onSkip` callback → explicitly remove all overlay elements, backdrop divs, `pointer-events: none` styles
+- [x] Add 3-second timeout failsafe: if overlay still present after tour ends, force-remove it
 - [ ] Test: rapid clicking, skipping steps, browser back button during tour
 
 **Acceptance Criteria:**
@@ -219,10 +219,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Create AchievementCounter component
 
-- [ ] Design animated counter cards (e.g., "X Employees Managed", "X Tasks Completed", "X Countries", "X Projects Active")
-- [ ] Use count-up animation on scroll-into-view (`IntersectionObserver`)
-- [ ] Fetch real stats from `GET /api/public/stats` (cached, refreshed hourly)
-- [ ] Fallback to static values if API unavailable
+- [x] Design animated counter cards (e.g., "X Employees Managed", "X Tasks Completed", "X Countries", "X Projects Active")
+- [x] Use count-up animation on scroll-into-view (`IntersectionObserver`)
+- [x] Fetch real stats from `GET /api/public/stats` (cached, refreshed hourly)
+- [x] Fallback to static values if API unavailable
 
 **Acceptance Criteria:**
 1. Hero section displays at least 4 achievement counters
@@ -239,11 +239,11 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Implement sticky announcement banner
 
-- [ ] Create thin (32–40px) bar: `position: sticky; top: 0; z-index: 50`
-- [ ] Migrate existing "What's New" content into banner
+- [x] Create thin (32–40px) bar: `position: sticky; top: 0; z-index: 50`
+- [x] Migrate existing "What's New" content into banner
 - [ ] Add marquee/scroll animation for multiple announcements
-- [ ] Add dismiss (X) button → sets `sessionStorage` flag, hidden until next session
-- [ ] Adjust page `padding-top` to account for banner height
+- [x] Add dismiss (X) button → sets `sessionStorage` flag, hidden until next session
+- [x] Adjust page `padding-top` to account for banner height
 
 **Acceptance Criteria:**
 1. Banner remains visible at all scroll positions
@@ -261,10 +261,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Add website URL field and render buttons
 
-- [ ] Add `website_url` column to companies table (nullable TEXT) if not present
+- [x] Add `website_url` column to companies table (nullable TEXT) if not present
 - [ ] Update company admin CRUD to include URL field with URL validation
-- [ ] Render "Visit Website" button on each company card → `target="_blank" rel="noopener noreferrer"`
-- [ ] No URL set → hide button (no broken link)
+- [x] Render "Visit Website" button on each company card → `target="_blank" rel="noopener noreferrer"`
+- [x] No URL set → hide button (no broken link)
 
 **Acceptance Criteria:**
 1. Every company with `website_url` shows clickable "Visit Website" button
@@ -281,9 +281,9 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Implement post-submission email trigger
 
-- [ ] Create email template — Subject: `Application Received — [Company Name]`; Body: "We have received your application. Our team will review it and reach out if you are shortlisted."
-- [ ] Wire email send in `POST /api/applications` using SMTP provider (Resend/SendGrid)
-- [ ] Include applicant name, position, date in email body
+- [x] Create email template — Subject: `Application Received — [Company Name]`; Body: "We have received your application. Our team will review it and reach out if you are shortlisted."
+- [x] Wire email send in `POST /api/applications` using SMTP provider (Resend/SendGrid)
+- [x] Include applicant name, position, date in email body
 - [ ] Log send status (sent/failed) in `applications` table
 
 **Acceptance Criteria:**
@@ -302,10 +302,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Add invoice calculation fields
 
-- [ ] Add form fields: `hourly_rate` (number), `currency` (dropdown: PHP, AUD, USD, EUR, GBP), `hours_worked` (number), `period_start` (date), `period_end` (date)
-- [ ] Add computed display: `subtotal = hourly_rate × hours_worked`
-- [ ] Add FX rate display + `converted_total` (auto-calculated)
-- [ ] Store all values in invoices table: rate, hours, currency, fx_rate_used, subtotal_foreign, total_php
+- [x] Add form fields: `hourly_rate` (number), `currency` (dropdown: PHP, AUD, USD, EUR, GBP), `hours_worked` (number), `period_start` (date), `period_end` (date)
+- [x] Add computed display: `subtotal = hourly_rate × hours_worked`
+- [x] Add FX rate display + `converted_total` (auto-calculated)
+- [x] Store all values in invoices table: rate, hours, currency, fx_rate_used, subtotal_foreign, total_php
 
 **Acceptance Criteria:**
 1. User can select from at least 5 currencies (PHP, AUD, USD, EUR, GBP)
@@ -316,10 +316,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 2: Implement exchange rate service
 
-- [ ] Create `fx_rates` table: `{ from_currency, to_currency, rate, fetched_at }`
-- [ ] Create Supabase Edge Function or n8n workflow → fetch daily rates from exchangerate.host
-- [ ] Cache in table; refresh daily at 00:00 UTC
-- [ ] Invoice form reads from `fx_rates`; shows "Rate as of [date]"
+- [x] Create `fx_rates` table: `{ from_currency, to_currency, rate, fetched_at }`
+- [x] Create Supabase Edge Function or n8n workflow → fetch daily rates from exchangerate.host
+- [x] Cache in table; refresh daily at 00:00 UTC
+- [x] Invoice form reads from `fx_rates`; shows "Rate as of [date]"
 
 **Acceptance Criteria:**
 1. FX rates update daily without manual intervention
@@ -336,11 +336,11 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Implement Add Task functionality
 
-- [ ] Add FAB or top-right "+ Add Task" button on Tasks Page
-- [ ] Create `<AddTaskModal>` — fields: title, description, category (dropdown), priority (Low/Med/High), due_date, assignee
-- [ ] `POST /api/tasks` with validation
-- [ ] New task appears immediately (optimistic UI)
-- [ ] Admin/Manager can assign to others; regular users self-assign only
+- [x] Add FAB or top-right "+  Add Task" button on Tasks Page
+- [x] Create `<AddTaskModal>` — fields: title, description, category (dropdown), priority (Low/Med/High), due_date, assignee
+- [x] `POST /api/tasks` with validation
+- [x] New task appears immediately (optimistic UI)
+- [x] Admin/Manager can assign to others; regular users self-assign only
 
 **Acceptance Criteria:**
 1. "+ Add Task" button visible on Tasks Page for all roles
@@ -352,7 +352,7 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 #### Subtask 2: Clarify task population model
 
 - [ ] Add help tooltip/info banner: "Tasks can be assigned by your manager or added by you. Use + to create your own."
-- [ ] Label existing admin-assigned tasks as "Assigned by [Name]"
+- [x] Label existing admin-assigned tasks as "Assigned by [Name]"
 
 **Acceptance Criteria:**
 1. Users understand self-input vs. manager-assigned model
@@ -368,11 +368,11 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Add document delete
 
-- [ ] Add delete (trash icon) on each document row
-- [ ] Confirmation modal: "Are you sure? This cannot be undone."
-- [ ] `DELETE /api/documents/[id]` — soft delete (retain 30 days) or hard delete from Storage
-- [ ] Only uploader or admin can delete (RLS enforced)
-- [ ] List updates immediately (optimistic UI)
+- [x] Add delete (trash icon) on each document row
+- [x] Confirmation modal: "Are you sure? This cannot be undone."
+- [x] `DELETE /api/documents/[id]` — soft delete (retain 30 days) or hard delete from Storage
+- [x] Only uploader or admin can delete (RLS enforced)
+- [x] List updates immediately (optimistic UI)
 
 **Acceptance Criteria:**
 1. Delete button on documents uploaded by current user
@@ -383,8 +383,8 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 2: Open documents in new tab
 
-- [ ] Change all view/download links → `target="_blank" rel="noopener noreferrer"`
-- [ ] PDF: open Supabase Storage URL in new tab
+- [x] Change all view/download links → `target="_blank" rel="noopener noreferrer"`
+- [x] PDF: open Supabase Storage URL in new tab
 - [ ] Non-PDF: trigger download in new tab
 
 **Acceptance Criteria:**
@@ -424,10 +424,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Create StatusBadge component
 
-- [ ] Create `<StatusBadge>` — color map: Pending `#F39C12`, In Progress `#3498DB`, Completed `#27AE60`, Overdue `#E74C3C`, Under Review `#9B59B6`
-- [ ] Apply to: task list, task detail, performance list, performance detail
-- [ ] Add filter-by-status dropdown on Tasks and Performance pages
-- [ ] Badges include text (not color-only) for accessibility
+- [x] Create `<StatusBadge>` — color map: Pending `#F39C12`, In Progress `#3498DB`, Completed `#27AE60`, Overdue `#E74C3C`, Under Review `#9B59B6`
+- [x] Apply to: task list, task detail, performance list, performance detail
+- [x] Add filter-by-status dropdown on Tasks and Performance pages
+- [x] Badges include text (not color-only) for accessibility
 
 **Acceptance Criteria:**
 1. All task statuses display with colored badges
@@ -445,9 +445,9 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Add invoice status badges and workflow
 
-- [ ] Reuse `<StatusBadge>` — invoice map: Draft `#95A5A6`, Pending `#F39C12`, Approved `#27AE60`, Sent `#3498DB`, Rejected `#E74C3C`, Paid `#2ECC71`
-- [ ] Display on invoice list and detail view
-- [ ] Add admin transition buttons: Approve, Reject, Mark Sent, Mark Paid
+- [x] Reuse `<StatusBadge>` — invoice map: Draft `#95A5A6`, Pending `#F39C12`, Approved `#27AE60`, Sent `#3498DB`, Rejected `#E74C3C`, Paid `#2ECC71`
+- [x] Display on invoice list and detail view
+- [x] Add admin transition buttons: Approve, Reject, Mark Sent, Mark Paid
 - [ ] Log transitions with timestamp + actor in `invoice_status_log` table
 
 **Acceptance Criteria:**
@@ -465,10 +465,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Add chart visualizations
 
-- [ ] Install Recharts (recommended for Next.js)
+- [x] Install Recharts (recommended for Next.js)
 - [ ] Marketing reports: bar (spend vs conversions), line (performance over time), pie (budget by platform)
 - [ ] Weekly/monthly reports: trend line (tasks completed), stacked bar (status breakdown)
-- [ ] Add toggle: "Table View" vs "Chart View"
+- [x] Add toggle: "Table View" vs "Chart View"
 - [ ] Charts responsive down to 320px
 
 **Acceptance Criteria:**
@@ -500,10 +500,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Add extensible profile metadata
 
-- [ ] Add `role_metadata` JSONB column to users/profiles table if not present
-- [ ] Marketing roles: "Primary Platform" dropdown (Meta Ads, Google Ads, TikTok Ads, LinkedIn Ads, Other)
+- [x] Add `role_metadata` JSONB column to users/profiles table if not present
+- [x] Marketing roles: "Primary Platform" dropdown (Meta Ads, Google Ads, TikTok Ads, LinkedIn Ads, Other)
 - [ ] All roles: "Skills/Tags" multi-select
-- [ ] Display on profile view; editable by user and admin
+- [x] Display on profile view; editable by user and admin
 - [ ] Searchable from employee directory
 
 **Acceptance Criteria:**
@@ -523,10 +523,10 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 #### Subtask 1: Audit and fix all dead links
 
 - [ ] Audit every clickable element (icon, button, link) across all pages
-- [ ] Planned features → show `<ComingSoon>` modal: "This feature is coming soon!"
+- [x] Planned features → show `<ComingSoon>` modal: "This feature is coming soon!"
 - [ ] Broken features → fix the link
 - [ ] Decorative icons → remove click handler and `cursor: pointer`
-- [ ] Create `/coming-soon` fallback route
+- [x] Create `/coming-soon` fallback route
 
 **Acceptance Criteria:**
 1. Zero clickable elements lead to broken/blank page
@@ -558,8 +558,8 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 #### Subtask 2: Add report type labels and documentation
 
 - [ ] Add info tooltips explaining: Weekly (task summary), Monthly (aggregated performance), Marketing (campaign + platform metrics)
-- [ ] Label each report card with type badge
-- [ ] Add date range and owner to each report card
+- [x] Label each report card with type badge
+- [x] Add date range and owner to each report card
 
 **Acceptance Criteria:**
 1. Each report type has visible label and description
