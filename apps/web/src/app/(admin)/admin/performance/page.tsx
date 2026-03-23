@@ -219,8 +219,8 @@ export default function AdminPerformancePage(): ReactNode {
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
+            <div className="flex flex-col lg:flex-row gap-3">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by name, position, email..."
@@ -229,132 +229,134 @@ export default function AdminPerformancePage(): ReactNode {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-10"
+                  className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
                 />
               </div>
-              <Select
-                value={roleFilter}
-                onValueChange={(value) => {
-                  setRoleFilter(value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-[160px]">
-                  <SelectValue placeholder="Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="employee">Employee</SelectItem>
-                  <SelectItem value="intern">Intern</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={departmentFilter}
-                onValueChange={(value) => {
-                  setDepartmentFilter(value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => {
-                  setStatusFilter(value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="accessible">Active & Probation</SelectItem>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="probation">Probation</SelectItem>
-                  <SelectItem value="pending_onboarding">Pending Onboarding</SelectItem>
-                  <SelectItem value="awaiting_approval">Awaiting Approval</SelectItem>
-                  <SelectItem value="on_leave">On Leave</SelectItem>
-                  <SelectItem value="terminated">Terminated</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* View Toggle */}
-              <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode('list');
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
+                  value={roleFilter}
+                  onValueChange={(value) => {
+                    setRoleFilter(value);
                     setPage(1);
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === 'list'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
                 >
-                  <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  List
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode('cards');
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="employee">Employee</SelectItem>
+                    <SelectItem value="intern">Intern</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={departmentFilter}
+                  onValueChange={(value) => {
+                    setDepartmentFilter(value);
                     setPage(1);
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === 'cards'
-                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                  }`}
                 >
-                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  Cards
-                </button>
-              </div>
+                  <SelectTrigger className="w-[170px]">
+                    <SelectValue placeholder="Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value) => {
+                    setStatusFilter(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="accessible">Active & Probation</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="probation">Probation</SelectItem>
+                    <SelectItem value="pending_onboarding">Pending Onboarding</SelectItem>
+                    <SelectItem value="awaiting_approval">Awaiting Approval</SelectItem>
+                    <SelectItem value="on_leave">On Leave</SelectItem>
+                    <SelectItem value="terminated">Terminated</SelectItem>
+                  </SelectContent>
+                </Select>
 
-              {/* Pagination - Gmail style at top */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">
-                    {(page - 1) * pageSize + 1}-
-                    {Math.min(page * pageSize, pagination?.total ?? 0)} of {pagination?.total ?? 0}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Previous page"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label="Next page"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+                {/* View Toggle */}
+                <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewMode('list');
+                      setPage(1);
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === 'list'
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewMode('cards');
+                      setPage(1);
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      viewMode === 'cards'
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    }`}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    Cards
+                  </button>
                 </div>
-              )}
+
+                {/* Pagination - Gmail style at top */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      {(page - 1) * pageSize + 1}-
+                      {Math.min(page * pageSize, pagination?.total ?? 0)} of {pagination?.total ?? 0}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label="Previous page"
+                        disabled={page <= 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label="Next page"
+                        disabled={page >= totalPages}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>

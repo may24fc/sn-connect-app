@@ -7,10 +7,9 @@ import {
   useUpdateOKR,
 } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
   Button,
-  Card,
-  CardContent,
   Input,
   Label,
   OKRList,
@@ -273,60 +272,28 @@ export default function OKRsPage(): ReactNode {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Target className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total OKRs</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                <Target className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">In Progress</p>
-                <p className="text-2xl font-bold">{stats.inProgress}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-                <Target className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/20">
-                <Target className="h-5 w-5 text-secondary-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Progress</p>
-                <p className="text-2xl font-bold">{stats.avgProgress}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <StatCardGrid columns={4}>
+        <StatCard
+          label="Total OKRs"
+          value={stats.total}
+          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="In Progress"
+          value={stats.inProgress}
+          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Completed"
+          value={stats.completed}
+          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Avg Progress"
+          value={`${stats.avgProgress}%`}
+          icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+        />
+      </StatCardGrid>
 
       {/* Filters */}
       <div className="flex items-center gap-4">

@@ -47,7 +47,9 @@ import {
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
+  ArrowRight,
   Check,
+  ChevronLeft,
   DollarSign,
   Hash,
   ListChecks,
@@ -55,6 +57,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  SlidersHorizontal,
   Target,
   ToggleLeft,
   Trash2,
@@ -115,7 +118,20 @@ const METRIC_TYPE_CONFIG: Record<
     description: 'Track manual task count (e.g., completed items)',
     defaultUnit: 'tasks',
   },
+  scale: {
+    label: 'Scale (1–4)',
+    icon: SlidersHorizontal,
+    description: 'Rate on a 1–4 rubric scale with custom descriptors',
+    defaultUnit: '',
+  },
 };
+
+/** Only legacy metric types shown in the picker — 'scale' is internal-only */
+const PICKER_METRIC_TYPES = (
+  Object.entries(METRIC_TYPE_CONFIG) as Array<
+    [TargetMetricType, (typeof METRIC_TYPE_CONFIG)['number']]
+  >
+).filter(([type]) => type !== 'scale');
 
 // =============================================
 // Target Form State
@@ -130,6 +146,10 @@ interface TargetFormState {
   currentValue: string;
   unit: string;
   weight: string;
+  rubric1: string;
+  rubric2: string;
+  rubric3: string;
+  rubric4: string;
 }
 
 const emptyTargetForm: TargetFormState = {
@@ -141,6 +161,10 @@ const emptyTargetForm: TargetFormState = {
   currentValue: '0',
   unit: '',
   weight: '1',
+  rubric1: '',
+  rubric2: '',
+  rubric3: '',
+  rubric4: '',
 };
 
 function targetFormForEdit(target: OKRTarget): TargetFormState {
@@ -153,6 +177,10 @@ function targetFormForEdit(target: OKRTarget): TargetFormState {
     currentValue: String(target.currentValue),
     unit: target.unit || '',
     weight: String(target.weight),
+    rubric1: target.rubric1 || '',
+    rubric2: target.rubric2 || '',
+    rubric3: target.rubric3 || '',
+    rubric4: target.rubric4 || '',
   };
 }
 
@@ -183,10 +211,12 @@ export default function OKRDetailPage(): ReactNode {
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | null>(null);
   const [editingTarget, setEditingTarget] = useState<OKRTarget | null>(null);
   const [formState, setFormState] = useState<TargetFormState>(emptyTargetForm);
+  const [formStep, setFormStep] = useState<1 | 2>(1);
 
   // Update progress dialog
   const [progressTarget, setProgressTarget] = useState<OKRTarget | null>(null);
   const [progressValue, setProgressValue] = useState('');
+  const [progressSelfRating, setProgressSelfRating] = useState<number | null>(null);
 
   // Computed: weighted progress from targets
   const computedProgress = useMemo(() => {
@@ -201,12 +231,14 @@ export default function OKRDetailPage(): ReactNode {
   // Handlers
   const handleOpenCreate = useCallback((): void => {
     setFormState(emptyTargetForm);
+    setFormStep(1);
     setDialogMode('create');
     setEditingTarget(null);
   }, []);
 
   const handleOpenEdit = useCallback((target: OKRTarget): void => {
     setFormState(targetFormForEdit(target));
+    setFormStep(1);
     setEditingTarget(target);
     setDialogMode('edit');
   }, []);
@@ -215,6 +247,7 @@ export default function OKRDetailPage(): ReactNode {
     setDialogMode(null);
     setEditingTarget(null);
     setFormState(emptyTargetForm);
+    setFormStep(1);
   }, []);
 
   const handleMetricTypeChange = useCallback((type: TargetMetricType): void => {
@@ -246,6 +279,10 @@ export default function OKRDetailPage(): ReactNode {
         if (desc) payload.description = desc;
         const unit = formState.unit.trim();
         if (unit) payload.unit = unit;
+        if (formState.rubric1.trim()) payload.rubric1 = formState.rubric1.trim();
+        if (formState.rubric2.trim()) payload.rubric2 = formState.rubric2.trim();
+        if (formState.rubric3.trim()) payload.rubric3 = formState.rubric3.trim();
+        if (formState.rubric4.trim()) payload.rubric4 = formState.rubric4.trim();
         await createTarget.mutateAsync(payload);
         addToast({ title: 'Target created', variant: 'success' });
       } else if (dialogMode === 'edit' && editingTarget) {
@@ -263,6 +300,10 @@ export default function OKRDetailPage(): ReactNode {
         if (editDesc) updatePayload.description = editDesc;
         const editUnit = formState.unit.trim();
         if (editUnit) updatePayload.unit = editUnit;
+        if (formState.rubric1.trim()) updatePayload.rubric1 = formState.rubric1.trim();
+        if (formState.rubric2.trim()) updatePayload.rubric2 = formState.rubric2.trim();
+        if (formState.rubric3.trim()) updatePayload.rubric3 = formState.rubric3.trim();
+        if (formState.rubric4.trim()) updatePayload.rubric4 = formState.rubric4.trim();
         await updateTarget.mutateAsync(updatePayload);
         addToast({ title: 'Target updated', variant: 'success' });
       }
@@ -283,22 +324,24 @@ export default function OKRDetailPage(): ReactNode {
 
   const handleUpdateProgress = async (): Promise<void> => {
     if (!progressTarget) return;
-    const newValue =
-      progressTarget.metricType === 'boolean'
-        ? progressTarget.currentValue === 0
-          ? 1
-          : 0
-        : Number(progressValue);
 
     try {
+      const newValue =
+        progressTarget.metricType === 'boolean'
+          ? progressTarget.currentValue === 0
+            ? 1
+            : 0
+          : Number(progressValue);
       await updateTarget.mutateAsync({
         id: progressTarget.id,
         okrId,
         currentValue: newValue,
+        ...(progressSelfRating ? { selfRating: progressSelfRating } : {}),
       });
       addToast({ title: 'Progress updated', variant: 'success' });
       setProgressTarget(null);
       setProgressValue('');
+      setProgressSelfRating(null);
     } catch {
       addToast({ title: 'Error updating progress', variant: 'error' });
     }
@@ -491,6 +534,7 @@ export default function OKRDetailPage(): ReactNode {
                 onUpdateProgress={() => {
                   setProgressTarget(target);
                   setProgressValue(String(target.currentValue));
+                  setProgressSelfRating(target.selfRating || null);
                 }}
               />
             ))}
@@ -507,220 +551,316 @@ export default function OKRDetailPage(): ReactNode {
                 <Target className="h-4 w-4 text-primary" />
               </div>
               {dialogMode === 'create' ? 'Add New Target' : 'Edit Target'}
+              <Badge variant="outline" className="ml-auto text-xs font-normal">
+                Step {formStep} of 2
+              </Badge>
             </SlidePanelTitle>
             <SlidePanelDescription>
-              {dialogMode === 'create'
-                ? 'Define a measurable target that contributes to this objective.'
-                : 'Update the details and tracking configuration for this target.'}
+              {formStep === 1
+                ? dialogMode === 'create'
+                  ? 'Define a measurable target that contributes to this objective.'
+                  : 'Update the details and tracking configuration for this target.'
+                : 'Describe what each rating level (1–4) means for this target.'}
             </SlidePanelDescription>
           </SlidePanelHeader>
 
           <SlidePanelBody className="space-y-6">
-            {/* ── Metric Type ────────────────────────────── */}
-            <SlidePanelSection label="How will you track this?">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(
-                  Object.entries(METRIC_TYPE_CONFIG) as Array<
-                    [TargetMetricType, typeof METRIC_TYPE_CONFIG.number]
-                  >
-                ).map(([type, config]) => {
-                  const Icon = config.icon;
-                  const isSelected = formState.metricType === type;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => handleMetricTypeChange(type)}
-                      className={`flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-all ${
-                        isSelected
-                          ? 'border-primary bg-primary/5'
-                          : 'border-zinc-200 hover:border-primary/30 dark:border-zinc-800'
-                      }`}
-                    >
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-md shrink-0 ${
-                          isSelected
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'
-                        }`}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">{config.label}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {config.description}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </SlidePanelSection>
+            {formStep === 1 ? (
+              <>
+                {/* ── Metric Type ────────────────────────────── */}
+                <SlidePanelSection label="How will you track this?">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {PICKER_METRIC_TYPES.map(([type, config]) => {
+                      const Icon = config.icon;
+                      const isSelected = formState.metricType === type;
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => handleMetricTypeChange(type)}
+                          className={`flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                            isSelected
+                              ? 'border-primary bg-primary/5'
+                              : 'border-zinc-200 hover:border-primary/30 dark:border-zinc-800'
+                          }`}
+                        >
+                          <div
+                            className={`flex h-8 w-8 items-center justify-center rounded-md shrink-0 ${
+                              isSelected
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium">{config.label}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {config.description}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </SlidePanelSection>
 
-            {/* ── Target Details ─────────────────────────── */}
-            <SlidePanelSection label="What are you measuring?">
-              <div className="space-y-1.5">
-                <Label htmlFor="target-name" className="text-sm font-medium">
-                  Target Name
-                </Label>
-                <Input
-                  id="target-name"
-                  placeholder={
-                    formState.metricType === 'number'
-                      ? 'e.g., Monthly VP points earned'
-                      : formState.metricType === 'boolean'
-                        ? 'e.g., Complete onboarding certification'
-                        : formState.metricType === 'currency'
-                          ? 'e.g., Monthly revenue generated'
-                          : 'e.g., Client deliverables completed'
-                  }
-                  value={formState.name}
-                  onChange={(e) => setFormState({ ...formState, name: e.target.value })}
-                  autoFocus
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="target-desc" className="text-sm font-medium">
-                  Description
-                  <span className="ml-1 text-xs font-normal text-muted-foreground">Optional</span>
-                </Label>
-                <Textarea
-                  id="target-desc"
-                  placeholder="Add context about how this target should be tracked or why it matters..."
-                  value={formState.description}
-                  onChange={(e) => setFormState({ ...formState, description: e.target.value })}
-                  className="min-h-[72px] resize-none"
-                />
-              </div>
-            </SlidePanelSection>
-
-            {/* ── Values ───────────────────────────────── */}
-            {formState.metricType !== 'boolean' ? (
-              <SlidePanelSection label="Values">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* ── Target Details ─────────────────────────── */}
+                <SlidePanelSection label="What are you measuring?">
                   <div className="space-y-1.5">
-                    <Label htmlFor="start-value" className="text-sm font-medium">
-                      Starting at
+                    <Label htmlFor="target-name" className="text-sm font-medium">
+                      Target Name
                     </Label>
                     <Input
-                      id="start-value"
-                      type="number"
-                      placeholder="0"
-                      value={formState.startValue}
-                      onChange={(e) => setFormState({ ...formState, startValue: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground">Where you are now</p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="target-value" className="text-sm font-medium">
-                      Goal
-                    </Label>
-                    <Input
-                      id="target-value"
-                      type="number"
-                      placeholder="100"
-                      value={formState.targetValue}
-                      onChange={(e) => setFormState({ ...formState, targetValue: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground">Where you want to be</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="unit" className="text-sm font-medium">
-                      Unit of measurement
-                    </Label>
-                    <Select
-                      value={formState.unit || 'none'}
-                      onValueChange={(value) =>
-                        setFormState({ ...formState, unit: value === 'none' ? '' : value })
+                      id="target-name"
+                      placeholder={
+                        formState.metricType === 'number'
+                          ? 'e.g., Monthly VP points earned'
+                          : formState.metricType === 'boolean'
+                            ? 'e.g., Complete onboarding certification'
+                            : formState.metricType === 'currency'
+                              ? 'e.g., Monthly revenue generated'
+                              : 'e.g., Client deliverables completed'
                       }
-                    >
-                      <SelectTrigger id="unit">
-                        <SelectValue placeholder="Select unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="points">Points</SelectItem>
-                        <SelectItem value="tasks">Tasks</SelectItem>
-                        <SelectItem value="PHP">PHP</SelectItem>
-                        <SelectItem value="USD">USD</SelectItem>
-                        <SelectItem value="%">%</SelectItem>
-                        <SelectItem value="hours">Hours</SelectItem>
-                        <SelectItem value="items">Items</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      value={formState.name}
+                      onChange={(e) => setFormState({ ...formState, name: e.target.value })}
+                      autoFocus
+                    />
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="target-weight" className="text-sm font-medium">
-                      Weight
+                    <Label htmlFor="target-desc" className="text-sm font-medium">
+                      Description
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        Optional
+                      </span>
                     </Label>
-                    <Input
-                      id="target-weight"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      placeholder="1"
-                      value={formState.weight}
-                      onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+                    <Textarea
+                      id="target-desc"
+                      placeholder="Add context about how this target should be tracked or why it matters..."
+                      value={formState.description}
+                      onChange={(e) => setFormState({ ...formState, description: e.target.value })}
+                      className="min-h-[72px] resize-none"
                     />
-                    <p className="text-xs text-muted-foreground">Impact on overall progress</p>
                   </div>
-                </div>
-              </SlidePanelSection>
-            ) : (
-              <SlidePanelSection label="Tracking">
-                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-                  <div className="flex items-center gap-3">
-                    <ToggleLeft className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">Done / Not Done</p>
+                </SlidePanelSection>
+
+                {/* ── Values ───────────────────────────────── */}
+                {formState.metricType !== 'boolean' ? (
+                  <SlidePanelSection label="Values">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="start-value" className="text-sm font-medium">
+                          Starting at
+                        </Label>
+                        <Input
+                          id="start-value"
+                          type="number"
+                          placeholder="0"
+                          value={formState.startValue}
+                          onChange={(e) =>
+                            setFormState({ ...formState, startValue: e.target.value })
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">Where you are now</p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="target-value" className="text-sm font-medium">
+                          Goal
+                        </Label>
+                        <Input
+                          id="target-value"
+                          type="number"
+                          placeholder="100"
+                          value={formState.targetValue}
+                          onChange={(e) =>
+                            setFormState({ ...formState, targetValue: e.target.value })
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">Where you want to be</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="unit" className="text-sm font-medium">
+                          Unit of measurement
+                        </Label>
+                        <Select
+                          value={formState.unit || 'none'}
+                          onValueChange={(value) =>
+                            setFormState({ ...formState, unit: value === 'none' ? '' : value })
+                          }
+                        >
+                          <SelectTrigger id="unit">
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="points">Points</SelectItem>
+                            <SelectItem value="tasks">Tasks</SelectItem>
+                            <SelectItem value="PHP">PHP</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="%">%</SelectItem>
+                            <SelectItem value="hours">Hours</SelectItem>
+                            <SelectItem value="items">Items</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="target-weight" className="text-sm font-medium">
+                          Weight
+                        </Label>
+                        <Input
+                          id="target-weight"
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          placeholder="1"
+                          value={formState.weight}
+                          onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground">Impact on overall progress</p>
+                      </div>
+                    </div>
+                  </SlidePanelSection>
+                ) : (
+                  <SlidePanelSection label="Tracking">
+                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                      <div className="flex items-center gap-3">
+                        <ToggleLeft className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">Done / Not Done</p>
+                          <p className="text-xs text-muted-foreground">
+                            This target tracks simple completion — progress is either 0% or 100%.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="target-weight" className="text-sm font-medium">
+                        Weight
+                      </Label>
+                      <Input
+                        id="target-weight"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        placeholder="1"
+                        value={formState.weight}
+                        onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+                      />
                       <p className="text-xs text-muted-foreground">
-                        This target tracks simple completion — progress is either 0% or 100%.
+                        How much this target impacts the objective&apos;s overall progress
+                      </p>
+                    </div>
+                  </SlidePanelSection>
+                )}
+              </>
+            ) : (
+              <>
+                {/* ── Step 2: Rubric Descriptors ──────────────── */}
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="shrink-0">
+                      {METRIC_TYPE_CONFIG[formState.metricType].label}
+                    </Badge>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{formState.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formState.metricType === 'boolean'
+                          ? 'Done / Not Done'
+                          : `${formState.startValue} → ${formState.targetValue}${formState.unit ? ` ${formState.unit}` : ''}`}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="target-weight" className="text-sm font-medium">
-                    Weight
-                  </Label>
-                  <Input
-                    id="target-weight"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    placeholder="1"
-                    value={formState.weight}
-                    onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    How much this target impacts the objective&apos;s overall progress
+                <SlidePanelSection label="Rubric Descriptors">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Describe what each rating level means for this target based on your goal.
                   </p>
-                </div>
-              </SlidePanelSection>
+                  {([1, 2, 3, 4] as const).map((level) => {
+                    const key = `rubric${level}` as `rubric${1 | 2 | 3 | 4}`;
+                    const labels = [
+                      'Beginning / Needs Improvement',
+                      'Developing / Approaching',
+                      'Proficient / Meets Expectations',
+                      'Exemplary / Exceeds Expectations',
+                    ];
+                    return (
+                      <div key={level} className="space-y-1.5">
+                        <Label htmlFor={`rubric-${level}`} className="text-sm font-medium">
+                          Rating {level}{' '}
+                          <span className="font-normal text-muted-foreground">
+                            — {labels[level - 1]}
+                          </span>
+                        </Label>
+                        <Textarea
+                          id={`rubric-${level}`}
+                          placeholder={
+                            formState.metricType === 'boolean'
+                              ? level <= 2
+                                ? 'e.g., Not completed or partially done'
+                                : 'e.g., Fully completed ahead of schedule'
+                              : `e.g., ${
+                                  level === 4
+                                    ? `${formState.targetValue} and above`
+                                    : level === 1
+                                      ? `Below ${Math.round(Number(formState.targetValue) * 0.25)}`
+                                      : `Around ${Math.round(Number(formState.targetValue) * 0.25 * level)}`
+                                }${formState.unit ? ` ${formState.unit}` : ''}`
+                          }
+                          value={formState[key]}
+                          onChange={(e) => setFormState({ ...formState, [key]: e.target.value })}
+                          className="min-h-[60px] resize-none"
+                        />
+                      </div>
+                    );
+                  })}
+                </SlidePanelSection>
+              </>
             )}
           </SlidePanelBody>
 
           <SlidePanelFooter>
-            <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => void handleSaveTarget()}
-              disabled={!formState.name.trim() || createTarget.isPending || updateTarget.isPending}
-            >
-              {createTarget.isPending || updateTarget.isPending
-                ? 'Saving...'
-                : dialogMode === 'create'
-                  ? 'Add Target'
-                  : 'Save Changes'}
-            </Button>
+            {formStep === 1 ? (
+              <>
+                <Button variant="outline" onClick={handleCloseDialog}>
+                  Cancel
+                </Button>
+                <Button onClick={() => setFormStep(2)} disabled={!formState.name.trim()}>
+                  Next: Define Rubrics
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setFormStep(1)}>
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  onClick={() => void handleSaveTarget()}
+                  disabled={
+                    !formState.rubric1.trim() ||
+                    !formState.rubric2.trim() ||
+                    !formState.rubric3.trim() ||
+                    !formState.rubric4.trim() ||
+                    createTarget.isPending ||
+                    updateTarget.isPending
+                  }
+                >
+                  {createTarget.isPending || updateTarget.isPending
+                    ? 'Saving...'
+                    : dialogMode === 'create'
+                      ? 'Add Target'
+                      : 'Save Changes'}
+                </Button>
+              </>
+            )}
           </SlidePanelFooter>
         </SlidePanelContent>
       </SlidePanel>
@@ -779,13 +919,55 @@ export default function OKRDetailPage(): ReactNode {
                   />
                 </div>
               )}
+
+              {/* Self-Assessment Rating */}
+              {progressTarget.rubric1 && (
+                <div className="space-y-3 pt-2 border-t">
+                  <p className="text-sm font-medium">Self-Assessment</p>
+                  <p className="text-xs text-muted-foreground">
+                    Rate your performance based on the rubric descriptors you defined.
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {([1, 2, 3, 4] as const).map((level) => {
+                      const rubricKey = `rubric${level}` as const;
+                      const rubricText = progressTarget[rubricKey];
+                      const isSelected = progressSelfRating === level;
+                      return (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setProgressSelfRating(isSelected ? null : level)}
+                          className={`flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                            isSelected
+                              ? 'border-primary bg-primary/5'
+                              : 'border-zinc-200 hover:border-primary/30 dark:border-zinc-800'
+                          }`}
+                        >
+                          <div
+                            className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold shrink-0 ${
+                              isSelected
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'
+                            }`}
+                          >
+                            {level}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {rubricText || `Rating ${level}`}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setProgressTarget(null)}>
               Cancel
             </Button>
-            {progressTarget?.metricType !== 'boolean' && (
+            {(progressTarget?.metricType !== 'boolean' || progressTarget?.rubric1) && (
               <Button onClick={() => void handleUpdateProgress()} disabled={updateTarget.isPending}>
                 Update
               </Button>
@@ -905,6 +1087,11 @@ function TargetCard({
                 {config.label}
               </Badge>
               <span>{displayValue}</span>
+              {target.selfRating && (
+                <Badge variant="secondary" className="text-xs h-5">
+                  Self: {target.selfRating}/4
+                </Badge>
+              )}
               <span className="ml-auto">Weight: {weightPct}%</span>
             </div>
 

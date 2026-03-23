@@ -104,22 +104,30 @@ export async function POST(request: NextRequest) {
       cycleId = okr?.cycle_id ?? null;
     }
 
+    const insertPayload: Record<string, unknown> = {
+      okr_id: parsed.data.okrId,
+      employee_id: employeeId,
+      cycle_id: cycleId,
+      name: parsed.data.name,
+      description: parsed.data.description || null,
+      metric_type: parsed.data.metricType,
+      start_value: parsed.data.startValue,
+      target_value: parsed.data.targetValue,
+      current_value: parsed.data.currentValue,
+      unit: parsed.data.unit || null,
+      weight: parsed.data.weight,
+      sort_order: parsed.data.sortOrder,
+    };
+
+    // Attach rubric descriptors if provided
+    if (parsed.data.rubric1) insertPayload.rubric_1 = parsed.data.rubric1;
+    if (parsed.data.rubric2) insertPayload.rubric_2 = parsed.data.rubric2;
+    if (parsed.data.rubric3) insertPayload.rubric_3 = parsed.data.rubric3;
+    if (parsed.data.rubric4) insertPayload.rubric_4 = parsed.data.rubric4;
+
     const { data, error: insertError } = await supabaseAdmin
       .from('okr_targets')
-      .insert({
-        okr_id: parsed.data.okrId,
-        employee_id: employeeId,
-        cycle_id: cycleId,
-        name: parsed.data.name,
-        description: parsed.data.description || null,
-        metric_type: parsed.data.metricType,
-        start_value: parsed.data.startValue,
-        target_value: parsed.data.targetValue,
-        current_value: parsed.data.currentValue,
-        unit: parsed.data.unit || null,
-        weight: parsed.data.weight,
-        sort_order: parsed.data.sortOrder,
-      })
+      .insert(insertPayload)
       .select('*')
       .single();
 
@@ -166,6 +174,11 @@ export async function PATCH(request: NextRequest) {
     if (parsed.data.adminComments !== undefined) payload.admin_comments = parsed.data.adminComments;
     if (parsed.data.evaluatedBy !== undefined) payload.evaluated_by = parsed.data.evaluatedBy;
     if (parsed.data.evaluatedAt !== undefined) payload.evaluated_at = parsed.data.evaluatedAt;
+    if (parsed.data.rubric1 !== undefined) payload.rubric_1 = parsed.data.rubric1;
+    if (parsed.data.rubric2 !== undefined) payload.rubric_2 = parsed.data.rubric2;
+    if (parsed.data.rubric3 !== undefined) payload.rubric_3 = parsed.data.rubric3;
+    if (parsed.data.rubric4 !== undefined) payload.rubric_4 = parsed.data.rubric4;
+    if (parsed.data.selfRating !== undefined) payload.self_rating = parsed.data.selfRating;
 
     const { data, error: updateError } = await supabaseAdmin
       .from('okr_targets')

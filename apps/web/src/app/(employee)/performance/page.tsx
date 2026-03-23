@@ -2,6 +2,7 @@
 
 import { useCreateOKR, usePerformanceCycles, usePerformanceOKRs } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
   Badge,
   Button,
@@ -227,20 +228,26 @@ export default function PerformancePage(): ReactNode {
             <CardTitle className="text-base flex items-center gap-1.5">Summary <SectionTooltip content="Quick stats: total objectives, completed, and in-progress counts." /></CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 grid-cols-3">
-              <div className="text-center p-3 rounded-lg bg-primary/5">
-                <p className="text-3xl font-bold text-primary">{stats.total}</p>
-                <p className="text-xs text-muted-foreground mt-1">Objectives</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-warning/5">
-                <p className="text-3xl font-bold text-warning">{stats.inProgress}</p>
-                <p className="text-xs text-muted-foreground mt-1">In Progress</p>
-              </div>
-              <div className="text-center p-3 rounded-lg bg-success/5">
-                <p className="text-3xl font-bold text-success">{stats.completed}</p>
-                <p className="text-xs text-muted-foreground mt-1">Completed</p>
-              </div>
-            </div>
+            <StatCardGrid columns={3}>
+              <StatCard
+                label="Objectives"
+                value={stats.total}
+                icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+                compact
+              />
+              <StatCard
+                label="In Progress"
+                value={stats.inProgress}
+                icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}
+                compact
+              />
+              <StatCard
+                label="Completed"
+                value={stats.completed}
+                icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+                compact
+              />
+            </StatCardGrid>
 
             {/* Weight distribution bar */}
             {okrs.length > 0 && (

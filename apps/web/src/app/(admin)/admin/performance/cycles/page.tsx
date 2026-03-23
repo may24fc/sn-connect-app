@@ -41,10 +41,12 @@ import {
   CheckCircle2,
   Clock,
   Edit2,
+  FileEdit,
   MoreVertical,
   Pause,
   Play,
   Plus,
+  Send,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -100,6 +102,7 @@ export default function CyclesPage(): ReactNode {
   const [editingCycle, setEditingCycle] = useState<PerformanceCycle | null>(null);
   const [deletingCycle, setDeletingCycle] = useState<PerformanceCycle | null>(null);
   const [formData, setFormData] = useState<CycleFormData>(emptyFormData);
+  const [savingAs, setSavingAs] = useState<'draft' | 'active' | null>(null);
 
   useEffect(() => {
     setCycles(cycleData);
@@ -144,7 +147,8 @@ export default function CyclesPage(): ReactNode {
     setDeleteDialogOpen(true);
   };
 
-  const handleSave = async (): Promise<void> => {
+  const handleSave = async (status: 'draft' | 'active' = 'active'): Promise<void> => {
+    setSavingAs(status);
     try {
       if (editingCycle) {
         await updateCycle.mutateAsync({
@@ -168,13 +172,15 @@ export default function CyclesPage(): ReactNode {
           endDate: formData.endDate,
           selfReviewDeadline: formData.selfAssessmentDeadline || null,
           managerReviewDeadline: formData.managerReviewDeadline || null,
-          status: 'draft',
+          status,
           description: null,
         });
 
         addToast({
-          title: 'Cycle created',
-          description: `"${formData.name}" has been created as draft`,
+          title: status === 'draft' ? 'Draft saved' : 'Cycle created',
+          description: status === 'draft'
+            ? `"${formData.name}" has been saved as draft`
+            : `"${formData.name}" has been created and activated`,
           variant: 'success',
         });
       }
@@ -187,6 +193,8 @@ export default function CyclesPage(): ReactNode {
         description: `Failed to ${editingCycle ? 'update' : 'create'} cycle`,
         variant: 'error',
       });
+    } finally {
+      setSavingAs(null);
     }
   };
 
@@ -531,14 +539,53 @@ export default function CyclesPage(): ReactNode {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
+            {!editingCycle && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void handleSave('draft');
+                }}
+                disabled={!isFormValid() || savingAs !== null}
+              >
+                {savingAs === 'draft' ? (
+                  <>
+                    <Clock className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FileEdit className="mr-2 h-4 w-4" />
+                    Save as Draft
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               onClick={() => {
-                void handleSave();
+                void handleSave('active');
               }}
-              disabled={!isFormValid() || createCycle.isPending || updateCycle.isPending}
+              disabled={!isFormValid() || savingAs !== null}
             >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              {editingCycle ? 'Save Changes' : 'Create Cycle'}
+              {savingAs === 'active' || (editingCycle && updateCycle.isPending) ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" />
+                  {editingCycle ? 'Saving...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  {editingCycle ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Create Cycle
+                    </>
+                  )}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
