@@ -61,10 +61,15 @@ export function TourProvider({ children, autoStart = true }: TourProviderProps):
    * This prevents the "frozen UI" bug where orphaned overlays block interaction.
    */
   const forceCleanupTourDOM = useCallback(() => {
-    document.querySelectorAll('.tg-dialog, .tg-backdrop, .tg-overlay, [class*="tg-"]').forEach((el) => el.remove());
-    document.body.classList.remove('tg-no-interaction');
-    document.body.style.removeProperty('pointer-events');
-    document.body.style.removeProperty('overflow');
+    // Exclude document.body from removal — TourGuideJS adds "tg-no-interaction" to
+    // it, so the [class*="tg-"] selector would otherwise match the body element and
+    // call body.remove(), causing document.body to become null on the next line.
+    document.querySelectorAll('.tg-dialog, .tg-backdrop, .tg-overlay, [class*="tg-"]').forEach((el) => {
+      if (el !== document.body) el.remove();
+    });
+    document.body?.classList.remove('tg-no-interaction');
+    document.body?.style.removeProperty('pointer-events');
+    document.body?.style.removeProperty('overflow');
     // Also reset any element-level pointer-events that the library may set
     document.querySelectorAll('[style*="pointer-events: none"]').forEach((el) => {
       if (el instanceof HTMLElement && el !== document.body) {

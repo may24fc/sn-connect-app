@@ -39,13 +39,20 @@ interface AuthContextValue {
 // DB roles: employee, intern, admin, super_admin
 // UI roles: employee, intern, admin, super_admin
 const resolveUiRole = (role: string | null | undefined): UserRoleType => {
-  // Direct mapping - DB roles match UI roles exactly
-  const validRoles: UserRoleType[] = ['employee', 'intern', 'admin', 'super_admin'];
-  if (role && validRoles.includes(role as UserRoleType)) {
-    return role as UserRoleType;
+  switch (role) {
+    case 'super_admin':
+      return 'super_admin';
+    case 'admin':
+    case 'hr':
+    case 'cos':
+    case 'ceo':
+      return 'admin';
+    case 'intern':
+      return 'intern';
+    case 'employee':
+    default:
+      return 'employee';
   }
-  // Default to employee if role is invalid/missing
-  return 'employee';
 };
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
@@ -373,8 +380,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         ) => {
           try {
             if (event === 'SIGNED_OUT') {
-              // User explicitly signed out — clear state
+              // User explicitly signed out — clear state and all cached data
               setUser(null);
+              queryClient.clear();
               return;
             }
 
@@ -404,7 +412,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         }
       }
     };
-  }, [supabase, syncAuthState, useMock]);
+  }, [supabase, syncAuthState, useMock, queryClient]);
 
   // keep the ref updated whenever `user` state changes
   React.useEffect(() => {
@@ -521,7 +529,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           // ignore
         }
         setUser(null);
+        queryClient.clear();
         router.push('/login');
+        router.refresh();
         return;
       }
 
@@ -532,11 +542,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       }
 
       setUser(null);
+      // Clear all cached query data to prevent stale role-specific UI
+      // from leaking into the next session
+      queryClient.clear();
       router.push('/login');
+      // Flush Next.js server-side router cache so no previous-role
+      // content is served on the next login
+      router.refresh();
     } finally {
       setIsLoading(false);
     }
-  }, [router, supabase, useMock]);
+  }, [queryClient, router, supabase, useMock]);
 
   const refreshUser = React.useCallback(async () => {
     if (useMock || !supabase) return;

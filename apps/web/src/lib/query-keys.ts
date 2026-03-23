@@ -235,6 +235,7 @@ export const queryKeys = {
     lists: () => [...queryKeys.tasks.all, 'list'] as const,
     list: (filters: TaskFilters) => [...queryKeys.tasks.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.tasks.all, 'detail', id] as const,
+    proofs: (taskId: string) => [...queryKeys.tasks.all, 'proofs', taskId] as const,
   },
 
   // Reports
@@ -279,6 +280,7 @@ export const queryKeys = {
     cycles: () => [...queryKeys.performance.all, 'cycles'] as const,
     cycle: (id: string) => [...queryKeys.performance.cycles(), id] as const,
     kpis: () => [...queryKeys.performance.all, 'kpis'] as const,
+    kpiEvidence: (kpiId: string) => [...queryKeys.performance.all, 'kpi-evidence', kpiId] as const,
     okrs: () => [...queryKeys.performance.all, 'okrs'] as const,
     okrTargets: (okrId?: string) =>
       [...queryKeys.performance.all, 'okr-targets', okrId || 'all'] as const,
@@ -346,6 +348,7 @@ export const queryKeys = {
     scheduled: () => [...queryKeys.announcements.all, 'scheduled'] as const,
     feed: (filters: AnnouncementFilters) =>
       [...queryKeys.announcements.all, 'feed', filters] as const,
+    starred: () => [...queryKeys.announcements.all, 'starred'] as const,
     analytics: (id: string) => [...queryKeys.announcements.all, 'analytics', id] as const,
     attachments: (id: string) => [...queryKeys.announcements.all, 'attachments', id] as const,
     comments: (id: string) => [...queryKeys.announcements.all, 'comments', id] as const,

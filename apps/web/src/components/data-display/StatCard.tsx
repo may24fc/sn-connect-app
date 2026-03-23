@@ -20,6 +20,8 @@ interface StatCardProps {
   icon?: React.ReactNode;
   /** @deprecated iconVariant is no longer used - icons are now text-zinc-400 only */
   iconVariant?: 'primary' | 'success' | 'warning' | 'danger';
+  /** Optional tooltip shown next to the label */
+  tooltip?: React.ReactNode;
   /** Additional CSS classes */
   className?: string;
   /** Whether to use compact styling */
@@ -41,6 +43,7 @@ export function StatCard({
   value,
   trend,
   icon,
+  tooltip,
   className,
   compact = false,
 }: StatCardProps): React.ReactNode {
@@ -64,6 +67,7 @@ export function StatCard({
           <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
             {label}
           </span>
+          {tooltip}
         </div>
 
         {/* Value */}

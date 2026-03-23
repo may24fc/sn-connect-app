@@ -1,6 +1,13 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 import type { Table } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -28,21 +35,18 @@ export function DataTablePagination<TData>({
       {/* Page size selector */}
       <div className="flex items-center gap-2">
         <span className="text-sm text-zinc-500 dark:text-zinc-400">Rows per page:</span>
-        <select
-          value={pageSize}
-          onChange={(e) => table.setPageSize(Number(e.target.value))}
-          className={cn(
-            'h-7 px-2 text-sm bg-card',
-            'border border-border rounded-md',
-            'focus:outline-none focus:ring-2 focus:ring-slate-600/20 focus:border-slate-600'
-          )}
-        >
-          {pageSizeOptions.map((size) => (
-            <option key={size} value={size}>
-              {size}
-            </option>
-          ))}
-        </select>
+        <Select value={String(pageSize)} onValueChange={(val) => table.setPageSize(Number(val))}>
+          <SelectTrigger className="h-7 w-auto min-w-[60px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {pageSizeOptions.map((size) => (
+              <SelectItem key={size} value={String(size)}>
+                {size}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex items-center gap-3">

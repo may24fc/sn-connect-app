@@ -49,11 +49,11 @@ function PulseItem({ event }: { event: PulseEvent }): ReactNode {
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 transition-colors">
       {/* Date badge */}
-      <div className="flex flex-col items-center justify-center w-11 h-11 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex-shrink-0">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 leading-none">
+      <div className="flex flex-col items-center justify-center w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800/40 flex-shrink-0">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400 leading-none">
           {month}
         </span>
-        <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300 leading-tight">
+        <span className="text-sm font-bold text-slate-800 dark:text-slate-300 leading-tight">
           {day}
         </span>
       </div>
@@ -79,7 +79,7 @@ function PulseItem({ event }: { event: PulseEvent }): ReactNode {
         href={buildAddToCalendarUrl(event)}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex-shrink-0 p-1.5 rounded-md text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors"
+        className="flex-shrink-0 p-1.5 rounded-md text-zinc-400 hover:text-slate-700 dark:hover:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors"
         title="Add to my Google Calendar"
       >
         <ExternalLink className="h-3.5 w-3.5" />
