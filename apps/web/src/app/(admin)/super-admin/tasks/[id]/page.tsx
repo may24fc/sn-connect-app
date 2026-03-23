@@ -1,9 +1,11 @@
 'use client';
 
-import { Button, TaskDetailView } from '@hr-portal/ui';
+import { useTaskProofs } from '@/hooks/useTaskProofs';
+import { formatDate } from '@/lib/format';
+import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton, TaskDetailView } from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { ArrowLeft, Edit, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Edit, ExternalLink, FileText, Link2, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { use, useEffect, useState } from 'react';
@@ -67,6 +69,9 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const { addToast } = useToast();
+  const { data: proofsData, isLoading: proofsLoading } = useTaskProofs(id);
+
+  const proofs = proofsData?.data || [];
 
   useEffect(() => {
     // TODO: Replace with actual API call
@@ -174,6 +179,74 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
         isUpdating={isUpdating}
         canUpdateStatus={false} // Admin view - they don't update status, assignees do
       />
+
+      {/* Proof of Completion Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg">Proof of Completion</CardTitle>
+            {proofs.length > 0 && (
+              <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-full px-2 py-0.5">
+                <CheckCircle2 className="h-3 w-3" />
+                {proofs.length} submitted
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Proofs submitted by the assignee for this task.
+          </p>
+        </CardHeader>
+        <CardContent>
+          {proofsLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : proofs.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No proof has been submitted yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {proofs.map((proof) => (
+                <div
+                  key={proof.id}
+                  className="flex items-start gap-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-3"
+                >
+                  <div className="mt-0.5 flex-shrink-0">
+                    {proof.proof_type === 'link' ? (
+                      <Link2 className="h-4 w-4 text-indigo-500" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-zinc-500" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    {proof.label && (
+                      <p className="text-sm font-medium truncate">{proof.label}</p>
+                    )}
+                    {proof.proof_type === 'link' ? (
+                      <a
+                        href={proof.content}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 truncate"
+                      >
+                        {proof.content}
+                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                      </a>
+                    ) : (
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{proof.content}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      by {proof.submitted_by_name} &middot; {formatDate(proof.created_at)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

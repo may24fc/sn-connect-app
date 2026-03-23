@@ -1,5 +1,6 @@
 'use client';
 
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateTask } from '@/hooks/useCreateTask';
@@ -11,8 +12,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -42,8 +41,9 @@ import {
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useTableSort } from '@/hooks/useTableSort';
-import { ClipboardList, LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { CheckCircle2, ClipboardList, Clock, LayoutGrid, List, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
 
 const TASK_CATEGORY_OPTIONS = [
@@ -62,7 +62,6 @@ export default function MyTasksPage() {
   const [status, setStatus] = useState<string>('all');
   const [priority, setPriority] = useState<string>('all');
   const [category, setCategory] = useState<string>('all');
-  const [tagFilter, setTagFilter] = useState('');
   const [activeView, setActiveView] = useState<'list' | 'board'>('list');
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
@@ -120,14 +119,6 @@ export default function MyTasksPage() {
       : {}),
     ...(priority !== 'all' ? { priority: priority as 'low' | 'medium' | 'high' | 'urgent' } : {}),
     ...(category !== 'all' ? { category } : {}),
-    ...(tagFilter.trim()
-      ? {
-          tags: tagFilter
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean),
-        }
-      : {}),
     ...(user?.id ? { assigneeId: user.id } : {}),
     page: 1,
     pageSize: 100,
@@ -188,82 +179,45 @@ export default function MyTasksPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-amber-600">{stats.pending}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">In Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-slate-700">{stats.inProgress}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatCardGrid columns={4}>
+        <StatCard
+          label="Total"
+          value={stats.total}
+          icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Pending"
+          value={stats.pending}
+          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="In Progress"
+          value={stats.inProgress}
+          icon={<Loader2 className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Completed"
+          value={stats.completed}
+          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+        />
+      </StatCardGrid>
 
       {/* View Tabs */}
       <div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-            <button
-              type="button"
-              onClick={() => setActiveView('list')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeView === 'list'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-              List
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveView('board')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeView === 'board'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Board
-            </button>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          {/* Search */}
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="w-full pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+              placeholder="Search tasks..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                className="w-[200px] pl-10"
-                placeholder="Search tasks..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Status" />
@@ -301,12 +255,34 @@ export default function MyTasksPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Input
-              className="w-[220px]"
-              placeholder="Tags: onboarding, urgent"
-              value={tagFilter}
-              onChange={(event) => setTagFilter(event.target.value)}
-            />
+
+            {/* View Toggle */}
+            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveView('list')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  activeView === 'list'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                List
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveView('board')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  activeView === 'board'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Board
+              </button>
+            </div>
           </div>
         </div>
 
@@ -319,7 +295,7 @@ export default function MyTasksPage() {
               <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
             </Card>
           ) : (
-            <TaskListView tasks={tasks} />
+            <TaskListView tasks={tasks} onStatusChange={handleStatusChange} updatingTaskId={updatingTaskId} />
           )}
         </div>}
 
@@ -518,9 +494,12 @@ interface TaskListViewProps {
     due_date: string | null;
     assigner_name?: string | null;
   }>;
+  onStatusChange: (taskId: string, newStatus: TaskStatusDB) => Promise<void>;
+  updatingTaskId: string | null;
 }
 
-function TaskListView({ tasks }: TaskListViewProps) {
+function TaskListView({ tasks, onStatusChange, updatingTaskId }: TaskListViewProps) {
+  const router = useRouter();
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'title' });
 
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
@@ -586,7 +565,7 @@ function TaskListView({ tasks }: TaskListViewProps) {
           </TableHeader>
           <TableBody>
             {sortedTasks.map((task) => (
-              <TableRow key={task.id}>
+              <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/tasks/${task.id}`)}>
                 <TableCell>
                   <p className="text-sm font-medium">{task.title}</p>
                   {task.description && (
@@ -611,7 +590,22 @@ function TaskListView({ tasks }: TaskListViewProps) {
                   <TaskPriorityBadge priority={task.priority as TaskPriority} size="sm" />
                 </TableCell>
                 <TableCell>
-                  <TaskStatusBadge status={task.status as TaskStatus} size="sm" dueDate={task.due_date ?? undefined} />
+                  <Select
+                    value={task.status}
+                    onValueChange={(value) => onStatusChange(task.id, value as TaskStatusDB)}
+                    disabled={updatingTaskId === task.id}
+                  >
+                    <SelectTrigger className="w-[140px] h-8 text-xs border-0 bg-transparent shadow-none hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-0 px-1">
+                      <TaskStatusBadge status={task.status as TaskStatus} size="sm" dueDate={task.due_date ?? undefined} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(['pending', 'in_progress', 'completed', 'cancelled'] as const).map((s) => (
+                        <SelectItem key={s} value={s}>
+                          <TaskStatusBadge status={s} size="sm" />
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {formatDate(task.due_date)}

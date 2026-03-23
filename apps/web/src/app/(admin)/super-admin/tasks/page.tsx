@@ -41,6 +41,7 @@ import {
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { Calendar, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
 
 type TaskCategoryValue = (typeof TASK_CATEGORY_OPTIONS)[number]['value'];
@@ -362,45 +363,20 @@ export default function TaskManagementPage() {
 
       {/* View Tabs */}
       <div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-            <button
-              type="button"
-              onClick={() => setActiveView('list')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeView === 'list'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-              List
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveView('board')}
-              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeView === 'board'
-                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Board
-            </button>
-          </div>
-
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           {/* Search */}
-          <div className="relative max-w-xs">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search tasks..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[170px]">
                 <SelectValue placeholder="Category" />
@@ -420,6 +396,34 @@ export default function TaskManagementPage() {
               placeholder="Tags: onboarding, urgent"
               className="w-[220px]"
             />
+
+            {/* View Toggle */}
+            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveView('list')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  activeView === 'list'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                List
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveView('board')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  activeView === 'board'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Board
+              </button>
+            </div>
           </div>
         </div>
 
@@ -685,6 +689,7 @@ function TaskListView({
   tasks: Array<TaskRecord>;
   assigneeById: Map<string, AssigneeInfo>;
 }) {
+  const router = useRouter();
   const priorityOrder: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
   const statusOrder: Record<string, number> = { pending: 0, in_progress: 1, completed: 2, cancelled: 3 };
 
@@ -733,7 +738,7 @@ function TaskListView({
               const assignee = task.assigned_to ? assigneeById.get(task.assigned_to) : null;
               const assigneeName = assignee?.name || task.assignee_name || 'Unassigned';
               return (
-                <TableRow key={task.id}>
+                <TableRow key={task.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/super-admin/tasks/${task.id}`)}>
                   <TableCell>
                     <p className="text-sm font-medium">{task.title}</p>
                     {task.description && (
