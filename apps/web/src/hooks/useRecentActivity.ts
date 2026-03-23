@@ -9,6 +9,8 @@ export interface ActivityItem {
   performedBy: string;
   timestamp: string;
   tableName: string;
+  categoryLabel: string;
+  category: string;
 }
 
 /**

@@ -2,7 +2,24 @@
 
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@hr-portal/ui';
-import { Activity, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import {
+  Activity,
+  ArrowLeft,
+  Bot,
+  Briefcase,
+  ClipboardList,
+  DollarSign,
+  FileText,
+  Loader2,
+  Megaphone,
+  Monitor,
+  Plus,
+  Settings,
+  Trash2,
+  UserCheck,
+  Users,
+  Edit,
+} from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -24,8 +41,49 @@ function formatRelativeTime(iso: string): string {
   });
 }
 
-function tableLabel(tableName: string): string {
-  return tableName.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const CATEGORY_BADGE_CLASSES: Record<string, string> = {
+  announcements: 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+  tasks: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  resources: 'bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300',
+  employees: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300',
+  documents: 'bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300',
+  organization: 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+  reports: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300',
+  performance: 'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+  internships: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+  onboarding: 'bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
+  ai: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950 dark:text-fuchsia-300',
+  finance: 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+  standups: 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
+  system: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
+  other: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400',
+};
+
+function getActionIcon(action: string) {
+  const lower = action.toLowerCase();
+  if (lower.includes('deleted')) return <Trash2 className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+  if (lower.includes('created') || lower.includes('added') || lower.includes('started') || lower.includes('submitted'))
+    return <Plus className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+  if (lower.includes('updated') || lower.includes('edited'))
+    return <Edit className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+  return <Activity className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+}
+
+function getCategoryIcon(category: string) {
+  switch (category) {
+    case 'announcements': return <Megaphone className="h-3 w-3" strokeWidth={1.5} />;
+    case 'tasks': return <ClipboardList className="h-3 w-3" strokeWidth={1.5} />;
+    case 'resources': return <FileText className="h-3 w-3" strokeWidth={1.5} />;
+    case 'employees': return <Users className="h-3 w-3" strokeWidth={1.5} />;
+    case 'documents': return <FileText className="h-3 w-3" strokeWidth={1.5} />;
+    case 'performance': return <Monitor className="h-3 w-3" strokeWidth={1.5} />;
+    case 'internships': return <Briefcase className="h-3 w-3" strokeWidth={1.5} />;
+    case 'onboarding': return <UserCheck className="h-3 w-3" strokeWidth={1.5} />;
+    case 'ai': return <Bot className="h-3 w-3" strokeWidth={1.5} />;
+    case 'finance': return <DollarSign className="h-3 w-3" strokeWidth={1.5} />;
+    case 'system': return <Settings className="h-3 w-3" strokeWidth={1.5} />;
+    default: return null;
+  }
 }
 
 export default function AdminActivityPage(): ReactNode {
@@ -80,23 +138,31 @@ export default function AdminActivityPage(): ReactNode {
                   className="flex items-start justify-between py-3 gap-4 first:pt-0 last:pb-0"
                 >
                   <div className="flex items-start gap-3 min-w-0">
-                    <CheckCircle
-                      className="h-4 w-4 text-slate-500 flex-shrink-0 mt-0.5"
-                      strokeWidth={1.5}
-                    />
+                    {getActionIcon(activity.action)}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
                         {activity.action}
                       </p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        {activity.performedBy}
+                        {activity.performedBy === 'System' ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Settings className="h-3 w-3" strokeWidth={1.5} />
+                            System
+                          </span>
+                        ) : (
+                          activity.performedBy
+                        )}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    {activity.tableName && (
-                      <Badge variant="secondary" className="text-xs h-5 hidden sm:flex">
-                        {tableLabel(activity.tableName)}
+                    {activity.categoryLabel && (
+                      <Badge
+                        variant="secondary"
+                        className={`text-xs h-5 hidden sm:inline-flex items-center gap-1 border-0 ${CATEGORY_BADGE_CLASSES[activity.category] ?? CATEGORY_BADGE_CLASSES.other}`}
+                      >
+                        {getCategoryIcon(activity.category)}
+                        {activity.categoryLabel}
                       </Badge>
                     )}
                     <span className="text-xs text-zinc-400 dark:text-zinc-500 whitespace-nowrap">
