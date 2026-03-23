@@ -741,7 +741,7 @@ function ConversationGroup({
   onSelect,
   onRename,
   onDelete,
-  formatDate,
+  formatDate: _formatDate,
 }: ConversationGroupProps): React.ReactNode {
   const [renamingId, setRenamingId] = React.useState<string | null>(null);
   const [renameValue, setRenameValue] = React.useState('');

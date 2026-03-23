@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useState, useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Quote, Briefcase, Clock } from 'lucide-react';
+import { Quote, Briefcase, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Spotlight {
@@ -42,11 +42,6 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
   const next = useCallback(() => {
     setDirection(1);
     setActive((prev) => (prev + 1) % spotlights.length);
-  }, [spotlights.length]);
-
-  const prev = useCallback(() => {
-    setDirection(-1);
-    setActive((prev) => (prev - 1 + spotlights.length) % spotlights.length);
   }, [spotlights.length]);
 
   // Auto-play

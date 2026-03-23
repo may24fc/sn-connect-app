@@ -6,7 +6,6 @@ import { useTaskProofs, useCreateTaskProof, useDeleteTaskProof } from '@/hooks/u
 import { useUpdateTask } from '@/hooks/useUpdateTask';
 import { formatDate } from '@/lib/format';
 import {
-  Badge,
   Button,
   Card,
   CardContent,
