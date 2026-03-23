@@ -52,7 +52,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
-  { label: 'Information Hub', href: '/information-hub', icon: Library },
+  { label: 'Resources', href: '/information-hub', icon: Library },
 ];
 
 // Intern navigation - same as employee except different dashboard and no payroll
@@ -61,10 +61,10 @@ const internNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
-  { label: 'Reports', href: '/intern/reports', icon: FileText },
+  { label: 'EOD Reports', href: '/intern/reports', icon: FileText },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
-  { label: 'Information Hub', href: '/information-hub', icon: Library },
+  { label: 'Resources', href: '/information-hub', icon: Library },
 ];
 
 // Admin (HR) navigation - includes team management features

@@ -227,6 +227,14 @@ export {
 export { OKRCard, OKRList } from './components/performance/OKRCard';
 export { KPICard, KPIList, KPISummary } from './components/performance/KPICard';
 export {
+  ScaleRatingInput,
+  ScaleRatingDisplay,
+} from './components/performance/ScaleRatingInput';
+export {
+  KPIEvidenceSection,
+  type KPIEvidenceItem,
+} from './components/performance/KPIEvidenceSection';
+export {
   CompletionTrendChart,
   DepartmentPerformanceChart,
   RatingDistributionChart,
@@ -386,7 +394,10 @@ export type {
   KPIId,
   ReviewId,
   OKRTargetId,
+  KPIEvidenceId,
   TargetMetricType,
+  KPIType,
+  KPIEvidenceType,
   CycleStatus,
   PerformanceCycle,
   OKRStatus,
@@ -394,6 +405,7 @@ export type {
   OKR,
   OKRTarget,
   KPI,
+  KPIEvidence,
   ReviewStatus,
   PerformanceRating,
   PerformanceReview,

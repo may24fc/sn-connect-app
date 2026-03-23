@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Maximize2, MessageSquare, Minimize2, MoreHorizontal, PanelLeft, Pencil, Plus, Sparkles, Trash2, User, X } from 'lucide-react';
+import { BookOpen, Maximize2, Minimize2, MoreHorizontal, PanelLeft, Pencil, Plus, Sparkles, Trash2, User, X } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../primitives/avatar';
 import { Button } from '../primitives/button';
@@ -384,18 +384,18 @@ export function AIChatbot({
             )}
           >
             {/* Sidebar Header */}
-            <div className="flex items-center justify-between px-3 h-14 flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
-              <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            <div className="flex items-center justify-between px-4 h-14 flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
+              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 uppercase tracking-widest">
                 Conversations
               </span>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                className="h-7 w-7 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md"
                 onClick={handleNewConversation}
                 aria-label="New conversation"
               >
-                <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                <Plus className="h-4 w-4" strokeWidth={1.5} />
               </Button>
             </div>
 
@@ -425,7 +425,7 @@ export function AIChatbot({
               )}
               {grouped.older.length > 0 && (
                 <ConversationGroup
-                  label="Older"
+                  label="Recents"
                   conversations={grouped.older}
                   activeId={currentActiveId}
                   onSelect={handleSelectConversation}
@@ -764,18 +764,18 @@ function ConversationGroup({
 
   return (
     <div className="mb-1">
-      <p className="px-3 py-1.5 text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+      <p className="px-4 pt-4 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
         {label}
       </p>
       {conversations.map((conv) => (
         <div
           key={conv.id}
           className={cn(
-            'group flex items-center gap-1 px-1 mx-1 rounded-md transition-colors',
+            'group flex items-center gap-1 px-2 mx-1 rounded-lg transition-colors',
             'hover:bg-zinc-200/60 dark:hover:bg-zinc-800',
             activeId === conv.id
               ? 'bg-zinc-200/80 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50'
-              : 'text-zinc-600 dark:text-zinc-400'
+              : 'text-zinc-700 dark:text-zinc-300'
           )}
           style={{ width: 'calc(100% - 8px)' }}
         >
@@ -802,15 +802,9 @@ function ConversationGroup({
             <button
               type="button"
               onClick={() => onSelect(conv.id)}
-              className="flex-1 flex items-start gap-2.5 px-2 py-2 text-left min-w-0"
+              className="flex-1 px-3 py-2.5 text-left min-w-0"
             >
-              <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 mt-0.5 text-muted-foreground" strokeWidth={1.5} />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium truncate leading-snug">{conv.title}</p>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                  {formatDate(conv.updatedAt)}
-                </p>
-              </div>
+              <p className="text-sm font-medium truncate leading-snug">{conv.title}</p>
             </button>
           )}
 
