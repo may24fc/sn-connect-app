@@ -1,9 +1,16 @@
 'use client';
 
 import { type ReactNode, useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Upload, CheckCircle, Send, ChevronRight, ChevronLeft, User, Mail, Phone, FileText, X } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 import { applicationSchema, type ApplicationFormData } from '@/lib/schemas/application.schema';
 import { PLACEHOLDER_JOBS } from '@/data/placeholder';
 
@@ -53,6 +60,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
     reset,
     trigger,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -249,18 +257,24 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
               <label htmlFor="job_posting_id" className="block text-sm font-medium text-zinc-700">
                 Position <span className="text-red-500">*</span>
               </label>
-              <select
-                id="job_posting_id"
-                {...register('job_posting_id')}
-                className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
-              >
-                <option value="">Select a position</option>
-                {jobOptions.map((j) => (
-                  <option key={j.id} value={j.id}>
-                    {j.title}
-                  </option>
-                ))}
-              </select>
+              <Controller
+                name="job_posting_id"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger className="mt-1 w-full">
+                      <SelectValue placeholder="Select a position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobOptions.map((j) => (
+                        <SelectItem key={j.id} value={j.id}>
+                          {j.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.job_posting_id && (
                 <p className="mt-1 text-xs text-red-500">{errors.job_posting_id.message}</p>
               )}

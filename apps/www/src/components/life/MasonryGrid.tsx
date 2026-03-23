@@ -178,25 +178,8 @@ export function MasonryGrid({ photos }: MasonryGridProps): ReactNode {
       </div>
 
       {/* Controls */}
-      <div className="mt-8 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => {
-                setDirection(i > page ? 1 : -1);
-                setPage(i);
-              }}
-              aria-label={`Go to page ${i + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === page ? 'w-8 bg-slate-900' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
-              }`}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
+      <div className="group mt-8 flex flex-col items-center gap-3">
+        <div className="flex items-center gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <button
             type="button"
             onClick={() => go(-1)}
@@ -215,6 +198,23 @@ export function MasonryGrid({ photos }: MasonryGridProps): ReactNode {
           >
             <ChevronRight className="h-5 w-5" />
           </button>
+        </div>
+
+        <div className="flex w-full items-center justify-center gap-2">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => {
+                setDirection(i > page ? 1 : -1);
+                setPage(i);
+              }}
+              aria-label={`Go to page ${i + 1}`}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                i === page ? 'w-8 bg-slate-900' : 'w-2 bg-zinc-300 hover:bg-zinc-400'
+              }`}
+            />
+          ))}
         </div>
       </div>
     </div>

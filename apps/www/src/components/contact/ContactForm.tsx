@@ -1,9 +1,16 @@
 'use client';
 
 import { type ReactNode, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Send, CheckCircle, User, Mail, Phone, Building2, MessageSquare, Type, Clock } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 import { inquirySchema, type InquiryFormData } from '@/lib/schemas/inquiry.schema';
 import { BUSINESS_UNITS } from '@/data/placeholder';
 
@@ -15,6 +22,7 @@ export function ContactForm(): ReactNode {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<InquiryFormData>({
     resolver: zodResolver(inquirySchema),
@@ -134,20 +142,29 @@ export function ContactForm(): ReactNode {
           <label htmlFor="contact-bu" className="block text-sm font-medium text-zinc-700">
             Regarding
           </label>
-          <div className="relative mt-1">
-            <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <select
-              id="contact-bu"
-              {...register('business_unit_id')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none appearance-none"
-            >
-              <option value="">General Inquiry</option>
-              {BUSINESS_UNITS.map((u) => (
-                <option key={u.slug} value={u.slug}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
+          <div className="mt-1">
+            <Controller
+              name="business_unit_id"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                  <SelectTrigger className="w-full">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-zinc-400" />
+                      <SelectValue placeholder="General Inquiry" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General Inquiry</SelectItem>
+                    {BUSINESS_UNITS.map((u) => (
+                      <SelectItem key={u.slug} value={u.slug}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </div>
         </div>
 

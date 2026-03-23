@@ -1,41 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ScrollReveal } from '@/components/shared/ScrollReveal';
+import { Timeline } from '@/components/ui/timeline';
 import { CountUp } from '@/components/shared/CountUp';
-
-const MILESTONES = [
-  {
-    year: '2010',
-    title: 'Company Founded',
-    description: 'SN International Group was established in Manila with a vision to build a diversified conglomerate that empowers Filipino communities.',
-  },
-  {
-    year: '2013',
-    title: 'SFO Launched',
-    description: 'SeaFood Outlet opened its first central kitchen, beginning the food service arm that now serves thousands of meals daily.',
-  },
-  {
-    year: '2016',
-    title: 'UHP Established',
-    description: 'Ultimate Health Project began distributing healthcare products to hospitals and pharmacies across Metro Manila.',
-  },
-  {
-    year: '2019',
-    title: '24 Fit Club Opens',
-    description: '24 Fit Club launched its first location, bringing 24/7 fitness access to the community with modern equipment and expert trainers.',
-  },
-  {
-    year: '2022',
-    title: 'Construction Arm Expands',
-    description: 'SN Property Development completed its 50th project, establishing the group as a trusted name in commercial and residential construction.',
-  },
-  {
-    year: '2025',
-    title: '500+ Employees Strong',
-    description: 'The group reaches a milestone of over 500 employees across 4 business units, with operations spanning the Philippines.',
-  },
-] as const;
 
 const COUNTER_STATS = [
   { value: 2010, label: 'Founded', prefix: '' },
@@ -44,53 +11,155 @@ const COUNTER_STATS = [
   { value: 15, label: 'Years Strong', suffix: '+' },
 ];
 
+const TIMELINE_DATA = [
+  {
+    title: '2010',
+    content: (
+      <div>
+        <h4 className="mb-4 text-lg font-semibold text-zinc-900 sm:text-xl">Company Founded</h4>
+        <p className="text-sm leading-relaxed text-zinc-600 sm:text-base">
+          SN International Group was established in Manila with a vision to build a diversified
+          conglomerate that empowers Filipino communities.
+        </p>
+        <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Milestone</p>
+          <p className="mt-1 text-sm text-zinc-700">
+            Founding of SN International Group in Metro Manila, laying the groundwork for a
+            multi-industry enterprise.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '2013',
+    content: (
+      <div>
+        <h4 className="mb-4 text-lg font-semibold text-zinc-900 sm:text-xl">SFO Launched</h4>
+        <p className="text-sm leading-relaxed text-zinc-600 sm:text-base">
+          SeaFood Outlet opened its first central kitchen, beginning the food service arm that now
+          serves thousands of meals daily.
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-2xl font-bold text-zinc-900">1,000+</p>
+            <p className="text-xs text-zinc-500">Daily meals served</p>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-2xl font-bold text-zinc-900">1st</p>
+            <p className="text-xs text-zinc-500">Central kitchen</p>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '2016',
+    content: (
+      <div>
+        <h4 className="mb-4 text-lg font-semibold text-zinc-900 sm:text-xl">UHP Established</h4>
+        <p className="text-sm leading-relaxed text-zinc-600 sm:text-base">
+          Ultimate Health Project began distributing healthcare products to hospitals and pharmacies
+          across Metro Manila.
+        </p>
+        <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Impact</p>
+          <p className="mt-1 text-sm text-zinc-700">
+            Partnering with hospitals and pharmacies to make quality healthcare products accessible
+            to more Filipino families.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '2019',
+    content: (
+      <div>
+        <h4 className="mb-4 text-lg font-semibold text-zinc-900 sm:text-xl">24 Fit Club Opens</h4>
+        <p className="text-sm leading-relaxed text-zinc-600 sm:text-base">
+          24 Fit Club launched its first location, bringing 24/7 fitness access to the community
+          with modern equipment and expert trainers.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {['24/7 Access', 'Modern Equipment', 'Expert Trainers', 'Community-Focused'].map(
+            (tag) => (
+              <span
+                key={tag}
+                className="inline-block rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600"
+              >
+                {tag}
+              </span>
+            ),
+          )}
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '2022',
+    content: (
+      <div>
+        <h4 className="mb-4 text-lg font-semibold text-zinc-900 sm:text-xl">
+          Construction Arm Expands
+        </h4>
+        <p className="text-sm leading-relaxed text-zinc-600 sm:text-base">
+          SN Property Development completed its 50th project, establishing the group as a trusted
+          name in commercial and residential construction.
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-2xl font-bold text-zinc-900">50+</p>
+            <p className="text-xs text-zinc-500">Projects completed</p>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="text-2xl font-bold text-zinc-900">2</p>
+            <p className="text-xs text-zinc-500">Sectors served</p>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
+    title: '2025',
+    content: (
+      <div>
+        <h4 className="mb-4 text-lg font-semibold text-zinc-900 sm:text-xl">
+          500+ Employees Strong
+        </h4>
+        <p className="text-sm leading-relaxed text-zinc-600 sm:text-base">
+          The group reaches a milestone of over 500 employees across 4 business units, with
+          operations spanning the Philippines.
+        </p>
+        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-xs font-medium uppercase tracking-wider text-amber-600">Today</p>
+          <p className="mt-1 text-sm text-amber-900">
+            Four thriving business units. Over 500 dedicated team members. One shared mission to
+            uplift Filipino communities.
+          </p>
+        </div>
+      </div>
+    ),
+  },
+];
+
 export function CompanyTimeline(): ReactNode {
   return (
     <section className="py-20 lg:py-28">
       <div className="section-max section-padding">
-        <ScrollReveal>
-          <h2 className="text-center text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+        <div className="max-w-7xl mx-auto mb-8 px-4 md:px-8 lg:px-10">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-100 bg-amber-50 px-4 py-1.5">
+            <span className="text-sm font-semibold text-amber-600">Since 2010</span>
+          </div>
+          <h2 className="text-3xl font-bold font-heading tracking-tight text-zinc-900 sm:text-4xl">
             Our Journey
           </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-lg text-zinc-500">
+          <p className="mt-3 max-w-2xl text-lg text-zinc-500">
             Key milestones that shaped SN International Group into what it is today.
           </p>
-        </ScrollReveal>
-
-        {/* Timeline */}
-        <div className="relative mt-16">
-          {/* Vertical center line */}
-          <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-zinc-200 lg:block" />
-          <div className="absolute left-6 top-0 h-full w-px bg-zinc-200 lg:hidden" />
-
-          <div className="space-y-12 lg:space-y-16">
-            {MILESTONES.map((milestone, i) => {
-              const isLeft = i % 2 === 0;
-
-              return (
-                <ScrollReveal key={milestone.year} delay={i * 0.1} direction={isLeft ? 'left' : 'right'}>
-                  <div className="relative flex items-start gap-6 lg:gap-0">
-                    {/* Mobile: simple dot icon */}
-                    <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-4 border-white bg-zinc-100 shadow-md lg:absolute lg:left-1/2 lg:-translate-x-1/2">
-                      <span className="block h-3 w-3 rounded-full bg-zinc-900" />
-                    </div>
-
-                    {/* Content card */}
-                    <div className={`flex-1 lg:w-[calc(50%-40px)] ${isLeft ? 'lg:mr-auto lg:pr-12' : 'lg:ml-auto lg:pl-12'}`}>
-                      <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-card transition-shadow hover:shadow-card-hover">
-                        <span className="inline-block rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-white">
-                          {milestone.year}
-                        </span>
-                        <h3 className="mt-3 text-lg font-semibold text-zinc-900">{milestone.title}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-zinc-500">{milestone.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              );
-            })}
-          </div>
         </div>
+
+        <Timeline data={TIMELINE_DATA} />
 
         {/* Counter stats */}
         <div className="mt-20">

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Star, ArrowRight, Quote, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { BUSINESS_UNITS, slugify } from '@/data/placeholder';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
@@ -10,6 +10,7 @@ import { TrustedMarquee } from '@/components/shared/TrustedMarquee';
 import { ServicesGrid } from '@/components/businesses/ServicesGrid';
 import { InquiryForm } from '@/components/businesses/InquiryForm';
 import { CTAButton } from '@/components/shared/CTAButton';
+import { TestimonialCarousel } from '@/components/businesses/TestimonialCarousel';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -28,33 +29,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: unit.name,
     description: unit.description,
   };
-}
-
-/** Generate stable initials for testimonial avatars */
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-/** Deterministic avatar color from name */
-const AVATAR_COLORS = [
-  'from-slate-800 to-slate-800',
-  'from-emerald-500 to-teal-500',
-  'from-amber-500 to-orange-500',
-  'from-rose-500 to-pink-500',
-  'from-cyan-500 to-blue-500',
-  'from-fuchsia-500 to-purple-500',
-];
-
-function avatarColor(name: string): string {
-  let hash = 0;
-  for (const ch of name) hash = ch.charCodeAt(0) + ((hash << 5) - hash);
-  const idx = Math.abs(hash) % AVATAR_COLORS.length;
-  return AVATAR_COLORS[idx] as string;
 }
 
 export default async function BusinessDetailPage({ params }: PageProps) {
@@ -224,47 +198,24 @@ export default async function BusinessDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* ─── Testimonials (enhanced) ─── */}
+      {/* ─── Testimonials ─── */}
       {unit.testimonials.length > 0 && (
-        <section className="bg-white py-16">
+        <section className="bg-zinc-50 py-16">
           <div className="section-max section-padding">
-            <SectionHeading
-              title="What Our Clients Say"
-              subtitle="Trusted by businesses and individuals across the Philippines."
-            />
-            <div className="mt-10 grid gap-6 sm:grid-cols-2">
-              {unit.testimonials.map((t, i) => (
-                <ScrollReveal key={t.name} delay={i * 0.15}>
-                  <div className="relative rounded-2xl border border-zinc-200 bg-white p-6 shadow-card transition-all hover:shadow-mega">
-                    <Quote className="absolute right-4 top-4 h-8 w-8 text-zinc-100" />
-                    {/* Star rating */}
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: 5 }).map((_, s) => (
-                        <Star
-                          key={s}
-                          className="h-4 w-4 fill-amber-400 text-amber-400"
-                        />
-                      ))}
-                    </div>
-                    <p className="mt-3 text-zinc-700 italic leading-relaxed">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
-                    <div className="mt-4 flex items-center gap-3 border-t border-zinc-100 pt-4">
-                      {/* Avatar */}
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white ${avatarColor(t.name)}`}
-                      >
-                        {getInitials(t.name)}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-zinc-900">{t.name}</p>
-                        <p className="text-sm text-zinc-500">{t.role}</p>
-                      </div>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
+            <ScrollReveal>
+              <SectionHeading
+                title="What Our Clients Say"
+                subtitle="Trusted by businesses and individuals across the Philippines."
+              />
+            </ScrollReveal>
+            <ScrollReveal delay={0.15}>
+              <div className="mx-auto mt-10 max-w-3xl">
+                <TestimonialCarousel
+                  testimonials={unit.testimonials}
+                  accentColor={unit.color}
+                />
+              </div>
+            </ScrollReveal>
           </div>
         </section>
       )}

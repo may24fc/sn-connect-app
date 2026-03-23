@@ -2,6 +2,13 @@
 
 import { type ReactNode, useState, useMemo, useEffect, useRef } from 'react';
 import { MapPin, Clock, Building2, Briefcase, Search, Users, ArrowRight, Flame, CalendarDays, BadgeDollarSign, SlidersHorizontal } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@hr-portal/ui';
 import Link from 'next/link';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { BUSINESS_UNITS } from '@/data/placeholder';
@@ -163,30 +170,32 @@ export function JobListings(): ReactNode {
           />
         </div>
 
-        <select
-          value={unitFilter}
-          onChange={(e) => setUnitFilter(e.target.value)}
-          className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
-        >
-          <option value="all">All Business Units</option>
-          {BUSINESS_UNITS.map((u) => (
-            <option key={u.slug} value={u.slug}>
-              {u.name}
-            </option>
-          ))}
-        </select>
+        <Select value={unitFilter} onValueChange={setUnitFilter}>
+          <SelectTrigger className="w-auto min-w-[160px]">
+            <SelectValue placeholder="All Business Units" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Business Units</SelectItem>
+            {BUSINESS_UNITS.map((u) => (
+              <SelectItem key={u.slug} value={u.slug}>
+                {u.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="rounded-lg border border-zinc-200 px-3 py-2.5 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
-        >
-          {EMPLOYMENT_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-auto min-w-[140px]">
+            <SelectValue placeholder="All" />
+          </SelectTrigger>
+          <SelectContent>
+            {EMPLOYMENT_TYPES.map((t) => (
+              <SelectItem key={t} value={t}>
+                {t}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Results */}

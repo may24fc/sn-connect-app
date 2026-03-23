@@ -111,7 +111,7 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
       </div>
 
       {/* Navigation + dots */}
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-6 flex items-center justify-center">
         {/* Dots */}
         <div className="flex items-center gap-2">
           {spotlights.map((s, i) => (
@@ -128,26 +128,6 @@ export function EmployeeSpotlight({ spotlights }: EmployeeSpotlightProps): React
               }`}
             />
           ))}
-        </div>
-
-        {/* Prev / Next */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={prev}
-            aria-label="Previous spotlight"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={next}
-            aria-label="Next spotlight"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 text-zinc-600 transition-colors hover:border-amber-500 hover:text-amber-600"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
         </div>
       </div>
     </div>

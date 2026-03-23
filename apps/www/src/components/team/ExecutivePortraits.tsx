@@ -1,9 +1,9 @@
 'use client';
 
-import { type ReactNode, useRef } from 'react';
+import { type ReactNode, useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
-import { Mail } from 'lucide-react';
-import { motion, useInView } from 'framer-motion';
+import { Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 
 interface Executive {
   name: string;
@@ -98,11 +98,120 @@ function ExecutiveCard({ person, index }: { person: Executive; index: number }) 
 }
 
 export function ExecutivePortraits({ executives }: ExecutivePortraitsProps): ReactNode {
+  if (executives.length <= 3) {
+    return (
+      <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
+        {executives.map((person, i) => (
+          <ExecutiveCard key={person.name} person={person} index={i} />
+        ))}
+      </div>
+    );
+  }
+
+  return <ExecutiveCarousel executives={executives} />;
+}
+
+const slideVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? '6%' : '-6%',
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+    transition: { duration: 0.45, ease: [0.25, 0.4, 0.25, 1] },
+  },
+  exit: (dir: number) => ({
+    x: dir < 0 ? '6%' : '-6%',
+    opacity: 0,
+    transition: { duration: 0.3, ease: [0.25, 0.4, 0.25, 1] },
+  }),
+};
+
+function ExecutiveCarousel({ executives }: { executives: Executive[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  const total = executives.length;
+  const maxIndex = total - 3;
+
+  const goTo = useCallback(
+    (index: number, dir: number) => {
+      setDirection(dir);
+      setCurrentIndex(index);
+    },
+    [],
+  );
+
+  const prev = () => currentIndex > 0 && goTo(currentIndex - 1, -1);
+  const next = () => currentIndex < maxIndex && goTo(currentIndex + 1, 1);
+
+  const visible = executives.slice(currentIndex, currentIndex + 3);
+
   return (
-    <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
-      {executives.map((person, i) => (
-        <ExecutiveCard key={person.name} person={person} index={i} />
-      ))}
+    <div className="group/carousel relative">
+      {/* Prev button — left side, vertically centered, show on hover */}
+      <button
+        type="button"
+        onClick={prev}
+        disabled={currentIndex === 0}
+        aria-label="Previous executives"
+        className="absolute -left-5 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 opacity-0 shadow-md transition-all duration-200 group-hover/carousel:opacity-100 hover:border-zinc-900 hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-0"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+
+      {/* Next button — right side, vertically centered, show on hover */}
+      <button
+        type="button"
+        onClick={next}
+        disabled={currentIndex === maxIndex}
+        aria-label="Next executives"
+        className="absolute -right-5 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 opacity-0 shadow-md transition-all duration-200 group-hover/carousel:opacity-100 hover:border-zinc-900 hover:text-zinc-900 disabled:pointer-events-none disabled:opacity-0"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+
+      {/* Slide area */}
+      <div className="overflow-hidden">
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+          <motion.div
+            key={currentIndex}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {visible.map((person, i) => (
+              <ExecutiveCard key={person.name} person={person} index={i} />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Dot indicators + counter */}
+      <div className="mt-10 flex flex-col items-center gap-2">
+        <div className="flex items-center gap-2">
+          {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => goTo(i, i > currentIndex ? 1 : -1)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === currentIndex
+                  ? 'w-6 bg-zinc-900'
+                  : 'w-1.5 bg-zinc-300 hover:bg-zinc-500'
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-xs tabular-nums text-zinc-400">
+          {currentIndex + 1}–{Math.min(currentIndex + 3, total)} of {total}
+        </p>
+      </div>
     </div>
   );
 }
