@@ -3,7 +3,6 @@
 import { useCreateAnnouncement } from '@/hooks/useCreateAnnouncement';
 import { useUploadAnnouncementAttachment } from '@/hooks/useUploadAnnouncementAttachment';
 import {
-  AnnouncementEditor,
   AttachmentUploader,
   Button,
   Input,
@@ -14,21 +13,30 @@ import {
   SelectTrigger,
   SelectValue,
   TargetingSelector,
+  Textarea,
   useToast,
 } from '@hr-portal/ui';
 import {
   AlertCircle,
+  Bold,
   Calendar,
   ChevronDown,
   ChevronUp,
   FileText,
+  Heading2,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
   MessageSquare,
+  Paperclip,
   Pin,
   Send,
   Target,
+  Underline,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 function parseCsvList(value: string) {
   return value
@@ -38,19 +46,29 @@ function parseCsvList(value: string) {
 }
 
 const categoryOptions = [
-  { value: 'general', label: 'General Update', icon: '📢' },
-  { value: 'hr_updates', label: 'HR Updates', icon: '👥' },
-  { value: 'benefits', label: 'Benefits', icon: '🎁' },
-  { value: 'events', label: 'Events', icon: '🎉' },
-  { value: 'training', label: 'Training', icon: '📚' },
-  { value: 'policy', label: 'Policy', icon: '📋' },
-  { value: 'emergency', label: 'Emergency', icon: '🚨' },
+  { value: 'general', label: 'General Update' },
+  { value: 'hr_updates', label: 'HR Updates' },
+  { value: 'benefits', label: 'Benefits' },
+  { value: 'events', label: 'Events' },
+  { value: 'training', label: 'Training' },
+  { value: 'policy', label: 'Policy' },
+  { value: 'emergency', label: 'Emergency' },
 ];
 
 const priorityOptions = [
   { value: 'normal', label: 'Normal' },
   { value: 'high', label: 'High Priority' },
   { value: 'urgent', label: 'Urgent' },
+];
+
+const toolbarButtons = [
+  { icon: Bold, label: 'Bold' },
+  { icon: Italic, label: 'Italic' },
+  { icon: Underline, label: 'Underline' },
+  { icon: Heading2, label: 'Heading' },
+  { icon: List, label: 'Bullet List' },
+  { icon: ListOrdered, label: 'Numbered List' },
+  { icon: Link2, label: 'Insert Link' },
 ];
 
 export default function NewAnnouncementPage() {
@@ -82,14 +100,28 @@ export default function NewAnnouncementPage() {
     departmentsCsv: '',
     employeesCsv: '',
   });
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
   const [showTargeting, setShowTargeting] = useState(false);
+  const [isEditorFocused, setIsEditorFocused] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
 
   const excerpt = useMemo(() => content.slice(0, 200), [content]);
 
+  // When a draft is auto-created to enable attachment upload, fire the pending upload
+  useEffect(() => {
+    if (pendingFile && createdId) {
+      uploadAttachment.mutate(pendingFile);
+      setPendingFile(null);
+    }
+  }, [createdId, pendingFile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleEditorFocus = useCallback(() => setIsEditorFocused(true), []);
+  const handleEditorBlur = useCallback(() => setIsEditorFocused(false), []);
+
   const save = async (nextStatus: 'draft' | 'published') => {
     try {
-      const response = await createAnnouncement.mutateAsync({
+      const payload = {
         title,
         content,
         excerpt,
@@ -108,7 +140,20 @@ export default function NewAnnouncementPage() {
         targetEmployees: parseCsvList(targeting.employeesCsv),
         isPinned,
         allowComments,
-      });
+      };
+
+      if (createdId) {
+        // Update the auto-saved draft instead of creating a duplicate
+        const res = await fetch(`/api/announcements/${createdId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Failed to update announcement');
+      } else {
+        const response = await createAnnouncement.mutateAsync(payload);
+        setCreatedId(response.data.id);
+      }
 
       addToast({
         title: nextStatus === 'published' ? 'Announcement published' : 'Draft saved',
@@ -119,7 +164,6 @@ export default function NewAnnouncementPage() {
         variant: 'success',
       });
 
-      setCreatedId(response.data.id);
       router.push('/admin/announcements');
     } catch (error) {
       addToast({
@@ -131,38 +175,82 @@ export default function NewAnnouncementPage() {
     }
   };
 
+  // Auto-saves a draft silently (no redirect) so attachments can be uploaded immediately
+  const autoSaveDraft = async (): Promise<void> => {
+    try {
+      const response = await createAnnouncement.mutateAsync({
+        title: title.trim() || 'Untitled',
+        content,
+        excerpt,
+        category,
+        priority,
+        status: 'draft',
+        publishedAt: publishedAt ? new Date(publishedAt).toISOString() : null,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        targetRoles: parseCsvList(targeting.rolesCsv) as (
+          | 'employee'
+          | 'intern'
+          | 'admin'
+          | 'super_admin'
+        )[],
+        targetDepartments: parseCsvList(targeting.departmentsCsv),
+        targetEmployees: parseCsvList(targeting.employeesCsv),
+        isPinned,
+        allowComments,
+      });
+      setCreatedId(response.data.id);
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: 'Could not prepare attachment upload',
+        variant: 'error',
+      });
+      console.error('Auto-save draft failed:', error);
+    }
+  };
+
+  const handleFileSelected = async (file: File): Promise<void> => {
+    if (createdId) {
+      uploadAttachment.mutate(file);
+    } else {
+      // Store file; useEffect will upload it once createdId is set
+      setPendingFile(file);
+      await autoSaveDraft();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+      {/* Top Action Bar */}
+      <div className="backdrop-blur-sm">
+        <div className="max-w p-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               onClick={() => router.push('/admin/announcements')}
-              className="text-zinc-500 dark:text-zinc-400"
+              className="text-muted-foreground hover:text-foreground"
             >
               ← Back
             </Button>
-            <div>
-              <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            <div className="hidden sm:block">
+              <h1 className="font-heading text-lg font-semibold text-foreground tracking-tight">
                 New Announcement
               </h1>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Share updates with your team</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={() => save('draft')}
               disabled={createAnnouncement.isPending || !title || !content}
+              className="border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               Save Draft
             </Button>
             <Button
               onClick={() => save('published')}
               disabled={createAnnouncement.isPending || !title || !content}
-              className="bg-slate-900 hover:bg-slate-800"
+              className="bg-primary-900 hover:bg-primary-800 text-white dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
             >
               <Send className="w-4 h-4 mr-2" />
               Publish
@@ -171,25 +259,80 @@ export default function NewAnnouncementPage() {
         </div>
       </div>
 
-      {/* Form */}
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="space-y-8">
-          {/* Title */}
-          <div className="space-y-2">
-            <Input
-              placeholder="Announcement title..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-2xl font-semibold border-0 px-0 focus-visible:ring-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-600"
-            />
-            <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+      {/* Split-Pane Layout */}
+      <div className="max-w p-3">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* ── Left Column: Writing Area (70%) ── */}
+          <div className="flex-1 lg:w-[70%] space-y-6">
+            {/* Title Input */}
+            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-border shadow-card px-4 py-3">
+              <Input
+                placeholder="Announcement title..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="text-2xl font-heading font-bold border-0 bg-transparent px-0 h-auto py-2 focus-visible:ring-0 placeholder:text-zinc-300 dark:placeholder:text-zinc-600 tracking-tight"
+              />
+            </div>
+
+            {/* Message Editor Card */}
+            <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
+              {/* Rich Text Toolbar */}
+              <div className="flex items-center gap-0.5 px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                {toolbarButtons.map((btn) => {
+                  const Icon = btn.icon;
+                  return (
+                    <button
+                      key={btn.label}
+                      type="button"
+                      title={btn.label}
+                      className="p-2 rounded-md text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      onClick={() => editorRef.current?.focus()}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </button>
+                  );
+                })}
+                <div className="mx-2 h-5 w-px bg-zinc-200 dark:bg-zinc-700" />
+                <button
+                  type="button"
+                  title="Attach file"
+                  className="p-2 rounded-md text-zinc-400 hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Editor Area */}
+              <Textarea
+                ref={editorRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onFocus={handleEditorFocus}
+                onBlur={handleEditorBlur}
+                placeholder="Write your announcement..."
+                className="min-h-[380px] border-0 rounded-none resize-none focus-visible:ring-0 px-4 py-4 text-base leading-relaxed bg-white dark:bg-zinc-900"
+              />
+
+              {/* Compact Dropzone */}
+              <div className="border-t border-dashed border-zinc-200 dark:border-zinc-700 px-4 py-3 bg-zinc-50/30 dark:bg-zinc-900/30">
+                <AttachmentUploader
+                  onFileSelected={handleFileSelected}
+                  isUploading={uploadAttachment.isPending || (createAnnouncement.isPending && pendingFile !== null)}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Quick Settings */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <FileText className="w-4 h-4" />
+          {/* ── Right Column: Configuration Sidebar (30%) ── */}
+          <div
+            className={`lg:w-[30%] space-y-4 transition-opacity duration-300 ${
+              isEditorFocused ? 'opacity-60' : 'opacity-100'
+            }`}
+          >
+            {/* Category Card */}
+            <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
+              <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <FileText className="w-3.5 h-3.5" />
                 Category
               </Label>
               <Select
@@ -208,25 +351,23 @@ export default function NewAnnouncementPage() {
                   )
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {categoryOptions.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
-                      <span className="flex items-center gap-2">
-                        <span>{item.icon}</span>
-                        {item.label}
-                      </span>
+                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
+            {/* Priority Card */}
+            <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
+              <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <AlertCircle className="w-3.5 h-3.5" />
                 Priority
               </Label>
               <Select
@@ -235,7 +376,7 @@ export default function NewAnnouncementPage() {
                   setPriority(value as 'low' | 'normal' | 'high' | 'urgent')
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,125 +388,127 @@ export default function NewAnnouncementPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Content Editor */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">Message</Label>
-            <AnnouncementEditor value={content} onChange={setContent} />
-          </div>
-
-          {/* Attachments */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Attachments (Optional)</Label>
-            <AttachmentUploader
-              onFileSelected={(file) => {
-                if (!createdId) return;
-                uploadAttachment.mutate(file);
-              }}
-              isUploading={uploadAttachment.isPending}
-            />
-            {!createdId && (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">💡 Save as draft first to attach files</p>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex flex-wrap gap-3 py-4 border-y border-zinc-200 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={() => setIsPinned((v) => !v)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
-                isPinned
-                  ? 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-950 dark:border-slate-800'
-                  : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900'
-              }`}
-            >
-              <Pin className="w-4 h-4" />
-              <span className="text-sm">Pin to top</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAllowComments((v) => !v)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-colors ${
-                allowComments
-                  ? 'bg-slate-50 border-slate-200 text-slate-700 dark:bg-slate-950 dark:border-slate-800'
-                  : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900'
-              }`}
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span className="text-sm">Allow comments</span>
-            </button>
-          </div>
-
-          {/* Targeting Section */}
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg">
-            <button
-              type="button"
-              onClick={() => setShowTargeting((v) => !v)}
-              className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                <span className="text-sm font-medium">Who can see this? (Optional)</span>
-              </div>
-              {showTargeting ? (
-                <ChevronUp className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
+            {/* Targeting Card */}
+            <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowTargeting((v) => !v)}
+                className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+              >
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Target className="w-3.5 h-3.5" />
+                  Who can see this?
+                </span>
+                {showTargeting ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+              {showTargeting && (
+                <div className="px-4 pb-4 border-t border-border">
+                  <p className="text-xs text-muted-foreground mt-3 mb-3">
+                    Leave empty to show to everyone
+                  </p>
+                  <TargetingSelector value={targeting} onChange={setTargeting} />
+                </div>
               )}
-            </button>
-            {showTargeting && (
-              <div className="p-4 pt-0 border-t border-zinc-200 dark:border-zinc-800">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">Leave empty to show to everyone</p>
-                <TargetingSelector value={targeting} onChange={setTargeting} />
-              </div>
-            )}
-          </div>
+            </div>
 
-          {/* Advanced Options */}
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                <span className="text-sm font-medium">Schedule & Expiry (Optional)</span>
-              </div>
-              {showAdvanced ? (
-                <ChevronUp className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-              )}
-            </button>
-            {showAdvanced && (
-              <div className="p-4 pt-0 border-t border-zinc-200 dark:border-zinc-800">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm">Publish Date & Time</Label>
+            {/* Schedule & Expiry Card */}
+            <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowSchedule((v) => !v)}
+                className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+              >
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Schedule & Expiry
+                </span>
+                {showSchedule ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+              {showSchedule && (
+                <div className="px-4 pb-4 border-t border-border space-y-4 pt-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Publish Date</Label>
                     <Input
                       type="datetime-local"
                       value={publishedAt}
                       onChange={(e) => setPublishedAt(e.target.value)}
                       className="text-sm"
                     />
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Leave empty to publish now</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">Expiry Date & Time</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Expiry Date</Label>
                     <Input
                       type="datetime-local"
                       value={expiresAt}
                       onChange={(e) => setExpiresAt(e.target.value)}
                       className="text-sm"
                     />
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400">Leave empty to never expire</p>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Options Card */}
+            <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground block">
+                Options
+              </span>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPinned((v) => !v)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md border text-sm transition-colors ${
+                    isPinned
+                      ? 'bg-primary-50 border-primary-200 text-primary-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
+                      : 'border-border hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-muted-foreground'
+                  }`}
+                >
+                  <Pin className={`w-4 h-4 ${isPinned ? 'text-primary-900 dark:text-slate-300' : ''}`} />
+                  <span className="flex-1 text-left">Pin to top</span>
+                  <div
+                    className={`w-8 h-5 rounded-full transition-colors flex items-center ${
+                      isPinned
+                        ? 'bg-primary-900 dark:bg-slate-400 justify-end'
+                        : 'bg-zinc-200 dark:bg-zinc-700 justify-start'
+                    }`}
+                  >
+                    <div className="w-3.5 h-3.5 rounded-full bg-white mx-0.5 shadow-sm" />
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllowComments((v) => !v)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md border text-sm transition-colors ${
+                    allowComments
+                      ? 'bg-primary-50 border-primary-200 text-primary-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
+                      : 'border-border hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-muted-foreground'
+                  }`}
+                >
+                  <MessageSquare
+                    className={`w-4 h-4 ${allowComments ? 'text-primary-900 dark:text-slate-300' : ''}`}
+                  />
+                  <span className="flex-1 text-left">Allow comments</span>
+                  <div
+                    className={`w-8 h-5 rounded-full transition-colors flex items-center ${
+                      allowComments
+                        ? 'bg-primary-900 dark:bg-slate-400 justify-end'
+                        : 'bg-zinc-200 dark:bg-zinc-700 justify-start'
+                    }`}
+                  >
+                    <div className="w-3.5 h-3.5 rounded-full bg-white mx-0.5 shadow-sm" />
+                  </div>
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

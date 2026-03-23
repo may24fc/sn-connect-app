@@ -22,10 +22,15 @@ import {
   CheckCircle,
   ChevronRight,
   ClipboardList,
+  Edit,
   FileText,
   GraduationCap,
   Loader2,
+  Activity,
+  Plus,
+  Settings,
   Target,
+  Trash2,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -77,6 +82,16 @@ function formatRelativeTime(iso: string): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
   return new Date(iso).toLocaleDateString();
+}
+
+function getActionIcon(action: string) {
+  const lower = action.toLowerCase();
+  if (lower.includes('deleted')) return <Trash2 className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+  if (lower.includes('created') || lower.includes('added') || lower.includes('started') || lower.includes('submitted'))
+    return <Plus className="h-4 w-4 text-emerald-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+  if (lower.includes('updated') || lower.includes('edited'))
+    return <Edit className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
+  return <Activity className="h-4 w-4 text-zinc-400 flex-shrink-0 mt-0.5" strokeWidth={1.5} />;
 }
 
 export default function AdminDashboardPage(): ReactNode {
@@ -210,16 +225,20 @@ export default function AdminDashboardPage(): ReactNode {
                     className="flex items-start justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50"
                   >
                     <div className="flex items-start gap-3">
-                      <CheckCircle
-                        className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 mt-0.5"
-                        strokeWidth={1.5}
-                      />
+                      {getActionIcon(activity.action)}
                       <div>
                         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                           {activity.action}
                         </p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {activity.performedBy}
+                          {activity.performedBy === 'System' ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Settings className="h-3 w-3" strokeWidth={1.5} />
+                              System
+                            </span>
+                          ) : (
+                            activity.performedBy
+                          )}
                         </p>
                       </div>
                     </div>

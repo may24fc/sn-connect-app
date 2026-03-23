@@ -3,6 +3,7 @@
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
@@ -430,63 +431,28 @@ export default function ProbationPage(): ReactNode {
 
         <TabsContent value="probation" className="space-y-6">
           {/* Probation Stats Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Users className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Employees</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-                    <TrendingUp className="h-5 w-5 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">On Track</p>
-                    <p className="text-2xl font-bold">{stats.onTrack}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-error/10">
-                    <AlertTriangle className="h-5 w-5 text-error" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">At Risk</p>
-                    <p className="text-2xl font-bold">{stats.atRisk}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                    <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-2xl font-bold">{stats.completed}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <StatCardGrid columns={4}>
+            <StatCard
+              label="Total Employees"
+              value={stats.total}
+              icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="On Track"
+              value={stats.onTrack}
+              icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="At Risk"
+              value={stats.atRisk}
+              icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Completed"
+              value={stats.completed}
+              icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          </StatCardGrid>
 
           {/* Filters */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -554,7 +520,7 @@ export default function ProbationPage(): ReactNode {
                       );
 
                       return (
-                        <TableRow key={employee.id}>
+                        <TableRow key={employee.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => handleViewAppraisal(employee)}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-9 w-9">
@@ -1099,7 +1065,7 @@ export default function ProbationPage(): ReactNode {
                         : profile.departments?.name;
 
                       return (
-                        <TableRow key={profile.id}>
+                        <TableRow key={profile.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/admin/onboarding/${profile.id}`)}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-9 w-9">

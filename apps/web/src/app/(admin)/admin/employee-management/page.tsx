@@ -815,7 +815,7 @@ export default function EmployeeManagementPage(): ReactNode {
                         : profile.departments?.name;
 
                       return (
-                        <TableRow key={profile.id}>
+                        <TableRow key={profile.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/admin/onboarding/${profile.id}`)}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-9 w-9">

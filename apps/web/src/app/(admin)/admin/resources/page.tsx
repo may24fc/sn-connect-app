@@ -70,7 +70,7 @@ export default function AdminResourcesPage() {
 
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-card p-6">
+      <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Resources</h1>
@@ -133,12 +133,9 @@ export default function AdminResourcesPage() {
         </div>
 
         <ResourceFilters value={filters} onChange={setFilters} showStatus />
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Downloads across listed resources: {stats.downloadCount}
-        </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <ResourceGrid
             columns={4}
@@ -206,14 +203,11 @@ export default function AdminResourcesPage() {
                       window.location.href = `/admin/resources/${resource.id}`;
                     }}
                     actions={
-                      // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation prevents card click
-                      <div
-                        className="flex items-center gap-1"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <>
                         <Button
                           size="sm"
                           variant="ghost"
+                          className="h-7 px-2 text-xs bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-zinc-800"
                           onClick={() =>
                             toggleFeatured.mutate(
                               {
@@ -250,6 +244,7 @@ export default function AdminResourcesPage() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          className="h-7 px-2 text-xs bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-zinc-800"
                           onClick={() =>
                             archiveResource.mutate(resource.id, {
                               onSuccess: () => {
@@ -271,7 +266,7 @@ export default function AdminResourcesPage() {
                         >
                           <Archive className="mr-1 h-3.5 w-3.5" /> Archive
                         </Button>
-                      </div>
+                      </>
                     }
                   />
                 ))}

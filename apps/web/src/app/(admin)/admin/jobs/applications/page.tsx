@@ -6,6 +6,7 @@ import { useUpdateApplicationStatus } from '@/hooks/useJobMutations';
 import { useTableSort } from '@/hooks/useTableSort';
 import { useAuth } from '@/contexts/AuthContext';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { formatDate, formatDateTime } from '@/lib/format';
 import {
   Badge,
@@ -258,69 +259,79 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          {[
-            { label: 'Total', value: stats.total, icon: Users },
-            { label: 'Pending', value: stats.pending, icon: Clock },
-            { label: 'Shortlisted', value: stats.shortlisted, icon: Star },
-            { label: 'Interview', value: stats.interview, icon: Users },
-            { label: 'Approved', value: stats.approved, icon: CheckCircle },
-          ].map((stat) => (
-            <Card key={stat.label} className="bg-card border border-border rounded-lg p-4">
-              <CardContent className="p-0 flex items-center gap-3">
-                <stat.icon className="h-5 w-5 text-slate-700" />
-                <div>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">{stat.label}</p>
-                  <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50">{stat.value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <StatCardGrid columns={5} className="mb-6">
+          <StatCard
+            label="Total"
+            value={stats.total}
+            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Pending"
+            value={stats.pending}
+            icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Shortlisted"
+            value={stats.shortlisted}
+            icon={<Star className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Interview"
+            value={stats.interview}
+            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Approved"
+            value={stats.approved}
+            icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
               placeholder="Search by name or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                <SelectItem key={key} value={key}>
-                  {cfg.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={jobFilter} onValueChange={setJobFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Job Posting" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Positions</SelectItem>
-              {jobPostings.map((jp) => (
-                <SelectItem key={jp.id} value={jp.id}>
-                  {jp.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'table' | 'kanban')}>
-            <TabsList>
-              <TabsTrigger value="table">Table</TabsTrigger>
-              <TabsTrigger value="kanban">Kanban</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                  <SelectItem key={key} value={key}>
+                    {cfg.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={jobFilter} onValueChange={setJobFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Job Posting" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Positions</SelectItem>
+                {jobPostings.map((jp) => (
+                  <SelectItem key={jp.id} value={jp.id}>
+                    {jp.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'table' | 'kanban')}>
+              <TabsList>
+                <TabsTrigger value="table">Table</TabsTrigger>
+                <TabsTrigger value="kanban">Kanban</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
 
@@ -383,7 +394,7 @@ export default function ApplicationsPage() {
                     <TableRow
                       key={app.id}
                       className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
-                      onClick={() => openCandidate(app)}
+                      onDoubleClick={() => openCandidate(app)}
                     >
                       <TableCell className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                         {app.full_name}

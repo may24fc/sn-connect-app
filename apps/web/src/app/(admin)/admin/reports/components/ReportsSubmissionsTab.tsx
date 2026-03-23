@@ -31,6 +31,7 @@ import {
 import { useToast } from '@hr-portal/ui';
 import { AlertTriangle, Eye } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 const statusVariant: Record<
@@ -111,6 +112,7 @@ export function ReportsSubmissionsTab({
   const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
   const { addToast } = useToast();
+  const router = useRouter();
 
   // Calculate period dates for API filtering
   const periodDates = useMemo(() => {
@@ -335,7 +337,7 @@ export function ReportsSubmissionsTab({
                   </TableRow>
                 ) : (
                   sortedReports.map((report) => (
-                    <TableRow key={report.id}>
+                    <TableRow key={report.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/admin/reports/${report.id}`)}>
                       <TableCell>
                         {report.employees
                           ? `${report.employees.first_name} ${report.employees.last_name}`

@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDirectory, useDirectoryExport } from '@/hooks/useDirectory';
 import type { DirectoryEntry, DirectoryFilters } from '@/hooks/useDirectory';
@@ -44,8 +45,10 @@ import { useToast } from '@hr-portal/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Download,
   Eye,
   MoreHorizontal,
@@ -54,6 +57,7 @@ import {
   Target,
   Trash2,
   Users,
+  UserCheck,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
@@ -291,53 +295,33 @@ export default function AdminDirectoryPage(): ReactNode {
 
       {/* Summary Stats */}
       {metadata && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-                <div>
-                  <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tabular-nums">
-                    {metadata.total}
-                  </p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Total</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-2xl font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                {metadata.active}
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Active</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-2xl font-semibold text-slate-700 dark:text-slate-400 tabular-nums">
-                {metadata.interns}
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Interns</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-2xl font-semibold text-amber-600 dark:text-amber-400 tabular-nums">
-                {metadata.onLeave}
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">On Leave</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-2xl font-semibold text-orange-600 dark:text-orange-400 tabular-nums">
-                {metadata.probation}
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Probation</p>
-            </CardContent>
-          </Card>
-        </div>
+        <StatCardGrid columns={5}>
+          <StatCard
+            label="Total"
+            value={metadata.total}
+            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Active"
+            value={metadata.active}
+            icon={<UserCheck className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Interns"
+            value={metadata.interns}
+            icon={<BookOpen className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="On Leave"
+            value={metadata.onLeave}
+            icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Probation"
+            value={metadata.probation}
+            icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
       )}
 
       {/* Filters */}
@@ -496,7 +480,7 @@ export default function AdminDirectoryPage(): ReactNode {
                     <TableRow
                       key={entry.user_id}
                       className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                      onClick={() => router.push(`/admin/directory/${entry.user_id}`)}
+                      onDoubleClick={() => router.push(`/admin/directory/${entry.user_id}`)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">

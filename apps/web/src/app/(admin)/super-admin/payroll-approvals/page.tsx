@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useApproveInvoice, useInvoices } from '@/hooks/useInvoices';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
@@ -20,6 +21,7 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
+import { CheckCircle2, Clock, DollarSign, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const statusVariant: Record<
@@ -120,40 +122,28 @@ export default function PayrollApprovalsPage() {
         <p className="text-muted-foreground">Review and approve submitted invoices</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Pending Review</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.pending}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Approved</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.approved}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Rejected</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.rejected}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Pending Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-bold">{formatCurrency(stats.pendingAmount)}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatCardGrid columns={4}>
+        <StatCard
+          label="Pending Review"
+          value={stats.pending}
+          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Approved"
+          value={stats.approved}
+          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Rejected"
+          value={stats.rejected}
+          icon={<XCircle className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Pending Amount"
+          value={formatCurrency(stats.pendingAmount)}
+          icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />}
+        />
+      </StatCardGrid>
 
       {isLoading ? (
         <Card>
