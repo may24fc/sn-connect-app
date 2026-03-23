@@ -5,7 +5,7 @@ import { getAuthedPerformanceContext, isPerformanceAdmin } from '../_lib';
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') || undefined;
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('review_cycles')
       .select('*')
       .order('start_date', { ascending: false });

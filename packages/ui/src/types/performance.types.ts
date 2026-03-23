@@ -8,7 +8,7 @@ export type ReviewId = string & { __brand: 'ReviewId' };
 export type OKRTargetId = string & { __brand: 'OKRTargetId' };
 
 // Target Metric Types
-export type TargetMetricType = 'number' | 'boolean' | 'currency' | 'tasks';
+export type TargetMetricType = 'number' | 'boolean' | 'currency' | 'tasks' | 'scale';
 
 // Performance Cycle Types
 export type CycleStatus = 'draft' | 'active' | 'closed';
@@ -45,6 +45,11 @@ export interface OKRTarget {
   progressPercentage: number; // Computed client-side
   adminRating?: PerformanceRating;
   adminComments?: string;
+  rubric1?: string | undefined;
+  rubric2?: string | undefined;
+  rubric3?: string | undefined;
+  rubric4?: string | undefined;
+  selfRating?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -81,6 +86,27 @@ export interface OKR {
   updatedAt: string;
 }
 
+// KPI Scale Type
+export type KPIType = 'numeric' | 'scale';
+
+// KPI Evidence Types
+export type KPIEvidenceId = string & { __brand: 'KPIEvidenceId' };
+export type KPIEvidenceType = 'link' | 'note' | 'file';
+
+export interface KPIEvidence {
+  id: KPIEvidenceId;
+  kpiId: KPIId;
+  submittedBy: string;
+  evidenceType: KPIEvidenceType;
+  content: string;
+  label?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
+  mimeType?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // KPI Types (kept for backward compat, but deprecated in favor of OKRTarget)
 export interface KPI {
   id: KPIId;
@@ -88,12 +114,18 @@ export interface KPI {
   cycleId: CycleId;
   name: string;
   description?: string | undefined;
+  kpiType: KPIType;
   target: number;
   actual: number;
   unit: string;
   weight: number;
   score: number;
   status?: string;
+  selfRating?: number | null;
+  rubric1?: string | null;
+  rubric2?: string | null;
+  rubric3?: string | null;
+  rubric4?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -156,6 +188,8 @@ export interface PerformanceDashboardStats {
   reviewsCompleted: number;
   averageOkrProgress: number;
   averageKpiScore: number;
+  kpiWeightedMeanRating?: number;
+  kpiWeightedMeanPercentage?: number;
 }
 
 // Chart Data Types

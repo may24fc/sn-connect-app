@@ -106,7 +106,7 @@ export const updateOKRSchema = z.object({
   evaluatedAt: z.string().datetime().optional(),
 });
 
-export const targetMetricTypeSchema = z.enum(['number', 'boolean', 'currency', 'tasks']);
+export const targetMetricTypeSchema = z.enum(['number', 'boolean', 'currency', 'tasks', 'scale']);
 
 export const createOKRTargetSchema = z.object({
   okrId: z.string().uuid(),
@@ -121,6 +121,10 @@ export const createOKRTargetSchema = z.object({
   unit: z.string().optional().nullable(),
   weight: z.number().min(0).default(1),
   sortOrder: z.number().int().default(0),
+  rubric1: z.string().min(1).optional(),
+  rubric2: z.string().min(1).optional(),
+  rubric3: z.string().min(1).optional(),
+  rubric4: z.string().min(1).optional(),
 });
 
 export const updateOKRTargetSchema = z.object({
@@ -140,7 +144,14 @@ export const updateOKRTargetSchema = z.object({
   adminComments: z.string().optional(),
   evaluatedBy: z.string().uuid().optional(),
   evaluatedAt: z.string().datetime().optional(),
+  rubric1: z.string().min(1).optional(),
+  rubric2: z.string().min(1).optional(),
+  rubric3: z.string().min(1).optional(),
+  rubric4: z.string().min(1).optional(),
+  selfRating: z.number().int().min(1).max(4).optional().nullable(),
 });
+
+export const kpiTypeSchema = z.enum(['numeric', 'scale']).default('numeric');
 
 export const createKPISchema = z
   .object({
@@ -152,11 +163,26 @@ export const createKPISchema = z
     unit: z.string().optional().nullable(),
     periodStart: dateSchema,
     periodEnd: dateSchema,
+    kpiType: kpiTypeSchema,
+    rubric1: z.string().min(1).optional(),
+    rubric2: z.string().min(1).optional(),
+    rubric3: z.string().min(1).optional(),
+    rubric4: z.string().min(1).optional(),
   })
   .refine((data) => data.periodStart <= data.periodEnd, {
     message: 'periodStart must be earlier than or equal to periodEnd',
     path: ['periodEnd'],
-  });
+  })
+  .refine(
+    (data) => {
+      if (data.kpiType !== 'scale') return true;
+      return !!data.rubric1 && !!data.rubric2 && !!data.rubric3 && !!data.rubric4;
+    },
+    {
+      message: 'All 4 rubric descriptions are required for scale-type KPIs',
+      path: ['rubric1'],
+    }
+  );
 
 export const updateKPISchema = z.object({
   id: z.string().uuid(),
@@ -167,12 +193,23 @@ export const updateKPISchema = z.object({
   periodStart: dateSchema.optional(),
   periodEnd: dateSchema.optional(),
   status: z.string().optional(),
+  selfRating: z.number().int().min(1).max(4).optional().nullable(),
+  rubric1: z.string().min(1).optional(),
+  rubric2: z.string().min(1).optional(),
+  rubric3: z.string().min(1).optional(),
+  rubric4: z.string().min(1).optional(),
   adminRating: z
     .enum(['exceptional', 'exceeds', 'meets', 'needs_improvement', 'unsatisfactory'])
     .optional(),
   adminComments: z.string().optional(),
   evaluatedBy: z.string().uuid().optional(),
   evaluatedAt: z.string().datetime().optional(),
+});
+
+export const createKPIEvidenceSchema = z.object({
+  evidenceType: z.enum(['link', 'note', 'file']),
+  content: z.string().min(1).max(2000),
+  label: z.string().max(200).optional().nullable(),
 });
 
 export const probationExtendSchema = z.object({

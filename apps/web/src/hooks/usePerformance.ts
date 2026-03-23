@@ -2,6 +2,7 @@ import { queryKeys } from '@/lib/query-keys';
 import type { CreateReviewCycleInput } from '@/lib/schemas/performance.schema';
 import type {
   KPI,
+  KPIType,
   OKR,
   OKRTarget,
   OKRTargetId,
@@ -51,9 +52,15 @@ interface KpiRow {
   employee_id: string;
   cycle_id: string | null;
   name: string;
+  kpi_type: KPIType;
   target_value: number;
   current_value: number;
   unit: string | null;
+  self_rating: number | null;
+  rubric_1: string | null;
+  rubric_2: string | null;
+  rubric_3: string | null;
+  rubric_4: string | null;
   period_start: string;
   period_end: string;
   created_at: string;
@@ -76,6 +83,11 @@ interface OkrTargetRow {
   sort_order: number | null;
   admin_rating: string | null;
   admin_comments: string | null;
+  rubric_1: string | null;
+  rubric_2: string | null;
+  rubric_3: string | null;
+  rubric_4: string | null;
+  self_rating: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -153,6 +165,8 @@ function calculateTargetProgress(target: OkrTargetRow): number {
   switch (target.metric_type) {
     case 'boolean':
       return current >= 1 ? 100 : 0;
+    case 'scale':
+      return target.self_rating ? Math.round((target.self_rating / 4) * 100) : 0;
     case 'number':
     case 'currency':
       if (targetVal > start) {
@@ -182,6 +196,11 @@ function toUiOKRTarget(row: OkrTargetRow): OKRTarget {
     weight: Number(row.weight ?? 1),
     sortOrder: Number(row.sort_order ?? 0),
     progressPercentage: Math.max(0, calculateTargetProgress(row)),
+    ...(row.rubric_1 ? { rubric1: row.rubric_1 } : {}),
+    ...(row.rubric_2 ? { rubric2: row.rubric_2 } : {}),
+    ...(row.rubric_3 ? { rubric3: row.rubric_3 } : {}),
+    ...(row.rubric_4 ? { rubric4: row.rubric_4 } : {}),
+    selfRating: row.self_rating ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -190,18 +209,31 @@ function toUiOKRTarget(row: OkrTargetRow): OKRTarget {
 function toUiKPI(row: KpiRow): KPI {
   const target = Number(row.target_value || 0);
   const actual = Number(row.current_value || 0);
-  const score = target > 0 ? Math.round((actual / target) * 100) : 0;
+  const kpiType = (row.kpi_type || 'numeric') as KPIType;
+
+  let score: number;
+  if (kpiType === 'scale') {
+    score = row.self_rating ? Math.round((row.self_rating / 4) * 100) : 0;
+  } else {
+    score = target > 0 ? Math.round((actual / target) * 100) : 0;
+  }
 
   return {
     id: row.id as KPI['id'],
     employeeId: row.employee_id as KPI['employeeId'],
     cycleId: (row.cycle_id || 'uncategorized') as KPI['cycleId'],
     name: row.name,
+    kpiType,
     target,
     actual,
     unit: row.unit || '',
     weight: 0,
     score,
+    selfRating: row.self_rating ?? null,
+    rubric1: row.rubric_1 ?? null,
+    rubric2: row.rubric_2 ?? null,
+    rubric3: row.rubric_3 ?? null,
+    rubric4: row.rubric_4 ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -378,6 +410,11 @@ export function useUpdateKPI() {
       currentValue?: number;
       unit?: string;
       status?: string;
+      selfRating?: number | null;
+      rubric1?: string;
+      rubric2?: string;
+      rubric3?: string;
+      rubric4?: string;
       adminRating?: 'exceptional' | 'exceeds' | 'meets' | 'needs_improvement' | 'unsatisfactory';
       adminComments?: string;
       evaluatedBy?: string;
@@ -414,6 +451,11 @@ export function useCreateKPI() {
       employeeId?: string;
       periodStart?: string;
       periodEnd?: string;
+      kpiType?: KPIType;
+      rubric1?: string;
+      rubric2?: string;
+      rubric3?: string;
+      rubric4?: string;
     }) => {
       const response = await fetch('/api/performance/kpis', {
         method: 'POST',
@@ -503,6 +545,10 @@ export function useCreateOKRTarget() {
       unit?: string;
       weight?: number;
       sortOrder?: number;
+      rubric1?: string;
+      rubric2?: string;
+      rubric3?: string;
+      rubric4?: string;
     }) => {
       const response = await fetch('/api/performance/okr-targets', {
         method: 'POST',
@@ -545,6 +591,11 @@ export function useUpdateOKRTarget() {
       sortOrder?: number;
       adminRating?: string;
       adminComments?: string;
+      rubric1?: string;
+      rubric2?: string;
+      rubric3?: string;
+      rubric4?: string;
+      selfRating?: number | null;
     }) => {
       const { okrId: _, ...body } = payload;
       const response = await fetch('/api/performance/okr-targets', {

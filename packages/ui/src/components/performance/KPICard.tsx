@@ -1,12 +1,13 @@
 'use client';
 
-import { BarChart3, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { BarChart3, Minus, SlidersHorizontal, TrendingDown, TrendingUp } from 'lucide-react';
 import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../primitives/card';
 import { Progress } from '../../primitives/progress';
 import type { KPI } from '../../types/performance.types';
 import { cn } from '../../utils/cn';
+import { ScaleRatingDisplay } from './ScaleRatingInput';
 
 interface KPICardProps {
   kpi: KPI;
@@ -31,9 +32,12 @@ function getScoreStatus(score: number): {
 export function KPICard({ kpi, className, compact = false }: KPICardProps): React.ReactNode {
   const { variant, label, Icon } = getScoreStatus(kpi.score);
   const progressValue = Math.min(kpi.score, 150); // Cap at 150% for visualization
+  const isScale = kpi.kpiType === 'scale';
 
   const progressColor =
     kpi.score >= 100 ? 'bg-success' : kpi.score >= 80 ? 'bg-warning' : 'bg-error';
+
+  const KpiIcon = isScale ? SlidersHorizontal : BarChart3;
 
   if (compact) {
     return (
@@ -45,12 +49,14 @@ export function KPICard({ kpi, className, compact = false }: KPICardProps): Reac
       >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-            <BarChart3 className="h-5 w-5 text-primary" />
+            <KpiIcon className="h-5 w-5 text-primary" />
           </div>
           <div>
             <p className="font-medium">{kpi.name}</p>
             <p className="text-xs text-muted-foreground">
-              {kpi.actual} / {kpi.target} {kpi.unit}
+              {isScale
+                ? `Rating: ${kpi.selfRating ?? '—'} / 4`
+                : `${kpi.actual} / ${kpi.target} ${kpi.unit}`}
             </p>
           </div>
         </div>
@@ -81,7 +87,7 @@ export function KPICard({ kpi, className, compact = false }: KPICardProps): Reac
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <KpiIcon className="h-5 w-5 text-primary" />
             </div>
             <div>
               <CardTitle className="text-base">{kpi.name}</CardTitle>
@@ -90,37 +96,78 @@ export function KPICard({ kpi, className, compact = false }: KPICardProps): Reac
               )}
             </div>
           </div>
-          <Badge variant={variant} className="gap-1">
-            <Icon className="h-3 w-3" />
-            {label}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isScale && (
+              <Badge variant="secondary" className="text-xs">
+                Scale
+              </Badge>
+            )}
+            <Badge variant={variant} className="gap-1">
+              <Icon className="h-3 w-3" />
+              {label}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-3 rounded-lg bg-muted/50">
-            <p className="text-xs text-muted-foreground mb-1">Target</p>
-            <p className="text-lg font-semibold">{kpi.target}</p>
-            <p className="text-xs text-muted-foreground">{kpi.unit}</p>
-          </div>
-          <div className="text-center p-3 rounded-lg bg-muted/50">
-            <p className="text-xs text-muted-foreground mb-1">Actual</p>
-            <p className="text-lg font-semibold">{kpi.actual}</p>
-            <p className="text-xs text-muted-foreground">{kpi.unit}</p>
-          </div>
-          <div className="text-center p-3 rounded-lg bg-muted/50">
-            <p className="text-xs text-muted-foreground mb-1">Score</p>
-            <p
-              className={cn('text-lg font-bold', {
-                'text-success': kpi.score >= 100,
-                'text-warning': kpi.score >= 80 && kpi.score < 100,
-                'text-error': kpi.score < 80,
+        {isScale ? (
+          <>
+            <ScaleRatingDisplay
+              value={kpi.selfRating}
+              rubrics={{
+                1: kpi.rubric1,
+                2: kpi.rubric2,
+                3: kpi.rubric3,
+                4: kpi.rubric4,
+              }}
+            />
+            <div className="grid grid-cols-4 gap-1">
+              {([1, 2, 3, 4] as const).map((level) => {
+                const rubricKey = `rubric${level}` as keyof KPI;
+                const rubricText = kpi[rubricKey] as string | null | undefined;
+                return (
+                  <div
+                    key={level}
+                    className={cn(
+                      'text-center p-2 rounded-lg text-xs',
+                      kpi.selfRating === level
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'bg-muted/50 text-muted-foreground'
+                    )}
+                  >
+                    <p className="font-bold mb-0.5">{level}</p>
+                    {rubricText && <p className="line-clamp-2">{rubricText}</p>}
+                  </div>
+                );
               })}
-            >
-              {kpi.score}%
-            </p>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-3 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground mb-1">Target</p>
+              <p className="text-lg font-semibold">{kpi.target}</p>
+              <p className="text-xs text-muted-foreground">{kpi.unit}</p>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground mb-1">Actual</p>
+              <p className="text-lg font-semibold">{kpi.actual}</p>
+              <p className="text-xs text-muted-foreground">{kpi.unit}</p>
+            </div>
+            <div className="text-center p-3 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground mb-1">Score</p>
+              <p
+                className={cn('text-lg font-bold', {
+                  'text-success': kpi.score >= 100,
+                  'text-warning': kpi.score >= 80 && kpi.score < 100,
+                  'text-error': kpi.score < 80,
+                })}
+              >
+                {kpi.score}%
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
@@ -188,6 +235,22 @@ export function KPISummary({ kpis, className }: KPISummaryProps): React.ReactNod
   const averageScore =
     totalWeight > 0 ? weightedScore : kpis.reduce((sum, kpi) => sum + kpi.score, 0) / kpis.length;
 
+  // Calculate weighted mean as rating (out of 4) and percentage
+  const effectiveTotalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 1), 0);
+  const normalizedScore =
+    effectiveTotalWeight > 0
+      ? kpis.reduce((sum, kpi) => {
+          const w = kpi.weight || 1;
+          if (kpi.kpiType === 'scale') {
+            return sum + ((kpi.selfRating || 0) / 4) * w;
+          }
+          const ratio = kpi.target > 0 ? Math.min(kpi.actual / kpi.target, 1) : 0;
+          return sum + ratio * w;
+        }, 0) / effectiveTotalWeight
+      : 0;
+  const weightedMeanRating = Math.round(normalizedScore * 4 * 100) / 100;
+  const weightedMeanPercentage = Math.round(normalizedScore * 100);
+
   const onTarget = kpis.filter((kpi) => kpi.score >= 100).length;
   const nearTarget = kpis.filter((kpi) => kpi.score >= 80 && kpi.score < 100).length;
   const belowTarget = kpis.filter((kpi) => kpi.score < 80).length;
@@ -195,10 +258,19 @@ export function KPISummary({ kpis, className }: KPISummaryProps): React.ReactNod
   return (
     <Card className={className}>
       <CardContent className="p-4">
-        <div className="grid grid-cols-4 gap-4 text-center">
+        <div className="grid grid-cols-5 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold">{Math.round(averageScore)}%</p>
             <p className="text-xs text-muted-foreground">Avg. Score</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold">
+              {weightedMeanRating}{' '}
+              <span className="text-sm font-normal text-muted-foreground">/ 4</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Weighted Mean ({weightedMeanPercentage}%)
+            </p>
           </div>
           <div>
             <p className="text-2xl font-bold text-success">{onTarget}</p>

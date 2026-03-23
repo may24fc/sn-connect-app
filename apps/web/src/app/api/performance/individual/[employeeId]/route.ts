@@ -152,6 +152,9 @@ export async function GET(
         kpis && kpis.length > 0
           ? Math.round(
               kpis.reduce((acc, k) => {
+                if (k.kpi_type === 'scale') {
+                  return acc + (k.self_rating ? (k.self_rating / 4) * 100 : 0);
+                }
                 if (k.target_value && k.target_value > 0) {
                   return acc + (k.current_value / k.target_value) * 100;
                 }
@@ -159,7 +162,31 @@ export async function GET(
               }, 0) / kpis.length
             )
           : 0,
+      weightedMeanRating: 0,
+      weightedMeanPercentage: 0,
     };
+
+    // Calculate weighted mean across all KPIs (scale uses self_rating/4, numeric uses current/target)
+    if (kpis && kpis.length > 0) {
+      const totalWeight = kpis.reduce((acc, k) => acc + (k.weight || 1), 0);
+      if (totalWeight > 0) {
+        const weightedSum = kpis.reduce((acc, k) => {
+          const w = k.weight || 1;
+          if (k.kpi_type === 'scale') {
+            const rating = k.self_rating || 0;
+            return acc + (rating / 4) * w;
+          }
+          if (k.target_value && k.target_value > 0) {
+            const ratio = Math.min(k.current_value / k.target_value, 1);
+            return acc + ratio * w;
+          }
+          return acc;
+        }, 0);
+        const normalizedScore = weightedSum / totalWeight; // 0..1
+        kpiSummary.weightedMeanRating = Math.round(normalizedScore * 4 * 100) / 100; // e.g. 3.20
+        kpiSummary.weightedMeanPercentage = Math.round(normalizedScore * 100); // e.g. 80
+      }
+    }
 
     const okrSummary = {
       total: okrs?.length || 0,
