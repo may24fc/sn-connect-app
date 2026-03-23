@@ -39,13 +39,27 @@ import type { ReactNode } from 'react';
 const quickActions = [
   {
     title: 'Upload Files',
+    description: 'Manage documents',
     icon: Upload,
     href: '/files',
   },
   {
     title: 'Submit Report',
+    description: 'Create new report',
     icon: FileText,
     href: '/reports/new',
+  },
+  {
+    title: 'My Tasks',
+    description: 'View assignments',
+    icon: ClipboardCheck,
+    href: '/tasks',
+  },
+  {
+    title: 'Announcements',
+    description: 'Company updates',
+    icon: Bell,
+    href: '/announcements',
   },
 ];
 
@@ -181,35 +195,25 @@ export default function DashboardPage(): ReactNode {
   const statColumns = isOnboardingCompleted ? 3 : 4;
 
   return (
-    <div className="h-full space-y-5 pb-6">
-      {/* ── Section 1: Quick Stats ── */}
-      <div className="py-4 space-y-6 border-b border-zinc-100 dark:border-zinc-800/80">
-        {/* Section Header */}
-        <div className="flex items-center gap-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-            Overview
-          </h2>
-          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+    <div className="h-full space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
+            {greeting}, {firstName}
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            Here is what is happening with your HR journey today.
+          </p>
         </div>
+      </div>
 
-        {/* Page Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              {greeting}, {firstName}
-            </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-              Here is what is happening with your HR journey today.
-            </p>
-          </div>
-        </div>
+      {/* Milestone Banner — upcoming birthdays & anniversaries */}
+      <MilestoneBanner milestones={milestones} isLoading={milestonesLoading} />
 
-        {/* Milestone Banner — upcoming birthdays & anniversaries */}
-        <MilestoneBanner milestones={milestones} isLoading={milestonesLoading} />
-
-        {/* Stats Row */}
-        <div data-tour="stat-cards">
-          <StatCardGrid columns={statColumns as 3 | 4}>
+      {/* Stats Row */}
+      <div data-tour="stat-cards">
+        <StatCardGrid columns={statColumns as 3 | 4}>
           {!isOnboardingCompleted && (
             <StatCard
               label="Onboarding"
@@ -229,7 +233,6 @@ export default function DashboardPage(): ReactNode {
                     : 'Not started',
               }}
               icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
-              className="border-l-4 border-l-emerald-500 dark:border-l-emerald-400"
             />
           )}
           <StatCard
@@ -254,7 +257,6 @@ export default function DashboardPage(): ReactNode {
                   : 'No active period',
             }}
             icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
-            className="border-l-4 border-l-amber-500 dark:border-l-amber-400"
           />
           <StatCard
             label="Tasks Due"
@@ -264,33 +266,21 @@ export default function DashboardPage(): ReactNode {
               value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
             }}
             icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
-            className="border-l-4 border-l-indigo-500 dark:border-l-indigo-400"
           />
           <StatCard
             label="Notifications"
             value="0"
             trend={{ direction: 'stable', value: 'No new notifications' }}
             icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
-            className="border-l-4 border-l-violet-500 dark:border-l-violet-400"
           />
         </StatCardGrid>
       </div>
-      </div>
 
-      {/* ── Section 2: Onboarding & Activity ── */}
-      <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/30 px-6 py-5 space-y-5 border border-zinc-100 dark:border-zinc-800/60">
-        {/* Section Header */}
-        <div className="flex items-center gap-3">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-            Activity &amp; Updates
-          </h2>
-          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
-        </div>
-
-      {/* Row 1: Onboarding Progress (only if not completed) */}
-      {!isOnboardingCompleted && (
-        <BentoGrid columns={4}>
-          <BentoCard colSpan={4} className="border-l-4 border-l-emerald-500 dark:border-l-emerald-400">
+      {/* Main Bento Grid */}
+      <BentoGrid columns={4}>
+        {/* Onboarding Progress (only if not completed) */}
+        {!isOnboardingCompleted && (
+          <BentoCard colSpan={4}>
             <BentoCardHeader>
               <BentoCardTitle icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}>
                 Onboarding Progress
@@ -343,13 +333,10 @@ export default function DashboardPage(): ReactNode {
               )}
             </BentoCardContent>
           </BentoCard>
-        </BentoGrid>
-      )}
+        )}
 
-      {/* Row 2: Company Pulse + Latest Announcements */}
-      <BentoGrid columns={4}>
         {/* Company Pulse Card */}
-        <BentoCard colSpan={2} className="border-l-4 border-l-indigo-500 dark:border-l-indigo-400">
+        <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Pulse
@@ -360,8 +347,8 @@ export default function DashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
 
-        {/* Latest Announcements Card — connected to feed API */}
-        <BentoCard colSpan={2} data-tour="announcements" className="border-l-4 border-l-amber-500 dark:border-l-amber-400">
+        {/* Latest Announcements Card */}
+        <BentoCard colSpan={2} data-tour="announcements">
           <BentoCardHeader>
             <BentoCardTitle icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}>
               Latest Announcements
@@ -427,39 +414,35 @@ export default function DashboardPage(): ReactNode {
             )}
           </BentoCardContent>
         </BentoCard>
-      </BentoGrid>
-      </div>
 
-      {/* ── Section 3: Quick Actions ── */}
-      <div className="rounded-xl bg-indigo-50/50 dark:bg-indigo-950/15 px-6 py-5 border border-indigo-100 dark:border-indigo-900/40">
-        {/* Section Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-indigo-600/80 dark:text-indigo-400/80 whitespace-nowrap">
-            Quick Access
-          </h2>
-          <div className="flex-1 h-px bg-indigo-200/60 dark:bg-indigo-800/40" />
-        </div>
-
-      {/* Row 3: Quick Actions — full width */}
-      <BentoGrid columns={4}>
-        <BentoCard colSpan={4} data-tour="quick-actions" className="border-l-4 border-l-indigo-500 dark:border-l-indigo-400">
+        {/* Quick Actions Card */}
+        <BentoCard colSpan={4} data-tour="quick-actions">
           <BentoCardHeader>
             <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
               Quick Actions
             </BentoCardTitle>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {quickActions.map((action) => (
                 <Link key={action.title} href={action.href}>
                   <div className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
                     <action.icon
-                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
                       strokeWidth={1.5}
                     />
-                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {action.title}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        {action.title}
+                      </p>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                        {action.description}
+                      </p>
+                    </div>
+                    <ChevronRight
+                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                      strokeWidth={1.5}
+                    />
                   </div>
                 </Link>
               ))}
@@ -467,31 +450,31 @@ export default function DashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>
-      </div>
 
-      {/* ── Section 4: KPI Dashboard ── */}
-      {/* Role-Specific KPI Dashboard (V2-4.2) */}
+      {/* Role-Specific KPI Dashboard */}
       {primaryKPIRole && kpiCardData.length > 0 && (
-        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/30 px-6 py-5 border border-zinc-100 dark:border-zinc-800/60">
-          {/* Section Header */}
-          <div className="flex items-center gap-3 mb-5">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-              Role Performance
-            </h2>
-            <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
-          </div>
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <RoleDashboardWidget
-            roleType={primaryKPIRole}
-            roleLabel={
-              ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY]?.label ??
-              primaryKPIRole
-            }
-            kpiData={kpiCardData}
-          />
-          <KPIEntryWidget />
-        </div>
-        </div>
+        <BentoGrid columns={4}>
+          <BentoCard colSpan={4}>
+            <BentoCardHeader>
+              <BentoCardTitle icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}>
+                Role Performance
+              </BentoCardTitle>
+            </BentoCardHeader>
+            <BentoCardContent>
+              <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+                <RoleDashboardWidget
+                  roleType={primaryKPIRole}
+                  roleLabel={
+                    ROLE_TYPE_REGISTRY[primaryKPIRole as keyof typeof ROLE_TYPE_REGISTRY]?.label ??
+                    primaryKPIRole
+                  }
+                  kpiData={kpiCardData}
+                />
+                <KPIEntryWidget />
+              </div>
+            </BentoCardContent>
+          </BentoCard>
+        </BentoGrid>
       )}
     </div>
   );
