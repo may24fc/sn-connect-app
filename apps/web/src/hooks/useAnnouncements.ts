@@ -31,6 +31,7 @@ export interface AnnouncementRecord {
   updated_at: string;
   deleted_at: string | null;
   is_read?: boolean;
+  is_starred?: boolean;
 }
 
 interface AnnouncementListResponse {

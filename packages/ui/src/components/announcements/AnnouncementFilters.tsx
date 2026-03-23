@@ -1,4 +1,4 @@
-import { Grid2X2, List } from 'lucide-react';
+import { Grid2X2, List, Search } from 'lucide-react';
 import { Input } from '../../primitives/input';
 import {
   Select,
@@ -58,12 +58,15 @@ export function AnnouncementFilters({
 }: AnnouncementFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
-      <Input
-        placeholder="Search announcements"
-        value={value.search}
-        onChange={(event) => onChange({ ...value, search: event.target.value })}
-        className="max-w-sm"
-      />
+      <div className="relative max-w-sm w-full">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
+        <Input
+          placeholder="Search announcements"
+          value={value.search}
+          onChange={(event) => onChange({ ...value, search: event.target.value })}
+          className="pl-10 bg-white dark:bg-zinc-950"
+        />
+      </div>
 
       <Select value={value.status} onValueChange={(status) => onChange({ ...value, status })}>
         <SelectTrigger className="w-[170px] border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm">
@@ -72,7 +75,7 @@ export function AnnouncementFilters({
         <SelectContent>
           {statuses.map((status) => (
             <SelectItem key={status} value={status}>
-              {formatLabel(status)}
+              {status === 'all' ? 'All Status' : formatLabel(status)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -85,7 +88,7 @@ export function AnnouncementFilters({
         <SelectContent>
           {categories.map((category) => (
             <SelectItem key={category} value={category}>
-              {formatLabel(category)}
+              {category === 'all' ? 'All Category' : formatLabel(category)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -98,7 +101,7 @@ export function AnnouncementFilters({
         <SelectContent>
           {priorities.map((priority) => (
             <SelectItem key={priority} value={priority}>
-              {formatLabel(priority)}
+              {priority === 'all' ? 'All Priority' : formatLabel(priority)}
             </SelectItem>
           ))}
         </SelectContent>

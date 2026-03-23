@@ -1,4 +1,4 @@
-import type * as React from 'react';
+import * as React from 'react';
 import { Badge } from '../../primitives/badge';
 import { cn } from '../../utils/cn';
 
@@ -11,8 +11,10 @@ export interface AnnouncementCardProps {
   dateLabel: string;
   isRead?: boolean | undefined;
   isPinned?: boolean;
+  isStarred?: boolean;
   readCount?: number;
   onClick?: () => void;
+  onStar?: () => void;
   actions?: React.ReactNode;
 }
 
@@ -24,7 +26,7 @@ const statusVariant: Record<string, 'success' | 'secondary' | 'warning' | 'outli
   archived: 'outline',
 };
 
-const priorityIndicator: Record<string, string> = {
+const priorityDot: Record<string, string> = {
   urgent: 'bg-rose-500',
   high: 'bg-amber-500',
   normal: 'bg-zinc-300 dark:bg-zinc-600',
@@ -40,77 +42,130 @@ export function AnnouncementCard({
   dateLabel,
   isRead,
   isPinned,
+  isStarred,
   readCount,
   onClick,
+  onStar,
   actions,
 }: AnnouncementCardProps) {
+  const unread = isRead === false;
+
   return (
     <div
       onClick={onClick}
       className={cn(
-        'group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg transition-colors',
-        onClick && 'cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700',
-        isRead === true && 'opacity-60'
+        'group flex items-center py-2.5 px-2 gap-2 border-b border-zinc-100 dark:border-zinc-800 transition-colors bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800/60',
+        onClick && 'cursor-pointer'
       )}
     >
-      <div className="p-4 space-y-2">
-        {/* Header: priority dot + title + indicators */}
-        <div className="flex items-start gap-2">
-          <span
-            className={cn('mt-1.5 h-2 w-2 shrink-0 rounded-full', priorityIndicator[priority])}
-            title={`${priority} priority`}
-          />
-          <h3 className="flex-1 text-sm font-medium text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug">
-            {title}
-          </h3>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {isPinned && (
-              <Badge variant="navy" className="text-[11px] px-1.5 py-0">
-                Pinned
-              </Badge>
-            )}
-            {isRead === false && (
-              <span className="h-2 w-2 rounded-full bg-slate-800" title="Unread" />
-            )}
+      {/* Star button */}
+      <button
+        type="button"
+        aria-label={isStarred ? 'Unstar announcement' : 'Star announcement'}
+        onClick={(e) => {
+          e.stopPropagation();
+          onStar?.();
+        }}
+        className={cn(
+          'shrink-0 h-7 w-7 flex items-center justify-center rounded transition-colors',
+          isStarred
+            ? 'text-amber-400 hover:text-amber-500'
+            : 'text-zinc-200 dark:text-zinc-700 hover:text-amber-400 dark:hover:text-amber-400 opacity-0 group-hover:opacity-100'
+        )}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill={isStarred ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      </button>
+
+      {/* Priority dot */}
+      <span
+        className={cn('shrink-0 h-2 w-2 rounded-full', priorityDot[priority])}
+        title={`${priority} priority`}
+      />
+
+      {/* Category — sender column */}
+      <span
+        className={cn(
+          'shrink-0 w-32 truncate text-[13px]',
+          unread
+            ? 'font-semibold text-zinc-800 dark:text-zinc-100'
+            : 'font-medium text-zinc-400 dark:text-zinc-500'
+        )}
+      >
+        {category}
+      </span>
+
+      {/* Subject + snippet inline — flex-1 */}
+      <span className="flex-1 min-w-0 flex items-baseline gap-1 text-[13px] truncate">
+        <span
+          className={cn(
+            'shrink-0 max-w-[45%] truncate',
+            unread
+              ? 'font-semibold text-zinc-800 dark:text-zinc-100'
+              : 'font-normal text-zinc-500 dark:text-zinc-400'
+          )}
+        >
+          {title}
+        </span>
+        <span className={cn('truncate min-w-0', unread ? 'text-zinc-400 dark:text-zinc-500' : 'text-zinc-350 dark:text-zinc-600')}>
+          &ndash; {excerpt}
+        </span>
+      </span>
+
+      {/* Badges + read count — revealed on hover, replaced by actions when present */}
+      <div className="shrink-0 flex items-center gap-1">
+        {actions ? (
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {actions}
           </div>
-        </div>
-
-        {/* Excerpt */}
-        <p className="text-[13px] text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
-          {excerpt}
-        </p>
-
-        {/* Meta row: category · status · date */}
-        <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-          <span className="text-zinc-600 dark:text-zinc-400 font-medium">{category}</span>
-          {status && (
-            <>
-              <span aria-hidden>·</span>
-              <Badge
-                variant={statusVariant[status] ?? 'outline'}
-                className="text-[11px] px-1.5 py-0"
-              >
-                {status}
-              </Badge>
-            </>
-          )}
-          <span aria-hidden>·</span>
-          <span>{dateLabel}</span>
-          {readCount !== undefined && (
-            <>
-              <span aria-hidden>·</span>
-              <span>{readCount} reads</span>
-            </>
-          )}
-        </div>
+        ) : (
+          <>
+            {readCount !== undefined && (
+              <span className="text-[11px] text-zinc-400 dark:text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                {readCount} reads
+              </span>
+            )}
+            {status && (
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <Badge
+                  variant={statusVariant[status] ?? 'outline'}
+                  className="text-[10px] px-1.5 py-0"
+                >
+                  {status}
+                </Badge>
+              </span>
+            )}
+          </>
+        )}
+        {isPinned && (
+          <Badge variant="navy" className="text-[10px] px-1.5 py-0">
+            Pinned
+          </Badge>
+        )}
       </div>
 
-      {/* Actions footer */}
-      {actions && (
-        <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-2 flex items-center gap-1">
-          {actions}
-        </div>
-      )}
+      {/* Date — far right */}
+      <span
+        className={cn(
+          'shrink-0 w-24 text-right text-[12px] whitespace-nowrap',
+          unread
+            ? 'font-medium text-zinc-600 dark:text-zinc-300'
+            : 'text-zinc-350 dark:text-zinc-600'
+        )}
+      >
+        {dateLabel}
+      </span>
     </div>
   );
 }

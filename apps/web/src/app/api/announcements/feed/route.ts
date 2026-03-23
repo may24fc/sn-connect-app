@@ -78,9 +78,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    let starredIds = new Set<string>();
+    if (announcementIds.length > 0) {
+      const { data: stars } = await supabase
+        .from('announcement_stars')
+        .select('announcement_id')
+        .eq('user_id', user.id)
+        .in('announcement_id', announcementIds);
+
+      starredIds = new Set(
+        ((stars || []) as Array<{ announcement_id: string }>).map((item) => item.announcement_id)
+      );
+    }
+
     let enrichedData = typedAnnouncements.map((item) => ({
       ...item,
       is_read: readIds.has(item.id),
+      is_starred: starredIds.has(item.id),
     }));
 
     if (filters.readStatus === 'read') {

@@ -1,12 +1,12 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 import { useArchiveAnnouncement, useToggleAnnouncementPin } from '@/hooks/usePublishAnnouncement';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate } from '@/lib/format';
 import {
-  AnnouncementCard,
   AnnouncementFilters,
   type AnnouncementFiltersValue,
   Badge,
@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { Archive, MoreHorizontal, Pin, PinOff, Trash2 } from 'lucide-react';
+import { Archive, FileText, MoreHorizontal, Pin, PinOff, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -82,7 +82,7 @@ export default function AdminAnnouncementsPage() {
     status: 'all',
     category: 'all',
     priority: 'all',
-    view: 'card',
+    view: 'list',
   });
 
   const queryFilters = {
@@ -143,7 +143,7 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
-      <div className="border-b border-border bg-card p-6">
+      <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Announcements</h1>
@@ -179,32 +179,17 @@ export default function AdminAnnouncementsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[
-            { label: 'Total', value: stats.total },
-            { label: 'Drafts', value: stats.drafts },
-            { label: 'Scheduled', value: stats.scheduled },
-            { label: 'Published', value: stats.published },
-          ].map((stat) => (
-            <Card
-              key={stat.label}
-              className="bg-card border border-border rounded-lg p-4"
-            >
-              <CardContent className="p-0">
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">{stat.label}</p>
-                <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{stat.value}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <StatCardGrid columns={4} className="mb-6">
+          <StatCard label="Total" value={stats.total} icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} />
+          <StatCard label="Drafts" value={stats.drafts} icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} />
+          <StatCard label="Scheduled" value={stats.scheduled} icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} />
+          <StatCard label="Published" value={stats.published} icon={<FileText className="h-4 w-4" strokeWidth={1.5} />} />
+        </StatCardGrid>
 
-        <AnnouncementFilters value={filters} onChange={setFilters} />
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Total reads across listed announcements: {stats.readCount}
-        </p>
+        <AnnouncementFilters value={filters} onChange={setFilters} showViewToggle={false} />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-4">
             <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400">
@@ -217,7 +202,7 @@ export default function AdminAnnouncementsPage() {
               Failed to load announcements.
             </CardContent>
           </Card>
-        ) : filters.view === 'list' ? (
+        ) : (
           <Card className="bg-card border border-border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
@@ -250,7 +235,7 @@ export default function AdminAnnouncementsPage() {
                   <TableRow
                     key={announcement.id}
                     className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
-                    onClick={() => {
+                    onDoubleClick={() => {
                       window.location.href = `/admin/announcements/${announcement.id}`;
                     }}
                   >
@@ -323,62 +308,6 @@ export default function AdminAnnouncementsPage() {
               </TableBody>
             </Table>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {announcements.map((announcement) => (
-              <AnnouncementCard
-                key={announcement.id}
-                title={announcement.title}
-                excerpt={announcement.excerpt || announcement.content.slice(0, 200)}
-                category={formatLabel(announcement.category)}
-                priority={announcement.priority}
-                status={announcement.status}
-                dateLabel={formatDate(announcement.published_at || announcement.created_at)}
-                isPinned={announcement.is_pinned}
-                readCount={announcement.read_count}
-                onClick={() => {
-                  window.location.href = `/admin/announcements/${announcement.id}`;
-                }}
-                actions={
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation prevents card click
-                  <div
-                    className="flex items-center gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        togglePin.mutate({
-                          id: announcement.id,
-                          pinned: !announcement.is_pinned,
-                        }, {
-                          onSuccess: () => addToast({ title: announcement.is_pinned ? 'Unpinned' : 'Pinned', variant: 'success' }),
-                          onError: () => addToast({ title: 'Failed to update pin', variant: 'error' }),
-                        })
-                      }
-                    >
-                      {announcement.is_pinned ? (
-                        <><PinOff className="mr-1 h-3.5 w-3.5" /> Unpin</>
-                      ) : (
-                        <><Pin className="mr-1 h-3.5 w-3.5" /> Pin</>
-                      )}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => archiveAnnouncement.mutate(announcement.id, {
-                        onSuccess: () => addToast({ title: 'Announcement archived', variant: 'success' }),
-                        onError: () => addToast({ title: 'Failed to archive', variant: 'error' }),
-                      })}
-                    >
-                      <Archive className="mr-1 h-3.5 w-3.5" /> Archive
-                    </Button>
-                  </div>
-                }
-              />
-            ))}
-          </div>
         )}
       </div>
     </div>

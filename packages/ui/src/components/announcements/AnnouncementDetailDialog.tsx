@@ -15,6 +15,8 @@ import { Separator } from '../../primitives/separator';
 export interface AnnouncementDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isStarred?: boolean;
+  onStar?: () => void;
   announcement: {
     id: string;
     title: string;
@@ -53,6 +55,8 @@ const categoryLabels: Record<string, string> = {
 export function AnnouncementDetailDialog({
   open,
   onOpenChange,
+  isStarred,
+  onStar,
   announcement,
 }: AnnouncementDetailDialogProps) {
   if (!announcement) return null;
@@ -76,7 +80,7 @@ export function AnnouncementDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh]">
         <DialogHeader>
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 pr-8">
             <div className="flex-1 space-y-2">
               <DialogTitle className="text-2xl">{announcement.title}</DialogTitle>
               <div className="flex flex-wrap items-center gap-2">
@@ -94,6 +98,32 @@ export function AnnouncementDetailDialog({
                 {announcement.status && <Badge variant="secondary">{announcement.status}</Badge>}
               </div>
             </div>
+            {onStar && (
+              <button
+                type="button"
+                aria-label={isStarred ? 'Unstar announcement' : 'Star announcement'}
+                onClick={onStar}
+                className={`shrink-0 h-8 w-8 flex items-center justify-center rounded-md transition-colors ${
+                  isStarred
+                    ? 'text-amber-400 hover:text-amber-500 bg-amber-50 dark:bg-amber-900/20'
+                    : 'text-zinc-400 hover:text-amber-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill={isStarred ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </button>
+            )}
           </div>
           <DialogDescription className="sr-only">
             Full announcement details for {announcement.title}
