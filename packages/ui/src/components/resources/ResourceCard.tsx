@@ -1,7 +1,5 @@
 import {
   Bookmark,
-  Download,
-  Eye,
   FileText,
   Image,
   Link,
@@ -58,12 +56,6 @@ const typeIcons: Record<ResourceType, typeof FileText> = {
   interactive: MousePointer,
 };
 
-const statusVariants: Record<ResourceStatus, 'secondary' | 'success' | 'warning'> = {
-  draft: 'secondary',
-  published: 'success',
-  archived: 'warning',
-};
-
 const categoryLabels: Record<ResourceCategory, string> = {
   onboarding: 'Onboarding',
   training: 'Training',
@@ -77,17 +69,26 @@ const categoryLabels: Record<ResourceCategory, string> = {
   emergency: 'Emergency',
 };
 
+const categoryColors: Record<ResourceCategory, string> = {
+  onboarding: 'bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-400 border-transparent',
+  training: 'bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 border-transparent',
+  policies: 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-transparent',
+  benefits: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-transparent',
+  tools: 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border-transparent',
+  culture: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-400 border-transparent',
+  department_specific: 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border-transparent',
+  forms_templates: 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 border-transparent',
+  performance: 'bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 border-transparent',
+  emergency: 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border-transparent',
+};
+
 export function ResourceCard({
   title,
   excerpt,
   resourceType,
   category,
-  status,
   tags,
   thumbnailPath,
-  viewCount,
-  downloadCount,
-  bookmarkCount,
   isFeatured,
   isPinned,
   isBookmarked,
@@ -102,10 +103,37 @@ export function ResourceCard({
     <div
       onClick={onClick}
       className={cn(
-        'group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-colors',
+        'relative group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-colors',
         onClick && 'cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700'
       )}
     >
+      {/* Bookmark — top-right, revealed on hover (only when no actions overlay is present) */}
+      {onBookmark && !actions && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onBookmark();
+          }}
+          className={cn(
+            'absolute top-2 right-2 z-10 p-1.5 rounded-md transition-all duration-150',
+            'bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm',
+            isBookmarked
+              ? 'opacity-100'
+              : 'opacity-0 group-hover:opacity-100'
+          )}
+        >
+          <Bookmark
+            className={cn(
+              'h-3.5 w-3.5',
+              isBookmarked
+                ? 'text-slate-700 fill-slate-600 dark:text-slate-300 dark:fill-slate-400'
+                : 'text-zinc-400 dark:text-zinc-500'
+            )}
+          />
+        </button>
+      )}
+
       {/* Thumbnail / type icon strip */}
       {thumbnailPath ? (
         <div className="h-32 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
@@ -119,35 +147,14 @@ export function ResourceCard({
 
       {/* Content */}
       <div className="p-3.5 space-y-2">
-        {/* Title row with bookmark/featured */}
+        {/* Title row with featured indicator */}
         <div className="flex items-start gap-2">
           <h3 className="flex-1 text-sm font-medium text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug">
             {title}
           </h3>
-          <div className="flex items-center gap-1 shrink-0">
-            {isFeatured && (
-              <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-            )}
-            {onBookmark && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onBookmark();
-                }}
-                className="p-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              >
-                <Bookmark
-                  className={cn(
-                    'h-3.5 w-3.5',
-                    isBookmarked
-                      ? 'text-slate-700 fill-slate-600'
-                      : 'text-zinc-400 dark:text-zinc-500'
-                  )}
-                />
-              </button>
-            )}
-          </div>
+          {isFeatured && (
+            <Star className="h-3.5 w-3.5 shrink-0 text-amber-500 fill-amber-500" />
+          )}
         </div>
 
         {/* Excerpt */}
@@ -157,62 +164,42 @@ export function ResourceCard({
           </p>
         )}
 
-        {/* Meta: category · status · tags */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-            {categoryLabels[category]}
-          </span>
-          {status && (
-            <>
-              <span className="text-zinc-300 dark:text-zinc-600" aria-hidden>·</span>
-              <Badge variant={statusVariants[status]} className="text-[11px] px-1.5 py-0">
-                {status}
-              </Badge>
-            </>
-          )}
-          {isPinned && (
-            <>
-              <span className="text-zinc-300 dark:text-zinc-600" aria-hidden>·</span>
+        {/* Meta: category · pinned · tags */}
+        <div className="flex flex-wrap justify-between items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1">
+            <Badge
+              className={cn('text-[11px] px-1.5 py-0 font-medium border', categoryColors[category])}
+            >
+              {categoryLabels[category]}
+            </Badge>
+            {isPinned && (
               <Badge variant="navy" className="text-[11px] px-1.5 py-0">
                 Pinned
               </Badge>
-            </>
-          )}
-          {tags.length > 0 && (
-            <>
-              <span className="text-zinc-300 dark:text-zinc-600" aria-hidden>·</span>
-              {tags.slice(0, 2).map((tag) => (
-                <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">
-                  {tag}
-                </Badge>
-              ))}
-              {tags.length > 2 && (
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500">+{tags.length - 2}</span>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Stats row */}
-        <div className="flex items-center justify-between text-[11px] text-zinc-400 dark:text-zinc-500 pt-0.5">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <Eye className="h-3 w-3" /> {viewCount}
-            </span>
-            <span className="flex items-center gap-1">
-              <Download className="h-3 w-3" /> {downloadCount}
-            </span>
-            <span className="flex items-center gap-1">
-              <Bookmark className="h-3 w-3" /> {bookmarkCount}
-            </span>
+            )}
+            {tags.length > 0 && (
+              <>
+                {tags.slice(0, 2).map((tag) => (
+                  <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">
+                    {tag}
+                  </Badge>
+                ))}
+                {tags.length > 2 && (
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-500">+{tags.length - 2}</span>
+                )}
+              </>
+            )}
           </div>
-          <span>{dateLabel}</span>
+          <span className='text-[11px] text-zinc-400 dark:text-zinc-500'>{dateLabel}</span>
         </div>
       </div>
 
-      {/* Actions footer */}
+      {/* Actions — top-right overlay, revealed on hover */}
       {actions && (
-        <div className="border-t border-zinc-100 dark:border-zinc-800 px-3.5 py-2 flex items-center gap-1">
+        <div
+          className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
           {actions}
         </div>
       )}

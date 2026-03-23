@@ -150,15 +150,11 @@ export default function InternDashboardPage(): ReactNode {
 
       {/* Profile Card */}
       <div
-        className="bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
+        className="bg-card dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4"
         style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <GraduationCap
-              className="h-5 w-5 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
-              strokeWidth={1.5}
-            />
             <div>
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                 {profile.name}

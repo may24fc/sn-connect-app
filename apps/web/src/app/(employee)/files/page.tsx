@@ -318,9 +318,6 @@ export default function FilesPage() {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">
-            {documents.length} document{documents.length !== 1 ? 's' : ''}
-          </span>
           {/* View Toggle */}
           <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
             <button
@@ -474,7 +471,7 @@ export default function FilesPage() {
                   </span>
 
                   {/* Action buttons — appear top-right on hover */}
-                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                     <button
                       type="button"
                       title="Open in New Tab"

@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
@@ -11,8 +12,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Select,
   SelectContent,
@@ -34,8 +33,9 @@ import {
   HelpLink,
   useToast,
 } from '@hr-portal/ui';
-import { ChevronDown, ChevronRight, Layers, List, Plus, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle2, FileText, Layers, List, Plus, Search, Send } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
 const statusVariant: Record<
@@ -50,6 +50,7 @@ const statusVariant: Record<
 
 export default function ReportsPage() {
   const { addToast } = useToast();
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'flat' | 'grouped'>('flat');
@@ -135,40 +136,31 @@ export default function ReportsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-1.5">Total Reports <SectionTooltip content="The total number of reports you've created across all statuses." /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-1.5">Submitted <SectionTooltip content="Reports you've submitted and are awaiting review." /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.submitted}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-1.5">Approved <SectionTooltip content="Reports that have been reviewed and approved." /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.approved}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Drafts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.draft}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatCardGrid columns={4}>
+        <StatCard
+          label="Total Reports"
+          value={stats.total}
+          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+          tooltip={<SectionTooltip content="The total number of reports you've created across all statuses." />}
+        />
+        <StatCard
+          label="Submitted"
+          value={stats.submitted}
+          icon={<Send className="h-4 w-4" strokeWidth={1.5} />}
+          tooltip={<SectionTooltip content="Reports you've submitted and are awaiting review." />}
+        />
+        <StatCard
+          label="Approved"
+          value={stats.approved}
+          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+          tooltip={<SectionTooltip content="Reports that have been reviewed and approved." />}
+        />
+        <StatCard
+          label="Drafts"
+          value={stats.draft}
+          icon={<Layers className="h-4 w-4" strokeWidth={1.5} />}
+        />
+      </StatCardGrid>
 
       {/* Status Distribution Chart */}
       {statusChartData.length > 0 && (
@@ -179,53 +171,55 @@ export default function ReportsPage() {
         />
       )}
 
-      <div className="flex gap-3">
-        <div className="relative flex-1">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            className="pl-10"
+            className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             placeholder="Search by report type or notes"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="submitted">Submitted</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-          <button
-            type="button"
-            onClick={() => setViewMode('flat')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === 'flat'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-            }`}
-          >
-            <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Flat
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('grouped')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === 'grouped'
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-            }`}
-          >
-            <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
-            Grouped
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="submitted">Submitted</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('flat')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === 'flat'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+              }`}
+            >
+              <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Flat
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('grouped')}
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                viewMode === 'grouped'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+              }`}
+            >
+              <Layers className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Grouped
+            </button>
+          </div>
         </div>
       </div>
 
@@ -294,7 +288,7 @@ export default function ReportsPage() {
                   ))
                 ) : (
                   sortedReports.map((report) => (
-                    <TableRow key={report.id}>
+                    <TableRow key={report.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/reports/${report.id}`)}>
                       <TableCell className="font-medium">
                         <TooltipProvider>
                           <Tooltip>
@@ -417,7 +411,7 @@ function GroupedReportRow({
 
   return (
     <>
-      <TableRow className={depth > 0 ? 'bg-muted/30' : undefined}>
+      <TableRow className={`cursor-pointer hover:bg-muted/50 transition-colors ${depth > 0 ? 'bg-muted/30' : ''}`} onDoubleClick={() => { window.location.href = `/reports/${report.id}`; }}>
         <TableCell className="w-10">
           {hasChildren ? (
             <button

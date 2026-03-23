@@ -1,5 +1,6 @@
 'use client';
 
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
 import { convertAmount, getExchangeRateText } from '@/lib/fx/rates';
@@ -10,8 +11,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -35,7 +34,7 @@ import {
   HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { CheckCircle2, Download, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, DollarSign, Download, Eye, EyeOff, FileText, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
@@ -598,40 +597,32 @@ export default function InvoicePage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-1.5">Total <SectionTooltip content="Total number of invoices you've created." /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-1.5">Pending Review <SectionTooltip content="Invoices submitted and awaiting admin approval." /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.pending}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-1.5">Approved/Paid <SectionTooltip content="Invoices that have been approved or already paid out." /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{stats.approved}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-1.5">Total Approved <SectionTooltip content="The combined net amount of all approved and paid invoices." /></CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xl font-bold">{maskedCurrency(stats.totalApprovedAmount)}</p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatCardGrid columns={4}>
+        <StatCard
+          label="Total"
+          value={stats.total}
+          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+          tooltip={<SectionTooltip content="Total number of invoices you've created." />}
+        />
+        <StatCard
+          label="Pending Review"
+          value={stats.pending}
+          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+          tooltip={<SectionTooltip content="Invoices submitted and awaiting admin approval." />}
+        />
+        <StatCard
+          label="Approved/Paid"
+          value={stats.approved}
+          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+          tooltip={<SectionTooltip content="Invoices that have been approved or already paid out." />}
+        />
+        <StatCard
+          label="Total Approved"
+          value={maskedCurrency(stats.totalApprovedAmount)}
+          icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />}
+          tooltip={<SectionTooltip content="The combined net amount of all approved and paid invoices." />}
+        />
+      </StatCardGrid>
 
       {isLoading ? (
         <Card>
@@ -669,7 +660,7 @@ export default function InvoicePage() {
                     <TableRow
                       key={invoice.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleRowClick(invoice)}
+                      onDoubleClick={() => handleRowClick(invoice)}
                     >
                       <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">

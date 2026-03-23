@@ -1,3 +1,4 @@
+import { Search } from 'lucide-react';
 import { Input } from '../../primitives/input';
 import {
   Select,
@@ -57,12 +58,15 @@ export function ResourceFilters({
 }: ResourceFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
-      <Input
-        placeholder="Search resources..."
-        value={value.search}
-        onChange={(event) => onChange({ ...value, search: event.target.value })}
-        className="max-w-sm"
-      />
+      <div className="relative max-w-sm w-full">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
+        <Input
+          placeholder="Search resources..."
+          value={value.search}
+          onChange={(event) => onChange({ ...value, search: event.target.value })}
+          className="pl-10 bg-white dark:bg-zinc-950"
+        />
+      </div>
 
       <Select value={value.category} onValueChange={(category) => onChange({ ...value, category })}>
         <SelectTrigger className="w-[170px] border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm">
@@ -101,7 +105,7 @@ export function ResourceFilters({
           <SelectContent>
             {statuses.map((s) => (
               <SelectItem key={s} value={s}>
-                {s}
+                {s === 'all' ? 'All Status' : s.charAt(0).toUpperCase() + s.slice(1)}
               </SelectItem>
             ))}
           </SelectContent>

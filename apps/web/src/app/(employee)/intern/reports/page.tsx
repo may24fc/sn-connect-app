@@ -6,6 +6,7 @@ import {
   useInternships,
   useUpdateInternDraftLog,
 } from '@/hooks/useInternships';
+import { StatCard as SharedStatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
   Badge,
   Button,
@@ -253,28 +254,28 @@ export default function InternReportsPage(): ReactNode {
       </div>
 
       {/* Stats row */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={<FileText className="h-4 w-4 text-indigo-500" />}
+      <StatCardGrid columns={4}>
+        <SharedStatCard
           label="Total Reports"
           value={logs.length}
+          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
         />
-        <StatCard
-          icon={<FileEdit className="h-4 w-4 text-amber-500" />}
+        <SharedStatCard
           label="Drafts"
           value={drafts.length}
+          icon={<FileEdit className="h-4 w-4" strokeWidth={1.5} />}
         />
-        <StatCard
-          icon={<Send className="h-4 w-4 text-blue-500" />}
+        <SharedStatCard
           label="Submitted"
           value={submitted.filter((l) => !l.is_approved).length}
+          icon={<Send className="h-4 w-4" strokeWidth={1.5} />}
         />
-        <StatCard
-          icon={<CheckCircle2 className="h-4 w-4 text-emerald-500" />}
+        <SharedStatCard
           label="Reviewed"
           value={submitted.filter((l) => l.is_approved).length}
+          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
         />
-      </div>
+      </StatCardGrid>
 
       {/* Draft reports section */}
       {drafts.length > 0 && (
@@ -400,26 +401,4 @@ function PageHeader(): ReactNode {
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number;
-}): ReactNode {
-  return (
-    <Card>
-      <CardContent className="p-4 flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-          {icon}
-        </div>
-        <div>
-          <p className="text-2xl font-bold">{value}</p>
-          <p className="text-xs text-muted-foreground">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+// End of file

@@ -1,4 +1,5 @@
 import { bookmarkResourceSchema } from '@/lib/schemas/resource.schema';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase } from '../../_lib';
 
@@ -33,6 +34,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const payload = parsed.data;
 
+    // Use admin client for writes — auth is validated above; RLS auth.uid()
+    // can be unreliable in server-side cookie-based sessions.
+    const adminClient = createSupabaseAdminClient();
+
     // Check if resource exists
     const { data: resource, error: resourceError } = await supabase
       .from('resources')
@@ -46,7 +51,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Check if bookmark already exists
-    const { data: existing } = await supabase
+    const { data: existing } = await adminClient
       .from('resource_bookmarks')
       .select('id')
       .eq('resource_id', id)
@@ -55,10 +60,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (existing) {
       // Update existing bookmark
-      const { data, error: updateError } = await supabase
+      const { data, error: updateError } = await adminClient
         .from('resource_bookmarks')
         .update({ notes: payload.notes || null })
         .eq('id', existing.id)
+        .eq('user_id', user.id)
         .select('*')
         .single();
 
@@ -71,7 +77,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     // Create new bookmark (the trigger will increment bookmark_count)
-    const { data, error: bookmarkError } = await supabase
+    const { data, error: bookmarkError } = await adminClient
       .from('resource_bookmarks')
       .insert({
         resource_id: id,
@@ -96,14 +102,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
 export async function DELETE(_: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const { supabase, user, error } = await getAuthedSupabase();
+    const { user, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const adminClient = createSupabaseAdminClient();
+
     // Delete bookmark (the trigger will decrement bookmark_count)
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await adminClient
       .from('resource_bookmarks')
       .delete()
       .eq('resource_id', id)

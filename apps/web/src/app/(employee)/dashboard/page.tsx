@@ -181,9 +181,17 @@ export default function DashboardPage(): ReactNode {
   const statColumns = isOnboardingCompleted ? 3 : 4;
 
   return (
-    <div className="h-full space-y-0">
+    <div className="h-full space-y-5 pb-6">
       {/* ── Section 1: Quick Stats ── */}
-      <div className="rounded-xl bg-white dark:bg-zinc-900 p-6 space-y-6">
+      <div className="py-4 space-y-6 border-b border-zinc-100 dark:border-zinc-800/80">
+        {/* Section Header */}
+        <div className="flex items-center gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+            Overview
+          </h2>
+          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+        </div>
+
         {/* Page Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -221,6 +229,7 @@ export default function DashboardPage(): ReactNode {
                     : 'Not started',
               }}
               icon={<Target className="h-4 w-4" strokeWidth={1.5} />}
+              className="border-l-4 border-l-emerald-500 dark:border-l-emerald-400"
             />
           )}
           <StatCard
@@ -245,6 +254,7 @@ export default function DashboardPage(): ReactNode {
                   : 'No active period',
             }}
             icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
+            className="border-l-4 border-l-amber-500 dark:border-l-amber-400"
           />
           <StatCard
             label="Tasks Due"
@@ -254,24 +264,33 @@ export default function DashboardPage(): ReactNode {
               value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
             }}
             icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
+            className="border-l-4 border-l-indigo-500 dark:border-l-indigo-400"
           />
           <StatCard
             label="Notifications"
             value="0"
             trend={{ direction: 'stable', value: 'No new notifications' }}
             icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
+            className="border-l-4 border-l-violet-500 dark:border-l-violet-400"
           />
         </StatCardGrid>
       </div>
       </div>
 
       {/* ── Section 2: Onboarding & Activity ── */}
-      <div className="rounded-xl bg-zinc-50/80 dark:bg-zinc-800/30 p-6 space-y-6 mt-4">
+      <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/30 px-6 py-5 space-y-5 border border-zinc-100 dark:border-zinc-800/60">
+        {/* Section Header */}
+        <div className="flex items-center gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+            Activity &amp; Updates
+          </h2>
+          <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+        </div>
 
       {/* Row 1: Onboarding Progress (only if not completed) */}
       {!isOnboardingCompleted && (
         <BentoGrid columns={4}>
-          <BentoCard colSpan={4}>
+          <BentoCard colSpan={4} className="border-l-4 border-l-emerald-500 dark:border-l-emerald-400">
             <BentoCardHeader>
               <BentoCardTitle icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}>
                 Onboarding Progress
@@ -330,7 +349,7 @@ export default function DashboardPage(): ReactNode {
       {/* Row 2: Company Pulse + Latest Announcements */}
       <BentoGrid columns={4}>
         {/* Company Pulse Card */}
-        <BentoCard colSpan={2}>
+        <BentoCard colSpan={2} className="border-l-4 border-l-indigo-500 dark:border-l-indigo-400">
           <BentoCardHeader>
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Pulse
@@ -342,12 +361,12 @@ export default function DashboardPage(): ReactNode {
         </BentoCard>
 
         {/* Latest Announcements Card — connected to feed API */}
-        <BentoCard colSpan={2} data-tour="announcements">
+        <BentoCard colSpan={2} data-tour="announcements" className="border-l-4 border-l-amber-500 dark:border-l-amber-400">
           <BentoCardHeader>
             <BentoCardTitle icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}>
               Latest Announcements
             </BentoCardTitle>
-            <Link href="/information-hub">
+            <Link href="/announcements">
               <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
                 View All
               </Button>
@@ -373,7 +392,7 @@ export default function DashboardPage(): ReactNode {
                 {announcements.map((announcement) => (
                   <Link
                     key={announcement.id}
-                    href={`/information-hub?announcement=${announcement.id}`}
+                    href="/announcements"
                   >
                     <div className="flex items-start justify-between p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
                       <div className="space-y-1">
@@ -412,11 +431,18 @@ export default function DashboardPage(): ReactNode {
       </div>
 
       {/* ── Section 3: Quick Actions ── */}
-      <div className="rounded-xl bg-white dark:bg-zinc-900 p-6 mt-4">
+      <div className="rounded-xl bg-indigo-50/50 dark:bg-indigo-950/15 px-6 py-5 border border-indigo-100 dark:border-indigo-900/40">
+        {/* Section Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-indigo-600/80 dark:text-indigo-400/80 whitespace-nowrap">
+            Quick Access
+          </h2>
+          <div className="flex-1 h-px bg-indigo-200/60 dark:bg-indigo-800/40" />
+        </div>
 
       {/* Row 3: Quick Actions — full width */}
       <BentoGrid columns={4}>
-        <BentoCard colSpan={4} data-tour="quick-actions">
+        <BentoCard colSpan={4} data-tour="quick-actions" className="border-l-4 border-l-indigo-500 dark:border-l-indigo-400">
           <BentoCardHeader>
             <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
               Quick Actions
@@ -446,7 +472,14 @@ export default function DashboardPage(): ReactNode {
       {/* ── Section 4: KPI Dashboard ── */}
       {/* Role-Specific KPI Dashboard (V2-4.2) */}
       {primaryKPIRole && kpiCardData.length > 0 && (
-        <div className="rounded-xl bg-zinc-50/80 dark:bg-zinc-800/30 p-6 mt-4">
+        <div className="rounded-xl bg-zinc-50 dark:bg-zinc-800/30 px-6 py-5 border border-zinc-100 dark:border-zinc-800/60">
+          {/* Section Header */}
+          <div className="flex items-center gap-3 mb-5">
+            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+              Role Performance
+            </h2>
+            <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-700" />
+          </div>
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <RoleDashboardWidget
             roleType={primaryKPIRole}

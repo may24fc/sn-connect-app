@@ -24,7 +24,7 @@ import {
 import { AlertCircle, ArrowLeft, Calendar, FileText, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ReportTemplate {
   label: string;
@@ -86,6 +86,10 @@ export default function NewReportPage() {
   const [periodEnd, setPeriodEnd] = useState('');
   const [notes, setNotes] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef(false);
 
   // Dynamic metric entries
   const [metrics, setMetrics] = useState<Array<MetricEntry>>([
@@ -96,6 +100,72 @@ export default function NewReportPage() {
   const [accomplishments, setAccomplishments] = useState<Array<string>>(['']);
   const [challenges, setChallenges] = useState<Array<string>>(['']);
   const [nextWeekPlans, setNextWeekPlans] = useState<Array<string>>(['']);
+
+  const buildReportPayload = useCallback((asDraft: boolean) => {
+    const validMetrics = metrics
+      .filter((m) => m.name.trim().length > 0)
+      .map((m) => ({
+        metricName: m.name,
+        metricValue: Number.isFinite(Number(m.value)) ? Number(m.value) : 0,
+        metricUnit: m.unit || 'PHP',
+      }));
+
+    const parts: Array<string> = [];
+    if (notes.trim()) parts.push(notes.trim());
+    const fa = accomplishments.filter((a) => a.trim());
+    if (fa.length > 0) parts.push(`Accomplishments:\n${fa.map((a) => `- ${a}`).join('\n')}`);
+    const fc = challenges.filter((c) => c.trim());
+    if (fc.length > 0) parts.push(`Challenges:\n${fc.map((c) => `- ${c}`).join('\n')}`);
+    const fp = nextWeekPlans.filter((p) => p.trim());
+    if (fp.length > 0) parts.push(`Next Week Plans:\n${fp.map((p) => `- ${p}`).join('\n')}`);
+
+    return {
+      reportType,
+      periodStart,
+      periodEnd,
+      status: asDraft ? ('draft' as const) : ('submitted' as const),
+      notes: parts.join('\n\n') || undefined,
+      metrics: validMetrics,
+    };
+  }, [reportType, periodStart, periodEnd, notes, metrics, accomplishments, challenges, nextWeekPlans]);
+
+  // Auto-save draft silently to prevent data loss
+  const autoSaveDraft = useCallback(async (): Promise<void> => {
+    if (isSavingRef.current || !periodStart || !periodEnd) return;
+
+    isSavingRef.current = true;
+    try {
+      const payload = buildReportPayload(true);
+      if (createdId) {
+        const res = await fetch(`/api/reports/${createdId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) setLastSavedAt(new Date());
+      } else {
+        const response = await createReport.mutateAsync(payload);
+        setCreatedId(response.data.id);
+        setLastSavedAt(new Date());
+      }
+    } catch {
+      // Silently fail for auto-save
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [buildReportPayload, createdId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced auto-save: 10 seconds after last change
+  useEffect(() => {
+    if (!periodStart || !periodEnd) return;
+
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => { void autoSaveDraft(); }, 10_000);
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [reportType, periodStart, periodEnd, notes, metrics, accomplishments, challenges, nextWeekPlans, autoSaveDraft]);
 
   const handleStringArrayChange = (
     index: number,
@@ -142,31 +212,6 @@ export default function NewReportPage() {
     setMetrics((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
   };
 
-  const buildNotes = (): string => {
-    const parts: Array<string> = [];
-
-    if (notes.trim()) {
-      parts.push(notes.trim());
-    }
-
-    const filteredAccomplishments = accomplishments.filter((a) => a.trim());
-    if (filteredAccomplishments.length > 0) {
-      parts.push(`Accomplishments:\n${filteredAccomplishments.map((a) => `- ${a}`).join('\n')}`);
-    }
-
-    const filteredChallenges = challenges.filter((c) => c.trim());
-    if (filteredChallenges.length > 0) {
-      parts.push(`Challenges:\n${filteredChallenges.map((c) => `- ${c}`).join('\n')}`);
-    }
-
-    const filteredPlans = nextWeekPlans.filter((p) => p.trim());
-    if (filteredPlans.length > 0) {
-      parts.push(`Next Week Plans:\n${filteredPlans.map((p) => `- ${p}`).join('\n')}`);
-    }
-
-    return parts.join('\n\n');
-  };
-
   const validateRequiredSections = (): string | null => {
     const filledAccomplishments = accomplishments.filter((a) => a.trim());
     if (filledAccomplishments.length === 0) {
@@ -192,6 +237,7 @@ export default function NewReportPage() {
   };
 
   const handleSubmit = async (asDraft: boolean) => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setErrorMessage(null);
 
     if (!asDraft) {
@@ -208,22 +254,22 @@ export default function NewReportPage() {
     }
 
     try {
-      const validMetrics = metrics
-        .filter((m) => m.name.trim().length > 0)
-        .map((m) => ({
-          metricName: m.name,
-          metricValue: Number.isFinite(Number(m.value)) ? Number(m.value) : 0,
-          metricUnit: m.unit || 'PHP',
-        }));
+      const payload = buildReportPayload(asDraft);
+      let reportId: string;
 
-      const response = await createReport.mutateAsync({
-        reportType,
-        periodStart,
-        periodEnd,
-        status: asDraft ? 'draft' : 'submitted',
-        notes: buildNotes() || undefined,
-        metrics: validMetrics,
-      });
+      if (createdId) {
+        // Update the auto-saved draft instead of creating a duplicate
+        const res = await fetch(`/api/reports/${createdId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('Failed to update report');
+        reportId = createdId;
+      } else {
+        const response = await createReport.mutateAsync(payload);
+        reportId = response.data.id;
+      }
 
       addToast({
         title: 'Report saved',
@@ -231,7 +277,7 @@ export default function NewReportPage() {
         variant: 'success',
       });
 
-      router.push(`/reports/${response.data.id}`);
+      router.push(`/reports/${reportId}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to save report';
       setErrorMessage(message);
@@ -575,7 +621,12 @@ export default function NewReportPage() {
       )}
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-3 pt-4 pb-8 border-t border-zinc-200 dark:border-zinc-800">
+      <div className="flex items-center justify-end gap-3 pt-4 pb-8 border-t border-zinc-200 dark:border-zinc-800">
+        {lastSavedAt && (
+          <span className="text-xs text-muted-foreground mr-auto">
+            Auto-saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
         <Button
           type="button"
           variant="outline"

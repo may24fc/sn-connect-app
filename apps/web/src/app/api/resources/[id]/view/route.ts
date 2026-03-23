@@ -1,4 +1,5 @@
 import { trackViewSchema } from '@/lib/schemas/resource.schema';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase } from '../../_lib';
 
@@ -45,8 +46,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
     }
 
+    const adminClient = createSupabaseAdminClient();
+
     // Insert view record (the trigger will increment view_count)
-    const { error: viewError } = await supabase.from('resource_views').insert({
+    const { error: viewError } = await adminClient.from('resource_views').insert({
       resource_id: id,
       user_id: user.id,
       duration_seconds: payload.durationSeconds || null,
