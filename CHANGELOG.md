@@ -10,6 +10,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Navy & Gold design system** — Full rebrand from Titanium & Indigo to Navy & Gold (zinc palette); font changed from Inter to Source Sans 3 (body) + Lexend (headings)
+- **Wise payment gateway** — `wise_payments` and `wise_payment_events` tables; `GET /api/webhooks/wise` receiver; full payment lifecycle tracking (`20260324000001`)
+- **Task proofs** — `task_proofs` table; employees can upload evidence files when completing a task; Super Admins can review proofs from task detail; `GET/POST/DELETE /api/tasks/[id]/proofs` (`20260322000001`)
+- **KPI scale rating** — `scale_min`/`scale_max` columns on `okr_targets` + `scale_to_okr_targets` migration; new `Scale` metric type on OKR targets with `ScaleRatingInput` UI component (`20260322000002`, `20260322000003`)
+- **KPI evidence attachments** — `kpi_evidence` table; `GET/POST /api/performance/kpis/[id]/evidence`; employees upload files to support KPI measurements (`20260322000002`)
+- **Announcement starring** — `announcement_stars` table with RLS; `POST /api/announcements/[id]/star` toggle; `GET /api/announcements/starred`; star counts in analytics dashboard; starred page at `/announcements/starred` (`20260321000001`)
+- **Announcement archive/restore** — `POST /api/announcements/[id]/restore` restores archived announcements; admin filter by Archived status
+- **Jobs archive/restore** — `GET /api/jobs/archived`; `POST /api/jobs/[id]/restore`; archived jobs page at `/admin/jobs/archived`
+- **Resources archive/restore** — `POST /api/resources/[id]/restore`; archived resources page at `/admin/resources/archived`
+- **CompanyPulse widget** — Dashboard widget showing live company activity feed for all users
+- **Milestone banner** — `MilestoneBanner` component on employee/intern dashboards highlighting tenure and work anniversaries; `GET /api/milestones`
+- **Help Center** — `/help`, `/help/invoices`, `/help/reports`, `/help/performance-reviews` pages; `HelpLink` + `SectionTooltip` components for contextual guidance throughout the app
+- **Team performance view** — `/admin/performance/team` with multi-select dept/role/status filters; `GET /api/performance/team`
+- **Activity/audit log** — `/super-admin/activity` page showing paginated audit trail; `GET /api/audit-logs` (super_admin only)
+- **AI chat citations** — `CitationBadge`, `CitationPanel`, `CitedContent`, `TextShimmer` components; RAG responses now cite knowledge source titles; `return_source_title_from_embeddings` function (`20260319000001`)
+- **Intern daily log draft/submit** — `status` column on `internship_daily_logs` (`draft`/`submitted`); interns can save drafts before submitting (`20260317000001`)
+- **Forgot password flow** — `/forgot-password` page; `POST /api/auth/forgot-password`
+- **Google Drive webhook** — `GET /api/webhooks/drive` receiver for real-time document sync events
+- **Edge Function security hardening** — Auth validation and CORS enforcement on all 3 Supabase Edge Functions
+- **Custom SMTP** — Email delivery via custom SMTP relay instead of Supabase default
+
+### Fixed
+
+- `fix(api)`: Use `supabaseAdmin` for all DB operations in POST routes (invoices, OKRs, KPIs, reports) to prevent nested RLS failures
+- `fix(api)`: Use admin client for DB operations to bypass nested RLS failures
+- `fix(db)`: Update offboarding and onboarding RLS policies to use consolidated role enum (`20260227000002`)
+
+### Removed
+
+- **Calendar** (`/calendar`) — Page and all related API routes removed
+- **Leave Requests** (`/leave`) — Leave request feature and all related API routes removed
+- **Company Events** — Removed from dashboard and sidebar navigation
+
+### Changed
+
 - **Package READMEs** — README.md for `@hr-portal/ai`, `@hr-portal/auth`, `@hr-portal/config`, `@hr-portal/database`, `@hr-portal/ui`
 - **Report hierarchy** — `parent_report_id`, `report_group`, `hierarchy_path` columns on `reports`; `get_report_children()`, `get_report_tree()` functions; `root_reports` view (`20260227000010`)
 - **Knowledge versioning** — `knowledge_source_versions` table with auto-snapshot trigger on update; `get_knowledge_source_versions()`, `restore_knowledge_source_version()` functions (`20260227000011`)

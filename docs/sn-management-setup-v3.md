@@ -30,7 +30,7 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 | V3-0.2 | P0 | Password Reset Email Delivery Fix | Auth | 🟡 Partial |
 | V3-0.3 | P0 | SSL / Unprotected Site Warning Fix | ALL | 🟡 Partial |
 | V3-0.4 | P0 | Post-Onboarding UI Freeze Fix | Dashboard | 🟡 Partial |
-| V3-0.5 | P0 | Calendar & Leave Request Error Fix | Dashboard | ⬜ Pending |
+| V3-0.5 | ~~P0~~ | ~~Calendar & Leave Request Error Fix~~ | Dashboard | ❌ Cancelled (features removed — see ADR) |
 | V3-1.1 | P1 | Hero Section Achievement Display | WWW | ✅ Done |
 | V3-1.2 | P1 | Sticky "What's New" Top Banner | WWW | 🟡 Partial |
 | V3-1.3 | P1 | Company "Visit Website" Links | WWW | 🟡 Partial |
@@ -177,36 +177,9 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 ---
 
-### V3-0.5: Calendar & Leave Request Error Fix
+### ~~V3-0.5: Calendar & Leave Request Error Fix~~ — CANCELLED
 
-- **Page**: Dashboard
-- **Source**: "Calendar and Request Leave features are still encountering an error"
-- **Why P0**: Blocks daily dashboard use.
-
-#### Subtask 1: Fix Calendar component
-
-- [ ] Check calendar data API returns valid ISO 8601 dates
-- [ ] Add loading state + error boundary around calendar widget
-- [ ] Zero events → show "No upcoming events" placeholder, not error
-- [ ] Test with: 0 events, 1 event, many events
-
-**Acceptance Criteria:**
-1. Calendar renders without error for all user roles
-2. Empty calendar shows placeholder, not error
-3. Events display correct dates/times in user's timezone
-
-#### Subtask 2: Fix Leave Request submission
-
-- [ ] Check leave request API for validation errors on date range, type, reason
-- [ ] Verify `leave_requests` table exists with correct RLS policies
-- [ ] Add form validation: start < end, reason required, no past dates
-- [ ] Show success toast with leave request ID after submission
-
-**Acceptance Criteria:**
-1. Leave request submits successfully and creates DB record
-2. User sees confirmation with status "Pending"
-3. Admin sees pending leave requests in their dashboard
-4. Form shows inline validation errors before submission, not generic error
+> **Status:** Features removed from the application. Calendar, leave requests, and company events were removed as premature features (commit `60137af`). Dashboard no longer includes calendar or leave request widgets.
 
 ---
 

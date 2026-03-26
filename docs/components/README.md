@@ -9,7 +9,7 @@ The SN Connect design system is built on Radix UI primitives styled with Tailwin
 
 ---
 
-## Primitives (21)
+## Primitives (24)
 
 > Location: `packages/ui/src/primitives/`
 
@@ -25,10 +25,13 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | Dialog | `dialog.tsx` | Modal dialog with overlay, close button |
 | DropdownMenu | `dropdown-menu.tsx` | Radix dropdown with items, separators, sub-menus |
 | FileDropZone | `file-drop-zone.tsx` | Drag-and-drop file upload zone with validation |
+| HoverCard | `hover-card.tsx` | Radix hover card for rich previews |
 | Input | `input.tsx` | Text input with Tailwind styling |
 | Label | `label.tsx` | Form label with Radix label primitive |
 | PasswordInput | `password-input.tsx` | Input with show/hide toggle for passwords |
+| Popover | `popover.tsx` | Radix popover for floating content |
 | Progress | `progress.tsx` | Radix progress bar with percentage indicator |
+| ProgressTimeline | `progress-timeline.tsx` | Step-based timeline progress indicator for onboarding flows |
 | Select | `select.tsx` | Radix select dropdown with value, trigger, content |
 | Separator | `separator.tsx` | Horizontal/vertical separator line |
 | Skeleton | `skeleton.tsx` | Shimmer loading placeholder |
@@ -63,7 +66,8 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | Component | Description |
 |-----------|-------------|
 | `AnnouncementAnalytics` | Read count charts and time series |
-| `AnnouncementCard` | Announcement list item with status, priority |
+| `AnnouncementAnalyticsDashboard` | Full analytics dashboard with multiple chart views |
+| `AnnouncementCard` | Announcement list item with status, priority, star toggle |
 | `AnnouncementDetailDialog` | Full announcement view in a dialog |
 | `AnnouncementEditor` | Rich text editor for creating/editing |
 | `AnnouncementFilters` | Search, status, category, date filters |
@@ -72,6 +76,19 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `TargetingSelector` | Audience targeting (roles, departments) |
 
 → [Full reference](announcements.md)
+
+### AI Chat (7)
+
+> Location: `packages/ui/src/components/ai-chat/`
+
+| Component | Description |
+|-----------|-------------|
+| `ChatInput` | AI chat input with submit handling |
+| `CitationBadge` | Inline citation reference badge |
+| `CitationPanel` | Side panel showing full citation details |
+| `CitedContent` | Extracted cited text display |
+| `TextShimmer` | Streaming text shimmer effect for AI responses |
+| `citation-utils` | Utility functions for parsing citation references |
 
 ### AI Knowledge (14)
 
@@ -123,17 +140,19 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 → [Full reference](internship.md)
 
-### Performance (6)
+### Performance (8)
 
 > Location: `packages/ui/src/components/performance/`
 
 | Component | Description |
 |-----------|-------------|
 | `KPICard` | KPI metric with gauge/progress |
+| `KPIEvidenceSection` | Evidence attachment section for KPI entries |
 | `OKRCard` | OKR with progress and key results |
 | `PerformanceCharts` | Performance trend charts (Recharts) |
 | `PerformanceStatusBadge` | Review status badge |
 | `PerformanceSummaryCards` | Aggregate performance metrics |
+| `ScaleRatingInput` | Scale-based rating input with rubric display |
 
 → [Full reference](performance.md)
 
@@ -178,12 +197,13 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 → [Full reference](resources.md)
 
-### Dashboard (3)
+### Dashboard (4)
 
 > Location: `packages/ui/src/components/dashboard/`
 
 | Component | Description |
 |-----------|-------------|
+| `MilestoneBanner` | Dismissable milestone celebration banner (birthdays, anniversaries) |
 | `MilestoneFeed` | Employee milestones feed (birthdays, work anniversaries) |
 | `PendingApprovalsCard` | Card showing pending approval items (invoices, reviews, onboarding) |
 | `RoleDashboardWidget` | Role-specific dashboard widget with KPI metrics |
@@ -272,8 +292,10 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 | Component | Location | Description |
 |-----------|----------|-------------|
-| `AIChatbot` | `packages/ui/src/components/AIChatbot.tsx` | Floating AI chat assistant widget |
+| `AIChatbot` | `packages/ui/src/components/AIChatbot.tsx` | Floating AI chat assistant widget with citation support |
+| `HelpLink` | `packages/ui/src/components/HelpLink.tsx` | Contextual help link to relevant help pages |
 | `MultiSelectFilter` | `packages/ui/src/components/MultiSelectFilter.tsx` | Multi-select filter dropdown |
+| `SectionTooltip` | `packages/ui/src/components/SectionTooltip.tsx` | Informational tooltip for page sections |
 | `EmptyState` | `packages/ui/src/components/empty-state.tsx` | Reusable empty state display |
 
 → [Full reference: data-display](data-display.md) | [Full reference: feedback](feedback.md)
@@ -303,11 +325,12 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 ## Design Tokens
 
-All components use the **Titanium & Indigo** design system tokens defined in `apps/web/tailwind.config.ts`:
+All components use the **Navy & Gold** design system tokens defined in `apps/web/tailwind.config.ts`:
 
 | Token | Light | Dark |
 |-------|-------|------|
-| Primary | Indigo-600 (`#4F46E5`) | Indigo-500 |
+| Primary | Zinc-900 (Navy) | Zinc-50 |
+| Accent | Gold-500 | Gold-400 |
 | Background | Zinc-50 (`#FAFAFA`) | Zinc-950 (`#09090B`) |
 | Card | White | Zinc-900 |
 | Border | Zinc-200 | Zinc-800 |
@@ -315,9 +338,10 @@ All components use the **Titanium & Indigo** design system tokens defined in `ap
 | Muted | Zinc-500 | Zinc-400 |
 
 - **Base font size:** 14px (`0.875rem`) — dense enterprise UI
-- **Font family:** Inter
+- **Body font:** Source Sans 3
+- **Heading font:** Lexend
 - **Heading tracking:** `-0.01em` (tight)
 
 ---
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-03-26*

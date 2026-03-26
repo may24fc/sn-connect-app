@@ -16,7 +16,7 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 | [Announcements](announcements.md) | Creating and managing company announcements | Admin, Super Admin |
 | [Resources](resources.md) | Managing company resources and collections | Admin, Super Admin |
 | [AI Knowledge Base](ai-knowledge.md) | Managing the AI assistant's knowledge sources | Admin, Super Admin |
-| [Super Admin Features](super-admin.md) | Task management, payroll approvals, system health | Super Admin only |
+| [Super Admin Features](super-admin.md) | Task management, payroll approvals, activity log, system health | Super Admin only |
 
 ## Role Differences
 
@@ -36,6 +36,7 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 | Task management | ❌ | ✅ |
 | Payroll approvals | ❌ | ✅ |
 | System health | ❌ | ✅ |
+| Activity log | ❌ | ✅ |
 | Audit logs | ❌ | ✅ |
 
 ## Navigation
@@ -44,7 +45,7 @@ Admin and Super Admin each have their own sidebar layout:
 
 **Admin sidebar:** Dashboard, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Announcements, Resources, Notifications
 
-**Super Admin sidebar:** Dashboard, Task Management, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources, Notifications
+**Super Admin sidebar:** Dashboard, Task Management, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources, Notifications, Activity Log
 
 ---
 

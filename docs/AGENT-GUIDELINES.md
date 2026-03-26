@@ -243,7 +243,7 @@ pnpm lint          # zero Biome violations required
 pnpm test          # relevant unit/integration tests pass
 ```
 
-For UI changes, visually verify in both light and dark mode using the Titanium & Indigo design tokens.  
+For UI changes, visually verify in both light and dark mode using the Navy & Gold design tokens (zinc palette).  
 For API changes, confirm the route returns correct shape for both success and error scenarios.  
 For schema changes, verify RLS policies still cover all access paths.
 

@@ -72,13 +72,21 @@ Toggle the **Featured** flag on a resource card to:
 - Highlight it prominently in the employee Information Hub
 - Give it priority placement in search results
 
-## Archiving Resources
+## Archiving and Restoring Resources
 
 Archive outdated resources using the action menu. Archived resources:
 
 - Are removed from the employee-facing Information Hub
-- Remain in the admin view for reference
-- Can be restored later
+- Remain in the admin view for reference (filter by **Archived** status)
+- Can be restored at any time
+
+### Restoring a Resource
+
+1. Set the **Status** filter to **Archived**
+2. Find the resource and click **Restore** from its action menu
+3. The resource returns to active status and reappears in the Information Hub
+
+`POST /api/resources/[id]/restore` — Restores an archived resource.
 
 ## Resource Categories (`/admin/resources/categories`)
 
@@ -135,6 +143,6 @@ Permanently remove a resource by selecting **Delete** from the action menu. This
 
 ---
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-03-26*
 
 Next: [AI Knowledge Base](ai-knowledge.md) · Previous: [Announcements](announcements.md)

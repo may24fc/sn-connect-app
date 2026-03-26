@@ -21,7 +21,7 @@ You can ask follow-up questions in the same conversation. The AI remembers the c
 |-------|-------------------|
 | **Documents** | "How do I upload my NBI clearance?" |
 | **Payroll** | "When is my invoice due?" / "How do I submit an invoice?" |
-| **Leave** | "How do I request leave?" / "What's the vacation policy?" |
+| **Leave** | "What’s the vacation policy?" / "How many leave days do I have?" |
 | **Onboarding** | "What documents do I need to submit?" |
 | **Benefits** | "What benefits am I eligible for?" |
 | **Performance** | "How does the OKR process work?" |

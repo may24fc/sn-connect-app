@@ -60,11 +60,12 @@ Click an objective to view its full detail:
 Each target card shows:
 
 | Metric Type | Display |
-|-------------|---------||
+|-------------|--------|
 | **Number** | Current / Target with progress bar |
 | **Boolean** | Completed / Not completed toggle |
 | **Currency** | PHP amount with target |
 | **Tasks** | Task count completed vs total |
+| **Scale** | Rating input on a defined min–max range (uses the `ScaleRatingInput` component) |
 
 Targets include weight percentage and admin rating (if evaluated).
 
@@ -90,6 +91,17 @@ Each KPI displays:
 - **Actual** — Your current measurement
 - **Score** — Percentage of target achieved
 - **Trend** — Up/down/steady arrow
+
+### Uploading KPI Evidence
+
+You can attach evidence files to any KPI to support your measurement.
+
+1. Open the KPI detail from your KPIs page
+2. Click **"Add Evidence"** (appears on each KPI card)
+3. Upload a file (image, PDF, or document) and optionally add a note
+4. Click **Save**
+
+Your manager and HR can review these attachments during evaluations. Evidence helps substantiate your KPI claims.
 
 ## Self-Assessment
 
@@ -121,6 +133,6 @@ Self-Assessment → Manager Review → HR Review → Complete
 
 ---
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-03-26*
 
 Next: [Information Hub](information-hub.md) · Previous: [Invoices](invoices.md)

@@ -112,7 +112,9 @@ Within each objective, admins can manage individual targets (key results).
 2. Click **"Add Target"**
 3. Fill in:
    - **Title** — Target description
-   - **Target Value** — Numeric goal
+   - **Metric Type** — Number, Boolean, Currency, Tasks, or **Scale**
+   - **Target Value** — Numeric goal (or max value for Scale type)
+   - **Min Value** — (Scale only) Minimum value on the scale
    - **Current Value** — Starting progress
    - **Weight** — Importance relative to other targets
 4. Click **Save**
@@ -151,6 +153,30 @@ The evaluation is a 2-step modal:
 
 Click **Submit Evaluation** to finalize.
 
+## KPI Evidence Attachments
+
+Employees can upload evidence files to support their KPI achievements. As an admin or manager, you can review uploaded evidence during the evaluation process.
+
+### Viewing Evidence
+
+1. Open the employee performance detail page
+2. Navigate to the **KPIs** tab
+3. KPIs with uploaded evidence show a **View Evidence** button
+4. Click to see attached files (images, PDFs, documents) uploaded by the employee
+
+### API Reference
+
+| Operation | Endpoint |
+|-----------|----------|
+| List evidence | `GET /api/performance/kpis/[id]/evidence` |
+| Upload evidence | `POST /api/performance/kpis/[id]/evidence` |
+
+## Team Performance (`/admin/performance/team`)
+
+The **Team Performance** view provides an aggregate overview of all employees'’ performance in the current cycle. Use the multi-select filters for **department**, **role**, and **status** to slice the data.
+
+`GET /api/performance/team` — Returns aggregated performance data for team views.
+
 ## Individual Performance (`/admin/performance/individual`)
 
 The Individual Performance page shows a searchable employee directory table for viewing per-employee performance.
@@ -177,6 +203,6 @@ Click **"Export Report"** to download performance data for payroll processing, t
 
 ---
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-03-26*
 
 Next: [Probation Tracking](probation.md) · Previous: [Intern Management](intern-management.md)

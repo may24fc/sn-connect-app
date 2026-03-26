@@ -53,10 +53,30 @@ From the task detail page, use the **Update Status** dropdown to move a task bet
 
 A toast notification confirms the status change.
 
+## Submitting Task Proof
+
+When you mark a task as **Completed**, you can upload proof files to verify your work.
+
+### How to Submit Proof
+
+1. Open the task detail page (`/tasks/[id]`)
+2. Change the task status to **Completed**
+3. A **"Upload Proof"** section appears below the status
+4. Click **Upload** and select one or more files (images, PDFs, documents)
+5. Files are saved and visible to your Super Admin
+
+### Supported Formats
+
+- Images (PNG, JPG, JPEG, GIF)
+- Documents (PDF, DOCX)
+- Other files up to 50 MB each
+
+> **Note:** Uploading proof is optional but recommended for tasks that require verification.
+
 > **Note:** Only Super Admins can create and assign tasks. You can update the status of tasks assigned to you.
 
 ---
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-03-26*
 
 Next: [Documents](documents.md) · Previous: [Dashboard](dashboard.md)

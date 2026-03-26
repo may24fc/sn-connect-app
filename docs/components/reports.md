@@ -100,7 +100,7 @@ Week-over-week metric comparison table with delta indicators.
 
 ## Analytics Charts (Recharts)
 
-All charts use Recharts and follow the Titanium & Indigo color palette.
+All charts use Recharts and follow the Navy & Gold color palette (zinc palette).
 
 | Chart | Description |
 |-------|-------------|

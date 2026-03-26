@@ -40,6 +40,23 @@ Click a card to read the full announcement in a detail dialog.
 
 Important announcements may be **pinned** to the top of the feed so they remain visible.
 
+### Starring Announcements
+
+Star an announcement to bookmark it for quick access later.
+
+1. Click the **star icon** (☆) on any announcement card
+2. The star turns filled (★) to indicate it's saved
+3. Click again to remove the star
+
+### Starred Announcements (`/announcements/starred`)
+
+View all your starred announcements in one place:
+
+- Access via the **"Starred"** link in the announcements section or the sidebar
+- Announcements are listed in reverse chronological order by when you starred them
+- Click any card to read the full announcement
+- Remove a star directly from the starred list
+
 ## Resources
 
 ### Browsing Resources

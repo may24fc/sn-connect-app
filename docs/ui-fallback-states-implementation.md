@@ -29,7 +29,7 @@ A reusable component for zero-state UIs with consistent styling:
 - Accepts Lucide icon for visual consistency
 - Title and description for context
 - Optional action button (with href or onClick)
-- Follows Titanium & Indigo design system
+- Follows Navy & Gold design system (zinc palette)
 - Responsive padding and spacing
 
 ### 2. Pages Updated
@@ -132,7 +132,7 @@ return <DataDisplay items={items} />;
 **Rationale:**
 - Matches design system neutrals
 - Large enough to be noticed but not dominant
-- Consistent with Titanium & Indigo color palette
+- Consistent with Navy & Gold color palette (zinc palette)
 
 ### 4. Graceful Degradation
 **Decision:** Always show UI structure, even when data is missing

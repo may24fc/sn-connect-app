@@ -1,6 +1,6 @@
 # Resources Components Documentation
 
-This document covers the UI components for the Resources / Information Hub feature. Components are located in `apps/web/src/components/resources/` and follow the project's design system (Titanium & Indigo) with CVA for variant styling.
+This document covers the UI components for the Resources / Information Hub feature. Components are located in `packages/ui/src/components/resources/` and follow the project's design system (Navy & Gold, zinc palette) with CVA for variant styling.
 
 > **Note:** Component implementations are in progress (Task #2). This document describes the planned component API based on the data layer and API contracts already implemented.
 
@@ -262,13 +262,14 @@ Fetches from `GET /api/resources/:id/analytics`. Uses Recharts for the time seri
 
 ## Design System Compliance
 
-All resource components follow the Titanium & Indigo design system:
+All resource components follow the Navy & Gold design system (zinc palette):
 
-- **Primary color:** Indigo-600 (#4F46E5) for featured highlights and primary actions
+- **Primary color:** Zinc-900 (Navy) for primary actions and highlights
+- **Accent:** Gold-500 for featured highlights
 - **Backgrounds:** White / Zinc-900 for cards, Zinc-50 / Zinc-950 for page background
 - **Borders:** Zinc-200 / Zinc-800
 - **Text:** Zinc-900 / Zinc-50 for primary, Zinc-500 for muted/secondary
-- **Typography:** 14px base, Inter font, -0.01em heading tracking
+- **Typography:** 14px base, Source Sans 3 body + Lexend headings, -0.01em heading tracking
 - **Spacing:** Consistent with existing component library (p-4 cards, gap-6 grids)
 - **Variants:** Use CVA (class-variance-authority) for component variants
 - **Icons:** Lucide React icon set

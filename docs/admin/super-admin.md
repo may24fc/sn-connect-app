@@ -54,6 +54,34 @@ Click a task to view:
 - Status history
 - Activity timeline
 - Comments section
+- **Task Proofs** — Evidence files uploaded by the assignee upon completion
+
+### Task Proofs
+
+When an employee marks a task as **Completed**, they can upload proof files (images, PDFs, documents) to verify their work. Super Admins can review these files from the task detail page.
+
+| Operation | Endpoint |
+|-----------|----------|
+| List proofs for a task | `GET /api/tasks/[id]/proofs` |
+| Delete a proof | `DELETE /api/tasks/[id]/proofs/[proofId]` |
+
+## Activity Log (`/super-admin/activity`)
+
+The Activity Log page provides a searchable, paginated audit trail of all system actions.
+
+Each entry shows:
+
+| Column | Description |
+|--------|-------------|
+| **Actor** | User who performed the action |
+| **Action** | Type of event (e.g., `employee.updated`, `task.created`) |
+| **Resource** | Affected record with a link where applicable |
+| **Timestamp** | Date and time of the event |
+| **Metadata** | JSON details about the change |
+
+Use the **date range** filter and **action type** filter to narrow results.
+
+`GET /api/audit-logs` — Returns paginated audit log entries. Requires super_admin role.
 
 ## Payroll Approvals (`/super-admin/payroll-approvals`)
 
@@ -173,10 +201,10 @@ The admin notification center displays system notifications with:
 - **Delete** — Remove selected notifications
 - **Pagination** — Navigate through notification history
 
-Notification types include: task assignments, report submissions, leave requests, onboarding completions, and system alerts. Each type has a distinct icon and color.
+Notification types include: task assignments, report submissions, onboarding completions, invoice approvals, and system alerts. Each type has a distinct icon and color.
 
 ---
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-03-26*
 
 Previous: [AI Knowledge Base](ai-knowledge.md) · Back to [Admin Guides](README.md)

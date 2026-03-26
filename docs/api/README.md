@@ -4,7 +4,7 @@
 
 All API routes live under `apps/web/src/app/api/`. Every endpoint requires authentication via Supabase session cookie unless noted otherwise. Row Level Security (RLS) is the final gatekeeper — application-level checks are secondary.
 
-**Total: 183 HTTP method handlers across 25 domains.**
+**Total: ~210 HTTP method handlers across 28 domains.**
 
 ---
 
@@ -12,19 +12,19 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 
 | Domain | Endpoints | Base Path | Doc |
 |--------|-----------|-----------|-----|
-| [Auth](#auth) | 2 | `/api/auth/` | [auth.md](auth.md) |
+| [Auth](#auth) | 3 | `/api/auth/` | [auth.md](auth.md) |
 | [Employees](#employees) | 5 | `/api/employees/` | [employees.md](employees.md) |
 | [Documents](#documents) | 4 | `/api/documents/` | [documents.md](documents.md) |
 | [Departments](#departments) | 2 | `/api/departments/` | [departments.md](departments.md) |
 | [Onboarding](#onboarding) | 16 | `/api/onboarding/` | [onboarding.md](onboarding.md) |
 | [Users](#users) | 9 | `/api/users/` | [users.md](users.md) |
-| [Tasks](#tasks) | 8 | `/api/tasks/` | [tasks.md](tasks.md) |
+| [Tasks](#tasks) | 12 | `/api/tasks/` | [tasks.md](tasks.md) |
 | [Reports](#reports) | 7 | `/api/reports/` | [reports.md](reports.md) |
 | [Invoices](#invoices) | 6 | `/api/invoices/` | [invoices.md](invoices.md) |
-| [Announcements](#announcements) | 18 | `/api/announcements/` | [announcements.md](announcements.md) |
-| [Resources](#resources) | 26 | `/api/resources/` | [resources.md](resources.md) |
+| [Announcements](#announcements) | 22 | `/api/announcements/` | [announcements.md](announcements.md) |
+| [Resources](#resources) | 27 | `/api/resources/` | [resources.md](resources.md) |
 | [Collections](#collections) | 8 | `/api/collections/` | [collections.md](collections.md) |
-| [Performance](#performance) | 18 | `/api/performance/` | [performance.md](performance.md) |
+| [Performance](#performance) | 20 | `/api/performance/` | [performance.md](performance.md) |
 | [Probation](#probation) | 3 | `/api/probation/` | [probation.md](probation.md) |
 | [Internships](#internships) | 10 | `/api/internships/` | [internships.md](internships.md) |
 | [Standups](#standups) | 6 | `/api/standups/` | [standups.md](standups.md) |
@@ -32,11 +32,14 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Notifications](#notifications) | 4 | `/api/notifications/` | [notifications.md](notifications.md) |
 | [Dashboard](#dashboard) | 3 | `/api/dashboard/` | [dashboard.md](dashboard.md) |
 | [Directory](#directory) | 3 | `/api/directory/` | [directory.md](directory.md) |
-| [Jobs](#jobs) | 5 | `/api/jobs/` | [jobs.md](jobs.md) |
+| [Jobs](#jobs) | 7 | `/api/jobs/` | [jobs.md](jobs.md) |
 | [Applications](#applications) | 3 | `/api/applications/` | [applications.md](applications.md) |
 | [Profile](#profile) | 3 | `/api/profile/` | [profile.md](profile.md) |
 | [Profile Change Requests](#profile-change-requests) | 3 | `/api/profile-change-requests/` | [profile-change-requests.md](profile-change-requests.md) |
 | [Banks](#banks) | 1 | `/api/banks/` | [banks.md](banks.md) |
+| [Audit Logs](#audit-logs) | 1 | `/api/audit-logs/` | — |
+| [Milestones](#milestones) | 1 | `/api/milestones/` | — |
+| [Webhooks](#webhooks) | 2 | `/api/webhooks/` | — |
 
 ---
 
@@ -46,6 +49,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 |--------|------|------|-------------|
 | `GET` | `/api/auth/callback` | None | OAuth PKCE code exchange and redirect |
 | `POST` | `/api/auth/signout` | Session | Signs out the current user |
+| `POST` | `/api/auth/forgot-password` | None | Send password reset email via custom SMTP |
 
 → [Full reference](auth.md)
 
@@ -144,6 +148,10 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/tasks/assignees` | super_admin | List eligible assignees |
 | `GET` | `/api/tasks/[id]/comments` | Any authenticated | List task comments |
 | `POST` | `/api/tasks/[id]/comments` | Any authenticated | Create a comment on a task |
+| `GET` | `/api/tasks/[id]/proofs` | Any authenticated | List proof submissions for a task |
+| `POST` | `/api/tasks/[id]/proofs` | Any authenticated | Submit proof of task completion |
+| `GET` | `/api/tasks/[id]/proofs/[proofId]` | Any authenticated | Get proof detail |
+| `DELETE` | `/api/tasks/[id]/proofs/[proofId]` | super_admin | Delete a proof submission |
 
 → [Full reference](tasks.md)
 
@@ -195,6 +203,9 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/announcements/[id]/pin` | admin, super_admin | Pin an announcement |
 | `DELETE` | `/api/announcements/[id]/pin` | admin, super_admin | Unpin an announcement |
 | `POST` | `/api/announcements/[id]/archive` | admin, super_admin | Archive an announcement |
+| `POST` | `/api/announcements/[id]/restore` | admin, super_admin | Restore an archived announcement |
+| `POST` | `/api/announcements/[id]/star` | Any authenticated | Star/unstar (favourite) an announcement |
+| `GET` | `/api/announcements/starred` | Any authenticated | List user's starred announcements |
 | `GET` | `/api/announcements/[id]/analytics` | admin, super_admin | Read analytics (count, readers, time series) |
 | `POST` | `/api/announcements/[id]/remind` | admin, super_admin | Send reminder notification to unread users |
 | `GET` | `/api/announcements/[id]/comments` | Any authenticated | List announcement comments |
@@ -237,6 +248,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/resources/[id]/analytics` | admin, super_admin | View analytics (counts, time series) |
 | `GET` | `/api/resources/[id]/download` | Any authenticated | 15-minute signed download URL |
 | `GET` | `/api/resources/[id]/stream` | Any authenticated | Stream resource file content |
+| `POST` | `/api/resources/[id]/restore` | admin, super_admin | Restore an archived resource |
 
 → [Full reference](resources.md)
 
@@ -281,6 +293,9 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/performance/reviews` | Any authenticated | Create a performance review |
 | `PATCH` | `/api/performance/reviews` | Any authenticated | Update review ratings/status |
 | `GET` | `/api/performance/individual/[employeeId]` | Any (scoped) | Get individual performance summary |
+| `GET` | `/api/performance/team` | admin, super_admin | Get team performance overview |
+| `GET` | `/api/performance/kpis/[id]/evidence` | Any (scoped) | List evidence attachments for a KPI |
+| `POST` | `/api/performance/kpis/[id]/evidence` | Any authenticated | Upload evidence for a KPI entry |
 
 → [Full reference](performance.md)
 
@@ -382,7 +397,9 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/jobs` | admin, super_admin | Create a job posting |
 | `GET` | `/api/jobs/[id]` | Any authenticated | Get job detail |
 | `PATCH` | `/api/jobs/[id]` | admin, super_admin | Update a job posting |
-| `DELETE` | `/api/jobs/[id]` | admin, super_admin | Delete a job posting |
+| `DELETE` | `/api/jobs/[id]` | admin, super_admin | Archive a job posting |
+| `GET` | `/api/jobs/archived` | admin, super_admin | List archived job postings |
+| `POST` | `/api/jobs/[id]/restore` | admin, super_admin | Restore an archived job posting |
 
 → [Full reference](jobs.md)
 
@@ -431,6 +448,33 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/banks` | Any authenticated | List available banks |
 
 → [Full reference](banks.md)
+
+---
+
+## Audit Logs
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/audit-logs` | admin, super_admin | List audit log entries with filters (table, action, actor, date range) |
+
+---
+
+## Milestones
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/milestones` | admin, super_admin | List upcoming employee milestones (birthdays, anniversaries) |
+
+---
+
+## Webhooks
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/api/webhooks/wise` | HMAC signature | Wise payment gateway webhook receiver |
+| `POST` | `/api/webhooks/drive` | Service key | Google Drive watch notification receiver |
+
+> Webhook endpoints validate request authenticity via HMAC signature / service key — not user sessions.
 
 ---
 

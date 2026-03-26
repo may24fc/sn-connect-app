@@ -18,6 +18,7 @@ Welcome to the SN Connect HR Portal user documentation. These guides help employ
 | [Notifications](notifications.md) | Viewing and managing notifications | All users |
 | [AI Assistant](ai-assistant.md) | Getting help from the HR AI chatbot | All users |
 | [Intern Guide](intern-guide.md) | Intern-specific features and daily reports | Interns |
+| [Help Center](help.md) | Step-by-step guides for invoices, reports, and performance reviews | All users |
 
 ## Role Overview
 
@@ -40,9 +41,10 @@ The sidebar on the left contains all pages available to your role. Key elements:
 ## Getting Help
 
 1. **AI Assistant** — Click the chat bubble for instant answers about HR policies, documents, and processes
-2. **IT Support** — Contact link is on the login page
-3. **HR Team** — For confidential or complex matters
-4. **Information Hub** — Check announcements for company updates
+2. **Help Center** (`/help`) — Step-by-step guides for invoices, reports, and performance reviews
+3. **IT Support** — Contact link is on the login page
+4. **HR Team** — For confidential or complex matters
+5. **Information Hub** — Check announcements for company updates
 
 ---
 

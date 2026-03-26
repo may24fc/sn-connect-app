@@ -70,11 +70,18 @@ Next.js route groups organize pages by user role:
 /onboarding                # (employee) Onboarding checklists
 /payroll                   # (employee) Invoice submission
 /announcements             # (employee) Information hub
+/announcements/starred     # (employee) Starred announcements
 /profile                   # (employee) User profile
 /performance               # (employee) Performance overview
 /performance/okrs          # (employee) OKR management
 /performance/kpis          # (employee) KPI tracking
 /performance/review        # (employee) Self-assessment
+/tasks                     # (employee) Assigned tasks
+/tasks/[id]                # (employee) Task detail + proof upload
+/help                      # (employee) Help Center index
+/help/invoices             # (employee) Invoice submission guide
+/help/reports              # (employee) Report submission guide
+/help/performance-reviews  # (employee) Performance review guide
 
 # ═══════════════════════════════════════════════════════════════════
 # MANAGER ROUTES (variant="manager")
@@ -93,7 +100,9 @@ Next.js route groups organize pages by user role:
 /onboarding                # (employee) Onboarding checklists
 /performance               # (employee) Performance overview
 /announcements             # (employee) Information hub
+/announcements/starred     # (employee) Starred announcements
 /profile                   # (employee) User profile
+/help                      # (employee) Help Center index
 # NOTE: Interns do NOT have access to /payroll
 
 # ═══════════════════════════════════════════════════════════════════
@@ -103,6 +112,13 @@ Next.js route groups organize pages by user role:
 /probation                 # (admin) Probation tracker
 /admin-performance         # (admin) Performance admin
 /admin-performance/cycles  # (admin) Performance cycles
+/admin-performance/team    # (admin) Team performance view
+/admin/announcements       # (admin) Announcements management
+/admin/announcements/archived # (admin) Archived announcements
+/admin/jobs                # (admin) Job postings
+/admin/jobs/archived       # (admin) Archived job postings
+/admin/resources           # (admin) Resources management
+/admin/resources/archived  # (admin) Archived resources
 /manager/team-performance  # (employee) Team performance view [MANAGER]
 /manager/reviews           # (employee) Employee reviews queue [MANAGER]
 /interns                   # (admin) Intern management
@@ -110,16 +126,26 @@ Next.js route groups organize pages by user role:
 
 # ═══════════════════════════════════════════════════════════════════
 # COS / SUPER ADMIN ROUTES (variant="cos")
-# Same as Admin + Invoice Approvals
+# Same as Admin + Invoice Approvals + Task Management + Activity Log
 # ═══════════════════════════════════════════════════════════════════
 /probation                 # (admin) Probation tracker
 /admin-performance         # (admin) Performance admin
 /admin-performance/cycles  # (admin) Performance cycles
+/admin-performance/team    # (admin) Team performance view
+/admin/announcements       # (admin) Announcements management
+/admin/announcements/archived # (admin) Archived announcements
+/admin/jobs                # (admin) Job postings
+/admin/jobs/archived       # (admin) Archived job postings
+/admin/resources           # (admin) Resources management
+/admin/resources/archived  # (admin) Archived resources
 /manager/team-performance  # (employee) Team performance view [MANAGER]
 /manager/reviews           # (employee) Employee reviews queue [MANAGER]
 /interns                   # (admin) Intern management
 /interns/[id]              # (admin) Intern detail
 /invoices                  # (admin) Invoice approvals [COS ONLY]
+/super-admin/tasks         # (admin) Task management [SUPER ADMIN ONLY]
+/super-admin/tasks/[id]    # (admin) Task detail + proofs [SUPER ADMIN ONLY]
+/super-admin/activity      # (admin) Audit/activity log [SUPER ADMIN ONLY]
 ```
 
 ---

@@ -64,14 +64,26 @@ If "Publish immediately" is unchecked, the posting is saved as a draft (is_activ
 2. The posting is soft-deleted (`deleted_at` set) and removed from public view
 3. Archived postings remain visible in the admin table when filtering by "Archived"
 
+### Restoring an Archived Job Posting
+
+Archived postings can be restored to active status:
+
+1. Set the **Status** filter to **Archived**
+2. Click the **Restore** icon on the archived posting
+3. The posting reverts to active and becomes visible in the public jobs board again
+
+`POST /api/jobs/[id]/restore` — Restores a soft-deleted job posting.
+
 ### API Reference
 
 | Operation | Endpoint |
 |-----------|----------|
 | List postings | `GET /api/jobs` |
+| List archived | `GET /api/jobs/archived` |
 | Create posting | `POST /api/jobs` |
 | Update posting | `PATCH /api/jobs/[id]` |
 | Archive posting | `DELETE /api/jobs/[id]` |
+| Restore posting | `POST /api/jobs/[id]/restore` |
 
 See [API: Jobs](../api/jobs.md) for full request/response details.
 

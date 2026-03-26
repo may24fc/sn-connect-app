@@ -25,7 +25,20 @@ A grid of shortcut buttons:
 
 - **Upload Files** — Jump to your 201 files page
 - **Submit Report** — Start a new weekly report
-- **View Calendar** — Open the calendar (coming soon)
+- **View Announcements** — Open the Information Hub
+
+### CompanyPulse Widget
+
+A real-time company pulse showing:
+
+- New announcements count
+- Pending tasks
+- Team milestones
+- Quick navigation links
+
+### Milestone Banner
+
+Celebrates employee milestones (birthdays, work anniversaries) with a dismissable banner at the top of the dashboard.
 
 ### Onboarding Progress Card
 
@@ -33,12 +46,6 @@ A grid of shortcut buttons:
 - Task completion count (e.g., "3 tasks remaining")
 - On Track / At Risk status badge
 - Link to view full onboarding checklist
-
-### Upcoming Events
-
-- List of scheduled events (performance reviews, team building, training)
-- Date and time for each event
-- **"View All"** link to the calendar
 
 ### Latest Announcements
 
