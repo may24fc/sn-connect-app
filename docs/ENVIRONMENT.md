@@ -45,6 +45,15 @@ This document describes all environment variables required by the HR Portal appl
 | `CRON_SECRET` | Secret used by Vercel to authenticate cron job requests. Must be at least 16 characters. Set in Vercel project settings. | Yes |
 | `ADMIN_SECRET_KEY` | Secret key for manual Edge Function invocation via `X-Admin-Key` header. Must be at least 32 characters. Generate with `openssl rand -base64 32`. | No |
 
+### Wise (TransferWise) Payment Gateway
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `WISE_API_KEY` | API token for Wise Business. Obtain from the Wise Business dashboard → Settings → API tokens. Use a **Read & Write** token. | For payroll | — |
+| `WISE_PROFILE_ID` | Your Wise Business profile ID (numeric). Find it via `GET /v1/profiles` or in the Wise dashboard URL. | For payroll | — |
+| `WISE_ENVIRONMENT` | `sandbox` for testing, `production` for live payments. Controls the API base URL. | No | `sandbox` |
+| `WISE_WEBHOOK_PUBLIC_KEY` | RSA public key (PEM format) used to verify Wise webhook signatures. Fetch from `GET /v1/webhook/public-keys`. Must include `-----BEGIN PUBLIC KEY-----` header/footer. | For webhooks | — |
+
 ### Application
 
 | Variable | Description | Required | Default |
