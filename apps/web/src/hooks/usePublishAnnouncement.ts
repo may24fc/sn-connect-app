@@ -46,6 +46,28 @@ export function useArchiveAnnouncement() {
   });
 }
 
+export function useRestoreAnnouncement() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<{ data: AnnouncementRecord }> => {
+      const response = await fetch(`/api/announcements/${id}/restore`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to restore announcement');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
+    },
+  });
+}
+
 export function useToggleAnnouncementPin() {
   const queryClient = useQueryClient();
 

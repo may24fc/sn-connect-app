@@ -78,6 +78,23 @@ export function useArchiveJobPosting() {
   });
 }
 
+export function useRestoreJobPosting() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/jobs/${id}/restore`, { method: 'POST' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to restore' }));
+        throw new Error(err.error ?? 'Failed to restore job posting');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs.all });
+    },
+  });
+}
+
 export function useUpdateApplicationStatus() {
   const queryClient = useQueryClient();
   return useMutation({

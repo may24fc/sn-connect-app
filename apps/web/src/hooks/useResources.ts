@@ -228,6 +228,25 @@ export function useArchiveResource() {
   });
 }
 
+export function useRestoreResource() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string): Promise<{ data: ResourceRecord }> => {
+      const response = await fetch(`/api/resources/${id}/restore`, { method: 'POST' });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to restore resource');
+      }
+      return response.json();
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.detail(id) });
+    },
+  });
+}
+
 export function useToggleResourceFeatured() {
   const queryClient = useQueryClient();
 
