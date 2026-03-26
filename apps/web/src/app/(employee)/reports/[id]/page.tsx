@@ -28,7 +28,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { ProgressTimelineStep } from '@hr-portal/ui';
-import { ArrowLeft, BarChart3, ListChecks, TableIcon } from 'lucide-react';
+import { ArrowLeft, BarChart3, ListChecks, Send, TableIcon } from 'lucide-react';
 import Link from 'next/link';
 import { use, useState } from 'react';
 
@@ -161,6 +161,7 @@ export default function ReportDetailPage({
               }
               disabled={submitReport.isPending}
             >
+              <Send className="mr-2 h-4 w-4" />
               Submit
             </Button>
           )}

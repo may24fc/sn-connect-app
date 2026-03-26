@@ -265,7 +265,7 @@ export default function NotificationsPage(): ReactNode {
             <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">Types</SelectItem>
             {Object.entries(NOTIFICATION_TYPE_LABELS).map(([key, label]) => (
               <SelectItem key={key} value={key}>
                 {label}
@@ -305,7 +305,7 @@ export default function NotificationsPage(): ReactNode {
                 <button
                   type="button"
                   onClick={toggleSelectAll}
-                  className="text-xs text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium"
+                  className="text-xs text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300 font-medium"
                 >
                   {selectedIds.size === notifications.length ? 'Deselect All' : 'Select All'}
                 </button>
@@ -379,7 +379,7 @@ export default function NotificationsPage(): ReactNode {
                     className={`group flex items-start gap-3 px-6 py-4 cursor-pointer transition-colors ${
                       notification.is_read
                         ? 'bg-card hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                        : 'bg-slate-50/30 dark:bg-slate-950/10 hover:bg-slate-50/50 dark:hover:bg-slate-950/20'
+                        : 'bg-slate-50/30 dark:bg-zinc-950/10 hover:bg-slate-50/50 dark:hover:bg-zinc-950/20'
                     } ${isSelected ? 'ring-2 ring-inset ring-slate-500/30' : ''}`}
                   >
                     {/* Checkbox */}

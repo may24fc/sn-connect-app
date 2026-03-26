@@ -209,7 +209,7 @@ export default function TaskDetailPage({
             <form onSubmit={handleSubmitProof} className="space-y-3 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">New Proof</Label>
-                <Button type="button" variant="ghost" size="sm" onClick={resetProofForm} className="h-7 w-7 p-0">
+                <Button type="button" variant="ghost" size="icon-sm" onClick={resetProofForm}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -326,8 +326,8 @@ export default function TaskDetailPage({
                   {proof.submitted_by === user?.id && (
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 flex-shrink-0"
+                      size="icon-sm"
+                      className="text-muted-foreground hover:text-red-600 flex-shrink-0"
                       onClick={() => handleDeleteProof(proof.id)}
                       disabled={deleteProof.isPending}
                     >

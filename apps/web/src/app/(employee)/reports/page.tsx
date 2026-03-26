@@ -181,7 +181,7 @@ export default function ReportsPage() {
             onChange={(event) => setSearch(event.target.value)}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />

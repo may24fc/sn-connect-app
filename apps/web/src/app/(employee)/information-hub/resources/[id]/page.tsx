@@ -110,7 +110,7 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
   }, [resource.id, addToast]);
 
   return (
-    <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden -m-4 lg:-m-6">
+    <div className="h-screen bg-background flex flex-col overflow-hidden -m-4 lg:-m-6">
       <div className="border-b border-border bg-card px-6 py-3 text-sm">
         <Link
           href="/information-hub"

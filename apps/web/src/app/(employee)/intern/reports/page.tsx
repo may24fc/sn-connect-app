@@ -180,7 +180,7 @@ export default function InternReportsPage(): ReactNode {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-4">
         <GraduationCap
-          className="h-10 w-10 text-slate-700 dark:text-slate-400 animate-pulse"
+          className="h-10 w-10 text-slate-700 dark:text-zinc-400 animate-pulse"
           strokeWidth={1.5}
         />
         <p className="text-sm text-zinc-500">Loading your reports…</p>
@@ -375,9 +375,9 @@ export default function InternReportsPage(): ReactNode {
 function PageHeader(): ReactNode {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-950">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-900">
         <FileText
-          className="h-5 w-5 text-slate-700 dark:text-slate-400"
+          className="h-5 w-5 text-slate-700 dark:text-zinc-400"
           strokeWidth={1.5}
         />
       </div>

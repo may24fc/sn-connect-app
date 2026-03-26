@@ -160,7 +160,7 @@ const emptyTargetForm: TargetFormState = {
   targetValue: '100',
   currentValue: '0',
   unit: '',
-  weight: '1',
+  weight: '',
   rubric1: '',
   rubric2: '',
   rubric3: '',
@@ -218,6 +218,13 @@ export default function OKRDetailPage(): ReactNode {
   const [progressValue, setProgressValue] = useState('');
   const [progressSelfRating, setProgressSelfRating] = useState<number | null>(null);
 
+  // Computed: weight already allocated by other targets (excluding the one being edited)
+  const usedWeight = useMemo(
+    () => targets.filter((t) => t.id !== editingTarget?.id).reduce((sum, t) => sum + t.weight, 0),
+    [targets, editingTarget]
+  );
+  const remainingWeight = Math.max(0, 100 - usedWeight);
+
   // Computed: weighted progress from targets
   const computedProgress = useMemo(() => {
     if (targets.length === 0) return 0;
@@ -230,11 +237,13 @@ export default function OKRDetailPage(): ReactNode {
 
   // Handlers
   const handleOpenCreate = useCallback((): void => {
-    setFormState(emptyTargetForm);
+    const currentUsed = targets.reduce((sum, t) => sum + t.weight, 0);
+    const autoWeight = Math.max(0, 100 - currentUsed);
+    setFormState({ ...emptyTargetForm, weight: autoWeight > 0 ? String(autoWeight) : '' });
     setFormStep(1);
     setDialogMode('create');
     setEditingTarget(null);
-  }, []);
+  }, [targets]);
 
   const handleOpenEdit = useCallback((target: OKRTarget): void => {
     setFormState(targetFormForEdit(target));
@@ -427,7 +436,7 @@ export default function OKRDetailPage(): ReactNode {
                 </Badge>
                 {cycle && <Badge variant="outline">{cycle.name}</Badge>}
                 <span className="text-xs text-muted-foreground">
-                  Weight: {okr.weight} &middot; Created {formatDate(okr.createdAt)}
+                  Weight: {okr.weight}% &middot; Created {formatDate(okr.createdAt)}
                 </span>
               </div>
             </div>
@@ -528,7 +537,6 @@ export default function OKRDetailPage(): ReactNode {
               <TargetCard
                 key={target.id}
                 target={target}
-                totalWeight={targets.reduce((s, t) => s + t.weight, 0)}
                 onEdit={() => handleOpenEdit(target)}
                 onDelete={() => void handleDeleteTarget(target)}
                 onUpdateProgress={() => {
@@ -551,9 +559,6 @@ export default function OKRDetailPage(): ReactNode {
                 <Target className="h-4 w-4 text-primary" />
               </div>
               {dialogMode === 'create' ? 'Add New Target' : 'Edit Target'}
-              <Badge variant="outline" className="ml-auto text-xs font-normal">
-                Step {formStep} of 2
-              </Badge>
             </SlidePanelTitle>
             <SlidePanelDescription>
               {formStep === 1
@@ -562,6 +567,17 @@ export default function OKRDetailPage(): ReactNode {
                   : 'Update the details and tracking configuration for this target.'
                 : 'Describe what each rating level (1–4) means for this target.'}
             </SlidePanelDescription>
+            <div className="flex items-center gap-1.5 mt-1">
+              <div
+                className={`h-1 flex-1 rounded-full transition-colors ${formStep >= 1 ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+              />
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {formStep} / 2
+              </span>
+              <div
+                className={`h-1 flex-1 rounded-full transition-colors ${formStep >= 2 ? 'bg-primary' : 'bg-zinc-200 dark:bg-zinc-700'}`}
+              />
+            </div>
           </SlidePanelHeader>
 
           <SlidePanelBody className="space-y-6">
@@ -712,22 +728,39 @@ export default function OKRDetailPage(): ReactNode {
                         <Label htmlFor="target-weight" className="text-sm font-medium">
                           Weight
                         </Label>
-                        <Input
-                          id="target-weight"
-                          type="number"
-                          min="0"
-                          step="0.5"
-                          placeholder="1"
-                          value={formState.weight}
-                          onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
-                        />
-                        <p className="text-xs text-muted-foreground">Impact on overall progress</p>
+                        <div className="relative">
+                          <Input
+                            id="target-weight"
+                            type="number"
+                            min="1"
+                            max={remainingWeight}
+                            step="1"
+                            placeholder={remainingWeight > 0 ? String(remainingWeight) : '0'}
+                            value={formState.weight}
+                            onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+                            className="pr-8"
+                          />
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <p
+                          className={`text-xs ${
+                            formState.weight !== '' && Number(formState.weight) > remainingWeight
+                              ? 'text-destructive'
+                              : 'text-muted-foreground'
+                          }`}
+                        >
+                          {remainingWeight <= 0
+                            ? '100% already allocated'
+                            : `${remainingWeight}% available`}
+                        </p>
                       </div>
                     </div>
                   </SlidePanelSection>
                 ) : (
                   <SlidePanelSection label="Tracking">
-                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800">
                       <div className="flex items-center gap-3">
                         <ToggleLeft className="h-5 w-5 text-muted-foreground" />
                         <div>
@@ -743,17 +776,32 @@ export default function OKRDetailPage(): ReactNode {
                       <Label htmlFor="target-weight" className="text-sm font-medium">
                         Weight
                       </Label>
-                      <Input
-                        id="target-weight"
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        placeholder="1"
-                        value={formState.weight}
-                        onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        How much this target impacts the objective&apos;s overall progress
+                      <div className="relative">
+                        <Input
+                          id="target-weight"
+                          type="number"
+                          min="1"
+                          max={remainingWeight}
+                          step="1"
+                          placeholder={remainingWeight > 0 ? String(remainingWeight) : '0'}
+                          value={formState.weight}
+                          onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+                          className="pr-8"
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          %
+                        </span>
+                      </div>
+                      <p
+                        className={`text-xs ${
+                          formState.weight !== '' && Number(formState.weight) > remainingWeight
+                            ? 'text-destructive'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        {remainingWeight <= 0
+                          ? '100% already allocated'
+                          : `${remainingWeight}% available`}
                       </p>
                     </div>
                   </SlidePanelSection>
@@ -831,7 +879,15 @@ export default function OKRDetailPage(): ReactNode {
                 <Button variant="outline" onClick={handleCloseDialog}>
                   Cancel
                 </Button>
-                <Button onClick={() => setFormStep(2)} disabled={!formState.name.trim()}>
+                <Button
+                  onClick={() => setFormStep(2)}
+                  disabled={
+                    !formState.name.trim() ||
+                    !formState.weight ||
+                    Number(formState.weight) <= 0 ||
+                    Number(formState.weight) > remainingWeight
+                  }
+                >
                   Next: Define Rubrics
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
@@ -985,22 +1041,15 @@ export default function OKRDetailPage(): ReactNode {
 
 interface TargetCardProps {
   target: OKRTarget;
-  totalWeight: number;
   onEdit: () => void;
   onDelete: () => void;
   onUpdateProgress: () => void;
 }
 
-function TargetCard({
-  target,
-  totalWeight,
-  onEdit,
-  onDelete,
-  onUpdateProgress,
-}: TargetCardProps): ReactNode {
+function TargetCard({ target, onEdit, onDelete, onUpdateProgress }: TargetCardProps): ReactNode {
   const config = METRIC_TYPE_CONFIG[target.metricType];
   const Icon = config.icon;
-  const weightPct = totalWeight > 0 ? Math.round((target.weight / totalWeight) * 100) : 0;
+  const weightPct = target.weight;
 
   const displayValue =
     target.metricType === 'boolean'
@@ -1044,7 +1093,7 @@ function TargetCard({
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 shrink-0">
+                  <Button variant="ghost" size="icon-sm" className="shrink-0">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>

@@ -113,7 +113,7 @@ function EmployeeLayoutInner({
   const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
 
   return (
-    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block flex-shrink-0">
         <Sidebar

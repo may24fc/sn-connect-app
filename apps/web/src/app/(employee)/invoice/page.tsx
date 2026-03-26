@@ -34,7 +34,7 @@ import {
   HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { CheckCircle2, DollarSign, Download, Eye, EyeOff, FileText, Clock } from 'lucide-react';
+import { CheckCircle2, Clock, DollarSign, Download, Eye, EyeOff, FileText, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
@@ -118,7 +118,7 @@ function InvoiceDetailDialog({
         <div className="bg-zinc-900 px-6 pt-5 pb-5 pr-14">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1.5">
+              <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">
                 Net Amount
               </p>
               <p className="text-3xl font-bold text-white tabular-nums leading-tight">
@@ -142,7 +142,7 @@ function InvoiceDetailDialog({
 
           {/* Financial Summary Card */}
           <div className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 px-4 py-3 space-y-2">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+            <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-1">
               Financial Summary
             </p>
             {invoice.hourly_rate && invoice.hours_worked && (
@@ -178,7 +178,7 @@ function InvoiceDetailDialog({
             </div>
             <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex items-center justify-between">
               <span className="text-sm font-semibold">Net Amount</span>
-              <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-slate-400">
+              <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-zinc-400">
                 {amount(Number(invoice.net_amount || 0), sourceCurrency)}
               </span>
             </div>
@@ -195,7 +195,7 @@ function InvoiceDetailDialog({
           {/* Notes */}
           {invoice.notes && (
             <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3">
-              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1">
+              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-wide mb-1">
                 Notes
               </p>
               <p className="text-sm text-foreground">{invoice.notes}</p>
@@ -204,7 +204,7 @@ function InvoiceDetailDialog({
 
           {/* Timeline */}
           <div>
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">
+            <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-3">
               Timeline
             </p>
             <div className="relative">
@@ -593,7 +593,7 @@ export default function InvoicePage() {
             {showAmounts ? <Eye className="h-4 w-4 mr-1.5" /> : <EyeOff className="h-4 w-4 mr-1.5" />}
             {showAmounts ? 'Hide Amounts' : 'Show Amounts'}
           </Button>
-          <Button onClick={() => setCreateOpen(true)}>Create Invoice</Button>
+          <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Create Invoice</Button>
         </div>
       </div>
 

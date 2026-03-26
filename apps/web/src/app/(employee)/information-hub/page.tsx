@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   useBookmarkResource,
@@ -122,7 +122,7 @@ export default function ResourcesPage() {
             <Bookmark className="h-4 w-4" />
             My Bookmarks
             {bookmarks.length > 0 && (
-              <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+              <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-zinc-800/40 dark:text-zinc-300">
                 {bookmarks.length}
               </span>
             )}
@@ -130,10 +130,10 @@ export default function ResourcesPage() {
         </Link>
       </div>
 
-      <div className="relative">
+      <div className="relative w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="pl-10"
+          className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
           placeholder="Search resources"
           value={search}
           onChange={(event) => {
@@ -178,7 +178,7 @@ export default function ResourcesPage() {
         )}
 
         {featuredResources.length > 0 ? (
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-950/50 dark:to-slate-900/50 rounded-lg p-6 border border-slate-200 dark:border-slate-800">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-zinc-950/50 dark:to-zinc-900/50 rounded-lg p-6 border border-slate-200 dark:border-zinc-800">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3 flex items-center gap-2">
               <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
               Featured Resources
@@ -273,7 +273,7 @@ export default function ResourcesPage() {
                   <span className="text-zinc-700 dark:text-zinc-300">{resource.title}</span>
                   <Link
                     href={`/information-hub/resources/${resource.id}`}
-                    className="text-slate-700 dark:text-slate-400 hover:underline"
+                    className="text-slate-700 dark:text-zinc-400 hover:underline"
                   >
                     Open
                   </Link>

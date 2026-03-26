@@ -126,11 +126,11 @@ export default function AnnouncementsPage() {
 
       <div className="space-y-4">
         {/* Filters & Pagination */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="relative">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              className="pl-10"
+              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               placeholder="Search announcements"
               value={search}
               onChange={(event) => {
@@ -139,7 +139,7 @@ export default function AnnouncementsPage() {
               }}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <MultiSelectFilter
               label="Category"
               options={announcementCategoryOptions}

@@ -37,7 +37,7 @@ export function ProgressStepper({
                   isCompleted &&
                     'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25',
                   isCurrent &&
-                    'border-2 border-slate-500 bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400 shadow-sm shadow-slate-500/25',
+                    'border-2 border-zinc-500 bg-zinc-50 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 shadow-sm shadow-zinc-500/25',
                   !isCompleted &&
                     !isCurrent &&
                     'border-2 border-zinc-200 bg-zinc-100 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500',
@@ -53,7 +53,7 @@ export function ProgressStepper({
                 className={cn(
                   'text-sm whitespace-nowrap hidden sm:inline',
                   isCompleted && 'font-medium text-foreground',
-                  isCurrent && 'font-semibold text-slate-700 dark:text-slate-400',
+                  isCurrent && 'font-semibold text-slate-700 dark:text-zinc-400',
                   !isCompleted && !isCurrent && 'font-medium text-muted-foreground',
                 )}
               >

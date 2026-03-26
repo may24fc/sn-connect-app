@@ -228,7 +228,7 @@ export default function InternDashboardPage(): ReactNode {
               <Progress value={progressPercentage} className="h-3" />
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                     Completed
                   </p>
                   <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
@@ -236,7 +236,7 @@ export default function InternDashboardPage(): ReactNode {
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                  <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                     Remaining
                   </p>
                   <p className="text-lg font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
@@ -305,7 +305,7 @@ export default function InternDashboardPage(): ReactNode {
                   </span>
                   <div className="flex-1 h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-slate-900 dark:bg-slate-800 rounded-full"
+                      className="h-full bg-slate-900 dark:bg-zinc-800 rounded-full"
                       style={{
                         width: `${Math.min(
                           ((new Date().getTime() - new Date(profile.startDate).getTime()) /
@@ -370,7 +370,7 @@ export default function InternDashboardPage(): ReactNode {
             Recent Reports
           </BentoCardTitle>
           <Link href="/intern/reports">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+            <Button variant="ghost" size="xs">
               View All
               <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
             </Button>
@@ -402,7 +402,7 @@ function InternSetupRedirect(): ReactNode {
   return (
     <div className="h-full flex flex-col items-center justify-center gap-4">
       <GraduationCap
-        className="h-10 w-10 text-slate-700 dark:text-slate-400 animate-pulse"
+        className="h-10 w-10 text-slate-700 dark:text-zinc-400 animate-pulse"
         strokeWidth={1.5}
       />
       <div className="text-center">

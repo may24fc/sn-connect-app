@@ -425,7 +425,7 @@ export default function ProfilePage() {
                   const platform = r.metadata.primary_platform;
                   if (typeof platform === 'string' && platform) {
                     return (
-                      <Badge key={`platform-${r.role_type}`} variant="secondary" className="bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300">
+                      <Badge key={`platform-${r.role_type}`} variant="secondary" className="bg-slate-100 text-slate-700 dark:bg-zinc-900/30 dark:text-zinc-300">
                         {platform}
                       </Badge>
                     );

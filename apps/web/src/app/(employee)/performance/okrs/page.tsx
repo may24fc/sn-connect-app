@@ -296,17 +296,17 @@ export default function OKRsPage(): ReactNode {
       </StatCardGrid>
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Filter by:</span>
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="all">Status</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
             <SelectItem value="submitted">Submitted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
@@ -490,7 +490,7 @@ export default function OKRsPage(): ReactNode {
                     {newOKR.subtasks.map((subtask, index) => (
                       <div
                         key={`subtask-${index}`}
-                        className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900"
+                        className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-800"
                       >
                         <span className="w-5 shrink-0 text-center text-sm text-muted-foreground">
                           {index + 1}.
@@ -544,6 +544,7 @@ export default function OKRsPage(): ReactNode {
                 createOKR.isPending
               }
             >
+              <Plus className="mr-2 h-4 w-4" />
               {createOKR.isPending ? 'Creating...' : 'Create Objective'}
             </Button>
           </SlidePanelFooter>

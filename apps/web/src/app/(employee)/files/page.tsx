@@ -316,7 +316,7 @@ export default function FilesPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-end gap-3">
         <div className="flex items-center gap-3">
           {/* View Toggle */}
           <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
@@ -419,7 +419,7 @@ export default function FilesPage() {
               <button
                 key={d.id}
                 type="button"
-                className={`group relative rounded-xl border ${colors.border} bg-white dark:bg-zinc-900 overflow-hidden text-left transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500`}
+                className={`group relative rounded-xl border ${colors.border} bg-card overflow-hidden text-left transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500`}
                 onDoubleClick={() =>
                   canPreview(d.mime_type) ? handlePreview(d.id) : download.mutateAsync(d.id)
                 }
@@ -465,7 +465,7 @@ export default function FilesPage() {
 
                   {/* Extension badge — hides on hover, replaced by download button */}
                   <span
-                    className={`absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${colors.bg} ${colors.text} border ${colors.border} transition-opacity group-hover:opacity-0`}
+                    className={`absolute top-2.5 right-2.5 px-2 py-0.5 rounded text-[10px] font-semibold ${colors.bg} ${colors.text} border ${colors.border} transition-opacity group-hover:opacity-0`}
                   >
                     {ext}
                   </span>
@@ -597,8 +597,7 @@ export default function FilesPage() {
                       {canPreview(d.mime_type) && (
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
+                          size="icon-sm"
                           onClick={() => handlePreview(d.id)}
                           disabled={previewLoading}
                           title="Preview"
@@ -612,8 +611,7 @@ export default function FilesPage() {
                       )}
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
+                        size="icon-sm"
                         onClick={() => handleOpenInNewTab(d.id)}
                         title="Open in New Tab"
                       >
@@ -621,8 +619,7 @@ export default function FilesPage() {
                       </Button>
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
+                        size="icon-sm"
                         onClick={() => download.mutateAsync(d.id)}
                         title="Download"
                       >
@@ -631,8 +628,8 @@ export default function FilesPage() {
                       {canDelete(d) && (
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
+                          size="icon-sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
                           onClick={() => handleDeleteClick(d)}
                           title="Delete"
                         >

@@ -6,7 +6,7 @@ export default function OnboardingSetupLayout({
   children: ReactNode;
 }): ReactNode {
   return (
-    <div className="min-h-screen w-full bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-4">
+    <div className="min-h-screen w-full bg-background flex items-center justify-center p-4">
       {children}
     </div>
   );

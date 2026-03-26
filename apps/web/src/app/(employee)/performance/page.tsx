@@ -290,7 +290,7 @@ export default function PerformancePage(): ReactNode {
               <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="not_started">Not Started</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
@@ -516,6 +516,7 @@ export default function PerformancePage(): ReactNode {
               }}
               disabled={!formState.objective.trim() || createOKR.isPending}
             >
+              <Plus className="mr-2 h-4 w-4" />
               {createOKR.isPending ? 'Creating...' : 'Create Objective'}
             </Button>
           </SlidePanelFooter>

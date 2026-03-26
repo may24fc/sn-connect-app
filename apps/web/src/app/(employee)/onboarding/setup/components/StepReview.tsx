@@ -75,16 +75,16 @@ function SummaryCard({
     .filter(({ value }) => value !== null && value !== undefined && value !== '');
 
   return (
-    <Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+    <Card className="bg-card border border-zinc-200 dark:border-zinc-800 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-4 px-5 space-y-0">
-        <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-400 tracking-tight">
+        <CardTitle className="text-sm font-semibold text-slate-700 dark:text-zinc-400 tracking-tight">
           {title}
         </CardTitle>
         <Button
           type="button"
           variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs text-zinc-500 hover:text-slate-700 dark:hover:text-slate-400 gap-1 shrink-0"
+          size="xs"
+          className="text-zinc-500 hover:text-slate-700 dark:hover:text-zinc-400 gap-1 shrink-0"
           onClick={() => onEdit(step)}
         >
           <Pencil className="h-3 w-3" />
@@ -98,7 +98,7 @@ function SummaryCard({
           <div className="grid gap-4">
             {entries.map(({ key, label, value }) => (
               <div key={key} className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+                <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
                   {label}
                 </span>
                 <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 leading-snug break-words">
@@ -127,12 +127,12 @@ export function StepReview({
   return (
     <div className="space-y-5">
       {/* Header banner */}
-      <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 px-4 py-3 flex items-start gap-3">
-        <div className="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-slate-100 dark:bg-slate-900/60 flex items-center justify-center">
+      <div className="rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-950/40 px-4 py-3 flex items-start gap-3">
+        <div className="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-slate-100 dark:bg-zinc-900/60 flex items-center justify-center">
           <svg
             viewBox="0 0 20 20"
             fill="currentColor"
-            className="h-3 w-3 text-slate-700 dark:text-slate-400"
+            className="h-3 w-3 text-slate-700 dark:text-zinc-400"
             aria-hidden="true"
           >
             <path
@@ -143,10 +143,10 @@ export function StepReview({
           </svg>
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">
             Review Your Information
           </p>
-          <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5">
+          <p className="text-xs text-slate-700 dark:text-zinc-300 mt-0.5">
             Please review all your information carefully before submitting. Click{' '}
             <strong>Edit</strong> on any card to make changes.
           </p>

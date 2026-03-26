@@ -41,10 +41,10 @@ import {
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useTableSort } from '@/hooks/useTableSort';
-import { CheckCircle2, ClipboardList, Clock, LayoutGrid, List, Loader2, Plus, Search } from 'lucide-react';
+import { CheckCircle2, ClipboardList, Clock, LayoutGrid, List, Loader2, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useCallback, useMemo, useState } from 'react';
+import React, { type FormEvent, useCallback, useMemo, useState } from 'react';
 
 const TASK_CATEGORY_OPTIONS = [
   { value: 'launch', label: 'Launch' },
@@ -54,6 +54,121 @@ const TASK_CATEGORY_OPTIONS = [
   { value: 'administrative', label: 'Administrative' },
   { value: 'other', label: 'Other' },
 ] as const;
+
+const PRESET_TAGS = [
+  'urgent',
+  'high-priority',
+  'onboarding',
+  'documentation',
+  'review',
+  'follow-up',
+  'blocked',
+  'compliance',
+  'training',
+  'deadline',
+] as const;
+
+function TagChipsInput({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (tags: string[]) => void;
+}) {
+  const [customInput, setCustomInput] = useState('');
+
+  const togglePreset = (tag: string): void => {
+    if (value.includes(tag)) {
+      onChange(value.filter((t) => t !== tag));
+    } else {
+      onChange([...value, tag]);
+    }
+  };
+
+  const addCustom = (raw: string): void => {
+    const trimmed = raw.trim().toLowerCase().replace(/\s+/g, '-');
+    if (trimmed && !value.includes(trimmed)) {
+      onChange([...value, trimmed]);
+    }
+    setCustomInput('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      if (customInput.trim()) addCustom(customInput);
+    } else if (e.key === 'Backspace' && !customInput && value.length > 0) {
+      const last = value[value.length - 1];
+      if (last) onChange(value.slice(0, -1));
+    }
+  };
+
+  const unselectedPresets = PRESET_TAGS.filter((t) => !value.includes(t));
+
+  return (
+    <div className="space-y-3">
+      {/* Selected chips */}
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((tag) => (
+            <span
+              key={tag}
+              className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-950/50 text-slate-700 dark:text-slate-300 text-xs px-2.5 py-1 font-medium"
+            >
+              #{tag}
+              <button
+                type="button"
+                onClick={() => onChange(value.filter((t) => t !== tag))}
+                className="hover:text-slate-900 dark:hover:text-white transition-colors ml-0.5"
+                aria-label={`Remove ${tag}`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Preset suggestion chips */}
+      {unselectedPresets.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {unselectedPresets.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => togglePreset(tag)}
+              className="inline-flex items-center gap-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 text-xs px-2.5 py-1 hover:border-slate-400 hover:text-slate-700 dark:hover:border-slate-500 dark:hover:text-slate-400 transition-colors"
+            >
+              + {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Custom tag input */}
+      <div className="flex items-center gap-2">
+        <Input
+          value={customInput}
+          onChange={(e) => setCustomInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a custom tag and press Enter…"
+          className="h-8 text-xs bg-white dark:bg-zinc-800"
+        />
+        {customInput.trim() && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => addCustom(customInput)}
+            className="h-8 text-xs shrink-0"
+          >
+            Add
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function MyTasksPage() {
   const { user } = useAuth();
@@ -72,6 +187,7 @@ export default function MyTasksPage() {
   const [newCategory, setNewCategory] = useState<string>('');
   const [newPriority, setNewPriority] = useState<string>('medium');
   const [newDueDate, setNewDueDate] = useState('');
+  const [newTags, setNewTags] = useState<string[]>([]);
   const createTask = useCreateTask();
 
   const resetAddTaskForm = useCallback(() => {
@@ -80,6 +196,7 @@ export default function MyTasksPage() {
     setNewCategory('');
     setNewPriority('medium');
     setNewDueDate('');
+    setNewTags([]);
   }, []);
 
   const handleAddTask = async (e: FormEvent<HTMLFormElement>) => {
@@ -93,7 +210,7 @@ export default function MyTasksPage() {
         priority: newPriority as 'low' | 'medium' | 'high' | 'urgent',
         dueDate: newDueDate || null,
         status: 'pending',
-        tags: [],
+        tags: newTags,
       });
 
       addToast({
@@ -217,13 +334,13 @@ export default function MyTasksPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
@@ -231,11 +348,11 @@ export default function MyTasksPage() {
               </SelectContent>
             </Select>
             <Select value={priority} onValueChange={setPriority}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Priority</SelectItem>
+                <SelectItem value="all">Priority</SelectItem>
                 <SelectItem value="low">Low</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="high">High</SelectItem>
@@ -247,7 +364,7 @@ export default function MyTasksPage() {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">Categories</SelectItem>
                 {TASK_CATEGORY_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -400,6 +517,10 @@ export default function MyTasksPage() {
                 onChange={(e) => setNewDueDate(e.target.value)}
                 min={new Date().toISOString().slice(0, 10)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <TagChipsInput value={newTags} onChange={setNewTags} />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => { setAddTaskOpen(false); resetAddTaskForm(); }}>

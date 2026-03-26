@@ -194,9 +194,9 @@ export default function InternSetupPage(): ReactNode {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-zinc-900/30">
               <GraduationCap
-                className="h-5 w-5 text-slate-700 dark:text-slate-400"
+                className="h-5 w-5 text-slate-700 dark:text-zinc-400"
                 strokeWidth={1.5}
               />
             </div>
@@ -213,14 +213,14 @@ export default function InternSetupPage(): ReactNode {
         </div>
 
         {/* Info Banner */}
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/10 p-4">
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/10 p-4">
           <AlertCircle
-            className="h-5 w-5 text-slate-700 dark:text-slate-400 flex-shrink-0 mt-0.5"
+            className="h-5 w-5 text-slate-700 dark:text-zinc-400 flex-shrink-0 mt-0.5"
             strokeWidth={1.5}
           />
-          <div className="text-sm text-slate-800 dark:text-slate-200">
+          <div className="text-sm text-slate-800 dark:text-zinc-200">
             <p className="font-medium">Why do I need to complete this?</p>
-            <p className="mt-1 text-slate-700 dark:text-slate-300">
+            <p className="mt-1 text-slate-700 dark:text-zinc-300">
               Your internship profile is needed to track hours, submit daily reports, and manage
               your performance reviews. This only needs to be done once.
             </p>

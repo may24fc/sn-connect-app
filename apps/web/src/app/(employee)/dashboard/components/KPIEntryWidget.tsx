@@ -174,7 +174,7 @@ export default function KPIEntryWidget(): ReactNode {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3
-              className="h-4.5 w-4.5 text-slate-700 dark:text-slate-400"
+              className="h-4.5 w-4.5 text-slate-700 dark:text-zinc-400"
               strokeWidth={1.5}
             />
             <div>

@@ -316,7 +316,7 @@ export default function DashboardPage(): ReactNode {
                     </span>
                     <Link
                       href="/onboarding"
-                      className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                      className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300"
                     >
                       View checklist
                       <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
@@ -354,7 +354,7 @@ export default function DashboardPage(): ReactNode {
               Latest Announcements
             </BentoCardTitle>
             <Link href="/announcements">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+              <Button variant="ghost" size="xs">
                 View All
               </Button>
             </Link>
