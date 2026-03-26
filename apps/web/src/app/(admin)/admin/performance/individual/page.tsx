@@ -111,7 +111,7 @@ export default function IndividualPerformancePage(): ReactNode {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="pl-10"
+                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
             <Select
@@ -125,7 +125,7 @@ export default function IndividualPerformancePage(): ReactNode {
                 <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="all">Roles</SelectItem>
                 <SelectItem value="employee">Employee</SelectItem>
                 <SelectItem value="intern">Intern</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
@@ -142,7 +142,7 @@ export default function IndividualPerformancePage(): ReactNode {
                 <SelectValue placeholder="Department" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
+                <SelectItem value="all">Departments</SelectItem>
                 {departments.map((dept) => (
                   <SelectItem key={dept} value={dept}>
                     {dept}
@@ -210,7 +210,7 @@ export default function IndividualPerformancePage(): ReactNode {
           ) : (
             <>
               {/* Table header */}
-              <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-6 py-3 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground">
                 <span>Employee</span>
                 <span>Department</span>
                 <span>Role</span>

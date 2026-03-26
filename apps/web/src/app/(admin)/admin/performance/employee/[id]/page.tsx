@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -89,7 +89,7 @@ function getStatusColor(status: string): string {
       return 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20';
     case 'in_progress':
     case 'active':
-      return 'text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/20';
+      return 'text-slate-700 dark:text-zinc-400 bg-slate-50 dark:bg-zinc-900/20';
     case 'not_started':
     case 'pending':
       return 'text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800';
@@ -1010,7 +1010,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               <div className="space-y-4">
                 {/* Objective Info */}
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+                  <p className="text-xs text-muted-foreground font-medium">
                     Objective
                   </p>
                   <p className="text-sm font-semibold mt-1">{selectedOKR.okr.objective}</p>
@@ -1083,7 +1083,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               <div className="space-y-6">
                 {/* Summary of target ratings */}
                 <div className="p-4 rounded-lg bg-muted/30 border border-border">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-3">
+                  <p className="text-xs text-muted-foreground font-medium mb-3">
                     Target Ratings Summary
                   </p>
                   <div className="space-y-2">

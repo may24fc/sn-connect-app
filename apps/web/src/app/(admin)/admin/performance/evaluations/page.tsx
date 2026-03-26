@@ -482,7 +482,7 @@ export default function EvaluationsPage(): ReactNode {
               <div className="space-y-3">
                 {/* Objective Info */}
                 <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                  <p className="text-xs text-muted-foreground">
                     Objective
                   </p>
                   <p className="text-sm font-medium mt-0.5">{selectedOKR.objective}</p>
