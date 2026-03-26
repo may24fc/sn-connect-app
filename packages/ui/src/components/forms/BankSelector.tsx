@@ -209,7 +209,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                           'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                           'hover:bg-zinc-100 dark:hover:bg-zinc-800',
                           bank.id === value &&
-                            'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400'
+                            'bg-zinc-50 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
                         )}
                       >
                         <span className="flex-1 text-left">{bank.bankName}</span>
@@ -230,7 +230,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                             'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                             'hover:bg-zinc-100 dark:hover:bg-zinc-800',
                             isOtherSelected &&
-                              'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400'
+                              'bg-zinc-50 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
                           )}
                         >
                           <span className="flex-1 text-left italic">Other (enter manually)</span>

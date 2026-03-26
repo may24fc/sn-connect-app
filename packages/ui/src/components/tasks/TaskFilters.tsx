@@ -54,7 +54,7 @@ export function TaskFilters({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* Search Input */}
         <div className="flex-1 min-w-[200px]">
           <Label htmlFor="search" className="sr-only">
@@ -68,13 +68,13 @@ export function TaskFilters({
               placeholder="Search tasks..."
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="pl-9"
+              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
         </div>
 
         {/* Status Filter */}
-        <div className="w-full sm:w-[180px]">
+        <div className="w-full sm:w-[160px]">
           <Label htmlFor="status" className="sr-only">
             Filter by status
           </Label>
@@ -96,7 +96,7 @@ export function TaskFilters({
         </div>
 
         {/* Priority Filter */}
-        <div className="w-full sm:w-[180px]">
+        <div className="w-full sm:w-[160px]">
           <Label htmlFor="priority" className="sr-only">
             Filter by priority
           </Label>
@@ -118,7 +118,7 @@ export function TaskFilters({
         </div>
 
         {/* Category Filter */}
-        <div className="w-full sm:w-[180px]">
+        <div className="w-full sm:w-[160px]">
           <Label htmlFor="category" className="sr-only">
             Filter by category
           </Label>
@@ -142,7 +142,7 @@ export function TaskFilters({
 
         {/* Assignee Filter (Optional - for admin view) */}
         {showAssigneeFilter && assigneeOptions.length > 0 && (
-          <div className="w-full sm:w-[200px]">
+          <div className="w-full sm:w-[180px]">
             <Label htmlFor="assignee" className="sr-only">
               Filter by assignee
             </Label>
@@ -165,7 +165,7 @@ export function TaskFilters({
           </div>
         )}
 
-        <div className="w-full sm:w-[220px]">
+        <div className="w-full sm:w-[200px]">
           <Label htmlFor="tags" className="sr-only">
             Filter by tags
           </Label>

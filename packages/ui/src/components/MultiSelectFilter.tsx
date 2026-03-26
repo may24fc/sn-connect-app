@@ -8,7 +8,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../primitives/dropdown-menu';
@@ -61,13 +60,15 @@ export function MultiSelectFilter({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
+        <button
+          type="button"
           className={cn(
-            'h-8 border-zinc-200 dark:border-zinc-800 text-sm font-normal gap-1.5',
+            'flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition-all',
+            'hover:border-zinc-300 hover:bg-zinc-50/50',
+            'focus:border-slate-700 focus:ring-2 focus:ring-slate-700/20 focus:ring-offset-0',
+            'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50 dark:focus:border-zinc-400 dark:focus:ring-zinc-400/20',
             hasSelection &&
-              'border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/30',
+              'border-zinc-300 dark:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-950/30',
             className
           )}
         >
@@ -86,13 +87,11 @@ export function MultiSelectFilter({
               </button>
             </span>
           ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
           )}
-        </Button>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-52">
-        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{label}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         {options.map((option) => (
           <DropdownMenuCheckboxItem
             key={option.value}

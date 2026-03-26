@@ -40,8 +40,8 @@ export function CitationBadge({
         className={cn(
           'inline-flex items-center justify-center',
           'min-w-[1.25rem] h-5 px-1.5 rounded text-[11px] font-medium',
-          'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
-          'hover:bg-slate-200 dark:hover:bg-slate-900/60',
+          'bg-zinc-100 text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300',
+          'hover:bg-zinc-200 dark:hover:bg-zinc-900/60',
           'transition-colors cursor-pointer',
           'align-super -translate-y-0.5',
           className
@@ -61,8 +61,8 @@ export function CitationBadge({
           className={cn(
             'inline-flex items-center justify-center',
             'min-w-[1.25rem] h-5 px-1.5 rounded text-[11px] font-medium',
-            'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
-            'hover:bg-slate-200 dark:hover:bg-slate-900/60',
+            'bg-zinc-100 text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300',
+            'hover:bg-zinc-200 dark:hover:bg-zinc-900/60',
             'transition-colors cursor-pointer',
             'align-super -translate-y-0.5',
             className

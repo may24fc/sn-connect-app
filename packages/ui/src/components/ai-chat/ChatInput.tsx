@@ -55,7 +55,7 @@ const FilePreviewCard: React.FC<FilePreviewCardProps> = ({ file, onRemove }) => 
             <div className="p-1.5 bg-zinc-200 dark:bg-zinc-700 rounded">
               <FileText className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
             </div>
-            <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider truncate">
+            <span className="text-[10px] font-medium text-zinc-400 truncate">
               {file.file.name.split('.').pop()}
             </span>
           </div>
@@ -294,9 +294,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   'inline-flex items-center justify-center h-8 w-8 rounded-xl transition-colors duration-200',
                   'active:scale-95',
                   isLoading
-                    ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-zinc-900 hover:bg-slate-800 dark:hover:bg-slate-300'
+                    ? 'bg-zinc-900 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-300'
                     : hasContent
-                      ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-zinc-900 hover:bg-slate-800 dark:hover:bg-slate-300 shadow-sm'
+                      ? 'bg-zinc-900 dark:bg-zinc-200 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-300 shadow-sm'
                       : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-400 dark:text-zinc-500 cursor-default'
                 )}
                 aria-label={isLoading ? 'Stop generating' : 'Send message'}
@@ -314,9 +314,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       {/* Drag Overlay */}
       {isDragging && (
-        <div className="absolute inset-0 bg-white/90 dark:bg-zinc-800/90 border-2 border-dashed border-slate-400 dark:border-slate-500 rounded-2xl z-50 flex flex-col items-center justify-center backdrop-blur-sm pointer-events-none">
-          <Paperclip className="w-8 h-8 text-slate-500 dark:text-slate-400 mb-2 animate-bounce" />
-          <p className="text-slate-600 dark:text-slate-300 font-medium text-sm">
+        <div className="absolute inset-0 bg-white/90 dark:bg-zinc-800/90 border-2 border-dashed border-zinc-400 dark:border-zinc-500 rounded-2xl z-50 flex flex-col items-center justify-center backdrop-blur-sm pointer-events-none">
+          <Paperclip className="w-8 h-8 text-zinc-500 dark:text-zinc-400 mb-2 animate-bounce" />
+          <p className="text-zinc-600 dark:text-zinc-300 font-medium text-sm">
             Drop files to attach
           </p>
         </div>

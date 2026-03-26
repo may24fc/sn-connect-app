@@ -55,7 +55,7 @@ function MilestoneAvatar({
   }
 
   return (
-    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400 text-xs font-medium ring-2 ring-white dark:ring-zinc-800">
+    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-900/30 text-zinc-700 dark:text-zinc-400 text-xs font-medium ring-2 ring-white dark:ring-zinc-800">
       {initials}
     </div>
   );
@@ -123,7 +123,7 @@ function MilestoneGroup({
 
   return (
     <div>
-      <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+      <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">
         {title}
       </h4>
       <div className="divide-y divide-zinc-100 dark:divide-zinc-800">

@@ -32,7 +32,7 @@ export function PlaygroundPanel({
   className,
 }: PlaygroundPanelProps): React.ReactNode {
   return (
-    <div className={cn('flex flex-col h-full bg-background rounded-lg', className)}>
+    <div className={cn('flex flex-col h-full bg-card rounded-lg', className)}>
       {/* Header */}
       <div className="flex-shrink-0 border-b border-border px-6 py-4">
         <div className="flex items-center justify-between">

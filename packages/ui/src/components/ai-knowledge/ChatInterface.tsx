@@ -133,7 +133,7 @@ export function ChatInterface({
     lastMessage?.role === 'assistant' && (lastMessage as ChatInterfaceMessage).isStreaming;
 
   return (
-    <div className={cn('flex flex-col h-full overflow-hidden bg-muted/20', className)}>
+    <div className={cn('flex flex-col h-full overflow-hidden bg-card', className)}>
       {/* Error Banner */}
       {error && (
         <div className="flex-shrink-0 mx-6 mt-4 flex items-center gap-2 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3">
@@ -178,7 +178,7 @@ export function ChatInterface({
       </div>
 
       {/* Input Area - Fixed at bottom */}
-      <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-background">
+      <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-card">
         <div className="flex gap-3">
           <Textarea
             ref={textareaRef}

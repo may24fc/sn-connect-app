@@ -169,7 +169,7 @@ export function NotificationBell({
                 e.stopPropagation();
                 onMarkAllRead();
               }}
-              className="text-xs font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+              className="text-xs font-medium text-zinc-700 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
             >
               Mark All Read
             </button>
@@ -204,7 +204,7 @@ export function NotificationBell({
                     'group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800 last:border-b-0',
                     notification.is_read
                       ? 'bg-card hover:bg-zinc-50 dark:hover:bg-zinc-800/50'
-                      : 'bg-slate-50/50 dark:bg-slate-950/20 hover:bg-slate-50 dark:hover:bg-slate-950/30'
+                      : 'bg-zinc-50/50 dark:bg-zinc-950/20 hover:bg-zinc-50 dark:hover:bg-zinc-950/30'
                   )}
                   onClick={() => handleNotificationClick(notification)}
                   onKeyDown={(e) => {
@@ -288,7 +288,7 @@ export function NotificationBell({
               e.stopPropagation();
               onViewAll();
             }}
-            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors py-1"
+            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-zinc-700 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors py-1"
           >
             View All Notifications
             <ChevronRight className="h-3 w-3" strokeWidth={2} />

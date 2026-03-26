@@ -362,7 +362,7 @@ export function AIChatbot({
       {/* Chat Panel */}
       <div
         className={cn(
-          'fixed z-50 flex flex-col bg-white dark:bg-zinc-900',
+          'fixed z-50 flex flex-col bg-card',
           'border-zinc-200 dark:border-zinc-800',
           'transition-[transform,inset,width] duration-300 ease-in-out will-change-transform',
           isFullscreen
@@ -378,14 +378,14 @@ export function AIChatbot({
           {/* ── History Sidebar ───────────────────────────────── */}
           <div
             className={cn(
-              'flex flex-col flex-shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950',
+              'flex flex-col flex-shrink-0 border-r border-zinc-200 dark:border-zinc-800 bg-background',
               'transition-[width,opacity] duration-300 ease-in-out overflow-hidden',
               showHistory ? 'w-64 opacity-100' : 'w-0 opacity-0'
             )}
           >
             {/* Sidebar Header */}
             <div className="flex items-center justify-between px-4 h-14 flex-shrink-0 border-b border-zinc-200 dark:border-zinc-800">
-              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100 uppercase tracking-widest">
+              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                 Conversations
               </span>
               <Button
@@ -449,7 +449,7 @@ export function AIChatbot({
                   className={cn(
                     'h-8 w-8 transition-colors',
                     showHistory
-                      ? 'text-slate-700 bg-slate-50 dark:bg-slate-950/60'
+                      ? 'text-zinc-700 bg-zinc-50 dark:bg-zinc-950/60'
                       : 'text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                   )}
                   onClick={() => setShowHistory((v) => !v)}
@@ -458,8 +458,8 @@ export function AIChatbot({
                   <PanelLeft className="h-4 w-4" strokeWidth={1.5} />
                 </Button>
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900/10 dark:bg-slate-800/15">
-                    <Sparkles className="h-3.5 w-3.5 text-slate-700 dark:text-slate-400" strokeWidth={1.5} />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-900/10 dark:bg-zinc-800/15">
+                    <Sparkles className="h-3.5 w-3.5 text-zinc-700 dark:text-zinc-400" strokeWidth={1.5} />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
@@ -517,8 +517,8 @@ export function AIChatbot({
               <div className="flex-1 flex flex-col items-center justify-center px-6">
                 <div className={cn(isFullscreen && 'max-w-2xl', 'w-full flex flex-col items-center')}>
                   {/* Logo */}
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900/10 dark:bg-slate-800/20 mb-5">
-                    <Sparkles className="h-7 w-7 text-slate-700 dark:text-slate-400" strokeWidth={1.5} />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900/10 dark:bg-zinc-800/20 mb-5">
+                    <Sparkles className="h-7 w-7 text-zinc-700 dark:text-zinc-400" strokeWidth={1.5} />
                   </div>
 
                   {/* Greeting */}
@@ -620,7 +620,7 @@ export function AIChatbot({
                                   setHighlightedCitationId(undefined);
                                   setCitationPanelOpen(true);
                                 }}
-                                className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                                className="flex items-center gap-1.5 mt-1 text-[11px] text-zinc-700 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300"
                               >
                                 <BookOpen className="h-3 w-3" />
                                 View {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
@@ -701,7 +701,7 @@ export function AIChatbot({
         className={cn(
           'group relative h-9 w-9 transition-colors',
           isOpen
-            ? 'bg-slate-50 dark:bg-slate-950/60 text-slate-700'
+            ? 'bg-zinc-50 dark:bg-zinc-950/60 text-zinc-700'
             : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-200'
         )}
       >
@@ -764,7 +764,7 @@ function ConversationGroup({
 
   return (
     <div className="mb-1">
-      <p className="px-4 pt-4 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+      <p className="px-4 pt-4 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
         {label}
       </p>
       {conversations.map((conv) => (
@@ -795,7 +795,7 @@ function ConversationGroup({
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setRenamingId(null);
                 }}
-                className="w-full bg-white dark:bg-zinc-900 border border-slate-500 rounded px-2 py-1 text-xs outline-none"
+                className="w-full bg-white dark:bg-zinc-800 border border-zinc-500 rounded px-2 py-1 text-xs outline-none"
               />
             </form>
           ) : (

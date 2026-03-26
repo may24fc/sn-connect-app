@@ -72,7 +72,7 @@ const categoryLabels: Record<ResourceCategory, string> = {
 const categoryColors: Record<ResourceCategory, string> = {
   onboarding: 'bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-400 border-transparent',
   training: 'bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-400 border-transparent',
-  policies: 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-transparent',
+  policies: 'bg-zinc-100 dark:bg-zinc-800/60 text-zinc-700 dark:text-zinc-300 border-transparent',
   benefits: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-transparent',
   tools: 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border-transparent',
   culture: 'bg-pink-50 dark:bg-pink-950/50 text-pink-700 dark:text-pink-400 border-transparent',
@@ -103,7 +103,7 @@ export function ResourceCard({
     <div
       onClick={onClick}
       className={cn(
-        'relative group bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-colors',
+        'relative group bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-colors',
         onClick && 'cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700'
       )}
     >
@@ -127,7 +127,7 @@ export function ResourceCard({
             className={cn(
               'h-3.5 w-3.5',
               isBookmarked
-                ? 'text-slate-700 fill-slate-600 dark:text-slate-300 dark:fill-slate-400'
+                ? 'text-zinc-700 fill-zinc-600 dark:text-zinc-300 dark:fill-zinc-400'
                 : 'text-zinc-400 dark:text-zinc-500'
             )}
           />

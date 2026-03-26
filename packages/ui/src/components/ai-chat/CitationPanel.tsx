@@ -45,7 +45,7 @@ export function CitationPanel({
       className={cn(
         'flex flex-col flex-shrink-0',
         'border-l border-zinc-200 dark:border-zinc-800',
-        'bg-white dark:bg-zinc-950',
+        'bg-white dark:bg-zinc-900',
         'transition-all duration-300 ease-in-out overflow-hidden',
         open ? 'w-80 opacity-100' : 'w-0 opacity-0',
         className
@@ -54,8 +54,8 @@ export function CitationPanel({
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-900/30">
-            <BookOpen className="h-4 w-4 text-slate-700 dark:text-slate-400" />
+          <div className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-900/30">
+            <BookOpen className="h-4 w-4 text-zinc-700 dark:text-zinc-400" />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -96,7 +96,7 @@ export function CitationPanel({
                 className={cn(
                   'rounded-lg border p-4 transition-all duration-200',
                   isHighlighted
-                    ? 'border-slate-500 bg-slate-50 dark:bg-slate-950/30 ring-1 ring-slate-500'
+                    ? 'border-zinc-500 bg-zinc-50 dark:bg-zinc-950/30 ring-1 ring-zinc-500'
                     : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50'
                 )}
               >
@@ -107,7 +107,7 @@ export function CitationPanel({
                       'flex-shrink-0 flex items-center justify-center h-6 w-6 rounded text-xs font-bold',
                       isHighlighted
                         ? 'bg-slate-900 text-white'
-                        : 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300'
+                        : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300'
                     )}
                   >
                     {citation.id}
@@ -127,10 +127,10 @@ export function CitationPanel({
                 {/* Referenced text from the AI response */}
                 {citation.citedText && (
                   <div className="mb-2.5">
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+                    <p className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 mb-1.5">
                       Referenced in response
                     </p>
-                    <div className="relative pl-3 border-l-2 border-slate-500 dark:border-slate-400">
+                    <div className="relative pl-3 border-l-2 border-zinc-500 dark:border-zinc-400">
                       <p className="text-[13px] text-zinc-700 dark:text-zinc-200 leading-relaxed">
                         {citation.citedText}
                       </p>
@@ -140,7 +140,7 @@ export function CitationPanel({
 
                 {/* Source excerpt */}
                 <div>
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+                  <p className="text-[11px] font-medium text-zinc-400 dark:text-zinc-500 mb-1.5">
                     {citation.citedText ? 'From source' : 'Source excerpt'}
                   </p>
                   <div className="relative pl-3 border-l-2 border-zinc-300 dark:border-zinc-700">

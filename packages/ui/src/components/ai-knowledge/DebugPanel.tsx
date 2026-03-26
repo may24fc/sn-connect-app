@@ -43,7 +43,7 @@ export function DebugPanel({
 
       {isExpanded && (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-card">
-          <h4 className="text-xs font-semibold text-foreground uppercase tracking-wide">
+          <h4 className="text-xs font-semibold text-foreground">
             Source Attributions
           </h4>
           {sources.map((source, index) => (

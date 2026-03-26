@@ -8,7 +8,7 @@ export interface AnnouncementEditorProps {
 
 export function AnnouncementEditor({ value, onChange }: AnnouncementEditorProps) {
   return (
-    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 min-h-[400px]">
+    <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 min-h-[400px]">
       <Label className="mb-2 block">Content</Label>
       <Textarea
         value={value}

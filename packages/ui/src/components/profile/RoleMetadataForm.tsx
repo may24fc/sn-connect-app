@@ -257,7 +257,7 @@ function FieldValueDisplay({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-sm text-slate-700 dark:text-slate-400 hover:underline"
+        className="text-sm text-zinc-700 dark:text-zinc-400 hover:underline"
       >
         {url}
       </a>
@@ -310,8 +310,8 @@ export function RoleMetadataForm({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-950">
-              <Briefcase className="h-4.5 w-4.5 text-slate-700 dark:text-slate-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-50 dark:bg-zinc-900">
+              <Briefcase className="h-4.5 w-4.5 text-zinc-700 dark:text-zinc-400" />
             </div>
             <div>
               <CardTitle className="text-base">{roleConfig.label}</CardTitle>
@@ -525,7 +525,7 @@ export function RoleMetadataFormContainer({
 
       {/* Add Role Selector */}
       {showAddRole && (
-        <Card className="border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/20">
+          <Card className="border-dashed border-zinc-300 dark:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-900/20">
           <CardContent className="py-4">
             <div className="flex items-end gap-3">
               <div className="flex-1 space-y-1.5">

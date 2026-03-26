@@ -63,7 +63,7 @@ export function AIKnowledgeManager({
   const showPlayground = panelState === 'both' || panelState === 'playground';
 
   return (
-    <div className={cn('bg-muted/30 rounded-lg border text-foreground flex flex-col', className)}>
+    <div className={cn('bg-card rounded-lg border text-foreground flex flex-col', className)}>
       <div className="flex flex-1 min-h-0">
         {/* Left Panel - Knowledge Base */}
         {showKnowledge && (

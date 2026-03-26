@@ -118,7 +118,7 @@ export function KnowledgeBasePanel({
   };
 
   return (
-    <div className={cn('flex flex-col h-full bg-background rounded-lg', className)}>
+    <div className={cn('flex flex-col h-full bg-card rounded-lg', className)}>
       {/* Header */}
       <div className="flex-shrink-0 border-b border-border px-6 py-4">
         <h2 className="text-md font-semibold text-foreground">Knowledge Base</h2>

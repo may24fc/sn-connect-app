@@ -129,7 +129,7 @@ export function MilestoneBanner({
             className="h-10 w-10 flex-shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-zinc-800"
           />
         ) : (
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-900/30 ring-2 ring-white dark:ring-zinc-800 text-slate-700 dark:text-slate-400 text-sm font-semibold">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-900/30 ring-2 ring-white dark:ring-zinc-800 text-zinc-700 dark:text-zinc-400 text-sm font-semibold">
             {initials}
           </div>
         )}

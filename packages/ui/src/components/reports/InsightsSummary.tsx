@@ -28,7 +28,7 @@ export function InsightsSummary({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg',
+        'bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg',
         className
       )}
     >

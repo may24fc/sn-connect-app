@@ -32,27 +32,27 @@ export function SourceFilters({
     <div className={cn('flex flex-col sm:flex-row gap-3', className)}>
       {/* Search Input */}
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-sm text-muted-foreground/70" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
         <Input
           type="search"
           placeholder="Search documents..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 h-10 rounded-lg border-border/60 focus:border-primary/40"
+          className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
           aria-label="Search knowledge base files"
         />
       </div>
 
       {/* Filter Dropdown */}
       <Select value={filterOption} onValueChange={(value) => onFilterChange(value as KnowledgeFilterOption)}>
-        <SelectTrigger className="w-full sm:w-36 h-10 rounded-lg border-border/60">
+        <SelectTrigger className="w-full sm:w-[160px]">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground/70" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <SelectValue />
           </div>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Files</SelectItem>
+          <SelectItem value="all">File</SelectItem>
           <SelectItem value="ready">Ready</SelectItem>
           <SelectItem value="indexing">Processing</SelectItem>
           <SelectItem value="error">Errors</SelectItem>

@@ -206,7 +206,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
                   'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                   'hover:bg-zinc-100 dark:hover:bg-zinc-800',
                   country.code === countryCode &&
-                    'bg-slate-50 text-slate-700 dark:bg-slate-950 dark:text-slate-400'
+                    'bg-zinc-50 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-400'
                 )}
               >
                 <span className="text-base">{country.flag}</span>

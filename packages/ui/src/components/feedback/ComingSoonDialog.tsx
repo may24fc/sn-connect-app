@@ -26,8 +26,8 @@ export function ComingSoonDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="items-center text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-950/50 mb-2">
-            <Construction className="h-6 w-6 text-slate-700 dark:text-slate-400" strokeWidth={1.5} />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-50 dark:bg-zinc-950/50 mb-2">
+            <Construction className="h-6 w-6 text-zinc-700 dark:text-zinc-400" strokeWidth={1.5} />
           </div>
           <DialogTitle>Coming Soon!</DialogTitle>
           <DialogDescription>

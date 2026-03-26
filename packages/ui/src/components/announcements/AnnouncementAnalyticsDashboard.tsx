@@ -135,7 +135,7 @@ export function AnnouncementAnalyticsDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Read Rate Over Time (Bar Chart) */}
         {data.timeSeries.length > 0 && (
-          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-card p-4">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
               Reads Over Time
             </h3>
@@ -150,7 +150,7 @@ export function AnnouncementAnalyticsDashboard({
                   </span>
                   <div className="flex-1 h-5 rounded bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
                     <div
-                      className="h-full rounded bg-slate-800 dark:bg-slate-900 transition-all"
+                      className="h-full rounded bg-zinc-800 dark:bg-zinc-900 transition-all"
                       style={{ width: `${(entry.count / maxTimeSeries) * 100}%` }}
                     />
                   </div>
@@ -164,7 +164,7 @@ export function AnnouncementAnalyticsDashboard({
         )}
 
         {/* Read vs Unread */}
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-card p-4">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
             Read vs Unread
           </h3>
@@ -222,7 +222,7 @@ export function AnnouncementAnalyticsDashboard({
 
         {/* Audience Breakdown by Role */}
         {roleEntries.length > 0 && (
-          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-card p-4">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
               Views by Role
             </h3>
@@ -243,7 +243,7 @@ export function AnnouncementAnalyticsDashboard({
 
         {/* Audience Breakdown by Department */}
         {deptEntries.length > 0 && (
-          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-card p-4">
             <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-4">
               Views by Department
             </h3>
@@ -283,7 +283,7 @@ function SummaryCard({
         'rounded-lg border p-4',
         highlight
           ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20'
-          : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+          : 'border-zinc-200 dark:border-zinc-800 bg-card'
       )}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -294,7 +294,7 @@ function SummaryCard({
         >
           {icon}
         </span>
-        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
           {label}
         </span>
       </div>

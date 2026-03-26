@@ -163,7 +163,7 @@ function VersionItem({
               <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-1 text-sm font-medium text-zinc-900 hover:text-slate-700 dark:text-zinc-100 dark:hover:text-slate-400"
+                className="flex items-center gap-1 text-sm font-medium text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-400"
               >
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4" />
@@ -173,7 +173,7 @@ function VersionItem({
                 Version {version.version_number}
               </button>
               {isCurrent && (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300">
                   Current
                 </span>
               )}
@@ -236,7 +236,7 @@ function VersionItem({
                 type="button"
                 onClick={() => onRestore(version.version_number)}
                 disabled={isRestoring}
-                className="flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-950/30"
+                className="flex items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-950/30"
               >
                 <RotateCcw className="h-3 w-3" />
                 Restore

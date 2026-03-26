@@ -25,7 +25,7 @@ export interface ResourceFiltersProps {
 }
 
 const defaultCategories = [
-  { value: 'all', label: 'All Categories' },
+  { value: 'all', label: 'Category' },
   { value: 'onboarding', label: 'Onboarding' },
   { value: 'training', label: 'Training' },
   { value: 'policies', label: 'Policies' },
@@ -39,7 +39,7 @@ const defaultCategories = [
 ];
 
 const defaultTypes = [
-  { value: 'all', label: 'All Types' },
+  { value: 'all', label: 'Type' },
   { value: 'video', label: 'Video' },
   { value: 'document', label: 'Document' },
   { value: 'image', label: 'Image' },
@@ -58,18 +58,18 @@ export function ResourceFilters({
 }: ResourceFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
-      <div className="relative max-w-sm w-full">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
         <Input
           placeholder="Search resources..."
           value={value.search}
           onChange={(event) => onChange({ ...value, search: event.target.value })}
-          className="pl-10 bg-white dark:bg-zinc-950"
+          className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
         />
       </div>
 
       <Select value={value.category} onValueChange={(category) => onChange({ ...value, category })}>
-        <SelectTrigger className="w-[170px] border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm">
+        <SelectTrigger className="w-[170px]">
           <SelectValue placeholder="Category" />
         </SelectTrigger>
         <SelectContent>
@@ -85,7 +85,7 @@ export function ResourceFilters({
         value={value.resourceType}
         onValueChange={(resourceType) => onChange({ ...value, resourceType })}
       >
-        <SelectTrigger className="w-[170px] border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm">
+        <SelectTrigger className="w-[170px]">
           <SelectValue placeholder="Type" />
         </SelectTrigger>
         <SelectContent>
@@ -99,13 +99,13 @@ export function ResourceFilters({
 
       {showStatus ? (
         <Select value={value.status} onValueChange={(status) => onChange({ ...value, status })}>
-          <SelectTrigger className="w-[170px] border border-zinc-200 dark:border-zinc-800 rounded-md px-3 py-2 text-sm">
+          <SelectTrigger className="w-[170px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             {statuses.map((s) => (
               <SelectItem key={s} value={s}>
-                {s === 'all' ? 'All Status' : s.charAt(0).toUpperCase() + s.slice(1)}
+                {s === 'all' ? 'Status' : s.charAt(0).toUpperCase() + s.slice(1)}
               </SelectItem>
             ))}
           </SelectContent>

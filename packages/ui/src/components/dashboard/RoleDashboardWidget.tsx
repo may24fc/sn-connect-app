@@ -85,9 +85,9 @@ function KPIMetricCard({ data }: { data: KPICardData }): React.ReactNode {
   const IconComponent = KPI_ICONS[data.name] || BarChart3;
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-2">
+    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-card p-4 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
           {data.label}
         </span>
         <IconComponent className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
@@ -126,7 +126,7 @@ export function RoleDashboardWidget({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BarChart3
-              className="h-4.5 w-4.5 text-slate-700 dark:text-slate-400"
+              className="h-4.5 w-4.5 text-zinc-700 dark:text-zinc-400"
               strokeWidth={1.5}
             />
             <div>
@@ -149,7 +149,7 @@ export function RoleDashboardWidget({
           <button
             type="button"
             onClick={onManageKPIs}
-            className="mt-3 text-xs font-medium text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+            className="mt-3 text-xs font-medium text-zinc-700 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
           >
             Log KPI Values →
           </button>
