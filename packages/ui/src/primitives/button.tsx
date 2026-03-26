@@ -13,20 +13,22 @@ const buttonVariants = cva(
         default: 'bg-slate-900 text-white shadow hover:bg-slate-800 active:bg-slate-700',
         destructive: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800',
         outline:
-          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-zinc-200 dark:active:bg-zinc-700',
+          'border border-input bg-white dark:bg-zinc-900 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-accent-foreground active:bg-zinc-100 dark:active:bg-zinc-700',
         secondary:
-          'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 shadow-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 active:bg-zinc-300 dark:active:bg-zinc-600',
+          'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-50 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 active:bg-zinc-100 dark:active:bg-zinc-600',
         ghost:
           'hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-50 active:bg-zinc-200 dark:active:bg-zinc-700',
-        link: 'text-slate-700 dark:text-slate-400 underline-offset-4 hover:underline',
+        link: 'text-zinc-700 dark:text-zinc-400 underline-offset-4 hover:underline',
         success: 'bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800',
         warning: 'bg-amber-500 text-white shadow-sm hover:bg-amber-600 active:bg-amber-700',
       },
       size: {
         default: 'h-10 px-4 py-2',
+        xs: 'h-7 rounded-md px-2 text-xs',
         sm: 'h-8 rounded-md px-3 text-xs',
         lg: 'h-12 rounded-md px-8 text-base',
         icon: 'h-10 w-10',
+        'icon-sm': 'h-8 w-8',
       },
     },
     defaultVariants: {

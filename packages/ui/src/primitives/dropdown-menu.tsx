@@ -100,7 +100,12 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      'relative flex cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-2.5 text-sm text-zinc-700 outline-none transition-colors focus:bg-zinc-100 focus:text-zinc-900 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-zinc-300 dark:focus:bg-zinc-800 dark:focus:text-zinc-100',
+      'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm text-zinc-700 outline-none transition-colors',
+      'focus:bg-slate-50 focus:text-slate-900',
+      'data-[state=checked]:bg-slate-900 data-[state=checked]:font-medium data-[state=checked]:text-white',
+      'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'dark:text-zinc-300 dark:focus:bg-slate-800/50 dark:focus:text-slate-200',
+      'dark:data-[state=checked]:bg-slate-700 dark:data-[state=checked]:text-white',
       className
     )}
     {...(checked !== undefined && { checked })}
@@ -108,7 +113,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
+        <Check className="h-3.5 w-3.5" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -147,7 +152,7 @@ const DropdownMenuLabel = React.forwardRef<
   <DropdownMenuPrimitive.Label
     ref={ref}
     className={cn(
-      'px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500',
+      'px-2.5 py-1.5 text-xs font-semibold text-zinc-400 dark:text-zinc-500',
       inset && 'pl-8',
       className
     )}

@@ -26,7 +26,7 @@ const badgeVariants = cva(
         rejected:
           'border-transparent bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400',
         navy:
-          'border-transparent bg-slate-50 dark:bg-slate-950/50 text-slate-700 dark:text-slate-400',
+          'border-transparent bg-zinc-50 dark:bg-zinc-950/50 text-zinc-700 dark:text-zinc-400',
       },
     },
     defaultVariants: {

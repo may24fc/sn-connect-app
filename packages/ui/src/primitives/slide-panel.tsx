@@ -181,7 +181,7 @@ const SlidePanelSection = React.forwardRef<
 >(({ className, label, children, ...props }, ref) => (
   <div ref={ref} className={cn('space-y-3', className)} {...props}>
     {label && (
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+      <h3 className="text-xs font-semibold text-zinc-400 dark:text-zinc-500">
         {label}
       </h3>
     )}

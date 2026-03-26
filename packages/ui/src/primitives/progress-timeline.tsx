@@ -56,7 +56,7 @@ export function ProgressTimeline({
                   step.status === 'completed' &&
                     'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25',
                   step.status === 'current' &&
-                    'border-2 border-slate-500 bg-slate-50 dark:bg-slate-950 shadow-sm shadow-slate-500/25',
+                    'border-2 border-zinc-500 bg-zinc-50 dark:bg-zinc-900 shadow-sm shadow-zinc-500/25',
                   step.status === 'upcoming' &&
                     'border-2 border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800',
                 )}
@@ -103,7 +103,7 @@ export function ProgressTimeline({
                   'leading-tight',
                   isCompact ? 'text-xs' : 'text-sm',
                   step.status === 'completed' && 'font-medium text-foreground',
-                  step.status === 'current' && 'font-semibold text-slate-700 dark:text-slate-400',
+                  step.status === 'current' && 'font-semibold text-zinc-700 dark:text-zinc-400',
                   step.status === 'upcoming' && 'font-medium text-muted-foreground',
                 )}
               >

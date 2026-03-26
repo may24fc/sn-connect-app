@@ -20,9 +20,9 @@ const SelectTrigger = React.forwardRef<
     className={cn(
       'flex h-9 w-full cursor-pointer items-center justify-between rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none ring-offset-background transition-all',
       'hover:border-zinc-300 hover:bg-zinc-50/50',
-      'focus:border-slate-700 focus:ring-2 focus:ring-slate-700/20 focus:ring-offset-0',
+      'focus:border-zinc-700 focus:ring-2 focus:ring-zinc-700/20 focus:ring-offset-0',
       'disabled:cursor-not-allowed disabled:opacity-50',
-      'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50 dark:focus:border-slate-400 dark:focus:ring-slate-400/20',
+      'dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50 dark:focus:border-zinc-400 dark:focus:ring-zinc-400/20',
       '[&>span]:line-clamp-1',
       className
     )}
@@ -111,7 +111,7 @@ const SelectLabel = React.forwardRef<
   <SelectPrimitive.Label
     ref={ref}
     className={cn(
-      'px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500',
+      'px-2 py-1.5 text-xs font-semibold text-zinc-400 dark:text-zinc-500',
       className
     )}
     {...props}
