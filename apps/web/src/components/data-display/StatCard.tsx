@@ -64,7 +64,7 @@ export function StatCard({
       <div className="space-y-1">
         {/* Label with inline icon option */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
             {label}
           </span>
           {tooltip}

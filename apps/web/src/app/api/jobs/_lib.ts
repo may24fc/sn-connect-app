@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const JOB_ADMIN_ROLES = ['admin', 'super_admin'];
+export const JOB_ADMIN_ROLES = ['admin'];
 
 export async function getAuthedSupabase() {
   const supabase = await createSupabaseServerClient();

@@ -85,7 +85,7 @@ export default function LoginPage(): ReactNode {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
+    <div className="h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md bg-card border border-border rounded-xl shadow-card">
         <CardHeader className="space-y-1 text-center pb-2">
           {/* Logo Section */}
@@ -151,7 +151,7 @@ export default function LoginPage(): ReactNode {
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium transition-colors"
+                  className="text-xs text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300 font-medium transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -183,7 +183,7 @@ export default function LoginPage(): ReactNode {
 
             <Button
               type="submit"
-              className="h-11 w-full bg-slate-900 hover:bg-slate-800 active:bg-slate-700 text-white text-sm font-medium rounded-lg transition-all focus:ring-2 focus:ring-slate-600/20 focus:ring-offset-2 disabled:opacity-60"
+              className="w-full"
               size="lg"
               disabled={isLoading}
             >
@@ -206,11 +206,10 @@ export default function LoginPage(): ReactNode {
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => quickLogin('employee@test.com')}
                   disabled={isLoading}
-                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   <Badge
                     variant="secondary"
@@ -221,11 +220,10 @@ export default function LoginPage(): ReactNode {
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => quickLogin('intern@test.com')}
                   disabled={isLoading}
-                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   <Badge
                     variant="secondary"
@@ -236,11 +234,10 @@ export default function LoginPage(): ReactNode {
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => quickLogin('admin@test.com')}
                   disabled={isLoading}
-                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   <Badge
                     variant="secondary"
@@ -251,11 +248,10 @@ export default function LoginPage(): ReactNode {
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => quickLogin('superadmin@test.com')}
                   disabled={isLoading}
-                  className="h-9 px-3 text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
                 >
                   <Badge
                     variant="secondary"
@@ -273,7 +269,7 @@ export default function LoginPage(): ReactNode {
               Need help?{' '}
               <a
                 href="mailto:support@company.com"
-                className="text-slate-700 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                className="text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300"
               >
                 Contact IT Support
               </a>

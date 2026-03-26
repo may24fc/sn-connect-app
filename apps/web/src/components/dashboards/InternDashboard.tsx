@@ -27,6 +27,7 @@ import {
   Clock,
   FileText,
   GraduationCap,
+  Send,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -177,6 +178,7 @@ export default function InternDashboard(): ReactNode {
                   </div>
                 </div>
                 <Button size="sm" onClick={() => setShowForm(true)}>
+                  <Send className="mr-2 h-4 w-4" />
                   Submit Now
                 </Button>
               </div>

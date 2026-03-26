@@ -49,11 +49,11 @@ function PulseItem({ event }: { event: PulseEvent }): ReactNode {
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 transition-colors">
       {/* Date badge */}
-      <div className="flex flex-col items-center justify-center w-11 h-11 rounded-lg bg-slate-100 dark:bg-slate-800/40 flex-shrink-0">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400 leading-none">
+      <div className="flex flex-col items-center justify-center w-11 h-11 rounded-lg bg-zinc-100 dark:bg-zinc-800/40 flex-shrink-0">
+        <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-400 leading-none">
           {month}
         </span>
-        <span className="text-sm font-bold text-slate-800 dark:text-slate-300 leading-tight">
+        <span className="text-sm font-bold text-zinc-800 dark:text-zinc-300 leading-tight">
           {day}
         </span>
       </div>

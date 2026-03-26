@@ -353,7 +353,7 @@ export function InviteUserModal({
               </div>
 
               <div className="flex justify-end pt-2">
-                <Button onClick={handleClose}>Done</Button>
+                <Button onClick={handleClose}><Check className="mr-2 h-4 w-4" />Done</Button>
               </div>
             </div>
           </>

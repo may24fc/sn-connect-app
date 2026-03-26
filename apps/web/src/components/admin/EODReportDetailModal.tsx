@@ -111,7 +111,7 @@ export function EODReportDetailModal({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="text-xs bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300">
+              <AvatarFallback className="text-xs bg-zinc-100 text-zinc-700 dark:bg-zinc-800/30 dark:text-zinc-300">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -207,7 +207,7 @@ export function EODReportDetailModal({
                 <MessageSquare className="h-4 w-4 text-slate-700" />
                 <Label className="text-sm font-medium">Supervisor Notes</Label>
               </div>
-              <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 p-3">
+              <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/20 p-3">
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
                   {log.supervisor_notes}
                 </p>
@@ -246,9 +246,9 @@ export function EODReportDetailModal({
         <DialogFooter>
           {!log.is_approved && (
             <Button
+              variant="success"
               onClick={handleApprove}
               disabled={isApproving}
-              className="bg-green-600 hover:bg-green-700 text-white"
             >
               {isApproving ? (
                 <>

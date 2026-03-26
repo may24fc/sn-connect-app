@@ -169,7 +169,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="h-10 px-4 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400"
+                    className="h-10 px-4 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder
@@ -188,7 +188,7 @@ export function DataTable<TData>({
                 className={cn(
                   'h-10 transition-colors',
                   onRowClick && 'cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50',
-                  row.getIsSelected() && 'bg-slate-50 dark:bg-slate-950/30'
+                  row.getIsSelected() && 'bg-zinc-50 dark:bg-zinc-950/30'
                 )}
               >
                 {row.getVisibleCells().map((cell) => (

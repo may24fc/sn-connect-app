@@ -91,7 +91,7 @@ export default function ForgotPasswordPage(): ReactNode {
 
             <Button
               type="submit"
-              className="h-11 w-full bg-slate-900 hover:bg-slate-800 active:bg-slate-700"
+              className="w-full"
               size="lg"
               disabled={isLoading}
             >
