@@ -44,8 +44,10 @@ import {
   ArrowLeft,
   CheckCircle,
   Clock,
+  Columns,
   Eye,
   FileText,
+  LayoutList,
   Search,
   Shield,
   Star,
@@ -96,7 +98,7 @@ const PIPELINE_ORDER: ApplicationStatus[] = [
 export default function ApplicationsPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
-  const isSuperAdmin = user?.role === 'super_admin';
+  const isAdmin = user?.role === 'admin';
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -236,9 +238,9 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border bg-card p-6">
+      <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <Link
@@ -290,7 +292,7 @@ export default function ApplicationsPage() {
         {/* Filters */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
             <Input
               placeholder="Search by name or email..."
               value={search}
@@ -298,13 +300,13 @@ export default function ApplicationsPage() {
               className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">Status</SelectItem>
                 {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                   <SelectItem key={key} value={key}>
                     {cfg.label}
@@ -317,7 +319,7 @@ export default function ApplicationsPage() {
                 <SelectValue placeholder="Job Posting" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Positions</SelectItem>
+                <SelectItem value="all">Position</SelectItem>
                 {jobPostings.map((jp) => (
                   <SelectItem key={jp.id} value={jp.id}>
                     {jp.title}
@@ -327,8 +329,8 @@ export default function ApplicationsPage() {
             </Select>
             <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'table' | 'kanban')}>
               <TabsList>
-                <TabsTrigger value="table">Table</TabsTrigger>
-                <TabsTrigger value="kanban">Kanban</TabsTrigger>
+                <TabsTrigger value="table"><LayoutList className="mr-1.5 h-3.5 w-3.5" />Table</TabsTrigger>
+                <TabsTrigger value="kanban"><Columns className="mr-1.5 h-3.5 w-3.5" />Kanban</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -336,7 +338,7 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-8">
             <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400 text-center">
@@ -445,12 +447,22 @@ export default function ApplicationsPage() {
                               <Users className="h-4 w-4 text-slate-500" />
                             </Button>
                           )}
-                          {app.status === 'interview' && isSuperAdmin && (
+                          {app.status === 'interview' && isAdmin && (
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleStatusChange(app.id, 'approved')}
                               title="Approve"
+                            >
+                              <CheckCircle className="h-4 w-4 text-emerald-600" />
+                            </Button>
+                          )}
+                          {app.status === 'approved' && isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleStatusChange(app.id, 'hired')}
+                              title="Mark as Hired"
                             >
                               <UserCheck className="h-4 w-4 text-emerald-600" />
                             </Button>
@@ -490,7 +502,7 @@ export default function ApplicationsPage() {
                             {app.full_name}
                           </p>
                           <p className="text-xs text-zinc-500 mt-1">{app.email}</p>
-                          <p className="text-xs text-slate-700 dark:text-slate-400 mt-1">
+                          <p className="text-xs text-slate-700 dark:text-zinc-400 mt-1">
                             {app.job_postings?.title || 'Unknown Position'}
                           </p>
                           <p className="text-xs text-zinc-400 mt-2">
@@ -704,7 +716,7 @@ export default function ApplicationsPage() {
                   )}
 
                   {/* SUPER-ADMIN ONLY: Approve after interview */}
-                  {isSuperAdmin && selectedApp.status === 'interview' && (
+                  {isAdmin && selectedApp.status === 'interview' && (
                     <Button
                       size="sm"
                       onClick={() => handleStatusChange(selectedApp.id, 'approved')}
@@ -716,8 +728,8 @@ export default function ApplicationsPage() {
                     </Button>
                   )}
 
-                  {/* SUPER-ADMIN ONLY: Final Approval override for earlier stages */}
-                  {isSuperAdmin &&
+                  {/* Admin & Super-Admin: Final Approval override for earlier stages */}
+                  {isAdmin &&
                     selectedApp.status !== 'interview' &&
                     selectedApp.status !== 'approved' &&
                     selectedApp.status !== 'hired' &&
@@ -732,6 +744,19 @@ export default function ApplicationsPage() {
                         Final Approval
                       </Button>
                     )}
+
+                  {/* Admin & Super-Admin: Mark as Hired after approval */}
+                  {isAdmin && selectedApp.status === 'approved' && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleStatusChange(selectedApp.id, 'hired')}
+                      disabled={updateStatus.isPending}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white ml-auto"
+                    >
+                      <UserCheck className="h-4 w-4 mr-1" />
+                      Mark as Hired
+                    </Button>
+                  )}
                 </div>
               </SlidePanelFooter>
             </>
@@ -762,7 +787,7 @@ export default function ApplicationsPage() {
                     <CardContent className="p-6">
                       <div className="space-y-4">
                         <div className="text-center border-b border-zinc-200 dark:border-zinc-700 pb-4">
-                          <p className="text-xs uppercase tracking-wider text-zinc-500 font-semibold">
+                          <p className="text-xs text-zinc-500 font-semibold">
                             SN INTERNATIONAL GROUP
                           </p>
                           <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mt-1">

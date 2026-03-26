@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Building2,
+  Check,
   ChevronDown,
   ChevronRight,
   Edit2,
@@ -270,8 +271,8 @@ function CategoryFormModal({
                   ? 'Creating...'
                   : 'Saving...'
                 : mode === 'create'
-                  ? 'Create'
-                  : 'Save'}
+                  ? <><Plus className="mr-1.5 h-3.5 w-3.5" />Create</>
+                  : <><Check className="mr-1.5 h-3.5 w-3.5" />Save</>}
             </Button>
           </div>
         </form>
@@ -320,7 +321,7 @@ function CategoryTreeRow({
               <span className="w-5" />
             )}
             {IconComponent && (
-              <IconComponent className="h-4 w-4 text-slate-700 dark:text-slate-400" />
+              <IconComponent className="h-4 w-4 text-slate-700 dark:text-zinc-400" />
             )}
             <span className="font-medium text-zinc-900 dark:text-zinc-100">{node.name}</span>
             {!node.isActive && (
@@ -543,7 +544,7 @@ export default function ResourceCategoriesPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+                  <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800">
                     <th className="px-4 py-3 text-left font-medium text-zinc-600 dark:text-zinc-300">
                       Name
                     </th>

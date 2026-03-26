@@ -295,7 +295,7 @@ export function ReportsAnalyticsTab({
         <p className="text-sm text-muted-foreground">
           Showing analytics for{' '}
           <span className="font-medium text-foreground">
-            {department === 'all' ? 'All Departments' : department}
+            {department === 'all' ? 'Departments' : department}
           </span>{' '}
           ({timeRange}
           {timeRange === 'custom' && customStartDate && customEndDate

@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
@@ -56,10 +57,12 @@ import {
   LayoutGrid,
   List,
   Search,
+  ShieldCheck,
   Star,
   TrendingUp,
   UserCog,
   UserPlus,
+  Users,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -141,7 +144,7 @@ function StageIndicator({
                     ? 'bg-amber-500 dark:bg-amber-400'
                     : status === 'extended'
                       ? 'bg-orange-500 dark:bg-orange-400'
-                      : 'bg-slate-800 dark:bg-slate-400'
+                      : 'bg-slate-800 dark:bg-zinc-400'
                   : 'bg-zinc-200 dark:bg-zinc-700'
             }`}
           />
@@ -247,6 +250,8 @@ export default function EmployeeManagementPage(): ReactNode {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('probation');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [probationView, setProbationView] = useState<ProbationView>('cards');
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
@@ -330,20 +335,24 @@ export default function EmployeeManagementPage(): ReactNode {
   const probationEmployees = probationData?.data || [];
   const onboardingProfiles = onboardingData?.data || [];
 
-  const filteredProbation = searchTerm
-    ? probationEmployees.filter(
-        (emp: ProbationRecord) => {
-          const name = emp.name.toLowerCase();
-          return (
-            name.includes(searchTerm.toLowerCase()) ||
-            emp.position?.toLowerCase().includes(searchTerm.toLowerCase())
-          );
-        }
-      )
-    : probationEmployees;
+  const onProbationCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'on-track' || e.status === 'at-risk' || e.status === 'extended').length;
+  const atRiskCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'at-risk').length;
+  const completedProbationCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'completed').length;
+
+  const departments = [...new Set(probationEmployees.filter((e: ProbationRecord) => e.department).map((e: ProbationRecord) => e.department))];
+
+  const filteredProbation = probationEmployees.filter((emp: ProbationRecord) => {
+    const matchesSearch =
+      !searchTerm ||
+      emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.position?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || emp.status === statusFilter;
+    const matchesDepartment = departmentFilter === 'all' || emp.department === departmentFilter;
+    return matchesSearch && matchesStatus && matchesDepartment;
+  });
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-3">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -363,22 +372,8 @@ export default function EmployeeManagementPage(): ReactNode {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
-          strokeWidth={1.5}
-        />
-        <Input
-          placeholder="Search employees..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="probation">
             Probation
@@ -397,6 +392,101 @@ export default function EmployeeManagementPage(): ReactNode {
             )}
           </TabsTrigger>
         </TabsList>
+
+        {/* Summary Cards */}
+        <StatCardGrid columns={4}>
+          <StatCard
+            label="On Probation"
+            value={onProbationCount}
+            trend={{ direction: 'stable', value: `${completedProbationCount} completed` }}
+            icon={<ShieldCheck className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="At Risk"
+            value={atRiskCount}
+            trend={atRiskCount > 0 ? { direction: 'up', value: 'Needs attention' } : { direction: 'stable', value: 'No issues' }}
+            icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Pending Onboarding"
+            value={pendingApprovals.length}
+            trend={{ direction: 'stable', value: `${onboardingData?.summary.total ?? 0} total submissions` }}
+            icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+          />
+          <StatCard
+            label="Onboarded"
+            value={onboardingData?.summary.completed ?? 0}
+            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+          />
+        </StatCardGrid>
+
+        {/* Filters + View Toggle */}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
+            <Input
+              placeholder="Search employees..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Status</SelectItem>
+                <SelectItem value="on-track">On Track</SelectItem>
+                <SelectItem value="at-risk">At Risk</SelectItem>
+                <SelectItem value="extended">Extended</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Department</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {activeTab === 'probation' && (
+              <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setProbationView('cards')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    probationView === 'cards'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Cards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProbationView('list')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    probationView === 'list'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  List
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Probation Tab */}
         <TabsContent value="probation" className="mt-4">
@@ -418,36 +508,6 @@ export default function EmployeeManagementPage(): ReactNode {
             </Card>
           ) : (
             <>
-              {/* View Toggle */}
-              <div className="flex items-center justify-end mb-4">
-                <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setProbationView('cards')}
-                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                      probationView === 'cards'
-                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                    }`}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    Cards
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProbationView('list')}
-                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                      probationView === 'list'
-                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                    }`}
-                  >
-                    <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    List
-                  </button>
-                </div>
-              </div>
-
               {probationView === 'cards' ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredProbation.map(
@@ -465,7 +525,7 @@ export default function EmployeeManagementPage(): ReactNode {
                             <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
                                 <AvatarImage src={emp.avatarUrl} />
-                                <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
+                                <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
                                   {getInitials(emp.name)}
                                 </AvatarFallback>
                               </Avatar>
@@ -549,7 +609,7 @@ export default function EmployeeManagementPage(): ReactNode {
                             <div className="flex items-center gap-3 min-w-0">
                               <Avatar className="h-8 w-8 shrink-0">
                                 <AvatarImage src={emp.avatarUrl} />
-                                <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
+                                <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
                                   {getInitials(emp.name)}
                                 </AvatarFallback>
                               </Avatar>
@@ -600,8 +660,7 @@ export default function EmployeeManagementPage(): ReactNode {
                             </span>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="h-7 px-2 text-xs"
+                              size="xs"
                               onClick={() => handleOpenAppraisal(emp)}
                             >
                               <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />

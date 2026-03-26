@@ -22,6 +22,7 @@ import {
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
+import { Plus, Save } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function CollectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -140,6 +141,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
             disabled={isPublic}
           />
           <Button onClick={save} disabled={updateCollection.isPending}>
+            <Save className="mr-2 h-4 w-4" />
             Save Changes
           </Button>
         </CardContent>
@@ -243,6 +245,7 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
                     }
                     disabled={addResource.isPending}
                   >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
                     Add to Collection
                   </Button>
                 </div>

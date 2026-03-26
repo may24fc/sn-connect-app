@@ -227,7 +227,7 @@ export default function NewResourcePage() {
   const canPublish = title && description && (filePath || externalUrl);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-background">
       {/* Top Action Bar */}
       <div>
         <div className="max-w p-3 flex items-center justify-between">
@@ -263,7 +263,7 @@ export default function NewResourcePage() {
             <Button
               onClick={() => create(true)}
               disabled={createResource.isPending || !canPublish}
-              className="bg-primary-900 hover:bg-primary-800 text-white dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300"
+              className="bg-primary-900 hover:bg-primary-800 text-white dark:bg-zinc-200 dark:text-zinc-900 dark:hover:bg-zinc-300"
             >
               <Send className="w-4 h-4 mr-2" />
               {createResource.isPending ? 'Publishing...' : 'Publish'}
@@ -278,7 +278,7 @@ export default function NewResourcePage() {
           {/* ── Left Column: Content Area (70%) ── */}
           <div className="flex-1 lg:w-[70%] space-y-6">
             {/* Title Input */}
-            <div className="bg-white dark:bg-zinc-900 rounded-lg border border-border shadow-card px-4 py-3">
+            <div className="bg-card rounded-lg border border-border shadow-card px-4 py-3">
               <Input
                 placeholder="Resource title..."
                 value={title}
@@ -289,8 +289,8 @@ export default function NewResourcePage() {
 
             {/* Description Card */}
             <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
-              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50">
+                <span className="text-xs font-medium text-muted-foreground">
                   Description
                 </span>
               </div>
@@ -302,19 +302,19 @@ export default function NewResourcePage() {
                 onFocus={handleDescriptionFocus}
                 onBlur={handleDescriptionBlur}
                 rows={6}
-                className="min-h-[180px] border-0 rounded-none resize-none focus-visible:ring-0 px-4 py-4 text-base leading-relaxed bg-white dark:bg-zinc-900"
+                className="min-h-[180px] border-0 rounded-none resize-none focus-visible:ring-0 px-4 py-4 text-base leading-relaxed bg-card"
               />
             </div>
 
             {/* Upload / Link Section */}
             <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
-              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-center gap-2">
+              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 flex items-center gap-2">
                 {isExternalLink ? (
                   <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
                 ) : (
                   <Upload className="w-3.5 h-3.5 text-muted-foreground" />
                 )}
-                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-medium text-muted-foreground">
                   {isExternalLink ? 'External Link' : 'Upload File'}
                 </span>
               </div>
@@ -355,7 +355,7 @@ export default function NewResourcePage() {
           >
             {/* Resource Type Card */}
             <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
-              <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                 <FileText className="w-3.5 h-3.5" />
                 Resource Type
               </Label>
@@ -381,7 +381,7 @@ export default function NewResourcePage() {
 
             {/* Category Card */}
             <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
-              <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                 <TagIcon className="w-3.5 h-3.5" />
                 Category
               </Label>
@@ -407,7 +407,7 @@ export default function NewResourcePage() {
 
             {/* Tags Card */}
             <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
-              <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                 <TagIcon className="w-3.5 h-3.5" />
                 Tags
               </Label>
@@ -418,7 +418,7 @@ export default function NewResourcePage() {
             {/* Access & Visibility Card */}
             <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
               <div className="p-4 space-y-3">
-                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                   <Shield className="w-3.5 h-3.5" />
                   Access
                 </span>
@@ -427,16 +427,16 @@ export default function NewResourcePage() {
                   onClick={() => setIsPublic((v) => !v)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md border text-sm transition-colors ${
                     isPublic
-                      ? 'bg-primary-50 border-primary-200 text-primary-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200'
+                      ? 'bg-primary-50 border-primary-200 text-primary-900 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-200'
                       : 'border-border hover:bg-zinc-50 dark:hover:bg-zinc-800/50 text-muted-foreground'
                   }`}
                 >
-                  <Globe className={`w-4 h-4 ${isPublic ? 'text-primary-900 dark:text-slate-300' : ''}`} />
+                  <Globe className={`w-4 h-4 ${isPublic ? 'text-primary-900 dark:text-zinc-300' : ''}`} />
                   <span className="flex-1 text-left">Public resource</span>
                   <div
                     className={`w-8 h-5 rounded-full transition-colors flex items-center ${
                       isPublic
-                        ? 'bg-primary-900 dark:bg-slate-400 justify-end'
+                        ? 'bg-primary-900 dark:bg-zinc-400 justify-end'
                         : 'bg-zinc-200 dark:bg-zinc-700 justify-start'
                     }`}
                   >
@@ -454,7 +454,7 @@ export default function NewResourcePage() {
                       onClick={() => setShowTargeting((v) => !v)}
                       className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                     >
-                      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-2">
                         <Target className="w-3.5 h-3.5" />
                         Who can access this?
                       </span>

@@ -4,6 +4,7 @@ import { useDeleteCollection, useResourceCollections } from '@/hooks/useResource
 import { Button, Card, CardContent, Input } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import Link from 'next/link';
+import { FolderOpen, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 export default function AdminCollectionsPage() {
@@ -34,7 +35,7 @@ export default function AdminCollectionsPage() {
             <Link href="/admin/resources">Back to Resources</Link>
           </Button>
           <Button asChild>
-            <Link href="/admin/resources/collections/new">New Collection</Link>
+            <Link href="/admin/resources/collections/new"><Plus className="mr-2 h-4 w-4" />New Collection</Link>
           </Button>
         </div>
       </div>
@@ -82,7 +83,7 @@ export default function AdminCollectionsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="sm" asChild>
-                    <Link href={`/admin/resources/collections/${collection.id}`}>Manage</Link>
+                    <Link href={`/admin/resources/collections/${collection.id}`}><FolderOpen className="mr-1.5 h-3.5 w-3.5" />Manage</Link>
                   </Button>
                   <Button
                     size="sm"

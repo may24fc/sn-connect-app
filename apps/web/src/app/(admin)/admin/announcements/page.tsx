@@ -25,7 +25,7 @@ import {
   TableRow,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { Archive, FileText, MoreHorizontal, Pin, PinOff, Trash2 } from 'lucide-react';
+import { Archive, FileText, MoreHorizontal, Pin, PinOff, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -142,7 +142,7 @@ export default function AdminAnnouncementsPage() {
   }, [announcements]);
 
   return (
-    <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
@@ -160,6 +160,12 @@ export default function AdminAnnouncementsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/announcements/archive">
+                    <Archive className="mr-2 h-4 w-4" />
+                    View Archive
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Archive className="mr-2 h-4 w-4" />
                   Bulk Archive
@@ -174,7 +180,7 @@ export default function AdminAnnouncementsPage() {
               asChild
               className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md font-medium"
             >
-              <Link href="/admin/announcements/new">Create New</Link>
+              <Link href="/admin/announcements/new"><Plus className="mr-2 h-4 w-4" />Create New</Link>
             </Button>
           </div>
         </div>

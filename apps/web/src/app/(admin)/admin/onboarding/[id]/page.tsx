@@ -131,7 +131,7 @@ export default function OnboardingDetailPage(): ReactNode {
       {/* Header */}
       <div className="flex items-start gap-4">
         <Avatar className="h-14 w-14">
-          <AvatarFallback className="text-lg bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
+          <AvatarFallback className="text-lg bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
             {getInitials(fullName)}
           </AvatarFallback>
         </Avatar>

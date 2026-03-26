@@ -96,7 +96,7 @@ export default function AdminAIKnowledgePage(): React.ReactNode {
   );
 
   return (
-    <div className="h-full flex flex-col p-6">
+    <div className="h-full flex flex-col p-3">
       <div className="mb-4 flex-shrink-0">
         <h1 className="text-2xl font-bold text-foreground">AI Knowledge Base</h1>
         <p className="text-sm text-muted-foreground mt-1">

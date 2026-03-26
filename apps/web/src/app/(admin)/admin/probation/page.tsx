@@ -455,23 +455,23 @@ export default function ProbationPage(): ReactNode {
           </StatCardGrid>
 
           {/* Filters */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search employees..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="all">Status</SelectItem>
                   <SelectItem value="on-track">On Track</SelectItem>
                   <SelectItem value="at-risk">At Risk</SelectItem>
                   <SelectItem value="extended">Extended</SelectItem>
@@ -483,7 +483,7 @@ export default function ProbationPage(): ReactNode {
                   <SelectValue placeholder="Department" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
+                  <SelectItem value="all">Departments</SelectItem>
                   {departments.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}

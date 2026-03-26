@@ -230,9 +230,9 @@ export default function AdminJobsPage() {
   }
 
   return (
-    <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b border-border bg-card p-6">
+      <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Job Postings</h1>
@@ -241,6 +241,12 @@ export default function AdminJobsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/jobs/archive">
+                <Archive className="h-4 w-4 mr-1.5" />
+                View Archive
+              </Link>
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/admin/jobs/applications">View Applications</Link>
             </Button>
@@ -273,12 +279,12 @@ export default function AdminJobsPage() {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
             <Input
               placeholder="Search job postings..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -286,7 +292,7 @@ export default function AdminJobsPage() {
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">Types</SelectItem>
               <SelectItem value="full-time">Full-time</SelectItem>
               <SelectItem value="part-time">Part-time</SelectItem>
               <SelectItem value="internship">Internship</SelectItem>
@@ -294,7 +300,7 @@ export default function AdminJobsPage() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -307,7 +313,7 @@ export default function AdminJobsPage() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-8">
             <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400 text-center">

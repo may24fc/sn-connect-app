@@ -19,7 +19,7 @@ import {
   Skeleton,
   useToast,
 } from '@hr-portal/ui';
-import { Archive, FileImage, FolderOpen, MoreHorizontal, Star, StarOff, Upload } from 'lucide-react';
+import { Archive, FileImage, FolderOpen, MoreHorizontal, Plus, Star, StarOff, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -69,7 +69,7 @@ export default function AdminResourcesPage() {
   }, [resources]);
 
   return (
-    <div className="h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
@@ -98,6 +98,12 @@ export default function AdminResourcesPage() {
                   <Upload className="mr-2 h-4 w-4" />
                   Bulk Upload
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/resources/archive">
+                    <Archive className="mr-2 h-4 w-4" />
+                    View Archive
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Archive className="mr-2 h-4 w-4" />
                   Bulk Archive
@@ -108,7 +114,7 @@ export default function AdminResourcesPage() {
               asChild
               className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-md font-medium"
             >
-              <Link href="/admin/resources/new">Create New</Link>
+              <Link href="/admin/resources/new"><Plus className="mr-2 h-4 w-4" />Create New</Link>
             </Button>
           </div>
         </div>
@@ -205,9 +211,9 @@ export default function AdminResourcesPage() {
                     actions={
                       <>
                         <Button
-                          size="sm"
+                          size="xs"
                           variant="ghost"
-                          className="h-7 px-2 text-xs bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-zinc-800"
+                          className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-zinc-800"
                           onClick={() =>
                             toggleFeatured.mutate(
                               {
@@ -242,9 +248,9 @@ export default function AdminResourcesPage() {
                           )}
                         </Button>
                         <Button
-                          size="sm"
+                          size="xs"
                           variant="ghost"
-                          className="h-7 px-2 text-xs bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-zinc-800"
+                          className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm hover:bg-white dark:hover:bg-zinc-800"
                           onClick={() =>
                             archiveResource.mutate(resource.id, {
                               onSuccess: () => {

@@ -46,7 +46,7 @@ const CATEGORY_BADGE_CLASSES: Record<string, string> = {
   tasks: 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
   resources: 'bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300',
   employees: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300',
-  documents: 'bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-300',
+  documents: 'bg-slate-50 text-slate-700 dark:bg-zinc-900 dark:text-zinc-300',
   organization: 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
   reports: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300',
   performance: 'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
@@ -95,7 +95,7 @@ export default function SuperAdminActivityPage(): ReactNode {
       {/* Page Header */}
       <div className="flex items-center gap-4">
         <Link href="/super-admin/dashboard">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button variant="ghost" size="icon-sm">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>

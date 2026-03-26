@@ -9,6 +9,7 @@ import { useTasks, type TaskRecord } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import { useTableSort } from '@/hooks/useTableSort';
 import type { TaskFilters } from '@/lib/query-keys';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
   Badge,
   Button,
@@ -39,7 +40,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import { Calendar, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
+import { Calendar, CheckCircle2, ClipboardList, Clock, LayoutGrid, List, Loader2, Plus, Search, X, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useCallback, useMemo, useState } from 'react';
@@ -326,7 +327,7 @@ export default function TaskManagementPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-3">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -342,24 +343,33 @@ export default function TaskManagementPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="flex flex-wrap gap-2">
-        <Badge variant="secondary">
-          All <span className="ml-1 font-semibold">{taskStats.total}</span>
-        </Badge>
-        <Badge variant="secondary">
-          Pending <span className="ml-1 font-semibold text-amber-600">{taskStats.pending}</span>
-        </Badge>
-        <Badge variant="secondary">
-          In Progress{' '}
-          <span className="ml-1 font-semibold text-slate-700">{taskStats.in_progress}</span>
-        </Badge>
-        <Badge variant="secondary">
-          Cancelled <span className="ml-1 font-semibold text-red-600">{taskStats.cancelled}</span>
-        </Badge>
-        <Badge variant="secondary">
-          Completed <span className="ml-1 font-semibold text-green-600">{taskStats.completed}</span>
-        </Badge>
-      </div>
+      <StatCardGrid columns={5}>
+        <StatCard
+          label="All"
+          value={taskStats.total}
+          icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Pending"
+          value={taskStats.pending}
+          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="In Progress"
+          value={taskStats.in_progress}
+          icon={<Loader2 className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Cancelled"
+          value={taskStats.cancelled}
+          icon={<XCircle className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Completed"
+          value={taskStats.completed}
+          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+        />
+      </StatCardGrid>
 
       {/* View Tabs */}
       <div>
@@ -376,13 +386,13 @@ export default function TaskManagementPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[170px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">Categories</SelectItem>
                 {TASK_CATEGORY_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
@@ -394,7 +404,7 @@ export default function TaskManagementPage() {
               value={tagFilter}
               onChange={(event) => setTagFilter(event.target.value)}
               placeholder="Tags: onboarding, urgent"
-              className="w-[220px]"
+              className="w-[220px] bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
             />
 
             {/* View Toggle */}
@@ -631,6 +641,7 @@ export default function TaskManagementPage() {
                   createTask.isPending || assigneesLoading || employeesLoading || !title.trim()
                 }
               >
+                <Plus className="mr-2 h-4 w-4" />
                 {createTask.isPending ? 'Creating...' : 'Create Task'}
               </Button>
             </DialogFooter>

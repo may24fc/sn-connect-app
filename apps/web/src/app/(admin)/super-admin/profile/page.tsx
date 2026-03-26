@@ -410,7 +410,7 @@ export default function SuperAdminProfilePage() {
               <div className="mt-2 flex flex-wrap justify-center gap-2 sm:justify-start">
                 <Badge variant="secondary">{department}</Badge>
                 <Badge variant="outline">{employeeNumber}</Badge>
-                <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300 border-slate-200 dark:border-slate-800">
+                <Badge className="bg-slate-100 text-slate-800 dark:bg-zinc-900/30 dark:text-zinc-300 border-slate-200 dark:border-zinc-800">
                   Super Admin
                 </Badge>
               </div>

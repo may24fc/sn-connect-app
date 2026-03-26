@@ -207,7 +207,7 @@ export default function AdminDashboardPage(): ReactNode {
               Recent Activity
             </BentoCardTitle>
             <Link href="/admin/activity">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+              <Button variant="ghost" size="xs">
                 View All
               </Button>
             </Link>

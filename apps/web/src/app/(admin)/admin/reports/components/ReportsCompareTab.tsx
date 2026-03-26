@@ -367,7 +367,7 @@ export function ReportsCompareTab({
           Comparing{' '}
           {timeRange === 'monthly' ? 'months' : timeRange === 'custom' ? 'periods' : 'weeks'} for{' '}
           <span className="font-medium text-foreground">
-            {department === 'all' ? 'All Departments' : department}
+            {department === 'all' ? 'Departments' : department}
           </span>
         </p>
         <Button
@@ -382,7 +382,7 @@ export function ReportsCompareTab({
       </div>
 
       {timeRange === 'weekly' && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-3">
+        <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-3">
           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Select Weeks to Compare</p>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
@@ -406,7 +406,7 @@ export function ReportsCompareTab({
       )}
 
       {timeRange !== 'weekly' && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
+        <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-4">
           <div className="grid gap-4 md:grid-cols-2 text-sm">
             <div>
               <span className="text-zinc-500 dark:text-zinc-400">Previous Period: </span>

@@ -184,7 +184,7 @@ function DetailRow({
             href={value}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-slate-700 dark:text-slate-400 hover:underline flex items-center gap-1"
+            className="text-sm text-slate-700 dark:text-zinc-400 hover:underline flex items-center gap-1"
           >
             {value}
             <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
@@ -242,7 +242,7 @@ function ReviewDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+          <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
             Proposed Changes
           </p>
           <div className="rounded-md border border-zinc-200 dark:border-zinc-800 divide-y divide-zinc-200 dark:divide-zinc-800">
@@ -382,14 +382,14 @@ export default function DirectoryDetailPage({
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/admin/directory">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button variant="ghost" size="icon-sm">
             <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
           </Button>
         </Link>
         <div className="flex items-center gap-3 flex-1">
           <Avatar className="h-12 w-12">
             <AvatarImage src={entry.avatar_url || undefined} />
-            <AvatarFallback className="text-sm bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
+            <AvatarFallback className="text-sm bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
               {getInitials(entry.full_name || 'U')}
             </AvatarFallback>
           </Avatar>

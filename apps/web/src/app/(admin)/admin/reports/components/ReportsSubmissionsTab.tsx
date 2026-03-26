@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertTriangle, Eye } from 'lucide-react';
+import { AlertTriangle, Eye, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -254,18 +254,24 @@ export function ReportsSubmissionsTab({
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <Input
-          placeholder="Search report type or notes"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="flex-1 min-w-[200px]"
-        />
+        <div className="relative flex-1 min-w-[200px]">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <Input
+            placeholder="Search report type or notes"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+          />
+        </div>
         <Select value={localPeriod} onValueChange={(v) => setLocalPeriod(v as typeof localPeriod)}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Period" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Time</SelectItem>
+            <SelectItem value="all">Time</SelectItem>
             <SelectItem value="weekly">This Week</SelectItem>
             <SelectItem value="monthly">This Month</SelectItem>
             {customStartDate && customEndDate && (
@@ -274,11 +280,11 @@ export function ReportsSubmissionsTab({
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="all">All</SelectItem>
             <SelectItem value="submitted">Submitted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>

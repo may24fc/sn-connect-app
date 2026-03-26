@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
@@ -36,7 +37,6 @@ import {
   InternList,
   InternRow,
   type InternSummary,
-  InternshipSummaryCards,
   Select,
   SelectContent,
   SelectItem,
@@ -70,7 +70,9 @@ import {
   Search,
   ThumbsUp,
   Trash2,
+  TrendingUp,
   UserPlus,
+  Users,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
@@ -139,14 +141,14 @@ export default function AdminInternsPage(): ReactNode {
   };
 
   // Real-time approvals hook
-  const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('intern');
+  const { pendingApprovals } = useRealtimeOnboardingApprovals('intern');
 
   // Real-time internships hook
   const { internships: _realtimeInternships, isSubscribed: _isInternshipsSubscribed } =
     useRealtimeInternships();
 
   // Real-time daily logs hook
-  const { dailyLogs, isSubscribed: isDailyLogsSubscribed } = useRealtimeInternDailyLogs();
+  const { dailyLogs, isSubscribed: _isDailyLogsSubscribed } = useRealtimeInternDailyLogs();
 
   // Sort state for Pending Approvals table
   const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
@@ -298,7 +300,7 @@ export default function AdminInternsPage(): ReactNode {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-3">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -335,7 +337,31 @@ export default function AdminInternsPage(): ReactNode {
 
         <TabsContent value="internships" className="space-y-6">
           {/* Summary Cards */}
-          <InternshipSummaryCards stats={stats} />
+          <StatCardGrid columns={4}>
+            <StatCard
+              label="Active Interns"
+              value={stats.activeInterns}
+              trend={{ direction: 'stable', value: `${stats.completedInterns} completed` }}
+              icon={<GraduationCap className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Average Progress"
+              value={`${stats.averageProgress}%`}
+              trend={{ direction: 'up', value: `${stats.totalHoursLogged.toLocaleString()} total hours logged` }}
+              icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Reports This Week"
+              value={stats.reportsThisWeek}
+              trend={{ direction: 'stable', value: `${stats.pendingReports} pending review` }}
+              icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Total Interns"
+              value={stats.totalInterns}
+              icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          </StatCardGrid>
 
           {/* Filters + View Toggle */}
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -348,13 +374,13 @@ export default function AdminInternsPage(): ReactNode {
                 className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="all">Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="terminated">Terminated</SelectItem>
@@ -366,7 +392,7 @@ export default function AdminInternsPage(): ReactNode {
                   <SelectValue placeholder="School" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Schools</SelectItem>
+                  <SelectItem value="all">School</SelectItem>
                   {schools.map((school) => (
                     <SelectItem key={school} value={school}>
                       {school}
@@ -379,7 +405,7 @@ export default function AdminInternsPage(): ReactNode {
                   <SelectValue placeholder="Supervisor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Supervisors</SelectItem>
+                  <SelectItem value="all">Supervisor</SelectItem>
                   {supervisors.map((sup) => (
                     <SelectItem key={sup} value={sup}>
                       {sup}
@@ -522,60 +548,24 @@ export default function AdminInternsPage(): ReactNode {
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-6">
-          {/* Real-time Connection Status */}
-          {isSubscribed && (
-            <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-                  <div className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
-                  Real-time monitoring active
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Approval Stats */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Awaiting Approval</p>
-                    <p className="text-2xl font-bold">{pendingApprovals.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Submissions</p>
-                    <p className="text-2xl font-bold">{onboardingData?.summary.total ?? 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
-                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-2xl font-bold">{onboardingData?.summary.completed ?? 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <StatCardGrid columns={3}>
+            <StatCard
+              label="Awaiting Approval"
+              value={pendingApprovals.length}
+              icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Total Submissions"
+              value={onboardingData?.summary.total ?? 0}
+              icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Completed"
+              value={onboardingData?.summary.completed ?? 0}
+              icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          </StatCardGrid>
 
           {/* Pending Approvals Alert */}
           {pendingApprovals.length > 0 && (
@@ -785,11 +775,7 @@ export default function AdminInternsPage(): ReactNode {
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 End of Day Reports
-                {isDailyLogsSubscribed && (
-                  <Badge variant="outline" className="ml-2">
-                    ✅ Live
-                  </Badge>
-                )}
+                
               </CardTitle>
               <CardDescription>
                 Monitor daily reports submitted by interns. Pending approvals require supervisor
@@ -799,51 +785,23 @@ export default function AdminInternsPage(): ReactNode {
             <CardContent>
               <div className="space-y-4">
                 {/* Summary Stats */}
-                <div className="grid gap-4 md:grid-cols-3">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                          <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{dailyLogs.length}</p>
-                          <p className="text-sm text-muted-foreground">Total Reports</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/20 flex items-center justify-center">
-                          <Clock className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">
-                            {dailyLogs.filter((log) => !log.is_approved).length}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Pending Approval</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                          <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">
-                            {dailyLogs.filter((log) => log.is_approved).length}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Approved</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                <StatCardGrid columns={3}>
+                  <StatCard
+                    label="Total Reports"
+                    value={dailyLogs.length}
+                    icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+                  />
+                  <StatCard
+                    label="Pending Approval"
+                    value={dailyLogs.filter((log) => !log.is_approved).length}
+                    icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+                  />
+                  <StatCard
+                    label="Approved"
+                    value={dailyLogs.filter((log) => log.is_approved).length}
+                    icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+                  />
+                </StatCardGrid>
 
                 {/* Reports Table */}
                 <Table>

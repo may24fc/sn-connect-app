@@ -30,7 +30,7 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { Archive, ArrowLeft, MoreHorizontal, Send, Star, StarOff } from 'lucide-react';
+import { Archive, ArrowLeft, MoreHorizontal, Save, Send, Star, StarOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -180,6 +180,7 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
               />
               <TagInput value={tags} onChange={setTags} />
               <Button onClick={saveDetails} disabled={updateResource.isPending}>
+                <Save className="mr-2 h-4 w-4" />
                 Save Changes
               </Button>
             </CardContent>
@@ -194,6 +195,7 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
             <CardContent className="space-y-4">
               <ResourceTargetingSelector value={targeting} onChange={setTargeting} />
               <Button onClick={saveDetails} disabled={updateResource.isPending}>
+                <Save className="mr-2 h-4 w-4" />
                 Save Targeting
               </Button>
             </CardContent>

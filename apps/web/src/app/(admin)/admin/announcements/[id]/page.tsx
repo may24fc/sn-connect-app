@@ -31,7 +31,7 @@ import {
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Archive, ArrowLeft, MoreHorizontal, Pencil, Pin, PinOff } from 'lucide-react';
+import { Archive, ArrowLeft, Globe, MoreHorizontal, Pencil, Pin, PinOff, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -321,7 +321,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
                   {categoryLabel[announcement.category] ?? announcement.category}
                 </Badge>
                 {announcement.is_pinned && (
-                  <Badge className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400">
+                  <Badge className="bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-400">
                     Pinned
                   </Badge>
                 )}
@@ -354,7 +354,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
               <>
                 <div className="border-t border-zinc-200 dark:border-zinc-800" />
                 <div className="space-y-2">
-                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                     Targeting
                   </h3>
                   {announcement.target_roles.length > 0 && (
@@ -390,7 +390,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
               <>
                 <div className="border-t border-zinc-200 dark:border-zinc-800" />
                 <div className="space-y-2">
-                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                  <h3 className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                     Attachments
                   </h3>
                   <div className="space-y-1">
@@ -458,6 +458,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
             })}
             disabled={publishAnnouncement.isPending || announcement.status === 'published'}
           >
+            <Globe className="mr-2 h-4 w-4" />
             {publishAnnouncement.isPending ? 'Publishing...' : 'Publish'}
           </Button>
           <Button
@@ -506,6 +507,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
               onClick={handleSaveChanges}
               disabled={updateAnnouncement.isPending}
             >
+              <Save className="mr-2 h-4 w-4" />
               {updateAnnouncement.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
             <Button variant="outline" onClick={handleBackFromEdit}>
@@ -522,6 +524,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
               onClick={handleSaveTargeting}
               disabled={updateAnnouncement.isPending}
             >
+              <Save className="mr-2 h-4 w-4" />
               {updateAnnouncement.isPending ? 'Saving...' : 'Save Targeting'}
             </Button>
             <Button variant="outline" onClick={handleBackFromEdit}>

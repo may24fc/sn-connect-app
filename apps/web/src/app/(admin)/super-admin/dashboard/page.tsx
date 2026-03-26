@@ -260,7 +260,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Database className="h-4 w-4" strokeWidth={1.5} />}>
               System Health
             </BentoCardTitle>
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => openComingSoon('System Settings')}>
+            <Button variant="ghost" size="xs" onClick={() => openComingSoon('System Settings')}>
                 Settings
             </Button>
           </BentoCardHeader>
@@ -353,7 +353,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
               Recent Activity
             </BentoCardTitle>
             <Link href="/super-admin/activity">
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
+              <Button variant="ghost" size="xs">
                 View All
               </Button>
             </Link>

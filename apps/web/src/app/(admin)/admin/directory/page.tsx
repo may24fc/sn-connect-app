@@ -53,6 +53,7 @@ import {
   Eye,
   MoreHorizontal,
   Pencil,
+  Save,
   Search,
   Target,
   Trash2,
@@ -102,6 +103,7 @@ export default function AdminDirectoryPage(): ReactNode {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isAdminOrSuperAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isSuperAdmin = user?.role === 'super_admin';
   const [search, setSearch] = useState('');
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
@@ -270,7 +272,7 @@ export default function AdminDirectoryPage(): ReactNode {
   }));
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -325,8 +327,7 @@ export default function AdminDirectoryPage(): ReactNode {
       )}
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
+      
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px]">
               <Search
@@ -340,7 +341,7 @@ export default function AdminDirectoryPage(): ReactNode {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="pl-10"
+                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
               />
             </div>
             <MultiSelectFilter
@@ -368,11 +369,11 @@ export default function AdminDirectoryPage(): ReactNode {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="probation">Probation</SelectItem>
                 <SelectItem value="on_leave">On Leave</SelectItem>
@@ -390,7 +391,7 @@ export default function AdminDirectoryPage(): ReactNode {
                 <SelectValue placeholder="Employment Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all">Employment Type</SelectItem>
                 <SelectItem value="regular">Regular</SelectItem>
                 <SelectItem value="probationary">Probationary</SelectItem>
                 <SelectItem value="intern">Intern</SelectItem>
@@ -398,8 +399,7 @@ export default function AdminDirectoryPage(): ReactNode {
               </SelectContent>
             </Select>
           </div>
-        </CardContent>
-      </Card>
+        
 
       {/* Table */}
       <Card>
@@ -486,7 +486,7 @@ export default function AdminDirectoryPage(): ReactNode {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={entry.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400">
+                            <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
                               {getInitials(entry.full_name || 'U')}
                             </AvatarFallback>
                           </Avatar>
@@ -545,8 +545,7 @@ export default function AdminDirectoryPage(): ReactNode {
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
-                                size="sm"
-                                className="h-7 w-7 p-0"
+                                size="icon-sm"
                                 title="Actions"
                               >
                                 <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
@@ -578,7 +577,7 @@ export default function AdminDirectoryPage(): ReactNode {
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              {isAdminOrSuperAdmin && (
+                              {isSuperAdmin && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
@@ -703,6 +702,7 @@ export default function AdminDirectoryPage(): ReactNode {
               onClick={handleEditSubmit}
               disabled={updateEmployeeMutation.isPending}
             >
+              <Save className="mr-2 h-4 w-4" />
               {updateEmployeeMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
