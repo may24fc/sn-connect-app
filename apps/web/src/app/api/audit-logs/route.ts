@@ -1,7 +1,21 @@
+import { formatLabel } from '@/lib/format';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
+const ADMIN_ROLES = ['admin', 'super_admin'] as const;
+
+type AdminRole = (typeof ADMIN_ROLES)[number];
+type ActivityScope = 'admin' | 'super_admin';
+
+const SCOPE_ACTOR_ROLE: Record<ActivityScope, AdminRole> = {
+  admin: 'admin',
+  super_admin: 'super_admin',
+};
+
+const SCOPE_INCLUDES_SYSTEM_ACTIVITY: Record<ActivityScope, boolean> = {
+  admin: false,
+  super_admin: true,
+};
 
 /** Human-readable labels for audit log actions and table operations */
 const ACTION_LABELS: Record<string, string> = {
@@ -41,7 +55,12 @@ const ACTION_LABELS: Record<string, string> = {
   update_daily_log: 'Updated a daily log',
   // AI
   create_ai_chat: 'Started an AI chat session',
+  ai_chat_suggestion_click: 'Clicked an AI chat suggestion',
   // Onboarding
+  approve_onboarding: 'Approved onboarding',
+  reject_onboarding: 'Rejected onboarding',
+  approve_onabording: 'Approved onboarding',
+  reject_onabording: 'Rejected onboarding',
   create_onboarding: 'Started an onboarding process',
   update_onboarding: 'Updated onboarding progress',
   complete_onboarding: 'Completed onboarding',
@@ -80,6 +99,7 @@ const TABLE_LABELS: Record<string, string> = {
   invoices: 'invoice',
   invoice_line_items: 'invoice line item',
   okrs: 'OKR',
+  okr_targets: 'OKR target',
   kpis: 'KPI',
   standup_recordings: 'standup recording',
   standup_topics: 'standup topic',
@@ -98,6 +118,37 @@ const OP_VERBS: Record<string, string> = {
   INSERT: 'Created',
   UPDATE: 'Updated',
   DELETE: 'Deleted',
+};
+
+const IGNORED_CHANGE_FIELDS = new Set(['updated_at', 'created_at']);
+
+const SENSITIVE_CHANGE_FIELDS = new Set([
+  'payroll_account_name',
+  'payroll_account_number',
+  'birthday',
+  'phone',
+  'emergency_contact_name',
+  'emergency_contact_number',
+  'personal_email',
+  'company_email',
+  'address',
+  'city',
+  'province',
+  'postal_code',
+]);
+
+const FIELD_LABELS: Record<string, string> = {
+  role: 'role',
+  status: 'status',
+  manager_id: 'manager',
+  department_id: 'department',
+  immediate_head: 'manager',
+  employment_type: 'employment type',
+  work_arrangement: 'work arrangement',
+  position: 'position',
+  department: 'department',
+  probation_end_date: 'probation end date',
+  deleted_at: 'account status',
 };
 
 /** Maps table names to display categories for UI badges */
@@ -123,6 +174,7 @@ const TABLE_CATEGORIES: Record<string, { label: string; category: string }> = {
   review_cycles: { label: 'Performance', category: 'performance' },
   performance_reviews: { label: 'Performance', category: 'performance' },
   okrs: { label: 'Performance', category: 'performance' },
+  okr_targets: { label: 'Performance', category: 'performance' },
   kpis: { label: 'Performance', category: 'performance' },
   role_kpi_entries: { label: 'Performance', category: 'performance' },
   internships: { label: 'Internships', category: 'internships' },
@@ -149,49 +201,251 @@ const TABLE_CATEGORIES: Record<string, { label: string; category: string }> = {
 
 /** Formats a raw table_name into a readable label as fallback */
 function formatTableName(tableName: string): string {
-  return tableName
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return formatLabel(tableName);
+}
+
+function normalizeAction(action: string): string {
+  return formatLabel(action);
+}
+
+function isAdminRole(role: string | null): role is AdminRole {
+  return typeof role === 'string' && ADMIN_ROLES.includes(role as AdminRole);
+}
+
+function resolveActivityScope(rawScope: string | null, role: AdminRole): ActivityScope | null {
+  if (!rawScope) {
+    return role === 'super_admin' ? 'super_admin' : 'admin';
+  }
+
+  if (rawScope !== 'admin' && rawScope !== 'super_admin') {
+    return null;
+  }
+
+  if (rawScope === 'super_admin' && role !== 'super_admin') {
+    return null;
+  }
+
+  return rawScope;
+}
+
+async function getScopedActorIds(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  actorRole: AdminRole
+): Promise<string[]> {
+  const { data: scopedUsers, error: scopeUserError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('role', actorRole)
+    .is('deleted_at', null);
+
+  if (scopeUserError) {
+    throw scopeUserError;
+  }
+
+  return (scopedUsers ?? []).map((scopedUser: { id: string }) => scopedUser.id);
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function getStringValue(record: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const candidate = record[key];
+    if (typeof candidate === 'string' && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
+  }
+  return '';
+}
+
+function getFullName(record: Record<string, unknown>): string {
+  const firstName = typeof record.first_name === 'string' ? record.first_name.trim() : '';
+  const lastName = typeof record.last_name === 'string' ? record.last_name.trim() : '';
+  return [firstName, lastName].filter(Boolean).join(' ');
+}
+
+function getChangedFields(
+  oldValues: Record<string, unknown> | null,
+  newValues: Record<string, unknown> | null
+): string[] {
+  const oldRecord = asRecord(oldValues);
+  const newRecord = asRecord(newValues);
+  const keys = new Set([...Object.keys(oldRecord), ...Object.keys(newRecord)]);
+
+  const changed = [...keys].filter((key) => {
+    if (IGNORED_CHANGE_FIELDS.has(key)) return false;
+    return oldRecord[key] !== newRecord[key];
+  });
+
+  return changed;
+}
+
+function buildSubject(row: {
+  table_name: string;
+  record_id: string;
+  metadata: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
+  old_values: Record<string, unknown> | null;
+}): string {
+  const metadata = asRecord(row.metadata);
+  const newValues = asRecord(row.new_values);
+  const oldValues = asRecord(row.old_values);
+
+  const fullName =
+    getFullName(metadata) ||
+    getFullName(newValues) ||
+    getFullName(oldValues);
+
+  const titleLike =
+    getStringValue(metadata, ['title', 'name', 'employeeName', 'resourceTitle', 'reportTitle']) ||
+    getStringValue(newValues, ['title', 'name']) ||
+    getStringValue(oldValues, ['title', 'name']);
+
+  const emailLike =
+    getStringValue(metadata, ['email', 'userEmail', 'company_email', 'personal_email']) ||
+    getStringValue(newValues, ['email', 'company_email', 'personal_email']) ||
+    getStringValue(oldValues, ['email', 'company_email', 'personal_email']);
+
+  if (fullName) return fullName;
+  if (titleLike) return titleLike;
+  if (emailLike) return emailLike;
+
+  if (row.table_name === 'users') {
+    return `user ${row.record_id.slice(0, 8)}`;
+  }
+
+  return '';
+}
+
+function buildChangeSummary(changedFields: string[]): string {
+  if (changedFields.length === 0) return '';
+
+  const safeFields = changedFields.filter((field) => !SENSITIVE_CHANGE_FIELDS.has(field));
+  const hasSensitive = changedFields.some((field) => SENSITIVE_CHANGE_FIELDS.has(field));
+
+  const formattedSafe = safeFields
+    .slice(0, 3)
+    .map((field) => FIELD_LABELS[field] ?? field.replace(/_/g, ' '));
+
+  const parts: string[] = [];
+  if (formattedSafe.length > 0) {
+    parts.push(`changed ${formattedSafe.join(', ')}`);
+  }
+  if (hasSensitive) {
+    parts.push('updated sensitive profile details');
+  }
+
+  return parts.join(' and ');
+}
+
+function buildFallbackDescription(row: {
+  table_name: string;
+  operation: string;
+  old_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+  record_id: string;
+}): { description: string; detail: string } {
+  const subject = buildSubject(row);
+  const changedFields = getChangedFields(row.old_values, row.new_values);
+  const changeSummary = buildChangeSummary(changedFields);
+
+  if (row.table_name === 'users') {
+    if (changedFields.includes('role')) {
+      return {
+        description: 'Updated user role',
+        detail: subject ? `for ${subject}` : '',
+      };
+    }
+
+    if (changedFields.includes('status')) {
+      return {
+        description: 'Updated user status',
+        detail: subject ? `for ${subject}` : '',
+      };
+    }
+
+    if (changedFields.includes('deleted_at')) {
+      const newValues = asRecord(row.new_values);
+      const isSoftDeleted = Boolean(newValues.deleted_at);
+      return {
+        description: isSoftDeleted ? 'Deactivated user account' : 'Reactivated user account',
+        detail: subject ? `for ${subject}` : '',
+      };
+    }
+  }
+
+  const verb = OP_VERBS[row.operation] ?? 'Updated';
+  const entity = TABLE_LABELS[row.table_name] ?? formatTableName(row.table_name);
+  const article = /^[aeiou]/i.test(entity) ? 'an' : 'a';
+  const description = `${verb} ${article} ${entity}`;
+
+  const detailParts: string[] = [];
+  if (subject) {
+    detailParts.push(`for ${subject}`);
+  }
+  if (changeSummary && row.operation === 'UPDATE') {
+    detailParts.push(changeSummary);
+  }
+
+  return {
+    description,
+    detail: detailParts.join(' - '),
+  };
 }
 
 function describeActivity(row: {
   action: string | null;
   table_name: string;
+  record_id: string;
   operation: string;
   metadata: Record<string, unknown> | null;
+  old_values: Record<string, unknown> | null;
   new_values: Record<string, unknown> | null;
 }): { description: string; detail: string } {
-  const titleFromMeta =
-    (row.metadata?.title as string) ||
-    (row.new_values?.title as string) ||
-    (row.metadata?.name as string) ||
-    (row.new_values?.name as string) ||
-    '';
+  const subject = buildSubject(row);
+  const changedFields = getChangedFields(row.old_values, row.new_values);
+  const changeSummary = buildChangeSummary(changedFields);
 
   // Prefer explicit action label (from `action` column)
   if (row.action && ACTION_LABELS[row.action]) {
+    const detailParts: string[] = [];
+    if (subject) detailParts.push(`for ${subject}`);
+    if (changeSummary && row.operation === 'UPDATE') detailParts.push(changeSummary);
+
     return {
       description: ACTION_LABELS[row.action]!,
-      detail: titleFromMeta ? `"${titleFromMeta}"` : '',
+      detail: detailParts.join(' - '),
     };
   }
 
   // Try matching operation column against action labels (edge functions write action to operation)
   if (row.operation && ACTION_LABELS[row.operation]) {
+    const detailParts: string[] = [];
+    if (subject) detailParts.push(`for ${subject}`);
+    if (changeSummary && row.operation === 'UPDATE') detailParts.push(changeSummary);
+
     return {
       description: ACTION_LABELS[row.operation]!,
-      detail: titleFromMeta ? `"${titleFromMeta}"` : '',
+      detail: detailParts.join(' - '),
+    };
+  }
+
+  if (row.action) {
+    const detailParts: string[] = [];
+    if (subject) detailParts.push(`for ${subject}`);
+    if (changeSummary && row.operation === 'UPDATE') detailParts.push(changeSummary);
+
+    return {
+      description: normalizeAction(row.action),
+      detail: detailParts.join(' - '),
     };
   }
 
   // Fallback to table_name + operation
-  const verb = OP_VERBS[row.operation] ?? 'Updated';
-  const entity = TABLE_LABELS[row.table_name] ?? formatTableName(row.table_name);
-
-  return {
-    description: `${verb} a ${entity}`,
-    detail: titleFromMeta ? `"${titleFromMeta}"` : '',
-  };
+  return buildFallbackDescription(row);
 }
 
 /**
@@ -200,6 +454,7 @@ function describeActivity(row: {
  * Query params:
  *   - limit (default 10, max 50)
  *   - own (if "true", only show the current user's activity)
+ *   - scope (`admin` or `super_admin`; defaults to the current user's dashboard scope)
  */
 export async function GET(request: Request): Promise<NextResponse> {
   try {
@@ -229,7 +484,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       role = roleData?.role ?? null;
     }
 
-    if (!role || !ADMIN_ROLES.includes(role)) {
+    if (!isAdminRole(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -237,15 +492,41 @@ export async function GET(request: Request): Promise<NextResponse> {
     const limitParam = Number(url.searchParams.get('limit') || '10');
     const limit = Math.min(Math.max(1, limitParam), 50);
     const ownOnly = url.searchParams.get('own') === 'true';
+    const scopeParam = url.searchParams.get('scope');
+
+    if (scopeParam && scopeParam !== 'admin' && scopeParam !== 'super_admin') {
+      return NextResponse.json({ error: 'Invalid scope' }, { status: 400 });
+    }
+
+    const scope = resolveActivityScope(scopeParam, role);
+
+    if (!scope) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     let query = supabase
       .from('audit_logs')
-      .select('id, table_name, record_id, operation, action, metadata, new_values, performed_by, performed_at')
+      .select('id, table_name, record_id, operation, action, metadata, old_values, new_values, performed_by, performed_at')
       .order('performed_at', { ascending: false })
       .limit(limit);
 
     if (ownOnly) {
       query = query.eq('performed_by', user.id);
+    } else {
+      const actorIds = await getScopedActorIds(supabase, SCOPE_ACTOR_ROLE[scope]);
+      const includeSystemActivity = SCOPE_INCLUDES_SYSTEM_ACTIVITY[scope];
+
+      if (actorIds.length === 0 && !includeSystemActivity) {
+        return NextResponse.json({ data: [] });
+      }
+
+      if (actorIds.length === 0) {
+        query = query.is('performed_by', null);
+      } else if (includeSystemActivity) {
+        query = query.or(`performed_by.in.(${actorIds.join(',')}),performed_by.is.null`);
+      } else {
+        query = query.in('performed_by', actorIds);
+      }
     }
 
     const { data: logs, error: fetchError } = await query;
@@ -255,12 +536,22 @@ export async function GET(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'Failed to fetch audit logs' }, { status: 500 });
     }
 
-    // Get unique user IDs to fetch display names
+    // Get unique actor and target user IDs to fetch display names
     const userIds = [
       ...new Set(
-        (logs ?? [])
-          .map((l: Record<string, unknown>) => l.performed_by as string | null)
-          .filter(Boolean)
+        (logs ?? []).flatMap((log: Record<string, unknown>) => {
+          const ids: string[] = [];
+
+          if (typeof log.performed_by === 'string' && log.performed_by.length > 0) {
+            ids.push(log.performed_by);
+          }
+
+          if (log.table_name === 'users' && typeof log.record_id === 'string' && log.record_id.length > 0) {
+            ids.push(log.record_id);
+          }
+
+          return ids;
+        })
       ),
     ] as string[];
 
@@ -288,11 +579,29 @@ export async function GET(request: Request): Promise<NextResponse> {
         operation: string;
         action: string | null;
         metadata: Record<string, unknown> | null;
+        old_values: Record<string, unknown> | null;
         new_values: Record<string, unknown> | null;
         performed_by: string | null;
         performed_at: string;
       }) => {
-        const { description, detail } = describeActivity(log);
+        const metadata = asRecord(log.metadata);
+        const existingSubject =
+          getFullName(metadata) ||
+          getStringValue(metadata, ['title', 'name', 'employeeName', 'resourceTitle', 'reportTitle']) ||
+          getStringValue(metadata, ['email', 'userEmail', 'company_email', 'personal_email']);
+
+        const enrichedLog =
+          log.table_name === 'users' && !existingSubject && userMap[log.record_id]
+            ? {
+                ...log,
+                metadata: {
+                  ...metadata,
+                  name: userMap[log.record_id],
+                },
+              }
+            : log;
+
+        const { description, detail } = describeActivity(enrichedLog);
         const categoryInfo = TABLE_CATEGORIES[log.table_name];
         return {
           id: log.id,

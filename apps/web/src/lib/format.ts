@@ -2,13 +2,46 @@
  * Shared formatting utilities for consistent UI display across all tables and views.
  */
 
+const LABEL_TOKEN_MAP: Record<string, string> = {
+  ai: 'AI',
+  api: 'API',
+  ceo: 'CEO',
+  cos: 'CoS',
+  hr: 'HR',
+  id: 'ID',
+  kpi: 'KPI',
+  kpis: 'KPIs',
+  okr: 'OKR',
+  okrs: 'OKRs',
+  ui: 'UI',
+  ux: 'UX',
+};
+
+function formatLabelToken(token: string): string {
+  const normalizedToken = token.toLowerCase();
+  const mappedToken = LABEL_TOKEN_MAP[normalizedToken];
+
+  if (mappedToken) {
+    return mappedToken;
+  }
+
+  return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+}
+
 /**
  * Converts a snake_case or lowercase database value to a human-friendly Title Case label.
  * e.g. "in_progress" → "In Progress", "pending" → "Pending", "approved" → "Approved"
  */
 export function formatLabel(value: string | null | undefined): string {
   if (!value) return '—';
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
+  return value
+    .trim()
+    .replace(/_/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => formatLabelToken(token))
+    .join(' ');
 }
 
 /**

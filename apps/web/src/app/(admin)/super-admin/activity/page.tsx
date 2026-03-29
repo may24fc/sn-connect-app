@@ -87,7 +87,7 @@ function getCategoryIcon(category: string) {
 }
 
 export default function SuperAdminActivityPage(): ReactNode {
-  const { data, isLoading } = useRecentActivity(100);
+  const { data, isLoading } = useRecentActivity(50, { scope: 'super_admin' });
   const activities = data ?? [];
 
   return (
@@ -101,10 +101,10 @@ export default function SuperAdminActivityPage(): ReactNode {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            All Activity
+            Super Admin Activity
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Full audit trail of recent actions across the portal
+            Recent super-admin and automated system actions
           </p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function SuperAdminActivityPage(): ReactNode {
               <Activity className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3" strokeWidth={1.5} />
               <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">No activity yet</p>
               <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-                Actions performed across the portal will appear here
+                Super-admin and system actions will appear here
               </p>
             </div>
           ) : (
@@ -140,7 +140,7 @@ export default function SuperAdminActivityPage(): ReactNode {
                   <div className="flex items-start gap-3 min-w-0">
                     {getActionIcon(activity.action)}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                         {activity.action}
                       </p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
