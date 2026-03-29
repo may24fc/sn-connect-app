@@ -19,6 +19,7 @@ import {
   Input,
   Label,
   Select,
+  EmptyState,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -26,9 +27,11 @@ import {
   SlidePanel,
   SlidePanelBody,
   SlidePanelContent,
+  AlertCircle,
   SlidePanelFooter,
   SlidePanelHeader,
   SlidePanelTitle,
+  Loader2,
   Table,
   TableBody,
   TableCell,
@@ -36,26 +39,36 @@ import {
   TableHeader,
   TableRow,
   Textarea,
-  useToast,
-} from '@hr-portal/ui';
+            <CardContent className="p-0">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading job postings"
+                description="Retrieving job postings and current filters."
+                size="sm"
+              />
 import {
   Archive,
   Briefcase,
   Edit,
-  Plus,
-  Search,
+            <CardContent className="p-0">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to load job postings"
+                description="The jobs list could not be retrieved. Refresh and try again."
+                size="sm"
+              />
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
-type FormMode = 'create' | 'edit';
-
-interface JobFormData {
-  title: string;
-  business_unit_id: string;
-  department: string;
-  location: string;
-  total_headcount: number;
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Briefcase}
+                title="No job postings yet"
+                description="Create your first job posting to start receiving applications."
+                action={{ label: 'Create Job', onClick: openCreateForm }}
+                size="md"
+              />
   employment_type: string;
   description: string;
   requirements: string;

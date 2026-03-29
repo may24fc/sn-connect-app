@@ -20,6 +20,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  EmptyState,
   type DailyReport,
   type DailyReportId,
   DailyReportList,
@@ -459,7 +460,12 @@ export default function InternDetailPage({
               <CardDescription>Internal notes about this intern</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm">No notes added yet.</p>
+              <EmptyState
+                icon={MessageSquare}
+                title="No notes added yet"
+                description="Internal HR notes for this intern will appear here once they are recorded."
+                size="sm"
+              />
             </CardContent>
             <CardFooter>
               <Button variant="outline" size="sm">

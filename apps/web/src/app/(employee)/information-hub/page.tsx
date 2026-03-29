@@ -15,6 +15,7 @@ import {
   CardTitle,
   CountBadge,
   CategoryBrowser,
+  EmptyState,
   Input,
   ResourceCard,
   ResourceGrid,
@@ -24,6 +25,7 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
+  Loader2,
   Search,
   Star,
 } from 'lucide-react';
@@ -225,8 +227,28 @@ export default function ResourcesPage() {
 
         {isResourcesLoading ? (
           <Card>
-            <CardContent className="p-6 text-sm text-zinc-600 dark:text-zinc-400">
-              Loading resources...
+            <CardContent>
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading resources"
+                description="Resources are still loading."
+                size="sm"
+              />
+            </CardContent>
+          </Card>
+        ) : resources.length === 0 ? (
+          <Card>
+            <CardContent>
+              <EmptyState
+                icon={Search}
+                title="No resources found"
+                description={
+                  search || selectedResourceCategory
+                    ? 'No resources match the current search or category filter.'
+                    : 'Resources will appear here once content is published to the information hub.'
+                }
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : (

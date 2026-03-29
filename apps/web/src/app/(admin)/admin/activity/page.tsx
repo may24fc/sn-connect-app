@@ -1,7 +1,7 @@
 'use client';
 
 import { useRecentActivity } from '@/hooks/useRecentActivity';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@hr-portal/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@hr-portal/ui';
 import {
   Activity,
   ArrowLeft,
@@ -123,13 +123,12 @@ export default function AdminActivityPage(): ReactNode {
               <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
             </div>
           ) : activities.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Activity className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3" strokeWidth={1.5} />
-              <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">No activity yet</p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-                Admin actions will appear here
-              </p>
-            </div>
+            <EmptyState
+              icon={Activity}
+              title="No activity yet"
+              description="Admin actions will appear here as changes are made across the portal."
+              size="sm"
+            />
           ) : (
             <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {activities.map((activity) => (

@@ -12,6 +12,7 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   Input,
   Table,
   TableBody,
@@ -21,7 +22,7 @@ import {
   TableRow,
   useToast,
 } from '@hr-portal/ui';
-import { Archive, ArrowLeft, RotateCcw, Search } from 'lucide-react';
+import { AlertCircle, Archive, ArrowLeft, Loader2, RotateCcw, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -68,16 +69,6 @@ export default function ArchivedJobsPage() {
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
-  function handleRestore(id: string) {
-    const job = jobs.find((j) => j.id === id);
-    restoreJob.mutate(id, {
-      onSuccess: () =>
-        addToast({
-          variant: 'success',
-          title: 'Job posting restored',
-          ...(job ? { description: `"${job.title}" has been restored and is now active.` } : {}),
-        }),
-      onError: () =>
         addToast({
           variant: 'error',
           title: 'Failed to restore posting',
@@ -137,26 +128,35 @@ export default function ArchivedJobsPage() {
       <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400 text-center">
-              Loading archived postings...
+            <CardContent className="p-0">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading archived postings"
+                description="Retrieving archived job postings and filters."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : error ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400 text-center">
-              Failed to load archived postings.
+            <CardContent className="p-0">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to load archived postings"
+                description="Archived job postings could not be retrieved. Refresh and try again."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : jobs.length === 0 ? (
           <Card className="bg-card border border-border rounded-lg p-12">
-            <CardContent className="p-0 flex flex-col items-center gap-3">
-              <Archive className="h-12 w-12 text-zinc-300 dark:text-zinc-600" />
-              <p className="text-lg font-medium text-zinc-700 dark:text-zinc-300">
-                No archived postings
-              </p>
-              <p className="text-sm text-zinc-500">
-                Job postings that are archived will appear here.
-              </p>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Archive}
+                title="No archived postings"
+                description="Job postings that are archived will appear here."
+                size="md"
+              />
             </CardContent>
           </Card>
         ) : (

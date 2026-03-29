@@ -1,6 +1,5 @@
 'use client';
 
-import { EmptyState } from '@/components/data-display/EmptyState';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
   ChecklistManagementDialog,
@@ -17,6 +16,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  EmptyState,
   Select,
   SelectContent,
   SelectItem,

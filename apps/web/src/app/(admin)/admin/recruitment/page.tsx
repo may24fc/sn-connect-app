@@ -1,10 +1,10 @@
 'use client';
 
-import { EmptyState, StatCard, StatCardGrid } from '@/components/data-display';
+import { StatCard, StatCardGrid } from '@/components/data-display';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { useApplications } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@hr-portal/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@hr-portal/ui';
 import {
   Archive,
   ArrowRight,

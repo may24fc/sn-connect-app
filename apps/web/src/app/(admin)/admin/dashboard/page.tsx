@@ -6,7 +6,6 @@ import {
   BentoCardHeader,
   BentoCardTitle,
   BentoGrid,
-  EmptyState,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
@@ -16,7 +15,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMilestones } from '@/hooks/useMilestones';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
-import { Button, DashboardAttentionCarousel, MilestoneBanner } from '@hr-portal/ui';
+import { Button, DashboardAttentionCarousel, EmptyState, MilestoneBanner } from '@hr-portal/ui';
 import {
   Calendar,
   CheckCircle,

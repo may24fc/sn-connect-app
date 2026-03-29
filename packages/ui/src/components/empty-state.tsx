@@ -1,41 +1,138 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
+import { FileQuestion } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '../primitives/button';
 import { cn } from '../utils/cn';
 
+type EmptyStateAction = {
+  label: string;
+  onClick?: () => void;
+  href?: string;
+  icon?: ReactNode;
+};
+
 export interface EmptyStateProps {
-  icon?: LucideIcon;
+  icon?: LucideIcon | ReactNode;
   title: string;
   description?: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
+  action?: EmptyStateAction;
+  secondaryAction?: EmptyStateAction;
+  size?: 'sm' | 'md' | 'lg';
+  appearance?: 'default' | 'inverse';
   className?: string;
 }
 
-export function EmptyState({ icon: Icon, title, description, action, className }: EmptyStateProps) {
+const appearanceClasses = {
+  default: {
+    icon: 'text-zinc-500 dark:text-zinc-400',
+    title: 'text-zinc-900 dark:text-zinc-100',
+    description: 'text-zinc-500 dark:text-zinc-400',
+  },
+  inverse: {
+    icon: 'text-zinc-400',
+    title: 'text-zinc-100',
+    description: 'text-zinc-300',
+  },
+} as const;
+
+const sizeClasses = {
+  sm: {
+    container: 'py-8',
+    icon: 'h-5 w-5',
+    title: 'text-sm',
+    description: 'text-xs',
+    button: 'sm' as const,
+  },
+  md: {
+    container: 'py-12',
+    icon: 'h-5 w-5',
+    title: 'text-base',
+    description: 'text-sm',
+    button: 'default' as const,
+  },
+  lg: {
+    container: 'py-16',
+    icon: 'h-5 w-5',
+    title: 'text-lg',
+    description: 'text-base',
+    button: 'default' as const,
+  },
+} as const;
+
+function renderAction(
+  action: EmptyStateAction,
+  variant: 'default' | 'outline',
+  size: 'sm' | 'default'
+) {
+  const content = (
+    <>
+      {action.icon ? <span>{action.icon}</span> : null}
+      {action.label}
+    </>
+  );
+
+  if (action.href) {
+    return (
+      <Button asChild variant={variant} size={size}>
+        <a href={action.href}>{content}</a>
+      </Button>
+    );
+  }
+
+  return (
+    <Button variant={variant} size={size} onClick={action.onClick}>
+      {content}
+    </Button>
+  );
+}
+
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  secondaryAction,
+  size = 'md',
+  appearance = 'default',
+  className,
+}: EmptyStateProps) {
+  const sizes = sizeClasses[size];
+  const colors = appearanceClasses[appearance];
+  const Icon = typeof icon === 'function' ? (icon as LucideIcon) : null;
+  const customIcon = Icon ? null : (icon as ReactNode | undefined);
+
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 p-8 text-center',
+        'flex flex-col items-center justify-center text-center',
+        sizes.container,
         className
       )}
     >
-      {Icon && (
-        <div className="mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 p-3">
-          <Icon className="h-6 w-6 text-zinc-500 dark:text-zinc-400" />
-        </div>
-      )}
-      <h3 className="mb-2 text-sm font-medium tracking-tight">{title}</h3>
+      <div className={cn('mb-4', colors.icon)}>
+        {Icon ? (
+          <Icon className={sizes.icon} strokeWidth={1.5} />
+        ) : customIcon ? (
+          <span className={sizes.icon}>{customIcon}</span>
+        ) : (
+          <FileQuestion className={sizes.icon} strokeWidth={1.5} />
+        )}
+      </div>
+      <h3 className={cn('mb-1 font-medium tracking-tight', colors.title, sizes.title)}>
+        {title}
+      </h3>
       {description && (
-        <p className="mb-4 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{description}</p>
+        <p className={cn('mb-4 max-w-sm', colors.description, sizes.description)}>
+          {description}
+        </p>
       )}
-      {action && (
-        <Button onClick={action.onClick} size="sm">
-          {action.label}
-        </Button>
+      {(action || secondaryAction) && (
+        <div className="mt-2 flex items-center gap-3">
+          {action ? renderAction(action, 'default', sizes.button) : null}
+          {secondaryAction ? renderAction(secondaryAction, 'outline', sizes.button) : null}
+        </div>
       )}
     </div>
   );

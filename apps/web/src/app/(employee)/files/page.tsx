@@ -21,6 +21,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   FileDropZone,
   FullScreenPreview,
   useToast,
@@ -388,21 +389,18 @@ export default function FilesPage() {
         )
       ) : documents.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <FileText className="h-12 w-12 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">No documents yet</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Upload your first document to get started
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={() => setUploadOpen(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Document
-            </Button>
+          <CardContent>
+            <EmptyState
+              icon={FileText}
+              title="No documents yet"
+              description="Upload your first document to get started."
+              action={{
+                label: 'Upload document',
+                onClick: () => setUploadOpen(true),
+                icon: <Upload className="h-4 w-4" />,
+              }}
+              size="md"
+            />
           </CardContent>
         </Card>
       ) : viewMode === 'cards' ? (

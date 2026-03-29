@@ -11,6 +11,7 @@ import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
   Button,
+  EmptyState,
   Input,
   Label,
   OKRList,
@@ -322,16 +323,25 @@ export default function OKRsPage(): ReactNode {
       </div>
 
       {/* OKR List */}
-      <OKRList
-        okrs={filteredOKRs}
-        readonly={false}
-        onUpdateKeyResult={handleUpdateKeyResult}
-        emptyMessage={
-          statusFilter !== 'all'
-            ? 'No OKRs match the selected filter'
-            : 'No OKRs created yet. Click "New Objective" to get started.'
-        }
-      />
+      {filteredOKRs.length === 0 ? (
+        <EmptyState
+          icon={Target}
+          title={statusFilter !== 'all' ? 'No OKRs match the selected filter' : 'No OKRs created yet'}
+          description={
+            statusFilter !== 'all'
+              ? 'Adjust the status filter to widen the OKR list.'
+              : 'Click "New Objective" to create your first OKR and start tracking progress.'
+          }
+          size="md"
+        />
+      ) : (
+        <OKRList
+          okrs={filteredOKRs}
+          readonly={false}
+          onUpdateKeyResult={handleUpdateKeyResult}
+          emptyMessage=""
+        />
+      )}
 
       {/* Create OKR — Slide Panel */}
       <SlidePanel open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

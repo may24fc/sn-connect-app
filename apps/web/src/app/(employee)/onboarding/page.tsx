@@ -1,6 +1,5 @@
 'use client';
 
-import { EmptyState } from '@/components/data-display/EmptyState';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useOffboardingSummary } from '@/hooks/useOffboardingSummary';
 import { useOnboardingProgressSummary } from '@/hooks/useOnboardingProgressSummary';
@@ -12,6 +11,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  EmptyState,
   Progress,
   Tabs,
   TabsContent,

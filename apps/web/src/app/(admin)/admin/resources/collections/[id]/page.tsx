@@ -15,6 +15,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   Input,
   ResourceCard,
   ResourceGrid,
@@ -22,7 +23,7 @@ import {
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useRouter } from 'next/navigation';
-import { Plus, Save } from 'lucide-react';
+import { FileText, Loader2, Plus, Save } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function CollectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -153,13 +154,19 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
         </CardHeader>
         <CardContent className="space-y-4">
           {isCollectionResourcesLoading ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              Loading collection resources...
-            </p>
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading collection resources"
+              description="Collection resources are still loading."
+              size="sm"
+            />
           ) : collectionResources.length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No resources in this collection yet.
-            </p>
+            <EmptyState
+              icon={FileText}
+              title="No resources in this collection yet"
+              description="Add published resources to start building this collection."
+              size="sm"
+            />
           ) : (
             <ResourceGrid
               columns={4}

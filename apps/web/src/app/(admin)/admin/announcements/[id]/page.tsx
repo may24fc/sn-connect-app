@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  EmptyState,
   Input,
   Label,
   Skeleton,
@@ -32,7 +33,7 @@ import {
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Archive, ArrowLeft, Globe, MoreHorizontal, Pencil, Pin, PinOff, Save } from 'lucide-react';
+import { AlertCircle, Archive, ArrowLeft, Globe, MoreHorizontal, Pencil, Pin, PinOff, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type ViewMode = 'preview' | 'edit';
@@ -224,9 +225,16 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <div className="p-6 text-sm text-rose-600 dark:text-rose-400">
-          Failed to load announcement.
-        </div>
+        <Card>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load announcement"
+              description="This announcement could not be retrieved. Go back or refresh and try again."
+              size="sm"
+            />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -302,7 +310,6 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
 
-        {/* Announcement preview */}
         <div className="bg-card border border-border rounded-lg">
           <div className="p-6 space-y-4">
             {/* Title & meta row */}

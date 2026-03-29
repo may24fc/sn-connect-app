@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  EmptyState,
   Input,
   Label,
   OKRStatusBadge,
@@ -319,25 +320,31 @@ export default function PerformancePage(): ReactNode {
 
         {okrs.length === 0 ? (
           <Card>
-            <CardContent className="p-8 text-center">
-              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-semibold text-lg mb-2">No objectives yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first objective, then add targets and KPIs to track your progress.
-              </p>
-              <Button onClick={handleOpenCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Objective
-              </Button>
+            <CardContent>
+              <EmptyState
+                icon={Target}
+                title="No objectives yet"
+                description="Create your first objective, then add targets and KPIs to track your progress."
+                action={{
+                  label: 'Create objective',
+                  onClick: handleOpenCreate,
+                  icon: <Plus className="h-4 w-4" />,
+                }}
+                size="md"
+              />
             </CardContent>
           </Card>
         ) : (() => {
           const filteredOkrs = statusFilter === 'all' ? okrs : okrs.filter((o) => o.status === statusFilter);
           return filteredOkrs.length === 0 ? (
             <Card>
-              <CardContent className="p-8 text-center">
-                <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No objectives match the selected filter</p>
+              <CardContent>
+                <EmptyState
+                  icon={Target}
+                  title="No objectives match the selected filter"
+                  description="Adjust the status filter to widen the objective list."
+                  size="sm"
+                />
               </CardContent>
             </Card>
           ) : (

@@ -4,12 +4,14 @@ import { useResourceFeed } from '@/hooks/useResourceFeed';
 import { formatDate } from '@/lib/format';
 import {
   Button,
+  EmptyState,
   ResourceCard,
   ResourceFilters,
   type ResourceFiltersValue,
   ResourceGrid,
 } from '@hr-portal/ui';
 import Link from 'next/link';
+import { FolderOpen, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function ResourceCategoryPage({
@@ -102,7 +104,19 @@ export default function ResourceCategoryPage({
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading resources...</div>
+        <EmptyState
+          icon={<Loader2 className="h-5 w-5 animate-spin" />}
+          title="Loading resources"
+          description="Resources for this category are still loading."
+          size="sm"
+        />
+      ) : resources.length === 0 ? (
+        <EmptyState
+          icon={FolderOpen}
+          title="No resources found"
+          description="No resources match the current category filters."
+          size="sm"
+        />
       ) : (
         <ResourceGrid
           columns={4}

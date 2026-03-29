@@ -14,6 +14,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   Select,
   SelectContent,
   SelectItem,
@@ -347,17 +348,16 @@ export default function AdminNotificationsPage(): ReactNode {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-4">
-              <Bell className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3" strokeWidth={1.5} />
-              <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                No notifications found
-              </p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-                {filters.isRead !== 'all' || filters.type
-                  ? 'Try adjusting your filters'
-                  : 'Notifications will appear here when you receive them'}
-              </p>
-            </div>
+            <EmptyState
+              icon={Bell}
+              title="No notifications found"
+              description={
+                filters.isRead !== 'all' || filters.type
+                  ? 'Try adjusting your filters to widen the notification list.'
+                  : 'Notifications will appear here when you receive them.'
+              }
+              size="sm"
+            />
           ) : (
             <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {notifications.map((notification) => {

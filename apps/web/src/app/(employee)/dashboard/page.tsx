@@ -6,7 +6,6 @@ import {
   BentoCardHeader,
   BentoCardTitle,
   BentoGrid,
-  EmptyState,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
@@ -20,7 +19,7 @@ import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useR
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import KPIEntryWidget from './components/KPIEntryWidget';
-import { Badge, Button, MilestoneBanner, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
+import { Badge, Button, EmptyState, MilestoneBanner, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
 import type { KPICardData } from '@hr-portal/ui';
 import {
   Bell,

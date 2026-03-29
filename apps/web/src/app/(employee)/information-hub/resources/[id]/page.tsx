@@ -12,13 +12,14 @@ import { formatDate } from '@/lib/format';
 import {
   Button,
   DocumentViewer,
+  EmptyState,
   type ResourceAccessLevel,
   ResourceCard,
   ResourceGrid,
   VideoPlayer,
   useToast,
 } from '@hr-portal/ui';
-import { Bookmark, CheckCircle2, Download } from 'lucide-react';
+import { Bookmark, CheckCircle2, Download, FileText, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -83,7 +84,16 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
   const isViewOnly = streamAccessLevel === 'view_only';
 
   if (isLoading || !resource) {
-    return <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading resource...</div>;
+    return (
+      <div className="p-6">
+        <EmptyState
+          icon={<Loader2 className="h-5 w-5 animate-spin" />}
+          title="Loading resource"
+          description="Resource details are still loading."
+          size="sm"
+        />
+      </div>
+    );
   }
 
   const isBookmarked = bookmarkIds.has(resource.id);
@@ -149,9 +159,14 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
               {...(resource.mime_type ? { mimeType: resource.mime_type } : {})}
             />
           ) : (
-            <div className="h-full flex items-center justify-center text-zinc-300">
-              No inline preview available
-            </div>
+            <EmptyState
+              icon={FileText}
+              title="No inline preview available"
+              description="Download the file or open the source link to view this resource."
+              size="sm"
+              appearance="inverse"
+              className="h-full"
+            />
           )}
         </div>
 

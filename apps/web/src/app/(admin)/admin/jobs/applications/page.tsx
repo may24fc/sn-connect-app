@@ -14,6 +14,7 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   Input,
   ProgressTimeline,
   Select,
@@ -33,14 +34,11 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-  Tabs,
   TabsList,
   TabsTrigger,
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import type { ProgressTimelineStep } from '@hr-portal/ui';
 import {
   ArrowLeft,
   CheckCircle,
@@ -49,6 +47,7 @@ import {
   Eye,
   FileText,
   LayoutList,
+  Loader2,
   Search,
   Star,
   ThumbsDown,
@@ -109,9 +108,6 @@ export default function ApplicationsPage() {
   const [selectedApp, setSelectedApp] = useState<ApplicationRecord | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notes, setNotes] = useState('');
-
-  // Offer letter view
-  const [showOfferLetter, setShowOfferLetter] = useState(false);
 
   // Signed URL for resume preview (private bucket — generate on demand)
   const [resumeSignedUrl, setResumeSignedUrl] = useState<string | null>(null);
@@ -191,7 +187,6 @@ export default function ApplicationsPage() {
   function openCandidate(app: ApplicationRecord) {
     setSelectedApp(app);
     setNotes(app.notes || '');
-    setShowOfferLetter(false);
     setDrawerOpen(true);
   }
 
@@ -204,11 +199,10 @@ export default function ApplicationsPage() {
         setSelectedApp((prev) => (prev ? { ...prev, status: newStatus as ApplicationStatus } : null));
       }
       if (newStatus === 'approved') {
-        setShowOfferLetter(true);
         addToast({
           variant: 'success',
           title: 'Application approved',
-          description: `${candidateName} has been approved. Offer letter is ready.`,
+          description: `${candidateName} has been approved and is ready for the final hire step.`,
         });
       } else if (newStatus === 'rejected') {
         addToast({
@@ -366,26 +360,35 @@ export default function ApplicationsPage() {
       <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400 text-center">
-              Loading applications...
+            <CardContent className="p-0">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading applications"
+                description="Retrieving job applications and current pipeline filters."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : error ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-rose-600 text-center">
-              Failed to load applications.
+            <CardContent className="p-0">
+              <EmptyState
+                icon={XCircle}
+                title="Failed to load applications"
+                description="The applications list could not be retrieved. Refresh and try again."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : applications.length === 0 ? (
           <Card className="bg-card border border-border rounded-lg p-12">
-            <CardContent className="p-0 flex flex-col items-center gap-3">
-              <FileText className="h-12 w-12 text-zinc-300 dark:text-zinc-600" />
-              <p className="text-lg font-medium text-zinc-700 dark:text-zinc-300">
-                No applications yet
-              </p>
-              <p className="text-sm text-zinc-500">
-                Applications will appear here once candidates apply through your careers page.
-              </p>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={FileText}
+                title="No applications yet"
+                description="Applications will appear here once candidates apply through your careers page."
+                size="md"
+              />
             </CardContent>
           </Card>
         ) : viewMode === 'table' ? (
@@ -552,7 +555,7 @@ export default function ApplicationsPage() {
       {/* ─── CANDIDATE DETAIL DRAWER ─── */}
       <SlidePanel open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SlidePanelContent size="2xl">
-          {selectedApp && !showOfferLetter && (
+          {selectedApp && (
             <>
               <SlidePanelHeader>
                 <SlidePanelTitle>{selectedApp.full_name}</SlidePanelTitle>
@@ -791,86 +794,6 @@ export default function ApplicationsPage() {
                     </Button>
                   )}
                 </div>
-              </SlidePanelFooter>
-            </>
-          )}
-
-          {/* ─── OFFER LETTER PLACEHOLDER VIEW ─── */}
-          {selectedApp && showOfferLetter && (
-            <>
-              <SlidePanelHeader>
-                <SlidePanelTitle>Offer Letter</SlidePanelTitle>
-              </SlidePanelHeader>
-              <SlidePanelBody>
-                <div className="flex flex-col items-center gap-6 py-12">
-                  <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                    <CheckCircle className="h-10 w-10 text-emerald-600" />
-                  </div>
-                  <div className="text-center max-w-md">
-                    <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                      Application Approved!
-                    </h3>
-                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
-                      The offer letter for <strong>{selectedApp.full_name}</strong> is ready to be
-                      generated.
-                    </p>
-                  </div>
-
-                  <Card className="w-full border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50">
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div className="text-center border-b border-zinc-200 dark:border-zinc-700 pb-4">
-                          <p className="text-xs text-zinc-500 font-semibold">
-                            SN INTERNATIONAL GROUP
-                          </p>
-                          <h4 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mt-1">
-                            Employment Offer Letter
-                          </h4>
-                        </div>
-                        <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                          <p>
-                            <strong>Candidate:</strong> {selectedApp.full_name}
-                          </p>
-                          <p>
-                            <strong>Email:</strong> {selectedApp.email}
-                          </p>
-                          <p>
-                            <strong>Position:</strong>{' '}
-                            {selectedApp.job_postings?.title || 'To be assigned'}
-                          </p>
-                          <p>
-                            <strong>Department:</strong>{' '}
-                            {selectedApp.job_postings?.department || 'To be assigned'}
-                          </p>
-                          <p>
-                            <strong>Status:</strong>{' '}
-                            <Badge variant="success">Approved</Badge>
-                          </p>
-                          <p>
-                            <strong>Date:</strong> {formatDate(new Date().toISOString())}
-                          </p>
-                        </div>
-                        <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
-                          <p className="text-xs text-zinc-400 italic">
-                            This is a placeholder offer letter. The actual offer letter template
-                            will be configured by HR.
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </SlidePanelBody>
-              <SlidePanelFooter>
-                <Button variant="outline" onClick={() => setShowOfferLetter(false)}>
-                  Back to Candidate
-                </Button>
-                <Button
-                  onClick={() => setDrawerOpen(false)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white"
-                >
-                  Done
-                </Button>
               </SlidePanelFooter>
             </>
           )}

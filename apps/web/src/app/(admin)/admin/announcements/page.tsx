@@ -17,6 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  EmptyState,
   Table,
   TableBody,
   TableCell,
@@ -25,7 +26,7 @@ import {
   TableRow,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { Archive, FileText, MoreHorizontal, Pin, PinOff, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, Archive, FileText, Loader2, MoreHorizontal, Pin, PinOff, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -198,14 +199,24 @@ export default function AdminAnnouncementsPage() {
       <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-4">
-            <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400">
-              Loading announcements...
+            <CardContent className="p-0">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading announcements"
+                description="Fetching the latest announcement records and filters."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : error ? (
           <Card className="bg-card border border-border rounded-lg p-4">
-            <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400">
-              Failed to load announcements.
+            <CardContent className="p-0">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to load announcements"
+                description="The announcements list could not be retrieved. Refresh and try again."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : (

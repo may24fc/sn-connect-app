@@ -10,6 +10,7 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   CardHeader,
   CardTitle,
   Input,
@@ -26,7 +27,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import { ArrowLeft, ExternalLink, FileText, Link2, Loader2, Plus, Send, Trash2, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ExternalLink, FileText, Link2, Loader2, Plus, Send, Trash2, X } from 'lucide-react';
 import { type FormEvent, use, useState } from 'react';
 
 export default function TaskDetailPage({
@@ -99,11 +100,29 @@ export default function TaskDetailPage({
   };
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading task...</div>;
+    return (
+      <div className="mx-auto max-w-3xl py-6">
+        <EmptyState
+          icon={<Loader2 className="h-5 w-5 animate-spin" />}
+          title="Loading task"
+          description="Task details are still loading."
+          size="sm"
+        />
+      </div>
+    );
   }
 
   if (error || !task) {
-    return <div className="text-sm text-error">Failed to load task.</div>;
+    return (
+      <div className="mx-auto max-w-3xl py-6">
+        <EmptyState
+          icon={AlertCircle}
+          title="Failed to load task"
+          description="Refresh and try again to load this task."
+          size="sm"
+        />
+      </div>
+    );
   }
 
   return (
@@ -292,9 +311,12 @@ export default function TaskDetailPage({
               <Skeleton className="h-16 w-full" />
             </div>
           ) : proofs.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No proof submitted yet.
-            </p>
+            <EmptyState
+              icon={FileText}
+              title="No proof submitted yet"
+              description="Add a note or link once work is ready for review."
+              size="sm"
+            />
           ) : (
             <div className="space-y-3">
               {proofs.map((proof) => (

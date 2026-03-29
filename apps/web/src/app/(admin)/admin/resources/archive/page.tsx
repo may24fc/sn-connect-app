@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   Input,
   Table,
   TableBody,
@@ -18,7 +19,7 @@ import {
   TableRow,
   useToast,
 } from '@hr-portal/ui';
-import { Archive, ArrowLeft, RotateCcw, Search } from 'lucide-react';
+import { AlertCircle, Archive, ArrowLeft, Loader2, RotateCcw, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -150,26 +151,35 @@ export default function ArchivedResourcesPage() {
       <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400 text-center">
-              Loading archived resources...
+            <CardContent className="p-0">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading archived resources"
+                description="Archived resources are still loading."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : error ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400 text-center">
-              Failed to load archived resources.
+            <CardContent className="p-0">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to load archived resources"
+                description="Refresh and try again to load archived resource records."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : resources.length === 0 ? (
           <Card className="bg-card border border-border rounded-lg p-12">
-            <CardContent className="p-0 flex flex-col items-center gap-3">
-              <Archive className="h-12 w-12 text-zinc-300 dark:text-zinc-600" />
-              <p className="text-lg font-medium text-zinc-700 dark:text-zinc-300">
-                No archived resources
-              </p>
-              <p className="text-sm text-zinc-500">
-                Resources that are archived will appear here.
-              </p>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Archive}
+                title="No archived resources"
+                description="Resources that are archived will appear here."
+                size="md"
+              />
             </CardContent>
           </Card>
         ) : (

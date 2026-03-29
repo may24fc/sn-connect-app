@@ -32,6 +32,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   Input,
   type InternDashboardStats,
   type InternId,
@@ -555,17 +556,26 @@ export default function AdminInternsPage(): ReactNode {
                     <InternRow key={intern.id} intern={intern} onView={handleViewIntern} {...(isSuperAdmin && { onDelete: handleDeleteIntern })} />
                   ))
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>
-                      {searchQuery ||
+                  <EmptyState
+                    icon={GraduationCap}
+                    title={
+                      searchQuery ||
                       statusFilter !== 'all' ||
                       schoolFilter !== 'all' ||
                       supervisorFilter !== 'all'
                         ? 'No interns match the selected filters'
-                        : 'No interns found'}
-                    </p>
-                  </div>
+                        : 'No interns found'
+                    }
+                    description={
+                      searchQuery ||
+                      statusFilter !== 'all' ||
+                      schoolFilter !== 'all' ||
+                      supervisorFilter !== 'all'
+                        ? 'Adjust the filters to widen the intern list.'
+                        : 'Intern records will appear here once accounts and internships are created.'
+                    }
+                    size="sm"
+                  />
                 )}
               </CardContent>
             </Card>
@@ -697,12 +707,13 @@ export default function AdminInternsPage(): ReactNode {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No pending approvals</p>
-                        <p className="text-sm mt-1">
-                          All onboarding submissions have been processed
-                        </p>
+                      <TableCell colSpan={5} className="py-8">
+                        <EmptyState
+                          icon={Clock}
+                          title="No pending approvals"
+                          description="All onboarding submissions have been processed."
+                          size="sm"
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -820,10 +831,21 @@ export default function AdminInternsPage(): ReactNode {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {onboardingLoading
-                          ? 'Loading onboarding data...'
-                          : 'No intern onboarding submissions found'}
+                      <TableCell colSpan={7} className="py-8">
+                        <EmptyState
+                          icon={FileText}
+                          title={
+                            onboardingLoading
+                              ? 'Loading onboarding data'
+                              : 'No intern onboarding submissions found'
+                          }
+                          description={
+                            onboardingLoading
+                              ? 'Intern onboarding submissions are still loading.'
+                              : 'Completed and in-progress intern onboarding records will appear here.'
+                          }
+                          size="sm"
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -959,14 +981,13 @@ export default function AdminInternsPage(): ReactNode {
                       })
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                          <div className="flex flex-col items-center gap-2">
-                            <FileText className="h-12 w-12 text-muted-foreground/50" />
-                            <p>No daily reports found</p>
-                            <p className="text-sm">
-                              Reports will appear here when interns submit their EOD forms
-                            </p>
-                          </div>
+                        <TableCell colSpan={7} className="py-12">
+                          <EmptyState
+                            icon={FileText}
+                            title="No daily reports found"
+                            description="Reports will appear here when interns submit their EOD forms."
+                            size="sm"
+                          />
                         </TableCell>
                       </TableRow>
                     )}

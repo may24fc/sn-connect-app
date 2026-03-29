@@ -8,10 +8,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   ResourceCard,
   ResourceGrid,
   useToast,
 } from '@hr-portal/ui';
+import { Bookmark } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ResourceBookmarksPage() {
@@ -43,11 +45,22 @@ export default function ResourceBookmarksPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading bookmarks...</div>
+        <EmptyState
+          icon={<Bookmark className="h-5 w-5" />}
+          title="Loading bookmarks"
+          description="Your bookmarked resources are still loading."
+          size="sm"
+        />
       ) : bookmarks.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-sm text-zinc-600 dark:text-zinc-400">
-            No bookmarked resources yet.
+          <CardContent>
+            <EmptyState
+              icon={Bookmark}
+              title="No bookmarked resources yet"
+              description="Bookmark resources from the information hub to keep them saved here."
+              action={{ label: 'Browse resources', href: '/information-hub' }}
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : (

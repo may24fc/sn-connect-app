@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  EmptyState,
   Input,
   ResourceAnalytics,
   ResourceTargetingSelector,
@@ -30,7 +31,7 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { Archive, ArrowLeft, MoreHorizontal, Save, Send, Star, StarOff } from 'lucide-react';
+import { Archive, ArrowLeft, Loader2, MoreHorizontal, Save, Send, Star, StarOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -74,7 +75,16 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
   }, [resource]);
 
   if (isLoading || !resource) {
-    return <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading resource...</div>;
+    return (
+      <div className="p-6">
+        <EmptyState
+          icon={<Loader2 className="h-5 w-5 animate-spin" />}
+          title="Loading resource"
+          description="Resource details are still loading."
+          size="sm"
+        />
+      </div>
+    );
   }
 
   const saveDetails = async (): Promise<void> => {

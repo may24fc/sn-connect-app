@@ -9,8 +9,10 @@ import {
   AnnouncementDetailDialog,
   Card,
   CardContent,
+  EmptyState,
   useToast,
 } from '@hr-portal/ui';
+import { Star } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -76,12 +78,14 @@ export default function StarredAnnouncementsPage() {
         <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading starred announcements...</div>
       ) : starred.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-sm text-zinc-600 dark:text-zinc-400">
-            No starred announcements yet. Star announcements from the{' '}
-            <Link href="/announcements" className="text-indigo-600 hover:underline">
-              Announcements page
-            </Link>{' '}
-            to see them here.
+          <CardContent>
+            <EmptyState
+              icon={Star}
+              title="No starred announcements yet"
+              description="Star announcements from the announcements page to keep them pinned here."
+              action={{ label: 'Browse announcements', href: '/announcements' }}
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : (

@@ -2,10 +2,10 @@
 
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useDeleteCollection, useResourceCollections } from '@/hooks/useResourceCollections';
-import { Button, Card, CardContent, Input } from '@hr-portal/ui';
+import { Button, Card, CardContent, EmptyState, Input } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import Link from 'next/link';
-import { FolderOpen, Plus } from 'lucide-react';
+import { AlertCircle, FolderOpen, Loader2, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 export default function AdminCollectionsPage() {
@@ -51,20 +51,36 @@ export default function AdminCollectionsPage() {
 
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-zinc-600 dark:text-zinc-400">
-            Loading collections...
+          <CardContent>
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading collections"
+              description="Resource collections are still loading."
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-rose-600 dark:text-rose-400">
-            Failed to load collections.
+          <CardContent>
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load collections"
+              description="Refresh and try again to load resource collections."
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : collections.length === 0 ? (
         <Card>
-          <CardContent className="p-6 text-sm text-zinc-600 dark:text-zinc-400">
-            No collections found.
+          <CardContent>
+            <EmptyState
+              icon={FolderOpen}
+              title="No collections found"
+              description="Create your first collection to group resources into a learning path."
+              action={{ label: 'New collection', href: '/admin/resources/collections/new' }}
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : (

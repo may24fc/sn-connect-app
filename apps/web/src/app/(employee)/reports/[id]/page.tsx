@@ -22,6 +22,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   InsightsSummary,
   type KeyFinding,
   MetricKPICard,
@@ -37,7 +38,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { ProgressTimelineStep } from '@hr-portal/ui';
-import { ArrowLeft, BarChart3, ListChecks, Send, TableIcon } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BarChart3, ListChecks, Loader2, Send, TableIcon } from 'lucide-react';
 import { use, useState } from 'react';
 
 const statusVariant: Record<
@@ -69,7 +70,16 @@ export default function ReportDetailPage({
   const report = data?.data;
 
   if (marketingAccess.isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading marketing report...</div>;
+    return (
+      <div className="mx-auto max-w-4xl py-6">
+        <EmptyState
+          icon={<Loader2 className="h-5 w-5 animate-spin" />}
+          title="Loading marketing report"
+          description="Marketing access and report context are still loading."
+          size="sm"
+        />
+      </div>
+    );
   }
 
   if (!marketingAccess.canAccess) {
@@ -82,7 +92,16 @@ export default function ReportDetailPage({
   }
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading report...</div>;
+    return (
+      <div className="mx-auto max-w-4xl py-6">
+        <EmptyState
+          icon={<Loader2 className="h-5 w-5 animate-spin" />}
+          title="Loading report"
+          description="Report details are still loading."
+          size="sm"
+        />
+      </div>
+    );
   }
 
   if (error || !report) {
@@ -93,12 +112,21 @@ export default function ReportDetailPage({
           Back to Reports
         </Button>
         <Card>
-          <CardContent className="p-6 text-center space-y-2">
-            <p className="text-sm text-destructive">
-              {error?.message?.includes('permission') || error?.message?.includes('403')
-                ? 'You do not have permission to view this report.'
-                : 'Failed to load report. Please try again.'}
-            </p>
+          <CardContent>
+            <EmptyState
+              icon={AlertCircle}
+              title={
+                error?.message?.includes('permission') || error?.message?.includes('403')
+                  ? 'You do not have permission to view this report'
+                  : 'Failed to load report'
+              }
+              description={
+                error?.message?.includes('permission') || error?.message?.includes('403')
+                  ? 'Your account does not have access to this report.'
+                  : 'Refresh and try again to load this report.'
+              }
+              size="sm"
+            />
           </CardContent>
         </Card>
       </div>

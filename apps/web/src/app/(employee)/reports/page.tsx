@@ -15,6 +15,7 @@ import {
   Card,
   CardContent,
   CountBadge,
+  EmptyState,
   Input,
   Select,
   SelectContent,
@@ -278,18 +279,17 @@ export default function ReportsPage() {
                       colSpan={viewMode === 'grouped' ? 7 : 5}
                       className="text-center py-12"
                     >
-                      <div className="space-y-2">
-                        <p className="text-muted-foreground">No marketing reports found.</p>
-                        <p className="text-sm text-muted-foreground">
-                          Create your first marketing report to get started.
-                        </p>
-                        <Button variant="outline" size="sm" asChild className="mt-2">
-                          <Link href="/reports/new">
-                            <Plus className="mr-1 h-3.5 w-3.5" />
-                            Create Marketing Report
-                          </Link>
-                        </Button>
-                      </div>
+                      <EmptyState
+                        icon={FileText}
+                        title="No marketing reports found"
+                        description="Create your first marketing report to get started."
+                        action={{
+                          label: 'Create marketing report',
+                          href: '/reports/new',
+                          icon: <Plus className="h-3.5 w-3.5" />,
+                        }}
+                        size="sm"
+                      />
                     </TableCell>
                   </TableRow>
                 ) : viewMode === 'grouped' ? (
