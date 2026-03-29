@@ -60,6 +60,21 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 
 const AUTH_TIMEOUT_MS = 12000;
 
+function getHomeRedirectPath(user: Pick<User, 'role' | 'isOnboardingComplete'>): string {
+  switch (user.role) {
+    case 'employee':
+      return user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup';
+    case 'intern':
+      return user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup';
+    case 'admin':
+      return '/admin/dashboard';
+    case 'super_admin':
+      return '/super-admin/dashboard';
+    default:
+      return '/dashboard';
+  }
+}
+
 async function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
@@ -88,10 +103,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
     process.env.NODE_ENV !== 'production';
   const useMock = enableMockAuth || !supabase;
 
-  // Mock users for local/dev mode when Supabase is not configured
-  // These match the sample accounts created by scripts/setup-sample-accounts.mjs
+  // Mock users for local/dev mode when Supabase is not configured.
+  // Keep legacy test.com aliases so existing Playwright specs keep working.
   const MOCK_USERS: Record<string, { password: string; user: User }> = React.useMemo(
     () => ({
+      'employee@test.com': {
+        password: 'password',
+        user: {
+          id: 'emp-1',
+          name: 'Sample Employee',
+          email: 'employee@test.com',
+          role: 'employee',
+          isOnboardingComplete: true,
+        },
+      },
       'employee@example.com': {
         password: 'password',
         user: {
@@ -99,6 +124,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           name: 'Sample Employee',
           email: 'employee@example.com',
           role: 'employee',
+          isOnboardingComplete: true,
+        },
+      },
+      'intern@test.com': {
+        password: 'password',
+        user: {
+          id: 'int-1',
+          name: 'Sample Intern',
+          email: 'intern@test.com',
+          role: 'intern',
           isOnboardingComplete: true,
         },
       },
@@ -112,6 +147,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           isOnboardingComplete: true,
         },
       },
+      'admin@test.com': {
+        password: 'password',
+        user: {
+          id: 'adm-1',
+          name: 'Admin User',
+          email: 'admin@test.com',
+          role: 'admin',
+          isOnboardingComplete: true,
+        },
+      },
       'admin@example.com': {
         password: 'password',
         user: {
@@ -122,12 +167,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           isOnboardingComplete: true,
         },
       },
+      'superadmin@test.com': {
+        password: 'password',
+        user: {
+          id: 'sad-1',
+          name: 'Super Admin',
+          email: 'superadmin@test.com',
+          role: 'super_admin',
+          isOnboardingComplete: true,
+        },
+      },
       'super-admin@example.com': {
         password: 'password',
         user: {
           id: 'sad-1',
           name: 'Super Admin',
           email: 'super-admin@example.com',
+          role: 'super_admin',
+          isOnboardingComplete: true,
+        },
+      },
+      'superadmin@example.com': {
+        password: 'password',
+        user: {
+          id: 'sad-1',
+          name: 'Super Admin',
+          email: 'superadmin@example.com',
           role: 'super_admin',
           isOnboardingComplete: true,
         },
@@ -478,24 +543,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
             // ignore
           }
 
-          switch (mock.user.role) {
-            case 'employee':
-              router.push(mock.user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
-              break;
-            case 'intern':
-              router.push(
-                mock.user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup'
-              );
-              break;
-            case 'admin':
-              router.push('/admin/dashboard');
-              break;
-            case 'super_admin':
-              router.push('/super-admin/dashboard');
-              break;
-            default:
-              router.push('/dashboard');
-          }
+          // In mock-auth mode, force a hard navigation so Playwright and local
+          // development don't depend on App Router state propagation.
+          window.location.assign(getHomeRedirectPath(mock.user));
           return;
         }
 
@@ -571,8 +621,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         }
         setUser(null);
         queryClient.clear();
-        router.push('/login');
-        router.refresh();
+        window.location.assign('/login');
         return;
       }
 
