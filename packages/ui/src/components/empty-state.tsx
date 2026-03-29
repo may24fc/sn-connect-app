@@ -2,7 +2,7 @@
 
 import type { LucideIcon } from 'lucide-react';
 import { FileQuestion } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { createElement, isValidElement, type ElementType, type ReactNode } from 'react';
 import { Button } from '../primitives/button';
 import { cn } from '../utils/cn';
 
@@ -100,8 +100,8 @@ export function EmptyState({
 }: EmptyStateProps) {
   const sizes = sizeClasses[size];
   const colors = appearanceClasses[appearance];
-  const Icon = typeof icon === 'function' ? (icon as LucideIcon) : null;
-  const customIcon = Icon ? null : (icon as ReactNode | undefined);
+  const Icon = icon && !isValidElement(icon) ? (icon as ElementType | LucideIcon) : null;
+  const customIcon = isValidElement(icon) ? icon : undefined;
 
   return (
     <div
@@ -113,7 +113,7 @@ export function EmptyState({
     >
       <div className={cn('mb-4', colors.icon)}>
         {Icon ? (
-          <Icon className={sizes.icon} strokeWidth={1.5} />
+          createElement(Icon, { className: sizes.icon, strokeWidth: 1.5 })
         ) : customIcon ? (
           <span className={sizes.icon}>{customIcon}</span>
         ) : (
