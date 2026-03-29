@@ -16,6 +16,13 @@ export type NotificationType =
   | 'report_submitted'
   | 'report_approved'
   | 'report_rejected'
+  | 'invoice_submitted'
+  | 'invoice_approved'
+  | 'invoice_rejected'
+  | 'intern_log_submitted'
+  | 'intern_log_approved'
+  | 'onboarding_approved'
+  | 'onboarding_rejected'
   | 'announcement_new'
   | 'resource_new'
   | 'reminder'
@@ -160,5 +167,51 @@ export async function getUserIdsByRoles(roles?: string[]): Promise<string[]> {
   } catch (err) {
     console.error('[notifications] Unexpected error fetching users:', err);
     return [];
+  }
+}
+
+// ---- Role-scoped link mapping ------------------------------------------------
+
+const ANNOUNCEMENT_LINKS: Record<string, string> = {
+  employee: '/announcements',
+  intern: '/announcements',
+  admin: '/admin/announcements',
+  super_admin: '/super-admin/announcements',
+};
+
+const ROLE_GROUPS = [
+  { roles: ['employee', 'intern'], key: 'employee' },
+  { roles: ['admin'], key: 'admin' },
+  { roles: ['super_admin'], key: 'super_admin' },
+] as const;
+
+/**
+ * Send announcement notifications with role-appropriate links.
+ * Splits recipients by role group so each user gets a link to their
+ * own announcement page rather than a 404.
+ */
+export async function createAnnouncementNotifications(
+  excludeUserId: string,
+  notification: { title: string; message: string; metadata?: Record<string, unknown> },
+  targetRoles?: string[] | null,
+): Promise<void> {
+  for (const group of ROLE_GROUPS) {
+    const scopedRoles = targetRoles && targetRoles.length > 0
+      ? group.roles.filter((r) => targetRoles.includes(r))
+      : [...group.roles];
+
+    if (scopedRoles.length === 0) continue;
+
+    const userIds = await getUserIdsByRoles(scopedRoles);
+    const recipients = userIds.filter((uid) => uid !== excludeUserId);
+    if (recipients.length === 0) continue;
+
+    createNotificationsForUsers(recipients, {
+      type: 'announcement_new',
+      title: notification.title,
+      message: notification.message,
+      link: ANNOUNCEMENT_LINKS[group.key] ?? '/announcements',
+      metadata: notification.metadata ?? {},
+    });
   }
 }

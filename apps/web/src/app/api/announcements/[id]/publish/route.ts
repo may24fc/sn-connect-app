@@ -1,8 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import {
-  createNotificationsForUsers,
+  createAnnouncementNotifications,
   getUserDisplayName,
-  getUserIdsByRoles,
 } from '@/lib/notifications/create-notification';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isAnnouncementAdmin } from '../../_lib';
@@ -38,20 +37,12 @@ export async function POST(_: NextRequest, context: RouteContext) {
 
     // Determine recipients: use target_roles if specified, otherwise all users
     const targetRoles = data.target_roles as string[] | null;
-    const recipientIds = targetRoles && targetRoles.length > 0
-      ? await getUserIdsByRoles(targetRoles)
-      : await getUserIdsByRoles();
 
-    // Exclude the publisher from notifications
-    const filteredRecipients = recipientIds.filter((uid) => uid !== user.id);
-
-    createNotificationsForUsers(filteredRecipients, {
-      type: 'announcement_new',
+    createAnnouncementNotifications(user.id, {
       title: 'New Announcement',
       message: `${publisherName} published: "${data.title}"`,
-      link: `/announcements`,
       metadata: { announcementId: id },
-    });
+    }, targetRoles);
 
     logActivity(supabase, {
       userId: user.id,

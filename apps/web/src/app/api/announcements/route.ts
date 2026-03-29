@@ -4,9 +4,8 @@ import {
   createAnnouncementSchema,
 } from '@/lib/schemas/announcement.schema';
 import {
-  createNotificationsForUsers,
+  createAnnouncementNotifications,
   getUserDisplayName,
-  getUserIdsByRoles,
 } from '@/lib/notifications/create-notification';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isAnnouncementAdmin, normalizeExcerpt } from './_lib';
@@ -155,19 +154,12 @@ export async function POST(request: NextRequest) {
     if (data.status === 'published') {
       const authorName = await getUserDisplayName(user.id);
       const targetRoles = data.target_roles as string[] | null;
-      const recipientIds = targetRoles && targetRoles.length > 0
-        ? await getUserIdsByRoles(targetRoles)
-        : await getUserIdsByRoles();
 
-      const filteredRecipients = recipientIds.filter((uid) => uid !== user.id);
-
-      createNotificationsForUsers(filteredRecipients, {
-        type: 'announcement_new',
+      createAnnouncementNotifications(user.id, {
         title: 'New Announcement',
         message: `${authorName} published: "${data.title}"`,
-        link: `/announcements`,
         metadata: { announcementId: data.id },
-      });
+      }, targetRoles);
     }
 
     logActivity(supabase, {

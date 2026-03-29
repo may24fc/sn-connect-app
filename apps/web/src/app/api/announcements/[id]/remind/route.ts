@@ -1,4 +1,5 @@
 import { createBulkNotifications } from '@/lib/notifications/create';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   getAuthedSupabase,
@@ -6,8 +7,55 @@ import {
   resolveAnnouncementTargetUserIds,
 } from '../../_lib';
 
+const ANNOUNCEMENT_LINKS: Record<string, string> = {
+  employee: '/announcements',
+  intern: '/announcements',
+  admin: '/admin/announcements',
+  super_admin: '/super-admin/announcements',
+};
+
 interface RouteContext {
   params: Promise<{ id: string }>;
+}
+
+/** Split unread user IDs by role and send reminders with role-appropriate links. */
+async function sendRoleScopedReminders(
+  unreadUserIds: string[],
+  announcement: { title: string },
+  announcementId: string,
+  senderId: string,
+): Promise<number> {
+  const admin = createSupabaseAdminClient();
+  const { data: users } = await admin
+    .from('users')
+    .select('id, role')
+    .in('id', unreadUserIds)
+    .is('deleted_at', null);
+
+  if (!users || users.length === 0) return 0;
+
+  // Group by announcement link
+  const grouped = new Map<string, string[]>();
+  for (const u of users) {
+    const link = ANNOUNCEMENT_LINKS[u.role as string] ?? '/announcements';
+    const list = grouped.get(link) ?? [];
+    list.push(u.id);
+    grouped.set(link, list);
+  }
+
+  let total = 0;
+  for (const [link, ids] of grouped) {
+    const count = await createBulkNotifications({
+      userIds: ids,
+      type: 'reminder',
+      title: `Reminder: ${announcement.title}`,
+      message: 'You have an unread announcement. Please review it.',
+      link,
+      metadata: { announcementId, reminderSentBy: senderId },
+    });
+    total += count;
+  }
+  return total;
 }
 
 /**
@@ -67,14 +115,7 @@ export async function POST(_: NextRequest, context: RouteContext): Promise<NextR
       });
     }
 
-    const notified = await createBulkNotifications({
-      userIds: unreadUserIds,
-      type: 'reminder',
-      title: `Reminder: ${announcement.title}`,
-      message: 'You have an unread announcement. Please review it.',
-      link: `/announcements/${id}`,
-      metadata: { announcementId: id, reminderSentBy: user.id },
-    });
+    const notified = await sendRoleScopedReminders(unreadUserIds, announcement, id, user.id);
 
     return NextResponse.json({
       data: {
