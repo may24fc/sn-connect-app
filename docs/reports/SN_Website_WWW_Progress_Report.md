@@ -3,6 +3,7 @@
 > **Report Date:** March 26, 2026
 > **Project:** SN International Group — Public Website
 > **Development Period:** March 7 – March 23, 2026 (~2.5 weeks)
+> **Developer:** Ceferino, Senior AI Intern
 
 ---
 

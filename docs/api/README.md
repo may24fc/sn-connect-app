@@ -455,7 +455,15 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/api/audit-logs` | admin, super_admin | List audit log entries with filters (table, action, actor, date range) |
+| `GET` | `/api/audit-logs` | admin, super_admin | List scoped activity feed entries for admin or super-admin surfaces |
+
+Query parameters:
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `limit` | number | Number of entries to return. Defaults to `10`, max `50`. |
+| `scope` | `admin` \| `super_admin` | Role-scoped feed. `admin` shows admin-actor activity only. `super_admin` shows super-admin activity plus system entries. |
+| `own` | boolean | If `true`, narrows the feed to the current user's own activity only. |
 
 ---
 

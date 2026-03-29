@@ -109,11 +109,9 @@ The dashboard serves as the central hub displaying personalized information.
    - **Tasks Due**: Count of pending tasks
    - **Notifications**: Unread notification count
 
-3. **Quick Actions Card**
-   Grid of action buttons:
-   - Upload Files (links to `/files`)
-   - Submit Report (links to `/reports/new`)
-   - View Calendar (links to `/calendar`)
+3. **Dashboard Navigation**
+   - Use the sidebar to jump to Files, Reports, Tasks, Announcements, and other employee features
+   - Use the announcement and onboarding cards on the dashboard for the most time-sensitive items
 
 4. **Onboarding Progress Card**
    - Visual progress bar with percentage
@@ -549,7 +547,7 @@ HR administrators have access to organization-wide management features.
 
 ### Admin Dashboard (`/admin/dashboard`)
 
-HR overview and quick actions hub.
+HR overview for approvals, recent activity, and company-wide updates.
 
 **Features:**
 
@@ -563,12 +561,11 @@ HR overview and quick actions hub.
    - Pending Leaves
    - Reviews Due
 
-3. **Pending Approvals Card**
-   - List of items requiring approval:
-     - Performance Reviews
-   - Priority indicators (urgent, high, medium)
-   - Quick "Review" action buttons
-   - "View All Approvals" link
+3. **Needs Attention Carousel**
+   - Rotating action banners for live operational concerns
+   - Role-aware items such as overdue intern EODs, onboarding approvals, probation follow-ups, pending reports, and pending reviews
+   - Click-through actions open the exact admin work area for the current concern
+   - Falls back to an "All caught up!" state when nothing needs attention
 
 4. **Department Overview Card**
    - Department headcount bars
@@ -581,12 +578,9 @@ HR overview and quick actions hub.
      - Performance review completed
    - Timestamp for each activity
 
-6. **Quick Actions Card**
-   Grid of shortcuts:
-   - Employee Management
-   - Performance (Reviews & OKRs)
-   - Recruitment (Open positions)
-   - Reports (Analytics & insights)
+6. **Navigation & Work Areas**
+   - Use the sidebar to open Employee Management, Performance, Recruitment, Reports, and other admin workspaces
+   - The dashboard itself focuses on approvals, recent activity, and company-wide updates
 
 ### Directory (`/admin/directory`)
 
@@ -899,11 +893,9 @@ Complete system overview and control center.
    - Actor and details for each log
    - "View All" link
 
-7. **Quick Actions Grid**
-   - User Management
-   - Role Management
-   - Audit Logs
-   - System Settings
+7. **Navigation & Controls**
+   - Use the sidebar for directory, employee management, payroll approvals, activity log, and other super admin tools
+   - System-level controls remain available through the dashboard header and monitoring cards
 
 ### Task Management (`/super-admin/tasks`)
 

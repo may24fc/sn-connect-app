@@ -257,6 +257,7 @@ export const queryKeys = {
     sourcesList: (filters: AISourceFilters) =>
       [...queryKeys.aiKnowledge.sources(), 'list', filters] as const,
     source: (id: string) => [...queryKeys.aiKnowledge.sources(), id] as const,
+    suggestions: () => [...queryKeys.aiKnowledge.all, 'suggestions'] as const,
     chat: () => [...queryKeys.aiKnowledge.all, 'chat'] as const,
     conversationsList: () => [...queryKeys.aiKnowledge.all, 'conversations'] as const,
     conversations: (limit: number, offset: number) =>
@@ -306,6 +307,9 @@ export const queryKeys = {
     all: ['onboarding'] as const,
     progress: () => [...queryKeys.onboarding.all, 'progress'] as const,
     tasks: () => [...queryKeys.onboarding.all, 'tasks'] as const,
+    checklist: (employeeId: string) => [...queryKeys.onboarding.all, 'checklist', employeeId] as const,
+    template: (scope: 'employee' | 'intern') =>
+      [...queryKeys.onboarding.all, 'template', scope] as const,
     profile: () => [...queryKeys.onboarding.all, 'profile'] as const,
     profiles: {
       all: () => [...queryKeys.onboarding.all, 'profiles'] as const,
@@ -319,6 +323,15 @@ export const queryKeys = {
         [...queryKeys.onboarding.documents.all(), 'list', profileId ?? 'self'] as const,
     },
     wizard: () => [...queryKeys.onboarding.all, 'wizard'] as const,
+  },
+
+  offboarding: {
+    all: ['offboarding'] as const,
+    list: (employeeId?: string) =>
+      [...queryKeys.offboarding.all, 'list', employeeId ?? 'all'] as const,
+    me: () => [...queryKeys.offboarding.all, 'me'] as const,
+    tasks: (offboardingId: string) => [...queryKeys.offboarding.all, 'tasks', offboardingId] as const,
+    template: () => [...queryKeys.offboarding.all, 'template', 'default'] as const,
   },
 
   // Probation

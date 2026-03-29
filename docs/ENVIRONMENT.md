@@ -41,9 +41,10 @@ This document describes all environment variables required by the HR Portal appl
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `RESEND_API_KEY` | API key for Resend transactional email service. Must start with `re_`. Used by Edge Functions to send emails. Obtain from [Resend Dashboard](https://resend.com/api-keys). | Yes |
+| `RESEND_API_KEY` | API key for Resend transactional email service. Must start with `re_`. Used by Edge Functions to send emails. Obtain from [Resend Dashboard](https://resend.com/api-keys). Sender policy: keep a single verified From address (`no-reply@sngroup.com.au`) and vary only display names per email context. | Yes |
 | `CRON_SECRET` | Secret used by Vercel to authenticate cron job requests. Must be at least 16 characters. Set in Vercel project settings. | Yes |
 | `ADMIN_SECRET_KEY` | Secret key for manual Edge Function invocation via `X-Admin-Key` header. Must be at least 32 characters. Generate with `openssl rand -base64 32`. | No |
+| `APP_URL` | Canonical internal app base URL for Edge Functions and other server-side jobs that generate absolute links outside the Next.js runtime. Set to `https://app.sngroup.com.au` in production. | No |
 
 ### Wise (TransferWise) Payment Gateway
 
@@ -59,7 +60,9 @@ This document describes all environment variables required by the HR Portal appl
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `NEXT_PUBLIC_ENABLE_MOCK_AUTH` | Enable mock authentication for local development. Set to `true` to bypass Supabase Auth and use test accounts. Set to `false` for production. | No | `false` |
-| `NEXT_PUBLIC_SITE_URL` | The canonical base URL of the deployed app (e.g., `https://app.sngroup.com.au`). Takes priority over Vercel's auto-set URL for auth redirects. **Required in production.** | No | — |
+| `NEXT_PUBLIC_SITE_URL` | The canonical base URL of the internal app (e.g., `https://app.sngroup.com.au`). Takes priority over preview URLs for auth redirects, password reset emails, invite emails, and onboarding approval emails. **Required in production.** | No | `http://localhost:3001` |
+| `NEXT_PUBLIC_APP_URL` | Canonical internal app URL used by the public website for login and access CTAs. Set to `https://app.sngroup.com.au` in production. | No | `http://localhost:3001` |
+| `NEXT_PUBLIC_WWW_URL` | Canonical public website URL for cross-app links that should stay on the marketing site. Set to `https://www.sngroup.com.au` in production. | No | `http://localhost:3000` |
 | `NEXT_PUBLIC_ROLE_MAPPING_MODE` | Role mapping strategy for UI roles. Options: `option-a`, `option-b`, or `option-c`. See [ADR-001-role-mapping.md](adr/ADR-001-role-mapping.md) for details. | No | `option-a` |
 
 ## Local Development with Mock Auth

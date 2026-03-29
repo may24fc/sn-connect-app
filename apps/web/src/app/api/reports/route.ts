@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { normalizeReportRecord, serializeReportNotes } from '@/lib/report-utils';
 import { reportCreateSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -158,7 +159,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      data: responseData,
+      data: responseData.map((report) => normalizeReportRecord(report)),
       pagination: {
         page,
         pageSize,
@@ -248,7 +249,10 @@ export async function POST(request: NextRequest) {
         period_start: parsed.data.periodStart,
         period_end: parsed.data.periodEnd,
         status: parsed.data.status,
-        notes: parsed.data.notes || null,
+        notes: serializeReportNotes(
+          parsed.data.notes,
+          parsed.data.reportType === 'marketing' ? parsed.data.marketingContext ?? null : null
+        ),
         created_by: user.id,
       })
       .select('*')
@@ -288,7 +292,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (fullReportError) {
-      return NextResponse.json({ data: report }, { status: 201 });
+      return NextResponse.json({ data: normalizeReportRecord(report) }, { status: 201 });
     }
 
     logActivity(supabaseAdmin, {
@@ -299,7 +303,7 @@ export async function POST(request: NextRequest) {
       metadata: { employeeId, reportType: parsed.data.reportType },
     });
 
-    return NextResponse.json({ data: fullReport }, { status: 201 });
+    return NextResponse.json({ data: normalizeReportRecord(fullReport) }, { status: 201 });
   } catch (error) {
     console.error('Unexpected error in POST /api/reports:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

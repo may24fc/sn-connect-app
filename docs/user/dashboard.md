@@ -1,6 +1,6 @@
 # Dashboard
 
-Your dashboard is the first page you see after logging in. It provides a personalized overview of your HR status and quick access to common actions.
+Your dashboard is the first page you see after logging in. It provides a personalized overview of your HR status and highlights the most important cards for the day.
 
 ## Employee Dashboard (`/dashboard`)
 
@@ -18,14 +18,6 @@ Four summary cards at the top:
 | **Probation Stage** | Current probation stage (1–4) and days remaining |
 | **Tasks Due** | Number of pending tasks assigned to you |
 | **Notifications** | Count of unread notifications |
-
-### Quick Actions
-
-A grid of shortcut buttons:
-
-- **Upload Files** — Jump to your 201 files page
-- **Submit Report** — Start a new weekly report
-- **View Announcements** — Open the Information Hub
 
 ### CompanyPulse Widget
 

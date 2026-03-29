@@ -4,6 +4,7 @@
 > **Project:** SN Connect HR Portal — Internal HR & Employee Management System
 > **Development Period:** January 31 – March 26, 2026 (~8 weeks)
 > **Tagline:** "Where Policy Meets Productivity"
+> **Developer:** Ceferino, Senior AI Intern
 
 ---
 

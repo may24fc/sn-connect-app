@@ -36,14 +36,14 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 | Task management | ❌ | ✅ |
 | Payroll approvals | ❌ | ✅ |
 | System health | ❌ | ✅ |
-| Activity log | ❌ | ✅ |
-| Audit logs | ❌ | ✅ |
+| Activity log (role-scoped) | ✅ | ✅ |
+| Automated system activity | ❌ | ✅ |
 
 ## Navigation
 
 Admin and Super Admin each have their own sidebar layout:
 
-**Admin sidebar:** Dashboard, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Announcements, Resources, Notifications
+**Admin sidebar:** Dashboard, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Announcements, Resources, Notifications, Activity Log
 
 **Super Admin sidebar:** Dashboard, Task Management, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources, Notifications, Activity Log
 

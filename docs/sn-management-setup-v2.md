@@ -629,6 +629,11 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
   - File: `apps/web/src/app/(admin)/admin/dashboard/page.tsx`
   - Add `PendingApprovalsCard` as a prominent top-section card
 
+- [x] **Evolve into shared Needs Attention carousel**
+  - Files: `packages/ui/src/components/dashboard/DashboardAttentionCarousel.tsx`, `apps/web/src/hooks/useDashboardAttentionItems.ts`
+  - Normalizes pending approvals, onboarding approvals, probation concerns, and late intern EOD follow-ups into a role-aware banner carousel
+  - Shared by both admin and super-admin dashboards, with payroll approvals reserved for super-admin
+
 ### V2-3.4 Auto-Reminder System (Late Reports & Compliance)
 
 **Source:** Admin Assistant feedback — "Highlight late report submissions and implement an Auto-Reminder system (Email/Push)."
@@ -795,7 +800,7 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 - [x] **Create TourGuide configuration**
   - File: `apps/web/src/lib/tour/tours.ts`
   - Defined tour steps for each major section:
-    - Dashboard tour (5-7 steps): sidebar nav, stats cards, quick actions, announcements
+    - Dashboard tour (5-7 steps): sidebar nav, stats cards, announcements, profile access
     - Profile tour (3-4 steps): edit fields, save, upload photo
     - Tasks tour (4-5 steps): create task, filters, detail view, comments
 

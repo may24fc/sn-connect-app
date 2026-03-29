@@ -17,19 +17,15 @@ Personalized greeting with a **"Manage Employees"** shortcut button.
 | **Total Employees** | Company-wide headcount (from `/api/dashboard/stats`) |
 | **Active Interns** | Currently active intern count |
 | **Reviews Due** | Performance reviews needing attention |
-| **Recent Hires** | Employees onboarded in the last 30 days |
 
-### Pending Approvals
+### Needs Attention Carousel
 
-Items requiring your action (powered by `/api/dashboard/pending`):
+Role-aware action banners at the top of the dashboard combine live operational concerns from the dashboard API, onboarding approvals, and probation monitoring.
 
-- Pending report submissions (with overdue count)
-- Pending invoice approvals
-- Performance reviews to complete
-- Late intern EOD reports
-- **Total pending count** badge
-- **"Review"** quick-action buttons
-- **"View All Approvals"** link
+- Admin sees live banners for reports, late intern EODs, onboarding approvals, probation follow-ups, and pending reviews
+- Super Admin sees the same operational items plus payroll approvals when present
+- Each slide links directly to the relevant work area
+- Empty state falls back to **"All caught up!"** when no concerns are active
 
 ### Department Overview
 
@@ -45,12 +41,7 @@ Timeline of HR events:
 - Performance reviews completed
 - Timestamps for each action
 
-### Quick Actions Grid
-
-- **Employee Management** — View and manage all employees
-- **Performance** — Reviews and OKR management
-- **Jobs** — Manage job postings and applications
-- **Reports** — Analytics and insights
+Use the sidebar to move from the dashboard into Employee Management, Performance, Jobs, Reports, and the rest of the admin work areas.
 
 ## Super Admin Dashboard (`/super-admin/dashboard`)
 

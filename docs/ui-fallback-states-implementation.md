@@ -59,7 +59,7 @@ A reusable component for zero-state UIs with consistent styling:
 - Maintains visual hierarchy and layout
 
 **Changes:**
-- Pending Approvals Card: EmptyState with "All caught up!" message
+- Needs Attention Carousel: EmptyState with "All caught up!" message
 - Department Overview Card: EmptyState with "Manage Departments" action
 - Recent Activity Card: EmptyState indicating where activities will appear
 - Stats Cards: All display 0 with consistent messaging

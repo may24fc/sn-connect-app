@@ -67,21 +67,19 @@ When an employee marks a task as **Completed**, they can upload proof files (ima
 
 ## Activity Log (`/super-admin/activity`)
 
-The Activity Log page provides a searchable, paginated audit trail of all system actions.
+The Activity Log page shows recent actions performed by super admins, plus automated system entries.
 
 Each entry shows:
 
 | Column | Description |
 |--------|-------------|
-| **Actor** | User who performed the action |
-| **Action** | Type of event (e.g., `employee.updated`, `task.created`) |
-| **Resource** | Affected record with a link where applicable |
+| **Actor** | Super admin who performed the action, or `System` for automated entries |
+| **Action** | Human-readable action summary |
+| **Resource** | Activity category badge |
 | **Timestamp** | Date and time of the event |
-| **Metadata** | JSON details about the change |
+| **Metadata** | Inline summary of the affected record when available |
 
-Use the **date range** filter and **action type** filter to narrow results.
-
-`GET /api/audit-logs` — Returns paginated audit log entries. Requires super_admin role.
+`GET /api/audit-logs?scope=super_admin` — Returns the scoped activity feed for super admins. The feed supports `limit` and `own=true`; `own=true` narrows results to the current super admin only.
 
 ## Payroll Approvals (`/super-admin/payroll-approvals`)
 

@@ -34,7 +34,7 @@ Welcome! This guide helps you explore and test the SN Connect HR Portal. No tech
 
 ### Dashboard (`/dashboard`)
 - After login, you land on your **Dashboard**
-- Review the greeting, your stats (onboarding progress, tasks due, notifications), and the quick actions grid
+- Review the greeting, your stats, onboarding progress, company pulse, and latest announcements
 
 ### Profile (`/profile`)
 1. Click **Profile** in the sidebar
@@ -113,7 +113,7 @@ Interns have a simplified experience focused on daily reporting and task trackin
 ### Admin Dashboard (`/admin/dashboard`)
 - Overview of total employees, active interns, and reviews due
 - Click **Manage Employees** (top right) to go to employee management
-- **Quick Actions** grid links to Employee Management, Performance, Recruitment, and Reports
+- Use the sidebar to open Employee Management, Performance, Recruitment, and Reports
 
 ### Directory (`/admin/directory`)
 1. Click **Directory** in the sidebar
