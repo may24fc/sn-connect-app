@@ -94,7 +94,7 @@ export function PendingApprovalsCard({
       icon: CreditCard,
       color: 'text-violet-500',
       bgColor: 'bg-violet-100 dark:bg-violet-900/50',
-      href: '/admin/payroll-approvals',
+      href: '/super-admin/payroll-approvals',
     },
     {
       label: 'Reviews Pending',

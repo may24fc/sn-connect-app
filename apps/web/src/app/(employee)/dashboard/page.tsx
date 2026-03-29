@@ -15,7 +15,7 @@ import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useMilestones } from '@/hooks/useMilestones';
 import { useMyProbation } from '@/hooks/useMyProbation';
-import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
+import { useOnboardingProgressSummary } from '@/hooks/useOnboardingProgressSummary';
 import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useRoleMetadata';
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
@@ -27,41 +27,11 @@ import {
   Calendar,
   ChevronRight,
   ClipboardCheck,
-  FileText,
   Target,
   TrendingUp,
-  Upload,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-
-// Quick actions configuration
-const quickActions = [
-  {
-    title: 'Upload Files',
-    description: 'Manage documents',
-    icon: Upload,
-    href: '/files',
-  },
-  {
-    title: 'Submit Report',
-    description: 'Create new report',
-    icon: FileText,
-    href: '/reports/new',
-  },
-  {
-    title: 'My Tasks',
-    description: 'View assignments',
-    icon: ClipboardCheck,
-    href: '/tasks',
-  },
-  {
-    title: 'Announcements',
-    description: 'Company updates',
-    icon: Bell,
-    href: '/announcements',
-  },
-];
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -160,28 +130,28 @@ export default function DashboardPage(): ReactNode {
   // Probation status
   const { data: probationResponse, isLoading: isProbationLoading } = useMyProbation(Boolean(user?.id));
   const probationData = probationResponse?.data ?? null;
-  const isOnProbation = probationResponse?.onProbation ?? false;
+  const probationState = probationResponse?.probationState ?? 'none';
+  const completedProbationDate =
+    probationData?.completedAt && probationState === 'completed'
+      ? new Date(probationData.completedAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : null;
 
   // Milestones — upcoming birthdays & anniversaries
   const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 14 });
   const milestones = milestonesData?.data ?? [];
 
-  // Onboarding profile — hide sections when completed
-  const { data: onboardingProfileData, isLoading: isOnboardingLoading } = useOnboardingProfile();
-  const onboardingProfile = onboardingProfileData?.data ?? null;
+  // Onboarding progress — based on actual field/document completion plus checklist state
+  const {
+    profile: onboardingProfile,
+    progressPercent: onboardingProgress,
+    tasksRemainingCount,
+    isLoading: isOnboardingLoading,
+  } = useOnboardingProgressSummary();
   const isOnboardingCompleted = onboardingProfile?.is_completed === true;
-
-  const onboardingStepWeights: Record<string, number> = {
-    personal_info: 25,
-    payment_info: 50,
-    documents: 75,
-    review: 90,
-  };
-  const onboardingProgress = isOnboardingCompleted
-    ? 100
-    : onboardingProfile?.current_step
-      ? (onboardingStepWeights[onboardingProfile.current_step] ?? 0)
-      : 0;
   const hasOnboardingData = onboardingProfile !== null;
 
   // Announcements — live data from feed API
@@ -192,7 +162,7 @@ export default function DashboardPage(): ReactNode {
   const announcements = announcementFeedData?.data ?? [];
 
   // Stat card columns adjust when onboarding is hidden
-  const statColumns = isOnboardingCompleted ? 3 : 4;
+  const statColumns = isOnboardingCompleted ? 2 : 3;
 
   return (
     <div className="h-full space-y-6">
@@ -213,7 +183,7 @@ export default function DashboardPage(): ReactNode {
 
       {/* Stats Row */}
       <div data-tour="stat-cards">
-        <StatCardGrid columns={statColumns as 3 | 4}>
+        <StatCardGrid columns={statColumns as 2 | 3}>
           {!isOnboardingCompleted && (
             <StatCard
               label="Onboarding"
@@ -240,20 +210,28 @@ export default function DashboardPage(): ReactNode {
             value={
               isProbationLoading
                 ? '—'
-                : isOnProbation && probationData
-                  ? `${probationData.daysRemaining}d`
+                : probationState === 'active' && probationData
+                  ? `${probationData.daysRemaining} ${probationData.daysRemaining === 1 ? 'day' : 'days'}`
+                  : probationState === 'completed'
+                    ? 'Done'
                   : 'N/A'
             }
             trend={{
-              direction: isOnProbation && probationData
+              direction: probationState === 'active' && probationData
                 ? probationData.status === 'at-risk'
                   ? 'down'
                   : 'up'
+                : probationState === 'completed'
+                  ? 'up'
                 : 'stable',
               value: isProbationLoading
                 ? 'Loading…'
-                : isOnProbation && probationData
+                : probationState === 'active' && probationData
                   ? `${probationData.status === 'at-risk' ? 'At risk — ' : probationData.status === 'extended' ? 'Extended — ' : ''}${probationData.progressPercent}% complete`
+                  : probationState === 'completed'
+                    ? completedProbationDate
+                      ? `Completed on ${completedProbationDate}`
+                      : 'Probation completed'
                   : 'No active period',
             }}
             icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
@@ -266,12 +244,6 @@ export default function DashboardPage(): ReactNode {
               value: tasksDueCount > 0 ? `${tasksDueCount} active task(s)` : 'No pending tasks',
             }}
             icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}
-          />
-          <StatCard
-            label="Notifications"
-            value="0"
-            trend={{ direction: 'stable', value: 'No new notifications' }}
-            icon={<Bell className="h-4 w-4" strokeWidth={1.5} />}
           />
         </StatCardGrid>
       </div>
@@ -312,13 +284,13 @@ export default function DashboardPage(): ReactNode {
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
                     <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                      Tasks remaining
+                      {tasksRemainingCount} checklist item{tasksRemainingCount === 1 ? '' : 's'} remaining
                     </span>
                     <Link
                       href="/onboarding"
                       className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300"
                     >
-                      View checklist
+                      Open checklist
                       <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
                     </Link>
                   </div>
@@ -356,6 +328,7 @@ export default function DashboardPage(): ReactNode {
             <Link href="/announcements">
               <Button variant="ghost" size="xs">
                 View All
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </BentoCardHeader>
@@ -412,41 +385,6 @@ export default function DashboardPage(): ReactNode {
                 description="Company announcements will appear here"
               />
             )}
-          </BentoCardContent>
-        </BentoCard>
-
-        {/* Quick Actions Card */}
-        <BentoCard colSpan={4} data-tour="quick-actions">
-          <BentoCardHeader>
-            <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
-              Quick Actions
-            </BentoCardTitle>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <div className="grid grid-cols-4 gap-3">
-              {quickActions.map((action) => (
-                <Link key={action.title} href={action.href}>
-                  <div className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                    <action.icon
-                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                      strokeWidth={1.5}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                        {action.title}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                        {action.description}
-                      </p>
-                    </div>
-                    <ChevronRight
-                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                </Link>
-              ))}
-            </div>
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>

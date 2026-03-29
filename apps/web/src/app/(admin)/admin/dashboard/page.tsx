@@ -11,19 +11,18 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDashboardAttentionItems } from '@/hooks/useDashboardAttentionItems';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMilestones } from '@/hooks/useMilestones';
-import { usePendingApprovals } from '@/hooks/usePendingApprovals';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
-import { Button, MilestoneBanner, PendingApprovalsCard } from '@hr-portal/ui';
+import { Button, DashboardAttentionCarousel, MilestoneBanner } from '@hr-portal/ui';
 import {
   Calendar,
   CheckCircle,
   ChevronRight,
   ClipboardList,
   Edit,
-  FileText,
   GraduationCap,
   Loader2,
   Activity,
@@ -36,34 +35,6 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
-
-// Quick actions configuration
-const quickActions = [
-  {
-    title: 'Employee Management',
-    description: 'Manage workforce',
-    icon: Users,
-    href: '/admin/employees',
-  },
-  {
-    title: 'Performance',
-    description: 'Reviews & OKRs',
-    icon: Target,
-    href: '/admin/performance',
-  },
-  {
-    title: 'Recruitment',
-    description: 'Open positions',
-    icon: GraduationCap,
-    href: '/admin/recruitment',
-  },
-  {
-    title: 'Reports',
-    description: 'Analytics & insights',
-    icon: FileText,
-    href: '/admin/reports',
-  },
-];
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -101,9 +72,15 @@ export default function AdminDashboardPage(): ReactNode {
   const greeting = getGreeting();
 
   const { data: milestonesData, isLoading: milestonesLoading } = useMilestones({ days: 30 });
-  const { data: pendingData, isLoading: pendingLoading } = usePendingApprovals();
+  const {
+    items: attentionItems,
+    isLoading: attentionLoading,
+    totalCount: attentionCount,
+  } = useDashboardAttentionItems('admin');
   const { data: statsData, isLoading: statsLoading } = useDashboardStats();
-  const { data: activityData, isLoading: activityLoading } = useRecentActivity(8);
+  const { data: activityData, isLoading: activityLoading } = useRecentActivity(8, {
+    scope: 'admin',
+  });
 
   const stats = {
     totalEmployees: statsData?.totalEmployees ?? 0,
@@ -129,9 +106,10 @@ export default function AdminDashboardPage(): ReactNode {
       </div>
 
       {/* Pending Approvals */}
-      <PendingApprovalsCard
-        data={pendingData ?? null}
-        isLoading={pendingLoading}
+      <DashboardAttentionCarousel
+        items={attentionItems}
+        isLoading={attentionLoading}
+        totalCount={attentionCount}
         onNavigate={(path) => router.push(path)}
       />
 
@@ -194,6 +172,12 @@ export default function AdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Pulse
             </BentoCardTitle>
+            <Link href="/admin/company-pulse">
+              <Button variant="ghost" size="xs">
+                Manage
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
           </BentoCardHeader>
           <BentoCardContent>
             <CompanyPulseWidget />
@@ -204,11 +188,12 @@ export default function AdminDashboardPage(): ReactNode {
         <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
-              Recent Activity
+              Recent Admin Activity
             </BentoCardTitle>
             <Link href="/admin/activity">
               <Button variant="ghost" size="xs">
                 View All
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </BentoCardHeader>
@@ -252,44 +237,9 @@ export default function AdminDashboardPage(): ReactNode {
               <EmptyState
                 icon={ClipboardList}
                 title="No recent activity"
-                description="Recent HR activities will appear here"
+                description="Recent admin actions will appear here"
               />
             )}
-          </BentoCardContent>
-        </BentoCard>
-
-        {/* Quick Actions Card */}
-        <BentoCard colSpan={4} data-tour="quick-actions">
-          <BentoCardHeader>
-            <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
-              Quick Actions
-            </BentoCardTitle>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <div className="grid grid-cols-4 gap-3">
-              {quickActions.map((action) => (
-                <Link key={action.title} href={action.href}>
-                  <div className="group flex items-center gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer">
-                    <action.icon
-                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                      strokeWidth={1.5}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                        {action.title}
-                      </p>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 truncate">
-                        {action.description}
-                      </p>
-                    </div>
-                    <ChevronRight
-                      className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                </Link>
-              ))}
-            </div>
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>

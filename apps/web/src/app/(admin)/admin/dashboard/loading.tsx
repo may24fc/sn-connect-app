@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 /**
  * Route-level loading skeleton for the Admin Dashboard.
- * Mirrors the StatCardGrid (3 cards) + BentoGrid (4 panels) layout.
+ * Mirrors the StatCardGrid plus the remaining BentoGrid panels.
  */
 export default function AdminDashboardLoading(): ReactNode {
   return (
@@ -31,9 +31,9 @@ export default function AdminDashboardLoading(): ReactNode {
         ))}
       </div>
 
-      {/* Bento grid (4 columns) */}
+      {/* Bento grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Department Overview (span 2) */}
+        {/* Company Pulse (span 2) */}
         <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-4">
           <Skeleton className="h-5 w-40" />
           {Array.from({ length: 4 }).map((_, i) => (
@@ -58,30 +58,6 @@ export default function AdminDashboardLoading(): ReactNode {
           ))}
         </div>
 
-        {/* Upcoming Milestones (span 2) */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-3">
-          <Skeleton className="h-5 w-40" />
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <Skeleton className="h-8 w-8 rounded-full" />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-3.5 w-28" />
-                <Skeleton className="h-3 w-20" />
-              </div>
-              <Skeleton className="h-3 w-12" />
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Actions (span 2) or full-width (span 4) */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-4">
-          <Skeleton className="h-5 w-28" />
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-md" />
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

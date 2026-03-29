@@ -11,10 +11,19 @@ import {
 } from '@/components/data-display';
 import { useAuth } from '@/contexts/AuthContext';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
+import { useDashboardAttentionItems } from '@/hooks/useDashboardAttentionItems';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
-import { Badge, Button, ComingSoonDialog, Progress } from '@hr-portal/ui';
+import {
+  Badge,
+  Button,
+  ComingSoonDialog,
+  CountBadge,
+  DashboardAttentionCarousel,
+  Progress,
+} from '@hr-portal/ui';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Activity,
   AlertTriangle,
@@ -32,7 +41,6 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 
 // Security alerts remain placeholder until an alerting system is implemented
@@ -50,33 +58,6 @@ const systemHealth: Array<{
   status: 'healthy' | 'degraded';
   uptime: number;
 }> = [];
-
-const quickActions = [
-  {
-    title: 'User Management',
-    description: 'Manage all users',
-    icon: Users,
-    href: '/admin/directory',
-  },
-  {
-    title: 'Role Management',
-    description: 'Configure roles',
-    icon: Shield,
-    comingSoon: true,
-  },
-  {
-    title: 'Audit Logs',
-    description: 'View all logs',
-    icon: FileText,
-    comingSoon: true,
-  },
-  {
-    title: 'System Settings',
-    description: 'Configure system',
-    icon: Settings,
-    comingSoon: true,
-  },
-];
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -110,12 +91,19 @@ function getActionIcon(action: string) {
 }
 
 export default function SuperAdminDashboardPage(): ReactNode {
-  const router = useRouter();
   const { user } = useAuth();
+  const router = useRouter();
   const firstName = user?.name?.split(' ')[0] ?? 'Admin';
   const greeting = getGreeting();
   const { data: statsData, isLoading } = useSuperAdminStats();
-  const { data: activityData, isLoading: activityLoading } = useRecentActivity(8);
+  const {
+    items: attentionItems,
+    isLoading: attentionLoading,
+    totalCount: attentionCount,
+  } = useDashboardAttentionItems('super_admin');
+  const { data: activityData, isLoading: activityLoading } = useRecentActivity(8, {
+    scope: 'super_admin',
+  });
   const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const [comingSoonFeature, setComingSoonFeature] = useState<string | undefined>();
 
@@ -149,6 +137,13 @@ export default function SuperAdminDashboardPage(): ReactNode {
             System Settings
         </Button>
       </div>
+
+      <DashboardAttentionCarousel
+        items={attentionItems}
+        isLoading={attentionLoading}
+        totalCount={attentionCount}
+        onNavigate={(path) => router.push(path)}
+      />
 
       {/* Stats Row */}
       <div data-tour="stat-cards">
@@ -194,7 +189,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}>
               Security Alerts
             </BentoCardTitle>
-            <Badge variant="warning">{securityAlerts.length}</Badge>
+            <CountBadge variant="accent" size="md" count={securityAlerts.length} />
           </BentoCardHeader>
           <BentoCardContent>
             <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -261,6 +256,7 @@ export default function SuperAdminDashboardPage(): ReactNode {
               System Health
             </BentoCardTitle>
             <Button variant="ghost" size="xs" onClick={() => openComingSoon('System Settings')}>
+              <Settings className="h-3.5 w-3.5" />
                 Settings
             </Button>
           </BentoCardHeader>
@@ -340,6 +336,12 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
               Company Pulse
             </BentoCardTitle>
+            <Link href="/super-admin/company-pulse">
+              <Button variant="ghost" size="xs">
+                Manage
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
           </BentoCardHeader>
           <BentoCardContent>
             <CompanyPulseWidget />
@@ -350,11 +352,12 @@ export default function SuperAdminDashboardPage(): ReactNode {
         <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}>
-              Recent Activity
+              Recent Super Admin Activity
             </BentoCardTitle>
             <Link href="/super-admin/activity">
               <Button variant="ghost" size="xs">
                 View All
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
           </BentoCardHeader>
@@ -398,44 +401,12 @@ export default function SuperAdminDashboardPage(): ReactNode {
               <div className="flex flex-col items-center justify-center py-6 text-center">
                 <ClipboardList className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" strokeWidth={1.5} />
                 <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">No recent activity</p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Recent activities will appear here</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Recent super-admin and system actions will appear here</p>
               </div>
             )}
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>
-
-      {/* Quick Actions Grid */}
-      <div className="grid grid-cols-4 gap-4" data-tour="quick-actions">
-        {quickActions.map((action) => (
-          <button
-            key={action.title}
-            type="button"
-            onClick={() => 'href' in action && action.href ? router.push(action.href) : openComingSoon(action.title)}
-            className="text-left"
-          >
-            <div
-              className="group flex items-center gap-3 p-4 rounded-lg bg-card border border-border hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-all cursor-pointer"
-              style={{ boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.03)' }}
-            >
-              <action.icon
-                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                strokeWidth={1.5}
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                  {action.title}
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">{action.description}</p>
-              </div>
-              <ChevronRight
-                className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
-                strokeWidth={1.5}
-              />
-            </div>
-          </button>
-        ))}
-      </div>
 
       <ComingSoonDialog
         open={comingSoonOpen}
