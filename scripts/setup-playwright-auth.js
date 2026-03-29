@@ -12,11 +12,12 @@ const path = require('path');
 
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3001';
 const AUTH_FILE = path.join(process.cwd(), 'playwright-auth.json');
+const LOGIN_URL = `${BASE_URL}/login`;
+const AUTHENTICATED_URL_PATTERN = /\/(dashboard|admin\/dashboard|super-admin\/dashboard|intern\/dashboard|onboarding)/;
 
-// Test credentials from CLAUDE.md
 const TEST_CREDENTIALS = {
-  email: 'admin@test.com',
-  password: 'password',
+  email: process.env.E2E_AUTH_EMAIL ?? 'admin@test.com',
+  password: process.env.E2E_AUTH_PASSWORD ?? 'password',
 };
 
 async function setupAuth() {
@@ -30,10 +31,10 @@ async function setupAuth() {
   try {
     // Navigate to login page
     console.log('[Playwright Auth] Navigating to login page...');
-    await page.goto(`${BASE_URL}/auth/login`, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.goto(LOGIN_URL, { waitUntil: 'networkidle', timeout: 30000 });
 
     // Check if already logged in
-    const emailInput = page.locator('input[type="email"]');
+    const emailInput = page.getByLabel('Email Address');
     const isVisible = await emailInput.isVisible({ timeout: 2000 }).catch(() => false);
     
     if (!isVisible) {
@@ -46,15 +47,26 @@ async function setupAuth() {
     // Fill login form
     console.log('[Playwright Auth] Filling login form...');
     await emailInput.fill(TEST_CREDENTIALS.email);
-    await page.locator('input[type="password"]').fill(TEST_CREDENTIALS.password);
+    await page.locator('#password').fill(TEST_CREDENTIALS.password);
 
     // Click login button
     console.log('[Playwright Auth] Clicking login button...');
-    await page.click('button:has-text("Sign in")');
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // Wait for navigation to dashboard
     console.log('[Playwright Auth] Waiting for dashboard navigation...');
-    await page.waitForURL(`${BASE_URL}/dashboard**`, { timeout: 30000 });
+    try {
+      await page.waitForURL(AUTHENTICATED_URL_PATTERN, { timeout: 30000 });
+    } catch (error) {
+      const mockAuthUser = await page.evaluate(() => localStorage.getItem('auth_user'));
+      if (!mockAuthUser) {
+        throw error;
+      }
+
+      console.log('[Playwright Auth] Mock auth state detected, forcing dashboard navigation...');
+      await page.goto(`${BASE_URL}/admin/dashboard`, { waitUntil: 'networkidle', timeout: 30000 });
+      await page.waitForURL(AUTHENTICATED_URL_PATTERN, { timeout: 30000 });
+    }
 
     // Wait for page to stabilize
     await page.waitForLoadState('networkidle', { timeout: 10000 });
