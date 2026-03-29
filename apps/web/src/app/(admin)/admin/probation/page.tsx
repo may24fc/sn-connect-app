@@ -31,6 +31,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  EmptyState,
   Input,
   Progress,
   Select,
@@ -60,6 +61,7 @@ import {
   Clock,
   Eye,
   FileText,
+  Loader2,
   MessageSquare,
   MoreVertical,
   Search,
@@ -132,9 +134,6 @@ interface Employee {
   okrs: Array<OKR>;
   kpis: Array<KPI>;
 }
-
-// TODO: Replace with actual API data
-const employees: Array<Employee> = [];
 
 const statusConfig: Record<
   ProbationStatus,
@@ -240,11 +239,39 @@ function StarRating({
   );
 }
 
+export function getProbationTrackerViewState({
+  isLoading,
+  hasError,
+  employeeCount,
+}: {
+  isLoading: boolean;
+  hasError: boolean;
+  employeeCount: number;
+}): 'loading' | 'error' | 'empty' | 'ready' {
+  if (hasError) {
+    return 'error';
+  }
+
+  if (isLoading) {
+    return 'loading';
+  }
+
+  if (employeeCount === 0) {
+    return 'empty';
+  }
+
+  return 'ready';
+}
+
 export default function ProbationPage(): ReactNode {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { addToast } = useToast();
-  const { data: probationPayload } = useProbation();
+  const {
+    data: probationPayload,
+    isLoading: probationLoading,
+    error: probationError,
+  } = useProbation();
   const completeProbation = useCompleteProbation();
   const extendProbation = useExtendProbation();
 
@@ -262,7 +289,7 @@ export default function ProbationPage(): ReactNode {
   const { employees: _realtimeEmployees, isSubscribed: _isProbationSubscribed } =
     useRealtimeProbationEmployees();
 
-  const employeeRecords = probationPayload?.data?.length ? probationPayload.data : employees;
+  const employeeRecords = probationPayload?.data ?? [];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -333,6 +360,12 @@ export default function ProbationPage(): ReactNode {
     atRisk: employeeRecords.filter((e) => e.status === 'at-risk').length,
     completed: employeeRecords.filter((e) => e.status === 'completed').length,
   };
+
+  const probationTrackerViewState = getProbationTrackerViewState({
+    isLoading: probationLoading,
+    hasError: Boolean(probationError),
+    employeeCount: employeeRecords.length,
+  });
 
   const departments = [...new Set(employeeRecords.map((e) => e.department))];
 
@@ -430,194 +463,231 @@ export default function ProbationPage(): ReactNode {
         </TabsList>
 
         <TabsContent value="probation" className="space-y-6">
-          {/* Probation Stats Cards */}
-          <StatCardGrid columns={4}>
-            <StatCard
-              label="Total Employees"
-              value={stats.total}
-              icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
-            />
-            <StatCard
-              label="On Track"
-              value={stats.onTrack}
-              icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
-            />
-            <StatCard
-              label="At Risk"
-              value={stats.atRisk}
-              icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
-            />
-            <StatCard
-              label="Completed"
-              value={stats.completed}
-              icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
-            />
-          </StatCardGrid>
+          {probationTrackerViewState === 'error' ? (
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={AlertCircle}
+                  title="Failed to load probation data"
+                  description="The probation tracker could not load employee records. Refresh and try again."
+                  size="sm"
+                />
+              </CardContent>
+            </Card>
+          ) : probationTrackerViewState === 'loading' ? (
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                  title="Loading probation data"
+                  description="Employee probation records are still loading."
+                  size="sm"
+                />
+              </CardContent>
+            </Card>
+          ) : probationTrackerViewState === 'empty' ? (
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={Users}
+                  title="No probationary employees found"
+                  description="There are currently no employees with active probation records."
+                  size="sm"
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Probation Stats Cards */}
+              <StatCardGrid columns={4}>
+                <StatCard
+                  label="Total Employees"
+                  value={stats.total}
+                  icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+                />
+                <StatCard
+                  label="On Track"
+                  value={stats.onTrack}
+                  icon={<TrendingUp className="h-4 w-4" strokeWidth={1.5} />}
+                />
+                <StatCard
+                  label="At Risk"
+                  value={stats.atRisk}
+                  icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
+                />
+                <StatCard
+                  label="Completed"
+                  value={stats.completed}
+                  icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+                />
+              </StatCardGrid>
 
-          {/* Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search employees..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-              />
-            </div>
-            <div className="flex gap-3">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Status</SelectItem>
-                  <SelectItem value="on-track">On Track</SelectItem>
-                  <SelectItem value="at-risk">At Risk</SelectItem>
-                  <SelectItem value="extended">Extended</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Departments</SelectItem>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              {/* Filters */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:w-80">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search employees..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Status</SelectItem>
+                      <SelectItem value="on-track">On Track</SelectItem>
+                      <SelectItem value="at-risk">At Risk</SelectItem>
+                      <SelectItem value="extended">Extended</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Departments</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-          {/* Employee Table */}
-          <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortableTableHead column="employee" {...probationSortHeadProps}>Employee</SortableTableHead>
-                    <SortableTableHead column="department" {...probationSortHeadProps}>Department</SortableTableHead>
-                    <SortableTableHead column="stage" {...probationSortHeadProps}>Stage</SortableTableHead>
-                    <SortableTableHead column="status" {...probationSortHeadProps}>Status</SortableTableHead>
-                    <TableHead>Documents</TableHead>
-                    <TableHead>View</TableHead>
-                    <SortableTableHead column="days_left" {...probationSortHeadProps}>Days Left</SortableTableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedEmployees.length > 0 ? (
-                    sortedEmployees.map((employee) => {
-                      const config = statusConfig[employee.status];
-                      const StatusIcon = config.icon;
-                      const docProgress = Math.round(
-                        (employee.documentsComplete / employee.totalDocuments) * 100
-                      );
+              {/* Employee Table */}
+              <Card>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <SortableTableHead column="employee" {...probationSortHeadProps}>Employee</SortableTableHead>
+                        <SortableTableHead column="department" {...probationSortHeadProps}>Department</SortableTableHead>
+                        <SortableTableHead column="stage" {...probationSortHeadProps}>Stage</SortableTableHead>
+                        <SortableTableHead column="status" {...probationSortHeadProps}>Status</SortableTableHead>
+                        <TableHead>Documents</TableHead>
+                        <TableHead>View</TableHead>
+                        <SortableTableHead column="days_left" {...probationSortHeadProps}>Days Left</SortableTableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedEmployees.length > 0 ? (
+                        sortedEmployees.map((employee) => {
+                          const config = statusConfig[employee.status];
+                          const StatusIcon = config.icon;
+                          const docProgress = Math.round(
+                            (employee.documentsComplete / employee.totalDocuments) * 100
+                          );
 
-                      return (
-                        <TableRow key={employee.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => handleViewAppraisal(employee)}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9">
-                                {employee.avatarUrl && <AvatarImage src={employee.avatarUrl} />}
-                                <AvatarFallback className="text-xs">
-                                  {getInitials(employee.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{employee.name}</p>
-                                <p className="text-xs text-muted-foreground">{employee.position}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{employee.department}</TableCell>
-                          <TableCell>
-                            <StageIndicator stage={employee.stage} status={employee.status} />
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={config.variant} className="gap-1">
-                              <StatusIcon className="h-3 w-3" />
-                              {config.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Progress value={docProgress} className="h-2 w-16" />
-                              <span className="text-xs text-muted-foreground">
-                                {employee.documentsComplete}/{employee.totalDocuments}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewAppraisal(employee)}
-                              disabled={employee.okrs.length === 0 && employee.kpis.length === 0}
-                            >
-                              <Eye className="mr-1 h-4 w-4" />
-                              View
-                            </Button>
-                          </TableCell>
-                          <TableCell>
-                            {employee.status === 'completed' ? (
-                              <span className="text-muted-foreground">-</span>
-                            ) : (
-                              <span
-                                className={
-                                  employee.daysRemaining <= 15 ? 'text-error font-medium' : ''
-                                }
-                              >
-                                {employee.daysRemaining} days
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" aria-label="More options">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleViewAppraisal(employee)}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View Appraisal
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <MessageSquare className="mr-2 h-4 w-4" />
-                                  Add Note
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    void handleExtendProbation(employee.id);
-                                  }}
+                          return (
+                            <TableRow key={employee.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => handleViewAppraisal(employee)}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-9 w-9">
+                                    {employee.avatarUrl && <AvatarImage src={employee.avatarUrl} />}
+                                    <AvatarFallback className="text-xs">
+                                      {getInitials(employee.name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium">{employee.name}</p>
+                                    <p className="text-xs text-muted-foreground">{employee.position}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{employee.department}</TableCell>
+                              <TableCell>
+                                <StageIndicator stage={employee.stage} status={employee.status} />
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={config.variant} className="gap-1">
+                                  <StatusIcon className="h-3 w-3" />
+                                  {config.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Progress value={docProgress} className="h-2 w-16" />
+                                  <span className="text-xs text-muted-foreground">
+                                    {employee.documentsComplete}/{employee.totalDocuments}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleViewAppraisal(employee)}
+                                  disabled={employee.okrs.length === 0 && employee.kpis.length === 0}
                                 >
-                                  <ChevronRight className="mr-2 h-4 w-4" />
-                                  Advance Stage
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                  <Eye className="mr-1 h-4 w-4" />
+                                  View
+                                </Button>
+                              </TableCell>
+                              <TableCell>
+                                {employee.status === 'completed' ? (
+                                  <span className="text-muted-foreground">-</span>
+                                ) : (
+                                  <span
+                                    className={
+                                      employee.daysRemaining <= 15 ? 'text-error font-medium' : ''
+                                    }
+                                  >
+                                    {employee.daysRemaining} days
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" aria-label="More options">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleViewAppraisal(employee)}>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Appraisal
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      <MessageSquare className="mr-2 h-4 w-4" />
+                                      Add Note
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        void handleExtendProbation(employee.id);
+                                      }}
+                                    >
+                                      <ChevronRight className="mr-2 h-4 w-4" />
+                                      Advance Stage
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                            No probationary employees match the current filters
                           </TableCell>
                         </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        No probationary employees found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           {/* Performance Appraisal Modal */}
           <Dialog open={appraisalDialogOpen} onOpenChange={setAppraisalDialogOpen}>
@@ -670,8 +740,13 @@ export default function ProbationPage(): ReactNode {
                     <TabsContent value="okrs" className="space-y-4">
                       {selectedEmployee.okrs.length === 0 ? (
                         <Card>
-                          <CardContent className="p-6 text-center text-muted-foreground">
-                            No OKRs submitted yet
+                          <CardContent>
+                            <EmptyState
+                              icon={Target}
+                              title="No OKRs submitted yet"
+                              description="Submitted employee objectives will appear here for appraisal once they are available."
+                              size="sm"
+                            />
                           </CardContent>
                         </Card>
                       ) : (
@@ -725,8 +800,13 @@ export default function ProbationPage(): ReactNode {
                     <TabsContent value="kpis" className="space-y-4">
                       {selectedEmployee.kpis.length === 0 ? (
                         <Card>
-                          <CardContent className="p-6 text-center text-muted-foreground">
-                            No KPIs defined yet
+                          <CardContent>
+                            <EmptyState
+                              icon={TrendingUp}
+                              title="No KPIs defined yet"
+                              description="Performance metrics will appear here once KPI data has been assigned to this employee."
+                              size="sm"
+                            />
                           </CardContent>
                         </Card>
                       ) : (
@@ -1014,12 +1094,13 @@ export default function ProbationPage(): ReactNode {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No pending approvals</p>
-                        <p className="text-sm mt-1">
-                          All onboarding submissions have been processed
-                        </p>
+                      <TableCell colSpan={5} className="py-8">
+                        <EmptyState
+                          icon={Clock}
+                          title="No pending approvals"
+                          description="All onboarding submissions have been processed."
+                          size="sm"
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -1113,10 +1194,21 @@ export default function ProbationPage(): ReactNode {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {onboardingLoading
-                          ? 'Loading onboarding data...'
-                          : 'No employee onboarding submissions found'}
+                      <TableCell colSpan={7} className="py-8">
+                        <EmptyState
+                          icon={FileText}
+                          title={
+                            onboardingLoading
+                              ? 'Loading onboarding data'
+                              : 'No employee onboarding submissions found'
+                          }
+                          description={
+                            onboardingLoading
+                              ? 'Employee onboarding submissions are still loading.'
+                              : 'Completed and in-progress employee onboarding records will appear here.'
+                          }
+                          size="sm"
+                        />
                       </TableCell>
                     </TableRow>
                   )}
