@@ -139,6 +139,17 @@ interface InternshipLogsResponse {
   }>;
 }
 
+interface InternshipActionResponse {
+  data: {
+    internshipId: string;
+    status: 'completed' | 'converted';
+    userId?: string;
+    employeeId?: string;
+    userRole?: 'employee';
+    employmentType?: 'probationary';
+  };
+}
+
 export function useInternships(filters: InternshipFilters = {}) {
   return useQuery({
     queryKey: queryKeys.internships.list(filters),
@@ -347,6 +358,64 @@ export function useUpdateInternship() {
       if (!response.ok) {
         const error = await response.json().catch(() => ({ error: 'Failed to update internship' }));
         throw new Error(error.error || 'Failed to update internship');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.internships.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.detail(variables.internshipId),
+      });
+    },
+  });
+}
+
+export function useEndInternship() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { internshipId: string }): Promise<InternshipActionResponse> => {
+      const response = await fetch(`/api/internships/${payload.internshipId}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'end_internship' }),
+      });
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to end internship' }));
+        throw new Error(error.error || 'Failed to end internship');
+      }
+
+      return response.json();
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.internships.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.internships.detail(variables.internshipId),
+      });
+    },
+  });
+}
+
+export function useHireInternAsEmployee() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { internshipId: string }): Promise<InternshipActionResponse> => {
+      const response = await fetch(`/api/internships/${payload.internshipId}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'hire_as_employee' }),
+      });
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to hire intern as employee' }));
+        throw new Error(error.error || 'Failed to hire intern as employee');
       }
 
       return response.json();

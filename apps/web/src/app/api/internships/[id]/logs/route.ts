@@ -3,6 +3,12 @@ import {
   updateInternDailyLogSchema,
   updateInternDraftLogSchema,
 } from '@/lib/schemas/internship.schema';
+import {
+  createNotificationsForUsers,
+  getAdminUserIds,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
+import { logActivity } from '@/lib/audit';
 import { type NextRequest, NextResponse } from 'next/server';
 import { canAccessInternship, getAuthedInternshipContext, isInternshipAdmin } from '../../_lib';
 
@@ -110,6 +116,26 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (internshipUpdate.error) {
         console.error('Error updating internship completed hours:', internshipUpdate.error);
       }
+
+      // Notify admins that an intern has submitted a daily log
+      const submitterName = await getUserDisplayName(user.id);
+      const adminIds = await getAdminUserIds();
+      const adminRecipients = adminIds.filter((adminId) => adminId !== user.id);
+
+      createNotificationsForUsers(adminRecipients, {
+        type: 'intern_log_submitted',
+        title: 'Intern Daily Log Submitted',
+        message: `${submitterName} submitted a daily log for ${payload.logDate}`,
+        link: `/admin/interns/${id}`,
+        metadata: { internshipId: id, logDate: payload.logDate, submittedBy: user.id },
+      });
+
+      logActivity(supabase, {
+        userId: user.id,
+        action: 'submit_intern_daily_log',
+        tableName: 'intern_daily_logs',
+        recordId: data.id,
+      });
     }
 
     return NextResponse.json({ data }, { status: 201 });
@@ -244,6 +270,39 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (updateError || !data) {
       console.error('Error updating daily log:', updateError);
       return NextResponse.json({ error: 'Failed to update daily log' }, { status: 500 });
+    }
+
+    // Notify intern that their daily log was approved/rejected
+    if (payload.isApproved !== undefined && access.employeeId) {
+      const approverName = await getUserDisplayName(user.id);
+      const isApproved = payload.isApproved;
+
+      if (isApproved) {
+        createNotificationsForUsers([access.employeeId], {
+          type: 'intern_log_approved',
+          title: 'Daily Log Approved',
+          message: `${approverName} approved your daily log for ${data.log_date}`,
+          link: `/intern/dashboard`,
+          metadata: { internshipId: id, logDate: data.log_date, approvedBy: user.id },
+        });
+      } else {
+        // For rejection (is_approved set to false)
+        createNotificationsForUsers([access.employeeId], {
+          type: 'system',
+          title: 'Daily Log Review',
+          message: `${approverName} reviewed your daily log for ${data.log_date}${data.supervisor_notes ? `: ${data.supervisor_notes}` : ''}`,
+          link: `/intern/dashboard`,
+          metadata: { internshipId: id, logDate: data.log_date, reviewedBy: user.id },
+        });
+      }
+
+      logActivity(supabase, {
+        userId: user.id,
+        action: isApproved ? 'approve_intern_log' : 'review_intern_log',
+        tableName: 'intern_daily_logs',
+        recordId: data.id,
+        metadata: { isApproved, supervisorNotes: data.supervisor_notes },
+      });
     }
 
     return NextResponse.json({ data });

@@ -6,6 +6,7 @@ import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModa
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
@@ -42,6 +43,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  CountBadge,
   type SupervisorId,
   Table,
   TableBody,
@@ -68,13 +70,14 @@ import {
   LayoutGrid,
   List,
   Search,
+  RotateCcw,
   ThumbsUp,
   Trash2,
   TrendingUp,
   UserPlus,
   Users,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
@@ -90,6 +93,8 @@ function formatDateTime(dateString: string): string {
 
 export default function AdminInternsPage(): ReactNode {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isSuperAdmin = user?.role === 'super_admin';
@@ -101,6 +106,7 @@ export default function AdminInternsPage(): ReactNode {
 
   // Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
@@ -142,6 +148,10 @@ export default function AdminInternsPage(): ReactNode {
 
   // Real-time approvals hook
   const { pendingApprovals } = useRealtimeOnboardingApprovals('intern');
+  const pendingApprovalById = useMemo(
+    () => new Set(pendingApprovals.map((approval) => approval.id)),
+    [pendingApprovals]
+  );
 
   // Real-time internships hook
   const { internships: _realtimeInternships, isSubscribed: _isInternshipsSubscribed } =
@@ -195,6 +205,7 @@ export default function AdminInternsPage(): ReactNode {
   }
 
   const internshipsQuery = useInternships(internshipFilters);
+  const internshipsForOnboardingQuery = useInternships({ page: 1, pageSize: 500 });
 
   // Fetch intern onboarding profiles
   const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
@@ -224,6 +235,16 @@ export default function AdminInternsPage(): ReactNode {
         pendingReports: internship.pendingReports,
       })),
     [internshipsQuery.data]
+  );
+
+  const internshipDepartmentByEmployeeId = useMemo(
+    () =>
+      new Map(
+        (internshipsForOnboardingQuery.data?.data || [])
+          .filter((internship) => internship.employeeId && internship.department)
+          .map((internship) => [internship.employeeId, internship.department])
+      ),
+    [internshipsForOnboardingQuery.data]
   );
 
   const stats: InternDashboardStats = internshipsQuery.data?.summary || {
@@ -299,6 +320,16 @@ export default function AdminInternsPage(): ReactNode {
     router.push(`/admin/interns/${intern.id}`);
   };
 
+  const currentPathWithSearch = useMemo(() => {
+    const query = searchParams.toString();
+    return query ? `${pathname}?${query}` : pathname;
+  }, [pathname, searchParams]);
+
+  const buildOnboardingDetailHref = (profileId: string): string => {
+    const returnTo = encodeURIComponent(currentPathWithSearch);
+    return `/admin/onboarding/${profileId}?returnTo=${returnTo}`;
+  };
+
   return (
     <div className="space-y-6 p-3">
       {/* Header */}
@@ -322,18 +353,28 @@ export default function AdminInternsPage(): ReactNode {
       </div>
 
       <Tabs defaultValue="internships" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="internships">Internships</TabsTrigger>
-          <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
-          <TabsTrigger value="eod-reports">
-            EOD Reports
-            {dailyLogs.filter((log) => !log.is_approved).length > 0 && (
-              <Badge variant="destructive" className="ml-2">
-                {dailyLogs.filter((log) => !log.is_approved).length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList>
+            <TabsTrigger value="internships">Internships</TabsTrigger>
+            <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
+            <TabsTrigger value="eod-reports">
+              EOD Reports
+              {dailyLogs.filter((log) => !log.is_approved).length > 0 && (
+                <CountBadge
+                  className="ml-2"
+                  variant="danger"
+                  size="md"
+                  count={dailyLogs.filter((log) => !log.is_approved).length}
+                />
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <Button variant="outline" size="sm" onClick={() => setChecklistDialogOpen(true)}>
+            <FileText className="mr-2 h-4 w-4" />
+            View Onboarding Checklist
+          </Button>
+        </div>
 
         <TabsContent value="internships" className="space-y-6">
           {/* Summary Cards */}
@@ -459,11 +500,31 @@ export default function AdminInternsPage(): ReactNode {
                   setSupervisorFilter('all');
                 }}
               >
+                <RotateCcw className="mr-2 h-4 w-4" />
                 Clear All Filters
               </Button>
             </div>
           )}
-           
+
+          {/* Pending Reports Alert */}
+          {stats.pendingReports > 0 && (
+            <Card className="border-warning/50 bg-warning/5">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                    <FileText className="h-5 w-5 text-warning" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      There are {stats.pendingReports} daily reports waiting for supervisor review.
+                      Timely feedback helps interns improve their performance.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Interns Header */}
           <div className="flex items-center justify-between">
@@ -506,26 +567,6 @@ export default function AdminInternsPage(): ReactNode {
                     </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Pending Reports Alert */}
-          {stats.pendingReports > 0 && (
-            <Card className="border-warning/50 bg-warning/5">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                    <FileText className="h-5 w-5 text-warning" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-warning">Pending Report Reviews</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      There are {stats.pendingReports} daily reports waiting for supervisor review.
-                      Timely feedback helps interns improve their performance.
-                    </p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           )}
@@ -702,12 +743,17 @@ export default function AdminInternsPage(): ReactNode {
                       step: (p: any) => p.current_step ?? '',
                       submitted: (p: any) => p.created_at ?? '',
                     }).map((profile: any) => {
-                      const department = Array.isArray(profile.departments)
+                      const onboardingDepartment = Array.isArray(profile.departments)
                         ? profile.departments[0]?.name
                         : profile.departments?.name;
+                      const assignedDepartment = profile.employee_id
+                        ? internshipDepartmentByEmployeeId.get(profile.employee_id)
+                        : null;
+                      const department = assignedDepartment || onboardingDepartment;
+                      const isPendingApproval = pendingApprovalById.has(profile.id);
 
                       return (
-                        <TableRow key={profile.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/admin/onboarding/${profile.id}`)}>
+                        <TableRow key={profile.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(buildOnboardingDetailHref(profile.id))}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-9 w-9">
@@ -741,14 +787,33 @@ export default function AdminInternsPage(): ReactNode {
                             {new Date(profile.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
-                            >
-                              <Eye className="mr-1 h-4 w-4" />
-                              View Details
-                            </Button>
+                            {isPendingApproval ? (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() =>
+                                  setSelectedApproval({
+                                    ...profile,
+                                    role: 'intern',
+                                    user_id: profile.user_id,
+                                    completed_at: profile.completed_at ?? profile.updated_at ?? profile.created_at,
+                                  })
+                                }
+                              >
+                                <CheckCircle2 className="mr-1 h-4 w-4" />
+                                Review & Approve
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(buildOnboardingDetailHref(profile.id))}
+                              >
+                                <Eye className="mr-1 h-4 w-4" />
+                                View Details
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -942,6 +1007,13 @@ export default function AdminInternsPage(): ReactNode {
           setAssignmentData(null);
           setAssignmentModalOpen(false);
         }}
+      />
+
+      <OnboardingChecklistDialog
+        open={checklistDialogOpen}
+        onOpenChange={setChecklistDialogOpen}
+        profiles={onboardingData?.data ?? []}
+        roleLabel="intern"
       />
 
       <EODReportDetailModal

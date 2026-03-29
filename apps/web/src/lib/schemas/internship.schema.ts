@@ -34,6 +34,15 @@ export const updateInternshipSchema = createInternshipSchema
     message: 'At least one field is required',
   });
 
+export const internshipActionSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.literal('end_internship'),
+  }),
+  z.object({
+    action: z.literal('hire_as_employee'),
+  }),
+]);
+
 export const internDailyLogStatusSchema = z.enum(['draft', 'submitted']);
 
 export const createInternDailyLogSchema = z.object({
@@ -69,6 +78,7 @@ export const updateInternDailyLogSchema = z
 export type InternshipFiltersInput = z.infer<typeof internshipFiltersSchema>;
 export type CreateInternshipInput = z.infer<typeof createInternshipSchema>;
 export type UpdateInternshipInput = z.infer<typeof updateInternshipSchema>;
+export type InternshipActionInput = z.infer<typeof internshipActionSchema>;
 export type CreateInternDailyLogInput = z.infer<typeof createInternDailyLogSchema>;
 export type UpdateInternDailyLogInput = z.infer<typeof updateInternDailyLogSchema>;
 

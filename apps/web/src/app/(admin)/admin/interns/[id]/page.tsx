@@ -2,6 +2,8 @@
 
 import { useExtendInternship } from '@/hooks/useIndividualPerformance';
 import {
+  useEndInternship,
+  useHireInternAsEmployee,
   useInternship,
   useUpdateInternDailyLog,
   useUpdateInternship,
@@ -83,6 +85,7 @@ export default function InternDetailPage({
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<DailyReport | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [extendDialogOpen, setExtendDialogOpen] = useState(false);
   const [newEndDate, setNewEndDate] = useState('');
@@ -91,6 +94,8 @@ export default function InternDetailPage({
   const internshipQuery = useInternship(id);
   const updateLogMutation = useUpdateInternDailyLog();
   const updateInternshipMutation = useUpdateInternship();
+  const endInternshipMutation = useEndInternship();
+  const hireInternMutation = useHireInternAsEmployee();
   const extendMutation = useExtendInternship();
   const { addToast } = useToast();
 
@@ -103,6 +108,40 @@ export default function InternDetailPage({
     internshipPeriodId: report.internshipPeriodId as InternshipPeriodId,
   }));
   const weeklyHours = intern?.weeklyHours || [];
+
+  const handleExportReport = useCallback((): void => {
+    if (!intern) return;
+
+    const profileData = [
+      {
+        field: 'Name',
+        value: intern.name,
+      },
+      { field: 'Email', value: intern.email },
+      { field: 'Phone', value: intern.phone || 'N/A' },
+      { field: 'School', value: intern.school },
+      { field: 'Program', value: intern.program },
+      { field: 'Department', value: intern.department },
+      { field: 'Supervisor', value: intern.supervisor },
+      { field: 'Start Date', value: formatDateForCsv(intern.startDate) },
+      { field: 'End Date', value: formatDateForCsv(intern.endDate) },
+      { field: 'Required Hours', value: String(intern.requiredHours) },
+      { field: 'Completed Hours', value: String(intern.completedHours) },
+      {
+        field: 'Progress',
+        value: formatPercentageForCsv(
+          calculateHoursProgress(intern.completedHours, intern.requiredHours)
+        ),
+      },
+      { field: 'Status', value: intern.status },
+    ];
+
+    exportToCsv(profileData, {
+      filename: `intern-${intern.name.replace(/\s+/g, '-').toLowerCase()}`,
+      headers: ['Field', 'Value'],
+      rowMapper: (item) => [item.field, item.value],
+    });
+  }, [intern]);
 
   if (internshipQuery.isLoading) {
     return (
@@ -123,36 +162,6 @@ export default function InternDetailPage({
   const daysRemaining = getDaysRemaining(intern.endDate);
   const progressPercentage = calculateHoursProgress(intern.completedHours, intern.requiredHours);
   const pendingReports = uiReports.filter((r) => r.status === 'submitted').length;
-
-  const handleExportReport = useCallback((): void => {
-    if (!intern) return;
-
-    // Export intern profile info and daily reports
-    const profileData = [
-      {
-        field: 'Name',
-        value: intern.name,
-      },
-      { field: 'Email', value: intern.email },
-      { field: 'Phone', value: intern.phone || 'N/A' },
-      { field: 'School', value: intern.school },
-      { field: 'Program', value: intern.program },
-      { field: 'Department', value: intern.department },
-      { field: 'Supervisor', value: intern.supervisor },
-      { field: 'Start Date', value: formatDateForCsv(intern.startDate) },
-      { field: 'End Date', value: formatDateForCsv(intern.endDate) },
-      { field: 'Required Hours', value: String(intern.requiredHours) },
-      { field: 'Completed Hours', value: String(intern.completedHours) },
-      { field: 'Progress', value: formatPercentageForCsv(progressPercentage) },
-      { field: 'Status', value: intern.status },
-    ];
-
-    exportToCsv(profileData, {
-      filename: `intern-${intern.name.replace(/\s+/g, '-').toLowerCase()}`,
-      headers: ['Field', 'Value'],
-      rowMapper: (item) => [item.field, item.value],
-    });
-  }, [intern, progressPercentage]);
 
   const handleProvideFeedback = (report: DailyReport): void => {
     setSelectedReport(report);
@@ -212,6 +221,39 @@ export default function InternDetailPage({
     }
   };
 
+  const handleEndInternship = async (): Promise<void> => {
+    try {
+      await endInternshipMutation.mutateAsync({ internshipId: id });
+      setReviewDialogOpen(false);
+      addToast({ title: 'Internship ended', variant: 'success' });
+    } catch {
+      addToast({ title: 'Failed to end internship', variant: 'error' });
+    }
+  };
+
+  const handleHireAsEmployee = async (): Promise<void> => {
+    try {
+      await hireInternMutation.mutateAsync({ internshipId: id });
+      setReviewDialogOpen(false);
+      addToast({
+        title: 'Intern hired as employee',
+        description: 'Role set to employee and employment type set to probationary.',
+        variant: 'success',
+      });
+    } catch {
+      addToast({ title: 'Failed to hire intern as employee', variant: 'error' });
+    }
+  };
+
+  const isActiveIntern = intern.status === 'active';
+  const canCompleteInternship = isActiveIntern && progressPercentage >= 100;
+  const canHireAsEmployee = isActiveIntern || intern.status === 'completed';
+  const isActionPending =
+    extendMutation.isPending ||
+    updateInternshipMutation.isPending ||
+    endInternshipMutation.isPending ||
+    hireInternMutation.isPending;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -228,6 +270,9 @@ export default function InternDetailPage({
           </div>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setReviewDialogOpen(true)}>
+            Review & Evaluate
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
@@ -248,23 +293,6 @@ export default function InternDetailPage({
                 <Award className="mr-2 h-4 w-4" />
                 Generate Certificate
               </DropdownMenuItem>
-              {intern.status === 'active' && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    setNewEndDate(intern.endDate);
-                    setExtendDialogOpen(true);
-                  }}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Extend Internship
-                </DropdownMenuItem>
-              )}
-              {intern.status === 'active' && progressPercentage >= 100 && (
-                <DropdownMenuItem onClick={() => setCompleteDialogOpen(true)}>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Complete Internship
-                </DropdownMenuItem>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -550,6 +578,73 @@ export default function InternDetailPage({
             >
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Submit Feedback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Review & Evaluate Dialog */}
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Review & Evaluate</DialogTitle>
+            <DialogDescription>
+              Run internship decisions for {intern.name}. Extend and complete use the current
+              review flow, while end and hire trigger lifecycle updates.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={!isActiveIntern || isActionPending}
+              onClick={() => {
+                setNewEndDate(intern.endDate);
+                setExtendDialogOpen(true);
+                setReviewDialogOpen(false);
+              }}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Extend Internship
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={!canCompleteInternship || isActionPending}
+              onClick={() => {
+                setCompleteDialogOpen(true);
+                setReviewDialogOpen(false);
+              }}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Complete Internship
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={!isActiveIntern || isActionPending}
+              onClick={handleEndInternship}
+            >
+              <Clock className="mr-2 h-4 w-4" />
+              End Internship
+            </Button>
+
+            <Button
+              className="w-full justify-start"
+              disabled={!canHireAsEmployee || isActionPending}
+              onClick={handleHireAsEmployee}
+            >
+              <User className="mr-2 h-4 w-4" />
+              Hire as Employee
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewDialogOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
