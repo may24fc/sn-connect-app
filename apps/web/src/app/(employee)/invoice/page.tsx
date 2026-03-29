@@ -34,7 +34,7 @@ import {
   HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { CheckCircle2, Clock, DollarSign, Download, Eye, EyeOff, FileText, Plus } from 'lucide-react';
+import { CheckCircle2, Clock, DollarSign, Download, Eye, EyeOff, FileText, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
@@ -267,6 +267,7 @@ function InvoiceDetailDialog({
             Download PDF
           </Button>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            <X className="h-4 w-4" />
             Close
           </Button>
         </div>
@@ -861,7 +862,14 @@ export default function InvoicePage() {
                 Cancel
               </Button>
               <Button type="submit" disabled={createInvoice.isPending}>
-                {createInvoice.isPending ? 'Saving...' : 'Save Draft'}
+                {createInvoice.isPending ? (
+                  'Saving...'
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    Save Draft
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

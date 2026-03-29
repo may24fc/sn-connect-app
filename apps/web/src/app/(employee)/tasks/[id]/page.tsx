@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTask } from '@/hooks/useTask';
 import { useTaskProofs, useCreateTaskProof, useDeleteTaskProof } from '@/hooks/useTaskProofs';
 import { useUpdateTask } from '@/hooks/useUpdateTask';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { formatDate } from '@/lib/format';
 import {
   Button,
@@ -25,8 +26,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
-import { ArrowLeft, ExternalLink, FileText, Link2, Plus, Trash2, X } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, ExternalLink, FileText, Link2, Loader2, Plus, Send, Trash2, X } from 'lucide-react';
 import { type FormEvent, use, useState } from 'react';
 
 export default function TaskDetailPage({
@@ -36,6 +36,7 @@ export default function TaskDetailPage({
 }) {
   const { id } = use(params);
   const { user } = useAuth();
+  const handleBack = useBackNavigation({ fallbackPath: '/tasks' });
   const { addToast } = useToast();
 
   const { data, isLoading, error } = useTask(id);
@@ -107,11 +108,9 @@ export default function TaskDetailPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Button variant="ghost" asChild>
-        <Link href="/tasks">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Tasks
-        </Link>
+      <Button variant="ghost" onClick={handleBack}>
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Tasks
       </Button>
 
       <Card>
@@ -270,7 +269,17 @@ export default function TaskDetailPage({
                   Cancel
                 </Button>
                 <Button type="submit" size="sm" disabled={createProof.isPending || !proofContent.trim()}>
-                  {createProof.isPending ? 'Submitting...' : 'Submit Proof'}
+                  {createProof.isPending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3.5 w-3.5" />
+                      Submit Proof
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

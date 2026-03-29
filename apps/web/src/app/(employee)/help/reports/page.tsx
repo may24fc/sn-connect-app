@@ -13,7 +13,7 @@ const employeeFaqs: FAQItem[] = [
   {
     question: 'How do I create a new report?',
     answer:
-      'Click the "+ New Report" button at the top of the Reports page. Select the report type, choose the week period, and fill in your summary, accomplishments, challenges, and plans. You can save as a draft or submit immediately.',
+      'Click the "+ New Marketing Report" button at the top of the Marketing Reports page. Choose the reporting period, pick a marketing template if needed, and fill in your summary, accomplishments, challenges, plans, and campaign metrics. You can save as a draft or submit immediately.',
   },
   {
     question: 'What\'s the difference between saving as a draft and submitting?',
@@ -28,7 +28,7 @@ const employeeFaqs: FAQItem[] = [
   {
     question: 'What report types are available?',
     answer:
-      'Common types include Weekly, Monthly, and Marketing reports. The available types depend on your department and role. Select the type that best matches your reporting needs.',
+      'The employee-facing reports workflow is currently focused on Marketing reports. The page is available only to employees assigned to the Marketing department.',
   },
   {
     question: 'What should I include in the Accomplishments section?',
@@ -92,9 +92,9 @@ export default function ReportsHelpPage(): ReactNode {
     <div className="space-y-8">
       {/* Page Title */}
       <div>
-        <h2 className="text-xl font-semibold text-foreground">Reports</h2>
+        <h2 className="text-xl font-semibold text-foreground">Marketing Reports</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Learn how to create, submit, and manage your reports.
+          Learn how to create, submit, and manage your marketing reports.
         </p>
       </div>
 
@@ -122,16 +122,16 @@ export default function ReportsHelpPage(): ReactNode {
       {/* How to Create a Report - Step by Step */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Creating a Report (Employees)</CardTitle>
+          <CardTitle className="text-base">Creating a Marketing Report</CardTitle>
         </CardHeader>
         <CardContent>
           <ol className="space-y-3">
             {[
-              'Click the "+ New Report" button at the top of the Reports page',
-              'Select the report type and choose the week/period you\'re reporting on',
-              'Fill in the Summary, Accomplishments, and optionally Challenges and Next Week Plans',
-              'Add any metrics (expenditure, results) and file attachments if applicable',
-              'Click "Save as Draft" to save for later, or "Submit" to send for review',
+              'Click the "+ New Marketing Report" button at the top of the page',
+              'Choose the reporting period and, if useful, apply the campaign template',
+              'Fill in the Summary, Accomplishments, Challenges, and Next Week Plans sections',
+              'Add campaign metrics such as spend, impressions, clicks, leads, conversions, or ROAS',
+              'Click "Save Draft" to save for later, or "Submit Report" to send for review',
             ].map((step, i) => (
               <li key={step} className="flex items-start gap-3">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 shrink-0 mt-0.5">

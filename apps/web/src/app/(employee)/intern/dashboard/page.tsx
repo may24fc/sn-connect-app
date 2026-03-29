@@ -38,6 +38,7 @@ import {
   Clock,
   FileText,
   GraduationCap,
+  Send,
   Target,
   TrendingUp,
   User,
@@ -289,6 +290,7 @@ export default function InternDashboardPage(): ReactNode {
                     </div>
                   </div>
                   <Button size="sm" onClick={() => setShowForm(true)}>
+                    <Send className="h-4 w-4" strokeWidth={1.5} />
                     Submit Now
                   </Button>
                 </div>

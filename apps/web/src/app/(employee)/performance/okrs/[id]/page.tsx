@@ -9,6 +9,7 @@ import {
   useUpdateOKR,
   useUpdateOKRTarget,
 } from '@/hooks/usePerformance';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import type { OKRTarget, TargetMetricType } from '@hr-portal/ui';
 import {
@@ -62,7 +63,6 @@ import {
   ToggleLeft,
   Trash2,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 
@@ -191,6 +191,7 @@ function targetFormForEdit(target: OKRTarget): TargetFormState {
 export default function OKRDetailPage(): ReactNode {
   usePerformanceRealtime();
   const params = useParams<{ id: string }>();
+  const handleBack = useBackNavigation({ fallbackPath: '/performance' });
   const { addToast } = useToast();
 
   const okrId = params.id;
@@ -372,13 +373,14 @@ export default function OKRDetailPage(): ReactNode {
   if (!okr) {
     return (
       <div className="space-y-4">
-        <Link
-          href="/performance"
+        <button
+          type="button"
+          onClick={handleBack}
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Performance
-        </Link>
+        </button>
         <Card>
           <CardContent className="p-8 text-center">
             <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -395,13 +397,14 @@ export default function OKRDetailPage(): ReactNode {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <Link
-        href="/performance"
+      <button
+        type="button"
+        onClick={handleBack}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Performance
-      </Link>
+      </button>
 
       {/* Objective Header */}
       <Card>

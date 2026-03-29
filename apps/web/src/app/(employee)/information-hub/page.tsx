@@ -13,6 +13,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CountBadge,
   CategoryBrowser,
   Input,
   ResourceCard,
@@ -122,9 +123,7 @@ export default function ResourcesPage() {
             <Bookmark className="h-4 w-4" />
             My Bookmarks
             {bookmarks.length > 0 && (
-              <span className="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-zinc-800/40 dark:text-zinc-300">
-                {bookmarks.length}
-              </span>
+              <CountBadge className="ml-1" variant="accent" size="md" count={bookmarks.length} />
             )}
           </Button>
         </Link>

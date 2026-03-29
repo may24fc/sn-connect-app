@@ -1,5 +1,6 @@
 'use client';
 
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import {
   useCreateOKR,
   usePerformanceCycles,
@@ -30,7 +31,6 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { ArrowLeft, Calendar, Filter, ListChecks, Plus, Target, X } from 'lucide-react';
-import Link from 'next/link';
 import { type ReactNode, useState } from 'react';
 
 interface NewOKRFormState {
@@ -57,6 +57,7 @@ const emptyForm: NewOKRFormState = {
 
 export default function OKRsPage(): ReactNode {
   usePerformanceRealtime();
+  const handleBack = useBackNavigation({ fallbackPath: '/performance' });
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
@@ -255,11 +256,9 @@ export default function OKRsPage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Link href="/performance">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="icon" onClick={handleBack}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">My OKRs</h1>
             <p className="text-muted-foreground">Manage your objectives and key results</p>
@@ -316,6 +315,7 @@ export default function OKRsPage(): ReactNode {
         </Select>
         {statusFilter !== 'all' && (
           <Button variant="ghost" size="sm" onClick={() => setStatusFilter('all')}>
+            <X className="h-4 w-4" />
             Clear
           </Button>
         )}

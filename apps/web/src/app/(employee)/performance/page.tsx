@@ -92,6 +92,7 @@ export default function PerformancePage(): ReactNode {
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
   const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
+  const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = usePerformanceOKRs();
   const createOKR = useCreateOKR();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -100,6 +101,24 @@ export default function PerformancePage(): ReactNode {
 
   // Calculate overall weighted progress across all objectives
   const totalWeight = okrs.reduce((sum, okr) => sum + (okr.weight || 1), 0);
+  const selectedCycleIdForWeight = formState.cycleId || activeCycle?.id || '';
+  const selectedCycleWeight = selectedCycleIdForWeight
+    ? allOkrs
+        .filter((okr) => okr.cycleId === selectedCycleIdForWeight)
+        .reduce((sum, okr) => sum + (okr.weight || 1), 0)
+    : 0;
+  const remainingObjectiveWeight = Math.max(
+    0,
+    Math.round((100 - selectedCycleWeight) * 100) / 100
+  );
+  const enteredObjectiveWeight = Number(formState.weight);
+  const objectiveWeightExceedsRemaining =
+    formState.weight !== '' && enteredObjectiveWeight > remainingObjectiveWeight;
+  const objectiveWeightInvalid =
+    !formState.weight ||
+    enteredObjectiveWeight <= 0 ||
+    objectiveWeightExceedsRemaining ||
+    isLoadingAllOkrs;
   const overallProgress =
     totalWeight > 0
       ? Math.round(
@@ -123,7 +142,7 @@ export default function PerformancePage(): ReactNode {
   };
 
   const handleCreateObjective = async (): Promise<void> => {
-    if (!formState.objective.trim()) return;
+    if (!formState.objective.trim() || objectiveWeightInvalid) return;
 
     const selectedCycleId = formState.cycleId || activeCycle?.id;
 
@@ -324,7 +343,6 @@ export default function PerformancePage(): ReactNode {
           ) : (
           <div className="space-y-3">
             {filteredOkrs.map((okr) => {
-              const weightPct = totalWeight > 0 ? Math.round((okr.weight / totalWeight) * 100) : 0;
               return (
                 <Link key={okr.id} href={`/performance/okrs/${okr.id}`} className="block">
                   <Card className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
@@ -377,7 +395,7 @@ export default function PerformancePage(): ReactNode {
                                 className="text-xs"
                               />
                               <span className="text-xs text-muted-foreground">
-                                Weight: {weightPct}%
+                                Weight: {okr.weight}%
                               </span>
                             </div>
                           </div>
@@ -490,17 +508,32 @@ export default function PerformancePage(): ReactNode {
                 <Label htmlFor="weight" className="text-sm font-medium">
                   Weight
                 </Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  placeholder="1"
-                  value={formState.weight}
-                  onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  How much this objective counts toward your overall score. Higher = more impact.
+                <div className="relative">
+                  <Input
+                    id="weight"
+                    type="number"
+                    min="1"
+                    max={remainingObjectiveWeight}
+                    step="1"
+                    placeholder={remainingObjectiveWeight > 0 ? String(remainingObjectiveWeight) : '0'}
+                    value={formState.weight}
+                    onChange={(e) => setFormState({ ...formState, weight: e.target.value })}
+                    className="pr-8"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    %
+                  </span>
+                </div>
+                <p
+                  className={`text-xs ${
+                    objectiveWeightExceedsRemaining ? 'text-destructive' : 'text-muted-foreground'
+                  }`}
+                >
+                  {isLoadingAllOkrs
+                    ? 'Checking cycle allocation...'
+                    : remainingObjectiveWeight <= 0
+                    ? '100% already allocated across objectives'
+                    : `${remainingObjectiveWeight}% available in this cycle. Higher = more impact.`}
                 </p>
               </div>
             </SlidePanelSection>
@@ -514,7 +547,7 @@ export default function PerformancePage(): ReactNode {
               onClick={() => {
                 void handleCreateObjective();
               }}
-              disabled={!formState.objective.trim() || createOKR.isPending}
+              disabled={!formState.objective.trim() || objectiveWeightInvalid || createOKR.isPending}
             >
               <Plus className="mr-2 h-4 w-4" />
               {createOKR.isPending ? 'Creating...' : 'Create Objective'}

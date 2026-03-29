@@ -14,10 +14,10 @@ const helpNav = [
     description: 'OKRs, KPIs, and review cycles',
   },
   {
-    title: 'Reports',
+    title: 'Marketing Reports',
     href: '/help/reports',
     icon: FileText,
-    description: 'Weekly reports and daily EOD reports',
+    description: 'Marketing reporting workflow and FAQs',
   },
   {
     title: 'Invoices',

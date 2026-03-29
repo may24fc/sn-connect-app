@@ -3,6 +3,7 @@
 import { TourProvider, useTour } from '@/components/TourProvider';
 import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
 import { useAIChat } from '@/hooks/useAIChat';
+import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
 import {
   useConversations,
   useCreateConversation,
@@ -16,6 +17,7 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/hooks/useNotifications';
+import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
 import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
 import { useTheme } from 'next-themes';
@@ -108,6 +110,7 @@ function EmployeeLayoutInner({
 }): ReactNode {
   const { startTour, currentGroup } = useTour();
   const { theme, setTheme } = useTheme();
+  const marketingReportsAccess = useMarketingReportsAccess();
 
   // Determine sidebar variant based on user role
   const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
@@ -122,6 +125,7 @@ function EmployeeLayoutInner({
           onNavigate={onNavigate}
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          showMarketingReports={marketingReportsAccess.canAccess}
         />
       </div>
 
@@ -130,7 +134,12 @@ function EmployeeLayoutInner({
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
           <div className="relative z-10 flex-shrink-0">
-            <Sidebar variant={sidebarVariant} currentPath={pathname} onNavigate={onNavigate} />
+            <Sidebar
+              variant={sidebarVariant}
+              currentPath={pathname}
+              onNavigate={onNavigate}
+              showMarketingReports={marketingReportsAccess.canAccess}
+            />
           </div>
         </div>
       )}
@@ -185,6 +194,11 @@ function EmployeeAIChatbot(): ReactNode {
   const { messages, sendMessage, isLoading, clearHistory, abort, loadMessages } = useAIChat({
     conversationId: activeConversationId,
   });
+  const {
+    data: suggestionsData,
+    isFetching: isSuggestionsLoading,
+    refetch: refetchSuggestions,
+  } = useAIChatSuggestions({ enabled: false });
 
   const { data: conversationsData } = useConversations();
   const createConversation = useCreateConversation();
@@ -203,6 +217,7 @@ function EmployeeAIChatbot(): ReactNode {
       onSuccess: (conv) => {
         setActiveConversationId(conv.id);
         clearHistory();
+        void refetchSuggestions();
       },
     });
   };
@@ -241,6 +256,7 @@ function EmployeeAIChatbot(): ReactNode {
         if (activeConversationId === id) {
           setActiveConversationId(null);
           clearHistory();
+          void refetchSuggestions();
         }
       },
     });
@@ -275,6 +291,14 @@ function EmployeeAIChatbot(): ReactNode {
       onCreateConversation={handleCreate}
       onRenameConversation={handleRename}
       onDeleteConversation={handleDelete}
+      suggestions={suggestionsData?.data ?? []}
+      isSuggestionsLoading={isSuggestionsLoading}
+      liveSync={suggestionsData?.liveSync ?? null}
+      onOpenChange={(open) => {
+        if (open) {
+          void refetchSuggestions();
+        }
+      }}
     />
   );
 }

@@ -10,6 +10,7 @@ import {
   AnnouncementCard,
   AnnouncementDetailDialog,
   Button,
+  CountBadge,
   Input,
   MultiSelectFilter,
   Skeleton,
@@ -116,9 +117,7 @@ export default function AnnouncementsPage() {
             <Star className="h-4 w-4" />
             My Starred
             {starredIds.size > 0 && (
-              <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                {starredIds.size}
-              </span>
+              <CountBadge className="ml-1" variant="accent" size="md" count={starredIds.size} />
             )}
           </Button>
         </Link>

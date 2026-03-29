@@ -6,6 +6,7 @@ import { EditableProfileSection, type EditableField } from '@/components/profile
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
+import { buildDisplayName, getDisplayNameInitials } from '@/lib/user-display';
 import {
   useRoleMetadata,
   useUpdateRoleMetadata,
@@ -250,15 +251,9 @@ export default function ProfilePage() {
   }
 
   // Handle missing employee data gracefully - show UI structure
-  const displayName = employee
-    ? `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim()
-    : (user?.name ?? 'User');
-  const initials = employee
-    ? (employee.first_name?.[0] ?? '') + (employee.last_name?.[0] ?? '')
-    : (user?.name
-        ?.split(' ')
-        .map((n: string) => n[0])
-        .join('') ?? 'U');
+  const employeeName = buildDisplayName(employee?.first_name, employee?.last_name);
+  const displayName = employeeName || user?.name || 'User';
+  const initials = getDisplayNameInitials(displayName, 'U');
   const position = employee?.position ?? 'Position not set';
   const department = employee?.department ?? 'Department not assigned';
   const employeeNumber = employee?.employee_number ?? 'N/A';
