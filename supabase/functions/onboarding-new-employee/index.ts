@@ -7,6 +7,10 @@ import { createInAppNotification } from '../_shared/in-app-notify.ts';
 import { sendEmail } from '../_shared/resend.ts';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
 
+const ONBOARDING_FROM = 'Onboarding Team <no-reply@sngroup.com.au>';
+const HR_OPERATIONS_FROM = 'HR Operations <no-reply@sngroup.com.au>';
+const CANONICAL_APP_URL = (Deno.env.get('APP_URL') ?? Deno.env.get('NEXT_PUBLIC_SITE_URL') ?? 'https://app.sngroup.com.au').replace(/\/$/, '');
+
 // ---------------------------------------------------------------------------
 // Input Schema
 // ---------------------------------------------------------------------------
@@ -90,7 +94,7 @@ function buildWelcomeEmailHtml(employeeName: string, checklistId: string): strin
           <li>Grant System Access (due in 2 days)</li>
         </ul>
       </div>
-      <a href="${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.vercel.app') ?? '#'}/onboarding"
+      <a href="${CANONICAL_APP_URL}/onboarding"
          style="display: inline-block; background: #4F46E5; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: 500;">
         View Your Checklist
       </a>
@@ -247,6 +251,7 @@ serve(async (req: Request): Promise<Response> => {
       employeeEmail
         ? sendEmail({
             to: employeeEmail,
+            from: ONBOARDING_FROM,
             subject: 'Welcome to SN Connect — Your Onboarding Checklist',
             html: buildWelcomeEmailHtml(employeeName, checklist.id),
           })
@@ -255,6 +260,7 @@ serve(async (req: Request): Promise<Response> => {
       // HR notification email
       sendEmail({
         to: 'hr@snconnect.com',
+        from: HR_OPERATIONS_FROM,
         subject: `New Employee Onboarding: ${employeeName}`,
         html: buildHrNotificationHtml(employeeName, employeeEmail, checklist.id),
       }),

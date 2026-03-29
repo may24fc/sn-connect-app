@@ -1,6 +1,15 @@
 import { Resend } from 'resend';
 
-const FROM_EMAIL = 'SN International Group <careers@sngroup.com.au>';
+const BASE_FROM_EMAIL = 'no-reply@sngroup.com.au';
+
+const SENDER_NAME_BY_CONTEXT = {
+  recruitment: 'Recruitment Team',
+} as const;
+
+function getFromEmail(context: keyof typeof SENDER_NAME_BY_CONTEXT): string {
+  // Keep one mailbox for deliverability and vary display name by email context.
+  return `${SENDER_NAME_BY_CONTEXT[context]} <${BASE_FROM_EMAIL}>`;
+}
 
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
@@ -27,7 +36,7 @@ export async function sendApplicationConfirmation({
 
   try {
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: getFromEmail('recruitment'),
       to,
       subject: `Application Received — ${positionTitle}`,
       html: buildEmailHtml({
@@ -155,7 +164,7 @@ export async function sendApplicationStatusUpdate({
 
   try {
     const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: getFromEmail('recruitment'),
       to,
       subject: `${content.subject} — ${positionTitle}`,
       html: buildEmailHtml({
