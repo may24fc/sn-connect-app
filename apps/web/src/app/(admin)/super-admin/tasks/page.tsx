@@ -1,7 +1,9 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { TaskKanbanBoard, type TaskStatusDB } from '@/components/tasks';
+import { SuperAdminTicketsPanel } from '@/components/tickets/SuperAdminTicketsPanel';
 import { useCreateTask } from '@/hooks/useCreateTask';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useTaskAssignees } from '@/hooks/useTaskAssignees';
@@ -9,7 +11,6 @@ import { useTasks, type TaskRecord } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import { useTableSort } from '@/hooks/useTableSort';
 import type { TaskFilters } from '@/lib/query-keys';
-import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
   Badge,
   Button,
@@ -28,6 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Table,
   TableBody,
   TableCell,
@@ -42,8 +47,8 @@ import {
 import type { TaskPriority, TaskStatus } from '@hr-portal/ui';
 import { Calendar, CheckCircle2, ClipboardList, Clock, LayoutGrid, List, Loader2, Plus, Search, X, XCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { type FormEvent, useCallback, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
 type TaskCategoryValue = (typeof TASK_CATEGORY_OPTIONS)[number]['value'];
 
@@ -195,10 +200,14 @@ const formatDate = (value: string | null | undefined): string => {
 };
 
 export default function TaskManagementPage() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ViewMode>('board');
+  const [activeManagementTab, setActiveManagementTab] = useState<'tasks' | 'tickets'>(
+    searchParams.get('tab') === 'tickets' ? 'tickets' : 'tasks'
+  );
   const { addToast } = useToast();
 
   const [title, setTitle] = useState('');
@@ -327,6 +336,10 @@ export default function TaskManagementPage() {
     }
   };
 
+  useEffect(() => {
+    setActiveManagementTab(searchParams.get('tab') === 'tickets' ? 'tickets' : 'tasks');
+  }, [searchParams]);
+
   return (
     <div className="space-y-6 p-3">
       {/* Header */}
@@ -334,146 +347,158 @@ export default function TaskManagementPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Task Management</h1>
           <p className="text-sm text-muted-foreground">
-            Create and assign tasks to employees and interns
+            Oversee staff tasks and triage employee support tickets.
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Task
-        </Button>
+        {activeManagementTab === 'tasks' ? (
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Task
+          </Button>
+        ) : null}
       </div>
 
-      {/* Stats Overview */}
-      <StatCardGrid columns={5}>
-        <StatCard
-          label="All"
-          value={taskStats.total}
-          icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Pending"
-          value={taskStats.pending}
-          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="In Progress"
-          value={taskStats.in_progress}
-          icon={<Loader2 className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Cancelled"
-          value={taskStats.cancelled}
-          icon={<XCircle className="h-4 w-4" strokeWidth={1.5} />}
-        />
-        <StatCard
-          label="Completed"
-          value={taskStats.completed}
-          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
-        />
-      </StatCardGrid>
+      <Tabs
+        value={activeManagementTab}
+        onValueChange={(value) => setActiveManagementTab(value as 'tasks' | 'tickets')}
+        className="space-y-6"
+      >
+        <TabsList>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="tickets">Tickets</TabsTrigger>
+        </TabsList>
 
-      {/* View Tabs */}
-      <div>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          {/* Search */}
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search tasks..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+        <TabsContent value="tasks" className="space-y-6">
+          <StatCardGrid columns={5}>
+            <StatCard
+              label="All"
+              value={taskStats.total}
+              icon={<ClipboardList className="h-4 w-4" strokeWidth={1.5} />}
             />
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[170px]">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Categories</SelectItem>
-                {TASK_CATEGORY_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              value={tagFilter}
-              onChange={(event) => setTagFilter(event.target.value)}
-              placeholder="Tags: onboarding, urgent"
-              className="w-[220px] bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+            <StatCard
+              label="Pending"
+              value={taskStats.pending}
+              icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
             />
+            <StatCard
+              label="In Progress"
+              value={taskStats.in_progress}
+              icon={<Loader2 className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Cancelled"
+              value={taskStats.cancelled}
+              icon={<XCircle className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Completed"
+              value={taskStats.completed}
+              icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          </StatCardGrid>
 
-            {/* View Toggle */}
-            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
-              <button
-                type="button"
-                onClick={() => setActiveView('list')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeView === 'list'
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <List className="h-3.5 w-3.5" strokeWidth={1.5} />
-                List
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveView('board')}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  activeView === 'board'
-                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                }`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Board
-              </button>
+          <div>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search tasks..."
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[170px]">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Categories</SelectItem>
+                    {TASK_CATEGORY_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={tagFilter}
+                  onChange={(event) => setTagFilter(event.target.value)}
+                  placeholder="Tags: onboarding, urgent"
+                  className="w-[220px] bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                />
+
+                <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('list')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      activeView === 'list'
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    }`}
+                  >
+                    <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('board')}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      activeView === 'board'
+                        ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                    }`}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    Board
+                  </button>
+                </div>
+              </div>
             </div>
+
+            {activeView === 'list' && <div className="mt-4">
+              {isLoading ? (
+                <TasksLoadingSkeleton viewMode="list" />
+              ) : error ? (
+                <Card>
+                  <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+                </Card>
+              ) : (
+                <TaskListView tasks={tasks} assigneeById={assigneeById} />
+              )}
+            </div>}
+
+            {activeView === 'board' && <div className="mt-4">
+              {isLoading ? (
+                <TasksLoadingSkeleton viewMode="board" />
+              ) : error ? (
+                <Card>
+                  <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+                </Card>
+              ) : tasks.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                    No tasks found. Create your first task to get started.
+                  </CardContent>
+                </Card>
+              ) : (
+                <TaskKanbanBoard
+                  tasks={tasks}
+                  onStatusChange={handleStatusChange}
+                  linkPrefix="/super-admin/tasks"
+                />
+              )}
+            </div>}
           </div>
-        </div>
+        </TabsContent>
 
-        {/* List View */}
-        {activeView === 'list' && <div className="mt-4">
-          {isLoading ? (
-            <TasksLoadingSkeleton viewMode="list" />
-          ) : error ? (
-            <Card>
-              <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
-            </Card>
-          ) : (
-            <TaskListView tasks={tasks} assigneeById={assigneeById} />
-          )}
-        </div>}
-
-        {/* Board View */}
-        {activeView === 'board' && <div className="mt-4">
-          {isLoading ? (
-            <TasksLoadingSkeleton viewMode="board" />
-          ) : error ? (
-            <Card>
-              <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
-            </Card>
-          ) : tasks.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-sm text-muted-foreground">
-                No tasks found. Create your first task to get started.
-              </CardContent>
-            </Card>
-          ) : (
-            <TaskKanbanBoard
-              tasks={tasks}
-              onStatusChange={handleStatusChange}
-              linkPrefix="/super-admin/tasks"
-            />
-          )}
-        </div>}
-      </div>
+        <TabsContent value="tickets">
+          <SuperAdminTicketsPanel />
+        </TabsContent>
+      </Tabs>
 
       {/* Create Task Modal */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

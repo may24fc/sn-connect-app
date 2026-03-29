@@ -12,6 +12,7 @@ import {
   FolderOpen,
   GraduationCap,
   Home,
+  LifeBuoy,
   Library,
   type LucideIcon,
   Megaphone,
@@ -52,6 +53,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/dashboard', icon: Home },
   { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+  { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
   { label: 'Marketing Reports', href: '/reports', icon: FileText },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
@@ -66,6 +68,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
   { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+  { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
   { label: 'EOD Reports', href: '/intern/reports', icon: FileText },
   { label: 'Documents', href: '/files', icon: FolderOpen },
@@ -88,6 +91,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/admin/resources', icon: Library },
+  { label: 'Tickets', href: '/admin/tickets', icon: LifeBuoy },
 ];
 
 // Super Admin navigation - same as admin plus payroll approvals

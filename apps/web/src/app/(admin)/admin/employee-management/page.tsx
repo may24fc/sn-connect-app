@@ -6,6 +6,8 @@ import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModa
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
+import { ManageTicketHandlersDialog } from '@/components/tickets/ManageTicketHandlersDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { type ProbationRecord, useCompleteProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
@@ -28,6 +30,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   Input,
   Progress,
   Select,
@@ -61,6 +64,7 @@ import {
   Search,
   ShieldCheck,
   Star,
+  Target,
   TrendingUp,
   UserCog,
   UserPlus,
@@ -250,6 +254,7 @@ export default function EmployeeManagementPage(): ReactNode {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'onboarding' ? 'onboarding' : 'probation');
   const [searchTerm, setSearchTerm] = useState('');
@@ -258,6 +263,7 @@ export default function EmployeeManagementPage(): ReactNode {
   const [probationView, setProbationView] = useState<ProbationView>('cards');
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
+  const [ticketHandlersDialogOpen, setTicketHandlersDialogOpen] = useState(false);
 
   // Onboarding modal states
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
@@ -412,10 +418,18 @@ export default function EmployeeManagementPage(): ReactNode {
             Manage employee probation, onboarding, and directory access
           </p>
         </div>
-        <Button onClick={() => setInviteModalOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Invite Employee
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {user?.role === 'super_admin' ? (
+            <Button variant="outline" onClick={() => setTicketHandlersDialogOpen(true)}>
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Manage IT Handlers
+            </Button>
+          ) : null}
+          <Button onClick={() => setInviteModalOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Invite Employee
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -533,14 +547,13 @@ export default function EmployeeManagementPage(): ReactNode {
             </div>
           ) : filteredProbation.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <CheckCircle2
-                  className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-3"
-                  strokeWidth={1.5}
+              <CardContent>
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="No employees on probation"
+                  description="Active probation records will appear here when employees enter the review cycle."
+                  size="sm"
                 />
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  No employees on probation
-                </p>
               </CardContent>
             </Card>
           ) : (
@@ -839,12 +852,13 @@ export default function EmployeeManagementPage(): ReactNode {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No pending approvals</p>
-                        <p className="text-sm mt-1">
-                          All onboarding submissions have been processed
-                        </p>
+                      <TableCell colSpan={5} className="py-8">
+                        <EmptyState
+                          icon={Clock}
+                          title="No pending approvals"
+                          description="All onboarding submissions have been processed."
+                          size="sm"
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -962,10 +976,21 @@ export default function EmployeeManagementPage(): ReactNode {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {onboardingLoading
-                          ? 'Loading onboarding data...'
-                          : 'No employee onboarding submissions found'}
+                      <TableCell colSpan={7} className="py-8">
+                        <EmptyState
+                          icon={FileText}
+                          title={
+                            onboardingLoading
+                              ? 'Loading onboarding data'
+                              : 'No employee onboarding submissions found'
+                          }
+                          description={
+                            onboardingLoading
+                              ? 'Employee onboarding submissions are still loading.'
+                              : 'Completed and in-progress employee onboarding records will appear here.'
+                          }
+                          size="sm"
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -1026,6 +1051,11 @@ export default function EmployeeManagementPage(): ReactNode {
         roleLabel="employee"
       />
 
+      <ManageTicketHandlersDialog
+        open={ticketHandlersDialogOpen}
+        onOpenChange={setTicketHandlersDialogOpen}
+      />
+
       {/* Performance Appraisal Dialog */}
       <Dialog open={appraisalDialogOpen} onOpenChange={setAppraisalDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -1074,8 +1104,13 @@ export default function EmployeeManagementPage(): ReactNode {
                 <TabsContent value="okrs" className="space-y-4">
                   {selectedProbationEmp.okrs.length === 0 ? (
                     <Card>
-                      <CardContent className="p-6 text-center text-muted-foreground">
-                        No OKRs submitted yet
+                      <CardContent>
+                        <EmptyState
+                          icon={Target}
+                          title="No OKRs submitted yet"
+                          description="Submitted employee objectives will appear here for appraisal once they are available."
+                          size="sm"
+                        />
                       </CardContent>
                     </Card>
                   ) : (
@@ -1129,8 +1164,13 @@ export default function EmployeeManagementPage(): ReactNode {
                 <TabsContent value="kpis" className="space-y-4">
                   {selectedProbationEmp.kpis.length === 0 ? (
                     <Card>
-                      <CardContent className="p-6 text-center text-muted-foreground">
-                        No KPIs defined yet
+                      <CardContent>
+                        <EmptyState
+                          icon={TrendingUp}
+                          title="No KPIs defined yet"
+                          description="Performance metrics will appear here once KPI data has been assigned to this employee."
+                          size="sm"
+                        />
                       </CardContent>
                     </Card>
                   ) : (

@@ -40,6 +40,16 @@ export interface TaskFilters {
   pageSize?: number;
 }
 
+export interface TicketFilters {
+  search?: string;
+  team?: 'hr' | 'it';
+  status?: 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  scope?: 'submitter' | 'assigned' | 'triage';
+  page?: number;
+  pageSize?: number;
+}
+
 export interface ReportFilters {
   search?: string;
   status?: 'draft' | 'submitted' | 'approved' | 'rejected';
@@ -236,6 +246,20 @@ export const queryKeys = {
     list: (filters: TaskFilters) => [...queryKeys.tasks.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.tasks.all, 'detail', id] as const,
     proofs: (taskId: string) => [...queryKeys.tasks.all, 'proofs', taskId] as const,
+  },
+
+  tickets: {
+    all: ['tickets'] as const,
+    lists: () => [...queryKeys.tickets.all, 'list'] as const,
+    list: (filters: TicketFilters) => [...queryKeys.tickets.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.tickets.all, 'detail', id] as const,
+    assignees: () => [...queryKeys.tickets.all, 'assignees'] as const,
+  },
+
+  ticketHandlers: {
+    all: ['ticket-handlers'] as const,
+    list: () => [...queryKeys.ticketHandlers.all, 'list'] as const,
+    me: () => [...queryKeys.ticketHandlers.all, 'me'] as const,
   },
 
   // Reports
