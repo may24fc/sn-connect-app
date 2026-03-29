@@ -69,6 +69,16 @@ export default function ArchivedJobsPage() {
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
+  function handleRestore(id: string) {
+    const job = jobs.find((jobItem) => jobItem.id === id);
+    restoreJob.mutate(id, {
+      onSuccess: () =>
+        addToast({
+          variant: 'success',
+          title: 'Job posting restored',
+          ...(job ? { description: `"${job.title}" has been restored and is now active.` } : {}),
+        }),
+      onError: () =>
         addToast({
           variant: 'error',
           title: 'Failed to restore posting',
