@@ -50,9 +50,52 @@ export async function GET() {
 
     // No employee record or no probation period set
     if (!employee || !employee.probation_end_date) {
+      if (!employee) {
+        return NextResponse.json({
+          data: null,
+          onProbation: false,
+          probationState: 'none',
+        });
+      }
+
+      const { data: latestCompletedReview } = await supabase
+        .from('performance_reviews')
+        .select('final_rating, manager_comments, completed_at')
+        .eq('employee_id', employee.id)
+        .eq('status', 'completed')
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!latestCompletedReview) {
+        return NextResponse.json({
+          data: null,
+          onProbation: false,
+          probationState: 'none',
+        });
+      }
+
       return NextResponse.json({
-        data: null,
+        data: {
+          employeeId: employee.id,
+          name: `${employee.first_name} ${employee.last_name}`,
+          position: employee.position,
+          department: employee.department,
+          startDate: employee.date_hired,
+          endDate: null,
+          stage: 4,
+          status: 'completed',
+          daysRemaining: 0,
+          totalDays: 90,
+          elapsedDays: 90,
+          progressPercent: 100,
+          finalRating: latestCompletedReview.final_rating,
+          managerComments: latestCompletedReview.manager_comments,
+          completedAt: latestCompletedReview.completed_at,
+        },
         onProbation: false,
+        probationState: 'completed',
       });
     }
 
@@ -100,8 +143,12 @@ export async function GET() {
         totalDays,
         elapsedDays: Math.min(elapsedDays, totalDays),
         progressPercent,
+        finalRating: null,
+        managerComments: null,
+        completedAt: null,
       },
       onProbation: daysRemaining > 0,
+      probationState: daysRemaining > 0 ? 'active' : 'completed',
     });
   } catch (error) {
     console.error('GET /api/probation/me error:', error);

@@ -305,6 +305,10 @@ serve(async (req: Request): Promise<Response> => {
         inAppRecipientIds.push(manager.user_id);
       }
 
+      if (emp.user_id) {
+        inAppRecipientIds.push(emp.user_id);
+      }
+
       // Include HR for 14d, 7d, 0d
       if (milestone.includeHr) {
         emailRecipients.push('hr@snconnect.com');
@@ -341,17 +345,25 @@ serve(async (req: Request): Promise<Response> => {
       // Create in-app notifications
       const uniqueRecipientIds = [...new Set(inAppRecipientIds)];
       for (const userId of uniqueRecipientIds) {
+        const isEmployeeRecipient = userId === emp.user_id;
         await createInAppNotification(supabase, {
           userId,
           type: 'probation_update',
-          title: `${milestone.subjectPrefix}: ${fullName}`,
-          message: `Probation ${daysRemaining === 0 ? 'ends today' : `ends in ${daysRemaining} days`}. Action required.`,
-          link: `/admin/employee-management?employeeId=${emp.id}`,
+          title: isEmployeeRecipient
+            ? `Probation Update: ${fullName}`
+            : `${milestone.subjectPrefix}: ${fullName}`,
+          message: isEmployeeRecipient
+            ? `Your probation ${daysRemaining === 0 ? 'ends today' : `ends in ${daysRemaining} days`}. Please check your dashboard for details.`
+            : `Probation ${daysRemaining === 0 ? 'ends today' : `ends in ${daysRemaining} days`}. Action required.`,
+          link: isEmployeeRecipient
+            ? '/dashboard'
+            : `/admin/employee-management?employeeId=${emp.id}`,
           metadata: {
             employeeId: emp.id,
             daysRemaining,
             milestoneType: milestone.type,
             urgency: milestone.urgency,
+            recipientType: isEmployeeRecipient ? 'employee' : 'admin',
           },
         });
       }

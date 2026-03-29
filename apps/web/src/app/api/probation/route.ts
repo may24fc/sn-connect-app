@@ -1,3 +1,5 @@
+import { logActivity } from '@/lib/audit';
+import { createNotification } from '@/lib/notifications/create-notification';
 import { probationActionSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin } from '../performance/_lib';
@@ -222,19 +224,76 @@ export async function POST(request: NextRequest) {
         .update({ probation_end_date: parsed.data.newProbationEndDate })
         .eq('id', parsed.data.employeeId)
         .is('deleted_at', null)
-        .select('id, probation_end_date')
+        .select('id, user_id, first_name, last_name, immediate_head, probation_end_date')
         .single();
 
       if (updateError || !data) {
         return NextResponse.json({ error: 'Failed to extend probation' }, { status: 500 });
       }
 
+      const employeeName = `${data.first_name} ${data.last_name}`.trim();
+      const formattedEndDate = new Date(parsed.data.newProbationEndDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      const notificationTasks: Array<Promise<void>> = [];
+
+      if (data.user_id) {
+        notificationTasks.push(
+          createNotification({
+            userId: data.user_id,
+            type: 'probation_update',
+            title: 'Probation Period Extended',
+            message: `Your probation period has been extended to ${formattedEndDate}.`,
+            link: '/dashboard',
+            metadata: {
+              employeeId: data.id,
+              action: 'extend',
+              newProbationEndDate: parsed.data.newProbationEndDate,
+            },
+          })
+        );
+      }
+
+      if (data.immediate_head && data.immediate_head !== data.user_id) {
+        notificationTasks.push(
+          createNotification({
+            userId: data.immediate_head,
+            type: 'probation_update',
+            title: `Probation Extended: ${employeeName}`,
+            message: `${employeeName}'s probation period was extended to ${formattedEndDate}.`,
+            link: `/admin/employee-management?employeeId=${data.id}`,
+            metadata: {
+              employeeId: data.id,
+              action: 'extend',
+              newProbationEndDate: parsed.data.newProbationEndDate,
+            },
+          })
+        );
+      }
+
+      await Promise.all(notificationTasks);
+
+      logActivity(supabase, {
+        userId: user.id,
+        action: 'extend_probation',
+        tableName: 'employees',
+        recordId: data.id,
+        metadata: {
+          employeeId: data.id,
+          newProbationEndDate: parsed.data.newProbationEndDate,
+          recipients: [data.user_id, data.immediate_head].filter(Boolean),
+        },
+      });
+
       return NextResponse.json({ data, message: 'Probation period extended successfully' });
     }
 
     const { data: employee, error: employeeError } = await supabase
       .from('employees')
-      .select('id')
+      .select('id, user_id, first_name, last_name, immediate_head')
       .eq('id', parsed.data.employeeId)
       .is('deleted_at', null)
       .single();
@@ -277,6 +336,66 @@ export async function POST(request: NextRequest) {
     if (updateError || !data) {
       return NextResponse.json({ error: 'Failed to complete probation' }, { status: 500 });
     }
+
+    const employeeName = `${employee.first_name} ${employee.last_name}`.trim();
+    const notificationTasks: Array<Promise<void>> = [];
+
+    if (employee.user_id) {
+      notificationTasks.push(
+        createNotification({
+          userId: employee.user_id,
+          type: 'probation_update',
+          title: 'Probation Evaluation Completed',
+          message:
+            typeof parsed.data.finalRating === 'number'
+              ? `Your probation evaluation has been completed with a final rating of ${parsed.data.finalRating}/5.`
+              : 'Your probation evaluation has been completed.',
+          link: '/dashboard',
+          metadata: {
+            employeeId: employee.id,
+            action: 'complete',
+            ...(typeof parsed.data.finalRating === 'number'
+              ? { finalRating: parsed.data.finalRating }
+              : {}),
+          },
+        })
+      );
+    }
+
+    if (employee.immediate_head && employee.immediate_head !== employee.user_id) {
+      notificationTasks.push(
+        createNotification({
+          userId: employee.immediate_head,
+          type: 'probation_update',
+          title: `Probation Completed: ${employeeName}`,
+          message: `${employeeName}'s probation evaluation has been completed.`,
+          link: `/admin/employee-management?employeeId=${employee.id}`,
+          metadata: {
+            employeeId: employee.id,
+            action: 'complete',
+            ...(typeof parsed.data.finalRating === 'number'
+              ? { finalRating: parsed.data.finalRating }
+              : {}),
+          },
+        })
+      );
+    }
+
+    await Promise.all(notificationTasks);
+
+    logActivity(supabase, {
+      userId: user.id,
+      action: 'complete_probation_evaluation',
+      tableName: 'employees',
+      recordId: employee.id,
+      metadata: {
+        employeeId: employee.id,
+        ...(typeof parsed.data.finalRating === 'number'
+          ? { finalRating: parsed.data.finalRating }
+          : {}),
+        recipients: [employee.user_id, employee.immediate_head].filter(Boolean),
+      },
+    });
 
     return NextResponse.json({ data, message: 'Probation evaluation completed successfully' });
   } catch (error) {
