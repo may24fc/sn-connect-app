@@ -43,7 +43,7 @@ CREATE POLICY "task_proofs_select_policy" ON public.task_proofs
           OR EXISTS (
             SELECT 1 FROM public.users u
             WHERE u.id = auth.uid()
-              AND u.role IN ('admin', 'super_admin', 'hr', 'cos', 'ceo')
+              AND u.role IN ('admin', 'super_admin')
               AND u.deleted_at IS NULL
           )
         )

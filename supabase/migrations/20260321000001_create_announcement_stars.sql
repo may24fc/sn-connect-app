@@ -26,4 +26,4 @@ CREATE POLICY announcement_stars_self_policy ON public.announcement_stars
 -- Admins can view all stars (for analytics)
 CREATE POLICY announcement_stars_admin_select_policy ON public.announcement_stars
   FOR SELECT TO authenticated
-  USING (user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'super_admin']::user_role[]));
+  USING (user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[]));

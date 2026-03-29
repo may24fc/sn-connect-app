@@ -81,7 +81,7 @@ CREATE POLICY kpi_evidence_select_policy ON public.kpi_evidence
     EXISTS (
       SELECT 1 FROM public.users u
       WHERE u.id = auth.uid()
-        AND u.role IN ('admin', 'super_admin', 'hr', 'cos', 'ceo')
+        AND u.role IN ('admin', 'super_admin')
         AND u.deleted_at IS NULL
     )
   );
@@ -144,7 +144,7 @@ CREATE POLICY kpi_evidence_storage_select ON storage.objects
       OR EXISTS (
         SELECT 1 FROM public.users u
         WHERE u.id = auth.uid()
-          AND u.role IN ('admin', 'super_admin', 'hr', 'cos', 'ceo')
+          AND u.role IN ('admin', 'super_admin')
           AND u.deleted_at IS NULL
       )
     )
