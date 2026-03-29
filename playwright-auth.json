@@ -1,4 +1,14 @@
 {
   "cookies": [],
-  "origins": []
+  "origins": [
+    {
+      "origin": "http://localhost:3002",
+      "localStorage": [
+        {
+          "name": "auth_user",
+          "value": "{\"id\":\"adm-1\",\"name\":\"Admin User\",\"email\":\"admin@test.com\",\"role\":\"admin\",\"isOnboardingComplete\":true}"
+        }
+      ]
+    }
+  ]
 }

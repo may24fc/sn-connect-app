@@ -4,7 +4,8 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL,

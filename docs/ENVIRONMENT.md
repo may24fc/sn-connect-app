@@ -11,7 +11,7 @@ This document describes all environment variables required by the HR Portal appl
 2. Fill in all required values (see variable descriptions below)
 3. The application validates environment variables at startup using Zod
 
-**For local development:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to use mock authentication without needing a real Supabase project. Test accounts: employee@test.com, intern@test.com, admin@test.com, superadmin@test.com (all with password: `password`)
+**For local development:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to use mock authentication without needing a real Supabase project. Mock auth supports the canonical `example.com` sample accounts and the legacy `test.com` aliases used by older Playwright specs. All mock accounts use password: `password`.
 
 **For production:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false` and provide real Supabase credentials.
 
@@ -71,11 +71,11 @@ For local development without a Supabase project:
 
 1. Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` in your `.env.local`
 2. You can skip setting Supabase keys (they won't be used)
-3. Use these test accounts:
-   - `employee@test.com` / `password` (Employee role)
-   - `intern@test.com` / `password` (Intern role)
-   - `admin@test.com` / `password` (Admin role - maps to hr/cos/ceo)
-   - `superadmin@test.com` / `password` (Super Admin role)
+3. Use either of these equivalent credential sets:
+   - `employee@test.com` or `employee@example.com` / `password` (Employee role)
+   - `intern@test.com` or `intern@example.com` / `password` (Intern role)
+   - `admin@test.com` or `admin@example.com` / `password` (Admin role)
+   - `superadmin@test.com`, `superadmin@example.com`, or `super-admin@example.com` / `password` (Super Admin role)
 
 ## Local Development with Supabase
 

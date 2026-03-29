@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter @sn-group/www dev",
     "dev:web": "pnpm --filter @hr-portal/web dev",
+    "dev:web:e2e": "node scripts/start-playwright-web.js",
     "dev:all": "pnpm --filter @sn-group/www --filter @hr-portal/web dev",
     "dev:mobile": "pnpm --filter @hr-portal/mobile dev",
     "build": "pnpm -r build",
@@ -19,6 +20,8 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:local": "playwright test --config playwright.local.config.ts",
+    "test:e2e:local:ui": "playwright test --config playwright.local.config.ts --ui",
     "test:e2e:ui": "playwright test --ui",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean && rimraf node_modules",
