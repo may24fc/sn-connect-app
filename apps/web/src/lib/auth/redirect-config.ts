@@ -168,6 +168,26 @@ export function getPostLoginRedirect(role?: string, returnTo?: string | null): s
 }
 
 /**
+ * Returns the default authenticated landing page.
+ * Onboarding-related states take precedence over role-based dashboards.
+ */
+export function getAuthenticatedHomeRedirect(
+  role?: string | null,
+  status?: string | null,
+  returnTo?: string | null
+): string {
+  if (status === 'pending_onboarding') {
+    return '/onboarding/setup';
+  }
+
+  if (status === 'awaiting_approval') {
+    return '/onboarding/awaiting-approval';
+  }
+
+  return getPostLoginRedirect(role ?? undefined, returnTo);
+}
+
+/**
  * Returns the redirect URL for the password reset flow.
  * This is passed to `supabase.auth.resetPasswordForEmail()` as `redirectTo`.
  */

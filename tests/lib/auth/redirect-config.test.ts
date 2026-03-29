@@ -164,6 +164,29 @@ describe('redirect-config', () => {
     });
   });
 
+  describe('getAuthenticatedHomeRedirect', () => {
+    it('prioritizes onboarding setup over role dashboards', async () => {
+      const { getAuthenticatedHomeRedirect } = await loadModule();
+      expect(getAuthenticatedHomeRedirect('admin', 'pending_onboarding')).toBe(
+        '/onboarding/setup'
+      );
+    });
+
+    it('prioritizes awaiting approval over returnTo', async () => {
+      const { getAuthenticatedHomeRedirect } = await loadModule();
+      expect(getAuthenticatedHomeRedirect('employee', 'awaiting_approval', '/reports')).toBe(
+        '/onboarding/awaiting-approval'
+      );
+    });
+
+    it('falls back to the role-based dashboard when no onboarding status blocks it', async () => {
+      const { getAuthenticatedHomeRedirect } = await loadModule();
+      expect(getAuthenticatedHomeRedirect('super_admin', 'active')).toBe(
+        '/super-admin/dashboard'
+      );
+    });
+  });
+
   describe('getPostSignupRedirect', () => {
     it('encodes email in the query string', async () => {
       const { getPostSignupRedirect } = await loadModule();

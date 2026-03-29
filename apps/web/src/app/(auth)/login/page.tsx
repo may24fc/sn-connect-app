@@ -1,5 +1,6 @@
 'use client';
 
+import { getAuthenticatedHomeRedirect } from '@/lib/auth/redirect-config';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Button,
@@ -19,27 +20,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 
-function getDefaultRedirect(user: NonNullable<ReturnType<typeof useAuth>['user']>): string {
-  if (user.status === 'pending_onboarding') {
-    return '/onboarding/setup';
-  }
-
-  if (user.status === 'awaiting_approval') {
-    return '/onboarding/awaiting-approval';
-  }
-
-  switch (user.role) {
-    case 'admin':
-      return '/admin/dashboard';
-    case 'super_admin':
-      return '/super-admin/dashboard';
-    case 'intern':
-      return '/intern/dashboard';
-    default:
-      return '/dashboard';
-  }
-}
-
 export default function LoginPage(): ReactNode {
   const { login, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -53,7 +33,7 @@ export default function LoginPage(): ReactNode {
     if (!authLoading && user) {
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get('returnTo') || params.get('redirect');
-      const defaultRedirect = getDefaultRedirect(user);
+      const defaultRedirect = getAuthenticatedHomeRedirect(user.role, user.status);
       const shouldBypassReturnTo =
         user.status === 'pending_onboarding' || user.status === 'awaiting_approval';
 
