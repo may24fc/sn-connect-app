@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { extractMarketingContext, normalizeReportRecord, serializeReportNotes } from '@/lib/report-utils';
 import { reportMetricSchema, reportSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -51,7 +52,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: normalizeReportRecord(data) });
   } catch (error) {
     console.error('Unexpected error in GET /api/reports/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -77,21 +78,35 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const body = await request.json();
+    const hasMarketingContext = body.marketingContext !== undefined;
 
     const hasReportFields =
       body.reportType !== undefined ||
       body.periodStart !== undefined ||
       body.periodEnd !== undefined ||
       body.status !== undefined ||
-      body.notes !== undefined;
+      body.notes !== undefined ||
+      hasMarketingContext;
 
     if (hasReportFields) {
+      const { data: existingReport, error: existingReportError } = await supabase
+        .from('reports')
+        .select('id, report_type, notes')
+        .eq('id', id)
+        .is('deleted_at', null)
+        .single();
+
+      if (existingReportError || !existingReport) {
+        return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+      }
+
       const parsedReport = reportSchema.partial().safeParse({
         reportType: body.reportType,
         periodStart: body.periodStart,
         periodEnd: body.periodEnd,
         status: body.status,
         notes: body.notes,
+        marketingContext: body.marketingContext,
       });
 
       if (!parsedReport.success) {
@@ -102,6 +117,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
 
       const updates: Record<string, string | null> = {};
+      const existingNoteData = extractMarketingContext(existingReport.notes);
+      const nextReportType = parsedReport.data.reportType ?? existingReport.report_type;
+      const nextMarketingContext = nextReportType === 'marketing'
+        ? parsedReport.data.marketingContext !== undefined
+          ? parsedReport.data.marketingContext ?? null
+          : existingNoteData.marketingContext
+        : null;
 
       if (parsedReport.data.reportType !== undefined) {
         updates.report_type = parsedReport.data.reportType;
@@ -115,8 +137,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       if (parsedReport.data.status !== undefined) {
         updates.status = parsedReport.data.status;
       }
-      if (parsedReport.data.notes !== undefined) {
-        updates.notes = parsedReport.data.notes || null;
+      if (
+        parsedReport.data.notes !== undefined ||
+        parsedReport.data.marketingContext !== undefined ||
+        parsedReport.data.reportType !== undefined
+      ) {
+        const nextNotes = parsedReport.data.notes !== undefined
+          ? parsedReport.data.notes
+          : existingNoteData.cleanNotes;
+
+        updates.notes = serializeReportNotes(nextNotes, nextMarketingContext);
       }
 
       const { error: updateError } = await supabase
@@ -195,7 +225,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       recordId: id,
     });
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: normalizeReportRecord(data) });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/reports/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
