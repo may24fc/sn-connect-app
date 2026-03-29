@@ -64,11 +64,6 @@ export const personalInfoSchema = z.object({
     .email('Valid personal email is required')
     .min(1, 'Personal email is required')
     .max(150),
-  companyEmail: z
-    .string()
-    .email('Valid company email is required')
-    .min(1, 'Company email is required')
-    .max(150),
   departmentId: optionalUuid,
   startDate: optionalDate,
   nationality: z.string().min(1, 'Nationality is required').max(120),
@@ -81,7 +76,11 @@ export const personalInfoSchema = z.object({
   age: z
     .union([z.number().int().min(0).max(120), z.literal(''), z.null(), z.undefined()])
     .optional(),
-  address: z.string().min(1, 'Address is required').max(500),
+  streetAddress: z.string().min(1, 'Street is required').max(300),
+  city: z.string().min(1, 'City is required').max(100),
+  province: z.string().min(1, 'Province is required').max(100),
+  country: z.string().min(1, 'Country is required').max(100),
+  zipcode: z.union([z.string().max(20), z.literal(''), z.null(), z.undefined()]).optional(),
   emergencyContactName: z.string().min(1, 'Emergency contact name is required').max(120),
   emergencyContactNumber: phoneNumber,
   emergencyContactCountryCode: phoneCountryCodeSchema.default('PH'),
@@ -127,9 +126,9 @@ export const paymentInfoSchema = z.object({
     .max(150),
   paymentPhoneNumber: phoneNumber,
   paymentPhoneCountryCode: phoneCountryCodeSchema.default('PH'),
-  paymentAddress: z.string().min(1, 'Address is required').max(500),
-  paymentCity: z.string().min(1, 'City is required').max(100),
-  paymentProvince: z.string().min(1, 'Province is required').max(100),
+  paymentAddress: z.union([z.string().max(500), z.literal(''), z.null(), z.undefined()]).optional(),
+  paymentCity: z.union([z.string().max(100), z.literal(''), z.null(), z.undefined()]).optional(),
+  paymentProvince: z.union([z.string().max(100), z.literal(''), z.null(), z.undefined()]).optional(),
   paymentZipcode: z.string().max(20).optional().nullable(),
 }).superRefine((data, ctx) => {
   if (

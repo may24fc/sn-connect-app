@@ -1,4 +1,5 @@
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@hr-portal/ui';
+import { LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -14,7 +15,10 @@ export default function OnboardingCompletePage(): ReactNode {
         </CardHeader>
         <CardContent>
           <Button asChild className="w-full">
-            <Link href="/dashboard">Go to Dashboard</Link>
+            <Link href="/dashboard">
+              <LayoutDashboard className="h-4 w-4" />
+              Go to Dashboard
+            </Link>
           </Button>
         </CardContent>
       </Card>

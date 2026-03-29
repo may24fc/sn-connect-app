@@ -132,8 +132,11 @@ export function StepPaymentInfo({
               id="paymentBankId"
               value={get('paymentBankId')}
               onChange={(bankId, bankName) => {
-                update('paymentBankId', bankId);
-                update('paymentBankName', bankName);
+                onChange({
+                  ...value,
+                  paymentBankId: bankId,
+                  paymentBankName: bankName,
+                });
               }}
               banks={banks}
               countryCode={paymentCountryCode}
@@ -195,54 +198,6 @@ export function StepPaymentInfo({
               countryCode={get('paymentPhoneCountryCode') || 'PH'}
               onCountryChange={(code) => update('paymentPhoneCountryCode', code)}
               placeholder="Enter phone number"
-              required
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Address */}
-      <div>
-        <h3 className="text-sm font-medium mb-3">Payment Address</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="paymentCity">
-              City <span className="text-rose-500">*</span>
-            </Label>
-            <Input
-              id="paymentCity"
-              value={get('paymentCity')}
-              onChange={(e) => update('paymentCity', e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="paymentProvince">
-              Province <span className="text-rose-500">*</span>
-            </Label>
-            <Input
-              id="paymentProvince"
-              value={get('paymentProvince')}
-              onChange={(e) => update('paymentProvince', e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="paymentZipcode">Zipcode (Optional)</Label>
-            <Input
-              id="paymentZipcode"
-              value={get('paymentZipcode')}
-              onChange={(e) => update('paymentZipcode', e.target.value)}
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="paymentAddress">
-              Address <span className="text-rose-500">*</span>
-            </Label>
-            <Input
-              id="paymentAddress"
-              value={get('paymentAddress')}
-              onChange={(e) => update('paymentAddress', e.target.value)}
               required
             />
           </div>

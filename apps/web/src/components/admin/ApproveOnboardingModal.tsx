@@ -13,6 +13,7 @@ import {
 import { Label } from '@hr-portal/ui/primitives/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hr-portal/ui/primitives/tabs';
 import { Textarea } from '@hr-portal/ui/primitives/textarea';
+import { useToast } from '@hr-portal/ui';
 import {
   Briefcase,
   Calendar,
@@ -42,6 +43,38 @@ function formatDate(dateString: string): string {
     day: 'numeric',
     year: 'numeric',
   }).format(date);
+}
+
+function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}
+
+function normalizeAddress(address?: string): string {
+  if (!address) {
+    return '';
+  }
+
+  const segments = address
+    .split('|')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .map((segment) => {
+      const separatorIndex = segment.indexOf(':');
+      if (separatorIndex === -1) {
+        return segment;
+      }
+      return segment.slice(separatorIndex + 1).trim();
+    })
+    .filter(Boolean);
+
+  return segments.join(', ');
 }
 
 interface OnboardingData {
@@ -76,6 +109,7 @@ interface OnboardingData {
   // Bank Details
   payment_account_number?: string;
   payment_account_name?: string;
+  payment_bank_name?: string;
 }
 
 interface ApproverModalProps {
@@ -99,6 +133,7 @@ export function ApproveOnboardingModal({
 }: ApproverModalProps) {
   const [action, setAction] = useState<'approve' | 'reject' | null>(null);
   const approveOnboarding = useApproveOnboarding();
+  const { addToast } = useToast();
 
   const {
     register,
@@ -119,6 +154,15 @@ export function ApproveOnboardingModal({
         notes: data.notes || '',
       });
 
+      addToast({
+        title: selectedAction === 'approve' ? 'Onboarding approved' : 'Onboarding rejected',
+        description:
+          selectedAction === 'approve'
+            ? `${onboarding.full_name} can now proceed to assignment.`
+            : `${onboarding.full_name} was notified of the rejection.`,
+        variant: selectedAction === 'approve' ? 'success' : 'default',
+      });
+
       if (selectedAction === 'approve' && onApprovalSuccess) {
         onApprovalSuccess({
           userId: onboarding.user_id,
@@ -132,6 +176,11 @@ export function ApproveOnboardingModal({
       handleClose();
     } catch (error) {
       console.error('Failed to process onboarding:', error);
+      addToast({
+        title: 'Failed to process onboarding decision',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
     }
   };
 
@@ -142,6 +191,17 @@ export function ApproveOnboardingModal({
   };
 
   if (!onboarding) return null;
+
+  const normalizedAddress = normalizeAddress(onboarding.address);
+  const fallbackAddress = [
+    onboarding.address,
+    onboarding.payment_city,
+    onboarding.payment_province,
+    onboarding.payment_zipcode,
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const displayAddress = normalizedAddress || fallbackAddress || 'Not provided';
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -171,9 +231,9 @@ export function ApproveOnboardingModal({
                     <Briefcase className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                     {onboarding.position || 'No position specified'}
                   </span>
-                  <span className="inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
                     <Calendar className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-                    Submitted {formatDate(onboarding.completed_at)}
+                    Submitted on {formatDateTime(onboarding.completed_at)}
                   </span>
                 </div>
               </div>
@@ -226,16 +286,7 @@ export function ApproveOnboardingModal({
               <InfoField
                 icon={<MapPin className="h-4 w-4" />}
                 label="Address"
-                value={
-                  [
-                    onboarding.address,
-                    onboarding.payment_city,
-                    onboarding.payment_province,
-                    onboarding.payment_zipcode,
-                  ]
-                    .filter(Boolean)
-                    .join(', ') || 'Not provided'
-                }
+                value={displayAddress}
               />
               <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4">
                 <h4 className="font-medium text-sm mb-3">Emergency Contact</h4>
@@ -257,7 +308,7 @@ export function ApproveOnboardingModal({
             </TabsContent>
 
             <TabsContent value="bank" className="space-y-4 mt-4">
-              <InfoField label="Bank Name" value={'Not provided'} />
+              <InfoField label="Bank Name" value={onboarding.payment_bank_name || 'Not provided'} />
               <InfoField
                 label="Account Number"
                 value={onboarding.payment_account_number || 'Not provided'}
@@ -286,14 +337,6 @@ export function ApproveOnboardingModal({
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={approveOnboarding.isPending}
-              >
-                Cancel
-              </Button>
               <Button
                 type="button"
                 variant="outline"

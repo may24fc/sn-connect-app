@@ -6,6 +6,28 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedOnboardingContext } from '../../_lib';
 
+function formatPersonalAddress(parts: {
+  streetAddress: string;
+  city: string;
+  province: string;
+  country: string;
+  zipcode: string;
+}): string {
+  const segments = [
+    `Street: ${parts.streetAddress.trim()}`,
+    `City: ${parts.city.trim()}`,
+    `Province: ${parts.province.trim()}`,
+    `Country: ${parts.country.trim()}`,
+  ];
+
+  const zipcode = parts.zipcode.trim();
+  if (zipcode) {
+    segments.push(`Zipcode: ${zipcode}`);
+  }
+
+  return segments.join(' | ');
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const { supabase, user, error } = await getAuthedOnboardingContext();
@@ -46,7 +68,6 @@ export async function PATCH(request: NextRequest) {
       updatePayload.last_name = payload.lastName;
       updatePayload.position = payload.position;
       updatePayload.personal_email = payload.personalEmail;
-      updatePayload.company_email = payload.companyEmail;
       updatePayload.department_id = payload.departmentId ?? null;
       updatePayload.start_date = payload.startDate ?? null;
       updatePayload.nationality = payload.nationality ?? null;
@@ -57,7 +78,13 @@ export async function PATCH(request: NextRequest) {
       updatePayload.major = payload.major ?? null;
       updatePayload.birthday = payload.birthday ?? null;
       updatePayload.age = payload.age ?? null;
-      updatePayload.address = payload.address ?? null;
+      updatePayload.address = formatPersonalAddress({
+        streetAddress: payload.streetAddress,
+        city: payload.city,
+        province: payload.province,
+        country: payload.country,
+        zipcode: String(payload.zipcode ?? ''),
+      });
       updatePayload.emergency_contact_name = payload.emergencyContactName ?? null;
       updatePayload.emergency_contact_number = payload.emergencyContactNumber ?? null;
       updatePayload.emergency_contact_country_code =
@@ -78,10 +105,34 @@ export async function PATCH(request: NextRequest) {
       }
 
       const payload = paymentParsed.data;
-      updatePayload.payment_country_code = payload.paymentCountryCode ?? 'PH';
-      updatePayload.payment_bank_id =
+      const selectedBankId =
         payload.paymentBankId && payload.paymentBankId !== 'OTHER' ? payload.paymentBankId : null;
-      updatePayload.payment_bank_name = payload.paymentBankName ?? null;
+      const providedBankName =
+        typeof payload.paymentBankName === 'string' ? payload.paymentBankName.trim() : '';
+      let resolvedBankName: string | null = providedBankName || null;
+
+      if (selectedBankId) {
+        const { data: bankRow, error: bankError } = await supabase
+          .from('bank_registry')
+          .select('bank_name')
+          .eq('id', selectedBankId)
+          .maybeSingle();
+
+        if (bankError) {
+          console.error('Failed to resolve payment bank from registry:', bankError);
+          return NextResponse.json({ error: 'Failed to resolve selected bank' }, { status: 500 });
+        }
+
+        if (!bankRow?.bank_name) {
+          return NextResponse.json({ error: 'Selected bank is invalid' }, { status: 400 });
+        }
+
+        resolvedBankName = bankRow.bank_name.trim();
+      }
+
+      updatePayload.payment_country_code = payload.paymentCountryCode ?? 'PH';
+      updatePayload.payment_bank_id = selectedBankId;
+      updatePayload.payment_bank_name = resolvedBankName;
       updatePayload.payment_account_name = payload.paymentAccountName;
       updatePayload.payment_account_number = payload.paymentAccountNumber;
       updatePayload.payment_email = payload.paymentEmail ?? null;

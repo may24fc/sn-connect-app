@@ -12,6 +12,7 @@ import {
 } from '@hr-portal/ui/primitives/dialog';
 import { Input } from '@hr-portal/ui/primitives/input';
 import { Label } from '@hr-portal/ui/primitives/label';
+import { useToast } from '@hr-portal/ui';
 import {
   Select,
   SelectContent,
@@ -71,6 +72,7 @@ export function AssignEmployeeModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const departmentsQuery = useDepartments();
+  const { addToast } = useToast();
 
   const isEmployee = assignmentData?.role === 'employee';
   const isIntern = assignmentData?.role === 'intern';
@@ -134,11 +136,22 @@ export function AssignEmployeeModal({
         throw new Error(errorData.error || 'Failed to assign employee');
       }
 
+      addToast({
+        title: 'Assignment completed',
+        description: `${assignmentData.fullName} has been added to the probation tracker.`,
+        variant: 'success',
+      });
+
       handleClose();
       onSuccess?.();
     } catch (err) {
       console.error('Employee assignment error:', err);
       setError(err instanceof Error ? err.message : 'Assignment failed');
+      addToast({
+        title: 'Failed to complete assignment',
+        description: err instanceof Error ? err.message : 'Assignment failed',
+        variant: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -170,11 +183,22 @@ export function AssignEmployeeModal({
         throw new Error(errorData.error || 'Failed to assign intern');
       }
 
+      addToast({
+        title: 'Assignment completed',
+        description: `${assignmentData.fullName} has been added as an intern assignment.`,
+        variant: 'success',
+      });
+
       handleClose();
       onSuccess?.();
     } catch (err) {
       console.error('Intern assignment error:', err);
       setError(err instanceof Error ? err.message : 'Assignment failed');
+      addToast({
+        title: 'Failed to complete assignment',
+        description: err instanceof Error ? err.message : 'Assignment failed',
+        variant: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }

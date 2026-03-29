@@ -75,8 +75,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch onboarding profiles' }, { status: 500 });
     }
 
+    const userIds = (data ?? [])
+      .map((row: { user_id?: string | null }) => row.user_id)
+      .filter((userId: string | null | undefined): userId is string =>
+        typeof userId === 'string' && userId.length > 0
+      );
+
+    const employeeIdsByUserId = new Map<string, string>();
+
+    if (userIds.length > 0) {
+      const { data: employees, error: employeesError } = await supabase
+        .from('employees')
+        .select('id, user_id')
+        .in('user_id', userIds)
+        .is('deleted_at', null);
+
+      if (employeesError) {
+        return NextResponse.json(
+          { error: 'Failed to resolve onboarding employee records' },
+          { status: 500 }
+        );
+      }
+
+      for (const employee of employees ?? []) {
+        if (employee.user_id) {
+          employeeIdsByUserId.set(employee.user_id, employee.id);
+        }
+      }
+    }
+
     const normalized = (data ?? []).map((row: any) => ({
       ...row,
+      employee_id: employeeIdsByUserId.get(row.user_id) ?? null,
       status: row.is_completed ? 'completed' : 'in_progress',
       full_name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' '),
       payment_account_masked: maskPaymentAccount(row.payment_account_number),

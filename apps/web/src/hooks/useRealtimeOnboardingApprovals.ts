@@ -31,6 +31,7 @@ export interface PendingOnboarding {
 export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
   const [pendingApprovals, setPendingApprovals] = useState<PendingOnboarding[]>([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
 
       if (error) {
         console.error('Error fetching pending approvals:', error);
+        setIsLoading(false);
         return;
       }
 
@@ -116,6 +118,7 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
       });
 
       setPendingApprovals(mapped);
+      setIsLoading(false);
     };
 
     void fetchPendingApprovals();
@@ -169,5 +172,5 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
     };
   }, [role, queryClient]);
 
-  return { pendingApprovals, isSubscribed };
+  return { pendingApprovals, isSubscribed, isLoading };
 }

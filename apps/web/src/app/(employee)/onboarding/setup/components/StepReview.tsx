@@ -23,10 +23,12 @@ const profileLabels: Record<string, string> = {
 
 const contactLabels: Record<string, string> = {
   personalEmail: 'Personal Email',
-  companyEmail: 'Company Email',
-  emailAddress: 'Email Address',
   contactNumber: 'Contact Number',
-  address: 'Home Address',
+  streetAddress: 'Street',
+  city: 'City',
+  province: 'Province',
+  country: 'Country',
+  zipcode: 'Zipcode',
 };
 
 const financialLabels: Record<string, string> = {
@@ -35,10 +37,6 @@ const financialLabels: Record<string, string> = {
   paymentAccountNumber: 'Account Number',
   paymentEmail: 'Payment Email',
   paymentPhoneNumber: 'Phone Number',
-  paymentAddress: 'Billing Address',
-  paymentCity: 'City',
-  paymentProvince: 'Province',
-  paymentZipcode: 'Zipcode',
 };
 
 const emergencyLabels: Record<string, string> = {

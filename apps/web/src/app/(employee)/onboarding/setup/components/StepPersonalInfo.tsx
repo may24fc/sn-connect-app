@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
+import { DatePickerField } from './DatePickerField';
 
 const NATIONALITIES = [
   'Filipino',
@@ -78,7 +79,9 @@ export function StepPersonalInfo({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="middleName">Middle Name</Label>
+            <Label htmlFor="middleName">
+              Middle Name <span className="text-muted-foreground text-xs">(Optional)</span>
+            </Label>
             <Input
               id="middleName"
               value={get('middleName')}
@@ -111,12 +114,11 @@ export function StepPersonalInfo({
             <Label htmlFor="birthday">
               Birthday <span className="text-rose-500">*</span>
             </Label>
-            <Input
+            <DatePickerField
               id="birthday"
-              type="date"
               value={get('birthday')}
-              onChange={(e) => update('birthday', e.target.value)}
-              required
+              onChange={(nextValue) => update('birthday', nextValue)}
+              placeholder="Select your birthday"
             />
           </div>
           <div className="space-y-2">
@@ -154,7 +156,10 @@ export function StepPersonalInfo({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="major">Major/Field of Study</Label>
+            <Label htmlFor="major">
+              Major/Field of Study{' '}
+              <span className="text-muted-foreground text-xs">(Optional)</span>
+            </Label>
             <Input
               id="major"
               value={get('major')}
@@ -183,19 +188,6 @@ export function StepPersonalInfo({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="companyEmail">
-              Company Email <span className="text-rose-500">*</span>
-            </Label>
-            <Input
-              id="companyEmail"
-              type="email"
-              value={get('companyEmail')}
-              onChange={(e) => update('companyEmail', e.target.value)}
-              placeholder="name@company.com"
-              required
-            />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="contactNumber">
               Contact Number <span className="text-rose-500">*</span>
             </Label>
@@ -210,15 +202,58 @@ export function StepPersonalInfo({
             />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="address">
-              Address <span className="text-rose-500">*</span>
+            <Label htmlFor="streetAddress">
+              Street <span className="text-rose-500">*</span>
             </Label>
             <Input
-              id="address"
-              value={get('address')}
-              onChange={(e) => update('address', e.target.value)}
-              placeholder="Street, Barangay, City, Province"
+              id="streetAddress"
+              value={get('streetAddress')}
+              onChange={(e) => update('streetAddress', e.target.value)}
+              placeholder="House/Unit, Building, Street"
               required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="city">
+              City <span className="text-rose-500">*</span>
+            </Label>
+            <Input
+              id="city"
+              value={get('city')}
+              onChange={(e) => update('city', e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="province">
+              Province <span className="text-rose-500">*</span>
+            </Label>
+            <Input
+              id="province"
+              value={get('province')}
+              onChange={(e) => update('province', e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="country">
+              Country <span className="text-rose-500">*</span>
+            </Label>
+            <Input
+              id="country"
+              value={get('country')}
+              onChange={(e) => update('country', e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="zipcode">
+              Zipcode <span className="text-muted-foreground text-xs">(Optional)</span>
+            </Label>
+            <Input
+              id="zipcode"
+              value={get('zipcode')}
+              onChange={(e) => update('zipcode', e.target.value)}
             />
           </div>
         </div>

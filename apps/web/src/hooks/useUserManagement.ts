@@ -16,6 +16,8 @@ interface InviteUserResponse {
     email: string;
     temporaryPassword: string;
     role: string;
+    reinvite?: boolean;
+    emailSent?: boolean;
   };
 }
 

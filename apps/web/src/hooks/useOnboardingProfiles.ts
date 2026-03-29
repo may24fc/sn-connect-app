@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 export interface OnboardingProfileListItem {
   id: string;
   user_id: string;
+  employee_id: string | null;
   full_name: string;
   email_address: string | null;
   status: 'completed' | 'in_progress';

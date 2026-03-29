@@ -31,9 +31,24 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const fullName = [data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ');
 
+    let resolvedPaymentBankName =
+      typeof data.payment_bank_name === 'string' ? data.payment_bank_name.trim() : '';
+
+    if (!resolvedPaymentBankName && typeof data.payment_bank_id === 'string') {
+      const { data: bankRow } = await supabase
+        .from('bank_registry')
+        .select('bank_name')
+        .eq('id', data.payment_bank_id)
+        .maybeSingle();
+
+      resolvedPaymentBankName =
+        typeof bankRow?.bank_name === 'string' ? bankRow.bank_name.trim() : '';
+    }
+
     return NextResponse.json({
       data: {
         ...data,
+        payment_bank_name: resolvedPaymentBankName || data.payment_bank_name,
         full_name: fullName,
         status: data.is_completed ? 'completed' : 'in_progress',
         payment_account_masked: maskPaymentAccount(data.payment_account_number),

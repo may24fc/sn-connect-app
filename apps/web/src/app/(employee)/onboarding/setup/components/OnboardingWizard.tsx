@@ -19,6 +19,7 @@ import {
   CardTitle,
   useToast,
 } from '@hr-portal/ui';
+import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -29,8 +30,49 @@ import { StepPersonalInfo } from './StepPersonalInfo';
 import { StepReview } from './StepReview';
 
 const steps = ['personal_info', 'payment_info', 'documents', 'review'] as const;
+const requiredDocumentTypes = ['cv', 'profile_photo'] as const;
+const requiredDocumentLabels: Record<(typeof requiredDocumentTypes)[number], string> = {
+  cv: 'CV',
+  profile_photo: 'Profile Photo',
+};
 
 type Step = (typeof steps)[number];
+
+function parsePersonalAddress(rawAddress: string | null): {
+  streetAddress: string;
+  city: string;
+  province: string;
+  country: string;
+  zipcode: string;
+} {
+  if (!rawAddress) {
+    return { streetAddress: '', city: '', province: '', country: '', zipcode: '' };
+  }
+
+  const base = { streetAddress: '', city: '', province: '', country: '', zipcode: '' };
+  const segments = rawAddress.split('|').map((segment) => segment.trim()).filter(Boolean);
+
+  if (segments.length === 0 || !segments.some((segment) => segment.includes(':'))) {
+    return { ...base, streetAddress: rawAddress };
+  }
+
+  for (const segment of segments) {
+    const [keyRaw, ...valueParts] = segment.split(':');
+    if (!keyRaw) {
+      continue;
+    }
+    const key = keyRaw.trim().toLowerCase();
+    const value = valueParts.join(':').trim();
+
+    if (key === 'street') base.streetAddress = value;
+    if (key === 'city') base.city = value;
+    if (key === 'province') base.province = value;
+    if (key === 'country' || key === 'county') base.country = value;
+    if (key === 'zipcode') base.zipcode = value;
+  }
+
+  return base;
+}
 
 export function OnboardingWizard(): ReactNode {
   const router = useRouter();
@@ -70,16 +112,15 @@ export function OnboardingWizard(): ReactNode {
     }
 
     updatePersonalInfo({
+      ...parsePersonalAddress(profile.address ?? null),
       firstName: profile.first_name ?? '',
       middleName: profile.middle_name ?? '',
       lastName: profile.last_name ?? '',
       position: profile.position ?? '',
       personalEmail: profile.personal_email ?? '',
-      companyEmail: profile.company_email ?? '',
       emailAddress: profile.email_address ?? '',
       contactNumber: profile.contact_number ?? '',
       contactCountryCode: profile.contact_country_code ?? 'PH',
-      address: profile.address ?? '',
       birthday: profile.birthday ?? '',
       nationality: profile.nationality ?? '',
       education: profile.education ?? '',
@@ -100,10 +141,6 @@ export function OnboardingWizard(): ReactNode {
       paymentEmail: profile.payment_email ?? '',
       paymentPhoneNumber: profile.payment_phone_number ?? '',
       paymentPhoneCountryCode: profile.payment_phone_country_code ?? 'PH',
-      paymentAddress: profile.payment_address ?? '',
-      paymentCity: profile.payment_city ?? '',
-      paymentProvince: profile.payment_province ?? '',
-      paymentZipcode: profile.payment_zipcode ?? '',
     });
 
     initialSyncDone.current = true;
@@ -163,9 +200,11 @@ export function OnboardingWizard(): ReactNode {
         lastName: 'Last name',
         position: 'Position',
         personalEmail: 'Personal email',
-        companyEmail: 'Company email',
         contactNumber: 'Contact number',
-        address: 'Address',
+        streetAddress: 'Street',
+        city: 'City',
+        province: 'Province',
+        country: 'Country',
         birthday: 'Birthday',
         nationality: 'Nationality',
         education: 'Education',
@@ -184,13 +223,9 @@ export function OnboardingWizard(): ReactNode {
       // Email validation (required emails)
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const personalEmail = String(draft.personalInfo.personalEmail ?? '').trim();
-      const companyEmail = String(draft.personalInfo.companyEmail ?? '').trim();
 
       if (!emailRegex.test(personalEmail)) {
         return 'Please enter a valid personal email address.';
-      }
-      if (!emailRegex.test(companyEmail)) {
-        return 'Please enter a valid company email address.';
       }
 
       // Optional email validation - only validate if provided
@@ -236,9 +271,6 @@ export function OnboardingWizard(): ReactNode {
         paymentAccountNumber: 'Account number',
         paymentEmail: 'Payment email',
         paymentPhoneNumber: 'Phone number',
-        paymentAddress: 'Address',
-        paymentCity: 'City',
-        paymentProvince: 'Province',
       };
 
       for (const [field, label] of Object.entries(requiredFields)) {
@@ -279,7 +311,7 @@ export function OnboardingWizard(): ReactNode {
     }
 
     if (step === 'documents') {
-      // Check if documents have been uploaded
+      // Check if all required documents have been uploaded
       try {
         const response = await fetch('/api/onboarding/documents');
         if (!response.ok) {
@@ -287,9 +319,16 @@ export function OnboardingWizard(): ReactNode {
         }
         const result = await response.json();
         const documents = result.data ?? [];
+        const uploadedTypes = new Set(
+          documents
+            .map((doc: { document_type?: string }) => String(doc.document_type ?? ''))
+            .filter(Boolean)
+        );
 
-        if (documents.length === 0) {
-          return 'Please upload at least one required document before proceeding.';
+        const missingTypes = requiredDocumentTypes.filter((type) => !uploadedTypes.has(type));
+        if (missingTypes.length > 0) {
+          const missingLabels = missingTypes.map((type) => requiredDocumentLabels[type]).join(', ');
+          return `Please upload all required documents before proceeding. Missing: ${missingLabels}.`;
         }
       } catch (error) {
         console.error('Failed to check documents:', error);
@@ -427,6 +466,7 @@ export function OnboardingWizard(): ReactNode {
           </div>
           {!isMandatory && (
             <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              <LogOut className="h-4 w-4" />
               Exit
             </Button>
           )}

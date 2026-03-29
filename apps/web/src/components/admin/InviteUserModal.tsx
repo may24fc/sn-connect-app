@@ -2,6 +2,7 @@
 
 import { useInviteUser } from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useToast } from '@hr-portal/ui';
 import { FormGroup } from '@hr-portal/ui/components/forms';
 import { Button } from '@hr-portal/ui/primitives/button';
 import {
@@ -83,6 +84,7 @@ export function InviteUserModal({
   });
 
   const inviteUser = useInviteUser();
+  const { addToast } = useToast();
 
   const onSubmit = async (data: InviteFormData) => {
     try {
@@ -100,15 +102,61 @@ export function InviteUserModal({
         email: result.data.email,
         temporaryPassword: result.data.temporaryPassword,
       });
+
+      if (result.data.reinvite) {
+        addToast({
+          title: 'Invite refreshed',
+          description: 'Existing pending onboarding user was re-invited with a new temporary password.',
+          variant: 'success',
+        });
+      } else {
+        addToast({
+          title: `${data.role === 'intern' ? 'Intern' : 'Employee'} invited`,
+          description: `${data.firstName} ${data.lastName} can now sign in and complete onboarding.`,
+          variant: 'success',
+        });
+      }
+
+      if (result.data.emailSent === false) {
+        addToast({
+          title: 'Invite created, but email was not sent',
+          description: 'Please share the temporary credentials manually while email delivery is unavailable.',
+          variant: 'error',
+        });
+      } else {
+        addToast({
+          title: 'Invite email sent',
+          description: `An invitation email was sent to ${result.data.email}.`,
+          variant: 'success',
+        });
+      }
     } catch (error) {
       console.error('Failed to invite user:', error);
+      addToast({
+        title: 'Failed to invite user',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
     }
   };
 
   const handleCopy = async (field: 'email' | 'password', value: string) => {
-    await navigator.clipboard.writeText(value);
-    setCopiedField(field);
-    setTimeout(() => setCopiedField(null), 2000);
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+
+      addToast({
+        title: field === 'email' ? 'Email copied' : 'Temporary password copied',
+        variant: 'success',
+      });
+    } catch {
+      addToast({
+        title: 'Copy failed',
+        description: 'Please copy manually.',
+        variant: 'error',
+      });
+    }
   };
 
   const handleClose = () => {
@@ -258,7 +306,11 @@ export function InviteUserModal({
               {inviteUser.isError && (
                 <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
                   <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  <span>Failed to invite user. Please try again.</span>
+                  <span>
+                    {inviteUser.error instanceof Error
+                      ? inviteUser.error.message
+                      : 'Failed to invite user. Please try again.'}
+                  </span>
                 </div>
               )}
 

@@ -7,9 +7,17 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { DocumentUploadCard } from './DocumentUploadCard';
 
-const requiredTypes = ['valid_id', 'profile_photo', 'cv', 'birth_certificate'] as const;
+const uploadOrder = ['cv', 'profile_photo', 'valid_id', 'birth_certificate'] as const;
+const requiredTypes = ['cv', 'profile_photo'] as const;
 
-type DocumentType = (typeof requiredTypes)[number];
+type DocumentType = (typeof uploadOrder)[number];
+
+const documentTypeLabels: Record<DocumentType, string> = {
+  valid_id: 'Valid ID',
+  profile_photo: 'Profile Photo',
+  cv: 'CV',
+  birth_certificate: 'Birth Certificate',
+};
 
 export function StepDocuments(): ReactNode {
   const { data, isLoading } = useOnboardingDocuments();
@@ -19,6 +27,7 @@ export function StepDocuments(): ReactNode {
   const [uploadingTypes, setUploadingTypes] = useState<Set<DocumentType>>(new Set());
 
   const uploadedMap = new Set((data?.data ?? []).map((doc) => doc.document_type));
+  const requiredTypeSet = new Set<string>(requiredTypes);
 
   const handleUpload = (type: DocumentType, file: File): void => {
     setUploadError(null);
@@ -58,27 +67,28 @@ export function StepDocuments(): ReactNode {
         </div>
       )}
 
-      <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-3">
-        <p className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-1">
-          Required Documents <span className="text-rose-500">*</span>
-        </p>
-        <p className="text-sm text-amber-700 dark:text-amber-300">
-          Please upload at least one document before proceeding to the final review.
-        </p>
-      </div>
-
       <div className="flex flex-wrap gap-2">
-        {requiredTypes.map((type) => (
-          <Badge key={type} variant={uploadedMap.has(type) ? 'success' : 'secondary'}>
-            {type.replace('_', ' ')}
+        {uploadOrder.map((type) => (
+          <Badge
+            key={type}
+            variant={
+              uploadedMap.has(type)
+                ? 'success'
+                : requiredTypeSet.has(type)
+                  ? 'error'
+                  : 'secondary'
+            }
+          >
+            {documentTypeLabels[type]}
           </Badge>
         ))}
       </div>
 
-      {requiredTypes.map((type) => (
+      {uploadOrder.map((type) => (
         <DocumentUploadCard
           key={type}
           type={type}
+          required={requiredTypeSet.has(type)}
           uploading={uploadingTypes.has(type)}
           onUpload={handleUpload}
         />

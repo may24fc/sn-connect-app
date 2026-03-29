@@ -1,6 +1,10 @@
 'use client';
 
+import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
+import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
+import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import {
   Avatar,
   AvatarFallback,
@@ -15,11 +19,13 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  useToast,
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
   Briefcase,
   Calendar,
+  CheckCircle2,
   CreditCard,
   FileText,
   Loader2,
@@ -28,8 +34,9 @@ import {
   Phone,
   User,
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 
 function getInitials(name: string): string {
   return name
@@ -70,9 +77,14 @@ function InfoField({
 }
 
 export default function OnboardingDetailPage(): ReactNode {
-  const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/admin/employee-management?tab=onboarding' });
   const params = useParams();
   const id = params.id as string;
+  const { addToast } = useToast();
+  const { pendingApprovals } = useRealtimeOnboardingApprovals();
+  const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
+  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
+  const [assignmentData, setAssignmentData] = useState<any | null>(null);
 
   const { data, isLoading, error } = useOnboardingProfile(id);
   const profile = data?.data;
@@ -88,7 +100,7 @@ export default function OnboardingDetailPage(): ReactNode {
   if (error || !profile) {
     return (
       <div className="p-6 space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
@@ -108,9 +120,11 @@ export default function OnboardingDetailPage(): ReactNode {
   const role = Array.isArray(profile.users)
     ? profile.users[0]?.role
     : profile.users?.role;
+  const normalizedRole = role === 'intern' ? 'intern' : 'employee';
   const department = Array.isArray(profile.departments)
     ? profile.departments[0]?.name
     : profile.departments?.name;
+  const isPendingApproval = pendingApprovals.some((approval) => approval.id === profile.id);
   const statusLabel = profile.status === 'completed' || profile.is_completed ? 'Completed' : 'In Progress';
 
   const currentStepMap: Record<string, string> = {
@@ -123,56 +137,78 @@ export default function OnboardingDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Back Button */}
-      <Button variant="ghost" size="sm" className="w-fit" onClick={() => router.back()}>
+      <Button variant="ghost" size="sm" className="w-fit" onClick={handleBack}>
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
 
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <Avatar className="h-14 w-14">
-          <AvatarFallback className="text-lg bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
-            {getInitials(fullName)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              {fullName}
-            </h1>
-            <Badge variant={statusLabel === 'Completed' ? 'success' : 'warning'}>
-              {statusLabel}
-            </Badge>
-            {role && (
-              <Badge variant="outline" className="capitalize">
-                {role}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start gap-4">
+          <Avatar className="h-14 w-14">
+            <AvatarFallback className="text-lg bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
+              {getInitials(fullName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+                {fullName}
+              </h1>
+              <Badge variant={statusLabel === 'Completed' ? 'success' : 'warning'}>
+                {statusLabel}
               </Badge>
-            )}
+              {role && (
+                <Badge variant="outline" className="capitalize">
+                  {role}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-4 mt-1 text-sm text-zinc-500 dark:text-zinc-400 flex-wrap">
+              {profile.email_address && (
+                <span className="flex items-center gap-1">
+                  <Mail className="h-3.5 w-3.5" />
+                  {profile.email_address}
+                </span>
+              )}
+              {profile.position && (
+                <span className="flex items-center gap-1">
+                  <Briefcase className="h-3.5 w-3.5" />
+                  {profile.position}
+                </span>
+              )}
+              {department && (
+                <span className="flex items-center gap-1">
+                  <User className="h-3.5 w-3.5" />
+                  {department}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+              Current Step: {currentStepMap[profile.current_step] || profile.current_step} · Submitted {formatDate(profile.created_at)}
+            </p>
           </div>
-          <div className="flex items-center gap-4 mt-1 text-sm text-zinc-500 dark:text-zinc-400 flex-wrap">
-            {profile.email_address && (
-              <span className="flex items-center gap-1">
-                <Mail className="h-3.5 w-3.5" />
-                {profile.email_address}
-              </span>
-            )}
-            {profile.position && (
-              <span className="flex items-center gap-1">
-                <Briefcase className="h-3.5 w-3.5" />
-                {profile.position}
-              </span>
-            )}
-            {department && (
-              <span className="flex items-center gap-1">
-                <User className="h-3.5 w-3.5" />
-                {department}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-            Current Step: {currentStepMap[profile.current_step] || profile.current_step} · Submitted {formatDate(profile.created_at)}
-          </p>
         </div>
+
+        {isPendingApproval && (
+          <Button
+            variant="default"
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white"
+            onClick={() =>
+              setSelectedApproval({
+                ...profile,
+                role: normalizedRole,
+                full_name: fullName,
+                user_id: profile.user_id,
+                   completed_at: profile.created_at,
+              })
+            }
+          >
+            <CheckCircle2 className="mr-1 h-4 w-4" />
+            Review & Approve
+          </Button>
+        )}
       </div>
 
       {/* Tabbed Details */}
@@ -334,6 +370,40 @@ export default function OnboardingDetailPage(): ReactNode {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ApproveOnboardingModal
+        open={!!selectedApproval}
+        onOpenChange={(open) => !open && setSelectedApproval(null)}
+        onboarding={selectedApproval}
+        onApprovalSuccess={(data) => {
+          setAssignmentData(data);
+          setAssignmentModalOpen(true);
+        }}
+      />
+
+      <AssignEmployeeModal
+        open={assignmentModalOpen}
+        onOpenChange={setAssignmentModalOpen}
+        assignmentData={assignmentData}
+        onSuccess={() => {
+          const completedName = assignmentData?.fullName;
+          const completedRole = assignmentData?.role;
+
+          setAssignmentData(null);
+          setAssignmentModalOpen(false);
+          setSelectedApproval(null);
+
+          addToast({
+            title: 'Assignment completed',
+            description: completedName
+              ? `${completedName} has been assigned to the ${
+                  completedRole === 'intern' ? 'internship tracker' : 'probation tracker'
+                }.`
+              : 'The user has been assigned successfully.',
+            variant: 'success',
+          });
+        }}
+      />
     </div>
   );
 }

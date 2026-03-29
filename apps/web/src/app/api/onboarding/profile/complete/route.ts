@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       type: 'onboarding_step',
       title: 'Onboarding Completed',
       message: `${userName} has completed their onboarding and is awaiting approval`,
-      link: `/admin/onboarding`,
+      link: `/admin/onboarding/${updatedProfile.id}`,
       metadata: { profileId: updatedProfile.id, userId: user.id },
     });
 

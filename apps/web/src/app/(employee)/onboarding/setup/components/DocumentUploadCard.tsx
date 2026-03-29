@@ -20,10 +20,12 @@ const acceptMap: Record<string, string> = {
 
 export function DocumentUploadCard({
   type,
+  required,
   uploading,
   onUpload,
 }: {
   type: 'valid_id' | 'profile_photo' | 'cv' | 'birth_certificate';
+  required: boolean;
   uploading: boolean;
   onUpload: (type: 'valid_id' | 'profile_photo' | 'cv' | 'birth_certificate', file: File) => void;
 }): ReactNode {
@@ -48,8 +50,20 @@ export function DocumentUploadCard({
     <Card>
       <CardContent className="p-4 space-y-2">
         <div>
-          <p className="text-sm font-medium">{labels[type]}</p>
-          <p className="text-xs text-muted-foreground">Upload the required file</p>
+          <p className="text-sm font-medium">
+            {labels[type]}
+            {required ? (
+              <> <span className="text-rose-500">*</span></>
+            ) : (
+              <>
+                {' '}
+                <span className="text-muted-foreground text-xs">(Optional)</span>
+              </>
+            )}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {required ? 'Upload the required file' : 'Upload this file if available'}
+          </p>
         </div>
         <FileDropZone
           onFilesSelected={handleFiles}

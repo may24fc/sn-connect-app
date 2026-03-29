@@ -12,6 +12,21 @@ export function maskPaymentAccount(value: string | null): string | null {
   return `****${visible}`;
 }
 
+export function isMissingOnboardingChecklistsTableError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code = 'code' in error ? error.code : null;
+  const message = 'message' in error ? error.message : null;
+
+  return (
+    code === 'PGRST205' &&
+    typeof message === 'string' &&
+    message.includes("public.onboarding_checklists")
+  );
+}
+
 export async function getAuthedOnboardingContext() {
   const supabase = await createSupabaseServerClient();
   const {

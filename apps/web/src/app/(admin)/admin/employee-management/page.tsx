@@ -5,6 +5,7 @@ import { StatCard, StatCardGrid } from '@/components/data-display';
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
+import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { type ProbationRecord, useCompleteProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
@@ -14,6 +15,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Badge,
+  CountBadge,
   Button,
   Card,
   CardContent,
@@ -62,11 +64,10 @@ import {
   TrendingUp,
   UserCog,
   UserPlus,
-  Users,
   X,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { type ReactNode, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 function getInitials(name: string): string {
   return name
@@ -246,14 +247,17 @@ function formatDateTime(dateString: string): string {
 
 export default function EmployeeManagementPage(): ReactNode {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState('probation');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'onboarding' ? 'onboarding' : 'probation');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [probationView, setProbationView] = useState<ProbationView>('cards');
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
 
   // Onboarding modal states
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
@@ -269,6 +273,31 @@ export default function EmployeeManagementPage(): ReactNode {
   const [okrRatings, setOkrRatings] = useState<Record<string, number>>({});
   const [kpiRatings, setKpiRatings] = useState<Record<string, number>>({});
   const completeProbation = useCompleteProbation();
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') === 'onboarding' ? 'onboarding' : 'probation';
+    setActiveTab((prev) => (prev === tabFromUrl ? prev : tabFromUrl));
+  }, [searchParams]);
+
+  const currentPathWithSearch = useMemo(() => {
+    const query = searchParams.toString();
+    return query ? `${pathname}?${query}` : pathname;
+  }, [pathname, searchParams]);
+
+  const handleTabChange = (nextTab: string): void => {
+    setActiveTab(nextTab);
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set('tab', nextTab);
+    const nextQuery = nextParams.toString();
+
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  };
+
+  const buildOnboardingDetailHref = (profileId: string): string => {
+    const returnTo = encodeURIComponent(currentPathWithSearch);
+    return `/admin/onboarding/${profileId}?returnTo=${returnTo}`;
+  };
 
   const handleOpenAppraisal = (emp: ProbationRecord): void => {
     setSelectedProbationEmp(emp);
@@ -309,14 +338,17 @@ export default function EmployeeManagementPage(): ReactNode {
 
   // Onboarding profiles
   const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
-    ...(searchTerm && { search: searchTerm }),
     role: 'employee',
     page: 1,
     pageSize: 50,
   });
 
   // Real-time pending approvals for employees
-  const { pendingApprovals, isSubscribed } = useRealtimeOnboardingApprovals('employee');
+  const { pendingApprovals } = useRealtimeOnboardingApprovals('employee');
+  const pendingApprovalById = useMemo(
+    () => new Set(pendingApprovals.map((approval) => approval.id)),
+    [pendingApprovals]
+  );
 
   // Sort state for Pending Approvals table
   const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
@@ -333,11 +365,25 @@ export default function EmployeeManagementPage(): ReactNode {
   const onboardSortHeadProps = { sortColumn: onboardSort.sortColumn, sortDirection: onboardSort.sortDirection, onSort: onboardSort.handleSort };
 
   const probationEmployees = probationData?.data || [];
+  const probationDepartmentByEmployeeId = useMemo(
+    () =>
+      new Map(
+        probationEmployees
+          .filter((employee: ProbationRecord) => employee.id && employee.department)
+          .map((employee: ProbationRecord) => [employee.id, employee.department])
+      ),
+    [probationEmployees]
+  );
   const onboardingProfiles = onboardingData?.data || [];
+  const totalOnboardingSubmissions = onboardingData?.summary.total ?? 0;
+  const completedOnboardingSubmissions = onboardingData?.summary.completed ?? 0;
+  const pendingOnboardingCount = Math.max(
+    totalOnboardingSubmissions - completedOnboardingSubmissions,
+    0
+  );
 
   const onProbationCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'on-track' || e.status === 'at-risk' || e.status === 'extended').length;
   const atRiskCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'at-risk').length;
-  const completedProbationCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'completed').length;
 
   const departments = [...new Set(probationEmployees.filter((e: ProbationRecord) => e.department).map((e: ProbationRecord) => e.department))];
 
@@ -373,91 +419,85 @@ export default function EmployeeManagementPage(): ReactNode {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="probation">
-            Probation
-            {probationEmployees.length > 0 && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {probationEmployees.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="onboarding">
-            Onboarding
-            {onboardingProfiles.length > 0 && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {onboardingProfiles.length}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList>
+            <TabsTrigger value="probation">
+              Probation
+              {probationEmployees.length > 0 && (
+                <CountBadge className="ml-2" variant="warning" size="md" count={probationEmployees.length} />
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="onboarding">
+              Onboarding
+              {onboardingProfiles.length > 0 && (
+                <CountBadge className="ml-2" variant="info" size="md" count={onboardingProfiles.length} />
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Summary Cards */}
-        <StatCardGrid columns={4}>
-          <StatCard
-            label="On Probation"
-            value={onProbationCount}
-            trend={{ direction: 'stable', value: `${completedProbationCount} completed` }}
-            icon={<ShieldCheck className="h-4 w-4" strokeWidth={1.5} />}
-          />
-          <StatCard
-            label="At Risk"
-            value={atRiskCount}
-            trend={atRiskCount > 0 ? { direction: 'up', value: 'Needs attention' } : { direction: 'stable', value: 'No issues' }}
-            icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
-          />
-          <StatCard
-            label="Pending Onboarding"
-            value={pendingApprovals.length}
-            trend={{ direction: 'stable', value: `${onboardingData?.summary.total ?? 0} total submissions` }}
-            icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
-          />
-          <StatCard
-            label="Onboarded"
-            value={onboardingData?.summary.completed ?? 0}
-            icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
-          />
-        </StatCardGrid>
+          <Button variant="outline" size="sm" onClick={() => setChecklistDialogOpen(true)}>
+            <FileText className="mr-2 h-4 w-4" />
+            View Onboarding Checklist
+          </Button>
+        </div>
 
-        {/* Filters + View Toggle */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
-            <Input
-              placeholder="Search employees..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+        {/* Probation Tab */}
+        <TabsContent value="probation" className="mt-4">
+          <StatCardGrid columns={2}>
+            <StatCard
+              label="On Probation"
+              value={onProbationCount}
+              icon={<ShieldCheck className="h-4 w-4" strokeWidth={1.5} />}
             />
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Status</SelectItem>
-                <SelectItem value="on-track">On Track</SelectItem>
-                <SelectItem value="at-risk">At Risk</SelectItem>
-                <SelectItem value="extended">Extended</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Department</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {activeTab === 'probation' && (
+            <StatCard
+              label="At Risk"
+              value={atRiskCount}
+              trend={
+                atRiskCount > 0
+                  ? { direction: 'up', value: 'Needs attention' }
+                  : { direction: 'stable', value: 'No issues' }
+              }
+              icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          </StatCardGrid>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center my-4">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
+              <Input
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Status</SelectItem>
+                  <SelectItem value="on-track">On Track</SelectItem>
+                  <SelectItem value="at-risk">At Risk</SelectItem>
+                  <SelectItem value="extended">Extended</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Department</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
                 <button
                   type="button"
@@ -484,12 +524,9 @@ export default function EmployeeManagementPage(): ReactNode {
                   List
                 </button>
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Probation Tab */}
-        <TabsContent value="probation" className="mt-4">
           {probationLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
@@ -593,83 +630,77 @@ export default function EmployeeManagementPage(): ReactNode {
                       <span>Status</span>
                       <span>Action</span>
                     </div>
-                    {filteredProbation.map(
-                      (emp: ProbationRecord) => {
-                        const isUrgent = emp.daysRemaining <= 14;
-                        const statusCfg = STATUS_CONFIG[emp.status];
-                        const StatusIcon = statusCfg.icon;
+                    {filteredProbation.map((emp: ProbationRecord) => {
+                      const isUrgent = emp.daysRemaining <= 14;
+                      const statusCfg = STATUS_CONFIG[emp.status];
+                      const StatusIcon = statusCfg.icon;
 
-                        return (
-                          <div
-                            key={emp.id}
-                            className={`grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-3 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors ${
-                              isUrgent ? 'bg-amber-50/50 dark:bg-amber-950/10' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <Avatar className="h-8 w-8 shrink-0">
-                                <AvatarImage src={emp.avatarUrl} />
-                                <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
-                                  {getInitials(emp.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
-                                  {emp.name}
-                                </p>
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                                  {emp.position || 'No position'}
-                                </p>
-                              </div>
+                      return (
+                        <div
+                          key={emp.id}
+                          className={`grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-3 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors ${
+                            isUrgent ? 'bg-amber-50/50 dark:bg-amber-950/10' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Avatar className="h-8 w-8 shrink-0">
+                              <AvatarImage src={emp.avatarUrl} />
+                              <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
+                                {getInitials(emp.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">
+                                {emp.name}
+                              </p>
+                              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                                {emp.position || 'No position'}
+                              </p>
                             </div>
-                            <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">
-                              {emp.department || '—'}
-                            </span>
-                            {/* Stage mini-indicator */}
-                            <div className="flex items-center gap-1.5">
-                              <div className="flex items-center gap-0.5">
-                                {([1, 2, 3, 4] as ProbationStage[]).map((s) => (
-                                  <div
-                                    key={s}
-                                    className={`h-1.5 w-5 rounded-full ${
-                                      s < emp.stage
-                                        ? 'bg-emerald-500 dark:bg-emerald-400'
-                                        : s === emp.stage
-                                          ? emp.status === 'at-risk'
-                                            ? 'bg-amber-500'
-                                            : emp.status === 'extended'
-                                              ? 'bg-orange-500'
-                                              : 'bg-slate-800'
-                                          : 'bg-zinc-200 dark:bg-zinc-700'
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-[10px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                {STAGE_LABELS[emp.stage].name}
-                              </span>
-                            </div>
-                            <span className="text-xs text-zinc-600 dark:text-zinc-300">
-                              {emp.daysRemaining <= 0 ? 'Ended' : `${emp.daysRemaining}d left`}
-                            </span>
-                            <span
-                              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${statusCfg.badgeClass}`}
-                            >
-                              <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
-                              {statusCfg.label}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="xs"
-                              onClick={() => handleOpenAppraisal(emp)}
-                            >
-                              <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
-                              View
-                            </Button>
                           </div>
-                        );
-                      }
-                    )}
+                          <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">
+                            {emp.department || '—'}
+                          </span>
+                          {/* Stage mini-indicator */}
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-0.5">
+                              {([1, 2, 3, 4] as ProbationStage[]).map((s) => (
+                                <div
+                                  key={s}
+                                  className={`h-1.5 w-5 rounded-full ${
+                                    s < emp.stage
+                                      ? 'bg-emerald-500 dark:bg-emerald-400'
+                                      : s === emp.stage
+                                        ? emp.status === 'at-risk'
+                                          ? 'bg-amber-500'
+                                          : emp.status === 'extended'
+                                            ? 'bg-orange-500'
+                                            : 'bg-slate-800'
+                                        : 'bg-zinc-200 dark:bg-zinc-700'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                              {STAGE_LABELS[emp.stage].name}
+                            </span>
+                          </div>
+                          <span className="text-xs text-zinc-600 dark:text-zinc-300">
+                            {emp.daysRemaining <= 0 ? 'Ended' : `${emp.daysRemaining}d left`}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${statusCfg.badgeClass}`}
+                          >
+                            <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
+                            {statusCfg.label}
+                          </span>
+                          <Button variant="ghost" size="xs" onClick={() => handleOpenAppraisal(emp)}>
+                            <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
+                            View
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </Card>
               )}
@@ -679,60 +710,45 @@ export default function EmployeeManagementPage(): ReactNode {
 
         {/* Onboarding Tab */}
         <TabsContent value="onboarding" className="mt-4 space-y-6">
-          {/* Real-time Connection Status */}
-          {isSubscribed && (
-            <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-                  <div className="h-2 w-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
-                  Real-time monitoring active
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Approval Stats */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Awaiting Approval</p>
-                    <p className="text-2xl font-bold">{pendingApprovals.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Submissions</p>
-                    <p className="text-2xl font-bold">{onboardingData?.summary.total ?? 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
-                    <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-2xl font-bold">{onboardingData?.summary.completed ?? 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <StatCardGrid columns={4}>
+            <StatCard
+              label="Pending Onboarding"
+              value={pendingOnboardingCount}
+              trend={{ direction: 'stable', value: 'Not yet completed' }}
+              icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Awaiting Approval"
+              value={pendingApprovals.length}
+              trend={{
+                direction: pendingApprovals.length > 0 ? 'up' : 'stable',
+                value: pendingApprovals.length > 0 ? 'Ready for review' : 'No pending reviews',
+              }}
+              icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Total Submissions"
+              value={totalOnboardingSubmissions}
+              trend={{
+                direction: 'stable',
+                value: `${completedOnboardingSubmissions} completed`,
+              }}
+              icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="Complete"
+              value={completedOnboardingSubmissions}
+              trend={{
+                direction: completedOnboardingSubmissions > 0 ? 'up' : 'stable',
+                value:
+                  totalOnboardingSubmissions > completedOnboardingSubmissions
+                    ? `${totalOnboardingSubmissions - completedOnboardingSubmissions} remaining`
+                    : 'All submissions processed',
+              }}
+              icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          </StatCardGrid>
 
           {/* Pending Approvals Alert */}
           {pendingApprovals.length > 0 && (
@@ -869,12 +885,17 @@ export default function EmployeeManagementPage(): ReactNode {
                       step: (p: any) => p.current_step ?? '',
                       submitted: (p: any) => p.created_at ?? '',
                     }).map((profile: any) => {
-                      const department = Array.isArray(profile.departments)
+                      const onboardingDepartment = Array.isArray(profile.departments)
                         ? profile.departments[0]?.name
                         : profile.departments?.name;
+                      const assignedDepartment = profile.employee_id
+                        ? probationDepartmentByEmployeeId.get(profile.employee_id)
+                        : null;
+                      const department = assignedDepartment || onboardingDepartment;
+                      const isPendingApproval = pendingApprovalById.has(profile.id);
 
                       return (
-                        <TableRow key={profile.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/admin/onboarding/${profile.id}`)}>
+                        <TableRow key={profile.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(buildOnboardingDetailHref(profile.id))}>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-9 w-9">
@@ -908,14 +929,33 @@ export default function EmployeeManagementPage(): ReactNode {
                             {new Date(profile.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
-                            >
-                              <Eye className="mr-1 h-4 w-4" />
-                              View Details
-                            </Button>
+                            {isPendingApproval ? (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() =>
+                                  setSelectedApproval({
+                                    ...profile,
+                                    role: 'employee',
+                                    user_id: profile.user_id,
+                                    completed_at: profile.completed_at ?? profile.updated_at ?? profile.created_at,
+                                  })
+                                }
+                              >
+                                <CheckCircle2 className="mr-1 h-4 w-4" />
+                                Review & Approve
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(buildOnboardingDetailHref(profile.id))}
+                              >
+                                <Eye className="mr-1 h-4 w-4" />
+                                View Details
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -959,11 +999,31 @@ export default function EmployeeManagementPage(): ReactNode {
         onOpenChange={setAssignmentModalOpen}
         assignmentData={assignmentData}
         onSuccess={() => {
+          const completedName = assignmentData?.fullName;
+          const completedRole = assignmentData?.role;
+
           queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
           queryClient.invalidateQueries({ queryKey: ['probation'] });
           setAssignmentData(null);
           setAssignmentModalOpen(false);
+
+          addToast({
+            title: 'Assignment completed',
+            description: completedName
+              ? `${completedName} has been assigned to the ${
+                  completedRole === 'intern' ? 'internship tracker' : 'probation tracker'
+                }.`
+              : 'The user has been assigned successfully.',
+            variant: 'success',
+          });
         }}
+      />
+
+      <OnboardingChecklistDialog
+        open={checklistDialogOpen}
+        onOpenChange={setChecklistDialogOpen}
+        profiles={onboardingProfiles}
+        roleLabel="employee"
       />
 
       {/* Performance Appraisal Dialog */}

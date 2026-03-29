@@ -1,5 +1,8 @@
 import { logActivity } from '@/lib/audit';
+import { getLoginUrl } from '@/lib/auth/redirect-config';
+import { sendUserInviteEmail } from '@/lib/email';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
+import type { User } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -56,39 +59,87 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, role, firstName, lastName, departmentId, position } = parsed.data;
+    const { role, firstName, lastName, departmentId, position } = parsed.data;
+    const email = parsed.data.email.trim().toLowerCase();
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
 
-    // Check if user already exists (using admin client)
-    const { data: existingAuthUser } = await supabaseAdmin.auth.admin.listUsers();
-    const userExists = existingAuthUser?.users.some((u: any) => u.email === email);
-
-    if (userExists) {
-      return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 });
-    }
+    const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email);
 
     // Generate a temporary password (user should change on first login)
     const temporaryPassword = generateTemporaryPassword();
 
-    // Create auth user (using admin client)
-    const { data: newAuthUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser(
-      {
-        email,
-        password: temporaryPassword,
-        email_confirm: true, // Auto-confirm email
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName,
-          role,
-        },
-      }
-    );
+    let invitedUserId: string;
+    let isReinvite = false;
 
-    if (createAuthError || !newAuthUser.user) {
-      console.error('Error creating auth user:', createAuthError);
-      return NextResponse.json(
-        { error: 'Failed to create auth user', details: createAuthError?.message },
-        { status: 500 }
+    if (existingAuthUser) {
+      const { data: existingUserRecord, error: existingUserError } = await supabaseAdmin
+        .from('users')
+        .select('status')
+        .eq('id', existingAuthUser.id)
+        .single();
+
+      if (existingUserError && existingUserError.code !== 'PGRST116') {
+        console.error('Error checking existing user profile:', existingUserError);
+        return NextResponse.json({ error: 'Failed to validate existing user' }, { status: 500 });
+      }
+
+      // Existing active users should not be re-invited through onboarding.
+      if (existingUserRecord?.status && existingUserRecord.status !== 'pending_onboarding') {
+        return NextResponse.json(
+          { error: 'A user with this email already exists and is already onboarded' },
+          { status: 409 }
+        );
+      }
+
+      const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingAuthUser.id,
+        {
+          password: temporaryPassword,
+          email_confirm: true,
+          user_metadata: {
+            ...(existingAuthUser.user_metadata ?? {}),
+            full_name: fullName,
+            first_name: firstName,
+            last_name: lastName,
+            role,
+          },
+        }
       );
+
+      if (updateAuthError) {
+        console.error('Error updating existing auth user:', updateAuthError);
+        return NextResponse.json(
+          { error: 'Failed to refresh user invite', details: updateAuthError.message },
+          { status: 500 }
+        );
+      }
+
+      invitedUserId = existingAuthUser.id;
+      isReinvite = true;
+    } else {
+      // Create auth user (using admin client)
+      const { data: newAuthUser, error: createAuthError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: temporaryPassword,
+          email_confirm: true, // Auto-confirm email
+          user_metadata: {
+            full_name: fullName,
+            first_name: firstName,
+            last_name: lastName,
+            role,
+          },
+        });
+
+      if (createAuthError || !newAuthUser.user) {
+        console.error('Error creating auth user:', createAuthError);
+        return NextResponse.json(
+          { error: 'Failed to create auth user', details: createAuthError?.message },
+          { status: 500 }
+        );
+      }
+
+      invitedUserId = newAuthUser.user.id;
     }
 
     // Upsert public.users record with pending_onboarding status.
@@ -96,36 +147,44 @@ export async function POST(request: NextRequest) {
     // so plain insert can fail with duplicate PK on retries/new invites.
     const { error: createUserError } = await supabaseAdmin.from('users').upsert(
       {
-        id: newAuthUser.user.id,
+        id: invitedUserId,
         role,
         status: 'pending_onboarding',
         department_id: departmentId || null,
         created_by: user.id,
+        deleted_at: null,
       },
       { onConflict: 'id' }
     );
 
     if (createUserError) {
       console.error('Error creating public user:', createUserError);
-      // Rollback: delete auth user if public.users creation fails (using admin client)
-      await supabaseAdmin.auth.admin.deleteUser(newAuthUser.user.id);
+      // Rollback only for newly created auth users.
+      if (!isReinvite) {
+        await supabaseAdmin.auth.admin.deleteUser(invitedUserId);
+      }
       return NextResponse.json(
         { error: 'Failed to create user profile', details: createUserError.message },
         { status: 500 }
       );
     }
 
-    // Create initial onboarding_profile with pre-filled data
-    const { error: createProfileError } = await supabaseAdmin.from('onboarding_profiles').insert({
-      user_id: newAuthUser.user.id,
-      first_name: firstName,
-      last_name: lastName,
-      email_address: email,
-      position: position || null,
-      department_id: departmentId || null,
-      is_completed: false,
-      current_step: 'personal_info',
-    });
+    // Create or refresh onboarding profile with pre-filled data.
+    const { error: createProfileError } = await supabaseAdmin.from('onboarding_profiles').upsert(
+      {
+        user_id: invitedUserId,
+        first_name: firstName,
+        last_name: lastName,
+        email_address: email,
+        position: position || null,
+        department_id: departmentId || null,
+        is_completed: false,
+        completed_at: null,
+        current_step: 'personal_info',
+        deleted_at: null,
+      },
+      { onConflict: 'user_id' }
+    );
 
     if (createProfileError) {
       console.error('Error creating onboarding profile:', createProfileError);
@@ -136,18 +195,34 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       action: 'invite_user',
       tableName: 'users',
-      recordId: newAuthUser.user.id,
-      metadata: { email, role },
+      recordId: invitedUserId,
+      metadata: { email, role, reinvite: isReinvite },
     });
+
+    // Best-effort email delivery: invite should still succeed even if provider fails.
+    const loginUrl = getLoginUrl();
+    const inviteEmailResult = await sendUserInviteEmail({
+      to: email,
+      firstName,
+      role,
+      temporaryPassword,
+      loginUrl,
+    });
+
+    if (!inviteEmailResult.sent) {
+      console.warn('Invite created, but invite email failed:', inviteEmailResult.error);
+    }
 
     return NextResponse.json(
       {
         message: 'User invited successfully',
         data: {
-          userId: newAuthUser.user.id,
+          userId: invitedUserId,
           email,
           temporaryPassword, // Return this so admin can share with the new user
           role,
+          reinvite: isReinvite,
+          emailSent: inviteEmailResult.sent,
         },
       },
       { status: 201 }
@@ -155,6 +230,38 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('POST /api/users/invite error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+async function findAuthUserByEmail(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+  email: string
+): Promise<User | null> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const perPage = 200;
+  let page = 1;
+
+  while (true) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+
+    if (error) {
+      throw error;
+    }
+
+    const users = data?.users ?? [];
+    const matchedUser = users.find(
+      (authUser) => authUser.email?.trim().toLowerCase() === normalizedEmail
+    );
+
+    if (matchedUser) {
+      return matchedUser;
+    }
+
+    if (users.length < perPage) {
+      return null;
+    }
+
+    page += 1;
   }
 }
 
