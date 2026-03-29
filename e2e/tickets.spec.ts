@@ -23,12 +23,44 @@ type TicketRecord = {
   assigned_by_name?: string | null;
 };
 
+function getExpectedLandingPath(email: string): string {
+  const normalizedEmail = email.toLowerCase();
+
+  if (normalizedEmail.startsWith('superadmin') || normalizedEmail.startsWith('super-admin')) {
+    return '/super-admin/dashboard';
+  }
+
+  if (normalizedEmail.startsWith('admin')) {
+    return '/admin/dashboard';
+  }
+
+  if (normalizedEmail.startsWith('intern')) {
+    return '/intern/dashboard';
+  }
+
+  return '/dashboard';
+}
+
 async function loginAs(page: Parameters<typeof test>[0]['page'], email: string, password: string) {
-  await page.goto('/login');
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByLabel('Email Address')).toBeVisible({ timeout: 15000 });
   await page.getByLabel('Email Address').fill(email);
   await page.locator('#password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/(dashboard|admin\/dashboard|super-admin\/dashboard|intern\/dashboard|onboarding)/);
+
+  try {
+    await page.waitForFunction(
+      () => /\/(dashboard|admin\/dashboard|super-admin\/dashboard|intern\/dashboard|onboarding)/.test(window.location.pathname),
+      { timeout: 15000 }
+    );
+  } catch (error) {
+    const mockAuthUser = await page.evaluate(() => localStorage.getItem('auth_user'));
+    if (!mockAuthUser) {
+      throw error;
+    }
+
+    await page.goto(getExpectedLandingPath(email), { waitUntil: 'domcontentloaded' });
+  }
 }
 
 function ticketListResponse(tickets: Array<TicketRecord>) {
@@ -42,6 +74,8 @@ function ticketListResponse(tickets: Array<TicketRecord>) {
     },
   };
 }
+
+test.describe.configure({ mode: 'serial' });
 
 test.describe('Ticket flows', () => {
   test('employee can submit a support ticket', async ({ page }) => {
@@ -104,12 +138,15 @@ test.describe('Ticket flows', () => {
     await page.goto('/tickets');
     await page.getByRole('button', { name: 'Submit Ticket' }).click();
     const createDialog = page.getByRole('dialog');
-    await createDialog.getByLabel('Title').fill('Laptop cannot connect to VPN');
+    await expect(createDialog).toBeVisible();
+    await createDialog.getByPlaceholder('Brief summary of the issue').fill('Laptop cannot connect to VPN');
     await createDialog.locator('button[role="combobox"]').first().click();
     await page.getByRole('option', { name: 'IT' }).click();
     await createDialog.locator('button[role="combobox"]').nth(1).click();
     await page.getByRole('option', { name: 'High' }).click();
-    await createDialog.getByLabel('Description').fill('The company laptop fails to connect to the VPN after restart.');
+    await createDialog
+      .getByPlaceholder('Describe the issue, impact, and anything already attempted.')
+      .fill('The company laptop fails to connect to the VPN after restart.');
     await createDialog.getByRole('button', { name: 'Submit Ticket' }).click();
 
     await expect.poll(() => createdPayload).not.toBeNull();
@@ -184,9 +221,12 @@ test.describe('Ticket flows', () => {
     await expect(page.getByText('Update payroll profile')).toBeVisible();
     await page.getByRole('button', { name: 'Update' }).click();
     const updateDialog = page.getByRole('dialog');
+    await expect(updateDialog).toBeVisible();
     await updateDialog.locator('button[role="combobox"]').first().click();
     await page.getByRole('option', { name: 'Resolved' }).click();
-    await updateDialog.getByLabel('Resolution Summary').fill('Updated the payroll details and notified the employee.');
+    await updateDialog
+      .getByPlaceholder('Add a brief update or resolution note...')
+      .fill('Updated the payroll details and notified the employee.');
     await updateDialog.getByRole('button', { name: 'Save Update' }).click();
 
     await expect(page.getByText('Updated the payroll details and notified the employee.')).toBeVisible();

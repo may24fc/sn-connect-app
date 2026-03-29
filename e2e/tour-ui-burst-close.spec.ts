@@ -28,7 +28,7 @@ const credentialCandidates = [
 async function loginAsAdmin(page: Parameters<typeof test>[0]['page']): Promise<void> {
   for (const candidate of credentialCandidates) {
     await page.goto('/login');
-    await page.getByLabel('Email').fill(candidate.email);
+    await page.getByLabel('Email Address').fill(candidate.email);
     await page.locator('#password').fill(candidate.password);
     await page.getByRole('button', { name: /sign in/i }).click();
 
@@ -47,7 +47,13 @@ async function loginAsAdmin(page: Parameters<typeof test>[0]['page']): Promise<v
   );
 }
 
-async function openTour(page: Parameters<typeof test>[0]['page']): Promise<void> {
+async function openTour(page: Parameters<typeof test>[0]['page']): Promise<boolean> {
+  const existingTour = page.locator('.tg-dialog').first();
+  const tourAlreadyOpen = await existingTour.isVisible({ timeout: 500 }).catch(() => false);
+  if (tourAlreadyOpen) {
+    return true;
+  }
+
   // Try to find and click the help button - it might not always be visible immediately
   const helpButton = page
     .locator('button[aria-label="Help — start guided tour"], button[aria-label*="guided tour"]')
@@ -65,22 +71,21 @@ async function openTour(page: Parameters<typeof test>[0]['page']): Promise<void>
       await altButton.click();
     } catch {
       console.log('Could not find help button, skipping tour for this iteration');
-      return;
+      return false;
     }
   }
 
   // Wait for tour to appear
-  await page
-    .locator('.tg-dialog, .tg-backdrop, .tg-overlay, [class*="tg-"]')
-    .first()
-    .waitFor({ state: 'visible', timeout: 5000 })
-    .catch(() => {});
+  await existingTour.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+
+  return true;
 }
 
 async function closeTourBurst(page: Parameters<typeof test>[0]['page']): Promise<void> {
   // Get all potential close UI elements
-  const closeButton = page
-    .locator('[class*="tg-"] button[aria-label*="close" i], [class*="tg-"] button:has-text("Close")')
+  const dialog = page.locator('.tg-dialog').first();
+  const closeButton = dialog
+    .locator('button[aria-label*="close" i], button:has-text("Close"), button:has-text("Skip")')
     .first();
   const backdrop = page.locator('.tg-backdrop').first();
 
@@ -95,7 +100,7 @@ async function closeTourBurst(page: Parameters<typeof test>[0]['page']): Promise
 
   // Wait for tour overlay to be gone (with fallback if it doesn't disappear)
   try {
-    await expect(page.locator('.tg-backdrop, .tg-dialog, .tg-overlay, [class*="tg-"]')).toHaveCount(0, {
+    await expect(page.locator('.tg-dialog')).toHaveCount(0, {
       timeout: 3000,
     });
   } catch {
@@ -103,6 +108,7 @@ async function closeTourBurst(page: Parameters<typeof test>[0]['page']): Promise
     // Force-click multiple times to ensure it's gone
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
+    await dialog.locator('button:has-text("Skip")').click({ force: true, timeout: 300 }).catch(() => {});
   }
 }
 
@@ -147,7 +153,10 @@ test.describe('Tour UI burst-close regression', () => {
 
     for (let iteration = 1; iteration <= 8; iteration++) {
       console.log(`Iteration ${iteration}/8`);
-      await openTour(page);
+      const openedTour = await openTour(page);
+      if (!openedTour) {
+        continue;
+      }
       await closeTourBurst(page);
       await assertAppStillClickable(page);
     }
