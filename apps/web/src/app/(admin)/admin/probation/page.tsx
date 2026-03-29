@@ -239,7 +239,7 @@ function StarRating({
   );
 }
 
-export function getProbationTrackerViewState({
+function getProbationTrackerViewState({
   isLoading,
   hasError,
   employeeCount,

@@ -27,11 +27,11 @@ interface ApiTaskPayload {
   assigner_name?: string | null;
 }
 
-export function toApiTaskStatus(status: TaskStatus): ApiTaskPayload['status'] {
+function toApiTaskStatus(status: TaskStatus): ApiTaskPayload['status'] {
   return status === 'blocked' ? 'cancelled' : status;
 }
 
-export function toTaskDetailViewModel(apiTask: ApiTaskPayload): Task {
+function toTaskDetailViewModel(apiTask: ApiTaskPayload): Task {
   const mappedStatus: TaskStatus = apiTask.status === 'cancelled' ? 'blocked' : apiTask.status;
 
   return {
