@@ -55,6 +55,17 @@ interface InvoiceListResponse {
   };
 }
 
+interface ApproveInvoiceResponse {
+  data: InvoiceRecord;
+  payroll?: {
+    triggered: boolean;
+    success: boolean;
+    paymentId?: string;
+    wiseTransferId?: number;
+    error?: string;
+  };
+}
+
 export function useInvoices(filters: InvoiceFilters = {}) {
   return useQuery({
     queryKey: queryKeys.payroll.list(filters),
@@ -177,7 +188,7 @@ export function useApproveInvoice() {
     }: {
       id: string;
       payload: InvoiceApprovalInput;
-    }): Promise<{ data: InvoiceRecord }> => {
+    }): Promise<ApproveInvoiceResponse> => {
       const response = await fetch(`/api/invoices/${id}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

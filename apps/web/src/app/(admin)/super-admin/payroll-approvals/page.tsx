@@ -1,6 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useApproveInvoice, useInvoices } from '@/hooks/useInvoices';
 import { useTableSort } from '@/hooks/useTableSort';
@@ -12,6 +13,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Table,
   TableBody,
   TableCell,
@@ -21,8 +28,8 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { CheckCircle2, Clock, DollarSign, XCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { AlertCircle, CheckCircle2, Clock, DollarSign, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 const statusVariant: Record<
   'draft' | 'submitted' | 'approved' | 'paid' | 'rejected',
@@ -57,7 +64,33 @@ export default function PayrollApprovalsPage() {
   const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 200 });
   const approveInvoice = useApproveInvoice();
   const [notesById, setNotesById] = useState<Record<string, string>>({});
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceRecord | null>(null);
+  const [pendingDialogOpen, setPendingDialogOpen] = useState(false);
   const { addToast } = useToast();
+
+  // Track which employees have Wise recipients (employee_id → hasRecipient)
+  const [employeesWithRecipient, setEmployeesWithRecipient] = useState<Set<string>>(new Set());
+  const [loadingRecipientInfo, setLoadingRecipientInfo] = useState(true);
+
+  // Fetch banking info for all employees to check who has Wise recipients
+  useEffect(() => {
+    const fetchBankingInfo = async () => {
+      try {
+        setLoadingRecipientInfo(true);
+        const response = await fetch('/api/admin/banking-info-status');
+        if (response.ok) {
+          const data = await response.json();
+          setEmployeesWithRecipient(new Set(data.employeesWithRecipient || []));
+        }
+      } catch (err) {
+        console.error('Failed to fetch banking info status:', err);
+      } finally {
+        setLoadingRecipientInfo(false);
+      }
+    };
+
+    fetchBankingInfo();
+  }, []);
 
   const invoices = data?.data || [];
 
@@ -102,6 +135,16 @@ export default function PayrollApprovalsPage() {
   });
   const processedSortHeadProps = { sortColumn: processedSort.sortColumn, sortDirection: processedSort.sortDirection, onSort: processedSort.handleSort };
 
+  const getEmployeeName = (invoice: InvoiceRecord) =>
+    invoice.employees
+      ? `${invoice.employees.first_name} ${invoice.employees.last_name}`
+      : '-';
+
+  const openPendingDialog = (invoice: InvoiceRecord) => {
+    setSelectedInvoice(invoice);
+    setPendingDialogOpen(true);
+  };
+
   const handleAction = (id: string, action: 'approved' | 'rejected') => {
     approveInvoice.mutate({
       id,
@@ -110,16 +153,81 @@ export default function PayrollApprovalsPage() {
         notes: notesById[id] || undefined,
       },
     }, {
-      onSuccess: () => addToast({ title: `Invoice ${action}`, variant: action === 'approved' ? 'success' : 'default' }),
-      onError: () => addToast({ title: `Failed to ${action === 'approved' ? 'approve' : 'reject'} invoice`, variant: 'error' }),
+      onSuccess: (response) => {
+        setPendingDialogOpen(false);
+        setSelectedInvoice(null);
+
+        if (action === 'approved') {
+          if (response.payroll?.success) {
+            addToast({
+              title: 'Invoice approved and payroll started',
+              description: response.payroll.wiseTransferId
+                ? `Wise transfer ${response.payroll.wiseTransferId} is now processing.`
+                : 'Wise payroll execution was triggered successfully.',
+              variant: 'success',
+            });
+            return;
+          }
+
+          if (response.payroll) {
+            addToast({
+              title: 'Invoice approved, but payroll needs attention',
+              description: response.payroll.error || 'Automatic payroll execution did not complete.',
+              variant: 'error',
+            });
+            return;
+          }
+
+          addToast({ title: 'Invoice approved', variant: 'success' });
+          return;
+        }
+
+        addToast({ title: 'Invoice rejected', variant: 'default' });
+      },
+      onError: (error) => addToast({
+        title: `Failed to ${action === 'approved' ? 'approve' : 'reject'} invoice`,
+        description: error instanceof Error ? error.message : 'An unexpected error occurred.',
+        variant: 'error',
+      }),
     });
   };
 
   return (
     <div className="space-y-6 p-3">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Payroll Approvals</h1>
-        <p className="text-muted-foreground">Review and approve submitted invoices</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Payroll Approvals</h1>
+          <p className="text-muted-foreground">Review and approve submitted invoices</p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            addToast({
+              title: 'Backfill starting...',
+              description: 'Attempting to create Wise recipients for employees without recipient IDs.',
+              variant: 'default',
+            });
+            fetch('/api/admin/backfill-wise-recipients', { method: 'POST' })
+              .then((res) => res.json())
+              .then((data) => {
+                addToast({
+                  title: 'Backfill completed',
+                  description: `Successfully backfilled ${data.successful} recipients (${data.failed} failed)`,
+                  variant: data.failed === 0 ? 'success' : 'error',
+                });
+              })
+              .catch((err) => {
+                addToast({
+                  title: 'Backfill failed',
+                  description: err instanceof Error ? err.message : 'Unknown error',
+                  variant: 'error',
+                });
+              });
+          }}
+        >
+          Backfill Wise Recipients
+        </Button>
       </div>
 
       <StatCardGrid columns={4}>
@@ -160,6 +268,7 @@ export default function PayrollApprovalsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Pending</CardTitle>
+              <p className="text-xs text-muted-foreground">Double-click a row to review details and take action.</p>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -171,24 +280,33 @@ export default function PayrollApprovalsPage() {
                     <SortableTableHead column="amount" {...pendingSortHeadProps}>Original Amount</SortableTableHead>
                     <TableHead>Source Currency</TableHead>
                     <TableHead>Converted Amount</TableHead>
-                    <TableHead>Notes</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">View</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pending.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground">
                         No pending invoices.
                       </TableCell>
                     </TableRow>
                   ) : (
                     sortedPending.map((invoice) => (
-                      <TableRow key={invoice.id}>
+                      <TableRow
+                        key={invoice.id}
+                        onDoubleClick={() => openPendingDialog(invoice)}
+                        className="group cursor-pointer transition-colors hover:bg-muted/50"
+                      >
                         <TableCell>
-                          {invoice.employees
-                            ? `${invoice.employees.first_name} ${invoice.employees.last_name}`
-                            : '-'}
+                          <div className="flex flex-col gap-1">
+                            <span>{getEmployeeName(invoice)}</span>
+                            {!loadingRecipientInfo && invoice.employee_id && !employeesWithRecipient.has(invoice.employee_id) && (
+                              <Badge variant="secondary" className="w-fit text-xs gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                No Wise recipient
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -209,37 +327,18 @@ export default function PayrollApprovalsPage() {
                           :
                             '—'}
                         </TableCell>
-                        <TableCell className="min-w-[220px]">
-                          <Textarea
-                            rows={2}
-                            value={notesById[invoice.id] || ''}
-                            onChange={(event) =>
-                              setNotesById((prev) => ({
-                                ...prev,
-                                [invoice.id]: event.target.value,
-                              }))
-                            }
-                          />
-                        </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleAction(invoice.id, 'approved')}
-                              disabled={approveInvoice.isPending}
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleAction(invoice.id, 'rejected')}
-                              disabled={approveInvoice.isPending}
-                            >
-                              Reject
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openPendingDialog(invoice);
+                            }}
+                          >
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -248,6 +347,129 @@ export default function PayrollApprovalsPage() {
               </Table>
             </CardContent>
           </Card>
+
+          <Dialog
+            open={pendingDialogOpen}
+            onOpenChange={(open) => {
+              setPendingDialogOpen(open);
+              if (!open) {
+                setSelectedInvoice(null);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  Invoice Details
+                  {selectedInvoice?.invoice_number ? ` - ${selectedInvoice.invoice_number}` : ''}
+                </DialogTitle>
+                <DialogDescription>
+                  Review the invoice details, add notes, then approve or reject.
+                </DialogDescription>
+              </DialogHeader>
+
+              {selectedInvoice ? (
+                <div className="space-y-4">
+                  <div className="grid gap-3 rounded-lg border border-border/70 bg-muted/30 p-4 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Employee</p>
+                      <p className="text-sm font-semibold text-foreground">{getEmployeeName(selectedInvoice)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Invoice #</p>
+                      <p className="text-sm font-semibold text-foreground">{selectedInvoice.invoice_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Period</p>
+                      <p className="text-sm text-foreground">
+                        {formatDate(selectedInvoice.period_start)} – {formatDate(selectedInvoice.period_end)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Source Currency</p>
+                      <p className="text-sm text-foreground">{selectedInvoice.source_currency || 'PHP'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Original Amount</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {formatCurrency(
+                          Number(selectedInvoice.net_amount || 0),
+                          selectedInvoice.source_currency || 'PHP'
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Converted Amount</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {selectedInvoice.converted_amount !== null &&
+                        selectedInvoice.converted_amount !== undefined &&
+                        selectedInvoice.target_currency
+                          ? formatCurrency(
+                            Number(selectedInvoice.converted_amount || 0),
+                            selectedInvoice.target_currency
+                          )
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedInvoice.status === 'submitted' || notesById[selectedInvoice.id] ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground">Notes</p>
+                      <Textarea
+                        rows={4}
+                        value={notesById[selectedInvoice.id] || ''}
+                        onChange={(event) => {
+                          if (selectedInvoice.status !== 'submitted') {
+                            return;
+                          }
+
+                          setNotesById((prev) => ({
+                            ...prev,
+                            [selectedInvoice.id]: event.target.value,
+                          }));
+                        }}
+                        readOnly={selectedInvoice.status !== 'submitted'}
+                        placeholder={
+                          selectedInvoice.status === 'submitted'
+                            ? 'Add context for approval/rejection...'
+                            : 'Notes are read-only for processed invoices.'
+                        }
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <DialogFooter className="gap-2 sm:justify-end">
+                {selectedInvoice?.status === 'submitted' ? (
+                  <>
+                    <Button
+                      variant="destructive"
+                      onClick={() => selectedInvoice && handleAction(selectedInvoice.id, 'rejected')}
+                      disabled={approveInvoice.isPending || !selectedInvoice}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Reject
+                    </Button>
+                    <Button
+                      variant="success"
+                      onClick={() => selectedInvoice && handleAction(selectedInvoice.id, 'approved')}
+                      disabled={approveInvoice.isPending || !selectedInvoice}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Approve
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="outline" onClick={() => setPendingDialogOpen(false)}>
+                    <XCircle className="h-4 w-4" />
+                    Close
+                  </Button>
+                )}
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <Card>
             <CardHeader>
@@ -264,18 +486,23 @@ export default function PayrollApprovalsPage() {
                     <TableHead>Source Currency</TableHead>
                     <TableHead>Converted Amount</TableHead>
                     <SortableTableHead column="approved_at" {...processedSortHeadProps}>Approved At</SortableTableHead>
+                    <TableHead className="text-right">View</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {processed.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground">
                         No processed invoices.
                       </TableCell>
                     </TableRow>
                   ) : (
                     sortedProcessed.map((invoice) => (
-                      <TableRow key={invoice.id}>
+                      <TableRow
+                        key={invoice.id}
+                        onDoubleClick={() => openPendingDialog(invoice)}
+                        className="group cursor-pointer transition-colors hover:bg-muted/50"
+                      >
                         <TableCell>
                           {invoice.employees
                             ? `${invoice.employees.first_name} ${invoice.employees.last_name}`
@@ -304,6 +531,19 @@ export default function PayrollApprovalsPage() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatDate(invoice.approved_at)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openPendingDialog(invoice);
+                            }}
+                          >
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))

@@ -1,4 +1,9 @@
 import { logActivity } from '@/lib/audit';
+import {
+  createNotificationsForUsers,
+  getUserDisplayName,
+  getUserIdsByRoles,
+} from '@/lib/notifications/create-notification';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -110,6 +115,19 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       console.error('Error submitting invoice:', error);
       return NextResponse.json({ error: 'Failed to submit invoice' }, { status: 500 });
     }
+
+    // Notify super_admins about the submitted invoice (only super_admin can approve invoices)
+    const submitterName = await getUserDisplayName(user.id);
+    const superAdminIds = await getUserIdsByRoles(['super_admin']);
+    const adminRecipients = superAdminIds.filter((adminId) => adminId !== user.id);
+
+    createNotificationsForUsers(adminRecipients, {
+      type: 'invoice_submitted',
+      title: 'Invoice Submitted for Approval',
+      message: `${submitterName} submitted an invoice for PHP ${data.net_amount || 0} for approval`,
+      link: `/super-admin/payroll-approvals`,
+      metadata: { invoiceId: id, submittedBy: user.id },
+    });
 
     logActivity(supabaseAdmin, {
       userId: user.id,

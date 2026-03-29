@@ -27,6 +27,8 @@ import {
   fundTransfer,
 } from '@/lib/wise/client';
 
+const WISE_ENVIRONMENT = process.env.WISE_ENVIRONMENT ?? 'sandbox';
+
 interface ExecutePayrollResult {
   success: boolean;
   paymentId?: string;
@@ -169,8 +171,22 @@ export async function executePayroll(
       reference: reference ?? `SN Payroll ${invoiceId.slice(0, 8)}`,
     });
 
-    // 4c. Fund the transfer (sandbox auto-completes)
-    await fundTransfer(transfer.id);
+    // 4c. Fund the transfer.
+    // Sandbox personal-token setups can create transfers but reject the
+    // balance-funding call with 403. In that case, keep the transfer in our
+    // ledger and continue testing via Wise simulation + webhook delivery.
+    try {
+      await fundTransfer(transfer.id);
+    } catch (fundError) {
+      const isSandboxFundingBypass =
+        WISE_ENVIRONMENT === 'sandbox' &&
+        fundError instanceof WiseApiError &&
+        fundError.statusCode === 403;
+
+      if (!isSandboxFundingBypass) {
+        throw fundError;
+      }
+    }
 
     // ──────────────────────────────────────────────
     // 5. LEDGER UPDATE — SUCCESS (processing)
