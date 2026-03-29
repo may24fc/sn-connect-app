@@ -5,6 +5,7 @@ import * as React from 'react';
 
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { normalizeAuthError } from '@/lib/errors';
+import { resolveUserDisplayName } from '@/lib/user-display';
 import { useQueryClient } from '@tanstack/react-query';
 
 // Type definitions
@@ -154,7 +155,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         if (mock) return mock;
         return {
           id: authUser.id,
-          name: (authUser.user_metadata?.name as string) ?? authUser.email ?? 'User',
+          name: resolveUserDisplayName({
+            metadataFullName:
+              typeof authUser.user_metadata?.full_name === 'string'
+                ? authUser.user_metadata.full_name
+                : null,
+            metadataName:
+              typeof authUser.user_metadata?.name === 'string'
+                ? authUser.user_metadata.name
+                : null,
+            metadataFirstName:
+              typeof authUser.user_metadata?.first_name === 'string'
+                ? authUser.user_metadata.first_name
+                : null,
+            metadataLastName:
+              typeof authUser.user_metadata?.last_name === 'string'
+                ? authUser.user_metadata.last_name
+                : null,
+            fallbackEmail: authUser.email ?? null,
+          }),
           email: authUser.email ?? '',
           role: 'employee',
         } as User;
@@ -194,13 +213,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         }
       }
 
-      const nameFromMetadata =
-        typeof authUser.user_metadata?.full_name === 'string'
-          ? authUser.user_metadata.full_name
-          : typeof authUser.user_metadata?.name === 'string'
-            ? authUser.user_metadata.name
-            : (authUser.email ?? 'User');
-
       const avatarUrlFromMetadata =
         typeof authUser.user_metadata?.avatar_url === 'string'
           ? authUser.user_metadata.avatar_url
@@ -208,11 +220,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
 
       const resolvedRole = resolveUiRole(dbRole);
 
+      let onboardingProfile:
+        | {
+            is_completed: boolean | null;
+            first_name: string | null;
+            last_name: string | null;
+          }
+        | null = null;
       let isOnboardingComplete = true;
+
       if (resolvedRole === 'employee' || resolvedRole === 'intern') {
         const { data: onboardingData, error: onboardingError } = await supabase
           .from('onboarding_profiles')
-          .select('is_completed')
+          .select('is_completed, first_name, last_name')
           .eq('user_id', authUser.id)
           .is('deleted_at', null)
           .maybeSingle();
@@ -224,13 +244,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           );
           isOnboardingComplete = true;
         } else {
+          onboardingProfile = onboardingData;
           isOnboardingComplete = onboardingData?.is_completed ?? false;
         }
       }
 
+      const resolvedName = resolveUserDisplayName({
+        metadataFullName:
+          typeof authUser.user_metadata?.full_name === 'string'
+            ? authUser.user_metadata.full_name
+            : null,
+        metadataName:
+          typeof authUser.user_metadata?.name === 'string' ? authUser.user_metadata.name : null,
+        metadataFirstName:
+          typeof authUser.user_metadata?.first_name === 'string'
+            ? authUser.user_metadata.first_name
+            : null,
+        metadataLastName:
+          typeof authUser.user_metadata?.last_name === 'string'
+            ? authUser.user_metadata.last_name
+            : null,
+        onboardingFirstName: onboardingProfile?.first_name ?? null,
+        onboardingLastName: onboardingProfile?.last_name ?? null,
+        fallbackEmail: authUser.email ?? null,
+      });
+
       return {
         id: authUser.id,
-        name: nameFromMetadata,
+        name: resolvedName,
         email: authUser.email ?? '',
         role: resolvedRole,
         status: userStatus ?? 'active',
@@ -238,7 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         ...(avatarUrlFromMetadata ? { avatarUrl: avatarUrlFromMetadata } : {}),
       } satisfies User;
     },
-    [supabase]
+    [MOCK_USERS, supabase, useMock]
   );
 
   const syncAuthState = React.useCallback(
@@ -594,12 +635,25 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
   const router = useRouter();
 
   React.useEffect(() => {
+    const currentPath =
+      typeof window !== 'undefined' ? window.location.pathname : '';
+    const isOnboardingRoute = currentPath.startsWith('/onboarding/');
+    const canAccessOnboardingDuringPendingState =
+      isOnboardingRoute &&
+      user &&
+      (user.status === 'pending_onboarding' || user.status === 'awaiting_approval');
+
     if (!(isLoading || user)) {
       // Preserve the current URL so the user returns here after login
-      const currentPath = window.location.pathname + window.location.search;
-      const returnTo = currentPath && currentPath !== '/' ? `?returnTo=${encodeURIComponent(currentPath)}` : '';
+      const currentPathWithSearch = window.location.pathname + window.location.search;
+      const returnTo = currentPathWithSearch && currentPathWithSearch !== '/' ? `?returnTo=${encodeURIComponent(currentPathWithSearch)}` : '';
       router.push(`/login${returnTo}`);
-    } else if (user && allowedRoles && !allowedRoles.includes(user.role)) {
+    } else if (
+      user &&
+      allowedRoles &&
+      !allowedRoles.includes(user.role) &&
+      !canAccessOnboardingDuringPendingState
+    ) {
       // Redirect to appropriate dashboard if unauthorized
       switch (user.role) {
         case 'employee':

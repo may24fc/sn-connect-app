@@ -2,7 +2,6 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -20,8 +19,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
 
-function getDefaultDashboard(role: string): string {
-  switch (role) {
+function getDefaultRedirect(user: NonNullable<ReturnType<typeof useAuth>['user']>): string {
+  if (user.status === 'pending_onboarding') {
+    return '/onboarding/setup';
+  }
+
+  if (user.status === 'awaiting_approval') {
+    return '/onboarding/awaiting-approval';
+  }
+
+  switch (user.role) {
     case 'admin':
       return '/admin/dashboard';
     case 'super_admin':
@@ -41,14 +48,16 @@ export default function LoginPage(): ReactNode {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  const enableMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
-
   // If user is already authenticated, redirect away from login
   useEffect(() => {
     if (!authLoading && user) {
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get('returnTo') || params.get('redirect');
-      router.replace(returnTo || getDefaultDashboard(user.role));
+      const defaultRedirect = getDefaultRedirect(user);
+      const shouldBypassReturnTo =
+        user.status === 'pending_onboarding' || user.status === 'awaiting_approval';
+
+      router.replace(shouldBypassReturnTo ? defaultRedirect : returnTo || defaultRedirect);
     }
   }, [user, authLoading, router]);
 
@@ -62,21 +71,6 @@ export default function LoginPage(): ReactNode {
     try {
       await login(normalizedEmail, normalizedPassword);
       // Router navigation is handled by the auth context
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const quickLogin = async (testEmail: string): Promise<void> => {
-    setEmail(testEmail);
-    setPassword('password');
-    setError('');
-    setIsLoading(true);
-
-    try {
-      await login(testEmail, 'password');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -197,72 +191,6 @@ export default function LoginPage(): ReactNode {
               )}
             </Button>
           </form>
-
-          {enableMockAuth ? (
-            <div className="mt-6 border-t border-zinc-200 dark:border-zinc-800 pt-6">
-              <p className="mb-3 text-center text-sm font-medium text-zinc-500 dark:text-zinc-400">
-                Quick Test Login
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => quickLogin('employee@test.com')}
-                  disabled={isLoading}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
-                  >
-                    Employee
-                  </Badge>
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => quickLogin('intern@test.com')}
-                  disabled={isLoading}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
-                  >
-                    Intern
-                  </Badge>
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => quickLogin('admin@test.com')}
-                  disabled={isLoading}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
-                  >
-                    Admin
-                  </Badge>
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => quickLogin('superadmin@test.com')}
-                  disabled={isLoading}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="mr-2 bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
-                  >
-                    Super Admin
-                  </Badge>
-                </Button>
-              </div>
-            </div>
-          ) : null}
 
           <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
             <p>

@@ -17,11 +17,13 @@ describe('redirect-config', () => {
 
   describe('isAllowedOrigin', () => {
     it('allows localhost:3000', async () => {
+      process.env.NODE_ENV = 'test';
       const { isAllowedOrigin } = await loadModule();
       expect(isAllowedOrigin('http://localhost:3000')).toBe(true);
     });
 
     it('allows localhost:3001', async () => {
+      process.env.NODE_ENV = 'test';
       const { isAllowedOrigin } = await loadModule();
       expect(isAllowedOrigin('http://localhost:3001')).toBe(true);
     });
@@ -50,14 +52,23 @@ describe('redirect-config', () => {
     });
 
     it('is case-insensitive', async () => {
+      process.env.NODE_ENV = 'test';
       const { isAllowedOrigin } = await loadModule();
       expect(isAllowedOrigin('HTTP://LOCALHOST:3000')).toBe(true);
       expect(isAllowedOrigin('HTTPS://MY-APP.VERCEL.APP')).toBe(true);
     });
 
     it('handles trailing slashes', async () => {
+      process.env.NODE_ENV = 'test';
       const { isAllowedOrigin } = await loadModule();
       expect(isAllowedOrigin('http://localhost:3000/')).toBe(true);
+    });
+
+    it('rejects localhost origins in production mode', async () => {
+      process.env.NODE_ENV = 'production';
+      const { isAllowedOrigin } = await loadModule();
+      expect(isAllowedOrigin('http://localhost:3000')).toBe(false);
+      expect(isAllowedOrigin('http://localhost:3001')).toBe(false);
     });
   });
 
@@ -76,16 +87,30 @@ describe('redirect-config', () => {
 
     it('falls back to NEXT_PUBLIC_VERCEL_URL', async () => {
       delete process.env.NEXT_PUBLIC_SITE_URL;
+      process.env.VERCEL_ENV = 'preview';
       process.env.NEXT_PUBLIC_VERCEL_URL = 'my-app-abc123.vercel.app';
       const { getSiteUrl } = await loadModule();
       expect(getSiteUrl()).toBe('https://my-app-abc123.vercel.app');
     });
 
-    it('falls back to localhost when no env vars set', async () => {
+    it('falls back to localhost when no env vars set in local runtime', async () => {
       delete process.env.NEXT_PUBLIC_SITE_URL;
       delete process.env.NEXT_PUBLIC_VERCEL_URL;
+      delete process.env.VERCEL_URL;
+      delete process.env.VERCEL_ENV;
+      process.env.NODE_ENV = 'test';
       const { getSiteUrl } = await loadModule();
-      expect(getSiteUrl()).toBe('http://localhost:3000');
+      expect(getSiteUrl()).toBe('http://localhost:3001');
+    });
+
+    it('falls back to the canonical production app url when no env vars are set', async () => {
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+      delete process.env.NEXT_PUBLIC_VERCEL_URL;
+      delete process.env.VERCEL_URL;
+      delete process.env.VERCEL_ENV;
+      process.env.NODE_ENV = 'production';
+      const { getSiteUrl } = await loadModule();
+      expect(getSiteUrl()).toBe('https://app.sngroup.com.au');
     });
   });
 
@@ -98,9 +123,18 @@ describe('redirect-config', () => {
 
     it('works with Vercel URL fallback', async () => {
       delete process.env.NEXT_PUBLIC_SITE_URL;
+      process.env.VERCEL_ENV = 'preview';
       process.env.NEXT_PUBLIC_VERCEL_URL = 'preview-abc.vercel.app';
       const { getAuthCallbackUrl } = await loadModule();
       expect(getAuthCallbackUrl()).toBe('https://preview-abc.vercel.app/auth/callback');
+    });
+  });
+
+  describe('getLoginUrl', () => {
+    it('returns site URL + /login', async () => {
+      process.env.NEXT_PUBLIC_SITE_URL = 'https://app.sngroup.com.au';
+      const { getLoginUrl } = await loadModule();
+      expect(getLoginUrl()).toBe('https://app.sngroup.com.au/login');
     });
   });
 
@@ -136,6 +170,11 @@ describe('redirect-config', () => {
       expect(getPostSignupRedirect('user@example.com')).toBe(
         '/signup/confirmation?email=user%40example.com'
       );
+    });
+
+    it('returns the base confirmation route when email is omitted', async () => {
+      const { getPostSignupRedirect } = await loadModule();
+      expect(getPostSignupRedirect()).toBe('/signup/confirmation');
     });
   });
 
@@ -173,6 +212,7 @@ describe('redirect-config', () => {
     });
 
     it('extracts pathname from allowed absolute URLs', async () => {
+      process.env.NODE_ENV = 'test';
       const { validateRedirectTarget } = await loadModule();
       expect(validateRedirectTarget('http://localhost:3000/tasks/123')).toBe('/tasks/123');
       expect(validateRedirectTarget('https://my-app.vercel.app/admin')).toBe('/admin');

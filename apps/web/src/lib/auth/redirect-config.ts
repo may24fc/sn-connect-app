@@ -11,10 +11,22 @@
  *
  * Environment Variable Priority:
  *   1. NEXT_PUBLIC_SITE_URL (explicitly set — takes precedence)
- *   2. NEXT_PUBLIC_VERCEL_URL (auto-set by Vercel on every deployment)
+ *   2. NEXT_PUBLIC_VERCEL_URL / VERCEL_URL (preview deployments)
  *   3. window.location.origin (client-side fallback)
- *   4. http://localhost:3000 (last resort for local dev)
+ *   4. http://localhost:3001 (last resort for local dev)
  */
+
+const PRODUCTION_APP_URL = 'https://app.sngroup.com.au';
+const PRODUCTION_PUBLIC_URL = 'https://www.sngroup.com.au';
+const LOCAL_APP_URL = 'http://localhost:3001';
+
+function normaliseUrl(url: string): string {
+  return url.replace(/\/$/, '');
+}
+
+function isLocalRuntime(): boolean {
+  return process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+}
 
 // ---------------------------------------------------------------------------
 // Allowed Origins
@@ -28,12 +40,11 @@
  * Dashboard → Authentication → URL Configuration → Redirect URLs.
  */
 const ALLOWED_ORIGIN_PATTERNS: readonly string[] = [
-  'http://localhost:3000',
-  'http://localhost:3001',
+  ...(isLocalRuntime() ? ['http://localhost:3000', 'http://localhost:3001'] : []),
   'https://*.vercel.app',
-  'https://app.sngroup.com.au',
+  PRODUCTION_APP_URL,
   'https://sngroup.com.au',
-  'https://www.sngroup.com.au',
+  PRODUCTION_PUBLIC_URL,
 ] as const;
 
 /**
@@ -41,7 +52,7 @@ const ALLOWED_ORIGIN_PATTERNS: readonly string[] = [
  * Supports exact matches and simple wildcard prefix patterns (e.g. `https://*.vercel.app`).
  */
 export function isAllowedOrigin(origin: string): boolean {
-  const normalised = origin.replace(/\/$/, '').toLowerCase();
+  const normalised = normaliseUrl(origin).toLowerCase();
 
   for (const pattern of ALLOWED_ORIGIN_PATTERNS) {
     const normalisedPattern = pattern.toLowerCase();
@@ -79,21 +90,32 @@ export function isAllowedOrigin(origin: string): boolean {
 export function getSiteUrl(): string {
   // 1. Explicit override via NEXT_PUBLIC_SITE_URL
   if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '');
+    return normaliseUrl(process.env.NEXT_PUBLIC_SITE_URL);
   }
 
-  // 2. Vercel auto-set variable (available on preview and production deploys)
-  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  // 2. Vercel preview URLs when an explicit site URL is not configured.
+  const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL ?? process.env.VERCEL_URL;
+  if (vercelUrl && process.env.VERCEL_ENV === 'preview') {
+    return `https://${vercelUrl}`;
   }
 
   // 3. Client-side fallback
   if (typeof window !== 'undefined') {
-    return window.location.origin;
+    const origin = normaliseUrl(window.location.origin);
+
+    if (isLocalRuntime()) {
+      return LOCAL_APP_URL;
+    }
+
+    if (origin === 'http://localhost:3000' || origin === 'http://localhost:3001') {
+      return PRODUCTION_APP_URL;
+    }
+
+    return origin;
   }
 
   // 4. Local dev fallback
-  return 'http://localhost:3000';
+  return isLocalRuntime() ? LOCAL_APP_URL : PRODUCTION_APP_URL;
 }
 
 // ---------------------------------------------------------------------------
@@ -109,6 +131,13 @@ export function getSiteUrl(): string {
  */
 export function getAuthCallbackUrl(): string {
   return `${getSiteUrl()}/auth/callback`;
+}
+
+/**
+ * Returns the canonical login URL for account emails and cross-app CTAs.
+ */
+export function getLoginUrl(): string {
+  return `${getSiteUrl()}/login`;
 }
 
 /**
@@ -144,6 +173,17 @@ export function getPostLoginRedirect(role?: string, returnTo?: string | null): s
  */
 export function getPasswordResetRedirectUrl(): string {
   return `${getSiteUrl()}/reset-password`;
+}
+
+/**
+ * Returns the confirmation page shown after a user signs up.
+ */
+export function getPostSignupRedirect(email?: string | null): string {
+  if (email) {
+    return `/signup/confirmation?email=${encodeURIComponent(email)}`;
+  }
+
+  return '/signup/confirmation';
 }
 
 /**
