@@ -13,6 +13,7 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   InsightsSummary,
   Skeleton,
   type WeekComparison,
@@ -21,7 +22,7 @@ import {
   type WeekPeriod,
   getCurrentWeekPeriod,
 } from '@hr-portal/ui';
-import { Download } from 'lucide-react';
+import { AlertCircle, Download } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 interface ReportsCompareTabProps {
@@ -411,8 +412,13 @@ export function ReportsCompareTab({
   if (error)
     return (
       <Card>
-        <CardContent className="p-6 text-sm text-destructive">
-          Failed to load comparison data.
+        <CardContent className="p-6">
+          <EmptyState
+            icon={AlertCircle}
+            title="Failed to load comparison data"
+            description="The comparison view could not be retrieved. Refresh and try again."
+            size="sm"
+          />
         </CardContent>
       </Card>
     );

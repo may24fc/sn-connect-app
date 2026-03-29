@@ -4,8 +4,8 @@ import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { TicketListTable } from '@/components/tickets/TicketListTable';
 import { TicketWorkDialog } from '@/components/tickets/TicketWorkDialog';
 import { useTickets, useUpdateTicket, type TicketRecord } from '@/hooks/useTickets';
-import { Card, CardContent } from '@hr-portal/ui';
-import { CheckCircle2, ClipboardList, Loader2, UserCog } from 'lucide-react';
+import { Card, CardContent, EmptyState } from '@hr-portal/ui';
+import { AlertCircle, CheckCircle2, ClipboardList, Loader2, UserCog } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 
 export default function AdminTicketsPage(): ReactNode {
@@ -47,11 +47,25 @@ export default function AdminTicketsPage(): ReactNode {
 
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">Loading assigned HR tickets...</CardContent>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading assigned HR tickets"
+              description="Retrieving the HR tickets currently assigned to you."
+              size="sm"
+            />
+          </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-red-600">{error.message}</CardContent>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load assigned HR tickets"
+              description={error.message}
+              size="sm"
+            />
+          </CardContent>
         </Card>
       ) : (
         <TicketListTable

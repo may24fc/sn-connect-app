@@ -14,6 +14,7 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   ExpenditureVsResultsChart,
   InsightsSummary,
   MetricKPICard,
@@ -23,7 +24,7 @@ import {
   SpendByCategoryChart,
   WeeklyTrendsChart,
 } from '@hr-portal/ui';
-import { Download } from 'lucide-react';
+import { AlertCircle, Download } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface ReportsAnalyticsTabProps {
@@ -400,8 +401,13 @@ export function ReportsAnalyticsTab({
   if (error) {
     return (
       <Card>
-        <CardContent className="p-6 text-sm text-destructive">
-          Failed to load analytics data. Please try again.
+        <CardContent className="p-6">
+          <EmptyState
+            icon={AlertCircle}
+            title="Failed to load analytics data"
+            description="The analytics view could not be retrieved. Refresh and try again."
+            size="sm"
+          />
         </CardContent>
       </Card>
     );

@@ -16,6 +16,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   Input,
   Label,
   Select,
@@ -530,13 +531,25 @@ export default function ResourceCategoriesPage() {
       {/* Categories Table */}
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Loading categories...
+          <CardContent className="p-6">
+            <EmptyState
+              icon={FileText}
+              title="Loading categories"
+              description="Fetching your resource category structure."
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-red-600">Failed to load categories.</CardContent>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertTriangle}
+              title="Failed to load categories"
+              description="There was a problem fetching the resource categories."
+              size="sm"
+            />
+          </CardContent>
         </Card>
       ) : (
         <Card>

@@ -16,10 +16,10 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   Input,
   Label,
   Select,
-  EmptyState,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -27,11 +27,9 @@ import {
   SlidePanel,
   SlidePanelBody,
   SlidePanelContent,
-  AlertCircle,
   SlidePanelFooter,
   SlidePanelHeader,
   SlidePanelTitle,
-  Loader2,
   Table,
   TableBody,
   TableCell,
@@ -39,36 +37,18 @@ import {
   TableHeader,
   TableRow,
   Textarea,
-            <CardContent className="p-0">
-              <EmptyState
-                icon={<Loader2 className="h-5 w-5 animate-spin" />}
-                title="Loading job postings"
-                description="Retrieving job postings and current filters."
-                size="sm"
-              />
-import {
-  Archive,
-  Briefcase,
-  Edit,
-            <CardContent className="p-0">
-              <EmptyState
-                icon={AlertCircle}
-                title="Failed to load job postings"
-                description="The jobs list could not be retrieved. Refresh and try again."
-                size="sm"
-              />
-} from 'lucide-react';
+  useToast,
+} from '@hr-portal/ui';
+import { AlertCircle, Archive, Briefcase, Edit, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
-            <CardContent className="p-0">
-              <EmptyState
-                icon={Briefcase}
-                title="No job postings yet"
-                description="Create your first job posting to start receiving applications."
-                action={{ label: 'Create Job', onClick: openCreateForm }}
-                size="md"
-              />
+interface JobFormData {
+  title: string;
+  business_unit_id: string;
+  department: string;
+  location: string;
+  total_headcount: number;
   employment_type: string;
   description: string;
   requirements: string;
@@ -77,6 +57,8 @@ import { useMemo, useState } from 'react';
   is_active: boolean;
   closes_at: string;
 }
+
+type FormMode = 'create' | 'edit';
 
 const EMPTY_FORM: JobFormData = {
   title: '',
@@ -339,33 +321,36 @@ export default function AdminJobsPage() {
       <div className="flex-1 overflow-y-auto p-3">
         {isLoading ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-zinc-600 dark:text-zinc-400 text-center">
-              Loading job postings...
+            <CardContent className="p-0">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading job postings"
+                description="Retrieving job postings and current filters."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : error ? (
           <Card className="bg-card border border-border rounded-lg p-8">
-            <CardContent className="p-0 text-sm text-rose-600 dark:text-rose-400 text-center">
-              Failed to load job postings.
+            <CardContent className="p-0">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to load job postings"
+                description="The jobs list could not be retrieved. Refresh and try again."
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : jobs.length === 0 ? (
           <Card className="bg-card border border-border rounded-lg p-12">
-            <CardContent className="p-0 flex flex-col items-center gap-3">
-              <Briefcase className="h-12 w-12 text-zinc-300 dark:text-zinc-600" />
-              <p className="text-lg font-medium text-zinc-700 dark:text-zinc-300">
-                No job postings yet
-              </p>
-              <p className="text-sm text-zinc-500">
-                Create your first job posting to start receiving applications.
-              </p>
-              <Button
-                onClick={openCreateForm}
-                className="mt-2 bg-slate-900 hover:bg-slate-800 text-white"
-              >
-                <Plus className="h-4 w-4 mr-1.5" />
-                Create Job
-              </Button>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Briefcase}
+                title="No job postings yet"
+                description="Create your first job posting to start receiving applications."
+                action={{ label: 'Create Job', onClick: openCreateForm }}
+                size="md"
+              />
             </CardContent>
           </Card>
         ) : (

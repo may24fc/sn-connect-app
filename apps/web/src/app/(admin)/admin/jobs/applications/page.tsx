@@ -17,6 +17,7 @@ import {
   EmptyState,
   Input,
   ProgressTimeline,
+  type ProgressTimelineStep,
   Select,
   SelectContent,
   SelectItem,
@@ -34,6 +35,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
+  TableRow,
+  Tabs,
   TabsList,
   TabsTrigger,
   Textarea,
@@ -346,7 +349,7 @@ export default function ApplicationsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'table' | 'kanban')}>
+            <Tabs value={viewMode} onValueChange={(value: string) => setViewMode(value as 'table' | 'kanban')}>
               <TabsList>
                 <TabsTrigger value="table"><LayoutList className="mr-1.5 h-3.5 w-3.5" />Table</TabsTrigger>
                 <TabsTrigger value="kanban"><Columns className="mr-1.5 h-3.5 w-3.5" />Kanban</TabsTrigger>

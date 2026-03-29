@@ -19,6 +19,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   InsightsSummary,
   type KeyFinding,
   MetricKPICard,
@@ -32,7 +33,7 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { ArrowLeft, ListChecks } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ListChecks } from 'lucide-react';
 import { use, useState } from 'react';
 
 const statusVariant: Record<
@@ -109,8 +110,13 @@ export default function AdminReportDetailPage({
           Back to Marketing Reports
         </Button>
         <Card>
-          <CardContent className="p-6 text-sm text-destructive">
-            Failed to load report. Please try again.
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load report"
+              description="This marketing report could not be retrieved. Go back or refresh and try again."
+              size="sm"
+            />
           </CardContent>
         </Card>
       </div>

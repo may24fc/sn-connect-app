@@ -3,8 +3,8 @@
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useTicketAssignees } from '@/hooks/useTicketAssignees';
 import { useTickets, useUpdateTicket, type TicketRecord } from '@/hooks/useTickets';
-import { Button, Card, CardContent, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
-import { CheckCircle2, ClipboardList, Clock, Loader2, Search } from 'lucide-react';
+import { Button, Card, CardContent, EmptyState, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import { AlertCircle, CheckCircle2, ClipboardList, Clock, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useMemo, useState } from 'react';
 import { TicketAssignmentDialog } from './TicketAssignmentDialog';
@@ -103,11 +103,25 @@ export function SuperAdminTicketsPanel(): ReactNode {
 
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">Loading tickets...</CardContent>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading tickets"
+              description="Retrieving the intake queue for triage and assignment."
+              size="sm"
+            />
+          </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-red-600">{error.message}</CardContent>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load tickets"
+              description={error.message}
+              size="sm"
+            />
+          </CardContent>
         </Card>
       ) : (
         <TicketListTable

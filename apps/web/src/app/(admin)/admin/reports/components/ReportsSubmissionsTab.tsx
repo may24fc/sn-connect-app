@@ -18,6 +18,7 @@ import {
   Button,
   Card,
   CardContent,
+  EmptyState,
   Input,
   Select,
   SelectContent,
@@ -37,7 +38,7 @@ import {
   TooltipTrigger,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { Eye, Search } from 'lucide-react';
+import { AlertCircle, Eye, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -288,17 +289,25 @@ export function ReportsSubmissionsTab({
       {/* Table */}
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Loading marketing reports...
+          <CardContent className="p-6">
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading marketing reports"
+              description="Retrieving report submissions for the selected filters."
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-center space-y-3">
-            <p className="text-sm text-destructive">Failed to load marketing reports. Please try again.</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Retry
-            </Button>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load marketing reports"
+              description="The submissions list could not be retrieved. Refresh and try again."
+              action={{ label: 'Retry', onClick: () => void refetch() }}
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : (
@@ -320,8 +329,13 @@ export function ReportsSubmissionsTab({
               <TableBody>
                 {reports.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
-                      No marketing reports found.
+                    <TableCell colSpan={8} className="py-10">
+                      <EmptyState
+                        icon={Search}
+                        title="No marketing reports found"
+                        description="Adjust the filters or wait for submissions to appear in this queue."
+                        size="sm"
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

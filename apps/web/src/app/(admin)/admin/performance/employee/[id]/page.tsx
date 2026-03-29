@@ -24,6 +24,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   Label,
   type PerformanceRating,
   RATING_CONFIG,
@@ -39,6 +40,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  CircleAlert,
   ClipboardCheck,
   Clock,
   Crosshair,
@@ -500,12 +502,17 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
 
   if (isError || !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <p className="text-sm text-red-500">Failed to load performance data</p>
-        <Button variant="outline" size="sm" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" strokeWidth={1.5} />
-          Go Back
-        </Button>
+      <div className="min-h-[400px]">
+        <EmptyState
+          icon={CircleAlert}
+          title="Failed to load performance data"
+          description="There was a problem loading this employee performance record."
+          action={{
+            label: 'Go Back',
+            onClick: handleBack,
+            icon: <ArrowLeft className="h-3.5 w-3.5" />,
+          }}
+        />
       </div>
     );
   }
@@ -840,9 +847,13 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
             <TabsContent value="reviews" className="mt-4">
               {reviews.length === 0 ? (
                 <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Star className="h-8 w-8 text-muted-foreground/40 mb-2" strokeWidth={1.5} />
-                    <p className="text-sm text-muted-foreground">No performance reviews yet</p>
+                  <CardContent className="py-12">
+                    <EmptyState
+                      icon={Star}
+                      title="No performance reviews yet"
+                      description="Reviews for this employee will appear here once they are created."
+                      size="sm"
+                    />
                   </CardContent>
                 </Card>
               ) : (

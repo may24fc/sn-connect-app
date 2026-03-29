@@ -19,6 +19,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   Table,
   TableBody,
   TableCell,
@@ -28,7 +29,7 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertCircle, CheckCircle2, Clock, DollarSign, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, DollarSign, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const statusVariant: Record<
@@ -255,13 +256,25 @@ export default function PayrollApprovalsPage() {
 
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Loading invoices...
+          <CardContent className="p-6">
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading invoices"
+              description="Retrieving payroll approval invoices and totals."
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-error">Failed to load invoices.</CardContent>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load invoices"
+              description="Payroll approval invoices could not be retrieved. Refresh and try again."
+              size="sm"
+            />
+          </CardContent>
         </Card>
       ) : (
         <>

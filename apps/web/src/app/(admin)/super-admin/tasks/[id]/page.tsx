@@ -3,7 +3,7 @@
 import { useTaskProofs } from '@/hooks/useTaskProofs';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { formatDate } from '@/lib/format';
-import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton, TaskDetailView } from '@hr-portal/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Skeleton, TaskDetailView } from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { ArrowLeft, CheckCircle2, ExternalLink, FileText, Link2, Loader2, Trash2 } from 'lucide-react';
@@ -169,10 +169,12 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">Loading task details...</p>
-        </div>
+        <EmptyState
+          icon={<Loader2 className="h-6 w-6 animate-spin" />}
+          title="Loading task details"
+          description="Retrieving the task record and submitted proofs."
+          size="sm"
+        />
       </div>
     );
   }
@@ -241,9 +243,12 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
               <Skeleton className="h-16 w-full" />
             </div>
           ) : proofs.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No proof has been submitted yet.
-            </p>
+            <EmptyState
+              icon={FileText}
+              title="No proof submitted yet"
+              description="Submitted proof links or files will appear here once the assignee adds them."
+              size="sm"
+            />
           ) : (
             <div className="space-y-3">
               {proofs.map((proof) => (

@@ -16,6 +16,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   Input,
   MultiSelectFilter,
   Select,
@@ -393,15 +394,12 @@ export default function AdminPerformancePage(): ReactNode {
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : entries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Users className="h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">No employees found</p>
-              {search && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Try adjusting your search or filters
-                </p>
-              )}
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No employees found"
+              description={search ? 'Try adjusting your search or filters.' : 'There are no employees to show yet.'}
+              size="sm"
+            />
           ) : (
             <>
               {viewMode === 'cards' ? (

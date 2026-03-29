@@ -21,6 +21,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   Input,
   Label,
   Select,
@@ -464,7 +465,14 @@ export default function TaskManagementPage() {
                 <TasksLoadingSkeleton viewMode="list" />
               ) : error ? (
                 <Card>
-                  <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+                  <CardContent className="p-6">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="Failed to load tasks"
+                      description="The task list could not be retrieved. Refresh and try again."
+                      size="sm"
+                    />
+                  </CardContent>
                 </Card>
               ) : (
                 <TaskListView tasks={tasks} assigneeById={assigneeById} />
@@ -476,12 +484,24 @@ export default function TaskManagementPage() {
                 <TasksLoadingSkeleton viewMode="board" />
               ) : error ? (
                 <Card>
-                  <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+                  <CardContent className="p-6">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="Failed to load tasks"
+                      description="The task board could not be retrieved. Refresh and try again."
+                      size="sm"
+                    />
+                  </CardContent>
                 </Card>
               ) : tasks.length === 0 ? (
                 <Card>
-                  <CardContent className="py-12 text-center text-sm text-muted-foreground">
-                    No tasks found. Create your first task to get started.
+                  <CardContent className="py-12">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="No tasks found"
+                      description="Create your first task to get started."
+                      size="sm"
+                    />
                   </CardContent>
                 </Card>
               ) : (

@@ -26,6 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  EmptyState,
   Input,
   Label,
   MultiSelectFilter,
@@ -449,18 +450,26 @@ export default function AdminDirectoryPage(): ReactNode {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
-            </div>
+            <EmptyState
+              icon={<div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />}
+              title="Loading directory"
+              description="Fetching employee records and current filter results."
+              size="sm"
+            />
           ) : isError ? (
-            <div className="flex items-center justify-center py-12 text-sm text-red-500">
-              Failed to load directory. Please try again.
-            </div>
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load directory"
+              description="There was a problem fetching the employee directory. Please try again."
+              size="sm"
+            />
           ) : entries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-sm text-zinc-500 dark:text-zinc-400">
-              <Users className="h-8 w-8 mb-2 text-zinc-300 dark:text-zinc-600" strokeWidth={1.5} />
-              <p>No employees found matching your filters.</p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No employees found"
+              description="No employees matched your current directory filters."
+              size="sm"
+            />
           ) : (
             <div className="overflow-x-auto">
               <Table>

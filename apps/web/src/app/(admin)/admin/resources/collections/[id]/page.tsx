@@ -90,7 +90,13 @@ export default function CollectionDetailPage({ params }: { params: Promise<{ id:
   };
 
   if (isLoading || !collection) {
-    return <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading collection...</div>;
+    return (
+      <EmptyState
+        icon={<Loader2 className="h-5 w-5 animate-spin" />}
+        title="Loading collection"
+        description="Fetching the collection details and its linked resources."
+      />
+    );
   }
 
   return (
