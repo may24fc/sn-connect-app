@@ -1,188 +1,153 @@
-import type { TourGuideStep } from '@sjmc11/tourguidejs/src/types/TourGuideStep';
+import type { ModalTourStep } from '@/components/TourModal';
 
 /**
- * Tour step definitions for each major section of SN Connect.
- * Steps use CSS selectors to target elements on the page.
- * Groups are used to identify which tour to run for each section.
+ * Modal-based tour definitions for each major section of SN Connect.
+ * Each step includes title, description, and optional screenshot/video URLs.
+ * No DOM targeting - just beautiful modals with screenshots!
  */
 
 // ──────────────────────────────────────────────────────────────
 // Dashboard Tour (employee + admin)
 // ──────────────────────────────────────────────────────────────
-export const dashboardTourSteps: TourGuideStep[] = [
+export const dashboardTourSteps: ModalTourStep[] = [
   {
     title: 'Welcome to SN Connect!',
-    content:
-      'This is your personal dashboard. Here you can see an overview of your tasks, announcements, and key metrics at a glance.',
-    group: 'dashboard',
-    order: 0,
+    description:
+      'Welcome to your personalized HR portal! This is your personal dashboard where you can see an overview of your tasks, announcements, and key metrics at a glance. Think of this as your command center for everything HR-related.',
+    imageUrl: '/tour/dashboard-welcome.png',
   },
   {
-    title: 'Sidebar Navigation',
-    content:
-      'Use the sidebar to navigate between sections like Profile, Tasks, Reports, and more. You can collapse it by clicking the arrow button.',
-    target: 'aside',
-    group: 'dashboard',
-    order: 1,
+    title: 'Quick Navigation Sidebar',
+    description:
+      'The sidebar on the left gives you access to all major sections: Dashboard, Profile, Tasks, Marketing Reports, Documents, and more. You can collapse it to give yourself more screen space by clicking the collapse button.',
+    imageUrl: '/tour/dashboard-sidebar.png',
   },
   {
-    title: 'Quick Stats',
-    content:
-      'These cards show your key metrics: onboarding progress, probation status, tasks due, and notifications.',
-    target: '[data-tour="stat-cards"]',
-    group: 'dashboard',
-    order: 2,
-  },
-  {
-    title: 'Quick Actions',
-    content:
-      'Quickly upload files, submit reports, or view your calendar from here.',
-    target: '[data-tour="quick-actions"]',
-    group: 'dashboard',
-    order: 3,
+    title: 'Your Key Metrics',
+    description:
+      'These stat cards show you the most important information at a glance: your onboarding progress, probation status, tasks due today, and any new notifications. They update in real-time.',
+    imageUrl: '/tour/dashboard-stats.png',
   },
   {
     title: 'Announcements',
-    content: 'Stay up to date with the latest company announcements and important updates.',
-    target: '[data-tour="announcements"]',
-    group: 'dashboard',
-    order: 4,
+    description:
+      'Stay informed with announcements from HR and leadership team. This section shows the latest company-wide updates, policy changes, and important dates. Click on any announcement to read the full details.',
+    imageUrl: '/tour/dashboard-announcements.png',
   },
   {
-    title: 'Your Profile',
-    content: 'Click your avatar in the top-right to access your profile, settings, or log out.',
-    target: '[data-tour="user-menu"]',
-    group: 'dashboard',
-    order: 5,
+    title: 'Access Your Profile',
+    description:
+      'Click on your avatar in the top-right corner to access your profile, account settings, help and support, or log out. Your profile is where you can update your personal information and upload your photo.',
+    imageUrl: '/tour/dashboard-profile.png',
   },
 ];
 
 // ──────────────────────────────────────────────────────────────
 // Profile Tour
 // ──────────────────────────────────────────────────────────────
-export const profileTourSteps: TourGuideStep[] = [
+export const profileTourSteps: ModalTourStep[] = [
   {
-    title: 'Your Profile',
-    content:
-      'This is your personal profile page. Keep your information up to date so HR and your team can reach you easily.',
-    group: 'profile',
-    order: 0,
+    title: 'Your Profile Page',
+    description:
+      'This is your personal profile page - your HR profile on the platform. Keep all your information here up to date so that HR, your manager, and your colleagues can reach you easily and have accurate contact information.',
+    imageUrl: '/tour/profile-overview.png',
   },
   {
-    title: 'Edit Your Info',
-    content:
-      'Click on any editable field to update your personal information, contact details, or emergency contacts.',
-    target: '[data-tour="profile-edit"]',
-    group: 'profile',
-    order: 1,
+    title: 'Upload Your Photo',
+    description:
+      'Add a professional photo to your profile by clicking your avatar. This helps your team recognize you and makes the company directory more personal. Supported formats: JPG, PNG. Maximum file size: 5 MB.',
+    imageUrl: '/tour/profile-photo.png',
   },
   {
-    title: 'Role Details',
-    content:
-      'View and manage your role-specific information here. You can add roles and update expertise details.',
-    target: '[data-tour="profile-roles"]',
-    group: 'profile',
-    order: 2,
+    title: 'Edit Your Information',
+    description:
+      'Keep your contact details, address, phone number, and emergency contacts up to date. Click the Edit button to modify any field. Remember to save your changes when done.',
+    imageUrl: '/tour/profile-edit.png',
   },
   {
-    title: 'Upload Photo',
-    content:
-      'Click your avatar to upload a new profile photo. Supported formats: JPG, PNG (max 5 MB).',
-    target: '[data-tour="profile-avatar"]',
-    group: 'profile',
-    order: 3,
+    title: 'Role & Responsibilities',
+    description:
+      'This section shows your current role(s), department, and responsibilities. If you have multiple roles, you can view and manage them all here.',
+    imageUrl: '/tour/profile-roles.png',
+  },
+  {
+    title: 'Employment Details',
+    description:
+      'View important employment information including your hire date, employment type, work arrangement, and tenure. These details are maintained by HR.',
+    imageUrl: '/tour/profile-employment.png',
   },
 ];
 
 // ──────────────────────────────────────────────────────────────
 // Tasks Tour
 // ──────────────────────────────────────────────────────────────
-export const tasksTourSteps: TourGuideStep[] = [
+export const tasksTourSteps: ModalTourStep[] = [
   {
-    title: 'Task Management',
-    content:
-      'View and manage all your assigned tasks here. Tasks are sorted by priority and due date.',
-    group: 'tasks',
-    order: 0,
+    title: 'Task Management Center',
+    description:
+      'This is your task management center. Here you can view all your assigned tasks, create new ones, and collaborate with your team. Tasks are sorted by priority and due date so you never miss a deadline.',
+    imageUrl: '/tour/tasks-overview.png',
   },
   {
-    title: 'Create a Task',
-    content: 'Click "New Task" to create a task for yourself or assign one to a team member.',
-    target: '[data-tour="create-task"]',
-    group: 'tasks',
-    order: 1,
+    title: 'Create New Tasks',
+    description:
+      'Use the "New Task" button to create a task for yourself or assign one to a team member. You can set priority, due dates, tags, and assign to specific people. New tasks appear immediately in the list.',
+    imageUrl: '/tour/tasks-create.png',
   },
   {
-    title: 'Filter & Sort',
-    content: 'Use filters to narrow down tasks by status, priority, category, or assignee.',
-    target: '[data-tour="task-filters"]',
-    group: 'tasks',
-    order: 2,
+    title: 'Filter & Sort Your Tasks',
+    description:
+      'Use the filter panel to narrow down tasks by status (To Do, In Progress, Done), priority (High, Medium, Low), category, or assignee. You can also search for specific tasks or sort by due date.',
+    imageUrl: '/tour/tasks-filter.png',
   },
   {
-    title: 'Task Details',
-    content:
-      'Click on any task to view its full details, add comments, update progress, or change status.',
-    target: '[data-tour="task-list"]',
-    group: 'tasks',
-    order: 3,
+    title: 'Task Details & Updates',
+    description:
+      'Click on any task card to open its details. Here you can update the status, add comments for collaboration, change priority, adjust due dates, or attach files. Your team sees updates in real-time.',
+    imageUrl: '/tour/tasks-details.png',
   },
   {
-    title: 'Task Comments',
-    content:
-      'Collaborate with your team by leaving comments on tasks. You can tag people and attach files.',
-    target: '[data-tour="task-comments"]',
-    group: 'tasks',
-    order: 4,
+    title: 'Collaborate with Comments',
+    description:
+      'Leave comments on tasks to discuss progress with your team. You can @mention colleagues, attach files, and track the full conversation history. Great for async communication!',
+    imageUrl: '/tour/tasks-comments.png',
   },
 ];
 
 // ──────────────────────────────────────────────────────────────
 // Admin Dashboard Tour
 // ──────────────────────────────────────────────────────────────
-export const adminDashboardTourSteps: TourGuideStep[] = [
+export const adminDashboardTourSteps: ModalTourStep[] = [
   {
     title: 'Admin Dashboard',
-    content:
-      "Welcome to the Admin Dashboard. Get a bird's-eye view of employees, interns, and organizational metrics.",
-    group: 'admin-dashboard',
-    order: 0,
+    description:
+      "Welcome to the Admin Dashboard! This is your command center for all HR operations. Get a bird's-eye view of employees, interns, departmental metrics, and organizational health.",
+    imageUrl: '/tour/admin-dashboard-overview.png',
   },
   {
     title: 'Workforce Overview',
-    content:
-      'These stat cards show total employees, active interns, and upcoming reviews at a glance.',
-    target: '[data-tour="stat-cards"]',
-    group: 'admin-dashboard',
-    order: 1,
+    description:
+      'These stat cards provide at-a-glance metrics for workforce size, active interns, and review load. Use the dashboard attention banner for urgent follow-ups like overdue reports, onboarding approvals, and late intern EODs.',
+    imageUrl: '/tour/admin-stats.png',
   },
   {
-    title: 'Department Overview',
-    content: 'View headcount and status breakdowns by department.',
-    target: '[data-tour="department-overview"]',
-    group: 'admin-dashboard',
-    order: 2,
+    title: 'Department Breakdown',
+    description:
+      'View headcount and status distribution across all departments. See how many employees are active, on leave, or pending onboarding in each department. Great for resource planning.',
+    imageUrl: '/tour/admin-departments.png',
   },
   {
-    title: 'Events',
-    content: 'Track birthdays and work anniversaries for your team. Never miss a celebration!',
-    target: '[data-tour="milestones"]',
-    group: 'admin-dashboard',
-    order: 3,
-  },
-  {
-    title: 'Quick Actions',
-    content: 'Jump to Employee Management, Performance Reviews, Recruitment, or Reports from here.',
-    target: '[data-tour="quick-actions"]',
-    group: 'admin-dashboard',
-    order: 4,
+    title: 'Team Events & Milestones',
+    description:
+      'Track birthdays and work anniversaries for your entire team. Never miss a celebration! This helps you recognize and appreciate your team members.',
+    imageUrl: '/tour/admin-milestones.png',
   },
 ];
 
 // ──────────────────────────────────────────────────────────────
 // Map of tour group name to its steps
 // ──────────────────────────────────────────────────────────────
-export const tourStepsByGroup: Record<string, TourGuideStep[]> = {
+export const tourStepsByGroup: Record<string, ModalTourStep[]> = {
   dashboard: dashboardTourSteps,
   profile: profileTourSteps,
   tasks: tasksTourSteps,
@@ -211,13 +176,54 @@ export function getTourGroupForPath(pathname: string): string | undefined {
 
 /** localStorage key prefix for tracking completed tours */
 export const TOUR_STORAGE_PREFIX = 'sn-tour-finished-';
+export const TOUR_GLOBAL_COMPLETED_KEY = 'sn-tour-completed-once';
+const TOUR_COOKIE_PREFIX = 'sn_tour_finished_';
+const TOUR_COOKIE_GLOBAL = 'sn_tour_completed_once';
+
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const prefixed = `${name}=`;
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith(prefixed)) {
+      return decodeURIComponent(trimmed.substring(prefixed.length));
+    }
+  }
+  return null;
+}
+
+function setCookie(name: string, value: string, days: number): void {
+  if (typeof document === 'undefined') return;
+  const expires = new Date();
+  expires.setDate(expires.getDate() + days);
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+}
+
+function removeCookie(name: string): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+}
+
+/** Check if the user already completed any tour at least once */
+export function isTourAutoStartDisabled(): boolean {
+  try {
+    const localValue = localStorage.getItem(TOUR_GLOBAL_COMPLETED_KEY) === 'true';
+    const cookieValue = getCookie(TOUR_COOKIE_GLOBAL) === 'true';
+    return localValue || cookieValue;
+  } catch {
+    return getCookie(TOUR_COOKIE_GLOBAL) === 'true';
+  }
+}
 
 /** Check if a tour group has been completed */
 export function isTourCompleted(group: string): boolean {
   try {
-    return localStorage.getItem(`${TOUR_STORAGE_PREFIX}${group}`) === 'true';
+    const localValue = localStorage.getItem(`${TOUR_STORAGE_PREFIX}${group}`) === 'true';
+    const cookieValue = getCookie(`${TOUR_COOKIE_PREFIX}${group}`) === 'true';
+    return localValue || cookieValue;
   } catch {
-    return false;
+    return getCookie(`${TOUR_COOKIE_PREFIX}${group}`) === 'true';
   }
 }
 
@@ -225,9 +231,12 @@ export function isTourCompleted(group: string): boolean {
 export function markTourCompleted(group: string): void {
   try {
     localStorage.setItem(`${TOUR_STORAGE_PREFIX}${group}`, 'true');
+    localStorage.setItem(TOUR_GLOBAL_COMPLETED_KEY, 'true');
   } catch {
     // ignore in SSR / private browsing
   }
+  setCookie(`${TOUR_COOKIE_PREFIX}${group}`, 'true', 365);
+  setCookie(TOUR_COOKIE_GLOBAL, 'true', 365);
 }
 
 /** Reset a specific tour so it can be replayed */
@@ -237,6 +246,7 @@ export function resetTour(group: string): void {
   } catch {
     // ignore
   }
+  removeCookie(`${TOUR_COOKIE_PREFIX}${group}`);
 }
 
 /** Reset all tours */
@@ -246,7 +256,15 @@ export function resetAllTours(): void {
     for (const key of keys) {
       localStorage.removeItem(key);
     }
+    localStorage.removeItem(TOUR_GLOBAL_COMPLETED_KEY);
   } catch {
     // ignore
   }
+
+  // Remove known tour group cookies and global cookie
+  const knownGroups = ['dashboard', 'profile', 'tasks', 'admin-dashboard'];
+  for (const group of knownGroups) {
+    removeCookie(`${TOUR_COOKIE_PREFIX}${group}`);
+  }
+  removeCookie(TOUR_COOKIE_GLOBAL);
 }
