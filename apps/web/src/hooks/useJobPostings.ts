@@ -19,6 +19,15 @@ export interface JobPostingRecord {
   updated_at: string;
   created_by: string | null;
   deleted_at: string | null;
+  job_requisition: {
+    id: string;
+    total_headcount: number;
+    filled_headcount: number;
+    status: 'open' | 'filled';
+    created_at: string;
+    updated_at: string;
+    deleted_at: string | null;
+  } | null;
 }
 
 interface JobPostingListResponse {

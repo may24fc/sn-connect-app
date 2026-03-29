@@ -55,6 +55,7 @@ interface JobFormData {
   business_unit_id: string;
   department: string;
   location: string;
+  total_headcount: number;
   employment_type: string;
   description: string;
   requirements: string;
@@ -69,6 +70,7 @@ const EMPTY_FORM: JobFormData = {
   business_unit_id: '',
   department: '',
   location: '',
+  total_headcount: 1,
   employment_type: 'full-time',
   description: '',
   requirements: '',
@@ -135,7 +137,12 @@ export default function AdminJobsPage() {
     const total = jobs.length;
     const active = jobs.filter((j) => j.is_active).length;
     const archived = jobs.filter((j) => !j.is_active).length;
-    return { total, active, archived };
+    const openings = jobs.reduce((sum, job) => {
+      const requisition = job.job_requisition;
+      if (!requisition) return sum;
+      return sum + Math.max(requisition.total_headcount - requisition.filled_headcount, 0);
+    }, 0);
+    return { total, active, archived, openings };
   }, [jobs]);
 
   // Form state
@@ -157,6 +164,7 @@ export default function AdminJobsPage() {
       business_unit_id: job.business_unit_id || '',
       department: job.department || '',
       location: job.location || '',
+      total_headcount: job.job_requisition?.total_headcount || 1,
       employment_type: job.employment_type,
       description: job.description,
       requirements: job.requirements || '',
@@ -173,6 +181,7 @@ export default function AdminJobsPage() {
   async function handleSubmitForm() {
     const payload: Record<string, unknown> = {
       title: formData.title,
+      total_headcount: formData.total_headcount,
       employment_type: formData.employment_type,
       description: formData.description,
       is_active: formData.is_active,
@@ -261,11 +270,12 @@ export default function AdminJobsPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           {[
             { label: 'Total Postings', value: stats.total },
             { label: 'Active', value: stats.active },
             { label: 'Archived', value: stats.archived },
+            { label: 'Open Seats', value: stats.openings },
           ].map((stat) => (
             <Card key={stat.label} className="bg-card border border-border rounded-lg p-4">
               <CardContent className="p-0">
@@ -360,7 +370,7 @@ export default function AdminJobsPage() {
                     Type
                   </SortableTableHead>
                   <SortableTableHead column="status" {...sortHeadProps}>
-                    Status
+                    Position Status
                   </SortableTableHead>
                   <SortableTableHead column="created_at" {...sortHeadProps}>
                     Created
@@ -377,7 +387,14 @@ export default function AdminJobsPage() {
                     className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
                   >
                     <TableCell className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                      {job.title}
+                      <div>
+                        <p>{job.title}</p>
+                        {job.job_requisition ? (
+                          <p className="text-xs font-normal text-zinc-500 dark:text-zinc-400">
+                            {job.job_requisition.filled_headcount} of {job.job_requisition.total_headcount} filled
+                          </p>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
                       {job.department || '—'}
@@ -386,9 +403,16 @@ export default function AdminJobsPage() {
                       <Badge variant="outline">{job.employment_type}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={job.is_active ? 'success' : 'secondary'}>
-                        {job.is_active ? 'Active' : 'Archived'}
-                      </Badge>
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge variant={job.is_active ? 'success' : 'secondary'}>
+                          {job.is_active ? 'Open' : 'Closed'}
+                        </Badge>
+                        {job.job_requisition ? (
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            {job.job_requisition.status === 'filled' ? 'Headcount filled' : 'Hiring in progress'}
+                          </span>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
                       {formatDate(job.created_at)}
@@ -480,6 +504,23 @@ export default function AdminJobsPage() {
                     value={formData.department}
                     onChange={(e) => setFormData((p) => ({ ...p, department: e.target.value }))}
                     placeholder="e.g. Sales, Engineering"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="jp-headcount">Approved Headcount *</Label>
+                  <Input
+                    id="jp-headcount"
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={formData.total_headcount}
+                    onChange={(e) =>
+                      setFormData((p) => ({
+                        ...p,
+                        total_headcount: Math.max(1, Number(e.target.value || 1)),
+                      }))
+                    }
                     className="mt-1"
                   />
                 </div>
@@ -581,7 +622,13 @@ export default function AdminJobsPage() {
             </Button>
             <Button
               onClick={handleSubmitForm}
-              disabled={!formData.title || !formData.description || createJob.isPending || updateJob.isPending}
+              disabled={
+                !formData.title ||
+                !formData.description ||
+                formData.total_headcount < 1 ||
+                createJob.isPending ||
+                updateJob.isPending
+              }
               className="bg-slate-900 hover:bg-slate-800 text-white"
             >
               {createJob.isPending || updateJob.isPending

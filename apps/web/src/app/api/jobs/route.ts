@@ -2,6 +2,19 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { jobPostingFiltersSchema, createJobPostingSchema } from '@/lib/schemas/job.schema';
 import { getAuthedSupabase, isJobAdmin } from './_lib';
 
+function normalizeJobPosting<T extends Record<string, unknown>>(row: T) {
+  const requisitions = Array.isArray(row.job_requisitions) ? row.job_requisitions : [];
+  const jobRequisition = requisitions.find(
+    (item): item is Record<string, unknown> =>
+      typeof item === 'object' && item !== null && item.deleted_at == null
+  ) ?? null;
+
+  return {
+    ...row,
+    job_requisition: jobRequisition,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { supabase, user, role, error } = await getAuthedSupabase();
@@ -34,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('job_postings')
-      .select('*', { count: 'exact' })
+      .select('*, job_requisitions(*)', { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -55,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      data,
+      data: (data ?? []).map((row: Record<string, unknown>) => normalizeJobPosting(row)),
       pagination: {
         page: filters.page,
         pageSize: filters.pageSize,
@@ -93,29 +106,32 @@ export async function POST(request: NextRequest) {
 
     const payload = parsed.data;
 
-    const { data, error: createError } = await supabase
-      .from('job_postings')
-      .insert({
-        title: payload.title,
-        business_unit_id: payload.business_unit_id || null,
-        department: payload.department || null,
-        location: payload.location || null,
-        employment_type: payload.employment_type,
-        description: payload.description,
-        requirements: payload.requirements || null,
-        benefits: payload.benefits || null,
-        salary_range: payload.salary_range || null,
-        is_active: payload.is_active,
-        closes_at: payload.closes_at || null,
-        published_at: payload.is_active ? new Date().toISOString() : null,
-        created_by: user.id,
-      })
-      .select('*')
-      .single();
+    const { data, error: createError } = await supabase.rpc('create_job_posting_with_requisition', {
+      p_title: payload.title,
+      p_business_unit_id: payload.business_unit_id || null,
+      p_department: payload.department || null,
+      p_location: payload.location || null,
+      p_total_headcount: payload.total_headcount,
+      p_employment_type: payload.employment_type,
+      p_description: payload.description,
+      p_requirements: payload.requirements || null,
+      p_benefits: payload.benefits || null,
+      p_salary_range: payload.salary_range || null,
+      p_is_active: payload.is_active,
+      p_closes_at: payload.closes_at || null,
+    });
 
     if (createError || !data) {
-      console.error('Error creating job posting:', createError);
-      return NextResponse.json({ error: 'Failed to create job posting' }, { status: 500 });
+      console.error('Error creating job posting with requisition:', createError);
+      const message = createError?.message ?? 'Failed to create job posting';
+      const normalizedMessage = message.toLowerCase();
+      const statusCode = normalizedMessage.includes('unauthorized')
+        ? 401
+        : normalizedMessage.includes('must be at least 1') ||
+            normalizedMessage.includes('invalid input')
+          ? 400
+          : 500;
+      return NextResponse.json({ error: message }, { status: statusCode });
     }
 
     return NextResponse.json({ data }, { status: 201 });

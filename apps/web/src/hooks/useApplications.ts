@@ -20,9 +20,20 @@ export interface ApplicationRecord {
   job_postings: {
     id: string;
     title: string;
+    is_active?: boolean | null;
+    closes_at?: string | null;
     department?: string | null;
     location?: string | null;
     employment_type?: string | null;
+    job_requisition?: {
+      id: string;
+      total_headcount: number;
+      filled_headcount: number;
+      status: 'open' | 'filled';
+      created_at: string;
+      updated_at: string;
+      deleted_at: string | null;
+    } | null;
   } | null;
 }
 

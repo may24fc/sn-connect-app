@@ -6,6 +6,7 @@ interface CreateJobPayload {
   business_unit_id?: string | null;
   department?: string;
   location?: string;
+  total_headcount: number;
   employment_type: string;
   description: string;
   requirements?: string;
@@ -120,6 +121,38 @@ export function useUpdateApplicationStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+    },
+  });
+}
+
+export function useHireApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/applications/${id}/hire`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to hire application' }));
+        throw new Error(err.error ?? 'Failed to hire application');
+      }
+      return res.json() as Promise<{
+        data: {
+          applicationId: string;
+          jobPostingId: string;
+          requisitionId: string;
+          applicationStatus: 'hired';
+          filledHeadcount: number;
+          totalHeadcount: number;
+          requisitionStatus: 'open' | 'filled';
+          postingIsActive: boolean;
+          autoClosed: boolean;
+        };
+      }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.jobs.all });
     },
   });
 }

@@ -2,6 +2,30 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { applicationFiltersSchema } from '@/lib/schemas/job.schema';
 import { getAuthedSupabase, isJobAdmin } from '../jobs/_lib';
 
+function normalizeApplication<T extends Record<string, unknown>>(row: T) {
+  const jobPosting =
+    typeof row.job_postings === 'object' && row.job_postings !== null
+      ? (row.job_postings as Record<string, unknown>)
+      : null;
+  const requisitions = Array.isArray(jobPosting?.job_requisitions)
+    ? jobPosting.job_requisitions
+    : [];
+  const jobRequisition = requisitions.find(
+    (item): item is Record<string, unknown> =>
+      typeof item === 'object' && item !== null && item.deleted_at == null
+  ) ?? null;
+
+  return {
+    ...row,
+    job_postings: jobPosting
+      ? {
+          ...jobPosting,
+          job_requisition: jobRequisition,
+        }
+      : null,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { supabase, user, role, error } = await getAuthedSupabase();
@@ -34,7 +58,9 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('job_applications')
-      .select('*, job_postings(id, title)', { count: 'exact' })
+      .select('*, job_postings(id, title, is_active, closes_at, job_requisitions(*))', {
+        count: 'exact',
+      })
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -55,7 +81,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      data,
+      data: (data ?? []).map((row: Record<string, unknown>) => normalizeApplication(row)),
       pagination: {
         page: filters.page,
         pageSize: filters.pageSize,

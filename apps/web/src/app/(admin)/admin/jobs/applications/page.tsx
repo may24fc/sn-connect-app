@@ -2,9 +2,10 @@
 
 import { useApplications, type ApplicationRecord } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
-import { useUpdateApplicationStatus } from '@/hooks/useJobMutations';
+import { useHireApplication, useUpdateApplicationStatus } from '@/hooks/useJobMutations';
 import { useTableSort } from '@/hooks/useTableSort';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { formatDate, formatDateTime } from '@/lib/format';
@@ -49,7 +50,6 @@ import {
   FileText,
   LayoutList,
   Search,
-  Shield,
   Star,
   ThumbsDown,
   UserCheck,
@@ -57,7 +57,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 type ApplicationStatus =
@@ -97,6 +96,7 @@ const PIPELINE_ORDER: ApplicationStatus[] = [
 
 export default function ApplicationsPage() {
   const { user } = useAuth();
+  const handleBack = useBackNavigation({ fallbackPath: '/admin/jobs' });
   const { addToast } = useToast();
   const isAdmin = user?.role === 'admin';
 
@@ -149,6 +149,7 @@ export default function ApplicationsPage() {
   const { data, isLoading, error } = useApplications(queryFilters);
   const { data: jobsData } = useJobPostings({ page: 1, pageSize: 100 });
   const updateStatus = useUpdateApplicationStatus();
+  const hireApplication = useHireApplication();
 
   const applications = data?.data || [];
   const jobPostings = jobsData?.data || [];
@@ -173,8 +174,8 @@ export default function ApplicationsPage() {
     const pending = applications.filter((a) => a.status === 'pending').length;
     const shortlisted = applications.filter((a) => a.status === 'shortlisted').length;
     const interview = applications.filter((a) => a.status === 'interview').length;
-    const approved = applications.filter((a) => a.status === 'approved').length;
-    return { total, pending, shortlisted, interview, approved };
+    const hired = applications.filter((a) => a.status === 'hired').length;
+    return { total, pending, shortlisted, interview, hired };
   }, [applications]);
 
   // Kanban board groups
@@ -215,12 +216,6 @@ export default function ApplicationsPage() {
           title: 'Application rejected',
           description: `${candidateName}'s application has been rejected.`,
         });
-      } else if (newStatus === 'hired') {
-        addToast({
-          variant: 'success',
-          title: '🎉 Candidate hired!',
-          description: `${candidateName} has been marked as hired.`,
-        });
       } else {
         addToast({
           variant: 'default',
@@ -237,18 +232,48 @@ export default function ApplicationsPage() {
     }
   }
 
+  async function handleHire(appId: string) {
+    const fallbackName = applications.find((application) => application.id === appId)?.full_name;
+    const candidateName =
+      selectedApp?.id === appId ? selectedApp.full_name : (fallbackName ?? 'Candidate');
+
+    try {
+      const response = await hireApplication.mutateAsync(appId);
+      const hireData = response.data;
+
+      if (selectedApp?.id === appId) {
+        setSelectedApp((prev) => (prev ? { ...prev, status: 'hired' } : null));
+      }
+
+      addToast({
+        variant: 'success',
+        title: hireData.autoClosed ? 'Candidate hired and position closed' : 'Candidate hired',
+        description: hireData.autoClosed
+          ? `${candidateName} filled the final seat. The posting is now closed.`
+          : `${candidateName} has been hired. ${hireData.filledHeadcount} of ${hireData.totalHeadcount} seats are now filled.`,
+      });
+    } catch (error) {
+      addToast({
+        variant: 'error',
+        title: 'Failed to hire candidate',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    }
+  }
+
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <div className="p-3">
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
-            <Link
-              href="/admin/jobs"
+            <button
+              type="button"
+              onClick={handleBack}
               className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
               <ArrowLeft className="h-5 w-5" />
-            </Link>
+            </button>
             <div>
               <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
                 Application Pipeline
@@ -283,9 +308,9 @@ export default function ApplicationsPage() {
             icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
-            label="Approved"
-            value={stats.approved}
-            icon={<CheckCircle className="h-4 w-4" strokeWidth={1.5} />}
+            label="Hired"
+            value={stats.hired}
+            icon={<UserCheck className="h-4 w-4" strokeWidth={1.5} />}
           />
         </StatCardGrid>
 
@@ -461,7 +486,7 @@ export default function ApplicationsPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleStatusChange(app.id, 'hired')}
+                              onClick={() => handleHire(app.id)}
                               title="Mark as Hired"
                             >
                               <UserCheck className="h-4 w-4 text-emerald-600" />
@@ -610,6 +635,14 @@ export default function ApplicationsPage() {
                           </span>
                         </div>
                       )}
+                      {selectedApp.job_postings?.job_requisition ? (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-zinc-500">Headcount</span>
+                          <span className="text-zinc-900 dark:text-zinc-50">
+                            {selectedApp.job_postings.job_requisition.filled_headcount} / {selectedApp.job_postings.job_requisition.total_headcount} filled
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                   </SlidePanelSection>
 
@@ -675,13 +708,13 @@ export default function ApplicationsPage() {
 
               <SlidePanelFooter>
                 <div className="flex items-center gap-2 w-full flex-wrap">
-                  {/* Reject - available to admin and super_admin */}
+                  {/* Reject */}
                   {selectedApp.status !== 'rejected' && selectedApp.status !== 'approved' && selectedApp.status !== 'hired' && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleStatusChange(selectedApp.id, 'rejected')}
-                      disabled={updateStatus.isPending}
+                      disabled={updateStatus.isPending || hireApplication.isPending}
                       className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
                     >
                       <ThumbsDown className="h-4 w-4 mr-1" />
@@ -695,7 +728,7 @@ export default function ApplicationsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleStatusChange(selectedApp.id, 'shortlisted')}
-                      disabled={updateStatus.isPending}
+                      disabled={updateStatus.isPending || hireApplication.isPending}
                     >
                       <Star className="h-4 w-4 mr-1 text-amber-500" />
                       Shortlist
@@ -707,7 +740,7 @@ export default function ApplicationsPage() {
                     <Button
                       size="sm"
                       onClick={() => handleStatusChange(selectedApp.id, 'interview')}
-                      disabled={updateStatus.isPending}
+                      disabled={updateStatus.isPending || hireApplication.isPending}
                       className="bg-slate-900 hover:bg-slate-800 text-white"
                     >
                       <Users className="h-4 w-4 mr-1" />
@@ -715,12 +748,12 @@ export default function ApplicationsPage() {
                     </Button>
                   )}
 
-                  {/* SUPER-ADMIN ONLY: Approve after interview */}
+                  {/* Approve after interview */}
                   {isAdmin && selectedApp.status === 'interview' && (
                     <Button
                       size="sm"
                       onClick={() => handleStatusChange(selectedApp.id, 'approved')}
-                      disabled={updateStatus.isPending}
+                      disabled={updateStatus.isPending || hireApplication.isPending}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white ml-auto"
                     >
                       <UserCheck className="h-4 w-4 mr-1" />
@@ -728,7 +761,7 @@ export default function ApplicationsPage() {
                     </Button>
                   )}
 
-                  {/* Admin & Super-Admin: Final Approval override for earlier stages */}
+                  {/* Final approval override for earlier stages */}
                   {isAdmin &&
                     selectedApp.status !== 'interview' &&
                     selectedApp.status !== 'approved' &&
@@ -737,24 +770,24 @@ export default function ApplicationsPage() {
                       <Button
                         size="sm"
                         onClick={() => handleStatusChange(selectedApp.id, 'approved')}
-                        disabled={updateStatus.isPending}
+                        disabled={updateStatus.isPending || hireApplication.isPending}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white ml-auto"
                       >
-                        <Shield className="h-4 w-4 mr-1" />
+                        <CheckCircle className="h-4 w-4 mr-1" />
                         Final Approval
                       </Button>
                     )}
 
-                  {/* Admin & Super-Admin: Mark as Hired after approval */}
+                  {/* Mark as hired after approval */}
                   {isAdmin && selectedApp.status === 'approved' && (
                     <Button
                       size="sm"
-                      onClick={() => handleStatusChange(selectedApp.id, 'hired')}
-                      disabled={updateStatus.isPending}
+                      onClick={() => handleHire(selectedApp.id)}
+                      disabled={updateStatus.isPending || hireApplication.isPending}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white ml-auto"
                     >
                       <UserCheck className="h-4 w-4 mr-1" />
-                      Mark as Hired
+                      {hireApplication.isPending ? 'Hiring...' : 'Mark as Hired'}
                     </Button>
                   )}
                 </div>

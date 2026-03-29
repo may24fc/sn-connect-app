@@ -16,6 +16,7 @@ export const createJobPostingSchema = z.object({
   business_unit_id: z.string().uuid().optional().nullable(),
   department: z.string().max(100).optional(),
   location: z.string().max(200).optional(),
+  total_headcount: z.coerce.number().int().min(1).max(999).default(1),
   employment_type: z.enum(['full-time', 'part-time', 'internship', 'contract']).default('full-time'),
   description: z.string().min(10),
   requirements: z.string().optional(),

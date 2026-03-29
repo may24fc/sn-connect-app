@@ -2,6 +2,19 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { updateJobPostingSchema } from '@/lib/schemas/job.schema';
 import { getAuthedSupabase, isJobAdmin } from '../_lib';
 
+function normalizeJobPosting<T extends Record<string, unknown>>(row: T) {
+  const requisitions = Array.isArray(row.job_requisitions) ? row.job_requisitions : [];
+  const jobRequisition = requisitions.find(
+    (item): item is Record<string, unknown> =>
+      typeof item === 'object' && item !== null && item.deleted_at == null
+  ) ?? null;
+
+  return {
+    ...row,
+    job_requisition: jobRequisition,
+  };
+}
+
 interface Params {
   params: Promise<{ id: string }>;
 }
@@ -21,7 +34,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
     const { data, error: fetchError } = await supabase
       .from('job_postings')
-      .select('*')
+      .select('*, job_requisitions(*)')
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -30,7 +43,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Job posting not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: normalizeJobPosting(data as Record<string, unknown>) });
   } catch (error) {
     console.error('Error in GET /api/jobs/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -62,10 +75,43 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const payload = parsed.data;
 
+    const { data: existingJob, error: existingJobError } = await supabase
+      .from('job_postings')
+      .select('*, job_requisitions(*)')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .single();
+
+    if (existingJobError || !existingJob) {
+      return NextResponse.json({ error: 'Job posting not found' }, { status: 404 });
+    }
+
+    const normalizedExistingJob = normalizeJobPosting(existingJob as Record<string, unknown>) as Record<
+      string,
+      unknown
+    > & { job_requisition?: Record<string, unknown> | null };
+
+    const { total_headcount, ...jobPostingPayload } = payload;
+    const currentFilledHeadcount =
+      typeof normalizedExistingJob.job_requisition?.filled_headcount === 'number'
+        ? normalizedExistingJob.job_requisition.filled_headcount
+        : 0;
+    const nextRequisitionStatus =
+      typeof total_headcount === 'number' && currentFilledHeadcount >= total_headcount
+        ? 'filled'
+        : 'open';
+
     const { data, error: updateError } = await supabase
       .from('job_postings')
       .update({
-        ...payload,
+        ...jobPostingPayload,
+        ...(typeof total_headcount === 'number' && nextRequisitionStatus === 'filled'
+          ? {
+              is_active: false,
+              closes_at:
+                normalizedExistingJob.closes_at ?? new Date().toISOString(),
+            }
+          : {}),
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)
@@ -78,7 +124,29 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Failed to update job posting' }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    let jobRequisition = normalizedExistingJob.job_requisition ?? null;
+
+    if (jobRequisition && typeof total_headcount === 'number') {
+      const { data: updatedRequisition, error: requisitionError } = await supabase
+        .from('job_requisitions')
+        .update({
+          total_headcount,
+          status: nextRequisitionStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', jobRequisition.id)
+        .select('*')
+        .single();
+
+      if (requisitionError || !updatedRequisition) {
+        console.error('Error updating job requisition:', requisitionError);
+        return NextResponse.json({ error: 'Failed to update job requisition' }, { status: 500 });
+      }
+
+      jobRequisition = updatedRequisition as Record<string, unknown>;
+    }
+
+    return NextResponse.json({ data: { ...data, job_requisition: jobRequisition } });
   } catch (error) {
     console.error('Error in PATCH /api/jobs/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
