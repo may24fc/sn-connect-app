@@ -57,7 +57,18 @@ export const knowledgeSourceFiltersSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
 });
 
+export const aiSuggestionClickSchema = z.object({
+  suggestionId: z.string().min(1).max(120),
+  label: z.string().min(1).max(120),
+  prompt: z.string().min(1).max(500),
+  surface: z.enum(['admin_chatbot']).default('admin_chatbot'),
+  path: z.string().min(1).max(255),
+  conversationId: z.string().uuid().nullable().optional(),
+  wasFirstMessage: z.boolean().optional().default(false),
+});
+
 export type ChatMessageInput = z.infer<typeof chatMessageSchema>;
 export type CreateKnowledgeSourceInput = z.infer<typeof createKnowledgeSourceSchema>;
 export type UpdateKnowledgeSourceInput = z.infer<typeof updateKnowledgeSourceSchema>;
 export type KnowledgeSourceFilters = z.infer<typeof knowledgeSourceFiltersSchema>;
+export type AISuggestionClickInput = z.infer<typeof aiSuggestionClickSchema>;

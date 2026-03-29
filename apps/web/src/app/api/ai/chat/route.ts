@@ -1,7 +1,7 @@
 import { chatMessageSchema } from '@/lib/schemas/ai.schema';
 import OpenAI from 'openai';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAdminClient, getAuthedSupabase } from '../_lib';
+import { getAdminClient, getAllowedKnowledgeAccessLevels, getAuthedSupabase } from '../_lib';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? '';
@@ -261,9 +261,8 @@ export async function POST(request: NextRequest) {
     // Determine which knowledge source access levels this user may see.
     // admin / super_admin / hr / cos / ceo → all sources
     // employee / intern → only sources marked access_level = 'all'
-    const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
-    const isAdminRole = ADMIN_ROLES.includes(role ?? '');
-    const allowedAccessLevels = isAdminRole ? ['all', 'admin'] : ['all'];
+    const allowedAccessLevels = getAllowedKnowledgeAccessLevels(role);
+    const isAdminRole = allowedAccessLevels.includes('admin');
 
     const body = await request.json();
     const parsed = chatMessageSchema.safeParse(body);

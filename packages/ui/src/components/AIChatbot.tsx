@@ -1,5 +1,6 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, Maximize2, Minimize2, MoreHorizontal, PanelLeft, Pencil, Plus, Sparkles, Trash2, User, X } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback } from '../primitives/avatar';
@@ -45,6 +46,19 @@ export interface ConversationItem {
   updatedAt: Date;
 }
 
+export interface AIChatSuggestion {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
+export interface AIChatbotLiveSync {
+  hasSyncedGoogleDocs: boolean;
+  syncedDocumentCount?: number;
+  lastSyncedAt?: string | null;
+  lastSyncedTitle?: string | null;
+}
+
 export interface AIChatbotProps {
   /** Legacy: simple request/response handler (fallback if no streaming props given). */
   onSendMessage?: (message: string) => Promise<string>;
@@ -70,6 +84,11 @@ export interface AIChatbotProps {
   onRenameConversation?: (id: string, title: string) => void;
   /** Callback when user deletes a conversation. */
   onDeleteConversation?: (id: string) => void;
+  suggestions?: Array<AIChatSuggestion>;
+  isSuggestionsLoading?: boolean;
+  liveSync?: AIChatbotLiveSync | null;
+  onOpenChange?: (open: boolean) => void;
+  onSuggestionSelect?: (suggestion: AIChatSuggestion) => void;
   welcomeMessage?: string;
   placeholder?: string;
   className?: string;
@@ -132,6 +151,11 @@ export function AIChatbot({
   onCreateConversation,
   onRenameConversation,
   onDeleteConversation,
+  suggestions = [],
+  isSuggestionsLoading = false,
+  liveSync = null,
+  onOpenChange,
+  onSuggestionSelect,
   welcomeMessage = defaultWelcomeMessage,
   placeholder = 'Ask me anything about HR...',
   className,
@@ -346,6 +370,32 @@ export function AIChatbot({
     : groupConversationsByDate(conversations);
 
   const currentActiveId = isPersistenceMode ? (externalActiveConversationId ?? '') : activeConversationId;
+  const shouldShowSuggestionButtons = isEmptyState && !currentIsLoading && suggestions.length > 0;
+  const shouldRenderSuggestionArea =
+    isEmptyState && (isSuggestionsLoading || suggestions.length > 0 || Boolean(liveSync?.hasSyncedGoogleDocs));
+
+  const updateOpenState = (nextOpen: boolean): void => {
+    setIsOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
+
+  const formatRelativeSyncTime = (value?: string | null): string => {
+    if (!value) return 'recently';
+
+    const timestamp = new Date(value).getTime();
+    if (!Number.isFinite(timestamp)) return 'recently';
+
+    const diffMinutes = Math.max(0, Math.round((Date.now() - timestamp) / 60000));
+
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+
+    const diffDays = Math.round(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
 
   return (
     <div className={cn('relative', className)}>
@@ -355,7 +405,7 @@ export function AIChatbot({
           'fixed inset-0 z-40 bg-black/30 dark:bg-black/50 transition-opacity duration-300 ease-in-out',
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         )}
-        onClick={() => setIsOpen(false)}
+        onClick={() => updateOpenState(false)}
         aria-hidden="true"
       />
 
@@ -470,6 +520,12 @@ export function AIChatbot({
                     </p>
                   </div>
                 </div>
+                {liveSync?.hasSyncedGoogleDocs && (
+                  <div className="hidden min-[920px]:inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-2.5 py-1 text-[11px] font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Docs synced {formatRelativeSyncTime(liveSync.lastSyncedAt)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-1">
@@ -504,7 +560,7 @@ export function AIChatbot({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => updateOpenState(false)}
                   aria-label="Close AI panel"
                 >
                   <X className="h-4 w-4" strokeWidth={1.5} />
@@ -528,6 +584,70 @@ export function AIChatbot({
                   <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8">
                     How can I help you today?
                   </p>
+
+                  <AnimatePresence initial={false}>
+                    {shouldRenderSuggestionArea && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 18 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 12 }}
+                        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                        className="mb-6 flex w-full max-w-2xl flex-col items-center gap-3"
+                      >
+                        {liveSync?.hasSyncedGoogleDocs && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.96 }}
+                            transition={{ delay: 0.04, duration: 0.2 }}
+                            className="inline-flex items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/90 px-3 py-1.5 text-[11px] font-medium text-emerald-700 shadow-sm backdrop-blur dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+                          >
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>
+                              Google Docs synced {formatRelativeSyncTime(liveSync.lastSyncedAt)}
+                            </span>
+                          </motion.div>
+                        )}
+
+                        {isSuggestionsLoading ? (
+                          <div className="flex w-full max-w-2xl flex-wrap justify-center gap-2.5">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                              <div
+                                key={`suggestion-skeleton-${index + 1}`}
+                                className="h-10 w-40 animate-pulse rounded-full border border-zinc-200/80 bg-white/70 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/70"
+                              />
+                            ))}
+                          </div>
+                        ) : shouldShowSuggestionButtons ? (
+                          <div className="flex w-full max-w-2xl flex-wrap justify-center gap-2.5">
+                            {suggestions.map((suggestion, index) => (
+                              <motion.button
+                                key={suggestion.id}
+                                type="button"
+                                initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                                transition={{
+                                  delay: 0.05 + index * 0.05,
+                                  duration: 0.24,
+                                  ease: [0.22, 1, 0.36, 1],
+                                }}
+                                whileHover={{ y: -3, scale: 1.01 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => {
+                                  onSuggestionSelect?.(suggestion);
+                                  void handleSendMessage(suggestion.prompt);
+                                }}
+                                className="rounded-full border border-zinc-200/80 bg-white/85 px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm backdrop-blur transition-colors hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-200 dark:hover:border-zinc-700 dark:hover:bg-zinc-900"
+                              >
+                                {suggestion.label}
+                              </motion.button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Chat Input */}
                   <ChatInput
@@ -695,7 +815,7 @@ export function AIChatbot({
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => updateOpenState(!isOpen)}
         aria-label="Open AI Assistant"
         aria-expanded={isOpen}
         className={cn(

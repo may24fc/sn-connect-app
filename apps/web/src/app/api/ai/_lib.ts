@@ -1,6 +1,8 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const AI_ADMIN_ROLES = ['admin', 'super_admin', 'hr'];
+export const AI_KNOWLEDGE_ACCESS_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'] as const;
+export type KnowledgeAccessLevel = 'all' | 'admin';
 
 export async function getAuthedSupabase() {
   const supabase = await createSupabaseServerClient();
@@ -38,6 +40,12 @@ export async function getAuthedSupabase() {
 
 export function isAiAdmin(role: string | null): boolean {
   return role ? AI_ADMIN_ROLES.includes(role) : false;
+}
+
+export function getAllowedKnowledgeAccessLevels(role: string | null): KnowledgeAccessLevel[] {
+  return role && AI_KNOWLEDGE_ACCESS_ROLES.includes(role as (typeof AI_KNOWLEDGE_ACCESS_ROLES)[number])
+    ? ['all', 'admin']
+    : ['all'];
 }
 
 export function getAdminClient() {
