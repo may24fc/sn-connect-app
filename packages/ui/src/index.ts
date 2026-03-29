@@ -25,6 +25,11 @@ export {
   CardContent,
 } from './primitives/card';
 export { Badge, badgeVariants, type BadgeProps } from './primitives/badge';
+export {
+  CountBadge,
+  countBadgeVariants,
+  type CountBadgeProps,
+} from './primitives/count-badge';
 export { Avatar, AvatarImage, AvatarFallback } from './primitives/avatar';
 export { Progress } from './primitives/progress';
 export {
@@ -135,7 +140,14 @@ export {
 // Document Components
 export { FullScreenPreview, type FullScreenPreviewProps } from './components/documents';
 // Components
-export { AIChatbot, type ChatMessage, type AIChatbotProps, type ConversationItem } from './components/AIChatbot';
+export {
+  AIChatbot,
+  type ChatMessage,
+  type AIChatbotProps,
+  type ConversationItem,
+  type AIChatSuggestion,
+  type AIChatbotLiveSync,
+} from './components/AIChatbot';
 export { ChatInput, type ChatInputProps, type AttachedFile } from './components/ai-chat/ChatInput';
 
 // AI Chat Citation Components
@@ -287,6 +299,11 @@ export {
   PendingApprovalsCard,
   type PendingApprovalsCardProps,
 } from './components/dashboard/PendingApprovalsCard';
+export {
+  DashboardAttentionCarousel,
+  type DashboardAttentionCarouselProps,
+  type DashboardAttentionItem,
+} from './components/dashboard/DashboardAttentionCarousel';
 
 // Profile Components
 export {

@@ -1,13 +1,20 @@
 'use client';
 
 import type { TaskRecord } from '@/hooks/useTasks';
-import { Badge, Card, CardContent, TaskPriorityBadge, useToast } from '@hr-portal/ui';
+import { Card, CardContent, CountBadge, TaskPriorityBadge, useToast } from '@hr-portal/ui';
 import type { TaskPriority } from '@hr-portal/ui';
 import { GripVertical } from 'lucide-react';
 import Link from 'next/link';
 import { type DragEvent, useCallback, useMemo, useState } from 'react';
 
 type TaskStatusDB = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+
+const COUNT_BADGE_VARIANT_BY_STATUS = {
+  pending: 'warning',
+  in_progress: 'info',
+  completed: 'success',
+  cancelled: 'danger',
+} as const;
 
 const STATUS_COLUMNS: Array<{
   value: TaskStatusDB;
@@ -165,9 +172,11 @@ export function TaskKanbanBoard({
               className={`mb-3 flex items-center justify-between rounded-md px-3 py-2 ${column.headerColor}`}
             >
               <span className="text-sm font-medium">{column.label}</span>
-              <Badge variant="secondary" className="text-xs">
-                {columnTasks.length}
-              </Badge>
+              <CountBadge
+                variant={COUNT_BADGE_VARIANT_BY_STATUS[column.value]}
+                size="md"
+                count={columnTasks.length}
+              />
             </div>
 
             {/* Drop Zone */}
