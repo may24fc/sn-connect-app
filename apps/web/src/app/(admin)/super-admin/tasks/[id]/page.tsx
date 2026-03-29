@@ -1,6 +1,7 @@
 'use client';
 
 import { useTaskProofs } from '@/hooks/useTaskProofs';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { formatDate } from '@/lib/format';
 import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton, TaskDetailView } from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
@@ -65,6 +66,7 @@ interface TaskDetailPageProps {
 export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNode {
   const { id } = use(params);
   const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/super-admin/tasks' });
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -143,7 +145,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           <p className="text-sm text-muted-foreground mb-4">
             The task you are looking for does not exist.
           </p>
-          <Button onClick={() => router.push('/super-admin/tasks')}>
+          <Button onClick={handleBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Tasks
           </Button>
@@ -156,7 +158,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
     <div className="space-y-6">
       {/* Header with Actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="ghost" onClick={() => router.push('/super-admin/tasks')} className="w-fit">
+        <Button variant="ghost" onClick={handleBack} className="w-fit">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Tasks
         </Button>

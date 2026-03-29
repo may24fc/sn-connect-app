@@ -7,6 +7,7 @@ import {
   useToggleAnnouncementPin,
 } from '@/hooks/usePublishAnnouncement';
 import { useUpdateAnnouncement } from '@/hooks/useUpdateAnnouncement';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import {
   AnnouncementAnalyticsDashboard,
   AnnouncementEditor,
@@ -32,7 +33,6 @@ import {
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Archive, ArrowLeft, Globe, MoreHorizontal, Pencil, Pin, PinOff, Save } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type ViewMode = 'preview' | 'edit';
@@ -64,7 +64,7 @@ const categoryLabel: Record<string, string> = {
 };
 
 export default function AnnouncementDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/admin/announcements' });
   const [announcementId, setAnnouncementId] = useState<string | null>(null);
   const [mode, setMode] = useState<ViewMode>('preview');
 
@@ -220,7 +220,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
   if (error || !data?.data) {
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
@@ -239,7 +239,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
         {/* Header with back + actions */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <Button variant="ghost" size="sm" onClick={handleBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useDeleteCollection, useResourceCollections } from '@/hooks/useResourceCollections';
 import { Button, Card, CardContent, Input } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
@@ -9,6 +10,7 @@ import { useState } from 'react';
 
 export default function AdminCollectionsPage() {
   const [search, setSearch] = useState('');
+  const handleBack = useBackNavigation({ fallbackPath: '/admin/resources' });
   const { data, isLoading, error } = useResourceCollections({
     ...(search ? { search } : {}),
     page: 1,
@@ -31,8 +33,8 @@ export default function AdminCollectionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild variant="outline">
-            <Link href="/admin/resources">Back to Resources</Link>
+          <Button variant="outline" onClick={handleBack}>
+            Back to Resources
           </Button>
           <Button asChild>
             <Link href="/admin/resources/collections/new"><Plus className="mr-2 h-4 w-4" />New Collection</Link>

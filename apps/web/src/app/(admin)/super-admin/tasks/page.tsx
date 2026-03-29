@@ -168,6 +168,7 @@ function TagChipsInput({
             onClick={() => addCustom(customInput)}
             className="h-8 text-xs shrink-0"
           >
+            <Plus className="mr-1 h-3.5 w-3.5" />
             Add
           </Button>
         )}

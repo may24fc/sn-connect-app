@@ -40,18 +40,47 @@ export async function POST(_: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Failed to publish resource' }, { status: 500 });
     }
 
-    // Notify all users about the new resource
+    // Notify users about the new resource with role-appropriate links
     const publisherName = await getUserDisplayName(user.id);
-    const allUserIds = await getUserIdsByRoles();
-    const recipients = allUserIds.filter((uid) => uid !== user.id);
 
-    createNotificationsForUsers(recipients, {
-      type: 'resource_new',
-      title: 'New Resource Available',
-      message: `${publisherName} published a new resource: "${data.title}"`,
-      link: `/resources`,
-      metadata: { resourceId: id },
-    });
+    // Employee + intern users → /information-hub/resources/{id}
+    const employeeUserIds = await getUserIdsByRoles(['employee', 'intern']);
+    const employeeRecipients = employeeUserIds.filter((uid) => uid !== user.id);
+    if (employeeRecipients.length > 0) {
+      createNotificationsForUsers(employeeRecipients, {
+        type: 'resource_new',
+        title: 'New Resource Available',
+        message: `${publisherName} published a new resource: "${data.title}"`,
+        link: `/information-hub/resources/${id}`,
+        metadata: { resourceId: id },
+      });
+    }
+
+    // Admin users → /admin/resources/{id}
+    const adminUserIds = await getUserIdsByRoles(['admin']);
+    const adminRecipients = adminUserIds.filter((uid) => uid !== user.id);
+    if (adminRecipients.length > 0) {
+      createNotificationsForUsers(adminRecipients, {
+        type: 'resource_new',
+        title: 'New Resource Available',
+        message: `${publisherName} published a new resource: "${data.title}"`,
+        link: `/admin/resources/${id}`,
+        metadata: { resourceId: id },
+      });
+    }
+
+    // Super-admin users → /super-admin/resources/{id}
+    const superAdminUserIds = await getUserIdsByRoles(['super_admin']);
+    const superAdminRecipients = superAdminUserIds.filter((uid) => uid !== user.id);
+    if (superAdminRecipients.length > 0) {
+      createNotificationsForUsers(superAdminRecipients, {
+        type: 'resource_new',
+        title: 'New Resource Available',
+        message: `${publisherName} published a new resource: "${data.title}"`,
+        link: `/super-admin/resources/${id}`,
+        metadata: { resourceId: id },
+      });
+    }
 
     return NextResponse.json({ data });
   } catch (error) {

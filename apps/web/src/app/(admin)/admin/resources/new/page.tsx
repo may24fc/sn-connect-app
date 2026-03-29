@@ -258,6 +258,7 @@ export default function NewResourcePage() {
               disabled={createResource.isPending || !canPublish}
               className="border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
+              <FileText className="mr-2 h-4 w-4" />
               Save as Draft
             </Button>
             <Button

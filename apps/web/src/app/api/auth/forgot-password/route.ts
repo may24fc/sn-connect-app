@@ -153,7 +153,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       try {
         const resend = new Resend(resendApiKey);
         const { error: sendError } = await resend.emails.send({
-          from: 'SN Connect <no-reply@sngroup.com.au>',
+          from: 'Account Security <no-reply@sngroup.com.au>',
           to: email,
           subject: 'Reset your SN Connect password',
           html: buildResetEmailHtml(linkData.properties.action_link),

@@ -18,6 +18,7 @@ import {
 } from '@hr-portal/ui';
 import {
   AlertCircle,
+  ArrowLeft,
   Bold,
   Calendar,
   ChevronDown,
@@ -230,7 +231,8 @@ export default function NewAnnouncementPage() {
               onClick={() => router.push('/admin/announcements')}
               className="text-muted-foreground hover:text-foreground"
             >
-              ← Back
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back
             </Button>
             <div className="hidden sm:block">
               <h1 className="font-heading text-lg font-semibold text-foreground tracking-tight">
@@ -245,6 +247,7 @@ export default function NewAnnouncementPage() {
               disabled={createAnnouncement.isPending || !title || !content}
               className="border border-border text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
+              <FileText className="mr-2 h-4 w-4" />
               Save Draft
             </Button>
             <Button

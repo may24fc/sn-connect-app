@@ -29,6 +29,7 @@ import {
   Input,
   Label,
   MultiSelectFilter,
+  CountBadge,
   Select,
   SelectContent,
   SelectItem,
@@ -496,13 +497,15 @@ export default function AdminDirectoryPage(): ReactNode {
                                 {entry.full_name || 'Unknown'}
                               </p>
                               {(entry.pending_changes_count ?? 0) > 0 && (
-                                <span
-                                  className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+                                <CountBadge
+                                  className="gap-0.5"
+                                  variant="accent"
+                                  size="sm"
                                   title={`${entry.pending_changes_count} pending change request(s)`}
                                 >
                                   <AlertCircle className="h-2.5 w-2.5" strokeWidth={2} />
                                   {entry.pending_changes_count}
-                                </span>
+                                </CountBadge>
                               )}
                             </div>
                             <p className="text-xs text-zinc-500 dark:text-zinc-400">

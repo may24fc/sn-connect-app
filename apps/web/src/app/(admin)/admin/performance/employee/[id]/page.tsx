@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import {
   type IndividualPerformanceData,
   useIndividualPerformance,
@@ -50,7 +51,7 @@ import {
   ToggleLeft,
   Weight,
 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
 import {
   CartesianGrid,
@@ -344,7 +345,7 @@ function TargetEvaluationCard({
 
 export default function EmployeePerformanceDetailPage(): ReactNode {
   const params = useParams();
-  const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/admin/performance' });
   const { user } = useAuth();
   const { addToast } = useToast();
   const employeeId = params.id as string;
@@ -501,7 +502,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <p className="text-sm text-red-500">Failed to load performance data</p>
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
+        <Button variant="outline" size="sm" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4 mr-2" strokeWidth={1.5} />
           Go Back
         </Button>
@@ -514,7 +515,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Back button */}
-      <Button variant="ghost" size="sm" className="w-fit" onClick={() => router.back()}>
+      <Button variant="ghost" size="sm" className="w-fit" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4 mr-2" strokeWidth={1.5} />
           Back
       </Button>

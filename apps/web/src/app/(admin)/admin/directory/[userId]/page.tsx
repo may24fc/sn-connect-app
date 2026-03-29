@@ -5,6 +5,7 @@ import {
   useDirectoryDetail,
   useReviewProfileChangeRequest,
 } from '@/hooks/useDirectory';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import {
   Avatar,
   AvatarFallback,
@@ -28,6 +29,7 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  CountBadge,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import {
@@ -47,7 +49,6 @@ import {
   User,
   XCircle,
 } from 'lucide-react';
-import Link from 'next/link';
 import { type ReactNode, use, useState } from 'react';
 
 function getInitials(name: string): string {
@@ -315,6 +316,7 @@ export default function DirectoryDetailPage({
   params: Promise<{ userId: string }>;
 }): ReactNode {
   const { userId } = use(params);
+  const handleBack = useBackNavigation({ fallbackPath: '/admin/directory' });
   const { data, isLoading, isError } = useDirectoryDetail(userId);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ProfileChangeRequest | null>(null);
@@ -350,12 +352,10 @@ export default function DirectoryDetailPage({
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Employee not found or could not be loaded.
         </p>
-        <Link href="/admin/directory">
-          <Button variant="outline" size="sm" className="mt-4">
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
-            Back to Directory
-          </Button>
-        </Link>
+        <Button variant="outline" size="sm" className="mt-4" onClick={handleBack}>
+          <ArrowLeft className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
+          Back to Directory
+        </Button>
       </div>
     );
   }
@@ -381,11 +381,9 @@ export default function DirectoryDetailPage({
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/admin/directory">
-          <Button variant="ghost" size="icon-sm">
-            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-          </Button>
-        </Link>
+        <Button variant="ghost" size="icon-sm" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+        </Button>
         <div className="flex items-center gap-3 flex-1">
           <Avatar className="h-12 w-12">
             <AvatarImage src={entry.avatar_url || undefined} />
@@ -426,9 +424,7 @@ export default function DirectoryDetailPage({
           <TabsTrigger value="changes" className="text-sm">
             Change Requests
             {pendingRequests.length > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-medium h-4 w-4">
-                {pendingRequests.length}
-              </span>
+              <CountBadge className="ml-1.5" variant="accent" size="sm" count={pendingRequests.length} />
             )}
           </TabsTrigger>
         </TabsList>

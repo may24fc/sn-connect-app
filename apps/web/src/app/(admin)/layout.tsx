@@ -3,6 +3,8 @@
 import { TourProvider, useTour } from '@/components/TourProvider';
 import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
 import { useAIChat } from '@/hooks/useAIChat';
+import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
+import { useTrackAIChatSuggestionClick } from '@/hooks/useTrackAIChatSuggestionClick';
 import {
   useConversations,
   useCreateConversation,
@@ -184,11 +186,18 @@ function AdminNotificationBell(): ReactNode {
 
 /** Wires useAIChat streaming hook + conversation persistence into the AIChatbot component */
 function AdminAIChatbot(): ReactNode {
+  const pathname = usePathname();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
 
   const { messages, sendMessage, isLoading, clearHistory, abort, loadMessages } = useAIChat({
     conversationId: activeConversationId,
   });
+  const {
+    data: suggestionsData,
+    isFetching: isSuggestionsLoading,
+    refetch: refetchSuggestions,
+  } = useAIChatSuggestions({ enabled: false });
+  const trackSuggestionClick = useTrackAIChatSuggestionClick();
 
   const { data: conversationsData } = useConversations();
   const createConversation = useCreateConversation();
@@ -207,6 +216,7 @@ function AdminAIChatbot(): ReactNode {
       onSuccess: (conv) => {
         setActiveConversationId(conv.id);
         clearHistory();
+        void refetchSuggestions();
       },
     });
   };
@@ -245,6 +255,7 @@ function AdminAIChatbot(): ReactNode {
         if (activeConversationId === id) {
           setActiveConversationId(null);
           clearHistory();
+          void refetchSuggestions();
         }
       },
     });
@@ -279,6 +290,25 @@ function AdminAIChatbot(): ReactNode {
       onCreateConversation={handleCreate}
       onRenameConversation={handleRename}
       onDeleteConversation={handleDelete}
+      suggestions={suggestionsData?.data ?? []}
+      isSuggestionsLoading={isSuggestionsLoading}
+      liveSync={suggestionsData?.liveSync ?? null}
+      onOpenChange={(open) => {
+        if (open) {
+          void refetchSuggestions();
+        }
+      }}
+      onSuggestionSelect={(suggestion) => {
+        trackSuggestionClick.mutate({
+          suggestionId: suggestion.id,
+          label: suggestion.label,
+          prompt: suggestion.prompt,
+          surface: 'admin_chatbot',
+          path: pathname,
+          conversationId: activeConversationId,
+          wasFirstMessage: !activeConversationId && messages.length === 0,
+        });
+      }}
     />
   );
 }

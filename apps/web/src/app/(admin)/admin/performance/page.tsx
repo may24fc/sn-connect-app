@@ -28,6 +28,8 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  LayoutGrid,
+  List,
   Search,
   Settings,
   Users,
@@ -79,6 +81,9 @@ interface EmployeePerformanceSummary {
   weightedMean: number;
 }
 
+type ViewMode = 'cards' | 'list';
+type CardSortMode = 'weighted_desc' | 'weighted_asc' | 'name_asc';
+
 export default function AdminPerformancePage(): ReactNode {
   usePerformanceRealtime();
   const router = useRouter();
@@ -88,6 +93,8 @@ export default function AdminPerformancePage(): ReactNode {
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('accessible');
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [cardSortMode, setCardSortMode] = useState<CardSortMode>('weighted_desc');
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
@@ -175,6 +182,28 @@ export default function AdminPerformancePage(): ReactNode {
       router.push(`/admin/performance/employee/${entry.employee_id}`);
     }
   };
+
+  const sortedCardEntries = useMemo(() => {
+    const scoreFor = (entry: DirectoryEntry): number => {
+      if (!entry.employee_id) return -1;
+      return performanceSummaries.get(entry.employee_id)?.weightedMean ?? -1;
+    };
+
+    return [...entries].sort((a, b) => {
+      if (cardSortMode === 'name_asc') {
+        return (a.full_name || '').localeCompare(b.full_name || '');
+      }
+
+      const aScore = scoreFor(a);
+      const bScore = scoreFor(b);
+
+      if (cardSortMode === 'weighted_asc') {
+        return aScore - bScore;
+      }
+
+      return bScore - aScore;
+    });
+  }, [cardSortMode, entries, performanceSummaries]);
 
   return (
     <div className="space-y-6 p-3">
@@ -274,6 +303,44 @@ export default function AdminPerformancePage(): ReactNode {
             <SelectItem value="terminated">Terminated</SelectItem>
           </SelectContent>
         </Select>
+        <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+          <button
+            type="button"
+            onClick={() => setViewMode('cards')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              viewMode === 'cards'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              viewMode === 'list'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+            List
+          </button>
+        </div>
+        {viewMode === 'cards' && (
+          <Select value={cardSortMode} onValueChange={(value) => setCardSortMode(value as CardSortMode)}>
+            <SelectTrigger className="w-[230px]">
+              <SelectValue placeholder="Sort cards" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="weighted_desc">Highest OWA First</SelectItem>
+              <SelectItem value="weighted_asc">Lowest OWA First</SelectItem>
+              <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Content */}
@@ -337,67 +404,58 @@ export default function AdminPerformancePage(): ReactNode {
             </div>
           ) : (
             <>
-              {/* Table header */}
-              <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_100px] gap-4 px-6 py-3 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground">
-                <span>Employee</span>
-                <span>Department</span>
-                <span>Role</span>
-                <span>Status</span>
-                <span className="text-right">Score</span>
-              </div>
+              {viewMode === 'cards' ? (
+                <div className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {sortedCardEntries.map((entry) => {
+                    const perf = entry.employee_id
+                      ? performanceSummaries.get(entry.employee_id)
+                      : undefined;
 
-              {/* Table rows */}
-              <div className="divide-y divide-border">
-                {entries.map((entry) => {
-                  const perf = entry.employee_id
-                    ? performanceSummaries.get(entry.employee_id)
-                    : undefined;
-                  return (
-                    <button
-                      key={entry.user_id}
-                      type="button"
-                      onClick={() => handleRowClick(entry)}
-                      disabled={!entry.employee_id}
-                      className="w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_100px] gap-2 md:gap-4 items-center">
-                        {/* Employee info */}
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 shrink-0">
-                            <AvatarImage src={entry.avatar_url || undefined} />
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {getInitials(entry.full_name || 'U')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {entry.full_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {entry.position || 'No position'}
-                            </p>
+                    return (
+                      <button
+                        key={entry.user_id}
+                        type="button"
+                        onClick={() => handleRowClick(entry)}
+                        disabled={!entry.employee_id}
+                        className="w-full rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/40 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Avatar className="h-10 w-10 shrink-0">
+                              <AvatarImage src={entry.avatar_url || undefined} />
+                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                {getInitials(entry.full_name || 'U')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">
+                                {entry.full_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {entry.position || 'No position'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* Department */}
-                        <div className="hidden md:block">
-                          <p className="text-sm text-foreground truncate">
-                            {entry.department_name || '—'}
-                          </p>
-                        </div>
-
-                        {/* Role */}
-                        <div className="hidden md:block">
-                          <Badge
-                            variant={getRoleBadgeVariant(entry.role)}
-                            className="text-xs capitalize"
-                          >
+                          <Badge variant={getRoleBadgeVariant(entry.role)} className="text-xs capitalize">
                             {entry.role?.replace('_', ' ') || '—'}
                           </Badge>
                         </div>
 
-                        {/* Status */}
-                        <div className="hidden md:block">
+                        <div className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-3">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            Overall Weighted Average
+                          </p>
+                          <p className={`mt-1 text-2xl font-bold tabular-nums ${getProgressColor(perf?.weightedMean || 0)}`}>
+                            {perf ? `${perf.weightedMean}%` : '—'}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{entry.department_name || 'No department'}</span>
+                          <span>{perf ? `${perf.okrCount} objective${perf.okrCount === 1 ? '' : 's'}` : 'No objectives'}</span>
+                        </div>
+
+                        <div className="mt-2">
                           <Badge
                             variant={
                               entry.status === 'active'
@@ -411,46 +469,128 @@ export default function AdminPerformancePage(): ReactNode {
                             {entry.status?.replace('_', ' ') || '—'}
                           </Badge>
                         </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
+                  {/* Table header */}
+                  <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_180px] gap-4 px-6 py-3 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground">
+                    <span>Employee</span>
+                    <span>Department</span>
+                    <span>Role</span>
+                    <span>Status</span>
+                    <span className="text-right">Overall Weighted Average</span>
+                  </div>
 
-                        {/* Score */}
-                        <div className="hidden md:flex justify-end">
-                          {perf ? (
-                            <span
-                              className={`text-sm font-semibold tabular-nums ${getProgressColor(perf.weightedMean)}`}
-                            >
-                              {perf.weightedMean}%
-                            </span>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </div>
+                  {/* Table rows */}
+                  <div className="divide-y divide-border">
+                    {entries.map((entry) => {
+                      const perf = entry.employee_id
+                        ? performanceSummaries.get(entry.employee_id)
+                        : undefined;
+                      return (
+                        <button
+                          key={entry.user_id}
+                          type="button"
+                          onClick={() => handleRowClick(entry)}
+                          disabled={!entry.employee_id}
+                          className="w-full text-left px-6 py-4 hover:bg-muted/50 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_180px] gap-2 md:gap-4 items-center">
+                            {/* Employee info */}
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 shrink-0">
+                                <AvatarImage src={entry.avatar_url || undefined} />
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {getInitials(entry.full_name || 'U')}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {entry.full_name}
+                                </p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {entry.position || 'No position'}
+                                </p>
+                              </div>
+                            </div>
 
-                        {/* Mobile meta */}
-                        <div className="flex items-center gap-2 md:hidden">
-                          <Badge
-                            variant={getRoleBadgeVariant(entry.role)}
-                            className="text-xs capitalize"
-                          >
-                            {entry.role?.replace('_', ' ') || '—'}
-                          </Badge>
-                          {entry.department_name && (
-                            <span className="text-xs text-muted-foreground">
-                              {entry.department_name}
-                            </span>
-                          )}
-                          {perf && (
-                            <span
-                              className={`ml-auto text-xs font-semibold ${getProgressColor(perf.weightedMean)}`}
-                            >
-                              {perf.weightedMean}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                            {/* Department */}
+                            <div className="hidden md:block">
+                              <p className="text-sm text-foreground truncate">
+                                {entry.department_name || '—'}
+                              </p>
+                            </div>
+
+                            {/* Role */}
+                            <div className="hidden md:block">
+                              <Badge
+                                variant={getRoleBadgeVariant(entry.role)}
+                                className="text-xs capitalize"
+                              >
+                                {entry.role?.replace('_', ' ') || '—'}
+                              </Badge>
+                            </div>
+
+                            {/* Status */}
+                            <div className="hidden md:block">
+                              <Badge
+                                variant={
+                                  entry.status === 'active'
+                                    ? 'success'
+                                    : entry.status === 'probation'
+                                      ? 'warning'
+                                      : 'secondary'
+                                }
+                                className="text-xs capitalize"
+                              >
+                                {entry.status?.replace('_', ' ') || '—'}
+                              </Badge>
+                            </div>
+
+                            {/* Score */}
+                            <div className="hidden md:flex justify-end">
+                              {perf ? (
+                                <span
+                                  className={`text-sm font-semibold tabular-nums ${getProgressColor(perf.weightedMean)}`}
+                                >
+                                  {perf.weightedMean}%
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </div>
+
+                            {/* Mobile meta */}
+                            <div className="flex items-center gap-2 md:hidden">
+                              <Badge
+                                variant={getRoleBadgeVariant(entry.role)}
+                                className="text-xs capitalize"
+                              >
+                                {entry.role?.replace('_', ' ') || '—'}
+                              </Badge>
+                              {entry.department_name && (
+                                <span className="text-xs text-muted-foreground">
+                                  {entry.department_name}
+                                </span>
+                              )}
+                              {perf && (
+                                <span
+                                  className={`ml-auto text-xs font-semibold ${getProgressColor(perf.weightedMean)}`}
+                                >
+                                  {perf.weightedMean}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </>
           )}
         </CardContent>

@@ -203,7 +203,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             ? 'Task Completed'
             : 'Task Status Updated',
           message: `${updaterName} updated "${taskTitle}" to ${statusLabel}`,
-          link: `/admin/tasks`,
+          link: `/super-admin/tasks/${id}`,
           metadata: { taskId: id, newStatus: parsed.data.status },
         });
       }

@@ -136,17 +136,27 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (task) {
       const commenterName = await getUserDisplayName(user.id);
-      const notifyIds = new Set<string>();
-      if (task.assigned_to && task.assigned_to !== user.id) notifyIds.add(task.assigned_to);
-      if (task.assigned_by && task.assigned_by !== user.id) notifyIds.add(task.assigned_by);
 
-      for (const recipientId of notifyIds) {
+      // Notify the assignee (employee/intern) with employee task link
+      if (task.assigned_to && task.assigned_to !== user.id) {
         createNotification({
-          userId: recipientId,
+          userId: task.assigned_to,
           type: 'system',
           title: 'New Comment on Task',
           message: `${commenterName} commented on "${task.title}"`,
-          link: `/tasks`,
+          link: `/tasks/${id}`,
+          metadata: { taskId: id, commentId: data.id },
+        });
+      }
+
+      // Notify the assigner (super_admin) with super-admin task link
+      if (task.assigned_by && task.assigned_by !== user.id) {
+        createNotification({
+          userId: task.assigned_by,
+          type: 'system',
+          title: 'New Comment on Task',
+          message: `${commenterName} commented on "${task.title}"`,
+          link: `/super-admin/tasks/${id}`,
           metadata: { taskId: id, commentId: data.id },
         });
       }
