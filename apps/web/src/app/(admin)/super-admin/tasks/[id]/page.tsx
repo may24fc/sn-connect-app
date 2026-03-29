@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/format';
 import { Button, Card, CardContent, CardHeader, CardTitle, Skeleton, TaskDetailView } from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { ArrowLeft, CheckCircle2, Edit, ExternalLink, FileText, Link2, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ExternalLink, FileText, Link2, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { use, useEffect, useState } from 'react';
@@ -27,7 +27,11 @@ interface ApiTaskPayload {
   assigner_name?: string | null;
 }
 
-function toTaskDetailViewModel(apiTask: ApiTaskPayload): Task {
+export function toApiTaskStatus(status: TaskStatus): ApiTaskPayload['status'] {
+  return status === 'blocked' ? 'cancelled' : status;
+}
+
+export function toTaskDetailViewModel(apiTask: ApiTaskPayload): Task {
   const mappedStatus: TaskStatus = apiTask.status === 'cancelled' ? 'blocked' : apiTask.status;
 
   return {
@@ -70,13 +74,13 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { addToast } = useToast();
   const { data: proofsData, isLoading: proofsLoading } = useTaskProofs(id);
 
   const proofs = proofsData?.data || [];
 
   useEffect(() => {
-    // TODO: Replace with actual API call
     const fetchTask = async (): Promise<void> => {
       setIsLoading(true);
       try {
@@ -85,44 +89,80 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           const data = await response.json();
           setTask(toTaskDetailViewModel(data.data as ApiTaskPayload));
         } else {
-          addToast({ title: 'Failed to load task', variant: 'error' });
+          const error = await response.json().catch(() => ({ error: 'Failed to load task' }));
+          setTask(null);
+          addToast({ title: error.error || 'Failed to load task', variant: 'error' });
         }
       } catch {
+        setTask(null);
         addToast({ title: 'Failed to load task', variant: 'error' });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchTask();
-  }, [id]);
+    void fetchTask();
+  }, [addToast, id]);
 
-  const handleStatusChange = async (status: TaskStatus, _note?: string): Promise<void> => {
+  const handleStatusChange = async (status: TaskStatus): Promise<void> => {
     setIsUpdating(true);
     try {
-      // TODO: Replace with actual API call
-      if (task) {
-        setTask({
-          ...task,
-          status,
-          updatedAt: new Date().toISOString(),
-        });
-        addToast({ title: `Task status updated to ${status.replace('_', ' ')}`, variant: 'success' });
+      const apiStatus = toApiTaskStatus(status);
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: apiStatus }),
+      });
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to update task status' }));
+        throw new Error(error.error || 'Failed to update task status');
       }
-    } catch {
-      addToast({ title: 'Failed to update task status', variant: 'error' });
+
+      const data = await response.json();
+      setTask(toTaskDetailViewModel(data.data as ApiTaskPayload));
+      addToast({
+        title: `Task status updated to ${status.replace('_', ' ')}`,
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: error instanceof Error ? error.message : 'Failed to update task status',
+        variant: 'error',
+      });
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleEdit = (): void => {};
+  const handleDelete = async (): Promise<void> => {
+    if (!confirm('Are you sure you want to delete this task?')) {
+      return;
+    }
 
-  const handleDelete = (): void => {
-    if (confirm('Are you sure you want to delete this task?')) {
-      // TODO: Implement delete API call
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete task' }));
+        throw new Error(error.error || 'Failed to delete task');
+      }
+
       addToast({ title: 'Task deleted', variant: 'success' });
       router.push('/super-admin/tasks');
+    } catch (error) {
+      addToast({
+        title: error instanceof Error ? error.message : 'Failed to delete task',
+        variant: 'error',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -163,13 +203,9 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           Back to Tasks
         </Button>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleEdit}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Task
-          </Button>
-          <Button variant="destructive" onClick={handleDelete}>
+          <Button variant="destructive" onClick={() => void handleDelete()} disabled={isDeleting}>
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
         </div>
       </div>
@@ -179,7 +215,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
         task={task}
         onStatusChange={handleStatusChange}
         isUpdating={isUpdating}
-        canUpdateStatus={false} // Admin view - they don't update status, assignees do
+        canUpdateStatus={true}
       />
 
       {/* Proof of Completion Section */}

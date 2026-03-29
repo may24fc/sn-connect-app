@@ -18,15 +18,14 @@ import {
   Badge,
   Button,
   ComingSoonDialog,
-  CountBadge,
   DashboardAttentionCarousel,
+  EmptyState,
   Progress,
 } from '@hr-portal/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Activity,
-  AlertTriangle,
   Calendar,
   CheckCircle,
   ChevronRight,
@@ -42,22 +41,6 @@ import {
   Users,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-
-// Security alerts remain placeholder until an alerting system is implemented
-const securityAlerts: Array<{
-  id: string;
-  type: string;
-  description: string;
-  severity: 'high' | 'medium' | 'low';
-  timestamp: string;
-}> = [];
-
-// System health remains placeholder until monitoring is implemented
-const systemHealth: Array<{
-  component: string;
-  status: 'healthy' | 'degraded';
-  uptime: number;
-}> = [];
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -165,8 +148,8 @@ export default function SuperAdminDashboardPage(): ReactNode {
           />
           <StatCard
             label="Security Alerts"
-            value={securityAlerts.length}
-            trend={{ direction: 'stable', value: 'No alerts configured' }}
+            value="—"
+            trend={{ direction: 'stable', value: 'Alerting not configured' }}
             icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}
           />
           <StatCard
@@ -189,63 +172,19 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}>
               Security Alerts
             </BentoCardTitle>
-            <CountBadge variant="accent" size="md" count={securityAlerts.length} />
+            <Badge variant="secondary">Not connected</Badge>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {securityAlerts.length > 0 ? (
-                securityAlerts.map((alert) => (
-                  <div
-                    key={alert.id}
-                    className="flex items-start justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle
-                        className={`h-4 w-4 flex-shrink-0 mt-0.5 ${
-                          alert.severity === 'high'
-                            ? 'text-rose-500'
-                            : alert.severity === 'medium'
-                              ? 'text-amber-500'
-                              : 'text-muted-foreground'
-                        }`}
-                        strokeWidth={1.5}
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                          {alert.type}
-                        </p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {alert.description}
-                        </p>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 dark:text-zinc-500 mt-0.5">
-                          {alert.timestamp}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={
-                        alert.severity === 'high'
-                          ? 'destructive'
-                          : alert.severity === 'medium'
-                            ? 'warning'
-                            : 'secondary'
-                      }
-                      className="text-xs h-5 flex-shrink-0"
-                    >
-                      {alert.severity}
-                    </Badge>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
-                  No security alerts
-                </p>
-              )}
-              <Button variant="outline" className="w-full" onClick={() => openComingSoon('Audit Logs')}>
-                  View All Alerts
-                  <ChevronRight className="ml-2 h-4 w-4" strokeWidth={1.5} />
-              </Button>
-            </div>
+            <EmptyState
+              icon={Shield}
+              title="Alert monitoring is not connected"
+              description="Connect an alerting source before this dashboard can surface live security incidents."
+              action={{
+                label: 'Configure alerting',
+                onClick: () => openComingSoon('Alert Monitoring'),
+              }}
+              size="sm"
+            />
           </BentoCardContent>
         </BentoCard>
 
@@ -255,41 +194,19 @@ export default function SuperAdminDashboardPage(): ReactNode {
             <BentoCardTitle icon={<Database className="h-4 w-4" strokeWidth={1.5} />}>
               System Health
             </BentoCardTitle>
-            <Button variant="ghost" size="xs" onClick={() => openComingSoon('System Settings')}>
-              <Settings className="h-3.5 w-3.5" />
-                Settings
-            </Button>
+            <Badge variant="secondary">Not connected</Badge>
           </BentoCardHeader>
           <BentoCardContent>
-            <div className="space-y-4 max-h-64 overflow-y-auto">
-              {systemHealth.length > 0 ? (
-                systemHealth.map((component) => (
-                  <div key={component.component} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {component.component}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
-                          {component.uptime}% uptime
-                        </span>
-                        <Badge
-                          variant={component.status === 'healthy' ? 'success' : 'warning'}
-                          className="text-xs h-5"
-                        >
-                          {component.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <Progress value={component.uptime} className="h-1.5" />
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 text-center py-4">
-                  No system health data available
-                </p>
-              )}
-            </div>
+            <EmptyState
+              icon={Database}
+              title="System monitoring is not connected"
+              description="Connect uptime and service-health signals before this dashboard can report platform status."
+              action={{
+                label: 'Configure monitoring',
+                onClick: () => openComingSoon('System Monitoring'),
+              }}
+              size="sm"
+            />
           </BentoCardContent>
         </BentoCard>
 
@@ -398,11 +315,12 @@ export default function SuperAdminDashboardPage(): ReactNode {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                <ClipboardList className="h-8 w-8 text-zinc-300 dark:text-zinc-600 mb-2" strokeWidth={1.5} />
-                <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">No recent activity</p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Recent super-admin and system actions will appear here</p>
-              </div>
+              <EmptyState
+                icon={ClipboardList}
+                title="No recent activity"
+                description="Recent super-admin and system actions will appear here as activity is recorded."
+                size="sm"
+              />
             )}
           </BentoCardContent>
         </BentoCard>
