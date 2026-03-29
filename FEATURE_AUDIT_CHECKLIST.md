@@ -29,6 +29,8 @@
 ### C1. EmployeeDashboard Component Uses 100% Mock Data
 **File:** `apps/web/src/components/dashboards/EmployeeDashboard.tsx`  
 **Lines:** 30-76  
+**Status Update (2026-03-29):** Retired. This legacy component was unused and has been deleted. The live dashboard route owns the real implementation at `apps/web/src/app/(employee)/dashboard/page.tsx`.
+
 **Problem:** The `EmployeeDashboard` component has all data hardcoded:
 - `onboardingProgress = 0` (hardcoded, never changes)
 - `probationData = { stage: '—', daysRemaining: 0 }` (all dashes)
@@ -54,6 +56,8 @@
 ### C2. InternDashboard Component Uses 100% Mock Data
 **File:** `apps/web/src/components/dashboards/InternDashboard.tsx`  
 **Lines:** 35-67  
+**Status Update (2026-03-29):** Retired. This legacy component was deleted after confirming the real implementation already lives at `apps/web/src/app/(employee)/intern/dashboard/page.tsx`.
+
 **Problem:** The `InternDashboard` *component* (not the *page*) uses fully mock data:
 - `mockInternProfile` = all dashes and zeros
 - `mockRecentReports = []` (empty)
@@ -208,6 +212,8 @@
 
 ### H5. Super Admin Dashboard — Placeholder Sections
 **File:** `apps/web/src/app/(admin)/super-admin/dashboard/page.tsx`  
+**Status Update (2026-03-29):** Partially resolved. The cards now render explicit not-connected states instead of fake empty telemetry. Real alerting and monitoring integrations remain deferred.
+
 **Problem:** Two sections are placeholders with no real data:
 - Security alerts: empty/placeholder
 - System health monitoring: empty/placeholder
@@ -223,6 +229,8 @@
 
 ### H6. Admin Dashboard — Recent Activity Hardcoded Empty
 **File:** `apps/web/src/app/(admin)/admin/dashboard/page.tsx`  
+**Status Update (2026-03-29):** Resolved. The admin dashboard now uses the live recent-activity hook and a shared empty state.
+
 **Problem:** Recent activity section shows no data. The API for audit_logs exists but isn't wired to the dashboard.
 
 **Fix Required:**
@@ -320,11 +328,8 @@
 **Locations:**
 | File | Line | Comment |
 |------|------|---------|
-| `components/dashboards/EmployeeDashboard.tsx` | 30 | Replace with actual data fetching |
-| `components/dashboards/EmployeeDashboard.tsx` | 75 | Replace with actual data fetching |
-| `components/dashboards/InternDashboard.tsx` | 35 | Replace with actual data fetching |
-| `components/dashboards/InternDashboard.tsx` | 53 | Replace with actual data fetching |
-| `components/dashboards/InternDashboard.tsx` | 67 | Implement API call |
+| `components/dashboards/EmployeeDashboard.tsx` | retired | Legacy mock component deleted on 2026-03-29 |
+| `components/dashboards/InternDashboard.tsx` | retired | Legacy mock component deleted on 2026-03-29 |
 | `admin/probation/page.tsx` | 135 | Replace with actual API data |
 | `super-admin/tasks/[id]/page.tsx` | 70 | Replace with actual API call |
 | `super-admin/tasks/[id]/page.tsx` | 92 | Replace with actual API call |
@@ -340,19 +345,16 @@
 ## Implementation Priority Order
 
 ### Phase 1 — Quick Wins (immediate impact)
-1. **C1** — Wire EmployeeDashboard with real hooks ← `frontend-lead`
-2. **C2** — Reconcile InternDashboard component ← `frontend-lead`
-3. **H3** — Fix probation page error handling ← `frontend-lead`
-4. **H6** — Wire admin dashboard recent activity ← `frontend-lead`
-5. **H1** — Wire task detail edit ← `frontend-lead`
-6. **H2** — Wire task detail delete ← `frontend-lead`
+1. **H3** — Fix probation page error handling ← `frontend-lead`
+2. **H1** — Wire task detail edit ← `frontend-lead`
+3. **H2** — Wire task detail delete ← `frontend-lead`
 
 ### Phase 2 — Feature Completion
-7. **C6** — Department management admin page ← `frontend-lead`
-8. **C7** — CSV export for directory ← `frontend-lead`
-9. **H5** — Super admin dashboard placeholders ← `frontend-lead`
-10. **H4** — Email notifications for onboarding ← `api-architect`
-11. **M4** — Profile change request emails ← `api-architect`
+4. **C6** — Department management admin page ← `frontend-lead`
+5. **C7** — CSV export for directory ← `frontend-lead`
+6. **H5** — Super admin dashboard telemetry integrations ← `frontend-lead`
+7. **H4** — Email notifications for onboarding ← `api-architect`
+8. **M4** — Profile change request emails ← `api-architect`
 
 ### Phase 3 — New Features
 12. **C4** — Cron job for probation checks ← `api-architect` + `devops-engineer`
@@ -374,10 +376,9 @@
 Each item specifies the recommended **subagent** to invoke. To implement:
 
 ```
-@frontend-lead Implement C1: Wire EmployeeDashboard with real hooks.
-Replace hardcoded mock data in apps/web/src/components/dashboards/EmployeeDashboard.tsx
-with useOnboardingProfile(), useProbation(), useTasks(), useAnnouncementFeed() hooks.
-Add loading skeletons and error states. Remove all hardcoded zeros and empty arrays.
+@frontend-lead Implement H3: Fix probation page error handling.
+Remove the fallback empty array in apps/web/src/app/(admin)/admin/probation/page.tsx,
+split loading, error, and true-empty states, and add regression coverage.
 ```
 
 After each implementation, re-run the audit:

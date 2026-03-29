@@ -112,26 +112,25 @@ Everything else is moved to the deferred backlog in `docs/apps-web-deferred-back
 
 These items are real, but they do not belong ahead of the `Fix Now` list.
 
-#### A. Legacy dashboard components still ship mock data and should be removed or reconciled
+#### A. Legacy dashboard mock exports were retired on 2026-03-29
 
-- Files:
+- Previous files:
   - `apps/web/src/components/dashboards/EmployeeDashboard.tsx`
   - `apps/web/src/components/dashboards/InternDashboard.tsx`
   - `apps/web/src/components/dashboards/index.ts`
-- Evidence:
-  - Both component files still contain explicit mock values and `TODO` comments.
-  - Current live route pages at `apps/web/src/app/(employee)/dashboard/page.tsx` and `apps/web/src/app/(employee)/intern/dashboard/page.tsx` already use real hooks and live data paths.
-  - Grep results show the mock components are only exported from the local barrel and are not used by the route pages.
-- Action:
-  - Remove these dead exports or rewrite them as wrappers around the real route-level implementations.
+- Resolution:
+  - The unused mock dashboard components and their barrel export were removed.
+  - The live route pages at `apps/web/src/app/(employee)/dashboard/page.tsx` and `apps/web/src/app/(employee)/intern/dashboard/page.tsx` remain the canonical implementations.
+- Follow-up:
+  - None. This item should not return to the active backlog unless a shared dashboard abstraction is intentionally reintroduced.
 
-#### B. Super-admin dashboard still contains placeholder sections
+#### B. Super-admin dashboard placeholder telemetry was reframed on 2026-03-29
 
 - File: `apps/web/src/app/(admin)/super-admin/dashboard/page.tsx`
-- Evidence:
-  - `securityAlerts` and `systemHealth` are both hardcoded empty arrays with comments stating they remain placeholder until future systems exist.
-- Action:
-  - Either remove placeholder sections from the dashboard or replace them with clearly labeled coming-soon cards that do not pretend to be live metrics.
+- Resolution:
+  - The security-alerts and system-health cards now render explicit not-connected states instead of fake zero-data placeholders.
+- Remaining deferred scope:
+  - Wiring real telemetry sources is still future work, but the live dashboard no longer implies those feeds are already active.
 
 #### C. Department management still has API support but no page-level UI
 

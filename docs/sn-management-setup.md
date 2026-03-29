@@ -2761,8 +2761,8 @@ Supabase Realtime hooks for live data updates across the portal.
 - [x] **Create probation hooks**
   - File: `apps/web/src/hooks/useProbation.ts`
 
-- [x] **Create intern dashboard component**
-  - File: `apps/web/src/components/dashboards/InternDashboard.tsx`
+- [x] **Create intern dashboard experience**
+  - Historical note: the temporary `apps/web/src/components/dashboards/InternDashboard.tsx` component was retired on 2026-03-29 after the real route implementation at `apps/web/src/app/(employee)/intern/dashboard/page.tsx` became the canonical surface.
 
 ---
 

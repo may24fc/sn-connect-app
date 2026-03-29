@@ -4,15 +4,15 @@ This file contains work that should not be mixed into the immediate `apps/web` a
 
 ## Defer Until After Current Fixes
 
-### 1. Remove or reconcile legacy dashboard exports
+### 1. Legacy dashboard exports retired on 2026-03-29
 
-- Files:
+- Completed cleanup:
   - `apps/web/src/components/dashboards/EmployeeDashboard.tsx`
   - `apps/web/src/components/dashboards/InternDashboard.tsx`
   - `apps/web/src/components/dashboards/index.ts`
-- Reason deferred:
-  - The live route pages already use real data.
-  - This is cleanup and confusion reduction, not an active user-facing failure.
+- Outcome:
+  - The unused mock dashboard layer was deleted.
+  - The live route pages remain the single source of truth.
 
 ### 2. Build department-management UI if the team still wants in-app ownership
 
@@ -21,14 +21,14 @@ This file contains work that should not be mixed into the immediate `apps/web` a
 - Reason deferred:
   - This is a feature expansion, not a broken existing page.
 
-### 3. Replace placeholder sections on the super-admin dashboard with real telemetry
+### 3. Implement real telemetry behind the super-admin observability cards
 
 - File: `apps/web/src/app/(admin)/super-admin/dashboard/page.tsx`
 - Deferred scope:
   - Security alerting.
   - System health / uptime / monitoring widgets.
 - Reason deferred:
-  - It depends on alerting and observability sources that are broader than a local page fix.
+  - The dashboard now uses explicit not-connected states, so the remaining work is integration with alerting and observability sources rather than UI cleanup.
 
 ### 4. Decide long-term ownership of offboarding UI surface area
 
