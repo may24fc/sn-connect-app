@@ -23,7 +23,7 @@ import { cn } from '../../../utils/cn';
 interface TrendData {
   week: string;
   submissions: number;
-  averageROI: number;
+  activeCampaigns: number;
 }
 
 interface WeeklyTrendsChartProps {
@@ -39,8 +39,7 @@ export function WeeklyTrendsChart({ data, className }: WeeklyTrendsChartProps): 
           <p className="font-semibold mb-2">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}:{' '}
-              {entry.name === 'Average ROI' ? `${entry.value.toFixed(1)}%` : entry.value}
+              {entry.name}: {entry.value}
             </p>
           ))}
         </div>
@@ -52,8 +51,8 @@ export function WeeklyTrendsChart({ data, className }: WeeklyTrendsChartProps): 
   return (
     <Card className={cn('', className)}>
       <CardHeader>
-        <CardTitle>Weekly Trends</CardTitle>
-        <CardDescription>Submission count and average ROI over time</CardDescription>
+        <CardTitle>Weekly Submission Trends</CardTitle>
+        <CardDescription>Submission count and active campaigns over time</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
@@ -72,7 +71,6 @@ export function WeeklyTrendsChart({ data, className }: WeeklyTrendsChartProps): 
             <YAxis
               yAxisId="right"
               orientation="right"
-              tickFormatter={(value) => `${value}%`}
               className="text-xs"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
@@ -91,8 +89,8 @@ export function WeeklyTrendsChart({ data, className }: WeeklyTrendsChartProps): 
             <Line
               yAxisId="right"
               type="monotone"
-              dataKey="averageROI"
-              name="Average ROI"
+              dataKey="activeCampaigns"
+              name="Active Campaigns"
               stroke="hsl(142 71% 45%)"
               strokeWidth={2}
               dot={{ r: 4 }}

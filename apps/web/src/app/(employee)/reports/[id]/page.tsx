@@ -1,11 +1,20 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { MarketingReportsAccessState } from '@/components/reports/MarketingReportsAccessState';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
+import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import { useReport } from '@/hooks/useReport';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
-import { getReportTypeLabel, getReportTypeDescription, parseNoteSections } from '@/lib/report-utils';
+import {
+  getMarketingCampaignTypeLabel,
+  getMarketingObjectiveLabel,
+  getReportTypeDescription,
+  getReportTypeLabel,
+  parseNoteSections,
+} from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -29,7 +38,6 @@ import {
 } from '@hr-portal/ui';
 import type { ProgressTimelineStep } from '@hr-portal/ui';
 import { ArrowLeft, BarChart3, ListChecks, Send, TableIcon } from 'lucide-react';
-import Link from 'next/link';
 import { use, useState } from 'react';
 
 const statusVariant: Record<
@@ -51,12 +59,27 @@ export default function ReportDetailPage({
 }) {
   const { addToast } = useToast();
   const { id } = use(params);
+  const handleBack = useBackNavigation({ fallbackPath: '/reports' });
+  const marketingAccess = useMarketingReportsAccess();
   const { data, isLoading, error } = useReport(id);
   const submitReport = useSubmitReport();
 
   const [metricsView, setMetricsView] = useState<'table' | 'chart'>('table');
 
   const report = data?.data;
+
+  if (marketingAccess.isLoading) {
+    return <div className="text-sm text-muted-foreground">Loading marketing report...</div>;
+  }
+
+  if (!marketingAccess.canAccess) {
+    return (
+      <MarketingReportsAccessState
+        reason={marketingAccess.reason}
+        fallbackHref={marketingAccess.user?.role === 'intern' ? '/intern/dashboard' : '/dashboard'}
+      />
+    );
+  }
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">Loading report...</div>;
@@ -65,11 +88,9 @@ export default function ReportDetailPage({
   if (error || !report) {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/reports">
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back to Reports
-          </Link>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back to Reports
         </Button>
         <Card>
           <CardContent className="p-6 text-center space-y-2">
@@ -85,6 +106,7 @@ export default function ReportDetailPage({
   }
 
   const metrics = report.report_metrics || [];
+  const marketingContext = report.marketing_context;
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'metric_name' });
 
@@ -122,16 +144,21 @@ export default function ReportDetailPage({
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/reports">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+          <Button variant="ghost" size="icon" onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{getReportTypeLabel(report.report_type)} Report</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {marketingContext?.campaignName || `${getReportTypeLabel(report.report_type)} Report`}
+            </h1>
             <p className="text-muted-foreground">
               {getReportTypeDescription(report.report_type) && (
                 <span className="block text-xs mb-0.5">{getReportTypeDescription(report.report_type)}</span>
+              )}
+              {marketingContext && (
+                <span className="block text-xs mb-0.5">
+                  {getMarketingObjectiveLabel(marketingContext.objective)} objective via {marketingContext.primaryChannel}
+                </span>
               )}
               {formatDate(report.period_start)} – {formatDate(report.period_end)}
             </p>
@@ -238,6 +265,32 @@ export default function ReportDetailPage({
           )}
         </CardContent>
       </Card>
+
+      {marketingContext && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Campaign Context</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+            <p>
+              <span className="text-muted-foreground">Campaign Type:</span>{' '}
+              {getMarketingCampaignTypeLabel(marketingContext.campaignType)}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Objective:</span>{' '}
+              {getMarketingObjectiveLabel(marketingContext.objective)}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Primary Channel:</span>{' '}
+              {marketingContext.primaryChannel}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Target Audience:</span>{' '}
+              {marketingContext.targetAudience}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Insights Section */}
       {(keyFindings.length > 0 || noteSections.nextWeekPlans.length > 0) && (

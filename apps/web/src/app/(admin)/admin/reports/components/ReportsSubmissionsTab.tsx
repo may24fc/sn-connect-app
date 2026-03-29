@@ -4,7 +4,15 @@ import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useReports } from '@/hooks/useReports';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
-import { getReportTypeLabel, getReportTypeDescription } from '@/lib/report-utils';
+import {
+  getMarketingCampaignTypeLabel,
+  getMarketingObjectiveLabel,
+  getMarketingReportContextSummary,
+  getMarketingReportDisplayName,
+  matchesMarketingReportFilters,
+  type MarketingCampaignFilterValue,
+  type MarketingObjectiveFilterValue,
+} from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -29,7 +37,7 @@ import {
   TooltipTrigger,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertTriangle, Eye, Search } from 'lucide-react';
+import { Eye, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
@@ -46,6 +54,8 @@ const statusVariant: Record<
 
 interface ReportsSubmissionsTabProps {
   department: string;
+  campaignType: MarketingCampaignFilterValue;
+  objective: MarketingObjectiveFilterValue;
   timeRange: 'weekly' | 'monthly' | 'custom';
   customStartDate?: string;
   customEndDate?: string;
@@ -99,6 +109,8 @@ function getPeriodDates(
 
 export function ReportsSubmissionsTab({
   department,
+  campaignType,
+  objective,
   timeRange,
   customStartDate,
   customEndDate,
@@ -108,7 +120,6 @@ export function ReportsSubmissionsTab({
   const [localPeriod, setLocalPeriod] = useState<'all' | 'weekly' | 'monthly' | 'custom'>(
     timeRange
   );
-  const [showLateOnly, setShowLateOnly] = useState(false);
   const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
   const { addToast } = useToast();
@@ -125,11 +136,11 @@ export function ReportsSubmissionsTab({
   }, [localPeriod, customStartDate, customEndDate]);
 
   const filters = {
-    ...(search ? { search } : {}),
     ...(status !== 'all'
       ? { status: status as 'draft' | 'submitted' | 'approved' | 'rejected' }
       : {}),
     ...(department !== 'all' ? { department } : {}),
+    reportType: 'marketing' as const,
     ...(periodDates ? { periodStart: periodDates.start, periodEnd: periodDates.end } : {}),
     page: 1,
     pageSize: 100,
@@ -137,21 +148,18 @@ export function ReportsSubmissionsTab({
 
   const { data, isLoading, error, refetch } = useReports(filters);
 
-  // Additional client-side filtering for late reports
   const reports = useMemo(() => {
     let all = data?.data || [];
-    if (showLateOnly) {
-      const now = new Date();
-      all = all.filter((r) => {
-        if (r.status !== 'submitted' && r.status !== 'draft') return false;
-        const periodEnd = r.period_end ? new Date(r.period_end) : null;
-        if (!periodEnd) return false;
-        const daysSince = Math.floor((now.getTime() - periodEnd.getTime()) / 86_400_000);
-        return daysSince > 7;
-      });
-    }
+
+    all = all.filter((report) =>
+      matchesMarketingReportFilters(report, {
+        campaignType,
+        objective,
+        search,
+      })
+    );
     return all;
-  }, [data?.data, showLateOnly]);
+  }, [campaignType, data?.data, objective, search]);
 
   const reportStatusOrder: Record<string, number> = { submitted: 0, draft: 1, rejected: 2, approved: 3 };
 
@@ -159,32 +167,27 @@ export function ReportsSubmissionsTab({
 
   const sortedReports = sortItems(reports, {
     employee: (r) => r.employees ? `${r.employees.first_name} ${r.employees.last_name}`.toLowerCase() : '',
-    department: (r) => r.employees?.department?.toLowerCase() ?? '',
-    type: (r) => r.report_type.toLowerCase(),
+    campaign: (r) => getMarketingReportDisplayName(r.marketing_context).toLowerCase(),
+    campaignType: (r) =>
+      r.marketing_context?.campaignType
+        ? getMarketingCampaignTypeLabel(r.marketing_context.campaignType).toLowerCase()
+        : '',
+    goal: (r) =>
+      r.marketing_context?.objective
+        ? getMarketingObjectiveLabel(r.marketing_context.objective).toLowerCase()
+        : '',
     status: (r) => reportStatusOrder[r.status] ?? 99,
     period: (r) => r.period_start ?? '',
-    overdue: (r) => getDaysOverdue(r.period_end),
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
-  /** Calculate days overdue for a report (>7 days past period_end) */
-  function getDaysOverdue(periodEnd: string | null | undefined): number {
-    if (!periodEnd) return 0;
-    const end = new Date(periodEnd);
-    const daysSince = Math.floor((Date.now() - end.getTime()) / 86_400_000);
-    return daysSince > 7 ? daysSince - 7 : 0;
-  }
-
   const stats = useMemo(() => {
+    const draft = reports.filter((report) => report.status === 'draft').length;
     const submitted = reports.filter((report) => report.status === 'submitted').length;
     const approved = reports.filter((report) => report.status === 'approved').length;
     const rejected = reports.filter((report) => report.status === 'rejected').length;
-    const overdue = reports.filter((report) => {
-      if (report.status === 'approved' || report.status === 'rejected') return false;
-      return getDaysOverdue(report.period_end) > 0;
-    }).length;
-    return { submitted, approved, rejected, overdue, total: reports.length };
+    return { draft, submitted, approved, rejected, total: reports.length };
   }, [reports]);
 
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
@@ -217,6 +220,12 @@ export function ReportsSubmissionsTab({
         </Card>
         <Card>
           <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">Drafts</p>
+            <p className="text-2xl font-bold">{stats.draft}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Submitted</p>
             <p className="text-2xl font-bold">{stats.submitted}</p>
           </CardContent>
@@ -233,23 +242,6 @@ export function ReportsSubmissionsTab({
             <p className="text-2xl font-bold">{stats.rejected}</p>
           </CardContent>
         </Card>
-        <Card
-          className={
-            stats.overdue > 0 ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950' : ''
-          }
-        >
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              {stats.overdue > 0 && <AlertTriangle className="h-4 w-4 text-red-500" />}
-              <p className="text-sm text-muted-foreground">Overdue</p>
-            </div>
-            <p
-              className={`text-2xl font-bold ${stats.overdue > 0 ? 'text-red-600 dark:text-red-400' : ''}`}
-            >
-              {stats.overdue}
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filters */}
@@ -260,7 +252,7 @@ export function ReportsSubmissionsTab({
             strokeWidth={1.5}
           />
           <Input
-            placeholder="Search report type or notes"
+            placeholder="Search employee, campaign, channel, audience, or notes"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
@@ -281,7 +273,7 @@ export function ReportsSubmissionsTab({
         </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder="Review Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
@@ -291,28 +283,19 @@ export function ReportsSubmissionsTab({
             <SelectItem value="draft">Draft</SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          size="sm"
-          variant={showLateOnly ? 'destructive' : 'outline'}
-          onClick={() => setShowLateOnly((prev) => !prev)}
-          className="whitespace-nowrap"
-        >
-          <AlertTriangle className="mr-1 h-3.5 w-3.5" />
-          {showLateOnly ? 'Show All' : 'Show Late Only'}
-        </Button>
       </div>
 
       {/* Table */}
       {isLoading ? (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">
-            Loading reports...
+            Loading marketing reports...
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
           <CardContent className="p-6 text-center space-y-3">
-            <p className="text-sm text-destructive">Failed to load reports. Please try again.</p>
+            <p className="text-sm text-destructive">Failed to load marketing reports. Please try again.</p>
             <Button variant="outline" size="sm" onClick={() => refetch()}>
               Retry
             </Button>
@@ -325,12 +308,12 @@ export function ReportsSubmissionsTab({
               <TableHeader>
                 <TableRow>
                   <SortableTableHead column="employee" {...sortHeadProps}>Employee</SortableTableHead>
-                  <SortableTableHead column="department" {...sortHeadProps}>Department</SortableTableHead>
-                  <SortableTableHead column="type" {...sortHeadProps}>Type</SortableTableHead>
+                  <SortableTableHead column="campaign" {...sortHeadProps}>Campaign</SortableTableHead>
+                  <SortableTableHead column="campaignType" {...sortHeadProps}>Campaign Type</SortableTableHead>
+                  <SortableTableHead column="goal" {...sortHeadProps}>Goal</SortableTableHead>
                   <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                   <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
-                  <SortableTableHead column="overdue" {...sortHeadProps}>Overdue</SortableTableHead>
-                  <TableHead>Action Notes</TableHead>
+                  <TableHead>Review Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -338,7 +321,7 @@ export function ReportsSubmissionsTab({
                 {reports.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-muted-foreground">
-                      No reports found.
+                      No marketing reports found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -349,22 +332,23 @@ export function ReportsSubmissionsTab({
                           ? `${report.employees.first_name} ${report.employees.last_name}`
                           : '-'}
                       </TableCell>
-                      <TableCell>{report.employees?.department || '—'}</TableCell>
+                        {report.marketing_context?.campaignType
+                          ? getMarketingCampaignTypeLabel(report.marketing_context.campaignType)
+                          : '—'}
                       <TableCell>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="cursor-help border-b border-dotted border-muted-foreground/40">
-                                {getReportTypeLabel(report.report_type)}
-                              </span>
-                            </TooltipTrigger>
-                            {getReportTypeDescription(report.report_type) && (
-                              <TooltipContent side="right" className="max-w-xs">
-                                <p>{getReportTypeDescription(report.report_type)}</p>
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                        </TooltipProvider>
+                        <div className="space-y-0.5">
+                          <p className="font-medium text-foreground">
+                            {getMarketingReportDisplayName(report.marketing_context)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {getMarketingReportContextSummary(report.marketing_context)}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {report.marketing_context?.objective
+                          ? getMarketingObjectiveLabel(report.marketing_context.objective)
+                          : '—'}
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusVariant[report.status]}>
@@ -373,22 +357,6 @@ export function ReportsSubmissionsTab({
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(report.period_start)} – {formatDate(report.period_end)}
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const days = getDaysOverdue(report.period_end);
-                          if (
-                            days <= 0 ||
-                            report.status === 'approved' ||
-                            report.status === 'rejected'
-                          )
-                            return <span className="text-muted-foreground">—</span>;
-                          return (
-                            <Badge variant="error" className="whitespace-nowrap">
-                              {days}d late
-                            </Badge>
-                          );
-                        })()}
                       </TableCell>
                       <TableCell className="min-w-[220px]">
                         <Textarea

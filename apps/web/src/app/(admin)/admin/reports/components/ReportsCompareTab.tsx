@@ -3,6 +3,13 @@
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { exportToCsv } from '@/lib/csv';
 import {
+  getMarketingCampaignTypeLabel,
+  getMarketingObjectiveLabel,
+  matchesMarketingReportFilters,
+  type MarketingCampaignFilterValue,
+  type MarketingObjectiveFilterValue,
+} from '@/lib/report-utils';
+import {
   Button,
   Card,
   CardContent,
@@ -19,6 +26,8 @@ import { useMemo, useState } from 'react';
 
 interface ReportsCompareTabProps {
   department: string;
+  campaignType: MarketingCampaignFilterValue;
+  objective: MarketingObjectiveFilterValue;
   timeRange: 'weekly' | 'monthly' | 'custom';
   customStartDate?: string;
   customEndDate?: string;
@@ -132,8 +141,30 @@ function aggregateReportMetrics(reports: ReportRecord[]): Map<string, number> {
   metricsMap.set('Approved', reports.filter((r) => r.status === 'approved').length);
   metricsMap.set('Rejected', reports.filter((r) => r.status === 'rejected').length);
   metricsMap.set('Pending', reports.filter((r) => r.status === 'submitted').length);
+  metricsMap.set(
+    'Unique Campaigns',
+    new Set(
+      reports.map((report) => report.marketing_context?.campaignName).filter((campaignName): campaignName is string => Boolean(campaignName))
+    ).size
+  );
 
   for (const report of reports) {
+    if (report.marketing_context?.campaignType) {
+      const campaignTypeLabel = getMarketingCampaignTypeLabel(report.marketing_context.campaignType);
+      metricsMap.set(
+        `Campaign Type: ${campaignTypeLabel}`,
+        (metricsMap.get(`Campaign Type: ${campaignTypeLabel}`) || 0) + 1
+      );
+    }
+
+    if (report.marketing_context?.objective) {
+      const objectiveLabel = getMarketingObjectiveLabel(report.marketing_context.objective);
+      metricsMap.set(
+        `Objective: ${objectiveLabel}`,
+        (metricsMap.get(`Objective: ${objectiveLabel}`) || 0) + 1
+      );
+    }
+
     for (const metric of report.report_metrics || []) {
       const name = metric.metric_name || 'Unknown';
       metricsMap.set(name, (metricsMap.get(name) || 0) + (metric.metric_value || 0));
@@ -144,6 +175,8 @@ function aggregateReportMetrics(reports: ReportRecord[]): Map<string, number> {
 
 export function ReportsCompareTab({
   department,
+  campaignType,
+  objective,
   timeRange,
   customStartDate,
   customEndDate,
@@ -193,6 +226,7 @@ export function ReportsCompareTab({
     error: currentError,
   } = useReports({
     ...(department !== 'all' ? { department } : {}),
+    reportType: 'marketing' as const,
     periodStart: actualPeriods.current.start,
     periodEnd: actualPeriods.current.end,
     pageSize: 500,
@@ -204,6 +238,7 @@ export function ReportsCompareTab({
     error: previousError,
   } = useReports({
     ...(department !== 'all' ? { department } : {}),
+    reportType: 'marketing' as const,
     periodStart: actualPeriods.previous.start,
     periodEnd: actualPeriods.previous.end,
     pageSize: 500,
@@ -211,10 +246,22 @@ export function ReportsCompareTab({
 
   const isLoading = currentLoading || previousLoading;
   const error = currentError || previousError;
+  const currentReports = useMemo(
+    () =>
+      (currentData?.data || []).filter((report) =>
+        matchesMarketingReportFilters(report, { campaignType, objective })
+      ),
+    [campaignType, currentData?.data, objective]
+  );
+  const previousReports = useMemo(
+    () =>
+      (previousData?.data || []).filter((report) =>
+        matchesMarketingReportFilters(report, { campaignType, objective })
+      ),
+    [campaignType, objective, previousData?.data]
+  );
 
   const { comparison, insightsData } = useMemo(() => {
-    const currentReports = currentData?.data || [];
-    const previousReports = previousData?.data || [];
     const currentMetrics = aggregateReportMetrics(currentReports);
     const previousMetrics = aggregateReportMetrics(previousReports);
 
@@ -272,6 +319,12 @@ export function ReportsCompareTab({
         metric: 'Report Count',
         insight: `${currentTotal} reports in current period vs ${previousTotal} in previous period`,
       });
+      const currentCampaigns = currentMetrics.get('Unique Campaigns') || 0;
+      const previousCampaigns = previousMetrics.get('Unique Campaigns') || 0;
+      keyFindings.push({
+        metric: 'Campaign Coverage',
+        insight: `${currentCampaigns} active campaigns vs ${previousCampaigns} previously`,
+      });
       const totalChange =
         previousTotal > 0 ? ((currentTotal - previousTotal) / previousTotal) * 100 : 0;
       if (totalChange > 0)
@@ -298,6 +351,10 @@ export function ReportsCompareTab({
         recommendations.push('Approval rate is improving. Keep up the quality!');
       else if (currentApprovalRate < prevApprovalRate)
         recommendations.push('Approval rate has decreased. Review submission quality.');
+
+      if (currentCampaigns < previousCampaigns) {
+        recommendations.push('Fewer campaigns were reported in the current period. Check for missing submissions or campaign pauses.');
+      }
     }
 
     return {
@@ -306,12 +363,12 @@ export function ReportsCompareTab({
         summary:
           currentTotal > 0 || previousTotal > 0
             ? `Comparing ${actualPeriods.current.label} with ${actualPeriods.previous.label}`
-            : 'No reports found for comparison.',
+            : 'No marketing reports found for comparison.',
         keyFindings,
         recommendations,
       },
     };
-  }, [currentData?.data, previousData?.data, actualPeriods]);
+  }, [actualPeriods, currentReports, previousReports]);
 
   const handleCurrentWeekChange = (week: WeekPeriod): void => {
     setCurrentWeek(week);
@@ -331,7 +388,7 @@ export function ReportsCompareTab({
   const handleExport = () => {
     if (comparison.metrics.length === 0) return;
     exportToCsv(comparison.metrics, {
-      filename: `reports-comparison-${timeRange}`,
+      filename: `marketing-reports-comparison-${timeRange}`,
       headers: ['Metric', 'Previous Period', 'Current Period', 'Change', 'Change (%)'],
       rowMapper: (m) => [
         m.name,
@@ -364,11 +421,9 @@ export function ReportsCompareTab({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Comparing{' '}
-          {timeRange === 'monthly' ? 'months' : timeRange === 'custom' ? 'periods' : 'weeks'} for{' '}
-          <span className="font-medium text-foreground">
-            {department === 'all' ? 'Departments' : department}
-          </span>
+          Comparing marketing reporting windows for the <span className="font-medium text-foreground">Marketing team</span>
+          {campaignType !== 'all' ? ` | ${getMarketingCampaignTypeLabel(campaignType)}` : ''}
+          {objective !== 'all' ? ` | ${getMarketingObjectiveLabel(objective)}` : ''}
         </p>
         <Button
           variant="outline"
@@ -421,7 +476,7 @@ export function ReportsCompareTab({
       )}
 
       <InsightsSummary
-        title={`${timeRange === 'monthly' ? 'Month' : timeRange === 'custom' ? 'Period' : 'Week'}-over-${timeRange === 'monthly' ? 'Month' : timeRange === 'custom' ? 'Period' : 'Week'} Analysis`}
+        title={`${timeRange === 'monthly' ? 'Month' : timeRange === 'custom' ? 'Period' : 'Week'}-over-${timeRange === 'monthly' ? 'Month' : timeRange === 'custom' ? 'Period' : 'Week'} Marketing Analysis`}
         summary={insightsData.summary}
         keyFindings={insightsData.keyFindings}
         recommendations={insightsData.recommendations}

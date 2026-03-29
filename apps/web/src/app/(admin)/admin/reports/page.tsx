@@ -2,6 +2,15 @@
 
 import { useReportsRealtime } from '@/hooks/useReportsRealtime';
 import {
+  getMarketingObjectivesForCampaignType,
+  MARKETING_CAMPAIGN_TYPE_OPTIONS,
+  MARKETING_OBJECTIVE_INFO,
+  type MarketingCampaignFilterValue,
+  type MarketingObjectiveFilterValue,
+} from '@/lib/report-utils';
+import {
+  Card,
+  CardContent,
   Input,
   Select,
   SelectContent,
@@ -16,7 +25,9 @@ import {
 } from '@hr-portal/ui';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+const MARKETING_DEPARTMENT = 'marketing';
 
 // Lazy-load the analytics tab (contains recharts / D3)
 const ReportsAnalyticsTab = dynamic(
@@ -48,31 +59,62 @@ export default function AdminReportsPage() {
   // The subscription is active for as long as this page is mounted.
   useReportsRealtime();
 
-  const [department, setDepartment] = useState('marketing');
   const [timeRange, setTimeRange] = useState<'weekly' | 'monthly' | 'custom'>('weekly');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const [campaignType, setCampaignType] = useState<MarketingCampaignFilterValue>('all');
+  const [objective, setObjective] = useState<MarketingObjectiveFilterValue>('all');
+
+  const availableObjectives = useMemo(
+    () =>
+      campaignType === 'all'
+        ? (Object.keys(MARKETING_OBJECTIVE_INFO) as MarketingObjectiveFilterValue[]).filter(
+            (value) => value !== 'all'
+          )
+        : getMarketingObjectivesForCampaignType(campaignType),
+    [campaignType]
+  );
+
+  useEffect(() => {
+    if (objective !== 'all' && !availableObjectives.includes(objective)) {
+      setObjective('all');
+    }
+  }, [availableObjectives, objective]);
 
   return (
     <div className="space-y-6 p-3">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Reports Management</h1>
-          <p className="text-muted-foreground">Review submissions, analytics, and comparisons</p>
+          <h1 className="text-2xl font-bold text-foreground">Marketing Reports</h1>
+          <p className="text-muted-foreground">Review the marketing team's submissions, performance trends, and campaign comparisons</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {/* Department filter */}
-          <Select value={department} onValueChange={setDepartment}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Department" />
+          <Select value={campaignType} onValueChange={(value) => setCampaignType(value as MarketingCampaignFilterValue)}>
+            <SelectTrigger className="w-[190px]">
+              <SelectValue placeholder="Campaign Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Departments</SelectItem>
-              <SelectItem value="marketing">Marketing</SelectItem>
-              <SelectItem value="sales">Sales</SelectItem>
-              <SelectItem value="operations">Operations</SelectItem>
-              <SelectItem value="hr">HR</SelectItem>
+              <SelectItem value="all">Any Campaign Type</SelectItem>
+              {MARKETING_CAMPAIGN_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={objective} onValueChange={(value) => setObjective(value as MarketingObjectiveFilterValue)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Goal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Any Goal</SelectItem>
+              {availableObjectives.map((objectiveValue) => (
+                <SelectItem key={objectiveValue} value={objectiveValue}>
+                  {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -113,6 +155,17 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
+      <Card>
+        <CardContent className="flex flex-col gap-2 p-4 text-sm text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
+          <p>
+            This admin view is scoped to the <span className="font-medium text-foreground">Marketing team</span>. Use <span className="font-medium text-foreground">Campaign Type</span> to group reports into awareness, consideration, or conversion work, and use <span className="font-medium text-foreground">Goal</span> when you need a specific objective like reach, lead generation, or catalog sales.
+          </p>
+          <p>
+            Open <span className="font-medium text-foreground">Submissions</span> to review individual campaign reports, then switch to <span className="font-medium text-foreground">Analytics</span> or <span className="font-medium text-foreground">Compare</span> with the same campaign filters already applied.
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Tabbed Content */}
       <Tabs defaultValue={initialTab}>
         <TabsList>
@@ -123,7 +176,9 @@ export default function AdminReportsPage() {
 
         <TabsContent value="submissions">
           <ReportsSubmissionsTab
-            department={department}
+            department={MARKETING_DEPARTMENT}
+            campaignType={campaignType}
+            objective={objective}
             timeRange={timeRange}
             customStartDate={customStartDate}
             customEndDate={customEndDate}
@@ -132,7 +187,9 @@ export default function AdminReportsPage() {
 
         <TabsContent value="analytics">
           <ReportsAnalyticsTab
-            department={department}
+            department={MARKETING_DEPARTMENT}
+            campaignType={campaignType}
+            objective={objective}
             timeRange={timeRange}
             customStartDate={customStartDate}
             customEndDate={customEndDate}
@@ -141,7 +198,9 @@ export default function AdminReportsPage() {
 
         <TabsContent value="compare">
           <ReportsCompareTab
-            department={department}
+            department={MARKETING_DEPARTMENT}
+            campaignType={campaignType}
+            objective={objective}
             timeRange={timeRange}
             customStartDate={customStartDate}
             customEndDate={customEndDate}

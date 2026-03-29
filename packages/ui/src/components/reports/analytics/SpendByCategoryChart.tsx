@@ -57,8 +57,8 @@ export function SpendByCategoryChart({
   return (
     <Card className={cn('', className)}>
       <CardHeader>
-        <CardTitle>Spend by Category</CardTitle>
-        <CardDescription>Distribution of expenditures across departments</CardDescription>
+        <CardTitle>Spend by Primary Channel</CardTitle>
+        <CardDescription>Distribution of logged spend across marketing channels</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>

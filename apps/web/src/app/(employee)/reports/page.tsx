@@ -2,6 +2,8 @@
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
+import { MarketingReportsAccessState } from '@/components/reports/MarketingReportsAccessState';
+import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
@@ -12,6 +14,7 @@ import {
   Button,
   Card,
   CardContent,
+  CountBadge,
   Input,
   Select,
   SelectContent,
@@ -51,16 +54,31 @@ const statusVariant: Record<
 export default function ReportsPage() {
   const { addToast } = useToast();
   const router = useRouter();
+  const marketingAccess = useMarketingReportsAccess();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'flat' | 'grouped'>('flat');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  if (marketingAccess.isLoading) {
+    return <div className="text-sm text-muted-foreground">Loading marketing reports...</div>;
+  }
+
+  if (!marketingAccess.canAccess) {
+    return (
+      <MarketingReportsAccessState
+        reason={marketingAccess.reason}
+        fallbackHref={marketingAccess.user?.role === 'intern' ? '/intern/dashboard' : '/dashboard'}
+      />
+    );
+  }
 
   const reportFilters = {
     ...(search ? { search } : {}),
     ...(status !== 'all'
       ? { status: status as 'draft' | 'submitted' | 'approved' | 'rejected' }
       : {}),
+    reportType: 'marketing' as const,
     ...(viewMode === 'grouped' ? { groupBy: 'report_group' as const } : {}),
     page: 1,
     pageSize: 50,
@@ -122,16 +140,16 @@ export default function ReportsPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-2xl font-bold text-foreground">My Reports</h1>
-            <SectionTooltip content="View, create, and track all your submitted reports and their approval status." />
+            <h1 className="text-2xl font-bold text-foreground">Marketing Reports</h1>
+            <SectionTooltip content="View, create, and track your submitted marketing reports and their approval status." />
           </div>
-          <p className="text-muted-foreground">Create, submit, and track report approvals</p>
-          <HelpLink href="/help/reports" label="Reports FAQ" LinkComponent={Link} />
+          <p className="text-muted-foreground">Create, submit, and track weekly marketing performance reports</p>
+          <HelpLink href="/help/reports" label="Marketing Reports FAQ" LinkComponent={Link} />
         </div>
         <Button asChild>
           <Link href="/reports/new">
             <Plus className="mr-2 h-4 w-4" />
-            New Report
+            New Marketing Report
           </Link>
         </Button>
       </div>
@@ -176,7 +194,7 @@ export default function ReportsPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
-            placeholder="Search by report type or notes"
+            placeholder="Search campaigns or report notes"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -261,14 +279,14 @@ export default function ReportsPage() {
                       className="text-center py-12"
                     >
                       <div className="space-y-2">
-                        <p className="text-muted-foreground">No reports found.</p>
+                        <p className="text-muted-foreground">No marketing reports found.</p>
                         <p className="text-sm text-muted-foreground">
-                          Create your first report to get started.
+                          Create your first marketing report to get started.
                         </p>
                         <Button variant="outline" size="sm" asChild className="mt-2">
                           <Link href="/reports/new">
                             <Plus className="mr-1 h-3.5 w-3.5" />
-                            Create Report
+                            Create Marketing Report
                           </Link>
                         </Button>
                       </div>
@@ -328,8 +346,8 @@ export default function ReportsPage() {
                                 submitReport.mutate(report.id, {
                                   onSuccess: () => {
                                     addToast({
-                                      title: 'Report submitted',
-                                      description: `${report.report_type} report has been submitted for review`,
+                                      title: 'Marketing report submitted',
+                                      description: 'Your marketing report has been submitted for review',
                                       variant: 'success',
                                     });
                                   },
@@ -400,6 +418,7 @@ function GroupedReportRow({
   const { data: childrenData, isLoading: childrenLoading } = useReports(
     isExpanded
       ? {
+          reportType: 'marketing',
           parentReportId: report.id,
           page: 1,
           pageSize: 100,
@@ -434,9 +453,7 @@ function GroupedReportRow({
           <span style={{ paddingLeft: `${depth * 16}px` }}>
             {getReportTypeLabel(report.report_type)}
             {hasChildren && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {report.child_count}
-              </Badge>
+              <CountBadge className="ml-2" variant="info" size="md" count={report.child_count ?? 0} />
             )}
           </span>
         </TableCell>
@@ -475,8 +492,8 @@ function GroupedReportRow({
                   submitReport.mutate(report.id, {
                     onSuccess: () => {
                       addToast({
-                        title: 'Report submitted',
-                        description: `${report.report_type} report has been submitted for review`,
+                        title: 'Marketing report submitted',
+                        description: 'Your marketing report has been submitted for review',
                         variant: 'success',
                       });
                     },

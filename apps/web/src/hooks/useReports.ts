@@ -1,4 +1,5 @@
 import { type ReportFilters, queryKeys } from '@/lib/query-keys';
+import type { MarketingContext } from '@/lib/schemas/report.schema';
 import { useQuery } from '@tanstack/react-query';
 
 export interface ReportRecord {
@@ -12,6 +13,7 @@ export interface ReportRecord {
   reviewed_by: string | null;
   reviewed_at: string | null;
   notes: string | null;
+  marketing_context: MarketingContext | null;
   parent_report_id: string | null;
   report_group: string | null;
   hierarchy_path: string[] | null;

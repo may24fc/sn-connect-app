@@ -22,8 +22,8 @@ import { cn } from '../../../utils/cn';
 
 interface WeeklyData {
   week: string;
-  expenditure: number;
-  results: number;
+  spend: number;
+  outcomes: number;
 }
 
 interface ExpenditureVsResultsChartProps {
@@ -35,7 +35,7 @@ export function ExpenditureVsResultsChart({
   data,
   className,
 }: ExpenditureVsResultsChartProps): React.ReactNode {
-  const formatCurrency = (value: number): string => {
+  const formatSpend = (value: number): string => {
     return `PHP ${(value / 1000).toFixed(0)}k`;
   };
 
@@ -44,11 +44,18 @@ export function ExpenditureVsResultsChart({
       return (
         <div className="bg-background border rounded-lg p-3 shadow-lg">
           <p className="font-semibold mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm">
-              {entry.name}: PHP {entry.value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-            </p>
-          ))}
+          {payload.map((entry: any, index: number) => {
+            const formattedValue =
+              entry.dataKey === 'spend'
+                ? `PHP ${entry.value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+                : entry.value.toLocaleString('en-PH');
+
+            return (
+              <p key={index} style={{ color: entry.color }} className="text-sm">
+                {entry.name}: {formattedValue}
+              </p>
+            );
+          })}
         </div>
       );
     }
@@ -58,8 +65,8 @@ export function ExpenditureVsResultsChart({
   return (
     <Card className={cn('', className)}>
       <CardHeader>
-        <CardTitle>Expenditure vs Results</CardTitle>
-        <CardDescription>Weekly comparison of spending and outcomes</CardDescription>
+        <CardTitle>Spend vs Tracked Outcomes</CardTitle>
+        <CardDescription>Weekly view of logged spend and primary outcome volume</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
@@ -71,19 +78,33 @@ export function ExpenditureVsResultsChart({
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <YAxis
-              tickFormatter={formatCurrency}
+              yAxisId="left"
+              tickFormatter={formatSpend}
+              className="text-xs"
+              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
               className="text-xs"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="rect" />
             <Bar
-              dataKey="expenditure"
-              name="Expenditure"
+              yAxisId="left"
+              dataKey="spend"
+              name="Spend"
               fill="hsl(24 95% 53%)"
               radius={[4, 4, 0, 0]}
             />
-            <Bar dataKey="results" name="Results" fill="hsl(142 71% 45%)" radius={[4, 4, 0, 0]} />
+            <Bar
+              yAxisId="right"
+              dataKey="outcomes"
+              name="Tracked Outcomes"
+              fill="hsl(142 71% 45%)"
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

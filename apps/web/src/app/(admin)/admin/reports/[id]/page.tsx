@@ -1,10 +1,17 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useReport } from '@/hooks/useReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
-import { getReportTypeLabel, getReportTypeDescription, parseNoteSections } from '@/lib/report-utils';
+import {
+  getMarketingCampaignTypeLabel,
+  getMarketingObjectiveLabel,
+  getReportTypeDescription,
+  getReportTypeLabel,
+  parseNoteSections,
+} from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -26,7 +33,6 @@ import {
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { ArrowLeft, ListChecks } from 'lucide-react';
-import Link from 'next/link';
 import { use, useState } from 'react';
 
 const statusVariant: Record<
@@ -47,6 +53,7 @@ export default function AdminReportDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const handleBack = useBackNavigation({ fallbackPath: '/admin/reports' });
   const { data, isLoading, error } = useReport(id);
   const [actionNotes, setActionNotes] = useState('');
   const [workingAction, setWorkingAction] = useState<string | null>(null);
@@ -97,11 +104,9 @@ export default function AdminReportDetailPage({
   if (error || !report) {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/admin/reports">
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back to Reports
-          </Link>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back to Marketing Reports
         </Button>
         <Card>
           <CardContent className="p-6 text-sm text-destructive">
@@ -113,6 +118,7 @@ export default function AdminReportDetailPage({
   }
 
   const metrics = report.report_metrics || [];
+  const marketingContext = report.marketing_context;
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'metric_name' });
 
@@ -151,16 +157,21 @@ export default function AdminReportDetailPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/reports">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
+          <Button variant="ghost" size="icon" onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{getReportTypeLabel(report.report_type)} Report</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {marketingContext?.campaignName || `${getReportTypeLabel(report.report_type)} Report`}
+            </h1>
             <p className="text-muted-foreground">
               {getReportTypeDescription(report.report_type) && (
                 <span className="block text-xs mb-0.5">{getReportTypeDescription(report.report_type)}</span>
+              )}
+              {marketingContext && (
+                <span className="block text-xs mb-0.5">
+                  {getMarketingObjectiveLabel(marketingContext.objective)} objective via {marketingContext.primaryChannel}
+                </span>
               )}
               {formatDate(report.period_start)} – {formatDate(report.period_end)}
             </p>
@@ -191,8 +202,7 @@ export default function AdminReportDetailPage({
               : '—'}
           </p>
           <p>
-            <span className="text-muted-foreground">Department:</span>{' '}
-            {report.employees?.department || '—'}
+            <span className="text-muted-foreground">Team:</span> Marketing
           </p>
           <p>
             <span className="text-muted-foreground">Submitted At:</span>{' '}
@@ -206,13 +216,39 @@ export default function AdminReportDetailPage({
         </CardContent>
       </Card>
 
+      {marketingContext && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Campaign Context</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+            <p>
+              <span className="text-muted-foreground">Campaign Type:</span>{' '}
+              {getMarketingCampaignTypeLabel(marketingContext.campaignType)}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Objective:</span>{' '}
+              {getMarketingObjectiveLabel(marketingContext.objective)}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Primary Channel:</span>{' '}
+              {marketingContext.primaryChannel}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Target Audience:</span>{' '}
+              {marketingContext.targetAudience}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Insights Section */}
       {(keyFindings.length > 0 || noteSections.nextWeekPlans.length > 0) && (
         <InsightsSummary
           title="Report Insights"
           summary={
             noteSections.summary ||
-            `${report.report_type} report for ${report.period_start} to ${report.period_end}`
+            `Marketing report for ${report.period_start} to ${report.period_end}`
           }
           keyFindings={keyFindings}
           recommendations={

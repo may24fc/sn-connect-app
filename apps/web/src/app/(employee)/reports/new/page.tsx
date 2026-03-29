@@ -1,7 +1,19 @@
 'use client';
 
+import { MarketingReportsAccessState } from '@/components/reports/MarketingReportsAccessState';
+import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useCreateReport } from '@/hooks/useCreateReport';
-import { REPORT_TYPE_INFO } from '@/lib/report-utils';
+import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
+import {
+  buildNarrativeReportNotes,
+  createMarketingMetricPreset,
+  getMarketingObjectivesForCampaignType,
+  MARKETING_CAMPAIGN_TYPE_OPTIONS,
+  MARKETING_OBJECTIVE_INFO,
+  REPORT_TYPE_INFO,
+  type MarketingMetricTemplate,
+} from '@/lib/report-utils';
+import type { MarketingCampaignType, MarketingObjective } from '@/lib/schemas/report.schema';
 import {
   Button,
   Card,
@@ -21,67 +33,26 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, ArrowLeft, Calendar, FileText, Plus, X } from 'lucide-react';
-import Link from 'next/link';
+import { AlertCircle, ArrowLeft, Calendar, FileText, Megaphone, Plus, RotateCcw, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-interface ReportTemplate {
-  label: string;
-  description: string;
-  reportType: 'weekly' | 'monthly' | 'marketing';
-  metrics: Array<MetricEntry>;
-}
+type MetricEntry = MarketingMetricTemplate;
 
-const REPORT_TEMPLATES: Record<string, ReportTemplate> = {
-  weekly_summary: {
-    label: 'Weekly Summary',
-    description: 'Standard weekly task summary with completion metrics',
-    reportType: 'weekly',
-    metrics: [
-      { name: 'Tasks Completed', value: '0', unit: 'count' },
-      { name: 'Tasks In Progress', value: '0', unit: 'count' },
-      { name: 'Hours Worked', value: '0', unit: 'hours' },
-    ],
-  },
-  monthly_summary: {
-    label: 'Monthly Summary',
-    description: 'Aggregated monthly performance overview',
-    reportType: 'monthly',
-    metrics: [
-      { name: 'Tasks Completed', value: '0', unit: 'count' },
-      { name: 'Projects Delivered', value: '0', unit: 'count' },
-      { name: 'Revenue Generated', value: '0', unit: 'PHP' },
-      { name: 'Client Satisfaction', value: '0', unit: '%' },
-    ],
-  },
-  campaign_deep_dive: {
-    label: 'Campaign Deep-Dive',
-    description: 'Detailed campaign metrics — impressions, clicks, CTR, conversions, spend, ROAS',
-    reportType: 'marketing',
-    metrics: [
-      { name: 'Impressions', value: '0', unit: 'count' },
-      { name: 'Clicks', value: '0', unit: 'count' },
-      { name: 'CTR', value: '0', unit: '%' },
-      { name: 'Conversions', value: '0', unit: 'count' },
-      { name: 'Spend', value: '0', unit: 'PHP' },
-      { name: 'ROAS', value: '0', unit: 'x' },
-    ],
-  },
-};
-
-interface MetricEntry {
-  name: string;
-  value: string;
-  unit: string;
-}
+const REPORT_TYPE = 'marketing' as const;
 
 export default function NewReportPage() {
   const router = useRouter();
+  const handleBack = useBackNavigation({ fallbackPath: '/reports' });
   const createReport = useCreateReport();
   const { addToast } = useToast();
+  const marketingAccess = useMarketingReportsAccess();
 
-  const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'marketing'>('weekly');
+  const [campaignName, setCampaignName] = useState('');
+  const [campaignType, setCampaignType] = useState<MarketingCampaignType>('awareness');
+  const [objective, setObjective] = useState<MarketingObjective>('brand_awareness');
+  const [primaryChannel, setPrimaryChannel] = useState('');
+  const [targetAudience, setTargetAudience] = useState('');
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   const [notes, setNotes] = useState('');
@@ -91,144 +62,224 @@ export default function NewReportPage() {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingRef = useRef(false);
 
-  // Dynamic metric entries
-  const [metrics, setMetrics] = useState<Array<MetricEntry>>([
-    { name: '', value: '0', unit: 'PHP' },
-  ]);
-
-  // Accomplishments, challenges, next-week plans
-  const [accomplishments, setAccomplishments] = useState<Array<string>>(['']);
-  const [challenges, setChallenges] = useState<Array<string>>(['']);
+  const [metrics, setMetrics] = useState<Array<MetricEntry>>(() => createMarketingMetricPreset('brand_awareness'));
   const [nextWeekPlans, setNextWeekPlans] = useState<Array<string>>(['']);
 
-  const buildReportPayload = useCallback((asDraft: boolean) => {
-    const validMetrics = metrics
-      .filter((m) => m.name.trim().length > 0)
-      .map((m) => ({
-        metricName: m.name,
-        metricValue: Number.isFinite(Number(m.value)) ? Number(m.value) : 0,
-        metricUnit: m.unit || 'PHP',
-      }));
+  const typeInfo = REPORT_TYPE_INFO[REPORT_TYPE];
+  const selectedCampaignType = useMemo(
+    () => MARKETING_CAMPAIGN_TYPE_OPTIONS.find((option) => option.value === campaignType),
+    [campaignType]
+  );
+  const availableObjectives = useMemo(
+    () => getMarketingObjectivesForCampaignType(campaignType),
+    [campaignType]
+  );
+  const selectedObjectiveInfo = MARKETING_OBJECTIVE_INFO[objective];
 
-    const parts: Array<string> = [];
-    if (notes.trim()) parts.push(notes.trim());
-    const fa = accomplishments.filter((a) => a.trim());
-    if (fa.length > 0) parts.push(`Accomplishments:\n${fa.map((a) => `- ${a}`).join('\n')}`);
-    const fc = challenges.filter((c) => c.trim());
-    if (fc.length > 0) parts.push(`Challenges:\n${fc.map((c) => `- ${c}`).join('\n')}`);
-    const fp = nextWeekPlans.filter((p) => p.trim());
-    if (fp.length > 0) parts.push(`Next Week Plans:\n${fp.map((p) => `- ${p}`).join('\n')}`);
+  useEffect(() => {
+    if (!availableObjectives.includes(objective)) {
+      setObjective(availableObjectives[0] ?? 'brand_awareness');
+    }
+  }, [availableObjectives, objective]);
 
-    return {
-      reportType,
-      periodStart,
+  useEffect(() => {
+    setMetrics(createMarketingMetricPreset(objective));
+  }, [objective]);
+
+  const validateBaseFields = useCallback((): string | null => {
+    if (!campaignName.trim()) {
+      return 'Campaign name is required.';
+    }
+
+    if (!periodStart || !periodEnd) {
+      return 'Select the reporting period start and end dates.';
+    }
+
+    if (!primaryChannel.trim()) {
+      return 'Primary channel is required.';
+    }
+
+    if (!targetAudience.trim()) {
+      return 'Target audience is required.';
+    }
+
+    return null;
+  }, [campaignName, periodEnd, periodStart, primaryChannel, targetAudience]);
+
+  const buildReportPayload = useCallback(
+    (asDraft: boolean) => {
+      const validMetrics = metrics
+        .filter((metric) => metric.name.trim().length > 0)
+        .map((metric) => ({
+          metricName: metric.name,
+          metricValue: Number.isFinite(Number(metric.value)) ? Number(metric.value) : 0,
+          metricUnit: metric.unit || 'count',
+        }));
+
+      return {
+        reportType: REPORT_TYPE,
+        periodStart,
+        periodEnd,
+        status: asDraft ? ('draft' as const) : ('submitted' as const),
+        notes: buildNarrativeReportNotes({
+          summary: notes,
+          nextWeekPlans,
+        }),
+        marketingContext: {
+          campaignName: campaignName.trim(),
+          campaignType,
+          objective,
+          primaryChannel: primaryChannel.trim(),
+          targetAudience: targetAudience.trim(),
+        },
+        metrics: validMetrics,
+      };
+    },
+    [
+      campaignName,
+      campaignType,
+      metrics,
+      nextWeekPlans,
+      notes,
+      objective,
       periodEnd,
-      status: asDraft ? ('draft' as const) : ('submitted' as const),
-      notes: parts.join('\n\n') || undefined,
-      metrics: validMetrics,
-    };
-  }, [reportType, periodStart, periodEnd, notes, metrics, accomplishments, challenges, nextWeekPlans]);
+      periodStart,
+      primaryChannel,
+      targetAudience,
+    ]
+  );
 
-  // Auto-save draft silently to prevent data loss
   const autoSaveDraft = useCallback(async (): Promise<void> => {
-    if (isSavingRef.current || !periodStart || !periodEnd) return;
+    if (isSavingRef.current || validateBaseFields() !== null) {
+      return;
+    }
 
     isSavingRef.current = true;
+
     try {
       const payload = buildReportPayload(true);
+
       if (createdId) {
-        const res = await fetch(`/api/reports/${createdId}`, {
+        const response = await fetch(`/api/reports/${createdId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (res.ok) setLastSavedAt(new Date());
+
+        if (response.ok) {
+          setLastSavedAt(new Date());
+        }
       } else {
         const response = await createReport.mutateAsync(payload);
         setCreatedId(response.data.id);
         setLastSavedAt(new Date());
       }
     } catch {
-      // Silently fail for auto-save
+      // Silent failure keeps auto-save unobtrusive.
     } finally {
       isSavingRef.current = false;
     }
-  }, [buildReportPayload, createdId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [buildReportPayload, createReport, createdId, validateBaseFields]);
 
-  // Debounced auto-save: 10 seconds after last change
   useEffect(() => {
-    if (!periodStart || !periodEnd) return;
+    if (validateBaseFields() !== null) {
+      return;
+    }
 
-    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    autoSaveTimerRef.current = setTimeout(() => { void autoSaveDraft(); }, 10_000);
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      void autoSaveDraft();
+    }, 10_000);
 
     return () => {
-      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
     };
-  }, [reportType, periodStart, periodEnd, notes, metrics, accomplishments, challenges, nextWeekPlans, autoSaveDraft]);
+  }, [
+    autoSaveDraft,
+    campaignName,
+    campaignType,
+    metrics,
+    nextWeekPlans,
+    notes,
+    objective,
+    periodEnd,
+    periodStart,
+    primaryChannel,
+    targetAudience,
+    validateBaseFields,
+  ]);
 
   const handleStringArrayChange = (
     index: number,
     value: string,
     setter: React.Dispatch<React.SetStateAction<Array<string>>>
   ) => {
-    setter((prev) => {
-      const updated = [...prev];
+    setter((previous) => {
+      const updated = [...previous];
       updated[index] = value;
       return updated;
     });
   };
 
   const handleAddItem = (setter: React.Dispatch<React.SetStateAction<Array<string>>>) => {
-    setter((prev) => [...prev, '']);
+    setter((previous) => [...previous, '']);
   };
 
   const handleRemoveItem = (
     index: number,
     setter: React.Dispatch<React.SetStateAction<Array<string>>>
   ) => {
-    setter((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+    setter((previous) => (previous.length > 1 ? previous.filter((_, itemIndex) => itemIndex !== index) : previous));
   };
 
   const handleMetricChange = (index: number, field: keyof MetricEntry, value: string) => {
-    setMetrics((prev) =>
-      prev.map((m, i) =>
-        i === index
+    setMetrics((previous) =>
+      previous.map((metric, metricIndex) =>
+        metricIndex === index
           ? {
-              name: field === 'name' ? value : m.name,
-              value: field === 'value' ? value : m.value,
-              unit: field === 'unit' ? value : m.unit,
+              ...metric,
+              name: field === 'name' ? value : metric.name,
+              value: field === 'value' ? value : metric.value,
+              unit: field === 'unit' ? value : metric.unit,
             }
-          : m
+          : metric
       )
     );
   };
 
   const handleAddMetric = () => {
-    setMetrics((prev) => [...prev, { name: '', value: '0', unit: 'PHP' }]);
+    setMetrics((previous) => [
+      ...previous,
+      {
+        name: '',
+        value: '0',
+        unit: 'count',
+        locked: false,
+        analyticsCategory: 'supporting',
+      },
+    ]);
   };
 
   const handleRemoveMetric = (index: number) => {
-    setMetrics((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+    setMetrics((previous) => (previous.length > 1 ? previous.filter((_, metricIndex) => metricIndex !== index) : previous));
+  };
+
+  const handleResetMetrics = () => {
+    setMetrics(createMarketingMetricPreset(objective));
   };
 
   const validateRequiredSections = (): string | null => {
-    const filledAccomplishments = accomplishments.filter((a) => a.trim());
-    if (filledAccomplishments.length === 0) {
-      return 'Please add at least one accomplishment.';
-    }
-
-    const filledChallenges = challenges.filter((c) => c.trim());
-    if (filledChallenges.length === 0) {
-      return 'Please add at least one challenge.';
-    }
-
-    const filledPlans = nextWeekPlans.filter((p) => p.trim());
+    const filledPlans = nextWeekPlans.filter((item) => item.trim());
     if (filledPlans.length === 0) {
-      return 'Please add at least one plan for next week.';
+      return 'Please add at least one next step.';
     }
 
-    const filledMetrics = metrics.filter((m) => m.name.trim());
+    const filledMetrics = metrics.filter((metric) => metric.name.trim());
     if (filledMetrics.length === 0) {
       return 'Please add at least one metric.';
     }
@@ -237,8 +288,22 @@ export default function NewReportPage() {
   };
 
   const handleSubmit = async (asDraft: boolean) => {
-    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
     setErrorMessage(null);
+
+    const baseValidationError = validateBaseFields();
+    if (baseValidationError) {
+      setErrorMessage(baseValidationError);
+      addToast({
+        title: 'Validation Error',
+        description: baseValidationError,
+        variant: 'error',
+      });
+      return;
+    }
 
     if (!asDraft) {
       const validationError = validateRequiredSections();
@@ -258,13 +323,16 @@ export default function NewReportPage() {
       let reportId: string;
 
       if (createdId) {
-        // Update the auto-saved draft instead of creating a duplicate
-        const res = await fetch(`/api/reports/${createdId}`, {
+        const response = await fetch(`/api/reports/${createdId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Failed to update report');
+
+        if (!response.ok) {
+          throw new Error('Failed to update report');
+        }
+
         reportId = createdId;
       } else {
         const response = await createReport.mutateAsync(payload);
@@ -272,14 +340,14 @@ export default function NewReportPage() {
       }
 
       addToast({
-        title: 'Report saved',
-        description: asDraft ? 'Draft saved successfully' : 'Report submitted for review',
+        title: 'Marketing report saved',
+        description: asDraft ? 'Draft saved successfully' : 'Marketing report submitted for review',
         variant: 'success',
       });
 
       router.push(`/reports/${reportId}`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save report';
+      const message = error instanceof Error ? error.message : 'Failed to save marketing report';
       setErrorMessage(message);
       addToast({
         title: 'Error',
@@ -289,19 +357,28 @@ export default function NewReportPage() {
     }
   };
 
-  const typeInfo = REPORT_TYPE_INFO[reportType];
+  if (marketingAccess.isLoading) {
+    return <div className="text-sm text-muted-foreground">Loading marketing report form...</div>;
+  }
+
+  if (!marketingAccess.canAccess) {
+    return (
+      <MarketingReportsAccessState
+        reason={marketingAccess.reason}
+        fallbackHref={marketingAccess.user?.role === 'intern' ? '/intern/dashboard' : '/dashboard'}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/reports">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+        <Button variant="ghost" size="icon" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Create Report</h1>
-          <p className="text-muted-foreground">Submit a weekly, monthly, or marketing report</p>
+          <h1 className="text-2xl font-bold text-foreground">Create Marketing Report</h1>
+          <p className="text-muted-foreground">Capture campaign context first, then log the metrics that match the objective.</p>
         </div>
       </div>
 
@@ -312,340 +389,318 @@ export default function NewReportPage() {
           void handleSubmit(false);
         }}
       >
-      {/* Report Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-slate-700" />
-            Report Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-5">
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormGroup
-                label="Report Type"
-                htmlFor="reportType"
-                required
-                showOptional={false}
-                description={typeInfo?.description}
-                icon={<FileText className="h-3.5 w-3.5" />}
-              >
-                <Select
-                  value={reportType}
-                  onValueChange={(value) =>
-                    setReportType(value as 'weekly' | 'monthly' | 'marketing')
-                  }
-                >
-                  <SelectTrigger id="reportType" className="h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormGroup>
-              <FormGroup
-                label="Template"
-                htmlFor="template"
-                showOptional
-                description="Pre-fill metrics from a template"
-                icon={<FileText className="h-3.5 w-3.5" />}
-              >
-                <Select
-                  value=""
-                  onValueChange={(key) => {
-                    const template = REPORT_TEMPLATES[key];
-                    if (template) {
-                      setReportType(template.reportType);
-                      setMetrics(template.metrics.map((m) => ({ ...m })));
-                    }
-                  }}
-                >
-                  <SelectTrigger id="template" className="h-10">
-                    <SelectValue placeholder="Select template..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(REPORT_TEMPLATES).map(([key, tpl]) => (
-                      <SelectItem key={key} value={key}>
-                        {tpl.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormGroup>
-              <FormGroup
-                label="Period Start"
-                htmlFor="periodStart"
-                required
-                showOptional={false}
-                icon={<Calendar className="h-3.5 w-3.5" />}
-              >
-                <Input
-                  id="periodStart"
-                  type="date"
-                  value={periodStart}
-                  onChange={(event) => setPeriodStart(event.target.value)}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-slate-700" />
+              Campaign Context
+            </CardTitle>
+            <CardDescription>
+              This page is now marketing-only. The campaign type controls which objectives and recommended metrics are shown.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-5">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <FormGroup
+                  label="Report Type"
+                  htmlFor="reportType"
                   required
-                  className="h-10"
-                />
-              </FormGroup>
-              <FormGroup
-                label="Period End"
-                htmlFor="periodEnd"
-                required
-                showOptional={false}
-                icon={<Calendar className="h-3.5 w-3.5" />}
-              >
-                <Input
-                  id="periodEnd"
-                  type="date"
-                  value={periodEnd}
-                  onChange={(event) => setPeriodEnd(event.target.value)}
+                  showOptional={false}
+                  description={typeInfo?.description}
+                  icon={<FileText className="h-3.5 w-3.5" />}
+                >
+                  <Input id="reportType" value={typeInfo?.label ?? 'Marketing'} readOnly className="h-10" />
+                </FormGroup>
+                <FormGroup
+                  label="Campaign Name"
+                  htmlFor="campaignName"
                   required
-                  className="h-10"
+                  showOptional={false}
+                  description="Use the working campaign name used by the marketing team."
+                  icon={<Megaphone className="h-3.5 w-3.5" />}
+                >
+                  <Input
+                    id="campaignName"
+                    value={campaignName}
+                    onChange={(event) => setCampaignName(event.target.value)}
+                    placeholder="Q2 Lead Sprint - Meta"
+                    className="h-10"
+                    required
+                  />
+                </FormGroup>
+                <FormGroup
+                  label="Campaign Type"
+                  htmlFor="campaignType"
+                  required
+                  showOptional={false}
+                  description={selectedCampaignType?.description}
+                >
+                  <Select value={campaignType} onValueChange={(value) => setCampaignType(value as MarketingCampaignType)}>
+                    <SelectTrigger id="campaignType" className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MARKETING_CAMPAIGN_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormGroup>
+                <FormGroup
+                  label="Objective"
+                  htmlFor="objective"
+                  required
+                  showOptional={false}
+                  description={selectedObjectiveInfo?.description}
+                >
+                  <Select value={objective} onValueChange={(value) => setObjective(value as MarketingObjective)}>
+                    <SelectTrigger id="objective" className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableObjectives.map((objectiveValue) => (
+                        <SelectItem key={objectiveValue} value={objectiveValue}>
+                          {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormGroup>
+                <FormGroup
+                  label="Period Start"
+                  htmlFor="periodStart"
+                  required
+                  showOptional={false}
+                  icon={<Calendar className="h-3.5 w-3.5" />}
+                >
+                  <Input
+                    id="periodStart"
+                    type="date"
+                    value={periodStart}
+                    onChange={(event) => setPeriodStart(event.target.value)}
+                    required
+                    className="h-10"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label="Period End"
+                  htmlFor="periodEnd"
+                  required
+                  showOptional={false}
+                  icon={<Calendar className="h-3.5 w-3.5" />}
+                >
+                  <Input
+                    id="periodEnd"
+                    type="date"
+                    value={periodEnd}
+                    onChange={(event) => setPeriodEnd(event.target.value)}
+                    required
+                    className="h-10"
+                  />
+                </FormGroup>
+                <FormGroup
+                  label="Primary Channel"
+                  htmlFor="primaryChannel"
+                  required
+                  showOptional={false}
+                  description="Examples: Meta Ads, Google Search, Email, LinkedIn Organic"
+                >
+                  <Input
+                    id="primaryChannel"
+                    value={primaryChannel}
+                    onChange={(event) => setPrimaryChannel(event.target.value)}
+                    placeholder="Meta Ads"
+                    className="h-10"
+                    required
+                  />
+                </FormGroup>
+                <FormGroup
+                  label="Target Audience"
+                  htmlFor="targetAudience"
+                  required
+                  showOptional={false}
+                  description="Describe the audience or segment this campaign is aimed at."
+                >
+                  <Input
+                    id="targetAudience"
+                    value={targetAudience}
+                    onChange={(event) => setTargetAudience(event.target.value)}
+                    placeholder="SMB founders in Metro Manila"
+                    className="h-10"
+                    required
+                  />
+                </FormGroup>
+              </div>
+
+              <FormGroup label="Campaign Summary" htmlFor="notes">
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  rows={3}
+                  placeholder="Briefly explain the campaign angle, creative direction, or what changed during this reporting window..."
+                  className="resize-none"
                 />
               </FormGroup>
             </div>
+          </CardContent>
+        </Card>
 
-            <FormGroup label="Notes" htmlFor="notes">
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                rows={3}
-                placeholder="General notes about this report period..."
-                className="resize-none"
-              />
-            </FormGroup>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Metrics <span className="text-rose-500">*</span>
+            </CardTitle>
+            <CardDescription>
+              Recommended metrics are aligned to the selected objective. Preset names and units stay locked by default, but you can still remove preset rows or add custom metrics.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {metrics.map((metric, index) => (
+              <div key={`${metric.name}-${index}`} className="flex items-end gap-2">
+                <div className="flex-1 space-y-1">
+                  {index === 0 && (
+                    <Label className="text-xs text-muted-foreground">Name</Label>
+                  )}
+                  <Input
+                    placeholder="Metric name"
+                    value={metric.name}
+                    readOnly={metric.locked}
+                    onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
+                    className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                  />
+                  {metric.locked ? (
+                    <p className="text-[11px] text-muted-foreground">Preset metric</p>
+                  ) : null}
+                </div>
+                <div className="w-32 space-y-1">
+                  {index === 0 && (
+                    <Label className="text-xs text-muted-foreground">Value</Label>
+                  )}
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={metric.value}
+                    onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
+                  />
+                </div>
+                <div className="w-24 space-y-1">
+                  {index === 0 && (
+                    <Label className="text-xs text-muted-foreground">Unit</Label>
+                  )}
+                  <Input
+                    placeholder="count"
+                    value={metric.unit}
+                    readOnly={metric.locked}
+                    onChange={(event) => handleMetricChange(index, 'unit', event.target.value)}
+                    className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                  />
+                </div>
+                {metrics.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Remove metric"
+                    onClick={() => handleRemoveMetric(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+
+            <Separator />
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={handleResetMetrics}>
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Reset to Objective Preset
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={handleAddMetric}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Metric
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Next Steps <span className="text-rose-500">*</span>
+            </CardTitle>
+            <CardDescription>Document the next experiments, fixes, or follow-through for the campaign.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {nextWeekPlans.map((item, index) => (
+              <div key={index} className="flex gap-2">
+                <Input
+                  placeholder={`Next step ${index + 1}`}
+                  value={item}
+                  onChange={(event) => handleStringArrayChange(index, event.target.value, setNextWeekPlans)}
+                  className="flex-1"
+                />
+                {nextWeekPlans.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Remove next step"
+                    onClick={() => handleRemoveItem(index, setNextWeekPlans)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={() => handleAddItem(setNextWeekPlans)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Next Step
+            </Button>
+          </CardContent>
+        </Card>
+
+        {errorMessage && (
+          <div className="flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-600 animate-in slide-in-from-top-2 fade-in duration-200 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-400">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <span>{errorMessage}</span>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Accomplishments */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Accomplishments <span className="text-rose-500">*</span>
-          </CardTitle>
-          <CardDescription>List key accomplishments for this reporting period</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {accomplishments.map((item, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                placeholder={`Accomplishment ${index + 1}`}
-                value={item}
-                onChange={(e) => handleStringArrayChange(index, e.target.value, setAccomplishments)}
-                className="flex-1"
-              />
-              {accomplishments.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remove accomplishment"
-                  onClick={() => handleRemoveItem(index, setAccomplishments)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => handleAddItem(setAccomplishments)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Accomplishment
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Challenges */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Challenges <span className="text-rose-500">*</span>
-          </CardTitle>
-          <CardDescription>Note any challenges or blockers encountered</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {challenges.map((item, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                placeholder={`Challenge ${index + 1}`}
-                value={item}
-                onChange={(e) => handleStringArrayChange(index, e.target.value, setChallenges)}
-                className="flex-1"
-              />
-              {challenges.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remove challenge"
-                  onClick={() => handleRemoveItem(index, setChallenges)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => handleAddItem(setChallenges)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Challenge
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Next Week Plans */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Next Week Plans <span className="text-rose-500">*</span>
-          </CardTitle>
-          <CardDescription>Outline priorities and goals for the coming week</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {nextWeekPlans.map((item, index) => (
-            <div key={index} className="flex gap-2">
-              <Input
-                placeholder={`Plan ${index + 1}`}
-                value={item}
-                onChange={(e) => handleStringArrayChange(index, e.target.value, setNextWeekPlans)}
-                className="flex-1"
-              />
-              {nextWeekPlans.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remove plan"
-                  onClick={() => handleRemoveItem(index, setNextWeekPlans)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => handleAddItem(setNextWeekPlans)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Plan
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Metrics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            Metrics <span className="text-rose-500">*</span>
-          </CardTitle>
-          <CardDescription>
-            Add quantitative metrics to your report (e.g. clicks, impressions, cost)
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {metrics.map((metric, index) => (
-            <div key={index} className="flex gap-2 items-end">
-              <div className="flex-1 space-y-1">
-                {index === 0 && <Label className="text-xs text-muted-foreground">Name</Label>}
-                <Input
-                  placeholder="Metric name"
-                  value={metric.name}
-                  onChange={(e) => handleMetricChange(index, 'name', e.target.value)}
-                />
-              </div>
-              <div className="w-32 space-y-1">
-                {index === 0 && <Label className="text-xs text-muted-foreground">Value</Label>}
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={metric.value}
-                  onChange={(e) => handleMetricChange(index, 'value', e.target.value)}
-                />
-              </div>
-              <div className="w-24 space-y-1">
-                {index === 0 && <Label className="text-xs text-muted-foreground">Unit</Label>}
-                <Input
-                  placeholder="PHP"
-                  value={metric.unit}
-                  onChange={(e) => handleMetricChange(index, 'unit', e.target.value)}
-                />
-              </div>
-              {metrics.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Remove metric"
-                  onClick={() => handleRemoveMetric(index)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-
-          <Separator />
-
-          <Button type="button" variant="outline" size="sm" onClick={handleAddMetric}>
-            <Plus className="h-4 w-4 mr-1" />
-            Add Metric
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Error Message */}
-      {errorMessage && (
-        <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">
-          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 pb-8 border-t border-zinc-200 dark:border-zinc-800">
-        {lastSavedAt && (
-          <span className="text-xs text-muted-foreground mr-auto">
-            Auto-saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
         )}
-        <Button
-          type="button"
-          variant="outline"
-          disabled={createReport.isPending}
-          onClick={() => void handleSubmit(true)}
-        >
-          Save Draft
-        </Button>
-        <Button type="submit" disabled={createReport.isPending} className="min-w-[120px]">
-          {createReport.isPending ? (
-            <span className="flex items-center gap-2">
-              <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Submitting...
+
+        <div className="flex items-center justify-end gap-3 border-t border-zinc-200 pt-4 pb-8 dark:border-zinc-800">
+          {lastSavedAt && (
+            <span className="mr-auto text-xs text-muted-foreground">
+              Auto-saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
-          ) : (
-            'Submit Report'
           )}
-        </Button>
-      </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={createReport.isPending}
+            onClick={() => void handleSubmit(true)}
+          >
+            <FileText className="h-4 w-4" />
+            Save Draft
+          </Button>
+          <Button type="submit" disabled={createReport.isPending} className="min-w-[160px]">
+            {createReport.isPending ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Submitting...
+              </span>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Submit Report
+              </>
+            )}
+          </Button>
+        </div>
       </form>
     </div>
   );
