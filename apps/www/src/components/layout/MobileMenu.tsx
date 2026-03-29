@@ -3,10 +3,11 @@
 import { type ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
+import { getAppLoginUrl } from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 import { NAV_LINKS, BUSINESS_UNITS } from '@/data/placeholder';
 
-const PORTAL_URL = process.env.NEXT_PUBLIC_PORTAL_URL ?? 'http://localhost:3001';
+const LOGIN_URL = getAppLoginUrl();
 
 interface MobileMenuProps {
   open: boolean;
@@ -100,14 +101,14 @@ export function MobileMenu({ open, onClose, pathname }: MobileMenuProps): ReactN
           {/* Login / Sign Up */}
           <div className="mt-4 border-t border-zinc-200 pt-4 px-3 flex flex-col gap-2">
             <a
-              href={`${PORTAL_URL}/login`}
+              href={LOGIN_URL}
               onClick={onClose}
               className="flex items-center justify-center rounded-md border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
             >
               Log in
             </a>
             <a
-              href={`${PORTAL_URL}/signup`}
+              href={LOGIN_URL}
               onClick={onClose}
               className="flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-800"
             >

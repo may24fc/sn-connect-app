@@ -4,12 +4,13 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown } from 'lucide-react';
+import { getAppLoginUrl } from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 import { NAV_LINKS, BUSINESS_UNITS } from '@/data/placeholder';
 import { MegaMenu } from './MegaMenu';
 import { MobileMenu } from './MobileMenu';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001';
+const LOGIN_URL = getAppLoginUrl();
 
 export function Header(): ReactNode {
   const pathname = usePathname();
@@ -120,7 +121,7 @@ export function Header(): ReactNode {
             {/* Login / Sign Up */}
             <div className="hidden items-center gap-2 lg:flex">
               <a
-                href={`${APP_URL}/login`}
+                href={LOGIN_URL}
                 className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 hover:bg-zinc-50"
               >
                 Log in

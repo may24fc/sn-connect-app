@@ -10,6 +10,7 @@ import {
   Users,
 } from 'lucide-react';
 import { PortalFAQ } from '@/components/portal/PortalFAQ';
+import { getAppLoginUrl } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'SN Connect Portal — Login & Sign Up',
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     'Access SN Connect HR Portal. Login or sign up to manage your account.',
 };
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001';
+const LOGIN_URL = getAppLoginUrl();
 
 const FEATURES = [
   { icon: CreditCard, title: 'View Pay Slips', description: 'Access your salary records and payroll history anytime.' },
@@ -62,13 +63,13 @@ export default function PortalPage(): ReactNode {
             {/* Actions */}
             <div className="mx-auto mt-8 flex max-w-sm flex-col gap-3">
               <a
-                href={`${APP_URL}/login`}
+                href={LOGIN_URL}
                 className="flex items-center justify-center rounded-lg bg-white px-6 py-3 text-sm font-medium text-amber-700 shadow-sm transition-all hover:bg-amber-50 hover:shadow-md"
               >
                 Log in to your account
               </a>
               <a
-                href={`${APP_URL}/signup`}
+                href={LOGIN_URL}
                 className="flex items-center justify-center rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
               >
                 Create a new account
