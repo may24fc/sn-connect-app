@@ -125,14 +125,21 @@ function ChecklistRoleSection({
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoadingProfiles ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading profiles...
-          </div>
+          <EmptyState
+            icon={<Loader2 className="h-5 w-5 animate-spin" />}
+            title="Loading profiles"
+            description="Retrieving onboarding profiles and checklist coverage."
+            size="sm"
+          />
         ) : null}
 
         {!isLoadingProfiles && rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No onboarding profiles found.</p>
+          <EmptyState
+            icon={Users}
+            title="No onboarding profiles found"
+            description="Profiles will appear here after onboarding is initiated for employees or interns."
+            size="sm"
+          />
         ) : null}
 
         {rows.map((row) => {
@@ -190,9 +197,23 @@ function ChecklistRoleSection({
                 </div>
 
                 {row.isLoading ? (
-                  <p className="mt-3 text-sm text-muted-foreground">Loading checklist items...</p>
+                  <div className="mt-3">
+                    <EmptyState
+                      icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                      title="Loading checklist items"
+                      description="Retrieving custom onboarding tasks for this profile."
+                      size="sm"
+                    />
+                  </div>
                 ) : row.isError ? (
-                  <p className="mt-3 text-sm text-destructive">Failed to load checklist items.</p>
+                  <div className="mt-3">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="Failed to load checklist items"
+                      description="The checklist items for this profile could not be retrieved."
+                      size="sm"
+                    />
+                  </div>
                 ) : taskCount > 0 ? (
                   <div className="mt-3 space-y-2">
                     {row.checklist?.onboarding_tasks.map((task) => (
@@ -217,10 +238,14 @@ function ChecklistRoleSection({
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    No custom checklist items yet. The onboarding wizard is currently the only
-                    required checklist flow.
-                  </p>
+                  <div className="mt-3">
+                    <EmptyState
+                      icon={ClipboardList}
+                      title="No custom checklist items yet"
+                      description="The onboarding wizard is currently the only required checklist flow."
+                      size="sm"
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -470,14 +495,21 @@ export function ChecklistsDashboardPage(): ReactNode {
             </CardHeader>
             <CardContent className="space-y-4">
               {offboardingQuery.isLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading offboarding records...
-                </div>
+                <EmptyState
+                  icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                  title="Loading offboarding records"
+                  description="Retrieving active offboarding workflows and assignments."
+                  size="sm"
+                />
               ) : null}
 
               {offboardingQuery.isError ? (
-                <p className="text-sm text-destructive">Failed to load offboarding records.</p>
+                <EmptyState
+                  icon={LogOut}
+                  title="Failed to load offboarding records"
+                  description="The offboarding workspace could not be retrieved. Refresh and try again."
+                  size="sm"
+                />
               ) : null}
 
               {!offboardingQuery.isLoading && !offboardingQuery.isError && offboardingRows.length === 0 ? (
@@ -571,9 +603,14 @@ export function ChecklistsDashboardPage(): ReactNode {
                           ))}
                         </div>
                       ) : (
-                        <p className="mt-3 text-sm text-muted-foreground">
-                          This offboarding record has no tasks yet.
-                        </p>
+                        <div className="mt-3">
+                          <EmptyState
+                            icon={ClipboardList}
+                            title="No offboarding tasks yet"
+                            description="Tasks will appear here once the exit checklist is configured."
+                            size="sm"
+                          />
+                        </div>
                       )}
                     </div>
                   </div>

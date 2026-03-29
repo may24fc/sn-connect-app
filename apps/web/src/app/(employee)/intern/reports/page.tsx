@@ -24,12 +24,13 @@ import {
   type InternshipPeriodId,
   SectionTooltip,
   HelpLink,
+  EmptyState,
 } from '@hr-portal/ui';
 import {
   CheckCircle2,
   FileEdit,
   FileText,
-  GraduationCap,
+  Loader2,
   Plus,
   Send,
 } from 'lucide-react';
@@ -178,12 +179,12 @@ export default function InternReportsPage(): ReactNode {
   // ── Render ──
   if (isLoading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-4">
-        <GraduationCap
-          className="h-10 w-10 text-slate-700 dark:text-zinc-400 animate-pulse"
-          strokeWidth={1.5}
+      <div className="h-full">
+        <EmptyState
+          icon={<Loader2 className="h-5 w-5 animate-spin" />}
+          title="Loading your reports"
+          description="Fetching your internship report history and draft entries."
         />
-        <p className="text-sm text-zinc-500">Loading your reports…</p>
       </div>
     );
   }
@@ -358,12 +359,14 @@ export default function InternReportsPage(): ReactNode {
           ))
         ) : (
           <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>
-                No reports submitted yet. Click &quot;New EOD Report&quot; to get
-                started.
-              </p>
+            <CardContent className="p-8">
+              <EmptyState
+                icon={FileText}
+                title="No reports submitted yet"
+                description="Create your first EOD report to start tracking your internship progress."
+                action={{ label: 'New EOD report', onClick: () => setViewMode('new') }}
+                size="sm"
+              />
             </CardContent>
           </Card>
         )}

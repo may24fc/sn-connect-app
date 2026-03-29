@@ -1,8 +1,8 @@
 'use client';
 
 import type { OnboardingStep } from '@/lib/schemas/onboarding.schema';
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@hr-portal/ui';
-import { Pencil } from 'lucide-react';
+import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@hr-portal/ui';
+import { FileText, Pencil } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 // ─── Label maps per card ───────────────────────────────────────────────────────
@@ -91,7 +91,12 @@ function SummaryCard({
       </CardHeader>
       <CardContent className="px-5 pb-5 pt-0">
         {entries.length === 0 ? (
-          <p className="text-sm text-zinc-400 dark:text-zinc-500 italic">No data provided yet.</p>
+          <EmptyState
+            icon={FileText}
+            title="No data provided yet"
+            description="Complete this step to see your information summarized here before submission."
+            size="sm"
+          />
         ) : (
           <div className="grid gap-4">
             {entries.map(({ key, label, value }) => (

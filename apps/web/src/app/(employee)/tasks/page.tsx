@@ -410,7 +410,14 @@ export default function MyTasksPage() {
             <TaskListSkeleton />
           ) : error ? (
             <Card>
-              <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+              <CardContent className="p-6">
+                <EmptyState
+                  icon={ClipboardList}
+                  title="Failed to load tasks"
+                  description="Your task list could not be retrieved. Refresh and try again."
+                  size="sm"
+                />
+              </CardContent>
             </Card>
           ) : (
             <TaskListView tasks={tasks} onStatusChange={handleStatusChange} updatingTaskId={updatingTaskId} />
@@ -423,7 +430,14 @@ export default function MyTasksPage() {
             <TaskBoardSkeleton />
           ) : error ? (
             <Card>
-              <CardContent className="p-6 text-sm text-red-600">Failed to load tasks.</CardContent>
+              <CardContent className="p-6">
+                <EmptyState
+                  icon={ClipboardList}
+                  title="Failed to load tasks"
+                  description="Your task board could not be retrieved. Refresh and try again."
+                  size="sm"
+                />
+              </CardContent>
             </Card>
           ) : tasks.length === 0 ? (
             <Card>

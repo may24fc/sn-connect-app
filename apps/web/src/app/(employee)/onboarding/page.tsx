@@ -261,7 +261,12 @@ export default function OnboardingPage(): ReactNode {
             </CardHeader>
             <CardContent className="space-y-4">
               {isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading tasks...</p>
+                <EmptyState
+                  icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                  title="Loading onboarding tasks"
+                  description="Fetching your current checklist and assigned actions."
+                  size="sm"
+                />
               ) : null}
 
               {!isLoading && checklistTasks.length === 0 ? (
@@ -371,10 +376,15 @@ export default function OnboardingPage(): ReactNode {
             <Card>
               <CardHeader>
                 <CardTitle>Offboarding Checklist</CardTitle>
-                <CardDescription>Loading your offboarding workflow...</CardDescription>
+                <CardDescription>Checking whether an offboarding workflow is active for you.</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">Checking for active offboarding records.</p>
+                <EmptyState
+                  icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                  title="Loading offboarding workflow"
+                  description="Checking for active offboarding records and assigned exit tasks."
+                  size="sm"
+                />
               </CardContent>
             </Card>
           ) : isOffboardingError && !offboarding ? (
@@ -449,7 +459,12 @@ export default function OnboardingPage(): ReactNode {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {isOffboardingLoading ? (
-                    <p className="text-sm text-muted-foreground">Loading offboarding tasks...</p>
+                    <EmptyState
+                      icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                      title="Loading offboarding tasks"
+                      description="Refreshing your assigned exit requirements."
+                      size="sm"
+                    />
                   ) : null}
 
                   {offboardingCategoryEntries.map(([category, items]) => (

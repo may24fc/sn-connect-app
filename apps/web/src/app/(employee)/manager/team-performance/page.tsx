@@ -9,6 +9,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  EmptyState,
   Table,
   TableBody,
   TableCell,
@@ -16,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
-import { ArrowRight, BarChart3, Target, Users } from 'lucide-react';
+import { AlertCircle, ArrowRight, BarChart3, Loader2, Target, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -75,12 +76,31 @@ export default function ManagerTeamPerformancePage(): ReactNode {
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-6 text-sm text-muted-foreground">Loading team performance...</div>
+            <div className="p-6">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading team performance"
+                description="Retrieving team OKR, KPI, and review summaries."
+                size="sm"
+              />
+            </div>
           ) : error ? (
-            <div className="p-6 text-sm text-error">Failed to load team performance.</div>
+            <div className="p-6">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to load team performance"
+                description="The team overview could not be retrieved. Refresh and try again."
+                size="sm"
+              />
+            </div>
           ) : entries.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">
-              No direct reports were found for your account.
+            <div className="p-6">
+              <EmptyState
+                icon={Users}
+                title="No direct reports found"
+                description="No team members are currently linked to your account."
+                size="sm"
+              />
             </div>
           ) : (
             <Table>

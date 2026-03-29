@@ -21,6 +21,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  EmptyState,
   FormGroup,
   Input,
   Label,
@@ -33,7 +34,7 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, ArrowLeft, Calendar, FileText, Megaphone, Plus, RotateCcw, Send, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Calendar, FileText, Loader2, Megaphone, Plus, RotateCcw, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -358,7 +359,13 @@ export default function NewReportPage() {
   };
 
   if (marketingAccess.isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading marketing report form...</div>;
+    return (
+      <EmptyState
+        icon={<Loader2 className="h-5 w-5 animate-spin" />}
+        title="Loading marketing report form"
+        description="Checking your access before opening the report composer."
+      />
+    );
   }
 
   if (!marketingAccess.canAccess) {

@@ -37,7 +37,7 @@ import {
   HelpLink,
   useToast,
 } from '@hr-portal/ui';
-import { ChevronDown, ChevronRight, CheckCircle2, FileText, Layers, List, Plus, Search, Send } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronRight, CheckCircle2, FileText, Layers, List, Loader2, Plus, Search, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -62,7 +62,13 @@ export default function ReportsPage() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   if (marketingAccess.isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading marketing reports...</div>;
+    return (
+      <EmptyState
+        icon={<Loader2 className="h-5 w-5 animate-spin" />}
+        title="Loading marketing reports"
+        description="Checking your reporting access and loading your latest submissions."
+      />
+    );
   }
 
   if (!marketingAccess.canAccess) {
@@ -244,17 +250,25 @@ export default function ReportsPage() {
 
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Loading reports...
+          <CardContent className="p-6">
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading reports"
+              description="Fetching your submitted and draft marketing reports."
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-center space-y-3">
-            <p className="text-sm text-destructive">Failed to load reports. Please try again.</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              Retry
-            </Button>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Unable to load reports"
+              description="There was a problem fetching your marketing reports. Try again."
+              action={{ label: 'Retry', onClick: () => refetch() }}
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : (
@@ -516,8 +530,13 @@ function GroupedReportRow({
       </TableRow>
       {isExpanded && childrenLoading && (
         <TableRow>
-          <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
-            Loading child reports...
+          <TableCell colSpan={7} className="py-6">
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading child reports"
+              description="Fetching related reports in this hierarchy."
+              size="sm"
+            />
           </TableCell>
         </TableRow>
       )}

@@ -27,6 +27,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  EmptyState,
   Input,
   Label,
   Progress,
@@ -521,17 +522,18 @@ export default function OKRDetailPage(): ReactNode {
           </Card>
         ) : targets.length === 0 ? (
           <Card>
-            <CardContent className="p-8 text-center">
-              <ListChecks className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-semibold text-lg mb-2">No targets yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Add targets to track specific metrics for this objective. Choose from Number,
-                True/False, Currency, or Tasks.
-              </p>
-              <Button onClick={handleOpenCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add First Target
-              </Button>
+            <CardContent className="p-8">
+              <EmptyState
+                icon={ListChecks}
+                title="No targets yet"
+                description="Add targets to track specific metrics for this objective. Choose from Number, True/False, Currency, or Tasks."
+                action={{
+                  label: 'Add First Target',
+                  onClick: handleOpenCreate,
+                  icon: <Plus className="h-3.5 w-3.5" />,
+                }}
+                size="sm"
+              />
             </CardContent>
           </Card>
         ) : (

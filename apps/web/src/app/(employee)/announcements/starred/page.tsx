@@ -12,7 +12,7 @@ import {
   EmptyState,
   useToast,
 } from '@hr-portal/ui';
-import { Star } from 'lucide-react';
+import { Loader2, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -75,7 +75,16 @@ export default function StarredAnnouncementsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-zinc-600 dark:text-zinc-400">Loading starred announcements...</div>
+        <Card>
+          <CardContent>
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading starred announcements"
+              description="Fetching the announcements you pinned for quick access."
+              size="sm"
+            />
+          </CardContent>
+        </Card>
       ) : starred.length === 0 ? (
         <Card>
           <CardContent>

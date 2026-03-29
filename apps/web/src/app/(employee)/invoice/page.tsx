@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   CurrencySelector,
+  EmptyState,
   Input,
   InvoiceStatusBadge,
   Label,
@@ -34,7 +35,7 @@ import {
   HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { CheckCircle2, Clock, DollarSign, Download, Eye, EyeOff, FileText, Plus, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, DollarSign, Download, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
@@ -627,13 +628,25 @@ export default function InvoicePage() {
 
       {isLoading ? (
         <Card>
-          <CardContent className="p-6 text-sm text-muted-foreground">
-            Loading invoices...
+          <CardContent className="p-6">
+            <EmptyState
+              icon={<Loader2 className="h-5 w-5 animate-spin" />}
+              title="Loading invoices"
+              description="Retrieving your invoice history and current totals."
+              size="sm"
+            />
           </CardContent>
         </Card>
       ) : error ? (
         <Card>
-          <CardContent className="p-6 text-sm text-error">Failed to load invoices.</CardContent>
+          <CardContent className="p-6">
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load invoices"
+              description="Your invoices could not be retrieved. Refresh and try again."
+              size="sm"
+            />
+          </CardContent>
         </Card>
       ) : (
         <Card>
@@ -652,8 +665,13 @@ export default function InvoicePage() {
               <TableBody>
                 {invoices.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
-                      No invoices yet.
+                    <TableCell colSpan={6} className="py-10">
+                      <EmptyState
+                        icon={FileText}
+                        title="No invoices yet"
+                        description="Submitted or drafted invoices will appear here once they are created."
+                        size="sm"
+                      />
                     </TableCell>
                   </TableRow>
                 ) : (

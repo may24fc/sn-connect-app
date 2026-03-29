@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   Input,
   Label,
   Select,
@@ -21,7 +22,7 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import { AlertCircle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 interface TaskDraft {
@@ -642,12 +643,22 @@ export function OffboardingChecklistManager({
           </div>
 
           {managingTemplate && templateQuery.isLoading ? (
-            <div className="flex items-center justify-center rounded-xl border border-zinc-200 p-8 dark:border-zinc-800">
-              <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+            <div className="rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Loading offboarding tasks"
+                description="Retrieving the saved default offboarding checklist."
+                size="sm"
+              />
             </div>
           ) : managingTemplate && templateQuery.isError ? (
-            <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-              Failed to load the saved default offboarding checklist.
+            <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+              <EmptyState
+                icon={AlertCircle}
+                title="Failed to load the saved default offboarding checklist"
+                description="The default offboarding template could not be retrieved."
+                size="sm"
+              />
             </div>
           ) : tasks.length > 0 ? (
             <div className="space-y-3">
@@ -722,10 +733,13 @@ export function OffboardingChecklistManager({
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-muted-foreground dark:border-zinc-700">
-              {managingTemplate
-                ? 'No saved default offboarding tasks yet.'
-                : 'No offboarding tasks have been assigned yet.'}
+            <div className="rounded-xl border border-dashed border-zinc-300 p-6 dark:border-zinc-700">
+              <EmptyState
+                icon={Pencil}
+                title={managingTemplate ? 'No saved default offboarding tasks yet' : 'No offboarding tasks have been assigned yet'}
+                description={managingTemplate ? 'Create default offboarding tasks here so they are ready before a record exists.' : 'Tasks will appear here once the offboarding workflow is configured.'}
+                size="sm"
+              />
             </div>
           )}
         </div>

@@ -12,6 +12,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  EmptyState,
   Input,
   Label,
   Select,
@@ -24,6 +25,7 @@ import {
 } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertCircle,
   CheckCircle2,
   ClipboardList,
   ExternalLink,
@@ -775,12 +777,22 @@ export function OnboardingChecklistManager({
               </div>
 
               {managingTemplate ? templateQuery.isLoading : checklistQuery.isLoading ? (
-                <div className="flex items-center justify-center rounded-xl border border-zinc-200 p-8 dark:border-zinc-800">
-                  <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+                <div className="rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
+                  <EmptyState
+                    icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                    title="Loading checklist items"
+                    description="Retrieving saved onboarding checklist tasks."
+                    size="sm"
+                  />
                 </div>
               ) : managingTemplate && templateQuery.isError ? (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-                  Failed to load the default checklist template.
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+                  <EmptyState
+                    icon={AlertCircle}
+                    title="Failed to load the default checklist template"
+                    description="The saved onboarding template could not be retrieved."
+                    size="sm"
+                  />
                 </div>
               ) : !managingTemplate && !selectedProfile?.employee_id ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300">
@@ -788,8 +800,13 @@ export function OnboardingChecklistManager({
                   default {roleLabel} checklist template from the selector above.
                 </div>
               ) : !managingTemplate && checklistQuery.isError ? (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-                  Failed to load the onboarding checklist.
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+                  <EmptyState
+                    icon={AlertCircle}
+                    title="Failed to load the onboarding checklist"
+                    description="The checklist for this profile could not be retrieved."
+                    size="sm"
+                  />
                 </div>
               ) : displayedTasks.length ? (
                 <div className="space-y-3">
@@ -892,8 +909,13 @@ export function OnboardingChecklistManager({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-muted-foreground dark:border-zinc-700">
-                  No extra checklist items have been assigned yet.
+                <div className="rounded-xl border border-dashed border-zinc-300 p-6 dark:border-zinc-700">
+                  <EmptyState
+                    icon={ClipboardList}
+                    title="No extra checklist items yet"
+                    description="Custom onboarding items will appear here once they are added."
+                    size="sm"
+                  />
                 </div>
               )}
             </div>
