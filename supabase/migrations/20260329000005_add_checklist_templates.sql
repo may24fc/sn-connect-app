@@ -30,24 +30,24 @@ CREATE POLICY checklist_templates_select_policy ON public.checklist_templates
   FOR SELECT
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 CREATE POLICY checklist_templates_insert_policy ON public.checklist_templates
   FOR INSERT
   TO authenticated
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 CREATE POLICY checklist_templates_update_policy ON public.checklist_templates
   FOR UPDATE
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   )
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['admin', 'hr', 'cos', 'ceo', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   );
 
 DROP TRIGGER IF EXISTS trigger_checklist_templates_updated_at ON public.checklist_templates;
