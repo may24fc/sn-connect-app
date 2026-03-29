@@ -9,7 +9,7 @@ The SN Connect design system is built on Radix UI primitives styled with Tailwin
 
 ---
 
-## Primitives (24)
+## Primitives (25)
 
 > Location: `packages/ui/src/primitives/`
 
@@ -22,6 +22,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | Button | `button.tsx` | Primary action button with variant, size, loading, press states |
 | Card | `card.tsx` | Container card (Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription) |
 | Checkbox | `checkbox.tsx` | Radix checkbox with indicator |
+| CountBadge | `count-badge.tsx` | Numeric badge for counts (notifications, tickets) with size variants |
 | Dialog | `dialog.tsx` | Modal dialog with overlay, close button |
 | DropdownMenu | `dropdown-menu.tsx` | Radix dropdown with items, separators, sub-menus |
 | FileDropZone | `file-drop-zone.tsx` | Drag-and-drop file upload zone with validation |
@@ -174,6 +175,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `WeekComparisonTable` | Week-over-week comparison |
 | `WeekSelector` | Week picker for report period |
 | Analytics charts | `CompletionChart`, `TrendChart`, `DistributionChart` |
+| Campaign analytics | `WeeklyTrendsChart`, `StatusBreakdownChart`, `SpendByCategoryChart`, `ROIByDepartmentChart`, `ReportMetricsChart`, `ExpenditureVsResultsChart` |
 
 → [Full reference](reports.md)
 
@@ -287,6 +289,28 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `EmptyState` | Page-level empty state display |
 | `SkeletonCard` | Card-shaped loading skeleton |
 | `SkeletonTable` | Table-shaped loading skeleton |
+
+### Tickets (6)
+
+> Location: `apps/web/src/components/tickets/`
+
+| Component | Description |
+|-----------|-------------|
+| `TicketListTable` | TanStack Table for listing tickets with sorting and filters |
+| `TicketWorkDialog` | Dialog for working on / resolving a ticket |
+| `TicketAssignmentDialog` | Dialog for assigning tickets to handlers |
+| `ManageTicketHandlersDialog` | Admin dialog for managing ticket handler roster |
+| `SuperAdminTicketsPanel` | Super Admin ticket triage and management panel |
+| `ticket-badges` | Priority and status badge components for tickets |
+
+### Checklists (2)
+
+> Location: `apps/web/src/components/`
+
+| Component | Description |
+|-----------|-------------|
+| `ChecklistsDashboardPage` | Dashboard page for onboarding/offboarding checklists |
+| `ChecklistManagementDialog` | Admin dialog for creating and editing checklist templates |
 
 ### Standalone Components
 

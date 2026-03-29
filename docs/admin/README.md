@@ -16,6 +16,10 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 | [Announcements](announcements.md) | Creating and managing company announcements | Admin, Super Admin |
 | [Resources](resources.md) | Managing company resources and collections | Admin, Super Admin |
 | [AI Knowledge Base](ai-knowledge.md) | Managing the AI assistant's knowledge sources | Admin, Super Admin |
+| [Tickets](tickets.md) | Managing IT/HR support tickets and triage | Admin, Super Admin |
+| [Checklists](checklists.md) | Onboarding/offboarding checklist templates | Admin, Super Admin |
+| [Company Pulse](company-pulse.md) | Company activity feed and health metrics | Admin, Super Admin |
+| [Recruitment](recruitment.md) | Job requisitions and candidate pipeline | Admin, Super Admin |
 | [Super Admin Features](super-admin.md) | Task management, payroll approvals, activity log, system health | Super Admin only |
 
 ## Role Differences
@@ -32,6 +36,10 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 | Announcements | ✅ | ✅ |
 | Resources | ✅ | ✅ |
 | AI Knowledge Base | ✅ | ✅ |
+| Tickets & triage | ✅ | ✅ |
+| Checklist templates | ✅ | ✅ |
+| Company Pulse | ✅ | ✅ |
+| Recruitment | ✅ | ✅ |
 | Notifications | ✅ | ✅ |
 | Task management | ❌ | ✅ |
 | Payroll approvals | ❌ | ✅ |
@@ -43,9 +51,9 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 
 Admin and Super Admin each have their own sidebar layout:
 
-**Admin sidebar:** Dashboard, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Announcements, Resources, Notifications, Activity Log
+**Admin sidebar:** Dashboard, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Announcements, Resources, Tickets, Checklists, Company Pulse, Recruitment, Notifications, Activity Log
 
-**Super Admin sidebar:** Dashboard, Task Management, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources, Notifications, Activity Log
+**Super Admin sidebar:** Dashboard, Task Management, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources, Tickets, Checklists, Company Pulse, Recruitment, Notifications, Activity Log
 
 ---
 

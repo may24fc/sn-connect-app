@@ -4,7 +4,7 @@
 
 All API routes live under `apps/web/src/app/api/`. Every endpoint requires authentication via Supabase session cookie unless noted otherwise. Row Level Security (RLS) is the final gatekeeper — application-level checks are secondary.
 
-**Total: ~210 HTTP method handlers across 28 domains.**
+**Total: ~240 HTTP method handlers across 32 domains.**
 
 ---
 
@@ -26,9 +26,9 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Collections](#collections) | 8 | `/api/collections/` | [collections.md](collections.md) |
 | [Performance](#performance) | 20 | `/api/performance/` | [performance.md](performance.md) |
 | [Probation](#probation) | 3 | `/api/probation/` | [probation.md](probation.md) |
-| [Internships](#internships) | 10 | `/api/internships/` | [internships.md](internships.md) |
+| [Internships](#internships) | 11 | `/api/internships/` | [internships.md](internships.md) |
 | [Standups](#standups) | 6 | `/api/standups/` | [standups.md](standups.md) |
-| [AI](#ai) | 9 | `/api/ai/` | [ai.md](ai.md) |
+| [AI](#ai) | 15 | `/api/ai/` | [ai.md](ai.md) |
 | [Notifications](#notifications) | 4 | `/api/notifications/` | [notifications.md](notifications.md) |
 | [Dashboard](#dashboard) | 3 | `/api/dashboard/` | [dashboard.md](dashboard.md) |
 | [Directory](#directory) | 3 | `/api/directory/` | [directory.md](directory.md) |
@@ -39,6 +39,10 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Banks](#banks) | 1 | `/api/banks/` | [banks.md](banks.md) |
 | [Audit Logs](#audit-logs) | 1 | `/api/audit-logs/` | — |
 | [Milestones](#milestones) | 1 | `/api/milestones/` | — |
+| [Tickets](#tickets) | 5 | `/api/tickets/` | — |
+| [Ticket Handlers](#ticket-handlers) | 4 | `/api/ticket-handlers/` | — |
+| [Checklist Templates](#checklist-templates) | 2 | `/api/checklist-templates/` | — |
+| [Admin](#admin) | 2 | `/api/admin/` | — |
 | [Webhooks](#webhooks) | 2 | `/api/webhooks/` | — |
 
 ---
@@ -327,6 +331,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/internships/[id]/logs` | Owner, supervisor, admin | List daily logs |
 | `POST` | `/api/internships/[id]/logs` | Intern (self) or admin | Create daily log entry |
 | `PATCH` | `/api/internships/[id]/logs` | Admin or supervisor | Approve/review daily log |
+| `POST` | `/api/internships/[id]/actions` | admin, super_admin | End internship or hire intern as employee |
 
 → [Full reference](internships.md)
 
@@ -360,6 +365,13 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/ai/sources/upload` | admin, super_admin | Upload knowledge file (PDF/DOC/TXT/MD, 10MB) |
 | `GET` | `/api/ai/sources/[id]/versions` | admin, super_admin | List source version history |
 | `POST` | `/api/ai/sources/[id]/versions` | admin, super_admin | Restore a specific source version |
+| `GET` | `/api/ai/suggestions` | Any authenticated | Get AI-generated suggestions for the chatbot |
+| `POST` | `/api/ai/suggestions/click` | Any authenticated | Track a suggestion click |
+| `GET` | `/api/ai/conversations` | Any authenticated | List user's saved AI conversations |
+| `POST` | `/api/ai/conversations` | Any authenticated | Create a new AI conversation |
+| `PATCH` | `/api/ai/conversations/[id]` | Any authenticated | Update conversation title |
+| `DELETE` | `/api/ai/conversations/[id]` | Any authenticated | Delete a saved conversation |
+| `GET` | `/api/ai/conversations/[id]/messages` | Any authenticated | Get messages for a conversation |
 
 → [Full reference](ai.md)
 
@@ -483,6 +495,47 @@ Query parameters:
 | `POST` | `/api/webhooks/drive` | Service key | Google Drive watch notification receiver |
 
 > Webhook endpoints validate request authenticity via HMAC signature / service key — not user sessions.
+
+---
+
+## Tickets
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/tickets` | Any authenticated | List tickets with filters and pagination |
+| `POST` | `/api/tickets` | Any authenticated | Create a new support ticket |
+| `GET` | `/api/tickets/[id]` | Any (RLS) | Get ticket detail with comments |
+| `PATCH` | `/api/tickets/[id]` | Any (RLS) | Update ticket fields (status, priority, assignment) |
+| `GET` | `/api/tickets/assignees` | admin, super_admin | List eligible ticket assignees |
+
+---
+
+## Ticket Handlers
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/ticket-handlers` | admin, super_admin | List all ticket handlers |
+| `POST` | `/api/ticket-handlers` | admin, super_admin | Add a user as a ticket handler |
+| `DELETE` | `/api/ticket-handlers` | admin, super_admin | Remove a ticket handler |
+| `GET` | `/api/ticket-handlers/me` | Any authenticated | Check if current user is a ticket handler |
+
+---
+
+## Checklist Templates
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/checklist-templates` | admin, super_admin | List onboarding/offboarding checklist templates |
+| `PUT` | `/api/checklist-templates` | admin, super_admin | Create or update a checklist template |
+
+---
+
+## Admin
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/admin/banking-info-status` | admin, super_admin | Get banking info completion status across employees |
+| `POST` | `/api/admin/backfill-wise-recipients` | super_admin | Backfill Wise recipient IDs for existing employees |
 
 ---
 

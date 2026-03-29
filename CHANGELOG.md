@@ -10,6 +10,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Ticketing system** — `tickets`, `ticket_handlers`, `ticket_comments` tables; `ticket_team`, `ticket_priority`, `ticket_status` enums; `GET/POST /api/tickets`, `GET/PATCH /api/tickets/[id]`, `GET /api/tickets/assignees`, `GET/POST/DELETE /api/ticket-handlers`, `GET /api/ticket-handlers/me`; `TicketListTable`, `TicketWorkDialog`, `TicketAssignmentDialog`, `ManageTicketHandlersDialog`, `SuperAdminTicketsPanel`, ticket-badges components; `/tickets`, `/tickets/[id]` employee pages; `/admin/tickets`, `/super-admin/tickets` admin pages (`20260329000006`)
+- **Checklist templates** — `checklist_templates` table; `checklist_template_flow`, `checklist_template_scope` enums; `GET/PUT /api/checklist-templates`; `ChecklistsDashboardPage`, `ChecklistManagementDialog` components; `/admin/checklists`, `/super-admin/checklists` pages (`20260329000005`)
+- **AI conversation history** — `GET/POST /api/ai/conversations`, `PATCH/DELETE /api/ai/conversations/[id]`, `GET /api/ai/conversations/[id]/messages`; users can save, name, and revisit AI chat sessions
+- **AI chatbot suggestions** — `GET /api/ai/suggestions`, `POST /api/ai/suggestions/click`; surfaced prompt suggestions with Google Docs live sync
+- **Internship end/hire actions** — `POST /api/internships/[id]/actions`; admins can end an internship or convert intern to employee via hire action (`20260329000001`, `20260329000002`)
+- **Admin banking tools** — `GET /api/admin/banking-info-status` to check payment info completion across employees; `POST /api/admin/backfill-wise-recipients` for Super Admins to backfill missing Wise recipient IDs
+- **Company Pulse pages** — `/admin/company-pulse` and `/super-admin/company-pulse` pages with live company activity feed and health metrics
+- **Recruitment pipeline** — `/admin/recruitment` page for job requisitions and candidate pipeline tracking (`20260329000001`, `20260329000002`)
+- **Report analytics** — `/admin/reports/analytics` and `/admin/reports/compare` pages; six analytics chart components: `WeeklyTrendsChart`, `StatusBreakdownChart`, `SpendByCategoryChart`, `ROIByDepartmentChart`, `ReportMetricsChart`, `ExpenditureVsResultsChart`
+- **Admin activity log** — `/admin/activity` page with role-scoped activity feed; `scope` query param added to `GET /api/audit-logs`
+- **Admin onboarding detail** — `/admin/onboarding/[id]` page for per-employee onboarding profile review
+- **CountBadge primitive** — `count-badge.tsx` in `packages/ui/src/primitives/`; numeric badge for unread counts with size variants; exported from `@hr-portal/ui`
+- **Probation state machine** — Live API data binding on probation tracker; enhanced state machine with notification triggers (`20260327000001`)
+- **Onboarding task submissions** — `submission_*` fields on `onboarding_tasks` for proof-of-completion uploads (`20260329000004`)
+- **Submission notification types** — `task_submission_received`, `task_submission_reviewed` added to `notification_type` enum (`20260327000001`)
+- **Offboarding tables repair** — Missing offboarding-related tables restored (`20260329000003`)
+
+### Changed
+
+- **Tour system** — Replaced TourGuideJS dependency with a custom modal-based onboarding tour system (no external dependency)
+- **EmptyState consolidation** — `EmptyState` component moved to `packages/ui/src/components/empty-state.tsx`; now accepts `ReactElement` for the `icon` prop; exported from `@hr-portal/ui`
+- **Auth root redirect** — Smart root (`/`) redirect consolidated to resolve correctly for all roles without intermediate flickers
+- **RLS: checklist templates** — Narrowed to `admin` and `super_admin` only (previously broader)
+- **RLS: admin roles simplified** — Admin-facing RLS policies streamlined across multiple tables
+
 - **Navy & Gold design system** — Full rebrand from Titanium & Indigo to Navy & Gold (zinc palette); font changed from Inter to Source Sans 3 (body) + Lexend (headings)
 - **Wise payment gateway** — `wise_payments` and `wise_payment_events` tables; `GET /api/webhooks/wise` receiver; full payment lifecycle tracking (`20260324000001`)
 - **Task proofs** — `task_proofs` table; employees can upload evidence files when completing a task; Super Admins can review proofs from task detail; `GET/POST/DELETE /api/tasks/[id]/proofs` (`20260322000001`)

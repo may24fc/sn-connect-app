@@ -47,8 +47,8 @@ Start here: **[Admin Guides](admin/README.md)**
 
 | Document | Description |
 |----------|-------------|
-| [api/README.md](api/README.md) | API endpoint index (~210 handlers across 28 domains) |
-| [components/README.md](components/README.md) | UI component index (24 primitives + 100+ composites) |
+| [api/README.md](api/README.md) | API endpoint index (~240 handlers across 32 domains) |
+| [components/README.md](components/README.md) | UI component index (25 primitives + 100+ composites) |
 | [architecture/README.md](architecture/README.md) | System architecture, layers, request flows, design decisions |
 | [architecture/auth.md](architecture/auth.md) | Auth provider (PKCE), middleware, role system, RLS |
 | [architecture/data-flow.md](architecture/data-flow.md) | TanStack Query patterns, cache, realtime, file uploads |
@@ -73,9 +73,9 @@ Start here: **[Admin Guides](admin/README.md)**
 | Collections | 8 | [api/collections.md](api/collections.md) |
 | Performance | 20 | [api/performance.md](api/performance.md) |
 | Probation | 3 | [api/probation.md](api/probation.md) |
-| Internships | 10 | [api/internships.md](api/internships.md) |
+| Internships | 11 | [api/internships.md](api/internships.md) |
 | Standups | 6 | [api/standups.md](api/standups.md) |
-| AI | 9 | [api/ai.md](api/ai.md) |
+| AI | 15 | [api/ai.md](api/ai.md) |
 | Resources | 27 | [api/resources.md](api/resources.md) |
 | Notifications | 4 | [api/notifications.md](api/notifications.md) |
 | Dashboard | 3 | [api/dashboard.md](api/dashboard.md) |
@@ -88,12 +88,16 @@ Start here: **[Admin Guides](admin/README.md)**
 | Audit Logs | 1 | — |
 | Milestones | 1 | — |
 | Webhooks | 2 | — |
+| Tickets | 5 | — |
+| Ticket Handlers | 4 | — |
+| Checklist Templates | 2 | — |
+| Admin | 2 | — |
 
 #### Component Docs
 
 | Doc | Coverage |
 |-----|----------|
-| [components/primitives.md](components/primitives.md) | 24 Radix-based primitives (Button, Input, Dialog, SlidePanel, FileDropZone, ProgressTimeline, etc.) |
+| [components/primitives.md](components/primitives.md) | 25 Radix-based primitives (Button, Input, Dialog, SlidePanel, FileDropZone, ProgressTimeline, CountBadge, etc.) |
 | [components/forms.md](components/forms.md) | Form, FormField, FormGroup, PhoneInput, CurrencySelector, BankSelector |
 | [components/tasks.md](components/tasks.md) | TaskCard, TaskList, TaskFilters, TaskDetailView |
 | [components/announcements.md](components/announcements.md) | AnnouncementCard, Editor, TargetingSelector |

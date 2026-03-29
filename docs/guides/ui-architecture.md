@@ -78,6 +78,8 @@ Next.js route groups organize pages by user role:
 /performance/review        # (employee) Self-assessment
 /tasks                     # (employee) Assigned tasks
 /tasks/[id]                # (employee) Task detail + proof upload
+/tickets                   # (employee) IT/HR support tickets
+/tickets/[id]              # (employee) Ticket detail
 /help                      # (employee) Help Center index
 /help/invoices             # (employee) Invoice submission guide
 /help/reports              # (employee) Report submission guide
@@ -119,6 +121,14 @@ Next.js route groups organize pages by user role:
 /admin/jobs/archived       # (admin) Archived job postings
 /admin/resources           # (admin) Resources management
 /admin/resources/archived  # (admin) Archived resources
+/admin/tickets             # (admin) Ticket management and triage
+/admin/checklists          # (admin) Onboarding/offboarding checklist templates
+/admin/company-pulse       # (admin) Company activity feed and health metrics
+/admin/activity            # (admin) Scoped activity/audit log
+/admin/recruitment         # (admin) Job requisitions and candidate pipeline
+/admin/reports/analytics   # (admin) Report analytics dashboards
+/admin/reports/compare     # (admin) Report comparison view
+/admin/onboarding/[id]     # (admin) Onboarding profile detail
 /manager/team-performance  # (employee) Team performance view [MANAGER]
 /manager/reviews           # (employee) Employee reviews queue [MANAGER]
 /interns                   # (admin) Intern management
@@ -138,6 +148,14 @@ Next.js route groups organize pages by user role:
 /admin/jobs/archived       # (admin) Archived job postings
 /admin/resources           # (admin) Resources management
 /admin/resources/archived  # (admin) Archived resources
+/admin/tickets             # (admin) Ticket management and triage
+/admin/checklists          # (admin) Onboarding/offboarding checklist templates
+/admin/company-pulse       # (admin) Company activity feed and health metrics
+/admin/activity            # (admin) Scoped activity/audit log
+/admin/recruitment         # (admin) Job requisitions and candidate pipeline
+/admin/reports/analytics   # (admin) Report analytics dashboards
+/admin/reports/compare     # (admin) Report comparison view
+/admin/onboarding/[id]     # (admin) Onboarding profile detail
 /manager/team-performance  # (employee) Team performance view [MANAGER]
 /manager/reviews           # (employee) Employee reviews queue [MANAGER]
 /interns                   # (admin) Intern management
@@ -146,6 +164,8 @@ Next.js route groups organize pages by user role:
 /super-admin/tasks         # (admin) Task management [SUPER ADMIN ONLY]
 /super-admin/tasks/[id]    # (admin) Task detail + proofs [SUPER ADMIN ONLY]
 /super-admin/activity      # (admin) Audit/activity log [SUPER ADMIN ONLY]
+/super-admin/checklists    # (admin) Checklist template management [SUPER ADMIN ONLY]
+/super-admin/company-pulse # (admin) Company pulse dashboard [SUPER ADMIN ONLY]
 ```
 
 ---
@@ -204,10 +224,10 @@ The `Sidebar` component accepts a `variant` prop that determines navigation item
 
 | Variant | Navigation Items |
 |---------|-----------------|
-| `employee` | Dashboard, Profile, Tasks, Performance Reviews, Reports, Invoice, Documents, Information Hub |
-| `intern` | Profile, Dashboard, Tasks, Performance Reviews, Documents, Information Hub (**NO Invoice or Reports**) |
-| `admin` | Dashboard, Directory, Employee Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources |
-| `super_admin` | Dashboard, Directory, Employee Management, Task Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Payroll Approvals |
+| `employee` | Dashboard, Profile, Tasks, Performance Reviews, Reports, Invoice, Documents, Information Hub, Tickets |
+| `intern` | Profile, Dashboard, Tasks, Performance Reviews, Documents, Information Hub, Tickets (**NO Invoice or Reports**) |
+| `admin` | Dashboard, Directory, Employee Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Tickets, Checklists, Company Pulse, Recruitment |
+| `super_admin` | Dashboard, Directory, Employee Management, Task Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Payroll Approvals, Tickets, Checklists, Company Pulse, Recruitment |
 
 ```typescript
 export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
