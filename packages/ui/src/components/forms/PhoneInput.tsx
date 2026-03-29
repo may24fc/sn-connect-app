@@ -70,6 +70,20 @@ function normalizePhoneValue(value: string, country: PhoneCountry): string {
   return digitsOnly ? `${country.dialCode}${digitsOnly}` : country.dialCode;
 }
 
+export function getDisplayPhoneValue(value: string, country: PhoneCountry): string {
+  const trimmed = value.trim();
+
+  if (!trimmed || country.code === 'GLOBAL') {
+    return trimmed;
+  }
+
+  if (!trimmed.startsWith(country.dialCode)) {
+    return trimmed;
+  }
+
+  return trimmed.slice(country.dialCode.length).trimStart();
+}
+
 export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
   (
     {
@@ -94,6 +108,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const fallbackCountry = countries[0] || DEFAULT_COUNTRIES[0]!;
     const selectedCountry = countries.find((c) => c.code === countryCode) || fallbackCountry;
     const displayPlaceholder = placeholder || `${selectedCountry?.dialCode || ''} Phone number`;
+    const displayValue = getDisplayPhoneValue(value, selectedCountry);
 
     // Close dropdown on outside click
     React.useEffect(() => {
@@ -121,7 +136,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     };
 
     const handleBlur = () => {
-      const normalized = normalizePhoneValue(value, selectedCountry);
+      const normalized = normalizePhoneValue(displayValue, selectedCountry);
       if (normalized !== value) {
         onChange?.(normalized);
       }
@@ -136,7 +151,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
           className={cn(
-            'flex items-center gap-1 rounded-l-md border border-r-0 px-2.5 py-2 text-sm',
+            'flex h-10 shrink-0 items-center gap-1 rounded-l-md border border-r-0 px-2.5 text-sm',
             'bg-zinc-50 hover:bg-zinc-100 transition-colors',
             'dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:border-zinc-700',
             'focus:outline-none focus:ring-2 focus:ring-slate-600/20',
@@ -148,7 +163,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           aria-haspopup="listbox"
         >
           <span className="text-base leading-none">{selectedCountry?.flag}</span>
-          <span className="text-xs text-muted-foreground">{selectedCountry?.dialCode}</span>
+          <span className="text-sm font-medium text-muted-foreground">{selectedCountry?.dialCode}</span>
           <svg
             className={cn(
               'h-3 w-3 text-muted-foreground transition-transform',
@@ -171,7 +186,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           ref={ref}
           id={id}
           type="tel"
-          value={value}
+          value={displayValue}
           onChange={handleInputChange}
           onBlur={handleBlur}
           disabled={disabled}

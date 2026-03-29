@@ -2,7 +2,9 @@
 
 import {
   Briefcase,
+  Calendar,
   CheckSquare,
+  ClipboardList,
   ChevronLeft,
   ChevronRight,
   FileCheck,
@@ -21,6 +23,7 @@ import {
   Users,
 } from 'lucide-react';
 import type * as React from 'react';
+import { CountBadge } from '../primitives/count-badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../primitives/tooltip';
 import { cn } from '../utils/cn';
 
@@ -40,15 +43,17 @@ export interface SidebarProps {
   logoUrl?: string;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  showMarketingReports?: boolean;
 }
 
 // Employee navigation
 const employeeNavItems: Array<NavItem> = [
   { label: 'Profile', href: '/profile', icon: User },
   { label: 'Dashboard', href: '/dashboard', icon: Home },
+  { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
-  { label: 'Reports', href: '/reports', icon: FileText },
+  { label: 'Marketing Reports', href: '/reports', icon: FileText },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
@@ -59,6 +64,7 @@ const employeeNavItems: Array<NavItem> = [
 const internNavItems: Array<NavItem> = [
   { label: 'Profile', href: '/intern/profile', icon: User },
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
+  { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Performance Reviews', href: '/performance', icon: Target },
   { label: 'EOD Reports', href: '/intern/reports', icon: FileText },
@@ -72,10 +78,13 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
   { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
-  { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Intern Management', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Checklists', href: '/admin/checklists', icon: ClipboardList },
   { label: 'Performance', href: '/admin/performance', icon: Target },
-  { label: 'Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Recruitment', href: '/admin/recruitment', icon: Briefcase },
   { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
+  { label: 'Company Pulse', href: '/admin/company-pulse', icon: Calendar },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/admin/resources', icon: Library },
@@ -86,11 +95,13 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
   { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
-  { label: 'Interns', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Intern Management', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Checklists', href: '/super-admin/checklists', icon: ClipboardList },
   { label: 'Performance', href: '/admin/performance', icon: Target },
-  { label: 'Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
+  { label: 'Company Pulse', href: '/super-admin/company-pulse', icon: Calendar },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/super-admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
@@ -103,8 +114,9 @@ export function Sidebar({
   logoUrl,
   collapsed = false,
   onToggleCollapse,
+  showMarketingReports = true,
 }: SidebarProps): React.ReactNode {
-  const navItems =
+  const baseNavItems =
     variant === 'employee'
       ? employeeNavItems
       : variant === 'intern'
@@ -112,6 +124,11 @@ export function Sidebar({
         : variant === 'super_admin'
           ? superAdminNavItems
           : adminNavItems;
+
+  const navItems =
+    variant === 'employee' && !showMarketingReports
+      ? baseNavItems.filter((item) => item.href !== '/reports')
+      : baseNavItems;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -184,9 +201,9 @@ export function Sidebar({
                     <>
                       <span className="flex-1 text-left">{item.label}</span>
                       {item.badge !== undefined && (
-                        <span className="rounded-full bg-zinc-900 dark:bg-zinc-100 px-2 py-0.5 text-xs text-white dark:text-zinc-900">
+                        <CountBadge variant="contrast" size="md">
                           {item.badge}
-                        </span>
+                        </CountBadge>
                       )}
                     </>
                   )}

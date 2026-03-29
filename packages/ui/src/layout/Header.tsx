@@ -1,10 +1,11 @@
 'use client';
 
-import { Bell, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User } from 'lucide-react';
+import { Bell, ChevronDown, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Badge } from '../primitives/badge';
 import { Button } from '../primitives/button';
+import { CountBadge } from '../primitives/count-badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -161,9 +162,13 @@ export function Header({
                 strokeWidth={1.5}
               />
               {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-rose-600 text-[10px] font-medium text-white">
-                  {notificationCount > 9 ? '9+' : notificationCount}
-                </span>
+                <CountBadge
+                  className="absolute -top-1 -right-1"
+                  variant="danger"
+                  size="sm"
+                  count={notificationCount}
+                  max={9}
+                />
               )}
             </Button>
           ))}
@@ -175,8 +180,9 @@ export function Header({
               variant="ghost"
               className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               data-tour="user-menu"
+              aria-label="Open profile menu"
             >
-              <Avatar className="h-8 w-8">
+              <Avatar className="h-8 w-8 ring-1 ring-zinc-200 dark:ring-zinc-700">
                 {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
                 <AvatarFallback className="bg-slate-900 text-white text-xs">
                   {getInitials(user.name)}
@@ -193,6 +199,10 @@ export function Header({
                   {user.role}
                 </Badge>
               </div>
+              <ChevronDown
+                className="h-4 w-4 text-zinc-500 dark:text-zinc-400"
+                strokeWidth={1.5}
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
