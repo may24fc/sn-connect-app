@@ -4,6 +4,10 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   transpilePackages: ['@hr-portal/ui', '@hr-portal/database'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
+  webpack: (config) => {
+    config.resolve.alias['@'] = path.resolve(__dirname, 'src');
+    return config;
+  },
   images: {
     remotePatterns: [
       {
