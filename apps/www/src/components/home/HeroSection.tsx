@@ -1,42 +1,86 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import Link from 'next/link';
-import { WHATS_NEW } from '@/data/placeholder';
-import { CTAButton } from '@/components/shared/CTAButton';
+import { ArrowRight, Search } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { BUSINESS_UNITS, WHATS_NEW } from '@/data/placeholder';
 import { AnimatedHeadline } from '@/components/shared/AnimatedHeadline';
-import { SocialProofStrip } from '@/components/home/SocialProofStrip';
-import { shineHoverClass } from '@/components/ui/shine-hover';
+import {
+  HIDE_EXPANSION_SECTIONS,
+  isTemporarilyHiddenPublicPath,
+} from '@/lib/site-config';
 
 export function HeroSection(): ReactNode {
-  return (
-    <section className="relative overflow-x-clip bg-white pt-16 pb-16 sm:pt-20 sm:pb-20 lg:pt-24 lg:pb-24">
-     
+  const [query, setQuery] = useState('');
+  const router = useRouter();
 
-      <div className="section-max section-padding relative">
-        <div className="mx-auto max-w-2xl text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
-            Building <AnimatedHeadline />,{' '}
-            <span className="text-amber-600">Empowering Lives</span>
+  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const trimmedQuery = query.trim();
+
+    if (!trimmedQuery) {
+      router.push('/contact');
+      return;
+    }
+
+    router.push(`/contact?need=${encodeURIComponent(trimmedQuery)}`);
+  }
+
+  return (
+    <section className="relative flex min-h-[calc(100vh-3.5rem)] items-center overflow-x-clip bg-[radial-gradient(circle_at_top,_rgba(96,153,172,0.20),_transparent_36%),linear-gradient(180deg,#f7fbfc_0%,#ffffff_70%)] py-16 sm:py-20 lg:py-24">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-400 to-transparent" />
+
+      <div className="section-max section-padding relative w-full">
+        <div className="mx-auto max-w-5xl text-center">
+        
+
+          <h1 className="mx-auto mt-6 max-w-5xl text-5xl font-semibold tracking-tight text-zinc-950 sm:text-6xl lg:text-7xl lg:leading-[1.02]">
+            <span className="block">You&apos;re one brief away from</span>
+            <span className="block md:whitespace-nowrap">
+              the right <AnimatedHeadline className="justify-center" /> support team.
+            </span>
           </h1>
-          <p className="mt-4 text-base text-zinc-500">
-            A diversified conglomerate committed to excellence across food
-            service, healthcare, fitness, and construction.
+          <p className="mx-auto mt-6 max-w-3xl text-base text-zinc-600 sm:text-lg">
+            We build dependable offshore support around your workflow, from executive assistance and marketing support to content creation and AI operations.
           </p>
 
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <CTAButton href="/businesses" variant="primary" size="lg" className={shineHoverClass}>
-              Explore Our Businesses
-            </CTAButton>
-            <CTAButton href="/careers" variant="outline" size="lg">
-              View Careers
-            </CTAButton>
+          <form
+            onSubmit={handleSubmit}
+            className="mx-auto mt-10 flex max-w-4xl flex-col gap-3 rounded-[1.75rem] border border-zinc-200 bg-white p-3 shadow-[0_20px_60px_rgba(23,80,99,0.12)] sm:flex-row sm:items-center"
+          >
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Tell us what support you need"
+                className="h-14 w-full rounded-2xl border border-transparent bg-transparent pl-12 pr-4 text-base text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-primary-200"
+                aria-label="Describe the support you need"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl bg-black px-6 text-sm font-semibold text-white transition-colors hover:bg-primary-900 sm:min-w-[220px]"
+            >
+              Connect to support
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            {BUSINESS_UNITS.map((unit) => (
+              <Link
+                key={unit.slug}
+                href={`/contact?service=${unit.slug}`}
+                className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-900"
+              >
+                {unit.name}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
-
-      {/* Social Proof Strip — dark variant */}
-      <SocialProofStrip />
     </section>
   );
 }
@@ -48,14 +92,17 @@ function formatDaysAgo(days: number): string {
 }
 
 export function WhatsNewMarquee(): ReactNode {
-  const items = [...WHATS_NEW, ...WHATS_NEW];
+  if (HIDE_EXPANSION_SECTIONS) return null;
+
+  const visibleItems = WHATS_NEW.filter((item) => !isTemporarilyHiddenPublicPath(item.href));
+  const items = [...visibleItems, ...visibleItems];
 
   return (
     <section className="relative flex items-center border-y border-zinc-100 bg-white py-3">
       {/* Pinned "What's New" label */}
       <div className="relative z-20 flex shrink-0 items-center gap-3 bg-white pl-5 pr-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600 ring-1 ring-inset ring-amber-200">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-800 ring-1 ring-inset ring-primary-100">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary-700" />
           What&apos;s New
         </span>
         <div className="h-4 w-px bg-zinc-200" aria-hidden="true" />

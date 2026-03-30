@@ -50,19 +50,19 @@ const thirdColumn = allTestimonials.slice(6);
 
 export function Testimonials(): ReactNode {
   return (
-    <section className="py-20 lg:py-28 bg-zinc-50">
+    <section className="bg-primary-50/60 py-20 lg:py-28">
       <div className="section-max section-padding">
         {/* Section heading */}
         <ScrollReveal>
           <div className="mx-auto flex max-w-xl flex-col items-center text-center">
-            <span className="inline-block rounded-md border border-amber-300 bg-amber-50 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-amber-700">
-              Testimonials
+            <span className="inline-block rounded-md border border-accent-300 bg-white px-4 py-1 text-xs font-semibold uppercase tracking-wider text-primary-900">
+              Client feedback
             </span>
             <h2 className="mt-5 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl lg:text-5xl">
-              Trusted across every venture
+              What clients value most
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-zinc-500">
-              Hear from the partners, clients, and members who experience excellence across all four of our business units.
+              Founders and operators trust SN for support that feels embedded, accountable, and easier to scale than ad hoc hiring.
             </p>
           </div>
         </ScrollReveal>

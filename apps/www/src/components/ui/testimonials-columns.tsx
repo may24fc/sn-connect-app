@@ -44,7 +44,7 @@ export function TestimonialsColumn({
                 {unit && (
                   <span
                     className="mb-4 inline-block rounded-md px-2.5 py-0.5 text-xs font-semibold text-white"
-                    style={{ backgroundColor: unitColor ?? "#0F172A" }}
+                    style={{ backgroundColor: unitColor ?? '#175063' }}
                   >
                     {unit}
                   </span>
