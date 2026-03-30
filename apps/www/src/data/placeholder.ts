@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Building2, Dumbbell, HardHat, Utensils } from 'lucide-react';
+import { Bot, Briefcase, Megaphone, PenTool } from 'lucide-react';
 
 /** Convert a human-readable title to a URL-safe slug, e.g. "Corporate Catering" → "corporate-catering" */
 export function slugify(text: string): string {
@@ -27,116 +27,115 @@ export interface BusinessUnit {
 }
 
 export const COMPANY = {
-  name: 'SN International Group',
-  tagline: 'Building Futures, Empowering Lives',
+  name: 'SN International Group Pty. Ltd.',
+  tagline: 'Remote support teams, matched with care.',
   description:
-    'SN International Group is a diversified conglomerate committed to excellence across food service, universal healthcare products, fitness, and construction. With a growing team and a culture of innovation, we build businesses that transform industries and uplift communities.',
-  email: 'info@sninternational.com',
+    'SN International Group Pty. Ltd. helps founders, operators, and growing teams build dependable offshore support across executive assistance, marketing support, content creation, and AI operations.',
+  email: 'info@sngroup.com.au',
   phone: '+63 (2) 8123 4567',
-  address: 'SN International Tower, Bonifacio Global City, Taguig, Metro Manila, Philippines',
   social: {
     facebook: 'https://facebook.com/sninternational',
-    linkedin: 'https://linkedin.com/company/sninternational',
+    linkedin: 'https://www.linkedin.com/company/sn-international-group/posts/?feedView=all',
     instagram: 'https://instagram.com/sninternational',
   },
 };
 
 export const BUSINESS_UNITS: BusinessUnit[] = [
   {
-    slug: 'sfo',
-    name: 'SFO (SeaFood Outlet)',
-    tagline: 'Nourishing Communities, One Meal at a Time',
+    slug: 'executive-assistance',
+    name: 'Executive Assistance',
+    tagline: 'Inbox, calendar, admin, and follow-through handled with precision',
     description:
-      'SFO is the food service arm of SN International Group, delivering quality meals and catering solutions to corporate clients, institutions, and events across the Philippines.',
-    icon: Utensils,
-    color: '#C5A059',
-    cardBg: 'bg-amber-100 border-amber-200',
-    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=80&auto=format&fit=crop',
-    stats: [{ label: 'Meals Served Daily', value: '10,000+' }, { label: 'Client Sites', value: '45+' }],
+      'Dedicated executive assistants who manage inboxes, calendars, reporting, travel coordination, SOP upkeep, and recurring admin so founders and operators can stay focused on growth.',
+    icon: Briefcase,
+    color: '#175063',
+    cardBg: 'bg-[rgba(23,80,99,0.08)] border-[rgba(23,80,99,0.16)]',
+    image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1200&q=80&auto=format&fit=crop',
+    stats: [{ label: 'Coverage Windows', value: 'AU / US' }, { label: 'Typical Launch', value: '7 days' }],
     services: [
-      { title: 'Corporate Catering', description: 'Full-service catering for offices, events, and conferences.', image: 'https://images.unsplash.com/photo-1555244162-803834f70033?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Institutional Food Service', description: 'Contracted meal programs for schools, hospitals, and government.', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Event Catering', description: 'Custom menus for weddings, galas, and private celebrations.', image: 'https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Meal Planning & Consulting', description: 'Nutrition-focused menu design and food safety consulting.', image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Calendar and inbox management', description: 'Own meeting flow, inbox triage, follow-ups, and internal coordination.', image: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Reporting and documentation', description: 'Keep leadership dashboards, minutes, SOPs, and trackers current.', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Research and coordination', description: 'Support hiring, vendors, bookings, and special projects with reliable follow-through.', image: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Executive support pods', description: 'Scale from one assistant to shared support coverage across multiple leaders.', image: 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?w=800&q=80&auto=format&fit=crop' },
     ],
     testimonials: [
-      { name: 'Maria Santos', role: 'HR Director, TechCorp PH', quote: 'SFO transformed our company cafeteria. The quality and consistency are outstanding.' },
-      { name: 'James Reyes', role: 'Event Coordinator', quote: 'Every event they cater is flawless — from setup to cleanup.' },
+      { name: 'Sophie Graham', role: 'Founder, Property Advisory Studio', quote: 'Our EA took over scheduling, client follow-ups, and weekly reporting within days. It immediately gave me back strategic time.' },
+      { name: 'Theo Ramirez', role: 'Operations Director, Service Company', quote: 'SN built a support rhythm around our operating calendar instead of forcing us into a generic VA setup.' },
     ],
-    contact: { email: 'sfo@sninternational.com', phone: '+63 (2) 8123 4568' },
-    website_url: 'https://sfo.sninternational.com',
+    contact: { email: 'assist@sngroup.com.au', phone: '+63 (2) 8123 4568' },
+    website_url: '/contact?service=executive-assistance',
   },
   {
-    slug: 'uhp',
-    name: 'UHP (Ultimate Health Project)',
-    tagline: 'Healthcare Solutions for Every Filipino',
+    slug: 'marketing-support',
+    name: 'Marketing Support',
+    tagline: 'Execution support for campaigns, outreach, reporting, and launch coordination',
     description:
-      'UHP is dedicated to making quality healthcare products accessible and affordable. From medical supplies to wellness essentials, UHP partners with healthcare providers and pharmacies nationwide.',
-    icon: Building2,
-    color: '#2563EB',
-    cardBg: 'bg-blue-100 border-blue-200',
-    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&q=80&auto=format&fit=crop',
-    stats: [{ label: 'Healthcare Partners', value: '200+' }, { label: 'Products Distributed', value: '1,500+' }],
+      'Flexible support for marketing teams that need help with campaign coordination, CRM updates, social scheduling, reporting, research, and recurring execution work.',
+    icon: Megaphone,
+    color: '#6099AC',
+    cardBg: 'bg-[rgba(96,153,172,0.12)] border-[rgba(96,153,172,0.2)]',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80&auto=format&fit=crop',
+    stats: [{ label: 'Campaign Rhythm', value: 'Weekly' }, { label: 'Ramp Time', value: '2 weeks' }],
     services: [
-      { title: 'Medical Supplies Distribution', description: 'Wide range of medical supplies for hospitals and clinics.', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Pharmaceutical Products', description: 'Quality-assured pharma products at competitive prices.', image: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Wellness & Personal Care', description: 'Health and wellness products for everyday consumers.', image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Institutional Partnerships', description: 'Long-term supply agreements with healthcare institutions.', image: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Campaign coordination', description: 'Keep briefs, timelines, approvals, and launch checklists moving.', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Social and email scheduling', description: 'Prepare assets, schedule sends, and maintain publishing cadence.', image: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Marketing admin and reporting', description: 'Handle recurring dashboards, CRM cleanup, and campaign tracking.', image: 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Research and list preparation', description: 'Support outreach and planning with organized source data and notes.', image: 'https://images.unsplash.com/photo-1516321165247-4aa89a48be28?w=800&q=80&auto=format&fit=crop' },
     ],
     testimonials: [
-      { name: 'Dr. Elena Cruz', role: 'Chief Medical Officer, Metro Hospital', quote: 'UHP has been a reliable partner for our supply chain needs for over 5 years.' },
-      { name: 'Robert Lim', role: 'Pharmacy Owner', quote: 'Their product range and pricing make them our preferred distributor.' },
+      { name: 'Chloe Bennett', role: 'Marketing Lead, Retail Brand', quote: 'We stopped dropping campaign tasks between strategy and execution because SN owned the operational layer.' },
+      { name: 'Mark Dizon', role: 'Founder, Service Marketplace', quote: 'They brought structure to our weekly marketing rhythm without forcing us into a bloated in-house hire.' },
     ],
-    contact: { email: 'uhp@sninternational.com', phone: '+63 (2) 8123 4569' },
-    website_url: 'https://uhp.sninternational.com',
+    contact: { email: 'marketing@sngroup.com.au', phone: '+63 (2) 8123 4569' },
+    website_url: '/contact?service=marketing-support',
   },
   {
-    slug: '24-fit-club',
-    name: '24 Fit Club',
-    tagline: 'Your Fitness Journey, 24/7',
+    slug: 'content-creation',
+    name: 'Content Creation',
+    tagline: 'Production support for copy, visual assets, publishing, and creative handoff',
     description:
-      '24 Fit Club is a modern fitness brand offering state-of-the-art gym facilities, personal training, and group classes. We believe fitness should be accessible to everyone, anytime.',
-    icon: Dumbbell,
-    color: '#DC2626',
-    cardBg: 'bg-red-100 border-red-200',
-    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80&auto=format&fit=crop',
-    stats: [{ label: 'Active Members', value: '5,000+' }, { label: 'Locations', value: '12' }],
+      'Content support for founders and teams that need writing assistance, asset preparation, publishing help, repurposing, and dependable production follow-through.',
+    icon: PenTool,
+    color: '#0E3A49',
+    cardBg: 'bg-[rgba(23,80,99,0.12)] border-[rgba(14,58,73,0.18)]',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&q=80&auto=format&fit=crop',
+    stats: [{ label: 'Output Types', value: 'Copy / Visuals' }, { label: 'Use Cases', value: 'B2B / Agency' }],
     services: [
-      { title: 'Gym Memberships', description: 'Flexible membership plans with 24/7 access to premium equipment.', image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Personal Training', description: 'Certified trainers creating personalized fitness programs.', image: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Group Fitness Classes', description: 'Yoga, HIIT, spinning, and more — designed for all levels.', image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Corporate Wellness Programs', description: 'Tailored fitness programs for companies and their employees.', image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Content drafting support', description: 'Assist with blogs, newsletters, captions, scripts, and campaign copy.', image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Asset preparation', description: 'Organize source files, briefs, revisions, and creative handoff steps.', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Repurposing workflows', description: 'Turn one source asset into multiple publish-ready content pieces.', image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Publishing coordination', description: 'Keep edits, approvals, and posting queues on schedule.', image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80&auto=format&fit=crop' },
     ],
     testimonials: [
-      { name: 'Anna Dela Cruz', role: 'Member since 2023', quote: 'The facilities are world-class and the trainers genuinely care about your progress.' },
-      { name: 'Miguel Torres', role: 'Corporate Member', quote: 'Our company wellness program with 24 Fit Club has improved employee morale significantly.' },
+      { name: 'Nina Patel', role: 'Content Lead, SaaS Team', quote: 'They kept our content calendar moving when internal bandwidth disappeared, and quality stayed consistent.' },
+      { name: 'Luke Harrison', role: 'Agency Founder', quote: 'SN became the production layer that helped us ship more content without burning out the core team.' },
     ],
-    contact: { email: 'fitclub@sninternational.com', phone: '+63 (2) 8123 4570' },
-    website_url: 'https://24fitclub.com',
+    contact: { email: 'content@sngroup.com.au', phone: '+63 (2) 8123 4570' },
+    website_url: '/contact?service=content-creation',
   },
   {
-    slug: 'construction',
-    name: 'SN Property Development',
-    tagline: 'Building the Future, One Structure at a Time',
+    slug: 'ai-operations',
+    name: 'AI Operations',
+    tagline: 'Human-led AI workflow support for research, systems, prompts, and repeatable ops',
     description:
-      'SN Construction & Real Estate delivers commercial and residential projects with uncompromising quality. From land development to turnkey construction, we build spaces where people thrive.',
-    icon: HardHat,
-    color: '#059669',
-    cardBg: 'bg-emerald-100 border-emerald-200',
-    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80&auto=format&fit=crop',
-    stats: [{ label: 'Projects Completed', value: '80+' }, { label: 'Sqm Developed', value: '250K+' }],
+      'Operational support for teams adopting AI into day-to-day work, including prompt libraries, workflow documentation, QA checks, knowledge-base upkeep, and tool coordination.',
+    icon: Bot,
+    color: '#B8BAB3',
+    cardBg: 'bg-[rgba(184,186,179,0.16)] border-[rgba(184,186,179,0.35)]',
+    image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=80&auto=format&fit=crop',
+    stats: [{ label: 'Workflow Type', value: 'Ops / Research' }, { label: 'Team Fit', value: 'Founders / Ops' }],
     services: [
-      { title: 'Commercial Construction', description: 'Office buildings, retail spaces, and industrial facilities.', image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Residential Development', description: 'Townhouses, condominiums, and subdivision projects.', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Renovation & Retrofitting', description: 'Modernization of existing structures to meet current standards.', image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&q=80&auto=format&fit=crop' },
-      { title: 'Project Management', description: 'End-to-end construction management and consulting.', image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Prompt and SOP libraries', description: 'Document prompts, usage notes, and team-ready operating procedures.', image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&q=80&auto=format&fit=crop' },
+      { title: 'AI workflow coordination', description: 'Support intake, output routing, and repeatable task flows across tools.', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Research and synthesis support', description: 'Turn raw source material into organized summaries, trackers, and briefs.', image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80&auto=format&fit=crop' },
+      { title: 'Quality and knowledge maintenance', description: 'Review outputs, maintain references, and keep systems usable over time.', image: 'https://images.unsplash.com/photo-1497215842964-222b430dc094?w=800&q=80&auto=format&fit=crop' },
     ],
     testimonials: [
-      { name: 'Ricardo Gonzales', role: 'Property Developer', quote: 'SN Construction delivered our project ahead of schedule and under budget.' },
-      { name: 'Linda Tan', role: 'Homeowner', quote: 'The quality of workmanship on our home exceeded our expectations.' },
+      { name: 'Erin Cole', role: 'Operations Lead, Advisory Firm', quote: 'They helped us turn scattered AI experiments into repeatable workflows the team could actually use.' },
+      { name: 'Paolo Cruz', role: 'Agency Director', quote: 'SN gave us structure around prompt libraries and QA so AI outputs became operational, not just interesting.' },
     ],
-    contact: { email: 'construction@sninternational.com', phone: '+63 (2) 8123 4571' },
-    website_url: 'https://snproperty.sninternational.com',
+    contact: { email: 'aiops@sngroup.com.au', phone: '+63 (2) 8123 4571' },
+    website_url: '/contact?service=ai-operations',
   },
 ];
 
@@ -144,20 +143,20 @@ export const CEO_MESSAGE = {
   name: 'Antonio S. Navarro',
   title: 'Chief Executive Officer',
   initials: 'ASN',
-  message: `At SN International Group, we believe that business is more than just commerce — it's about creating value that uplifts people and communities.
+  message: `At SN International Group Pty. Ltd., we believe outsourcing works best when it feels intentional, accountable, and deeply integrated with the way a client already operates.
 
-Since our founding, we have built a portfolio of businesses united by a single vision: to deliver excellence in everything we do. From nourishing communities through SFO, to making healthcare accessible through UHP, empowering fitness through 24 Fit Club, and building structures that stand the test of time through our construction arm — every venture reflects our commitment to quality and integrity.
+We do not treat support as a commodity. We build service roles around real workflows, communication rhythms, and performance expectations so founders and teams get support that is dependable from day one.
 
-Our team is our greatest asset. The passion, creativity, and dedication of our people drive us forward every day. As we continue to grow, we remain grounded in the values that define us: trust, innovation, and service.
+Our commitment is simple: thoughtful matching, disciplined operations, and a standard of service that protects both trust and momentum as your business grows.
 
-Thank you for being part of our journey. Together, we are building a future that we can all be proud of.`,
+Thank you for considering SN as part of your next growth phase.`,
 };
 
 export const MISSION =
-  'To deliver exceptional value through diversified business ventures that uplift communities, empower individuals, and set new standards of excellence across every industry we serve.';
+  'To help growing businesses scale with dependable remote support built on clear process, careful matching, and consistent service quality.';
 
 export const VISION =
-  'To be the Philippines\' most trusted and admired conglomerate — known for innovation, integrity, and the positive impact we create in the lives of our employees, customers, and communities.';
+  'To be the trusted operating partner behind high-performing remote support teams for founders, operators, and modern service businesses.';
 
 export interface NewsItem {
   text: string;
@@ -168,12 +167,12 @@ export interface NewsItem {
 }
 
 export const WHATS_NEW: NewsItem[] = [
-  { text: 'SFO opens new central kitchen facility in BGC', category: 'SFO', categoryColor: '#C5A059', href: '/businesses/sfo', daysAgo: 1 },
-  { text: '24 Fit Club launches corporate wellness partnerships', category: '24 Fit', categoryColor: '#DC2626', href: '/businesses/24-fit-club', daysAgo: 3 },
-  { text: 'SN Construction breaks ground on new residential project', category: 'Construction', categoryColor: '#059669', href: '/businesses/construction', daysAgo: 5 },
-  { text: 'UHP expands distribution to Visayas and Mindanao', category: 'UHP', categoryColor: '#2563EB', href: '/businesses/uhp', daysAgo: 7 },
-  { text: 'SN International Group recognized as Top Employer 2026', category: 'Corporate', categoryColor: '#0F172A', href: '/about', daysAgo: 10 },
-  { text: 'Now hiring across all business units — explore our Careers page', category: 'Careers', categoryColor: '#7C3AED', href: '/careers', daysAgo: 2 },
+  { text: 'Executive support pods now available for founder and director coverage', category: 'Executive', categoryColor: '#175063', href: '/contact?service=executive-assistance', daysAgo: 1 },
+  { text: 'Marketing support pods now cover campaign coordination, scheduling, and weekly reporting', category: 'Marketing', categoryColor: '#6099AC', href: '/contact?service=marketing-support', daysAgo: 3 },
+  { text: 'Content creation support now includes drafting, repurposing, and publishing coordination', category: 'Content', categoryColor: '#0E3A49', href: '/contact?service=content-creation', daysAgo: 5 },
+  { text: 'AI operations support now includes prompt libraries, workflow QA, and research handoff', category: 'AI Ops', categoryColor: '#6F726B', href: '/contact?service=ai-operations', daysAgo: 7 },
+  { text: 'SN refocuses its public site around VA outsourcing and remote support', category: 'SN', categoryColor: '#000000', href: '/about', daysAgo: 10 },
+  { text: 'Book a discovery call to scope your first support role', category: 'Contact', categoryColor: '#175063', href: '/contact', daysAgo: 2 },
 ];
 
 export const CULTURE_VALUES = [
@@ -280,12 +279,10 @@ export const LIFE_PHOTOS = [
 
 export const NAV_LINKS = [
   { href: '/', label: 'Home' },
+  { href: '/#services', label: 'Services', hasMegaMenu: true },
   { href: '/about', label: 'About Us' },
-  { href: '/businesses', label: 'Businesses', hasMegaMenu: true },
-  { href: '/careers', label: 'Careers' },
-  { href: '/life-at-sn', label: 'Life at SN' },
   { href: '/team', label: 'Meet the Team' },
-  { href: '/contact', label: 'Contact Us' },
+  { href: '/contact', label: 'Contact' },
 ] as const;
 
 export const GOOGLE_MAPS_EMBED_URL =
