@@ -46,13 +46,15 @@ export function Header(): ReactNode {
           <div className="flex h-14 items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center">
-              <div className="relative h-6 w-[3.75rem]">
+              <div className="shrink-0">
                 <Image
                   src="/sn-logo.png"
                   alt="SN International logo"
-                  fill
+                  width={60}
+                  height={24}
                   priority
-                  className="object-contain"
+                  unoptimized
+                  className="h-6 w-auto object-contain"
                   sizes="60px"
                 />
               </div>

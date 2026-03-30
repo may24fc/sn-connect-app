@@ -80,6 +80,7 @@ function ExecutiveLightbox({
                   alt={`${person.name} executive poster`}
                   width={768}
                   height={1024}
+                  unoptimized
                   className="h-auto max-h-[82vh] w-auto max-w-full object-contain"
                   sizes="100vw"
                   priority
@@ -132,6 +133,7 @@ function ExecutiveCard({
                 alt={`${person.name} executive poster`}
                 width={768}
                 height={1024}
+                unoptimized
                 className="h-auto max-h-[26rem] w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.01] sm:max-h-[29rem]"
                 sizes="(max-width: 640px) 92vw, (max-width: 1024px) 44vw, 360px"
               />
