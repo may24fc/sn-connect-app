@@ -1,32 +1,48 @@
 'use client';
 
-import { type ReactNode, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { type ReactNode, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Send, CheckCircle, User, Mail, Phone, Building2, MessageSquare, Type, Clock } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@hr-portal/ui';
+import { Send, CheckCircle, User, Mail, Phone, MessageSquare, Type, Clock } from 'lucide-react';
 import { inquirySchema, type InquiryFormData } from '@/lib/schemas/inquiry.schema';
-import { BUSINESS_UNITS } from '@/data/placeholder';
 
 export function ContactForm(): ReactNode {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const searchParams = useSearchParams();
 
   const {
     register,
     handleSubmit,
     reset,
-    control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<InquiryFormData>({
     resolver: zodResolver(inquirySchema),
+    defaultValues: {
+      business_unit_id: null,
+    },
   });
+
+  useEffect(() => {
+    const requestedService = searchParams.get('need') ?? searchParams.get('service');
+
+    if (!requestedService) {
+      return;
+    }
+
+    const normalizedService = requestedService
+      .replace(/[-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!normalizedService) {
+      return;
+    }
+
+    setValue('subject', `Support needed: ${normalizedService}`);
+  }, [searchParams, setValue]);
 
   async function onSubmit(data: InquiryFormData) {
     setSubmitError('');
@@ -34,7 +50,10 @@ export function ContactForm(): ReactNode {
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          business_unit_id: null,
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'Submission failed' }));
@@ -49,25 +68,23 @@ export function ContactForm(): ReactNode {
 
   if (submitted) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-12 text-center shadow-card">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 animate-[bounceIn_0.5s_ease-out]">
-          <CheckCircle className="h-8 w-8 text-green-600" />
-        </div>
-        <h3 className="mt-4 text-2xl font-bold text-zinc-900">Message Sent!</h3>
+      <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-zinc-200 bg-white p-12 text-center shadow-card">
+        <CheckCircle className="h-12 w-12 text-primary-800" />
+        <h3 className="mt-4 text-2xl font-bold text-zinc-900">Brief received</h3>
         <p className="mt-2 text-zinc-600">
-          Thank you for reaching out. We&apos;ll get back to you within 1–2 business days.
+          Thank you for sharing your support needs. We&apos;ll review the brief and reply with next steps within 1 business day.
         </p>
-        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-600">
+        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-800">
           <Clock className="h-3.5 w-3.5" />
-          Estimated response: 24–48 hours
+          Estimated response: within 24 hours
         </div>
         <div className="mt-4">
           <button
             type="button"
             onClick={() => setSubmitted(false)}
-            className="text-sm font-semibold text-amber-600 hover:underline"
+            className="text-sm font-semibold text-primary-800 hover:underline"
           >
-            Send another message
+            Submit another brief
           </button>
         </div>
       </div>
@@ -77,11 +94,11 @@ export function ContactForm(): ReactNode {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-card"
+      className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-8 shadow-card"
     >
-      <h3 className="text-xl font-bold text-zinc-900">Send Us a Message</h3>
+      <h3 className="text-xl font-bold text-zinc-900">Request support</h3>
       <p className="mt-1 text-sm text-zinc-500">
-        Fill out the form and our team will respond promptly.
+        Give us enough context to scope the right role, working style, and next step.
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -95,7 +112,8 @@ export function ContactForm(): ReactNode {
             <input
               id="contact-name"
               {...register('name')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
+              placeholder="Your full name"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.name && (
@@ -114,7 +132,8 @@ export function ContactForm(): ReactNode {
               id="contact-email"
               type="email"
               {...register('email')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
+              placeholder="name@company.com"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.email && (
@@ -123,7 +142,7 @@ export function ContactForm(): ReactNode {
         </div>
 
         {/* Phone */}
-        <div className="sm:col-span-1">
+        <div className="sm:col-span-2">
           <label htmlFor="contact-phone" className="block text-sm font-medium text-zinc-700">
             Phone
           </label>
@@ -132,38 +151,8 @@ export function ContactForm(): ReactNode {
             <input
               id="contact-phone"
               {...register('phone')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Business unit selector */}
-        <div className="sm:col-span-1">
-          <label htmlFor="contact-bu" className="block text-sm font-medium text-zinc-700">
-            Regarding
-          </label>
-          <div className="mt-1">
-            <Controller
-              name="business_unit_id"
-              control={control}
-              render={({ field }) => (
-                <Select value={field.value ?? ''} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-zinc-400" />
-                      <SelectValue placeholder="General Inquiry" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General Inquiry</SelectItem>
-                    {BUSINESS_UNITS.map((u) => (
-                      <SelectItem key={u.slug} value={u.slug}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              placeholder="Optional"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
         </div>
@@ -171,14 +160,15 @@ export function ContactForm(): ReactNode {
         {/* Subject */}
         <div className="sm:col-span-2">
           <label htmlFor="contact-subject" className="block text-sm font-medium text-zinc-700">
-            Subject <span className="text-red-500">*</span>
+            What support do you need? <span className="text-red-500">*</span>
           </label>
           <div className="relative mt-1">
             <Type className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               id="contact-subject"
               {...register('subject')}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
+              placeholder="Example: Executive assistance for inbox, calendar, and weekly reporting"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.subject && (
@@ -189,7 +179,7 @@ export function ContactForm(): ReactNode {
         {/* Message */}
         <div className="sm:col-span-2">
           <label htmlFor="contact-message" className="block text-sm font-medium text-zinc-700">
-            Message <span className="text-red-500">*</span>
+            Brief details <span className="text-red-500">*</span>
           </label>
           <div className="relative mt-1">
             <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
@@ -197,7 +187,8 @@ export function ContactForm(): ReactNode {
               id="contact-message"
               {...register('message')}
               rows={5}
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
+              placeholder="Tell us about the tasks, hours, timezone, tools, and how quickly you want to start."
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.message && (
@@ -208,17 +199,17 @@ export function ContactForm(): ReactNode {
 
       {submitError && <p className="mt-4 text-sm text-red-500">{submitError}</p>}
 
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-auto pt-6 flex flex-col gap-3">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-900 disabled:opacity-50"
         >
           <Send className="h-4 w-4" />
-          {isSubmitting ? 'Sending...' : 'Send Message'}
+          {isSubmitting ? 'Sending...' : 'Send Brief'}
         </button>
         <p className="text-center text-xs text-zinc-400">
-          We typically respond within 24 hours during business days.
+          We typically respond within 1 business day.
         </p>
       </div>
     </form>
