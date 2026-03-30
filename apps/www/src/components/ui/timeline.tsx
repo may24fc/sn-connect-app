@@ -54,16 +54,16 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
             className="flex justify-start pt-10 md:pt-40 md:gap-10"
           >
             <div className="sticky flex flex-col md:flex-row z-40 items-center top-40 self-start max-w-xs lg:max-w-sm md:w-full">
-              <div className="h-10 absolute left-3 md:left-3 w-10 rounded-full bg-white flex items-center justify-center">
-                <div className="h-4 w-4 rounded-full bg-zinc-200 border border-zinc-300 p-2" />
+              <div className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-white md:left-3">
+                <div className="h-4 w-4 rounded-full border border-primary-200 bg-primary-100 p-2" />
               </div>
-              <h3 className="hidden md:block text-xl md:pl-20 md:text-5xl font-bold font-heading text-zinc-400">
+              <h3 className="hidden font-heading text-xl font-bold text-zinc-400 md:block md:pl-20 md:text-5xl">
                 {item.title}
               </h3>
             </div>
 
             <div className="relative pl-20 pr-4 md:pl-4 w-full">
-              <h3 className="md:hidden block text-2xl mb-4 text-left font-bold font-heading text-zinc-400">
+              <h3 className="mb-4 block text-left font-heading text-2xl font-bold text-zinc-400 md:hidden">
                 {item.title}
               </h3>
               {item.content}
@@ -81,7 +81,7 @@ export const Timeline = ({ data }: { data: TimelineEntry[] }) => {
               height: heightTransform,
               opacity: opacityTransform,
             }}
-            className="absolute inset-x-0 top-0 w-[2px] bg-gradient-to-t from-amber-500 via-zinc-900 to-transparent from-[0%] via-[10%] rounded-full"
+            className="absolute inset-x-0 top-0 w-[2px] rounded-full bg-gradient-to-t from-primary-500 via-primary-900 to-transparent from-[0%] via-[10%]"
           />
         </div>
       </div>
