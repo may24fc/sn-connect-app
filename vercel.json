@@ -2,7 +2,6 @@
   "buildCommand": "pnpm build:www",
   "installCommand": "pnpm install",
   "framework": "nextjs",
-  "outputDirectory": "apps/www/.next",
   "crons": [
     {
       "path": "/api/cron/probation-check",
