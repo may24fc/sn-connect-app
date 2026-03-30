@@ -2,11 +2,12 @@
 
 import { type ReactNode, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
-const WORDS = ['Futures', 'Careers', 'Communities', 'Leaders'];
+const WORDS = ['executive', 'marketing', 'content', 'AI'];
 const INTERVAL = 3000;
 
-export function AnimatedHeadline(): ReactNode {
+export function AnimatedHeadline({ className }: { className?: string }): ReactNode {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -17,7 +18,12 @@ export function AnimatedHeadline(): ReactNode {
   }, []);
 
   return (
-    <span className="inline-block overflow-hidden align-bottom">
+    <span
+      className={cn(
+        'inline-flex min-w-[4ch] overflow-hidden align-bottom sm:min-w-[8ch] lg:min-w-[9ch]',
+        className
+      )}
+    >
       <AnimatePresence mode="wait">
         <motion.span
           key={WORDS[index]}
@@ -25,7 +31,7 @@ export function AnimatedHeadline(): ReactNode {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -40, opacity: 0 }}
           transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] }}
-          className="inline-block text-amber-600"
+          className="inline-block text-primary-800"
         >
           {WORDS[index]}
         </motion.span>

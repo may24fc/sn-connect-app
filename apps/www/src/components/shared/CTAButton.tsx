@@ -15,11 +15,11 @@ interface CTAButtonProps {
 
 const variants = {
   primary:
-    'bg-slate-900 text-white font-medium hover:bg-slate-800 transition-colors',
+    'bg-primary-800 text-white font-medium hover:bg-primary-900 transition-colors',
   outline:
-    'border border-zinc-300 text-zinc-700 font-medium hover:bg-zinc-50 transition-colors',
+    'border border-accent-300 text-zinc-700 font-medium hover:border-primary-300 hover:bg-primary-50 hover:text-primary-900 transition-colors',
   secondary:
-    'bg-zinc-100 text-zinc-700 font-medium hover:bg-zinc-200 transition-colors',
+    'bg-primary-50 text-primary-900 font-medium hover:bg-primary-100 transition-colors',
 };
 
 const sizes = {
