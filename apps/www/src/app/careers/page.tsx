@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { JobListings } from '@/components/careers/JobListings';
 import { ApplicationForm } from '@/components/careers/ApplicationForm';
 import { WhyCarousel } from '@/components/careers/WhyCarousel';
+import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'Careers',
@@ -11,9 +13,12 @@ export const metadata: Metadata = {
 };
 
 export default function CareersPage() {
+  if (HIDE_EXPANSION_SECTIONS) {
+    notFound();
+  }
+
   return (
     <>
-      {/* Hero */}
       <section className="bg-white py-24">
         <div className="section-max section-padding text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
@@ -25,14 +30,12 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* Why join us */}
       <section className="bg-zinc-50 py-16">
         <div className="section-max section-padding">
           <WhyCarousel />
         </div>
       </section>
 
-      {/* Job listings */}
       <section className="bg-zinc-50 py-16">
         <div className="section-max section-padding">
           <SectionHeading
@@ -45,7 +48,6 @@ export default function CareersPage() {
         </div>
       </section>
 
-      {/* Application form */}
       <section className="section-max section-padding py-16" id="apply">
         <div className="mx-auto max-w-2xl">
           <SectionHeading

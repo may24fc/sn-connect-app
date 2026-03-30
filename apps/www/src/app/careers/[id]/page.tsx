@@ -6,6 +6,7 @@ import { PLACEHOLDER_JOBS, BUSINESS_UNITS } from '@/data/placeholder';
 import { ApplicationForm } from '@/components/careers/ApplicationForm';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -48,6 +49,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function JobDetailPage({ params }: PageProps) {
+  if (HIDE_EXPANSION_SECTIONS) {
+    notFound();
+  }
+
   const { id } = await params;
 
   // Try DB first, fall back to placeholders
