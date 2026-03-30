@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import snLogo from '@/assets/sn-logo.png';
 import { ArrowUp, Linkedin } from 'lucide-react';
 import {
   isTemporarilyHiddenPublicPath,
@@ -111,11 +112,10 @@ export function Footer(): ReactNode {
               <Link href="/" className="flex items-center">
                 <div className="shrink-0">
                   <Image
-                    src="/sn-logo.png"
+                    src={snLogo}
                     alt="SN International logo"
                     width={60}
                     height={24}
-                    unoptimized
                     className="h-6 w-auto object-contain"
                     sizes="60px"
                   />

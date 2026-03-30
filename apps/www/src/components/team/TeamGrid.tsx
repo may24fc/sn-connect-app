@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, type ReactNode, useId, useEffect } from 'react';
-import Image from 'next/image';
+import Image, { type StaticImageData } from 'next/image';
 import Link from 'next/link';
 import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
@@ -10,7 +10,7 @@ import { ArrowRight, Expand, X } from 'lucide-react';
 interface TeamMember {
   name: string;
   title: string;
-  image?: string;
+  image?: string | StaticImageData;
 }
 
 interface TeamGridProps {
@@ -74,7 +74,6 @@ function TeamLightbox({
                 alt={`${member.name} team poster`}
                 width={768}
                 height={1024}
-                unoptimized
                 className="h-auto max-h-[82vh] w-auto max-w-full object-contain"
                 sizes="100vw"
                 priority
@@ -127,7 +126,6 @@ function MemberCell({
                 alt={`${member.name} team poster`}
                 width={768}
                 height={1024}
-                unoptimized
                 className="h-auto max-h-[20rem] w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.01] sm:max-h-[22rem]"
                 sizes="(max-width: 640px) 92vw, (max-width: 1024px) 42vw, 280px"
               />
