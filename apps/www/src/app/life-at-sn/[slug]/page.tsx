@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { LIFE_PHOTOS } from '@/data/placeholder';
 import { CTAButton } from '@/components/shared/CTAButton';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
+import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -26,6 +27,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function LifePhotoPage({ params }: PageProps) {
+  if (HIDE_EXPANSION_SECTIONS) {
+    notFound();
+  }
+
   const { slug } = await params;
   const photo = LIFE_PHOTOS.find((p) => p.slug === slug);
 
