@@ -23,12 +23,12 @@ Welcome to the SN Connect HR Portal user documentation. These guides help employ
 
 ## Role Overview
 
-| Role | What You Can Do |
-|------|-----------------|
-| **Employee** | Dashboard, tasks, profile, 201 files, invoices, reports, performance reviews, announcements, resources, notifications, tickets |
-| **Intern** | Dashboard, tasks, profile, 201 files, performance reviews, announcements, resources, notifications, daily EOD reports, tickets |
+| Role | Sidebar Items |
+|------|---------------|
+| **Employee** | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, Marketing Reports (conditional), Invoice, Documents, Announcements, Resources |
+| **Intern** | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, EOD Reports, Documents, Announcements, Resources |
 
-> Interns do **not** have access to Invoices or Weekly Reports.
+> Interns do **not** have access to Invoice or Marketing Reports.
 
 ## Navigation
 

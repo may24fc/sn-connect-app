@@ -26,6 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Onboarding task submissions** — `submission_*` fields on `onboarding_tasks` for proof-of-completion uploads (`20260329000004`)
 - **Submission notification types** — `task_submission_received`, `task_submission_reviewed` added to `notification_type` enum (`20260327000001`)
 - **Offboarding tables repair** — Missing offboarding-related tables restored (`20260329000003`)
+- **Offboarding API** — `GET /api/offboarding`, `PATCH/POST/PUT/DELETE /api/offboarding/[id]/tasks`; offboarding record and task management endpoints
+- **Applications hire** — `POST /api/applications/[id]/hire`; convert applicant to employee via hire action
+- **Health check endpoint** — `GET /api/health` for monitoring and deployment probes
+- **Inngest integration** — `GET/POST/PUT /api/inngest` for background job processing via Inngest SDK
+- **Cron probation check** — `GET /api/cron/probation-check` scheduled endpoint for automated probation status updates
 
 ### Changed
 

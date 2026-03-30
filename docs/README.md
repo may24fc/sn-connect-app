@@ -47,7 +47,7 @@ Start here: **[Admin Guides](admin/README.md)**
 
 | Document | Description |
 |----------|-------------|
-| [api/README.md](api/README.md) | API endpoint index (~240 handlers across 32 domains) |
+| [api/README.md](api/README.md) | API endpoint index (~250 handlers across 37 domains) |
 | [components/README.md](components/README.md) | UI component index (25 primitives + 100+ composites) |
 | [architecture/README.md](architecture/README.md) | System architecture, layers, request flows, design decisions |
 | [architecture/auth.md](architecture/auth.md) | Auth provider (PKCE), middleware, role system, RLS |
@@ -81,7 +81,7 @@ Start here: **[Admin Guides](admin/README.md)**
 | Dashboard | 3 | [api/dashboard.md](api/dashboard.md) |
 | Directory | 3 | [api/directory.md](api/directory.md) |
 | Jobs | 7 | [api/jobs.md](api/jobs.md) |
-| Applications | 3 | [api/applications.md](api/applications.md) |
+| Applications | 4 | [api/applications.md](api/applications.md) |
 | Profile | 3 | [api/profile.md](api/profile.md) |
 | Profile Change Requests | 3 | [api/profile-change-requests.md](api/profile-change-requests.md) |
 | Banks | 1 | [api/banks.md](api/banks.md) |
@@ -92,6 +92,11 @@ Start here: **[Admin Guides](admin/README.md)**
 | Ticket Handlers | 4 | — |
 | Checklist Templates | 2 | — |
 | Admin | 2 | — |
+| Offboarding | 5 | — |
+| Calendar | 1 | — |
+| Cron | 1 | — |
+| Health | 1 | — |
+| Inngest | 3 | — |
 
 #### Component Docs
 

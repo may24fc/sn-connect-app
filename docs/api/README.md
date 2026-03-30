@@ -4,7 +4,7 @@
 
 All API routes live under `apps/web/src/app/api/`. Every endpoint requires authentication via Supabase session cookie unless noted otherwise. Row Level Security (RLS) is the final gatekeeper — application-level checks are secondary.
 
-**Total: ~240 HTTP method handlers across 32 domains.**
+**Total: ~250 HTTP method handlers across 37 domains.**
 
 ---
 
@@ -33,7 +33,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Dashboard](#dashboard) | 3 | `/api/dashboard/` | [dashboard.md](dashboard.md) |
 | [Directory](#directory) | 3 | `/api/directory/` | [directory.md](directory.md) |
 | [Jobs](#jobs) | 7 | `/api/jobs/` | [jobs.md](jobs.md) |
-| [Applications](#applications) | 3 | `/api/applications/` | [applications.md](applications.md) |
+| [Applications](#applications) | 4 | `/api/applications/` | [applications.md](applications.md) |
 | [Profile](#profile) | 3 | `/api/profile/` | [profile.md](profile.md) |
 | [Profile Change Requests](#profile-change-requests) | 3 | `/api/profile-change-requests/` | [profile-change-requests.md](profile-change-requests.md) |
 | [Banks](#banks) | 1 | `/api/banks/` | [banks.md](banks.md) |
@@ -42,8 +42,13 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Tickets](#tickets) | 5 | `/api/tickets/` | — |
 | [Ticket Handlers](#ticket-handlers) | 4 | `/api/ticket-handlers/` | — |
 | [Checklist Templates](#checklist-templates) | 2 | `/api/checklist-templates/` | — |
+| [Offboarding](#offboarding) | 5 | `/api/offboarding/` | — |
 | [Admin](#admin) | 2 | `/api/admin/` | — |
 | [Webhooks](#webhooks) | 2 | `/api/webhooks/` | — |
+| [Calendar](#calendar) | 1 | `/api/calendar/` | — |
+| [Cron](#cron) | 1 | `/api/cron/` | — |
+| [Health](#health) | 1 | `/api/health` | — |
+| [Inngest](#inngest) | 3 | `/api/inngest` | — |
 
 ---
 
@@ -424,6 +429,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/applications` | admin, super_admin | List job applications |
 | `GET` | `/api/applications/[id]` | admin, super_admin | Get application detail |
 | `PATCH` | `/api/applications/[id]` | admin, super_admin | Update application status |
+| `POST` | `/api/applications/[id]/hire` | admin, super_admin | Convert applicant to employee (hire action) |
 
 → [Full reference](applications.md)
 
@@ -536,6 +542,60 @@ Query parameters:
 |--------|------|------|-------------|
 | `GET` | `/api/admin/banking-info-status` | admin, super_admin | Get banking info completion status across employees |
 | `POST` | `/api/admin/backfill-wise-recipients` | super_admin | Backfill Wise recipient IDs for existing employees |
+
+---
+
+## Offboarding
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/offboarding` | admin, super_admin | List offboarding records |
+| `PATCH` | `/api/offboarding/[id]/tasks` | admin, super_admin | Update offboarding task status |
+| `POST` | `/api/offboarding/[id]/tasks` | admin, super_admin | Create offboarding task |
+| `PUT` | `/api/offboarding/[id]/tasks` | admin, super_admin | Replace offboarding tasks |
+| `DELETE` | `/api/offboarding/[id]/tasks` | admin, super_admin | Delete offboarding task |
+
+---
+
+## Calendar
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/calendar/events` | Any authenticated | List calendar events |
+
+> **Note:** Calendar page was removed but the API route is still available for programmatic use.
+
+---
+
+## Cron
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/cron/probation-check` | Service / admin | Run scheduled probation status check |
+
+> Internal cron endpoint triggered by scheduled jobs.
+
+---
+
+## Health
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/health` | None | Application health check |
+
+> Returns `200 OK` when the application is running. Used by monitoring and deployment probes.
+
+---
+
+## Inngest
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/api/inngest` | Inngest SDK | Inngest introspection endpoint |
+| `POST` | `/api/inngest` | Inngest SDK | Inngest event handler |
+| `PUT` | `/api/inngest` | Inngest SDK | Inngest registration endpoint |
+
+> Managed by the Inngest SDK `serve()` handler. Used for background job processing.
 
 ---
 

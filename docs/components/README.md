@@ -91,7 +91,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `TextShimmer` | Streaming text shimmer effect for AI responses |
 | `citation-utils` | Utility functions for parsing citation references |
 
-### AI Knowledge (14)
+### AI Knowledge (15)
 
 > Location: `packages/ui/src/components/ai-knowledge/`
 
@@ -109,6 +109,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `SourcesInventory` | Full source management table |
 | `UploadProgress` | File upload progress indicator |
 | `UploadZone` | Drag-and-drop file upload area |
+| `VersionHistory` | Knowledge source version history and restore interface |
 
 → [Full reference](ai-knowledge.md)
 
@@ -126,7 +127,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 → [Full reference](forms.md)
 
-### Internship (7)
+### Internship (8)
 
 > Location: `packages/ui/src/components/internship/`
 
@@ -136,6 +137,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `EODReportForm` | End-of-day report submission form |
 | `HoursProgressCard` | Hours completed vs required progress bar |
 | `InternCard` | Intern profile summary card |
+| `InternHoursProgressBar` | Visual progress bar for intern hours tracking |
 | `InternshipSummaryCards` | Aggregate metrics (active, completed, hours) |
 | `InternStatusBadge` | Internship status badge (active, completed, etc.) |
 
@@ -199,12 +201,13 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 → [Full reference](resources.md)
 
-### Dashboard (4)
+### Dashboard (5)
 
 > Location: `packages/ui/src/components/dashboard/`
 
 | Component | Description |
 |-----------|-------------|
+| `DashboardAttentionCarousel` | Carousel of attention-requiring items (pending approvals, overdue tasks) |
 | `MilestoneBanner` | Dismissable milestone celebration banner (birthdays, anniversaries) |
 | `MilestoneFeed` | Employee milestones feed (birthdays, work anniversaries) |
 | `PendingApprovalsCard` | Card showing pending approval items (invoices, reviews, onboarding) |
@@ -258,13 +261,16 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 
 > Location: `apps/web/src/components/`
 
-### Admin Modals (3)
+### Admin Modals (6)
 
 | Component | Description |
 |-----------|-------------|
 | `ApproveOnboardingModal` | Approve/reject onboarding dialog |
 | `AssignEmployeeModal` | Assign employee record with probation details |
+| `EODReportDetailModal` | View intern's EOD report in detail |
 | `InviteUserModal` | Invite new user form dialog |
+| `OffboardingChecklistDialog` | Admin dialog for managing offboarding checklists |
+| `OnboardingChecklistDialog` | Admin dialog for managing onboarding checklists |
 
 ### Dashboards (2)
 
@@ -282,10 +288,11 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `EmptyState` | Empty state with icon, title, description, action |
 | `StatCard` | Metric stat card with icon, value, trend |
 
-### Feedback (3)
+### Feedback (4)
 
 | Component | Description |
 |-----------|-------------|
+| `ComingSoonDialog` | "Coming soon" placeholder dialog for unimplemented features |
 | `EmptyState` | Page-level empty state display |
 | `SkeletonCard` | Card-shaped loading skeleton |
 | `SkeletonTable` | Table-shaped loading skeleton |
@@ -317,10 +324,15 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | Component | Location | Description |
 |-----------|----------|-------------|
 | `AIChatbot` | `packages/ui/src/components/AIChatbot.tsx` | Floating AI chat assistant widget with citation support |
+| `CompanyPulseWidget` | `apps/web/src/components/CompanyPulseWidget.tsx` | Dashboard widget showing live company activity feed |
+| `EmptyState` | `packages/ui/src/components/empty-state.tsx` | Reusable empty state display |
 | `HelpLink` | `packages/ui/src/components/HelpLink.tsx` | Contextual help link to relevant help pages |
+| `MarketingReportsAccessState` | `apps/web/src/components/reports/` | Access gate for marketing reports feature |
 | `MultiSelectFilter` | `packages/ui/src/components/MultiSelectFilter.tsx` | Multi-select filter dropdown |
 | `SectionTooltip` | `packages/ui/src/components/SectionTooltip.tsx` | Informational tooltip for page sections |
-| `EmptyState` | `packages/ui/src/components/empty-state.tsx` | Reusable empty state display |
+| `TaskKanbanBoard` | `apps/web/src/components/tasks/` | Kanban board view for task management |
+| `TourModal` | `apps/web/src/components/TourModal.tsx` | Custom modal-based onboarding tour step |
+| `TourProvider` | `apps/web/src/components/TourProvider.tsx` | Tour context provider managing step progression |
 
 → [Full reference: data-display](data-display.md) | [Full reference: feedback](feedback.md)
 
@@ -368,4 +380,4 @@ All components use the **Navy & Gold** design system tokens defined in `apps/web
 
 ---
 
-*Last updated: 2026-03-26*
+*Last updated: 2026-03-30*

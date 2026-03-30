@@ -61,111 +61,122 @@ Next.js route groups organize pages by user role:
 /                          # Root redirect
 /login                     # (auth) Login page
 /forgot-password           # (auth) Password recovery
+/forgot-password/confirmation # (auth) Recovery email sent confirmation
+/reset-password            # (auth) Password reset form
 
 # ═══════════════════════════════════════════════════════════════════
 # EMPLOYEE ROUTES (variant="employee")
 # ═══════════════════════════════════════════════════════════════════
 /dashboard                 # (employee) Employee dashboard
+/profile                   # (employee) User profile
 /files                     # (employee) 201 document management
 /onboarding                # (employee) Onboarding checklists
-/payroll                   # (employee) Invoice submission
-/announcements             # (employee) Information hub
+/onboarding/setup          # (employee) Onboarding wizard step-by-step setup
+/onboarding/complete       # (employee) Onboarding completion confirmation
+/invoice                   # (employee) Invoice submission
+/announcements             # (employee) Announcement feed
 /announcements/starred     # (employee) Starred announcements
-/profile                   # (employee) User profile
+/notifications             # (employee) Notification center
 /performance               # (employee) Performance overview
 /performance/okrs          # (employee) OKR management
+/performance/okrs/[id]     # (employee) OKR detail and key results
 /performance/kpis          # (employee) KPI tracking
 /performance/review        # (employee) Self-assessment
 /tasks                     # (employee) Assigned tasks
 /tasks/[id]                # (employee) Task detail + proof upload
 /tickets                   # (employee) IT/HR support tickets
 /tickets/[id]              # (employee) Ticket detail
+/reports                   # (employee) Marketing reports list
+/reports/new               # (employee) Create new marketing report
+/reports/[id]              # (employee) Marketing report detail
+/information-hub           # (employee) Resource hub
+/information-hub/resources/[id] # (employee) Resource detail
+/information-hub/resources/category/[category] # (employee) Filtered by category
+/information-hub/resources/bookmarks # (employee) Bookmarked resources
 /help                      # (employee) Help Center index
 /help/invoices             # (employee) Invoice submission guide
 /help/reports              # (employee) Report submission guide
 /help/performance-reviews  # (employee) Performance review guide
-
-# ═══════════════════════════════════════════════════════════════════
-# MANAGER ROUTES (variant="manager")
-# Same as employee + additional team management pages
-# ═══════════════════════════════════════════════════════════════════
-/manager/team-performance  # (employee) Team performance view
-/manager/reviews           # (employee) Pending reviews queue
+/manager/team-performance  # (employee) Team performance view [MANAGER]
 
 # ═══════════════════════════════════════════════════════════════════
 # INTERN ROUTES (variant="intern")
-# Similar to employee but NO /payroll, different dashboard
+# Similar to employee but NO /invoice, different dashboard
 # ═══════════════════════════════════════════════════════════════════
 /intern/dashboard          # (employee) Intern-specific dashboard
+/intern/profile            # (employee) Intern profile
+/intern/setup              # (employee) Intern onboarding setup
 /intern/reports            # (employee) Daily EOD reports
-/files                     # (employee) 201 document management
-/onboarding                # (employee) Onboarding checklists
-/performance               # (employee) Performance overview
-/announcements             # (employee) Information hub
-/announcements/starred     # (employee) Starred announcements
-/profile                   # (employee) User profile
-/help                      # (employee) Help Center index
-# NOTE: Interns do NOT have access to /payroll
+# Interns also access: /onboarding, /files, /performance,
+# /announcements, /announcements/starred, /tasks, /tasks/[id],
+# /tickets, /tickets/[id], /information-hub, /help
 
 # ═══════════════════════════════════════════════════════════════════
 # ADMIN ROUTES (variant="admin")
-# HR Admin - full HR access + manager capabilities (except invoices)
+# HR Admin - full HR access + manager capabilities
 # ═══════════════════════════════════════════════════════════════════
-/probation                 # (admin) Probation tracker
-/admin-performance         # (admin) Performance admin
-/admin-performance/cycles  # (admin) Performance cycles
-/admin-performance/team    # (admin) Team performance view
-/admin/announcements       # (admin) Announcements management
-/admin/announcements/archived # (admin) Archived announcements
-/admin/jobs                # (admin) Job postings
-/admin/jobs/archived       # (admin) Archived job postings
-/admin/resources           # (admin) Resources management
-/admin/resources/archived  # (admin) Archived resources
-/admin/tickets             # (admin) Ticket management and triage
+/admin/dashboard           # (admin) Admin dashboard
+/admin/profile             # (admin) Admin profile
+/admin/directory           # (admin) Employee directory
+/admin/directory/[userId]  # (admin) Employee detail view
+/admin/employee-management # (admin) Employee management
+/admin/interns             # (admin) Intern management
+/admin/interns/[id]        # (admin) Intern detail
 /admin/checklists          # (admin) Onboarding/offboarding checklist templates
-/admin/company-pulse       # (admin) Company activity feed and health metrics
-/admin/activity            # (admin) Scoped activity/audit log
-/admin/recruitment         # (admin) Job requisitions and candidate pipeline
-/admin/reports/analytics   # (admin) Report analytics dashboards
-/admin/reports/compare     # (admin) Report comparison view
 /admin/onboarding/[id]     # (admin) Onboarding profile detail
-/manager/team-performance  # (employee) Team performance view [MANAGER]
-/manager/reviews           # (employee) Employee reviews queue [MANAGER]
-/interns                   # (admin) Intern management
-/interns/[id]              # (admin) Intern detail
+/admin/performance         # (admin) Performance admin
+/admin/performance/cycles  # (admin) Performance cycles
+/admin/performance/individual # (admin) Individual performance view
+/admin/performance/evaluations # (admin) Performance evaluations
+/admin/performance/employee/[id] # (admin) Employee performance detail
+/admin/reports             # (admin) Marketing reports management
+/admin/reports/[id]        # (admin) Report detail
+/admin/reports/analytics   # (admin) Report analytics dashboards
+/admin/reports/analytics/compare # (admin) Report comparison view
+/admin/resources           # (admin) Resources management
+/admin/resources/new       # (admin) Create new resource
+/admin/resources/[id]      # (admin) Resource detail/edit
+/admin/resources/categories # (admin) Resource category management
+/admin/resources/archive   # (admin) Archived resources
+/admin/resources/collections # (admin) Resource collections
+/admin/resources/collections/new # (admin) Create new collection
+/admin/resources/collections/[id] # (admin) Collection detail
+/admin/announcements       # (admin) Announcements management
+/admin/announcements/new   # (admin) Create new announcement
+/admin/announcements/[id]  # (admin) Announcement detail/edit
+/admin/announcements/archive # (admin) Archived announcements
+/admin/recruitment         # (admin) Job requisitions and candidate pipeline
+/admin/jobs                # (admin) Job postings
+/admin/jobs/applications   # (admin) Job applications
+/admin/jobs/archive        # (admin) Archived job postings
+/admin/company-pulse       # (admin) Company activity feed and health metrics
+/admin/tickets             # (admin) Ticket management and triage
+/admin/notifications       # (admin) Admin notification center
+/admin/ai-knowledge        # (admin) AI knowledge base management
+/admin/probation           # (admin) Probation tracker
+/admin/activity            # (admin) Scoped activity/audit log
 
 # ═══════════════════════════════════════════════════════════════════
-# COS / SUPER ADMIN ROUTES (variant="cos")
-# Same as Admin + Invoice Approvals + Task Management + Activity Log
+# SUPER ADMIN ROUTES (variant="super_admin")
+# Same as Admin + dedicated super-admin pages
 # ═══════════════════════════════════════════════════════════════════
-/probation                 # (admin) Probation tracker
-/admin-performance         # (admin) Performance admin
-/admin-performance/cycles  # (admin) Performance cycles
-/admin-performance/team    # (admin) Team performance view
-/admin/announcements       # (admin) Announcements management
-/admin/announcements/archived # (admin) Archived announcements
-/admin/jobs                # (admin) Job postings
-/admin/jobs/archived       # (admin) Archived job postings
-/admin/resources           # (admin) Resources management
-/admin/resources/archived  # (admin) Archived resources
-/admin/tickets             # (admin) Ticket management and triage
-/admin/checklists          # (admin) Onboarding/offboarding checklist templates
-/admin/company-pulse       # (admin) Company activity feed and health metrics
-/admin/activity            # (admin) Scoped activity/audit log
-/admin/recruitment         # (admin) Job requisitions and candidate pipeline
-/admin/reports/analytics   # (admin) Report analytics dashboards
-/admin/reports/compare     # (admin) Report comparison view
-/admin/onboarding/[id]     # (admin) Onboarding profile detail
-/manager/team-performance  # (employee) Team performance view [MANAGER]
-/manager/reviews           # (employee) Employee reviews queue [MANAGER]
-/interns                   # (admin) Intern management
-/interns/[id]              # (admin) Intern detail
-/invoices                  # (admin) Invoice approvals [COS ONLY]
-/super-admin/tasks         # (admin) Task management [SUPER ADMIN ONLY]
-/super-admin/tasks/[id]    # (admin) Task detail + proofs [SUPER ADMIN ONLY]
-/super-admin/activity      # (admin) Audit/activity log [SUPER ADMIN ONLY]
-/super-admin/checklists    # (admin) Checklist template management [SUPER ADMIN ONLY]
-/super-admin/company-pulse # (admin) Company pulse dashboard [SUPER ADMIN ONLY]
+/super-admin/dashboard     # (admin) Super admin dashboard
+/super-admin/profile       # (admin) Super admin profile
+/super-admin/checklists    # (admin) Checklist template management
+/super-admin/company-pulse # (admin) Company pulse dashboard
+/super-admin/payroll-approvals # (admin) Payroll / invoice approvals
+/super-admin/tasks         # (admin) Task management
+/super-admin/tasks/[id]    # (admin) Task detail + proofs
+/super-admin/announcements # (admin) Announcements management
+/super-admin/announcements/new # (admin) Create announcement
+/super-admin/announcements/[id] # (admin) Announcement detail
+/super-admin/resources     # (admin) Resources management
+/super-admin/resources/new # (admin) Create resource
+/super-admin/resources/[id] # (admin) Resource detail
+/super-admin/resources/collections # (admin) Resource collections
+/super-admin/ai-knowledge  # (admin) AI knowledge base
+/super-admin/activity      # (admin) Audit/activity log
+# Super Admins also access all /admin/* routes
 ```
 
 ---
@@ -224,10 +235,10 @@ The `Sidebar` component accepts a `variant` prop that determines navigation item
 
 | Variant | Navigation Items |
 |---------|-----------------|
-| `employee` | Dashboard, Profile, Tasks, Performance Reviews, Reports, Invoice, Documents, Information Hub, Tickets |
-| `intern` | Profile, Dashboard, Tasks, Performance Reviews, Documents, Information Hub, Tickets (**NO Invoice or Reports**) |
-| `admin` | Dashboard, Directory, Employee Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Tickets, Checklists, Company Pulse, Recruitment |
-| `super_admin` | Dashboard, Directory, Employee Management, Task Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Payroll Approvals, Tickets, Checklists, Company Pulse, Recruitment |
+| `employee` | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, Marketing Reports (conditional), Invoice, Documents, Announcements, Resources |
+| `intern` | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, EOD Reports, Documents, Announcements, Resources |
+| `admin` | Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Recruitment, Jobs, Company Pulse, Announcements, AI Knowledge, Resources, Tickets |
+| `super_admin` | Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Task Management, Payroll Approvals, Company Pulse, Announcements, AI Knowledge, Resources |
 
 ```typescript
 export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';

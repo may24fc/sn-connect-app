@@ -51,9 +51,11 @@ Documentation for HR Administrators and Super Administrators managing the SN Con
 
 Admin and Super Admin each have their own sidebar layout:
 
-**Admin sidebar:** Dashboard, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Announcements, Resources, Tickets, Checklists, Company Pulse, Recruitment, Notifications, Activity Log
+**Admin sidebar (14 items):** Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Recruitment, Jobs, Company Pulse, Announcements, AI Knowledge, Resources, Tickets
 
-**Super Admin sidebar:** Dashboard, Task Management, Employees, Directory, Interns, Jobs, Reports, Performance, Probation, AI Knowledge, Payroll Approvals, Announcements, Resources, Tickets, Checklists, Company Pulse, Recruitment, Notifications, Activity Log
+**Super Admin sidebar (13 items):** Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Task Management, Payroll Approvals, Company Pulse, Announcements, AI Knowledge, Resources
+
+> **Note:** Some features like Probation, Notifications, and Activity Log are accessible via direct URL but are not sidebar navigation items.
 
 ---
 
