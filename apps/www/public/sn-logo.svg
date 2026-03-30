@@ -1,21 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" fill="none">
   <defs>
-    <linearGradient id="sn-apple-gradient" x1="26" y1="26" x2="154" y2="154" gradientUnits="userSpaceOnUse">
+    <linearGradient id="sn-logo-gradient" x1="16" y1="12" x2="104" y2="68" gradientUnits="userSpaceOnUse">
       <stop stop-color="#175063"/>
       <stop offset="1" stop-color="#6099AC"/>
     </linearGradient>
   </defs>
   <text
-    x="90"
-    y="112"
+    x="60"
+    y="55"
     text-anchor="middle"
     font-family="Segoe UI, Arial Narrow, sans-serif"
     font-weight="700"
-    font-size="72"
+    font-size="48"
     letter-spacing="3"
-    fill="url(#sn-apple-gradient)"
+    fill="url(#sn-logo-gradient)"
     stroke="#B8BAB3"
-    stroke-width="4"
+    stroke-width="1.4"
     paint-order="stroke fill"
   >
     SN
