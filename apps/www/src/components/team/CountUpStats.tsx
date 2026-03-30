@@ -50,7 +50,7 @@ function StatCard({ stat }: { stat: StatItem }) {
       ref={ref}
       className="p-8 text-center duration-300"
     >
-      <p className="text-4xl font-bold text-zinc-900 hover:text-amber-600 transition-colors duration-300">
+      <p className="text-4xl font-bold text-zinc-900 transition-colors duration-300 hover:text-primary-800">
         {count}
         {stat.suffix}
       </p>

@@ -1,14 +1,20 @@
 'use client';
 
-import { type ReactNode, useRef, useState, useCallback } from 'react';
+import {
+  type ReactNode,
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
 import Image from 'next/image';
-import { Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Mail, ChevronLeft, ChevronRight, Expand, X } from 'lucide-react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 
 interface Executive {
   name: string;
   title: string;
-  bio: string;
+  bio?: string;
   image?: string;
   email?: string;
 }
@@ -26,7 +32,76 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function ExecutiveCard({ person, index }: { person: Executive; index: number }) {
+function ExecutiveLightbox({
+  person,
+  onClose,
+}: {
+  person: Executive;
+  onClose: () => void;
+}) {
+  if (!person.image) {
+    return null;
+  }
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-zinc-950/85 backdrop-blur-sm"
+        onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Full poster for ${person.name}`}
+      >
+        <div className="flex h-full w-full items-center justify-center p-4 md:p-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 8 }}
+            transition={{ duration: 0.22, ease: [0.25, 0.4, 0.25, 1] }}
+            className="relative w-full max-w-5xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute right-3 top-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/92 text-zinc-900 shadow-lg transition-colors duration-200 hover:bg-white"
+              aria-label="Close full poster"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-white/10">
+              <div className="relative flex max-h-[88vh] items-center justify-center bg-[radial-gradient(circle_at_top,#f8fafc,transparent_55%),linear-gradient(180deg,#fafaf9,#f4f4f5)] p-3 md:p-4">
+                <Image
+                  src={person.image}
+                  alt={`${person.name} executive poster`}
+                  width={768}
+                  height={1024}
+                  className="h-auto max-h-[82vh] w-auto max-w-full object-contain"
+                  sizes="100vw"
+                  priority
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function ExecutiveCard({
+  person,
+  index,
+  onOpenImage,
+}: {
+  person: Executive;
+  index: number;
+  onOpenImage: (person: Executive) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
 
@@ -40,21 +115,41 @@ function ExecutiveCard({ person, index }: { person: Executive; index: number }) 
         delay: index * 0.12,
         ease: [0.25, 0.4, 0.25, 1],
       }}
-      className="group"
+      className="group mx-auto w-full max-w-sm"
     >
-      {/* Vertical portrait */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-100">
-        {person.image ? (
-          <Image
-            src={person.image}
-            alt={person.name}
-            fill
-            className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          />
-        ) : (
-          /* Editorial placeholder — faint oversized initial anchored to bottom-right */
-          <div className="absolute inset-0 bg-gradient-to-br from-zinc-100 to-zinc-200/60">
+      {/* Poster preview */}
+      {person.image ? (
+        <button
+          type="button"
+          onClick={() => onOpenImage(person)}
+          className="block w-full text-left"
+          aria-label={`Open full poster for ${person.name}`}
+        >
+          <div className="relative overflow-hidden rounded-[28px] border border-zinc-200/80 bg-[radial-gradient(circle_at_top,rgba(96,153,172,0.14),transparent_28%),linear-gradient(180deg,#ffffff,#f8fafc)] p-3 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.35)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_34px_90px_-44px_rgba(15,23,42,0.4)]">
+            <div className="relative flex min-h-[23rem] items-center justify-center overflow-hidden rounded-[20px] bg-zinc-50 sm:min-h-[26rem]">
+              <Image
+                src={person.image}
+                alt={`${person.name} executive poster`}
+                width={768}
+                height={1024}
+                className="h-auto max-h-[26rem] w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.01] sm:max-h-[29rem]"
+                sizes="(max-width: 640px) 92vw, (max-width: 1024px) 44vw, 360px"
+              />
+
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-zinc-950/70 via-zinc-950/15 to-transparent px-4 pb-4 pt-10 text-white opacity-100 transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100">
+                <span className="text-xs font-medium tracking-[0.14em] text-white/85 uppercase">
+                  View full poster
+                </span>
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm">
+                  <Expand className="h-4 w-4" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </button>
+      ) : (
+        <div className="relative overflow-hidden rounded-[28px] border border-zinc-200/80 bg-gradient-to-br from-zinc-100 to-zinc-200/60 p-3 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.35)]">
+          <div className="relative flex min-h-[23rem] items-end justify-end overflow-hidden rounded-[20px] bg-zinc-100 sm:min-h-[26rem]">
             <span
               aria-hidden="true"
               className="absolute -bottom-3 -right-2 select-none text-[10rem] font-black leading-none tracking-tighter text-zinc-300/70"
@@ -62,13 +157,11 @@ function ExecutiveCard({ person, index }: { person: Executive; index: number }) 
               {getInitials(person.name)[0]}
             </span>
           </div>
-        )}
-        {/* Scrim on hover */}
-        <div className="absolute inset-0 bg-zinc-900/0 transition-colors duration-500 group-hover:bg-zinc-900/[0.07]" />
-      </div>
+        </div>
+      )}
 
       {/* Editorial metadata beneath portrait */}
-      <div className="mt-5">
+      <div className="mt-5 px-1">
         <h3 className="text-[1.125rem] font-bold tracking-tight text-zinc-900">
           {person.name}
         </h3>
@@ -77,10 +170,11 @@ function ExecutiveCard({ person, index }: { person: Executive; index: number }) 
           {person.title}
         </p>
 
-        {/* Accent rule */}
-        <div className="mt-4 h-px w-8 bg-zinc-900" />
+        {(person.bio || person.email) && <div className="mt-4 h-px w-8 bg-zinc-900" />}
 
-        <p className="mt-4 text-sm leading-[1.7] text-zinc-500">{person.bio}</p>
+        {person.bio && (
+          <p className="mt-4 text-sm leading-[1.7] text-zinc-500">{person.bio}</p>
+        )}
 
         {person.email && (
           <a
@@ -98,17 +192,73 @@ function ExecutiveCard({ person, index }: { person: Executive; index: number }) 
 }
 
 export function ExecutivePortraits({ executives }: ExecutivePortraitsProps): ReactNode {
+  const [selectedExecutive, setSelectedExecutive] = useState<Executive | null>(null);
+
+  useEffect(() => {
+    if (!selectedExecutive) {
+      return undefined;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedExecutive(null);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [selectedExecutive]);
+
   if (executives.length <= 3) {
+    const gridClassName =
+      executives.length === 1
+        ? 'mx-auto max-w-md grid grid-cols-1 gap-10'
+        : executives.length === 2
+          ? 'mx-auto max-w-4xl grid grid-cols-1 gap-x-8 gap-y-12 md:grid-cols-2 md:items-start'
+          : 'grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3';
+
     return (
-      <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
-        {executives.map((person, i) => (
-          <ExecutiveCard key={person.name} person={person} index={i} />
-        ))}
-      </div>
+      <>
+        <div className={gridClassName}>
+          {executives.map((person, i) => (
+            <ExecutiveCard
+              key={person.name}
+              person={person}
+              index={i}
+              onOpenImage={setSelectedExecutive}
+            />
+          ))}
+        </div>
+        {selectedExecutive && (
+          <ExecutiveLightbox
+            person={selectedExecutive}
+            onClose={() => setSelectedExecutive(null)}
+          />
+        )}
+      </>
     );
   }
 
-  return <ExecutiveCarousel executives={executives} />;
+  return (
+    <>
+      <ExecutiveCarousel
+        executives={executives}
+        onOpenImage={setSelectedExecutive}
+      />
+      {selectedExecutive && (
+        <ExecutiveLightbox
+          person={selectedExecutive}
+          onClose={() => setSelectedExecutive(null)}
+        />
+      )}
+    </>
+  );
 }
 
 const slideVariants = {
@@ -128,7 +278,13 @@ const slideVariants = {
   }),
 };
 
-function ExecutiveCarousel({ executives }: { executives: Executive[] }) {
+function ExecutiveCarousel({
+  executives,
+  onOpenImage,
+}: {
+  executives: Executive[];
+  onOpenImage: (person: Executive) => void;
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
 
@@ -185,7 +341,12 @@ function ExecutiveCarousel({ executives }: { executives: Executive[] }) {
             className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3"
           >
             {visible.map((person, i) => (
-              <ExecutiveCard key={person.name} person={person} index={i} />
+              <ExecutiveCard
+                key={person.name}
+                person={person}
+                index={i}
+                onOpenImage={onOpenImage}
+              />
             ))}
           </motion.div>
         </AnimatePresence>

@@ -56,10 +56,10 @@ export function OpenRolesTeaser(): ReactNode {
               <ScrollReveal key={job.id} delay={i * 0.05}>
                 <Link
                   href={`/careers/${job.id}`}
-                  className="group flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-card transition-all hover:border-amber-200 hover:shadow-mega"
+                  className="group flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-5 shadow-card transition-all hover:border-primary-200 hover:shadow-mega"
                 >
                   <div>
-                    <h3 className="font-semibold text-zinc-900 transition-colors group-hover:text-amber-600">
+                    <h3 className="font-semibold text-zinc-900 transition-colors group-hover:text-primary-800">
                       {job.title}
                     </h3>
                     <div className="mt-2.5 flex flex-wrap gap-2.5 text-xs text-zinc-500">
@@ -81,7 +81,7 @@ export function OpenRolesTeaser(): ReactNode {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-amber-600 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary-800 opacity-0 transition-opacity group-hover:opacity-100">
                     Apply Now
                     <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
                   </div>
