@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { BusinessPortfolio } from '@/components/businesses/BusinessPortfolio';
+import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'Our Businesses',
@@ -9,9 +11,12 @@ export const metadata: Metadata = {
 };
 
 export default function BusinessesPage() {
+  if (HIDE_EXPANSION_SECTIONS) {
+    notFound();
+  }
+
   return (
     <>
-      {/* Hero */}
       <section className="bg-white py-24">
         <div className="section-max section-padding text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 sm:text-5xl">
@@ -23,7 +28,6 @@ export default function BusinessesPage() {
         </div>
       </section>
 
-      {/* Business units with view toggle */}
       <section className="section-max section-padding py-20">
         <SectionHeading
           title="Our Portfolio"

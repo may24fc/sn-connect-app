@@ -8,6 +8,7 @@ import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { CTAButton } from '@/components/shared/CTAButton';
 import { InquiryForm } from '@/components/businesses/InquiryForm';
+import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
 interface PageProps {
   params: Promise<{ slug: string; projectSlug: string }>;
@@ -57,6 +58,10 @@ function deriveHighlights(description: string): string[] {
 }
 
 export default async function ProjectDetailPage({ params }: PageProps) {
+  if (HIDE_EXPANSION_SECTIONS) {
+    notFound();
+  }
+
   const { slug, projectSlug } = await params;
 
   const unit = BUSINESS_UNITS.find((u) => u.slug === slug);

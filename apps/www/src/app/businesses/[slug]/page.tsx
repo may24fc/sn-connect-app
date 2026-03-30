@@ -11,6 +11,7 @@ import { ServicesGrid } from '@/components/businesses/ServicesGrid';
 import { InquiryForm } from '@/components/businesses/InquiryForm';
 import { CTAButton } from '@/components/shared/CTAButton';
 import { TestimonialCarousel } from '@/components/businesses/TestimonialCarousel';
+import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -32,6 +33,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BusinessDetailPage({ params }: PageProps) {
+  if (HIDE_EXPANSION_SECTIONS) {
+    notFound();
+  }
+
   const { slug } = await params;
   const unit = BUSINESS_UNITS.find((u) => u.slug === slug);
 
