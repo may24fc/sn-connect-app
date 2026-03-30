@@ -4,6 +4,10 @@ import { type ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { WHATS_NEW } from '@/data/placeholder';
+import {
+  HIDE_EXPANSION_SECTIONS,
+  isTemporarilyHiddenPublicPath,
+} from '@/lib/site-config';
 
 const DISMISS_KEY = 'sn-whats-new-dismissed';
 
@@ -15,22 +19,23 @@ function formatDaysAgo(days: number): string {
 
 export function AnnouncementBanner(): ReactNode {
   const [dismissed, setDismissed] = useState(true); // Start hidden to avoid flash
+  const visibleItems = WHATS_NEW.filter((item) => !isTemporarilyHiddenPublicPath(item.href));
 
   useEffect(() => {
     const stored = sessionStorage.getItem(DISMISS_KEY);
     setDismissed(stored === 'true');
   }, []);
 
-  if (dismissed) return null;
+  if (HIDE_EXPANSION_SECTIONS || dismissed || visibleItems.length === 0) return null;
 
-  const items = [...WHATS_NEW, ...WHATS_NEW];
+  const items = [...visibleItems, ...visibleItems];
 
   return (
     <div className="relative z-[40] flex items-center border-b border-zinc-100 bg-white">
       {/* Pinned "What's New" label */}
       <div className="relative z-20 flex shrink-0 items-center gap-3 bg-white pl-5 pr-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600 ring-1 ring-inset ring-amber-200">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-800 ring-1 ring-inset ring-primary-100">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary-700" />
           What&apos;s New
         </span>
         <div className="h-4 w-px bg-zinc-200" aria-hidden="true" />

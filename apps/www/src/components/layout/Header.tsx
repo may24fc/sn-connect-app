@@ -1,12 +1,19 @@
 'use client';
 
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown } from 'lucide-react';
-import { getAppLoginUrl } from '@/lib/site-config';
+import { ChevronDown } from 'lucide-react';
+import {
+  getAppLoginUrl,
+  HIDE_EXPANSION_SECTIONS,
+  isTemporarilyHiddenPublicPath,
+} from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 import { NAV_LINKS, BUSINESS_UNITS } from '@/data/placeholder';
+import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon';
+import { useScroll } from '@/components/ui/use-scroll';
 import { MegaMenu } from './MegaMenu';
 import { MobileMenu } from './MobileMenu';
 
@@ -14,15 +21,9 @@ const LOGIN_URL = getAppLoginUrl();
 
 export function Header(): ReactNode {
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
+  const scrolled = useScroll(10);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -35,25 +36,38 @@ export function Header(): ReactNode {
     <>
       <header
         className={cn(
-          'fixed top-0 right-0 left-0 z-50 transition-all duration-300 bg-white',
-          scrolled && 'border-b border-zinc-200 shadow-sm'
+          'fixed top-0 right-0 left-0 z-50 w-full border-b border-transparent transition-all duration-300',
+          scrolled
+            ? 'bg-white/95 border-zinc-200 shadow-sm supports-[backdrop-filter]:bg-white/80 backdrop-blur-lg'
+            : 'bg-white'
         )}
       >
         <div className="section-max px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
-                SN
+            <Link href="/" className="flex items-center">
+              <div className="relative h-6 w-[3.75rem]">
+                <Image
+                  src="/sn-logo.png"
+                  alt="SN International logo"
+                  fill
+                  priority
+                  className="object-contain"
+                  sizes="60px"
+                />
               </div>
-              <span className="text-base font-semibold text-zinc-900">
-                SN International
-              </span>
+              <div className="leading-none">
+                <span className="block text-sm font-semibold uppercase tracking-[0.2em] text-zinc-950">
+                  SN International
+                </span>
+              </div>
             </Link>
 
             {/* Desktop Navigation — centered links */}
             <nav className="hidden items-center gap-0.5 lg:flex">
-              {NAV_LINKS.map((link) => {
+              {NAV_LINKS.filter(
+                (link) => !HIDE_EXPANSION_SECTIONS || !isTemporarilyHiddenPublicPath(link.href)
+              ).map((link) => {
                 const isActive =
                   pathname === link.href ||
                   (link.href !== '/' && pathname.startsWith(link.href));
@@ -71,7 +85,7 @@ export function Header(): ReactNode {
                         className={cn(
                           'relative flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                           isActive
-                            ? 'text-amber-600'
+                            ? 'text-primary-800'
                             : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
                         )}
                         onClick={() => setMegaOpen((v) => !v)}
@@ -86,7 +100,7 @@ export function Header(): ReactNode {
                           )}
                         />
                         {isActive && (
-                          <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-slate-900" />
+                          <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-primary-800" />
                         )}
                       </button>
                       <MegaMenu
@@ -105,13 +119,13 @@ export function Header(): ReactNode {
                     className={cn(
                       'relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
                       isActive
-                        ? 'text-amber-600'
+                        ? 'text-primary-800'
                         : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
                     )}
                   >
                     {link.label}
                     {isActive && (
-                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-slate-900" />
+                      <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-primary-800" />
                     )}
                   </Link>
                 );
@@ -133,13 +147,11 @@ export function Header(): ReactNode {
               type="button"
               className="rounded-md p-1.5 text-zinc-600 hover:bg-zinc-100 lg:hidden"
               onClick={() => setMobileOpen((v) => !v)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
+              aria-label="Toggle menu"
             >
-              {mobileOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
+              <MenuToggleIcon open={mobileOpen} className="h-5 w-5" duration={300} />
             </button>
           </div>
         </div>

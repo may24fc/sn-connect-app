@@ -33,25 +33,25 @@ export function MegaMenu({ open, onClose, businesses }: MegaMenuProps): ReactNod
           <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-mega">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                Our Businesses
+                Service tracks
               </h3>
               <Link
-                href="/businesses"
+                href="/#services"
                 onClick={onClose}
-                className="text-xs font-medium text-amber-600 transition-colors hover:text-amber-700"
+                className="text-xs font-medium text-primary-800 transition-colors hover:text-primary-900"
               >
-                View All
+                View all
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-1">
               {businesses.map((unit) => (
                 <Link
                   key={unit.slug}
-                  href={`/businesses/${unit.slug}`}
+                  href={`/contact?service=${unit.slug}`}
                   onClick={onClose}
                   className="group rounded-lg p-3 transition-colors hover:bg-zinc-50"
                 >
-                  <p className="text-sm font-semibold text-zinc-900 group-hover:text-amber-600">
+                  <p className="text-sm font-semibold text-zinc-900 group-hover:text-primary-800">
                     {unit.name}
                   </p>
                   <p className="mt-0.5 text-xs text-zinc-500">

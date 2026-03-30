@@ -21,32 +21,34 @@
   }
 
   body {
-    font-family: var(--font-body), 'Source Sans 3', system-ui, -apple-system, sans-serif;
-    background-color: #F8FAFC;
-    color: #020617;
+    font-family: var(--font-body);
+    background-color: #FAFCFC;
+    color: #0B0E10;
     font-size: 1rem;
     line-height: 1.75;
     @apply bg-background text-foreground;
   }
 
   ::selection {
-    background-color: #0F172A;
+    background-color: #175063;
     color: #FFFFFF;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading), 'Lexend', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-heading);
     font-weight: 600;
     letter-spacing: -0.01em;
   }
 
   /* Focus-visible outlines for keyboard accessibility */
   *:focus-visible {
-    outline: 2px solid #0F172A;
+    outline: 2px solid #175063;
     outline-offset: 2px;
     border-radius: 4px;
   }
   :root {
+    --font-body: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-heading: "Segoe UI", "Arial Narrow", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);

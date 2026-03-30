@@ -1,6 +1,4 @@
 import type { Metadata } from 'next';
-import { Source_Sans_3 } from 'next/font/google';
-import { Lexend } from 'next/font/google';
 import type { ReactNode } from 'react';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
@@ -8,30 +6,15 @@ import { Footer } from '@/components/layout/Footer';
 import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
 import { Providers } from './providers';
-import { cn } from "@/lib/utils";
-
-const sourceSans = Source_Sans_3({
-  subsets: ['latin'],
-  variable: '--font-body',
-  display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
-});
-
-const lexend = Lexend({
-  subsets: ['latin'],
-  variable: '--font-heading',
-  display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
-});
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'SN International Group',
+  name: 'SN International Group Pty. Ltd.',
   url: 'https://sninternational.com',
-  logo: 'https://sninternational.com/logo.svg',
+  logo: 'https://sninternational.com/sn-logo.png',
   description:
-    'SN International Group is a diversified conglomerate committed to excellence across food service, healthcare, fitness, and construction in the Philippines.',
+    'SN International Group Pty. Ltd. helps growing businesses build dependable offshore support teams across executive assistance, marketing support, content creation, and AI operations.',
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'SN International Tower, Bonifacio Global City',
@@ -54,31 +37,35 @@ const jsonLd = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'SN International Group — Building Futures, Empowering Lives',
-    template: '%s | SN International Group',
+    default: 'SN International Group Pty. Ltd. — VA Outsourcing and Remote Support',
+    template: '%s | SN International Group Pty. Ltd.',
   },
   description:
-    'SN International Group is a diversified conglomerate committed to excellence across food service, healthcare, fitness, and construction in the Philippines.',
+    'SN International Group Pty. Ltd. helps growing businesses build dependable offshore support teams across executive assistance, marketing support, content creation, and AI operations.',
   keywords: [
-    'SN International Group',
-    'SFO',
-    'UHP',
-    '24 Fit Club',
-    'SN Construction',
-    'Philippines',
-    'conglomerate',
+    'SN International Group Pty. Ltd.',
+    'virtual assistant outsourcing',
+    'remote support teams',
+    'executive assistance',
+    'marketing support outsourcing',
+    'content creation support',
+    'AI operations support',
   ],
   icons: {
-    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
-    apple: [{ url: '/apple-touch-icon.svg', type: 'image/svg+xml' }],
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/sn-logo.png', sizes: '192x192', type: 'image/png' },
+    ],
+    shortcut: ['/favicon.svg'],
+    apple: [{ url: '/sn-logo.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
     type: 'website',
     locale: 'en_PH',
-    siteName: 'SN International Group',
-    title: 'SN International Group — Building Futures, Empowering Lives',
+    siteName: 'SN International Group Pty. Ltd.',
+    title: 'SN International Group Pty. Ltd. — VA Outsourcing and Remote Support',
     description:
-      'A diversified conglomerate committed to excellence across food service, healthcare, fitness, and construction.',
+      'Dependable offshore support across executive assistance, marketing support, content creation, and AI operations.',
   },
   robots: {
     index: true,
@@ -88,7 +75,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
   return (
-    <html lang="en" className={cn("font-sans", sourceSans.variable, lexend.variable)}>
+    <html lang="en" className="font-sans">
       <head>
         <script
           type="application/ld+json"

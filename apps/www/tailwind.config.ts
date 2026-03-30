@@ -6,36 +6,36 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary — Navy (Trust & Authority brand identity)
+        // Primary — SN teal
         primary: {
-          50: '#F8FAFC',
-          100: '#F1F5F9',
-          200: '#E2E8F0',
-          300: '#CBD5E1',
-          400: '#94A3B8',
-          500: '#64748B',
-          600: '#475569',
-          700: '#334155',
-          800: '#1E293B',
-          900: '#0F172A',
-          950: '#020617',
-          DEFAULT: '#0F172A',
+          50: '#F1F7F9',
+          100: '#E2EFF3',
+          200: '#C2DDE5',
+          300: '#99C0CE',
+          400: '#7AAAAE',
+          500: '#6099AC',
+          600: '#457E92',
+          700: '#2D6577',
+          800: '#175063',
+          900: '#103E4D',
+          950: '#0A2B36',
+          DEFAULT: '#175063',
         },
 
-        // Accent — Gold (Premium conglomerate accent)
+        // Accent — Metallic
         accent: {
-          50: '#FFFBEB',
-          100: '#FEF3C7',
-          200: '#FDE68A',
-          300: '#FCD34D',
-          400: '#FBBF24',
-          500: '#F59E0B',
-          600: '#CA8A04',
-          700: '#A16207',
-          800: '#854D0E',
-          900: '#713F12',
-          950: '#422006',
-          DEFAULT: '#CA8A04',
+          50: '#F7F7F5',
+          100: '#EFEFEC',
+          200: '#DFE0DB',
+          300: '#CFD0C9',
+          400: '#B8BAB3',
+          500: '#9A9D95',
+          600: '#7C8078',
+          700: '#62655E',
+          800: '#4A4C47',
+          900: '#323431',
+          950: '#1D1E1C',
+          DEFAULT: '#B8BAB3',
         },
 
         // Semantic
@@ -44,18 +44,18 @@ const config: Config = {
         error: { DEFAULT: '#E11D48', foreground: '#FFFFFF' },
 
         // Layout
-        background: '#F8FAFC',
-        foreground: '#020617',
-        card: { DEFAULT: '#FFFFFF', foreground: '#0F172A' },
-        muted: { DEFAULT: '#F1F5F9', foreground: '#64748B' },
-        border: '#E2E8F0',
-        input: '#E2E8F0',
-        ring: '#0F172A',
+        background: '#FAFCFC',
+        foreground: '#0B0E10',
+        card: { DEFAULT: '#FFFFFF', foreground: '#0B0E10' },
+        muted: { DEFAULT: '#EEF5F7', foreground: '#5F7180' },
+        border: '#D7E3E8',
+        input: '#D7E3E8',
+        ring: '#175063',
       },
 
       fontFamily: {
-        sans: ['Source Sans 3', 'system-ui', '-apple-system', 'sans-serif'],
-        heading: ['Lexend', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['var(--font-body)', 'system-ui', '-apple-system', 'sans-serif'],
+        heading: ['var(--font-heading)', 'system-ui', '-apple-system', 'sans-serif'],
       },
 
       fontSize: {
