@@ -1,4 +1,22 @@
 import type { Metadata } from 'next';
+import StevenPoster from '../../../public/staff-posters/Steven.png';
+import MayPoster from '../../../public/staff-posters/May.png';
+import AndreaPoster from '../../../public/staff-posters/Andrea.png';
+import ArianaPoster from '../../../public/staff-posters/Ariana.png';
+import CamillePoster from '../../../public/staff-posters/Camille.png';
+import BiancaPoster from '../../../public/staff-posters/Bianca.png';
+import LJPoster from '../../../public/staff-posters/LJ.png';
+import PatrickPoster from '../../../public/staff-posters/Patrick.png';
+import JCPoster from '../../../public/staff-posters/JC.png';
+import TinaPoster from '../../../public/intern-posters/Tina.png';
+import ArishaPoster from '../../../public/intern-posters/Arisha.png';
+import EmanuelaPoster from '../../../public/intern-posters/Emanuela.png';
+import EnricoPoster from '../../../public/intern-posters/Enrico.png';
+import CeferinoPoster from '../../../public/intern-posters/Ceferino.png';
+import KazzPoster from '../../../public/intern-posters/Kazz.png';
+import NaimaPoster from '../../../public/intern-posters/Naima.png';
+import FranzPoster from '../../../public/intern-posters/Franz.png';
+import NormanPoster from '../../../public/intern-posters/Norman.png';
 import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { ExecutivePortraits } from '@/components/team/ExecutivePortraits';
@@ -16,12 +34,12 @@ const EXECUTIVES = [
   {
     name: 'Steven Nhan',
     title: 'Chief Executive Officer',
-    image: '/staff-posters/Steven.png',
+    image: StevenPoster,
   },
   {
     name: 'May Layugan',
     title: 'Chief Operating Officer',
-    image: '/staff-posters/May.png',
+    image: MayPoster,
   },
 ];
 
@@ -29,37 +47,37 @@ const STAFF_MEMBERS = [
   {
     name: 'Andrea Visitacion',
     title: 'Executive Assistant to CEO',
-    image: '/staff-posters/Andrea.png',
+    image: AndreaPoster,
   },
   {
     name: 'Ariana Ricardo',
     title: 'Personal Assistant to CEO',
-    image: '/staff-posters/Ariana.png',
+    image: ArianaPoster,
   },
   {
     name: 'Camille "Cams" Buquir',
     title: 'HR Manager',
-    image: '/staff-posters/Camille.png',
+    image: CamillePoster,
   },
   {
     name: 'Bianca Ragadio',
     title: 'Google Ads Specialist',
-    image: '/staff-posters/Bianca.png',
+    image: BiancaPoster,
   },
   {
     name: 'Lolita Jonquil "LJ" Cruz',
     title: 'Meta Ads Specialist',
-    image: '/staff-posters/LJ.png',
+    image: LJPoster,
   },
   {
     name: 'Patrick Mongaya',
     title: 'Multimedia Specialist',
-    image: '/staff-posters/Patrick.png',
+    image: PatrickPoster,
   },
   {
     name: 'John Christian Tulio',
     title: 'Digital Content Designer',
-    image: '/staff-posters/JC.png',
+    image: JCPoster,
   }
 ];
 
@@ -67,47 +85,47 @@ const INTERN_MEMBERS = [
   {
     name: 'Tina Olavia',
     title: 'Admin Assistant Intern',
-    image: '/intern-posters/Tina.png',
+    image: TinaPoster,
   },
   {
     name: 'Arisha Bablani',
     title: 'HR SOP & Policy Development Intern',
-    image: '/intern-posters/Arisha.png',
+    image: ArishaPoster,
   },
   {
     name: 'Emanuela Saldi',
     title: 'Marketing Intern',
-    image: '/intern-posters/Emanuela.png',
+    image: EmanuelaPoster,
   },
   {
     name: 'Enrico Miguel Buhisan',
     title: 'Video Editor Intern',
-    image: '/intern-posters/Enrico.png',
+    image: EnricoPoster,
   },
   {
     name: 'Ceferino Jumao-as V',
     title: 'Senior AI Specialist Intern',
-    image: '/intern-posters/Ceferino.png',
+    image: CeferinoPoster,
   },
   {
     name: 'Kazz Virtudez',
     title: 'AI Specialist Intern',
-    image: '/intern-posters/Kazz.png',
+    image: KazzPoster,
   },
   {
     name: 'Naima Tasnia',
     title: 'AI Specialist Intern',
-    image: '/intern-posters/Naima.png',
+    image: NaimaPoster,
   },
   {
     name: 'Franz Ivan De Villa',
     title: 'AI Specialist Intern',
-    image: '/intern-posters/Franz.png',
+    image: FranzPoster,
   },
   {
     name: 'Norman Jazul Jr.',
     title: 'AI Specialist Intern',
-    image: '/intern-posters/Norman.png',
+    image: NormanPoster,
   }
 ];
 

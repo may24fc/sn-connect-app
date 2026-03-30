@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { Linkedin, Mail } from 'lucide-react';
 import { COMPANY } from '@/data/placeholder';
-import { SectionHeading } from '@/components/shared/SectionHeading';
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { ContactForm } from '@/components/contact/ContactForm';
-import { ContactCards } from '@/components/contact/ContactCards';
 import { BookingCard } from '@/components/contact/BookingCard';
 import {
   getGoogleAppointmentEmbedUrl,
@@ -84,7 +82,7 @@ export default function ContactPage() {
       </section>
 
       {/* Business unit contacts — below the form, not above */}
-      <section className="bg-zinc-50 py-16">
+      {/* <section className="bg-zinc-50 py-16">
         <div className="section-max section-padding">
           <ScrollReveal>
             <SectionHeading
@@ -96,7 +94,7 @@ export default function ContactPage() {
             <ContactCards />
           </div>
         </div>
-      </section>
+      </section> */}
     </>
   );
 }
