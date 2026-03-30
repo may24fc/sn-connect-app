@@ -22,14 +22,15 @@ docs
 dist
 .turbo
 
-# Images and media
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.pdf
-*.webp
-*.avif
+# Images and media (only in non-essential dirs)
+docs/**/*.png
+docs/**/*.jpg
+docs/**/*.jpeg
+docs/**/*.gif
+docs/**/*.pdf
+docs/**/*.webp
+docs/**/*.avif
+e2e/**/*.png
 
 # Mobile app
 apps/mobile
