@@ -148,7 +148,6 @@ const INTERN_MEMBERS = [
 ];
 
 export default function TeamPage() {
-  const totalSupportTeam = STAFF_MEMBERS.length + INTERN_MEMBERS.length;
   const departmentCount = new Set([
     ...STAFF_MEMBERS.map((m) => m.department),
     ...INTERN_MEMBERS.map((m) => m.department),
