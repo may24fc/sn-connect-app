@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { BUSINESS_UNITS } from '@/data/placeholder';
 import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
-const BASE_URL = 'https://www.sninternational.com';
+const BASE_URL = 'https://www.sngroup.com.au';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [

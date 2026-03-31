@@ -46,13 +46,13 @@ export function Header(): ReactNode {
         <div className="section-max px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center">
+            <Link href="/" className="flex items-center gap-2">
               <div className="shrink-0">
                 <Image
                   src={snLogo}
                   alt="SN International logo"
                   width={60}
-                  height={24}
+                  height={10}
                   priority
                   className="h-6 w-auto object-contain"
                   sizes="60px"
@@ -60,7 +60,7 @@ export function Header(): ReactNode {
               </div>
               <div className="leading-none">
                 <span className="block text-sm font-semibold uppercase tracking-[0.2em] text-zinc-950">
-                  SN International
+                  SN International Group
                 </span>
               </div>
             </Link>

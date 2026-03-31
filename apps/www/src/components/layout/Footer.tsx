@@ -109,7 +109,7 @@ export function Footer(): ReactNode {
 
             {/* Branding + Newsletter */}
             <div>
-              <Link href="/" className="flex items-center">
+              <Link href="/" className="flex items-center gap-2">
                 <div className="shrink-0">
                   <Image
                     src={snLogo}

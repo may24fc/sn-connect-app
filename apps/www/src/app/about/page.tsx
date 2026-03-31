@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { MissionVision } from '@/components/about/MissionVision';
-import { CEOMessage } from '@/components/about/CEOMessage';
+// import { CEOMessage } from '@/components/about/CEOMessage';
 import { COMPANY } from '@/data/placeholder';
 
 export const metadata: Metadata = {
@@ -49,7 +49,7 @@ export default function AboutPage(): ReactNode {
       </section>
 
       <MissionVision />
-      <CEOMessage />
+      {/* <CEOMessage /> */}
     </>
   );
 }

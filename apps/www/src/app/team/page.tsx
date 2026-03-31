@@ -4,12 +4,12 @@ import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { ExecutivePortraits } from '@/components/team/ExecutivePortraits';
 import { TeamGrid } from '@/components/team/TeamGrid';
 import { OpenRolesTeaser } from '@/components/team/OpenRolesTeaser';
+import { HeroStats } from '@/components/team/HeroStats';
 import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 
 // Staff poster imports (bundled by webpack)
 import stevenPoster from '@/assets/staff-posters/Steven.png';
 import mayPoster from '@/assets/staff-posters/May.png';
-import andreaPoster from '@/assets/staff-posters/Andrea.png';
 import arianaPoster from '@/assets/staff-posters/Ariana.png';
 import camillePoster from '@/assets/staff-posters/Camille.png';
 import biancaPoster from '@/assets/staff-posters/Bianca.png';
@@ -38,50 +38,55 @@ const EXECUTIVES = [
   {
     name: 'Steven Nhan',
     title: 'Chief Executive Officer',
+    shortTitle: 'CEO',
     image: stevenPoster,
+    bio: 'Founder and visionary behind SN International Group, driving strategy and growth across the business.',
   },
   {
     name: 'May Layugan',
     title: 'Chief Operating Officer',
+    shortTitle: 'COO',
     image: mayPoster,
+    bio: 'Oversees daily operations and ensures the organization runs with precision and efficiency.',
   },
 ];
 
 const STAFF_MEMBERS = [
   {
-    name: 'Andrea Visitacion',
-    title: 'Executive Assistant to CEO',
-    image: andreaPoster,
-  },
-  {
     name: 'Ariana Ricardo',
     title: 'Personal Assistant to CEO',
     image: arianaPoster,
+    department: 'Executive Support',
   },
   {
     name: 'Camille "Cams" Buquir',
     title: 'HR Manager',
     image: camillePoster,
+    department: 'Human Resources',
   },
   {
     name: 'Bianca Ragadio',
     title: 'Google Ads Specialist',
     image: biancaPoster,
+    department: 'Marketing',
   },
   {
     name: 'Lolita Jonquil "LJ" Cruz',
     title: 'Meta Ads Specialist',
     image: ljPoster,
+    department: 'Marketing',
   },
   {
     name: 'Patrick Mongaya',
     title: 'Multimedia Specialist',
     image: patrickPoster,
+    department: 'Creative',
   },
   {
     name: 'John Christian Tulio',
     title: 'Digital Content Designer',
     image: jcPoster,
+    department: 'Creative',
   }
 ];
 
@@ -90,51 +95,64 @@ const INTERN_MEMBERS = [
     name: 'Tina Olavia',
     title: 'Admin Assistant Intern',
     image: tinaPoster,
+    department: 'Administration',
   },
   {
     name: 'Arisha Bablani',
     title: 'HR SOP & Policy Development Intern',
     image: arishaPoster,
+    department: 'Human Resources',
   },
   {
     name: 'Emanuela Saldi',
     title: 'Marketing Intern',
     image: emanuelaPoster,
+    department: 'Marketing',
   },
   {
     name: 'Enrico Miguel Buhisan',
     title: 'Video Editor Intern',
     image: enricoPoster,
+    department: 'Creative',
   },
   {
     name: 'Ceferino Jumao-as V',
     title: 'Senior AI Specialist Intern',
     image: ceferinoPoster,
+    department: 'AI & Technology',
   },
   {
     name: 'Kazz Virtudez',
     title: 'AI Specialist Intern',
     image: kazzPoster,
+    department: 'AI & Technology',
   },
   {
     name: 'Naima Tasnia',
     title: 'AI Specialist Intern',
     image: naimaPoster,
+    department: 'AI & Technology',
   },
   {
     name: 'Franz Ivan De Villa',
     title: 'AI Specialist Intern',
     image: franzPoster,
+    department: 'AI & Technology',
   },
   {
     name: 'Norman Jazul Jr.',
     title: 'AI Specialist Intern',
     image: normanPoster,
+    department: 'AI & Technology',
   }
 ];
 
 export default function TeamPage() {
   const totalSupportTeam = STAFF_MEMBERS.length + INTERN_MEMBERS.length;
+  const departmentCount = new Set([
+    ...STAFF_MEMBERS.map((m) => m.department),
+    ...INTERN_MEMBERS.map((m) => m.department),
+  ]).size;
 
   return (
     <>
@@ -143,6 +161,10 @@ export default function TeamPage() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-400 to-transparent" />
         <div className="section-max section-padding">
           <div className="mx-auto max-w-5xl text-center">
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary-200/60 bg-primary-50/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary-800">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary-600" />
+              {EXECUTIVES.length + STAFF_MEMBERS.length + INTERN_MEMBERS.length} Team Members
+            </p>
             <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl lg:leading-[1.04]">
               Meet the team building reliable support behind <span className="text-primary-800">SN International</span>.
             </h1>
@@ -150,23 +172,14 @@ export default function TeamPage() {
               Leadership, specialists, and interns working across executive support, marketing, content, operations, and AI-driven workflow delivery.
             </p>
 
-            <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
-              <div className="rounded-2xl border border-zinc-200 bg-white/90 p-5 shadow-[0_16px_40px_rgba(23,80,99,0.08)]">
-                <p className="text-3xl font-bold text-zinc-950">{EXECUTIVES.length}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary-800">Executive leaders</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">Setting direction, standards, and the operating cadence behind the business.</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white/90 p-5 shadow-[0_16px_40px_rgba(23,80,99,0.08)]">
-                <p className="text-3xl font-bold text-zinc-950">{STAFF_MEMBERS.length}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary-800">Core staff</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">Specialists supporting creative output, administration, HR, and day-to-day execution.</p>
-              </div>
-              <div className="rounded-2xl border border-zinc-200 bg-white/90 p-5 shadow-[0_16px_40px_rgba(23,80,99,0.08)]">
-                <p className="text-3xl font-bold text-zinc-950">{totalSupportTeam}</p>
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary-800">Visible team members</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">A cross-functional group contributing to delivery quality, documentation, and workflow support.</p>
-              </div>
-            </div>
+            <HeroStats
+              stats={[
+                { value: EXECUTIVES.length, label: 'Executive Leaders', description: 'Setting direction, standards, and the operating cadence behind the business.' },
+                { value: STAFF_MEMBERS.length, label: 'Core Staff', description: 'Specialists supporting creative output, administration, HR, and day-to-day execution.' },
+                { value: INTERN_MEMBERS.length, label: 'Active Interns', description: 'Contributors across AI, admin, content, HR, and marketing work.' },
+                { value: departmentCount, label: 'Departments', description: 'A cross-functional group driving delivery quality and workflow support.' },
+              ]}
+            />
           </div>
         </div>
       </section>
@@ -180,11 +193,23 @@ export default function TeamPage() {
               subtitle="Our senior leadership team sets the strategic direction and culture of the organization."
             />
           </ScrollReveal>
-          <div className="mt-6 rounded-[2rem] border border-zinc-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-6 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.18)] sm:p-8 lg:p-10">
+          <div className="mt-8 rounded-[2.5rem] border border-zinc-200/80 bg-[radial-gradient(ellipse_at_top,rgba(96,153,172,0.06),transparent_50%),linear-gradient(180deg,#ffffff_0%,#fafbfc_100%)] p-8 shadow-[0_32px_80px_-50px_rgba(15,23,42,0.14)] sm:p-10 lg:p-14">
             <ExecutivePortraits executives={EXECUTIVES} />
           </div>
         </div>
       </section>
+
+      {/* Values / Culture */}
+      {/* <section className="bg-zinc-50 py-20 lg:py-24">
+        <div className="section-max section-padding">
+          <ScrollReveal>
+            <SectionHeading
+              title="How We Work"
+              subtitle="The principles that shape how our team operates, collaborates, and delivers results."
+            />
+          </ScrollReveal>
+        </div>
+      </section> */}
 
       {/* Staffs & Interns */}
       <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-zinc-50 to-primary-50/40 py-20 lg:py-24">
@@ -195,7 +220,7 @@ export default function TeamPage() {
               subtitle="Meet the staff and interns behind the daily work, creative output, and operational momentum across the organization."
             />
           </ScrollReveal>
-          <div className="mt-6 rounded-[2rem] border border-zinc-200/80 bg-white/80 p-6 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.14)] backdrop-blur sm:p-8 lg:p-10">
+          <div className="mt-6 rounded-[2rem] border border-zinc-200/80 bg-white/80 p-6 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.14)] sm:p-8 lg:p-10">
             <TeamGrid
               staffMembers={STAFF_MEMBERS}
               internMembers={INTERN_MEMBERS}

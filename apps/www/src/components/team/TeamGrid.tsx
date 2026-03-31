@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, type ReactNode, useId, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image, { type StaticImageData } from 'next/image';
 import Link from 'next/link';
 import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
@@ -11,6 +12,7 @@ interface TeamMember {
   name: string;
   title: string;
   image?: string | StaticImageData;
+  department?: string;
 }
 
 interface TeamGridProps {
@@ -43,43 +45,39 @@ function TeamLightbox({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-zinc-950/85 backdrop-blur-sm"
+      className="fixed inset-0 z-50 overflow-y-auto bg-zinc-950/90 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={`Full poster for ${member.name}`}
     >
-      <div className="flex h-full w-full items-center justify-center p-4 md:p-8">
+      <div className="flex min-h-full w-full items-start justify-center px-4 py-8 md:px-12 md:py-10">
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.98, y: 8 }}
           transition={{ duration: 0.22, ease: [0.25, 0.4, 0.25, 1] }}
-          className="relative w-full max-w-5xl"
+          className="relative"
           onClick={(event) => event.stopPropagation()}
         >
           <button
             type="button"
-            onClick={onClose}
-            className="absolute right-3 top-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/92 text-zinc-900 shadow-lg transition-colors duration-200 hover:bg-white"
+            onClick={(event) => { event.stopPropagation(); onClose(); }}
+            className="absolute right-2 top-2 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-zinc-900 shadow-lg backdrop-blur-sm transition-colors duration-200 hover:bg-white"
             aria-label="Close full poster"
           >
             <X className="h-5 w-5" />
           </button>
 
-          <div className="overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-white/10">
-            <div className="relative flex max-h-[88vh] items-center justify-center bg-[radial-gradient(circle_at_top,#f8fafc,transparent_55%),linear-gradient(180deg,#fafaf9,#f4f4f5)] p-3 md:p-4">
-              <Image
-                src={member.image}
-                alt={`${member.name} team poster`}
-                width={768}
-                height={1024}
-                className="h-auto max-h-[82vh] w-auto max-w-full object-contain"
-                sizes="100vw"
-                priority
-              />
-            </div>
-          </div>
+          <Image
+            src={member.image}
+            alt={`${member.name} team poster`}
+            width={768}
+            height={1024}
+            className="w-auto max-w-[80vw] rounded-2xl object-contain shadow-2xl sm:max-w-[60vw] md:max-w-[45vw] lg:max-w-[35vw]"
+            sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 45vw, 35vw"
+            priority
+          />
         </motion.div>
       </div>
     </motion.div>
@@ -153,6 +151,11 @@ function MemberCell({
 
       {/* Metadata */}
       <div className="mt-4 px-1">
+        {member.department && (
+          <span className="mb-2 inline-block rounded-full bg-primary-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-primary-700">
+            {member.department}
+          </span>
+        )}
         <h3 className="text-sm font-bold leading-snug text-zinc-900 transition-colors duration-200 group-hover:text-primary-800">
           {member.name}
         </h3>
@@ -183,12 +186,13 @@ export function TeamGrid({
       }
     };
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const html = document.documentElement;
+    const previousOverflow = html.style.overflow;
+    html.style.overflow = 'hidden';
     window.addEventListener('keydown', onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      html.style.overflow = previousOverflow;
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [selectedMember]);
@@ -199,34 +203,46 @@ export function TeamGrid({
   return (
     <>
       <div>
-        {/* Filter bar — underline style */}
+        {/* Filter bar — underline style with counts */}
         <div className="mb-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 border-b border-zinc-200">
-          {filters.map((filter) => (
-            <button
-              key={filter}
-              type="button"
-              onClick={() => setActiveFilter(filter)}
-              className={`relative pb-3 text-sm font-medium transition-colors duration-200 ${
-                activeFilter === filter
-                  ? 'text-zinc-900'
-                  : 'text-zinc-400 hover:text-zinc-700'
-              }`}
-            >
-              {filter}
-              <AnimatePresence>
-                {activeFilter === filter && (
-                  <motion.span
-                    layoutId={underlineId}
-                    className="absolute bottom-0 left-0 h-0.5 w-full bg-primary-800"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                  />
-                )}
-              </AnimatePresence>
-            </button>
-          ))}
+          {filters.map((filter) => {
+            const count = filter === 'Staffs' ? staffMembers.length : internMembers.length;
+            return (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setActiveFilter(filter)}
+                className={`relative flex items-center gap-2 pb-3 text-sm font-medium transition-colors duration-200 ${
+                  activeFilter === filter
+                    ? 'text-zinc-900'
+                    : 'text-zinc-400 hover:text-zinc-700'
+                }`}
+              >
+                {filter}
+                <span
+                  className={`inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-bold tabular-nums transition-colors duration-200 ${
+                    activeFilter === filter
+                      ? 'bg-primary-100 text-primary-800'
+                      : 'bg-zinc-100 text-zinc-400'
+                  }`}
+                >
+                  {count}
+                </span>
+                <AnimatePresence>
+                  {activeFilter === filter && (
+                    <motion.span
+                      layoutId={underlineId}
+                      className="absolute bottom-0 left-0 h-0.5 w-full bg-primary-800"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                    />
+                  )}
+                </AnimatePresence>
+              </button>
+            );
+          })}
         </div>
 
         <p className="mb-10 text-center text-sm text-zinc-500">
@@ -259,10 +275,11 @@ export function TeamGrid({
           </Link>
         </div>
       </div>
-      {selectedMember && (
+      {selectedMember && createPortal(
         <AnimatePresence>
           <TeamLightbox member={selectedMember} onClose={() => setSelectedMember(null)} />
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
       )}
     </>
   );
