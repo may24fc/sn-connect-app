@@ -37,8 +37,8 @@ const jsonLd = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'SN International Group Pty. Ltd. — VA Outsourcing and Remote Support',
-    template: '%s | SN International Group Pty. Ltd.',
+    default: 'SN International Group',
+    template: '%s | SN International Group',
   },
   description:
     'SN International Group Pty. Ltd. helps growing businesses build dependable offshore support teams across executive assistance, marketing support, content creation, and AI operations.',
@@ -53,10 +53,9 @@ export const metadata: Metadata = {
   ],
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
       { url: '/sn-logo.png', sizes: '192x192', type: 'image/png' },
     ],
-    shortcut: ['/favicon.svg'],
+    shortcut: ['/sn-logo.png'],
     apple: [{ url: '/sn-logo.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
