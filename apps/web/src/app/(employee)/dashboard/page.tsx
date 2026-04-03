@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
+import { useEmployeeDashboardAttentionItems } from '@/hooks/useEmployeeDashboardAttentionItems';
 import { useMilestones } from '@/hooks/useMilestones';
 import { useMyProbation } from '@/hooks/useMyProbation';
 import { useOnboardingProgressSummary } from '@/hooks/useOnboardingProgressSummary';
@@ -19,7 +20,7 @@ import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useR
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import KPIEntryWidget from './components/KPIEntryWidget';
-import { Badge, Button, EmptyState, MilestoneBanner, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
+import { Badge, Button, DashboardAttentionCarousel, EmptyState, MilestoneBanner, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
 import type { KPICardData } from '@hr-portal/ui';
 import {
   Bell,
@@ -30,6 +31,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 const announcementCategoryLabels: Record<string, string> = {
@@ -77,6 +79,7 @@ function getGreeting(): string {
 
 export default function DashboardPage(): ReactNode {
   const { user } = useAuth();
+  const router = useRouter();
   const firstName = user?.name?.split(' ')[0] ?? 'there';
   const greeting = getGreeting();
 
@@ -196,6 +199,10 @@ export default function DashboardPage(): ReactNode {
   });
   const announcements = announcementFeedData?.data ?? [];
 
+  // Attention items — nudge for incomplete onboarding, pending tasks, etc.
+  const { items: attentionItems, isLoading: isAttentionLoading } =
+    useEmployeeDashboardAttentionItems();
+
   // Stat card columns adjust when onboarding is hidden
   const statColumns = isOnboardingCompleted ? 2 : 3;
 
@@ -215,6 +222,13 @@ export default function DashboardPage(): ReactNode {
 
       {/* Milestone Banner — upcoming birthdays & anniversaries */}
       <MilestoneBanner milestones={milestones} isLoading={milestonesLoading} />
+
+      {/* Needs Action Carousel */}
+      <DashboardAttentionCarousel
+        items={attentionItems}
+        isLoading={isAttentionLoading}
+        onNavigate={(path) => router.push(path)}
+      />
 
       {/* Stats Row */}
       <div data-tour="stat-cards">

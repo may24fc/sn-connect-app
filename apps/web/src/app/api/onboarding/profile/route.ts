@@ -53,6 +53,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ data: existing });
     }
 
+    // Check for a soft-deleted profile (e.g. from a privileged admin/super_admin
+    // invite) and restore it instead of attempting a duplicate insert.
+    const { data: softDeleted } = await supabase
+      .from('onboarding_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .not('deleted_at', 'is', null)
+      .maybeSingle();
+
+    if (softDeleted) {
+      const { data: restored, error: restoreError } = await supabase
+        .from('onboarding_profiles')
+        .update({
+          deleted_at: null,
+          is_completed: false,
+          completed_at: null,
+          current_step: 'personal_info',
+          first_name: typeof body.firstName === 'string' ? body.firstName : softDeleted.first_name,
+          middle_name: typeof body.middleName === 'string' ? body.middleName : softDeleted.middle_name,
+          last_name: typeof body.lastName === 'string' ? body.lastName : softDeleted.last_name,
+          email_address: typeof body.emailAddress === 'string' ? body.emailAddress : softDeleted.email_address,
+        })
+        .eq('id', softDeleted.id)
+        .select('*')
+        .single();
+
+      if (restoreError) {
+        console.error('Failed to restore soft-deleted onboarding profile:', restoreError);
+        return NextResponse.json(
+          {
+            error: 'Failed to create onboarding profile',
+            details: process.env.NODE_ENV === 'development' ? restoreError.message : undefined,
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ data: restored }, { status: 201 });
+    }
+
     const { data, error: insertError } = await supabase
       .from('onboarding_profiles')
       .insert({

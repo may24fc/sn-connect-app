@@ -63,9 +63,9 @@ const AUTH_TIMEOUT_MS = 12000;
 function getHomeRedirectPath(user: Pick<User, 'role' | 'isOnboardingComplete'>): string {
   switch (user.role) {
     case 'employee':
-      return user.isOnboardingComplete ? '/dashboard' : '/onboarding/setup';
+      return '/dashboard';
     case 'intern':
-      return user.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup';
+      return '/intern/dashboard';
     case 'admin':
       return '/admin/dashboard';
     case 'super_admin':
@@ -586,12 +586,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         // Refresh router to clear Next.js server-side cache (fixes stale
         // state after signup → email confirmation → login flow)
         router.refresh();
-
-        // Handle pending_onboarding status - redirect to onboarding
-        if (nextUser.status === 'pending_onboarding') {
-          router.push('/onboarding/setup');
-          return;
-        }
 
         // Handle awaiting_approval status - redirect to waiting page
         if (nextUser.status === 'awaiting_approval') {

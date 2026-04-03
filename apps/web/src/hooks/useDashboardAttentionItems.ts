@@ -1,5 +1,6 @@
 'use client';
 
+import { useAdminProfileCompletion } from '@/hooks/useAdminProfileCompletion';
 import { usePendingApprovals } from '@/hooks/usePendingApprovals';
 import { useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
@@ -11,6 +12,7 @@ import {
   GraduationCap,
   Star,
   UserCog,
+  UserCircle,
   Users,
 } from 'lucide-react';
 
@@ -18,6 +20,7 @@ type DashboardAttentionRole = 'admin' | 'super_admin';
 
 export function useDashboardAttentionItems(role: DashboardAttentionRole) {
   const { data: pendingData, isLoading: pendingLoading } = usePendingApprovals();
+  const { data: profileData, isLoading: profileLoading } = useAdminProfileCompletion();
   const {
     pendingApprovals,
     isLoading: onboardingLoading,
@@ -41,6 +44,20 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
   );
 
   const items: DashboardAttentionItem[] = [];
+
+  // Profile completion prompt for admins / super-admins
+  if (profileData?.needsSetup) {
+    items.push({
+      id: 'admin-profile-setup',
+      title: 'Complete Your Profile',
+      description: 'Your employee profile is incomplete. Fill in personal details, emergency contacts, and more.',
+      count: 1,
+      href: '/admin/onboarding-setup',
+      icon: UserCircle,
+      severity: 'warning',
+      actionLabel: 'Complete profile',
+    });
+  }
 
   if ((pendingData?.lateEodReports.count ?? 0) > 0) {
     items.push({
@@ -156,6 +173,6 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
   return {
     items,
     totalCount,
-    isLoading: pendingLoading || onboardingLoading || probationLoading,
+    isLoading: pendingLoading || onboardingLoading || probationLoading || profileLoading,
   };
 }

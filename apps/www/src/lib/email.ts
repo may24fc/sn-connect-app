@@ -1,10 +1,9 @@
 import { Resend } from 'resend';
-import { COMPANY } from '@/data/placeholder';
 
 const BASE_FROM_EMAIL = 'no-reply@sngroup.com.au';
+const INQUIRY_NOTIFICATION_FALLBACK = 'info@sngroup.com.au';
 
 const SENDER_NAME_BY_CONTEXT = {
-  inquiries: 'Client Relations',
   recruitment: 'Recruitment Team',
 } as const;
 
@@ -22,12 +21,6 @@ function getResendClient(): Resend | null {
     return null;
   }
   return new Resend(apiKey);
-}
-
-function getInquiryNotificationRecipient(): string {
-  return process.env.INQUIRY_NOTIFICATION_EMAIL
-    ?? process.env.CONTACT_NOTIFICATION_EMAIL
-    ?? COMPANY.email;
 }
 
 export async function sendApplicationConfirmation({
@@ -72,6 +65,100 @@ export async function sendApplicationConfirmation({
     }
   } catch (error) {
     console.error('[Email] Failed to send application confirmation email:', error);
+  }
+}
+
+export async function sendInquiryNotification({
+  inquiryId,
+  name,
+  email,
+  phone,
+  subject,
+  message,
+}: {
+  inquiryId: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+}) {
+  const resend = getResendClient();
+  if (!resend) return;
+
+  const notificationEmail =
+    process.env.INQUIRY_NOTIFICATION_EMAIL?.trim() || INQUIRY_NOTIFICATION_FALLBACK;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail('recruitment'),
+      to: notificationEmail,
+      subject: `New inquiry received — ${subject}`,
+      html: buildEmailHtml({
+        heading: 'New Inquiry Received',
+        body: `
+      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
+        A new inquiry has been submitted through the website.
+      </p>
+      <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Inquiry ID:</strong> ${escapeHtml(inquiryId)}</p>
+      <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Name:</strong> ${escapeHtml(name)}</p>
+      <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Email:</strong> ${escapeHtml(email)}</p>
+      <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Phone:</strong> ${escapeHtml(phone ?? 'Not provided')}</p>
+      <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Subject:</strong> ${escapeHtml(subject)}</p>
+      <p style="margin:0 0 12px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Message:</strong></p>
+      <div style="border:1px solid #e4e4e7;border-radius:10px;background:#fafafa;padding:16px;color:#3f3f46;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(message)}</div>`,
+      }),
+    });
+
+    if (error) {
+      console.error('[Email] Resend API error for inquiry notification:', error);
+    } else {
+      console.log('[Email] Inquiry notification sent successfully, id:', data?.id);
+    }
+  } catch (error) {
+    console.error('[Email] Failed to send inquiry notification email:', error);
+  }
+}
+
+export async function sendInquiryConfirmation({
+  to,
+  name,
+  subject,
+}: {
+  to: string;
+  name: string;
+  subject: string;
+}) {
+  const resend = getResendClient();
+  if (!resend) return;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail('recruitment'),
+      to,
+      subject: `We received your inquiry — ${subject}`,
+      html: buildEmailHtml({
+        heading: 'Inquiry Received',
+        body: `
+      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
+        Dear ${escapeHtml(name)},
+      </p>
+      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
+        Thank you for contacting SN International Group. We have received your inquiry regarding <strong>${escapeHtml(subject)}</strong>.
+      </p>
+      <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">
+        Our team will review your message and get back to you as soon as possible.
+      </p>`,
+      }),
+    });
+
+    if (error) {
+      console.error('[Email] Resend API error for inquiry confirmation:', error);
+    } else {
+      console.log('[Email] Inquiry confirmation sent successfully, id:', data?.id);
+    }
+  } catch (error) {
+    console.error('[Email] Failed to send inquiry confirmation email:', error);
   }
 }
 
@@ -188,102 +275,6 @@ export async function sendApplicationStatusUpdate({
     }
   } catch (error) {
     console.error(`[Email] Failed to send status update email (${status}):`, error);
-  }
-}
-
-export async function sendInquiryNotification({
-  inquiryId,
-  name,
-  email,
-  phone,
-  subject,
-  message,
-}: {
-  inquiryId: string;
-  name: string;
-  email: string;
-  phone?: string | null;
-  subject: string;
-  message: string;
-}) {
-  const resend = getResendClient();
-  if (!resend) return;
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: getFromEmail('inquiries'),
-      to: getInquiryNotificationRecipient(),
-      replyTo: email,
-      subject: `New Website Inquiry — ${subject}`,
-      html: buildEmailHtml({
-        heading: 'New Website Inquiry',
-        body: `
-      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        A new inquiry was submitted through the public contact form.
-      </p>
-      <div style="margin:0 0 20px;padding:16px;border:1px solid #e4e4e7;border-radius:12px;background:#fafafa;">
-        <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Inquiry ID:</strong> ${escapeHtml(inquiryId)}</p>
-        <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Name:</strong> ${escapeHtml(name)}</p>
-        <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Email:</strong> ${escapeHtml(email)}</p>
-        <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Phone:</strong> ${escapeHtml(phone?.trim() ? phone : 'Not provided')}</p>
-        <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Subject:</strong> ${escapeHtml(subject)}</p>
-      </div>
-      <div style="margin:0 0 24px;padding:16px;border:1px solid #e4e4e7;border-radius:12px;background:#ffffff;">
-        <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Message</strong></p>
-        <p style="margin:0;color:#3f3f46;font-size:14px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(message)}</p>
-      </div>`,
-      }),
-    });
-
-    if (error) {
-      console.error('[Email] Resend API error for inquiry notification:', error);
-    } else {
-      console.log('[Email] Inquiry notification sent successfully, id:', data?.id);
-    }
-  } catch (error) {
-    console.error('[Email] Failed to send inquiry notification email:', error);
-  }
-}
-
-export async function sendInquiryConfirmation({
-  to,
-  name,
-  subject,
-}: {
-  to: string;
-  name: string;
-  subject: string;
-}) {
-  const resend = getResendClient();
-  if (!resend) return;
-
-  try {
-    const { data, error } = await resend.emails.send({
-      from: getFromEmail('inquiries'),
-      to,
-      subject: `We received your inquiry — ${subject}`,
-      html: buildEmailHtml({
-        heading: 'Inquiry Received',
-        body: `
-      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Dear ${escapeHtml(name)},
-      </p>
-      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Thank you for contacting ${escapeHtml(COMPANY.name)}. We have received your message regarding <strong>${escapeHtml(subject)}</strong>.
-      </p>
-      <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Our team will review your inquiry and respond within 1 to 2 business days.
-      </p>`,
-      }),
-    });
-
-    if (error) {
-      console.error('[Email] Resend API error for inquiry confirmation:', error);
-    } else {
-      console.log('[Email] Inquiry confirmation sent successfully, id:', data?.id);
-    }
-  } catch (error) {
-    console.error('[Email] Failed to send inquiry confirmation email:', error);
   }
 }
 

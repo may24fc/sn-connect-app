@@ -11,12 +11,14 @@ import {
 } from '@/components/data-display';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useCreateInternDailyLog, useInternship, useInternships } from '@/hooks/useInternships';
+import { useEmployeeDashboardAttentionItems } from '@/hooks/useEmployeeDashboardAttentionItems';
 import {
   Badge,
   Button,
   type DailyReport,
   type DailyReportId,
   DailyReportSummary,
+  DashboardAttentionCarousel,
   EODReportForm,
   type EODReportFormData,
   type InternId,
@@ -49,12 +51,17 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 export default function InternDashboardPage(): ReactNode {
   const [showForm, setShowForm] = useState(false);
+  const internRouter = useRouter();
 
   const listQuery = useInternships({ page: 1, pageSize: 1, status: 'active' });
   const activeInternshipId = listQuery.data?.data?.[0]?.id || null;
   const detailQuery = useInternship(activeInternshipId, !!activeInternshipId);
   const createLogMutation = useCreateInternDailyLog();
   const { addToast } = useToast();
+
+  // Attention items — onboarding reminders, pending tasks
+  const { items: attentionItems, isLoading: isAttentionLoading } =
+    useEmployeeDashboardAttentionItems();
 
   const profile = detailQuery.data?.data;
   const reports = profile?.recentReports || [];
@@ -148,6 +155,13 @@ export default function InternDashboardPage(): ReactNode {
           </Button>
         )}
       </div>
+
+      {/* Needs Action Carousel */}
+      <DashboardAttentionCarousel
+        items={attentionItems}
+        isLoading={isAttentionLoading}
+        onNavigate={(path) => internRouter.push(path)}
+      />
 
       {/* Profile Card */}
       <div

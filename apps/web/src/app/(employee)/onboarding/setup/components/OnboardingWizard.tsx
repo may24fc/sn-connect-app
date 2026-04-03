@@ -19,7 +19,7 @@ import {
   CardTitle,
   useToast,
 } from '@hr-portal/ui';
-import { LogOut } from 'lucide-react';
+import { LogOut, SkipForward } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -450,9 +450,8 @@ export function OnboardingWizard(): ReactNode {
     );
   };
 
-  // Onboarding is mandatory when the profile is not completed.
-  // Hide the Exit button in that case so users cannot bypass the flow.
-  const isMandatory = !profileQuery.data?.data?.is_completed;
+  // Onboarding can be skipped — users will see a reminder on their dashboard.
+  const isCompleted = profileQuery.data?.data?.is_completed === true;
 
   return (
     <Card className="w-full max-w-5xl">
@@ -464,10 +463,15 @@ export function OnboardingWizard(): ReactNode {
               Fill out all required onboarding data. You can continue where you left off.
             </CardDescription>
           </div>
-          {!isMandatory && (
+          {isCompleted ? (
             <Button variant="outline" onClick={() => router.push('/dashboard')}>
               <LogOut className="h-4 w-4" />
               Exit
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              <SkipForward className="h-4 w-4" />
+              Skip for now
             </Button>
           )}
         </div>
