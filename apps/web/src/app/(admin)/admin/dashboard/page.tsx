@@ -165,15 +165,15 @@ export default function AdminDashboardPage(): ReactNode {
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
-        {/* Company Pulse Card */}
+        {/* Company Calendar Card */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
-              Company Pulse
+              Company Calendar
             </BentoCardTitle>
-            <Link href="/admin/company-pulse">
+            <Link href="/admin/calendar">
               <Button variant="ghost" size="xs">
-                Manage
+                View Calendar
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </Link>

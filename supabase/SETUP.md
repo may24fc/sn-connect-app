@@ -57,14 +57,31 @@ The migrations will be applied in this order:
 7. `20260123000007_create_triggers.sql` - Triggers
 8. `20260123000008_create_helper_functions.sql` - Helper functions
 
-### Step 3: Seed Sample Data (Optional)
+### Step 3: Seed Data (Optional)
 
 ```bash
-# Load sample data for testing
-psql $DATABASE_URL -f supabase/seed/01_sample_data.sql
+# The safe baseline seed runs automatically during supabase db reset.
+# Re-run this only when you want to recreate the local database from scratch.
+supabase db reset
 ```
 
-**Note**: Before seeding, you need to create corresponding `auth.users` entries through Supabase Auth. The seed file expects these user IDs:
+The repo default seed path is `supabase/seed.sql`.
+
+It is intentionally safe and minimal so fresh environments and Supabase branches do not receive fake HR data automatically.
+
+For local development only, you can manually load development sample data:
+
+```bash
+# HR portal sample data for local or non-production testing only
+psql $DATABASE_URL -f supabase/seed/01_sample_data.sql
+
+# Optional public website starter content for local or non-production testing only
+psql $DATABASE_URL -f supabase/seed/02_corporate_website.sql
+```
+
+**Important**: Do not run these sample seed files in production.
+
+Before loading `supabase/seed/01_sample_data.sql`, you need to create corresponding `auth.users` entries through Supabase Auth. That seed file expects these user IDs:
 
 | User ID | Email | Role |
 |---------|-------|------|
@@ -114,6 +131,11 @@ supabase db push
 # Verify migration status
 supabase migration list
 ```
+
+Production note:
+- do not apply development seed files to the live project
+- import only approved baseline production data after migration push
+- preferred launch path is a clean new project, documented in [docs/production/supabase-production-bootstrap.md](../docs/production/supabase-production-bootstrap.md)
 
 ### Step 4: Configure Production Environment
 

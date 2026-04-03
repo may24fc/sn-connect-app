@@ -37,7 +37,7 @@ export default function AdminCompanyPulsePage() {
       <div className="p-3">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Company Pulse</h1>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Company Calendar</h1>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               Google Calendar is the single source of truth. The HR portal reads one shared company calendar and reflects those events on every dashboard.
             </p>
@@ -45,6 +45,9 @@ export default function AdminCompanyPulsePage() {
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href="/admin/dashboard">Back to Dashboard</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/calendar">Open Calendar View</Link>
             </Button>
             <Button asChild className="bg-slate-900 hover:bg-slate-800 text-white">
               <a href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noopener noreferrer">
@@ -94,7 +97,7 @@ export default function AdminCompanyPulsePage() {
                     How it works
                   </div>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Admins create and edit events directly in the shared Google Calendar. Company Pulse then shows the next upcoming items across employee, admin, intern, and super-admin dashboards.
+                    Admins create and edit events directly in the shared Google Calendar. Company Calendar then shows the next upcoming items across employee, admin, intern, and super-admin dashboards.
                   </p>
                 </div>
 
@@ -163,7 +166,7 @@ export default function AdminCompanyPulsePage() {
           <EmptyState
             icon={Calendar}
             title="Google Calendar not configured"
-            description="Set the required Google calendar environment variables and share the calendar with the service account. Company Pulse will stay empty until that connection is live."
+            description="Set the required Google calendar environment variables and share the calendar with the service account. Company Calendar will stay empty until that connection is live."
             action={{
               label: 'Open Google Calendar',
               onClick: () => window.open('https://calendar.google.com/calendar/u/0/r', '_blank', 'noopener,noreferrer'),
@@ -176,13 +179,13 @@ export default function AdminCompanyPulsePage() {
                 <div>
                   <p className="text-base font-semibold text-zinc-900 dark:text-zinc-50">Live preview</p>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    This is the same Company Pulse feed shown on the dashboards.
+                    This is the same Company Calendar feed shown on the dashboards.
                   </p>
                 </div>
                 <Badge variant="secondary">Read-only preview</Badge>
               </div>
 
-              <CompanyPulseWidget />
+              <CompanyPulseWidget scrollable={false} />
             </CardContent>
           </Card>
         )}

@@ -39,6 +39,21 @@ $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 COMMENT ON FUNCTION public.user_has_any_role(uuid, user_role[]) IS 'Check if a user has any of the specified roles';
 
+-- Overload accepting text[] so callers can pass ARRAY['admin','hr'] without explicit cast
+CREATE OR REPLACE FUNCTION public.user_has_any_role(user_id uuid, required_roles text[])
+RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.users
+    WHERE id = user_id
+    AND role = ANY(required_roles::user_role[])
+    AND deleted_at IS NULL
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+COMMENT ON FUNCTION public.user_has_any_role(uuid, text[]) IS 'Check if a user has any of the specified roles (text overload)';
+
 -- ============================================
 -- Function: Get user role
 -- ============================================
@@ -106,7 +121,7 @@ RETURNS TABLE(
   user_id uuid,
   employee_number text,
   full_name text,
-  position text,
+  "position" text,
   department text
 ) AS $$
 BEGIN
@@ -116,7 +131,7 @@ BEGIN
     e.user_id,
     e.employee_number,
     CONCAT(e.first_name, ' ', e.last_name) as full_name,
-    e.position,
+    e."position",
     e.department
   FROM public.employees e
   WHERE e.immediate_head = manager_user_id
@@ -153,7 +168,7 @@ RETURNS integer AS $$
   SELECT
     CASE
       WHEN date_hired IS NOT NULL THEN
-        EXTRACT(DAY FROM CURRENT_DATE - date_hired)::integer
+        (CURRENT_DATE - date_hired)
       ELSE
         NULL
     END
@@ -172,7 +187,7 @@ RETURNS TABLE(
   employee_id uuid,
   employee_number text,
   full_name text,
-  position text,
+  "position" text,
   employment_type employment_type,
   date_hired date
 ) AS $$
@@ -182,7 +197,7 @@ BEGIN
     e.id,
     e.employee_number,
     CONCAT(e.first_name, ' ', e.last_name) as full_name,
-    e.position,
+    e."position",
     e.employment_type,
     e.date_hired
   FROM public.employees e
@@ -208,6 +223,7 @@ DROP FUNCTION IF EXISTS public.soft_delete(text, uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.get_employee_by_user_id(uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.is_manager_of(uuid, uuid) CASCADE;
 DROP FUNCTION IF EXISTS public.get_user_role(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.user_has_any_role(uuid, text[]) CASCADE;
 DROP FUNCTION IF EXISTS public.user_has_any_role(uuid, user_role[]) CASCADE;
 DROP FUNCTION IF EXISTS public.user_has_role(uuid, user_role) CASCADE;
 

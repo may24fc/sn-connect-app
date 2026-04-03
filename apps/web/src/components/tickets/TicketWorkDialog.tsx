@@ -1,14 +1,16 @@
 'use client';
 
-import type { TicketRecord } from '@/hooks/useTickets';
+import { useTicketAttachments, type TicketRecord } from '@/hooks/useTickets';
 import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   Label,
+  Separator,
   Select,
   SelectContent,
   SelectItem,
@@ -17,6 +19,8 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { type ReactNode, useEffect, useState } from 'react';
+import { TicketCommentsPanel } from './TicketCommentsPanel';
+import { TicketDetailsPanel } from './TicketDetailsPanel';
 import { TICKET_STATUS_OPTIONS } from './ticket-badges';
 
 type HandlerTicketStatus = 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
@@ -42,6 +46,8 @@ export function TicketWorkDialog({
 }: TicketWorkDialogProps): ReactNode {
   const [status, setStatus] = useState<HandlerTicketStatus>('assigned');
   const [resolutionSummary, setResolutionSummary] = useState('');
+  const { data: attachmentData, isLoading: attachmentsLoading, error: attachmentsError } =
+    useTicketAttachments(ticket?.id, { enabled: open && Boolean(ticket) });
 
   useEffect(() => {
     if (!ticket) {
@@ -67,11 +73,23 @@ export function TicketWorkDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Update Ticket</DialogTitle>
+          <DialogDescription>
+            Review the submitted details and attachments before updating the ticket status.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          <TicketDetailsPanel
+            ticket={ticket}
+            attachments={attachmentData?.data}
+            attachmentsLoading={attachmentsLoading}
+            attachmentsError={attachmentsError?.message ?? null}
+          />
+          <Separator />
+          <TicketCommentsPanel ticket={ticket} enabled={open} />
+          <Separator />
           <div className="space-y-1.5">
             <Label>Status</Label>
             <Select value={status} onValueChange={(value) => setStatus(value as HandlerTicketStatus)}>

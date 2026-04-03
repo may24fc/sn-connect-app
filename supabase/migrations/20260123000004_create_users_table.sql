@@ -112,6 +112,64 @@ COMMENT ON COLUMN public.users.manager_id IS 'Self-referencing foreign key for r
 COMMENT ON COLUMN public.users.status IS 'Employment status';
 COMMENT ON COLUMN public.users.deleted_at IS 'Soft delete timestamp';
 
+-- Now that public.users exists, create the deferred audit_logs select policy
+CREATE POLICY "audit_logs_select_policy" ON public.audit_logs
+  FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE users.id = auth.uid()
+      AND users.role IN ('admin', 'hr')
+      AND users.deleted_at IS NULL
+    )
+  );
+
+-- Deferred departments policies (moved from 20260123000003)
+CREATE POLICY "departments_insert_policy" ON public.departments
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE users.id = auth.uid()
+      AND users.role IN ('admin', 'hr', 'cos', 'ceo')
+      AND users.deleted_at IS NULL
+    )
+  );
+
+CREATE POLICY "departments_update_policy" ON public.departments
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE users.id = auth.uid()
+      AND users.role IN ('admin', 'hr', 'cos', 'ceo')
+      AND users.deleted_at IS NULL
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE users.id = auth.uid()
+      AND users.role IN ('admin', 'hr', 'cos', 'ceo')
+      AND users.deleted_at IS NULL
+    )
+  );
+
+CREATE POLICY "departments_delete_policy" ON public.departments
+  FOR DELETE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.users
+      WHERE users.id = auth.uid()
+      AND users.role = 'admin'
+      AND users.deleted_at IS NULL
+    )
+  );
+
 COMMIT;
 
 -- DOWN Migration (run manually if rollback needed)

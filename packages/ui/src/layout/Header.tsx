@@ -67,6 +67,14 @@ export function Header({
 }: HeaderProps): React.ReactNode {
   const [searchQuery, setSearchQuery] = React.useState('');
 
+  const formatRoleLabel = (role: string): string => {
+    return role
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const handleSearchSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     onSearch?.(searchQuery);
@@ -194,9 +202,9 @@ export function Header({
                 </span>
                 <Badge
                   variant="secondary"
-                  className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 capitalize"
+                  className="text-xs font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                 >
-                  {user.role}
+                  {formatRoleLabel(user.role)}
                 </Badge>
               </div>
               <ChevronDown

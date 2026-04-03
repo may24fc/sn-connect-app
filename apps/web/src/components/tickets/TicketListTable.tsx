@@ -3,6 +3,7 @@
 import type { TicketRecord } from '@/hooks/useTickets';
 import { formatDate } from '@/lib/format';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -14,9 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Paperclip } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { TicketPriorityBadge, TicketStatusBadge, TicketTeamBadge } from './ticket-badges';
+import {
+  getTicketFeatureAreaLabel,
+  TicketCategoryBadge,
+  TicketPriorityBadge,
+  TicketStatusBadge,
+  TicketTeamBadge,
+} from './ticket-badges';
 
 interface TicketListTableProps {
   tickets: Array<TicketRecord>;
@@ -74,7 +81,26 @@ export function TicketListTable({
                 <TableCell>
                   <div className="space-y-1">
                     <p className="font-medium text-foreground">{ticket.title}</p>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                      <TicketCategoryBadge category={ticket.category} />
+                      {ticket.feature_area ? (
+                        <Badge variant="secondary" className="border-0 bg-zinc-100 text-[11px] text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300">
+                          {getTicketFeatureAreaLabel(ticket.feature_area)}
+                        </Badge>
+                      ) : null}
+                      {ticket.has_attachments ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Paperclip className="h-3.5 w-3.5" />
+                          Attachment included
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="line-clamp-2 text-xs text-muted-foreground">{ticket.description}</p>
+                    {ticket.steps_to_reproduce ? (
+                      <p className="line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">
+                        Steps: {ticket.steps_to_reproduce}
+                      </p>
+                    ) : null}
                     {ticket.resolution_summary ? (
                       <p className="line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">
                         Resolution: {ticket.resolution_summary}

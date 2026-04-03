@@ -164,12 +164,14 @@ export async function sendUserInviteEmail({
   role,
   temporaryPassword,
   loginUrl,
+  requiresOnboarding,
 }: {
   to: string;
   firstName: string;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'intern' | 'admin' | 'super_admin';
   temporaryPassword: string;
   loginUrl: string;
+  requiresOnboarding: boolean;
 }): Promise<{ sent: boolean; error?: string }> {
   const resend = getResendClient();
   if (!resend) {
@@ -178,9 +180,15 @@ export async function sendUserInviteEmail({
 
   try {
     const safeName = escapeHtml(firstName || 'there');
-    const safeRole = escapeHtml(role);
+    const safeRole = escapeHtml(role.replace(/_/g, ' '));
     const safePassword = escapeHtml(temporaryPassword);
     const safeLoginUrl = escapeHtml(loginUrl);
+    const inviteBody = requiresOnboarding
+      ? `Your <strong>${safeRole}</strong> account has been created in SN Connect. Use the credentials below to sign in and complete onboarding.`
+      : `Your <strong>${safeRole}</strong> account has been created in SN Connect. Use the credentials below to sign in and access your dashboard.`;
+    const followUpBody = requiresOnboarding
+      ? `For security, change your password after your first sign-in.`
+      : `For security, change your password immediately after your first sign-in.`;
 
     const { data, error } = await resend.emails.send({
       from: getFromEmail('onboarding'),
@@ -198,7 +206,7 @@ export async function sendUserInviteEmail({
       <h2 style="margin:0 0 16px;color:#18181b;font-size:18px;font-weight:600;">You have been invited</h2>
       <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">Hi ${safeName},</p>
       <p style="margin:0 0 16px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Your <strong>${safeRole}</strong> account has been created in SN Connect. Use the credentials below to sign in and complete onboarding.
+        ${inviteBody}
       </p>
 
       <div style="background:#fafafa;border:1px solid #e4e4e7;border-radius:10px;padding:16px;margin:0 0 20px;">
@@ -212,7 +220,7 @@ export async function sendUserInviteEmail({
         Login here: <a href="${safeLoginUrl}" style="color:#1d4ed8;text-decoration:none;">${safeLoginUrl}</a>
       </p>
       <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        For security, change your password after your first sign-in.
+        ${followUpBody}
       </p>
 
       <div style="border-top:1px solid #e4e4e7;padding-top:20px;margin-top:20px;">
@@ -337,6 +345,84 @@ export async function sendOnboardingDecisionEmail({
     return { sent: true };
   } catch (error) {
     console.error('[Email] Failed to send onboarding decision email:', error);
+    return {
+      sent: false,
+      error: error instanceof Error ? error.message : 'Unknown send error',
+    };
+  }
+}
+
+export async function sendPortalNotificationEmail({
+  to,
+  subject,
+  heading,
+  paragraphs,
+  actionLabel,
+  actionUrl,
+  context = 'hrOperations',
+}: {
+  to: string;
+  subject: string;
+  heading: string;
+  paragraphs: string[];
+  actionLabel?: string;
+  actionUrl?: string | undefined;
+  context?: keyof typeof SENDER_NAME_BY_CONTEXT;
+}): Promise<{ sent: boolean; error?: string }> {
+  const resend = getResendClient();
+  if (!resend) {
+    return { sent: false, error: 'RESEND_API_KEY is not configured' };
+  }
+
+  try {
+    const renderedParagraphs = paragraphs
+      .filter((paragraph) => paragraph.trim().length > 0)
+      .map(
+        (paragraph) =>
+          `<p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">${escapeHtml(paragraph)}</p>`
+      )
+      .join('');
+    const safeHeading = escapeHtml(heading);
+    const safeActionLabel = actionLabel ? escapeHtml(actionLabel) : null;
+    const safeActionUrl = actionUrl ? escapeHtml(actionUrl) : null;
+
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail(context),
+      to,
+      subject,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8" /></head>
+<body style="margin:0;padding:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background-color:#f4f4f5;">
+  <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e4e4e7;">
+    <div style="background:#0F172A;padding:32px 24px;text-align:center;">
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">SN Connect HR Portal</h1>
+    </div>
+    <div style="padding:32px 24px;">
+      <h2 style="margin:0 0 16px;color:#18181b;font-size:18px;font-weight:600;">${safeHeading}</h2>
+      ${renderedParagraphs}
+      ${safeActionLabel && safeActionUrl ? `<div style="margin:24px 0 0;"><a href="${safeActionUrl}" style="display:inline-block;background:#0F172A;color:#ffffff;text-decoration:none;padding:12px 16px;border-radius:8px;font-size:14px;font-weight:600;">${safeActionLabel}</a></div>` : ''}
+      <div style="border-top:1px solid #e4e4e7;padding-top:20px;margin-top:24px;">
+        <p style="margin:0;color:#71717a;font-size:12px;line-height:1.5;">
+          This is an automated message. Please do not reply to this email.<br />
+          &copy; ${new Date().getFullYear()} SN International Group. All rights reserved.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+    });
+
+    if (error) {
+      console.error('[Email] Resend API error for portal notification email:', error);
+      return { sent: false, error: error.message };
+    }
+
+    console.log('[Email] Portal notification email sent successfully, id:', data?.id);
+    return { sent: true };
+  } catch (error) {
+    console.error('[Email] Failed to send portal notification email:', error);
     return {
       sent: false,
       error: error instanceof Error ? error.message : 'Unknown send error',

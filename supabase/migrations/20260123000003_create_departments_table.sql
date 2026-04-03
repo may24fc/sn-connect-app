@@ -31,52 +31,8 @@ CREATE POLICY "departments_select_policy" ON public.departments
   TO authenticated
   USING (deleted_at IS NULL);
 
--- Only HR, COS, CEO, and Admin can insert departments
-CREATE POLICY "departments_insert_policy" ON public.departments
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.id = auth.uid()
-      AND users.role IN ('admin', 'hr', 'cos', 'ceo')
-      AND users.deleted_at IS NULL
-    )
-  );
-
--- Only HR, COS, CEO, and Admin can update departments
-CREATE POLICY "departments_update_policy" ON public.departments
-  FOR UPDATE
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.id = auth.uid()
-      AND users.role IN ('admin', 'hr', 'cos', 'ceo')
-      AND users.deleted_at IS NULL
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.id = auth.uid()
-      AND users.role IN ('admin', 'hr', 'cos', 'ceo')
-      AND users.deleted_at IS NULL
-    )
-  );
-
--- Only Admin can delete (soft delete)
-CREATE POLICY "departments_delete_policy" ON public.departments
-  FOR DELETE
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-      AND users.deleted_at IS NULL
-    )
-  );
+-- NOTE: Insert/update/delete policies referencing public.users are created in
+-- 20260123000004_create_users_table.sql (after the users table exists).
 
 -- Comment on table
 COMMENT ON TABLE public.departments IS 'Organizational departments within the company';

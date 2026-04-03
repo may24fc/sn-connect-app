@@ -1,6 +1,7 @@
 'use client';
 
 import { useCompanyPulse, type PulseEvent } from '@/hooks/useCompanyPulse';
+import { buildAddToCalendarUrl, formatCompanyCalendarTimeRange } from '@/lib/company-calendar';
 import { Badge, Skeleton } from '@hr-portal/ui';
 import { Calendar, ExternalLink, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -12,33 +13,6 @@ const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', '
 function dateBadge(iso: string): { month: string; day: number } {
   const d = new Date(iso);
   return { month: MONTHS[d.getMonth()] ?? 'JAN', day: d.getDate() };
-}
-
-function formatTimeRange(start: string, end: string, allDay: boolean): string {
-  if (allDay) return 'All day';
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `${fmt(start)} – ${fmt(end)}`;
-}
-
-function buildAddToCalendarUrl(event: PulseEvent): string {
-  const params = new URLSearchParams({ action: 'TEMPLATE' });
-  params.set('text', event.summary);
-  if (event.location) params.set('location', event.location);
-
-  const fmtDate = (iso: string, allDay: boolean) => {
-    if (allDay) return iso.slice(0, 10).replace(/-/g, '');
-    return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  };
-
-  if (event.start) {
-    params.set(
-      'dates',
-      `${fmtDate(event.start, event.allDay)}/${fmtDate(event.end || event.start, event.allDay)}`,
-    );
-  }
-
-  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 // ─── Item ───────────────────────────────────────────
@@ -64,7 +38,7 @@ function PulseItem({ event }: { event: PulseEvent }): ReactNode {
           {event.summary}
         </p>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          {formatTimeRange(event.start, event.end, event.allDay)}
+          {formatCompanyCalendarTimeRange(event.start, event.end, event.allDay)}
         </p>
         {event.location && (
           <div className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -90,7 +64,11 @@ function PulseItem({ event }: { event: PulseEvent }): ReactNode {
 
 // ─── Widget ─────────────────────────────────────────
 
-export function CompanyPulseWidget(): ReactNode {
+interface CompanyPulseWidgetProps {
+  scrollable?: boolean;
+}
+
+export function CompanyPulseWidget({ scrollable = true }: CompanyPulseWidgetProps = {}): ReactNode {
   const { data, isLoading } = useCompanyPulse();
 
   const events = data?.data ?? [];
@@ -141,7 +119,7 @@ export function CompanyPulseWidget(): ReactNode {
   }
 
   return (
-    <div className="space-y-2">
+    <div className={scrollable ? 'space-y-2 max-h-64 overflow-y-auto pr-1' : 'space-y-2'}>
       {events.map((event) => (
         <PulseItem key={event.id} event={event} />
       ))}

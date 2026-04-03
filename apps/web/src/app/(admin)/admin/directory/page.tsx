@@ -1,5 +1,6 @@
 'use client';
 
+import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,6 +62,7 @@ import {
   Trash2,
   Users,
   UserCheck,
+  UserPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
@@ -115,6 +117,7 @@ export default function AdminDirectoryPage(): ReactNode {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
   const pageSize = 20;
+  const [inviteLeadershipOpen, setInviteLeadershipOpen] = useState(false);
 
   // Delete employee state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -286,6 +289,12 @@ export default function AdminDirectoryPage(): ReactNode {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {isSuperAdmin && (
+            <Button size="sm" onClick={() => setInviteLeadershipOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" strokeWidth={1.5} />
+              Invite Leadership
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
             <Download className="h-4 w-4 mr-2" strokeWidth={1.5} />
             {exporting ? 'Exporting...' : 'Export CSV'}
@@ -654,6 +663,12 @@ export default function AdminDirectoryPage(): ReactNode {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <InviteUserModal
+        open={inviteLeadershipOpen}
+        onOpenChange={setInviteLeadershipOpen}
+        allowedRoles={['admin', 'super_admin']}
+      />
 
       {/* Edit Employee Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

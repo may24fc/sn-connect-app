@@ -69,6 +69,17 @@ CREATE TABLE IF NOT EXISTS public.intern_daily_logs (
 );
 
 -- ============================================
+-- 3b. Ensure missing columns exist (original migration lacked these)
+-- ============================================
+
+ALTER TABLE public.internships ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+ALTER TABLE public.internships ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users(id);
+
+ALTER TABLE public.intern_daily_logs ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+ALTER TABLE public.intern_daily_logs ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users(id);
+ALTER TABLE public.intern_daily_logs ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+
+-- ============================================
 -- 4. Create indexes
 -- ============================================
 

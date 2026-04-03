@@ -1,5 +1,11 @@
 'use client';
 
+import {
+  TICKET_CATEGORY_LABELS,
+  TICKET_FEATURE_AREA_LABELS,
+  type TicketCategory,
+  type TicketFeatureArea,
+} from '@/lib/schemas/ticket.schema';
 import { Badge, cn } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
 
@@ -89,6 +95,22 @@ export function TicketTeamBadge({ team }: { team: TicketTeam }): ReactNode {
   return (
     <Badge variant="secondary" className={cn('border-0 uppercase', TEAM_CLASSNAMES[team])}>
       {team}
+    </Badge>
+  );
+}
+
+export function getTicketCategoryLabel(category: TicketCategory): string {
+  return TICKET_CATEGORY_LABELS[category];
+}
+
+export function getTicketFeatureAreaLabel(featureArea: TicketFeatureArea): string {
+  return TICKET_FEATURE_AREA_LABELS[featureArea];
+}
+
+export function TicketCategoryBadge({ category }: { category: TicketCategory }): ReactNode {
+  return (
+    <Badge variant="outline" className="border-zinc-200 text-[11px] font-medium text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">
+      {getTicketCategoryLabel(category)}
     </Badge>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useInviteUser } from '@/hooks/useUserManagement';
+import { type InviteUserRole, useInviteUser } from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@hr-portal/ui';
 import { FormGroup } from '@hr-portal/ui/components/forms';
@@ -41,7 +41,7 @@ const inviteSchema = z.object({
   email: z.string().email('Invalid email address'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['employee', 'intern'], {
+  role: z.enum(['employee', 'intern', 'admin', 'super_admin'], {
     required_error: 'Role is required',
   }),
   position: z.string().optional(),
@@ -50,10 +50,18 @@ const inviteSchema = z.object({
 
 type InviteFormData = z.infer<typeof inviteSchema>;
 
+const roleLabels: Record<InviteUserRole, string> = {
+  employee: 'Employee',
+  intern: 'Intern',
+  admin: 'Admin',
+  super_admin: 'Super Admin',
+};
+
 interface InviteUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultRole?: 'employee' | 'intern';
+  defaultRole?: InviteUserRole;
+  allowedRoles?: InviteUserRole[];
   departments?: Array<{ id: string; name: string }>;
 }
 
@@ -61,6 +69,7 @@ export function InviteUserModal({
   open,
   onOpenChange,
   defaultRole,
+  allowedRoles,
   departments = [],
 }: InviteUserModalProps) {
   const [invitedCredentials, setInvitedCredentials] = useState<{
@@ -85,6 +94,7 @@ export function InviteUserModal({
 
   const inviteUser = useInviteUser();
   const { addToast } = useToast();
+  const availableRoles = allowedRoles ?? (defaultRole ? [defaultRole] : ['employee', 'intern']);
 
   const onSubmit = async (data: InviteFormData) => {
     try {
@@ -110,9 +120,14 @@ export function InviteUserModal({
           variant: 'success',
         });
       } else {
+        const invitedRoleLabel = roleLabels[data.role];
+        const nextStepDescription =
+          data.role === 'employee' || data.role === 'intern'
+            ? `${data.firstName} ${data.lastName} can now sign in and complete onboarding.`
+            : `${data.firstName} ${data.lastName} can now sign in with ${invitedRoleLabel.toLowerCase()} access.`;
         addToast({
-          title: `${data.role === 'intern' ? 'Intern' : 'Employee'} invited`,
-          description: `${data.firstName} ${data.lastName} can now sign in and complete onboarding.`,
+          title: `${invitedRoleLabel} invited`,
+          description: nextStepDescription,
           variant: 'success',
         });
       }
@@ -167,6 +182,12 @@ export function InviteUserModal({
   };
 
   const selectedRole = watch('role');
+  const selectedRoleLabel = roleLabels[selectedRole];
+  const modalTitle = defaultRole ? `Invite New ${roleLabels[defaultRole]}` : 'Invite New User';
+  const isPrivilegedRole = selectedRole === 'admin' || selectedRole === 'super_admin';
+  const description = isPrivilegedRole
+    ? 'Create a privileged account. These users are activated immediately and should be invited only when elevated access is required.'
+    : 'Create a new user account. They will receive login credentials to complete their onboarding.';
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -176,12 +197,9 @@ export function InviteUserModal({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-slate-700" />
-                Invite New {defaultRole === 'intern' ? 'Intern' : 'Employee'}
+                {modalTitle}
               </DialogTitle>
-              <DialogDescription>
-                Create a new user account. They will receive login credentials to complete their
-                onboarding.
-              </DialogDescription>
+              <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -251,18 +269,27 @@ export function InviteUserModal({
               >
                 <Select
                   value={selectedRole}
-                  onValueChange={(value) => setValue('role', value as 'employee' | 'intern')}
+                  onValueChange={(value) => setValue('role', value as InviteUserRole)}
                   disabled={inviteUser.isPending || !!defaultRole}
                 >
                   <SelectTrigger id="role" className={errors.role ? 'border-rose-500' : ''}>
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="employee">Employee</SelectItem>
-                    <SelectItem value="intern">Intern</SelectItem>
+                    {availableRoles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {roleLabels[role]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </FormGroup>
+
+              {isPrivilegedRole && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  Privileged invites skip onboarding and become active immediately. Only create this account if elevated access is required.
+                </div>
+              )}
 
               <FormGroup
                 label="Position"
@@ -356,6 +383,13 @@ export function InviteUserModal({
               <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                 <div className="space-y-3">
                   <div>
+                    <Label className="text-xs text-zinc-500 dark:text-zinc-400">Role</Label>
+                    <div className="mt-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {selectedRoleLabel}
+                    </div>
+                  </div>
+
+                  <div>
                     <Label className="text-xs text-zinc-500 dark:text-zinc-400">Email</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <code className="flex-1 text-sm font-mono bg-card px-3 py-2 rounded border border-border">
@@ -399,8 +433,7 @@ export function InviteUserModal({
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 dark:bg-yellow-900/20 dark:border-yellow-800">
                 <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  ⚠️ <strong>Important:</strong> This password will only be shown once. Make sure to
-                  share it securely with the new user.
+                  ⚠️ <strong>Important:</strong> This password will only be shown once. Make sure to share it securely with the new user.
                 </p>
               </div>
 

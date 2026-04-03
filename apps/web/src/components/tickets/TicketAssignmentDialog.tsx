@@ -1,15 +1,17 @@
 'use client';
 
 import type { TicketAssigneeOption } from '@/hooks/useTicketAssignees';
-import type { TicketRecord } from '@/hooks/useTickets';
+import { useTicketAttachments, type TicketRecord } from '@/hooks/useTickets';
 import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   Label,
+  Separator,
   Select,
   SelectContent,
   SelectItem,
@@ -18,6 +20,8 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { TicketCommentsPanel } from './TicketCommentsPanel';
+import { TicketDetailsPanel } from './TicketDetailsPanel';
 import { TICKET_PRIORITY_OPTIONS, TICKET_STATUS_OPTIONS, TICKET_TEAM_OPTIONS } from './ticket-badges';
 
 type TicketStatus = 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
@@ -69,6 +73,8 @@ export function TicketAssignmentDialog({
     () => assignees.filter((assignee) => assignee.team === team),
     [assignees, team]
   );
+  const { data: attachmentData, isLoading: attachmentsLoading, error: attachmentsError } =
+    useTicketAttachments(ticket?.id, { enabled: open && Boolean(ticket) });
 
   useEffect(() => {
     if (assignedTo === 'unassigned') {
@@ -93,10 +99,24 @@ export function TicketAssignmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Triage Ticket</DialogTitle>
+          <DialogDescription>
+            Review the full ticket context before routing it to the right team and handler.
+          </DialogDescription>
         </DialogHeader>
+        <div className="space-y-4">
+          <TicketDetailsPanel
+            ticket={ticket}
+            attachments={attachmentData?.data}
+            attachmentsLoading={attachmentsLoading}
+            attachmentsError={attachmentsError?.message ?? null}
+          />
+          <Separator />
+          <TicketCommentsPanel ticket={ticket} enabled={open} />
+          <Separator />
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Team</Label>

@@ -14,6 +14,7 @@ import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useDashboardAttentionItems } from '@/hooks/useDashboardAttentionItems';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
 import { useSuperAdminStats } from '@/hooks/useSuperAdminStats';
+import { formatLabel } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -166,50 +167,6 @@ export default function SuperAdminDashboardPage(): ReactNode {
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
-        {/* Security Alerts Card */}
-        <BentoCard colSpan={2}>
-          <BentoCardHeader>
-            <BentoCardTitle icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}>
-              Security Alerts
-            </BentoCardTitle>
-            <Badge variant="secondary">Not connected</Badge>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <EmptyState
-              icon={Shield}
-              title="Alert monitoring is not connected"
-              description="Connect an alerting source before this dashboard can surface live security incidents."
-              action={{
-                label: 'Configure alerting',
-                onClick: () => openComingSoon('Alert Monitoring'),
-              }}
-              size="sm"
-            />
-          </BentoCardContent>
-        </BentoCard>
-
-        {/* System Health Card */}
-        <BentoCard colSpan={2}>
-          <BentoCardHeader>
-            <BentoCardTitle icon={<Database className="h-4 w-4" strokeWidth={1.5} />}>
-              System Health
-            </BentoCardTitle>
-            <Badge variant="secondary">Not connected</Badge>
-          </BentoCardHeader>
-          <BentoCardContent>
-            <EmptyState
-              icon={Database}
-              title="System monitoring is not connected"
-              description="Connect uptime and service-health signals before this dashboard can report platform status."
-              action={{
-                label: 'Configure monitoring',
-                onClick: () => openComingSoon('System Monitoring'),
-              }}
-              size="sm"
-            />
-          </BentoCardContent>
-        </BentoCard>
-
         {/* User Role Distribution */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
@@ -224,11 +181,11 @@ export default function SuperAdminDashboardPage(): ReactNode {
                   <div key={roleData.role} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                        {roleData.role}
+                        {formatLabel(roleData.role)}
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 tabular-nums">
-                          {roleData.count} users
+                          {roleData.count} {roleData.count === 1 ? 'user' : 'users'}
                         </span>
                         <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
                           {roleData.percentage}%
@@ -247,15 +204,15 @@ export default function SuperAdminDashboardPage(): ReactNode {
           </BentoCardContent>
         </BentoCard>
 
-        {/* Company Pulse Card */}
+        {/* Company Calendar Card */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
-              Company Pulse
+              Company Calendar
             </BentoCardTitle>
-            <Link href="/super-admin/company-pulse">
+            <Link href="/super-admin/calendar">
               <Button variant="ghost" size="xs">
-                Manage
+                View Calendar
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </Link>
@@ -322,6 +279,50 @@ export default function SuperAdminDashboardPage(): ReactNode {
                 size="sm"
               />
             )}
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* Security Alerts Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Shield className="h-4 w-4" strokeWidth={1.5} />}>
+              Security Alerts
+            </BentoCardTitle>
+            <Badge variant="secondary">Not connected</Badge>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <EmptyState
+              icon={Shield}
+              title="Alert monitoring is not connected"
+              description="Connect an alerting source before this dashboard can surface live security incidents."
+              action={{
+                label: 'Configure alerting',
+                onClick: () => openComingSoon('Alert Monitoring'),
+              }}
+              size="sm"
+            />
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* System Health Card */}
+        <BentoCard colSpan={2}>
+          <BentoCardHeader>
+            <BentoCardTitle icon={<Database className="h-4 w-4" strokeWidth={1.5} />}>
+              System Health
+            </BentoCardTitle>
+            <Badge variant="secondary">Not connected</Badge>
+          </BentoCardHeader>
+          <BentoCardContent>
+            <EmptyState
+              icon={Database}
+              title="System monitoring is not connected"
+              description="Connect uptime and service-health signals before this dashboard can report platform status."
+              action={{
+                label: 'Configure monitoring',
+                onClick: () => openComingSoon('System Monitoring'),
+              }}
+              size="sm"
+            />
           </BentoCardContent>
         </BentoCard>
       </BentoGrid>

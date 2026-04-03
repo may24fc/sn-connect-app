@@ -33,7 +33,7 @@ export default function AdminDashboardLoading(): ReactNode {
 
       {/* Bento grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Company Pulse (span 2) */}
+        {/* Company Calendar (span 2) */}
         <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-4">
           <Skeleton className="h-5 w-40" />
           {Array.from({ length: 4 }).map((_, i) => (

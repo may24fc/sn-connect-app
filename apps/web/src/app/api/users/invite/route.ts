@@ -6,9 +6,14 @@ import type { User } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+const inviteableRoles = ['employee', 'intern', 'admin', 'super_admin'] as const;
+const privilegedInviteRoles = ['admin', 'super_admin'] as const;
+
 const inviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
-  role: z.enum(['employee', 'intern'], { required_error: 'Role must be employee or intern' }),
+  role: z.enum(inviteableRoles, {
+    required_error: 'Role must be employee, intern, admin, or super_admin',
+  }),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   departmentId: z.string().uuid().optional(),
@@ -60,8 +65,20 @@ export async function POST(request: NextRequest) {
     }
 
     const { role, firstName, lastName, departmentId, position } = parsed.data;
+    const isPrivilegedInvite = privilegedInviteRoles.includes(
+      role as (typeof privilegedInviteRoles)[number]
+    );
+
+    if (isPrivilegedInvite && userRecord.role !== 'super_admin') {
+      return NextResponse.json(
+        { error: 'Forbidden: Only super admins can invite admin or super_admin users' },
+        { status: 403 }
+      );
+    }
+
     const email = parsed.data.email.trim().toLowerCase();
     const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+    const nextStatus = isPrivilegedInvite ? 'active' : 'pending_onboarding';
 
     const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email);
 
@@ -96,6 +113,10 @@ export async function POST(request: NextRequest) {
         {
           password: temporaryPassword,
           email_confirm: true,
+          app_metadata: {
+            ...(existingAuthUser.app_metadata ?? {}),
+            db_role: role,
+          },
           user_metadata: {
             ...(existingAuthUser.user_metadata ?? {}),
             full_name: fullName,
@@ -123,6 +144,11 @@ export async function POST(request: NextRequest) {
           email,
           password: temporaryPassword,
           email_confirm: true, // Auto-confirm email
+          app_metadata: {
+            provider: 'email',
+            providers: ['email'],
+            db_role: role,
+          },
           user_metadata: {
             full_name: fullName,
             first_name: firstName,
@@ -149,7 +175,7 @@ export async function POST(request: NextRequest) {
       {
         id: invitedUserId,
         role,
-        status: 'pending_onboarding',
+        status: nextStatus,
         department_id: departmentId || null,
         created_by: user.id,
         deleted_at: null,
@@ -169,26 +195,70 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create or refresh onboarding profile with pre-filled data.
-    const { error: createProfileError } = await supabaseAdmin.from('onboarding_profiles').upsert(
-      {
-        user_id: invitedUserId,
-        first_name: firstName,
-        last_name: lastName,
-        email_address: email,
-        position: position || null,
-        department_id: departmentId || null,
-        is_completed: false,
-        completed_at: null,
-        current_step: 'personal_info',
-        deleted_at: null,
-      },
-      { onConflict: 'user_id' }
-    );
+    if (isPrivilegedInvite) {
+      const departmentName = await resolveDepartmentName(supabaseAdmin, departmentId);
 
-    if (createProfileError) {
-      console.error('Error creating onboarding profile:', createProfileError);
-      // Continue anyway - the user can create their profile on first login
+      const { data: existingEmployee } = await supabaseAdmin
+        .from('employees')
+        .select('id')
+        .eq('user_id', invitedUserId)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (!existingEmployee?.id) {
+        const { error: createEmployeeError } = await supabaseAdmin.from('employees').insert({
+          user_id: invitedUserId,
+          employee_number: generateEmployeeNumber(),
+          first_name: firstName,
+          last_name: lastName,
+          date_hired: new Date().toISOString().slice(0, 10),
+          employment_type: 'regular',
+          work_arrangement: 'full_time',
+          position: position || formatRoleLabel(role),
+          department: departmentName,
+          company_email: email,
+          created_by: user.id,
+        });
+
+        if (createEmployeeError) {
+          console.error('Error creating employee profile for privileged invite:', createEmployeeError);
+          if (!isReinvite) {
+            await supabaseAdmin.auth.admin.deleteUser(invitedUserId);
+          }
+          return NextResponse.json(
+            { error: 'Failed to create employee profile', details: createEmployeeError.message },
+            { status: 500 }
+          );
+        }
+      }
+
+      await supabaseAdmin
+        .from('onboarding_profiles')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('user_id', invitedUserId)
+        .is('deleted_at', null);
+    } else {
+      // Create or refresh onboarding profile with pre-filled data.
+      const { error: createProfileError } = await supabaseAdmin.from('onboarding_profiles').upsert(
+        {
+          user_id: invitedUserId,
+          first_name: firstName,
+          last_name: lastName,
+          email_address: email,
+          position: position || null,
+          department_id: departmentId || null,
+          is_completed: false,
+          completed_at: null,
+          current_step: 'personal_info',
+          deleted_at: null,
+        },
+        { onConflict: 'user_id' }
+      );
+
+      if (createProfileError) {
+        console.error('Error creating onboarding profile:', createProfileError);
+        // Continue anyway - the user can create their profile on first login
+      }
     }
 
     logActivity(supabaseAdmin, {
@@ -207,6 +277,7 @@ export async function POST(request: NextRequest) {
       role,
       temporaryPassword,
       loginUrl,
+      requiresOnboarding: !isPrivilegedInvite,
     });
 
     if (!inviteEmailResult.sent) {
@@ -221,6 +292,7 @@ export async function POST(request: NextRequest) {
           email,
           temporaryPassword, // Return this so admin can share with the new user
           role,
+          status: nextStatus,
           reinvite: isReinvite,
           emailSent: inviteEmailResult.sent,
         },
@@ -231,6 +303,38 @@ export async function POST(request: NextRequest) {
     console.error('POST /api/users/invite error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+async function resolveDepartmentName(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+  departmentId?: string
+): Promise<string> {
+  if (!departmentId) {
+    return 'Unassigned';
+  }
+
+  const { data } = await supabaseAdmin
+    .from('departments')
+    .select('name')
+    .eq('id', departmentId)
+    .maybeSingle();
+
+  return data?.name ?? 'Assigned Department';
+}
+
+function formatRoleLabel(role: (typeof inviteableRoles)[number]): string {
+  return role
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function generateEmployeeNumber(): string {
+  const now = new Date();
+  const yyyy = now.getUTCFullYear();
+  const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(now.getUTCDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 9000 + 1000);
+  return `EMP-${yyyy}${mm}${dd}-${random}`;
 }
 
 async function findAuthUserByEmail(

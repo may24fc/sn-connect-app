@@ -32,6 +32,42 @@ import {
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+const announcementCategoryLabels: Record<string, string> = {
+  hr_updates: 'HR Updates',
+  benefits: 'Benefits',
+  events: 'Events',
+  performance: 'Performance',
+  training: 'Training',
+  policy: 'Policy',
+  general: 'General',
+  emergency: 'Emergency',
+};
+
+function getAnnouncementCategoryLabel(category: string): string {
+  return announcementCategoryLabels[category] ?? category.replace(/_/g, ' ');
+}
+
+function getAnnouncementCategoryBadgeVariant(
+  category: string
+): 'error' | 'warning' | 'success' | 'secondary' | 'navy' {
+  switch (category) {
+    case 'emergency':
+      return 'error';
+    case 'policy':
+      return 'warning';
+    case 'benefits':
+      return 'success';
+    case 'training':
+    case 'events':
+      return 'secondary';
+    case 'performance':
+    case 'hr_updates':
+    case 'general':
+    default:
+      return 'navy';
+  }
+}
+
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -306,12 +342,18 @@ export default function DashboardPage(): ReactNode {
           </BentoCard>
         )}
 
-        {/* Company Pulse Card */}
+        {/* Company Calendar Card */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
-              Company Pulse
+              Company Calendar
             </BentoCardTitle>
+            <Link href="/calendar">
+              <Button variant="ghost" size="xs">
+                View Calendar
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
           </BentoCardHeader>
           <BentoCardContent>
             <CompanyPulseWidget />
@@ -359,8 +401,11 @@ export default function DashboardPage(): ReactNode {
                           {announcement.title}
                         </p>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs h-5">
-                            {announcement.category.replace(/_/g, ' ')}
+                          <Badge
+                            variant={getAnnouncementCategoryBadgeVariant(announcement.category)}
+                            className="h-6 border-transparent px-2.5 text-[11px] font-medium"
+                          >
+                            {getAnnouncementCategoryLabel(announcement.category)}
                           </Badge>
                           <span className="text-xs text-zinc-500 dark:text-zinc-400">
                             {announcement.published_at

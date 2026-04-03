@@ -16,6 +16,7 @@ import {
   PasswordInput,
 } from '@hr-portal/ui';
 import { AlertCircle, Lock, Mail } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, type ReactNode, useEffect, useState } from 'react';
@@ -64,9 +65,15 @@ export default function LoginPage(): ReactNode {
         <CardHeader className="space-y-1 text-center pb-2">
           {/* Logo Section */}
           <div className="flex flex-col items-center mb-6">
-            <div className="h-12 w-12 flex items-center justify-center rounded-xl bg-slate-900 text-white font-bold text-lg mb-4">
-              SN
-            </div>
+            <Image
+              src="/sn-logo.png"
+              alt="SN International logo"
+              width={60}
+              height={10}
+              priority
+              className="mb-4 h-6 w-auto object-contain"
+              sizes="60px"
+            />
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
               SN Connect
             </h1>

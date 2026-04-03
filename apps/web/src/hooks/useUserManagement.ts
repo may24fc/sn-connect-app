@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+export type InviteUserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+
 interface InviteUserPayload {
   email: string;
-  role: 'employee' | 'intern';
+  role: InviteUserRole;
   firstName: string;
   lastName: string;
   departmentId?: string | undefined;

@@ -5,8 +5,48 @@ type TicketRecord = {
   title: string;
   description: string;
   team: 'hr' | 'it';
+  category:
+    | 'payroll_benefits'
+    | 'leave_attendance'
+    | 'employee_records'
+    | 'onboarding_offboarding'
+    | 'policy_clarification'
+    | 'workplace_support'
+    | 'other_hr'
+    | 'access_permissions'
+    | 'bug_report'
+    | 'performance_issue'
+    | 'data_issue'
+    | 'integration_notifications'
+    | 'hardware_software'
+    | 'feature_request'
+    | 'other_it';
+  feature_area:
+    | 'authentication'
+    | 'dashboard'
+    | 'profile'
+    | 'tasks'
+    | 'reports'
+    | 'tickets'
+    | 'documents'
+    | 'announcements'
+    | 'resources'
+    | 'performance'
+    | 'payroll'
+    | 'onboarding'
+    | 'employee_management'
+    | 'recruitment'
+    | 'ai_knowledge'
+    | 'company_pulse'
+    | 'mobile_app'
+    | 'hardware_software'
+    | 'other'
+    | null;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
+  steps_to_reproduce: string | null;
+  expected_behavior: string | null;
+  has_attachments: boolean;
   submitted_by: string;
   assigned_to: string | null;
   assigned_by: string | null;
@@ -107,8 +147,18 @@ test.describe('Ticket flows', () => {
           title: String(createdPayload?.title ?? 'Printer issue'),
           description: String(createdPayload?.description ?? 'Laptop will not connect to wifi.'),
           team: (createdPayload?.team as 'hr' | 'it') ?? 'it',
+          category: (createdPayload?.category as TicketRecord['category']) ?? 'bug_report',
+          feature_area:
+            (createdPayload?.featureArea as TicketRecord['feature_area']) ?? 'authentication',
           priority: (createdPayload?.priority as 'low' | 'medium' | 'high' | 'urgent') ?? 'high',
           status: 'new',
+          steps_to_reproduce:
+            (createdPayload?.stepsToReproduce as string | undefined) ??
+            'Open the VPN client and sign in after restarting the laptop.',
+          expected_behavior:
+            (createdPayload?.expectedBehavior as string | undefined) ??
+            'The VPN should connect successfully.',
+          has_attachments: false,
           submitted_by: 'employee-user',
           assigned_to: null,
           assigned_by: null,
@@ -140,13 +190,21 @@ test.describe('Ticket flows', () => {
     const createDialog = page.getByRole('dialog');
     await expect(createDialog).toBeVisible();
     await createDialog.getByPlaceholder('Brief summary of the issue').fill('Laptop cannot connect to VPN');
-    await createDialog.locator('button[role="combobox"]').first().click();
-    await page.getByRole('option', { name: 'IT' }).click();
-    await createDialog.locator('button[role="combobox"]').nth(1).click();
+    await createDialog.getByRole('combobox', { name: 'Category' }).click();
+    await page.getByRole('option', { name: 'Bug or Error' }).click();
+    await createDialog.getByRole('combobox', { name: 'Feature area' }).click();
+    await page.getByRole('option', { name: 'Authentication & Login' }).click();
+    await createDialog.getByRole('combobox', { name: 'Priority' }).click();
     await page.getByRole('option', { name: 'High' }).click();
     await createDialog
       .getByPlaceholder('Describe the issue, impact, and anything already attempted.')
       .fill('The company laptop fails to connect to the VPN after restart.');
+    await createDialog
+      .getByPlaceholder('What did you click or do before the issue happened?')
+      .fill('Open the VPN client after restarting the laptop.');
+    await createDialog
+      .getByPlaceholder('What should have happened instead?')
+      .fill('The VPN should connect after entering valid credentials.');
     await createDialog.getByRole('button', { name: 'Submit Ticket' }).click();
 
     await expect.poll(() => createdPayload).not.toBeNull();
@@ -160,8 +218,13 @@ test.describe('Ticket flows', () => {
         title: 'Update payroll profile',
         description: 'Need HR help correcting the bank account ending in 1234.',
         team: 'hr',
+        category: 'payroll_benefits',
+        feature_area: 'payroll',
         priority: 'medium',
         status: 'assigned',
+        steps_to_reproduce: null,
+        expected_behavior: null,
+        has_attachments: false,
         submitted_by: 'employee-user',
         assigned_to: 'admin-user',
         assigned_by: 'super-admin-user',
@@ -239,8 +302,13 @@ test.describe('Ticket flows', () => {
         title: 'VPN access issue',
         description: 'Cannot authenticate to the company VPN after password reset.',
         team: 'it',
+        category: 'access_permissions',
+        feature_area: 'authentication',
         priority: 'high',
         status: 'new',
+        steps_to_reproduce: 'Reset password, open VPN client, then try to authenticate.',
+        expected_behavior: 'VPN should accept the updated password.',
+        has_attachments: true,
         submitted_by: 'employee-user',
         assigned_to: null,
         assigned_by: null,

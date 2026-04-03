@@ -1,6 +1,16 @@
 # Vercel Deployment Guide - HR Portal
 
-This guide will walk you through deploying the HR Portal monorepo to Vercel.
+This guide describes deployment for the internal HR portal in `apps/web`.
+
+This repository uses separate Vercel projects:
+
+- `apps/www` for the public website
+- `apps/web` for the internal HR portal
+
+Important config split:
+
+- Root [vercel.json](/vercel.json) belongs to `apps/www`
+- [apps/web/vercel.json](/apps/web/vercel.json) belongs to `apps/web`
 
 ## Prerequisites
 
@@ -35,11 +45,12 @@ vercel login
 
 This will open your browser to authenticate with Vercel.
 
-### Step 2: Link Project to Vercel
+### Step 2: Link the `apps/web` Project to Vercel
 
 From the repository root, run:
 
 ```bash
+cd apps/web
 vercel link
 ```
 
@@ -47,8 +58,8 @@ During the interactive setup:
 1. **Set up and deploy?** → Yes
 2. **Which scope?** → Select your team/personal account
 3. **Link to existing project?** → No (for first deployment) or Yes (if project exists)
-4. **What's your project's name?** → sn-hr-portal (or your preferred name)
-5. **In which directory is your code located?** → `./` (root)
+4. **What's your project's name?** → your HR portal project name
+5. **In which directory is your code located?** → `./` from inside `apps/web`
 
 This will create a `.vercel` directory with project configuration.
 
@@ -62,7 +73,7 @@ cat .vercel/project.json
 
 Save these values:
 - `orgId` → This is your `VERCEL_ORG_ID`
-- `projectId` → This is your `VERCEL_PROJECT_ID`
+- `projectId` → Prefer saving this as `VERCEL_WEB_PROJECT_ID`
 
 ### Step 4: Get Vercel Token
 
@@ -159,7 +170,11 @@ Go to your GitHub repository → Settings → Secrets and variables → Actions
 Add these secrets:
 - `VERCEL_TOKEN` - Token from Step 4
 - `VERCEL_ORG_ID` - orgId from Step 3
-- `VERCEL_PROJECT_ID` - projectId from Step 3
+- `VERCEL_WEB_PROJECT_ID` - preferred projectId secret for the `apps/web` project
+
+Compatibility note:
+- The CI workflow still falls back to `VERCEL_PROJECT_ID` if `VERCEL_WEB_PROJECT_ID` is not set.
+- New setup should use `VERCEL_WEB_PROJECT_ID` so the web deployment is unambiguous.
 
 ### Environment Variables in GitHub
 
@@ -186,15 +201,17 @@ It will:
 
 ## Vercel Configuration Files
 
-### vercel.json
+### apps/web/vercel.json
 
-Located at repository root, configures:
-- Build command: `pnpm build:web`
-- Install command: `pnpm install`
-- Output directory: `apps/web/.next`
-- Function runtime: Node.js 20.x
-- Security headers for API routes
-- 30-second max duration for serverless functions
+Located at `apps/web/vercel.json`, configures the HR portal project:
+- Next.js framework metadata
+- Daily probation-check cron
+- security headers at the project level
+
+### root vercel.json
+
+Located at repository root, configures the public website deployment for `apps/www`.
+It should not be treated as the HR portal deployment config.
 
 ### .vercelignore
 

@@ -1,6 +1,10 @@
 import { logActivity } from '@/lib/audit';
 import { createNotification, getUserDisplayName, getUserIdsByRoles } from '@/lib/notifications/create-notification';
-import { ticketCreateSchema } from '@/lib/schemas/ticket.schema';
+import {
+  type TicketCategory,
+  ticketCreateSchema,
+  type TicketFeatureArea,
+} from '@/lib/schemas/ticket.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   getDisplayName,
@@ -19,8 +23,13 @@ interface TicketRow {
   title: string;
   description: string;
   team: TicketTeam;
+  category: TicketCategory;
+  feature_area: TicketFeatureArea | null;
   priority: TicketPriority;
   status: TicketStatus;
+  steps_to_reproduce: string | null;
+  expected_behavior: string | null;
+  has_attachments: boolean;
   submitted_by: string;
   assigned_to: string | null;
   assigned_by: string | null;
@@ -165,8 +174,12 @@ export async function POST(request: NextRequest) {
         title: parsed.data.title,
         description: parsed.data.description,
         team: parsed.data.team,
+        category: parsed.data.category,
+        feature_area: parsed.data.featureArea ?? null,
         priority: parsed.data.priority,
         status: 'new',
+        steps_to_reproduce: parsed.data.stepsToReproduce ?? null,
+        expected_behavior: parsed.data.expectedBehavior ?? null,
         submitted_by: user.id,
         created_by: user.id,
       })
@@ -199,8 +212,11 @@ export async function POST(request: NextRequest) {
       recordId: data.id,
       metadata: {
         team: data.team,
+        category: data.category,
+        featureArea: data.feature_area,
         priority: data.priority,
         title: data.title,
+        hasAttachments: data.has_attachments,
       },
     });
 

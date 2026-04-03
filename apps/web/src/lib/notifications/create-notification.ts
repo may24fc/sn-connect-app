@@ -7,6 +7,12 @@
  */
 
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import {
+  buildAddToCalendarUrl,
+  buildCompanyCalendarPageLink,
+  formatCompanyCalendarNotificationLabel,
+  type CompanyCalendarEvent,
+} from '@/lib/company-calendar';
 
 // ---- Types ----------------------------------------------------------------
 
@@ -185,6 +191,12 @@ const ROLE_GROUPS = [
   { roles: ['super_admin'], key: 'super_admin' },
 ] as const;
 
+const COMPANY_CALENDAR_LINKS: Record<(typeof ROLE_GROUPS)[number]['key'], string> = {
+  employee: '/calendar',
+  admin: '/admin/calendar',
+  super_admin: '/super-admin/calendar',
+};
+
 /**
  * Send announcement notifications with role-appropriate links.
  * Splits recipients by role group so each user gets a link to their
@@ -213,5 +225,54 @@ export async function createAnnouncementNotifications(
       link: ANNOUNCEMENT_LINKS[group.key] ?? '/announcements',
       metadata: notification.metadata ?? {},
     });
+  }
+}
+
+export async function createCompanyCalendarNotifications(
+  events: Array<CompanyCalendarEvent>,
+): Promise<void> {
+  if (events.length === 0) return;
+
+  for (const group of ROLE_GROUPS) {
+    const userIds = await getUserIdsByRoles([...group.roles]);
+    if (userIds.length === 0) continue;
+
+    const notifications = events.map((event) => ({
+      type: 'system' as const,
+      title: `New company event: ${event.summary}`,
+      message: [
+        formatCompanyCalendarNotificationLabel(event),
+        event.location ? `at ${event.location}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      link: buildCompanyCalendarPageLink(COMPANY_CALENDAR_LINKS[group.key], event),
+      metadata: {
+        calendarEventId: event.id,
+        calendarEventStart: event.start,
+        calendarEventEnd: event.end,
+        calendarEventAllDay: event.allDay,
+        calendarEventLocation: event.location,
+        calendarAddUrl: buildAddToCalendarUrl(event),
+        calendarSourceUrl: event.htmlLink ?? null,
+      },
+    }));
+
+    const admin = createSupabaseAdminClient();
+    const rows = userIds.flatMap((userId) =>
+      notifications.map((notification) => ({
+        user_id: userId,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        link: notification.link,
+        metadata: notification.metadata,
+      })),
+    );
+
+    const { error } = await admin.from('notifications').insert(rows);
+    if (error) {
+      console.error('[notifications] Failed to create calendar notifications:', error);
+    }
   }
 }

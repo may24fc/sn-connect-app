@@ -417,19 +417,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           setIsLoading(false);
 
           // SECURITY: Validate the JWT with Supabase servers in the background.
-          // If the token was revoked, sign the user out. This is non-blocking
-          // so the UI doesn't flash while waiting for the round-trip.
+          // If the token was revoked, the next server-side request (middleware)
+          // will redirect to login. This is non-blocking so the UI doesn't
+          // flash while waiting for the round-trip.
           void (async () => {
             try {
               const { data, error: getUserError } = await supabase.auth.getUser();
               if (!isMounted) return;
               if (getUserError || !data.user) {
-                // Server says session is invalid — clear state
-                console.warn('Background session validation failed:', getUserError?.message);
-                setUser(null);
+                // Background validation failed — do NOT clear user state.
+                // The session was already validated by getSession() and the
+                // middleware. Clearing user here causes a redirect chain
+                // (current page → /login → dashboard) on transient errors.
+                // The real security boundary is RLS + middleware.
+                console.warn('Background session validation failed — keeping current session:', getUserError?.message);
               } else {
                 // Sync any updated metadata from the validated session
-                syncAuthState(data.user);
+                await syncAuthState(data.user);
               }
             } catch {
               // Network error during background validation — keep current user.
@@ -492,7 +496,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
               return;
             }
 
-            // For SIGNED_IN, TOKEN_REFRESHED, INITIAL_SESSION, etc.
+            // Skip INITIAL_SESSION — loadUser() already handles the initial
+            // session hydration via getSession(). Processing it here causes
+            // a duplicate syncAuthState race that can resolve with stale data
+            // or trigger redundant DB queries.
+            if (event === 'INITIAL_SESSION') {
+              return;
+            }
+
+            // For SIGNED_IN, TOKEN_REFRESHED, etc.
             // only update if the session has a valid user
             if (session?.user) {
               await syncAuthState(session.user);
@@ -683,6 +695,17 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
+  // Track whether we've ever seen a valid user during this component's
+  // lifetime. Prevents redirect-to-login when user transiently goes null
+  // (e.g. background validation hiccup) after initial hydration succeeded.
+  const wasAuthenticatedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (user) {
+      wasAuthenticatedRef.current = true;
+    }
+  }, [user]);
+
   React.useEffect(() => {
     const currentPath =
       typeof window !== 'undefined' ? window.location.pathname : '';
@@ -693,10 +716,17 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
       (user.status === 'pending_onboarding' || user.status === 'awaiting_approval');
 
     if (!(isLoading || user)) {
+      // If we previously had a valid user but now don't, this is likely a
+      // transient state (background token refresh, network hiccup). Don't
+      // redirect — the middleware will enforce auth on the next server
+      // request if the session is truly invalid.
+      if (wasAuthenticatedRef.current) {
+        return;
+      }
       // Preserve the current URL so the user returns here after login
       const currentPathWithSearch = window.location.pathname + window.location.search;
       const returnTo = currentPathWithSearch && currentPathWithSearch !== '/' ? `?returnTo=${encodeURIComponent(currentPathWithSearch)}` : '';
-      router.push(`/login${returnTo}`);
+      router.replace(`/login${returnTo}`);
     } else if (
       user &&
       allowedRoles &&
@@ -706,16 +736,16 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
       // Redirect to appropriate dashboard if unauthorized
       switch (user.role) {
         case 'employee':
-          router.push('/dashboard');
+          router.replace('/dashboard');
           break;
         case 'intern':
-          router.push('/intern/dashboard');
+          router.replace('/intern/dashboard');
           break;
         case 'admin':
-          router.push('/admin/dashboard');
+          router.replace('/admin/dashboard');
           break;
         case 'super_admin':
-          router.push('/super-admin/dashboard');
+          router.replace('/super-admin/dashboard');
           break;
       }
     }

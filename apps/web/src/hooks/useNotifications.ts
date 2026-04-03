@@ -1,22 +1,10 @@
 'use client';
 
+import type { NotificationType } from '@/lib/notifications/presentation';
 import { type NotificationFilters, queryKeys } from '@/lib/query-keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // --- Types ---
-
-export type NotificationType =
-  | 'task_assigned'
-  | 'task_due'
-  | 'report_submitted'
-  | 'report_approved'
-  | 'report_rejected'
-  | 'announcement_new'
-  | 'resource_new'
-  | 'reminder'
-  | 'onboarding_step'
-  | 'probation_update'
-  | 'system';
 
 export interface NotificationRecord {
   id: string;

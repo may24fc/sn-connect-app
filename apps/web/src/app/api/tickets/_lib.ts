@@ -16,6 +16,12 @@ export type TicketTeam = (typeof TICKET_TEAMS)[number];
 export type TicketPriority = (typeof TICKET_PRIORITIES)[number];
 export type TicketStatus = (typeof TICKET_STATUSES)[number];
 
+export interface TicketAccessRow {
+  submitted_by: string;
+  assigned_to: string | null;
+  team: TicketTeam;
+}
+
 export interface TicketAuthedContext {
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
   supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>;
@@ -121,6 +127,31 @@ export function isSuperAdminRole(role: string | null): boolean {
 
 export function isAdminRole(role: string | null): boolean {
   return role === 'admin';
+}
+
+export function canAccessTicket(
+  ticket: TicketAccessRow,
+  userId: string,
+  role: string | null,
+  isItHandler: boolean
+): boolean {
+  if (ticket.submitted_by === userId) return true;
+  if (isSuperAdminRole(role)) return true;
+  if (ticket.team === 'hr' && isAdminRole(role) && ticket.assigned_to === userId) return true;
+  if (ticket.team === 'it' && isItHandler && ticket.assigned_to === userId) return true;
+  return false;
+}
+
+export function canWorkAssignedTicket(
+  ticket: TicketAccessRow,
+  userId: string,
+  role: string | null,
+  isItHandler: boolean
+): boolean {
+  if (isSuperAdminRole(role)) return true;
+  if (ticket.team === 'hr' && isAdminRole(role) && ticket.assigned_to === userId) return true;
+  if (ticket.team === 'it' && isItHandler && ticket.assigned_to === userId) return true;
+  return false;
 }
 
 export async function validateTicketAssignee(

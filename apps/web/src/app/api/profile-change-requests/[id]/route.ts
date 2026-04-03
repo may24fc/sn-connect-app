@@ -1,3 +1,13 @@
+import { sendPortalNotificationEmail } from '@/lib/email';
+import {
+  createNotification,
+  getUserDisplayName,
+  type NotificationType,
+} from '@/lib/notifications/create-notification';
+import {
+  getEmployeeContactByEmployeeId,
+  getProfilePathForRole,
+} from '@/lib/notifications/recipients';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -123,6 +133,47 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           );
         }
       }
+    }
+
+    const requesterContact = await getEmployeeContactByEmployeeId(changeRequest.employee_id);
+    const approverName = await getUserDisplayName(user.id);
+    const requesterLink = getProfilePathForRole(requesterContact?.role ?? null);
+    const isApproved = action === 'approve';
+
+    if (requesterContact?.userId) {
+      createNotification({
+        userId: requesterContact.userId,
+        type: 'system' as NotificationType,
+        title: isApproved ? 'Profile change request approved' : 'Profile change request rejected',
+        message: isApproved
+          ? `${approverName} approved your requested profile updates.`
+          : `${approverName} rejected your requested profile updates${review_note ? `. Reason: ${review_note}` : ''}`,
+        link: requesterLink,
+        metadata: {
+          employeeId: changeRequest.employee_id,
+          profileChangeRequestId: changeRequest.id,
+          reviewedBy: user.id,
+          action,
+        },
+      });
+    }
+
+    if (requesterContact?.email) {
+      const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
+      await sendPortalNotificationEmail({
+        to: requesterContact.email,
+        subject: isApproved ? 'Your profile change request was approved' : 'Your profile change request was rejected',
+        heading: isApproved ? 'Profile change approved' : 'Profile change rejected',
+        paragraphs: [
+          isApproved
+            ? `${approverName} approved your requested profile updates.`
+            : `${approverName} reviewed your requested profile updates and rejected them at this time.`,
+          ...(review_note ? [`Reviewer note: ${review_note}`] : []),
+          'Open your profile to review the latest status and current details.',
+        ],
+        actionLabel: 'Open profile',
+        actionUrl: appBaseUrl ? `${appBaseUrl}${requesterLink}` : undefined,
+      });
     }
 
     return NextResponse.json({ data: updated });

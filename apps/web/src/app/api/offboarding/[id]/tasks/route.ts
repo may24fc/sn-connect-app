@@ -1,3 +1,13 @@
+import { sendPortalNotificationEmail } from '@/lib/email';
+import {
+  createNotification,
+  getUserDisplayName,
+  type NotificationType,
+} from '@/lib/notifications/create-notification';
+import {
+  getEmployeeContactByEmployeeId,
+  getUserContactByUserId,
+} from '@/lib/notifications/recipients';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -104,7 +114,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const { data: task, error: taskError } = await supabase
       .from('offboarding_tasks')
-      .select('id, offboarding_id, assigned_to')
+      .select('id, offboarding_id, title, assigned_to, is_completed')
       .eq('id', taskId)
       .eq('offboarding_id', id)
       .is('deleted_at', null)
@@ -124,7 +134,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!admin) {
       const { data: offboarding, error: offboardingError } = await supabase
         .from('offboarding')
-        .select('employee_id')
+        .select('employee_id, initiated_by')
         .eq('id', id)
         .is('deleted_at', null)
         .maybeSingle();
@@ -174,6 +184,55 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (updateError || !data) {
       return NextResponse.json({ error: 'Failed to update offboarding task' }, { status: 500 });
+    }
+
+    if (task.is_completed !== isCompleted) {
+      const { data: offboardingRecord } = await supabase
+        .from('offboarding')
+        .select('employee_id, initiated_by')
+        .eq('id', id)
+        .is('deleted_at', null)
+        .maybeSingle();
+
+      if (offboardingRecord) {
+        const [employeeContact, initiatorContact, actorName] = await Promise.all([
+          getEmployeeContactByEmployeeId(offboardingRecord.employee_id),
+          offboardingRecord.initiated_by
+            ? getUserContactByUserId(offboardingRecord.initiated_by)
+            : Promise.resolve(null),
+          getUserDisplayName(user.id),
+        ]);
+
+        if (isCompleted && initiatorContact?.userId && initiatorContact.userId !== user.id) {
+          createNotification({
+            userId: initiatorContact.userId,
+            type: 'system' as NotificationType,
+            title: 'Offboarding task completed',
+            message: `${actorName} completed the offboarding task "${data.title}"${employeeContact ? ` for ${employeeContact.name}` : ''}.`,
+            link: '/admin/employee-management',
+            metadata: {
+              offboardingId: id,
+              offboardingTaskId: data.id,
+              employeeId: offboardingRecord.employee_id,
+            },
+          });
+
+          if (initiatorContact.email) {
+            const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
+            await sendPortalNotificationEmail({
+              to: initiatorContact.email,
+              subject: 'An offboarding task was completed',
+              heading: 'Offboarding task completed',
+              paragraphs: [
+                `${actorName} completed the offboarding task "${data.title}"${employeeContact ? ` for ${employeeContact.name}` : ''}.`,
+                'Open Employee Management to review the updated offboarding progress.',
+              ],
+              actionLabel: 'Open Employee Management',
+              actionUrl: appBaseUrl ? `${appBaseUrl}/admin/employee-management` : undefined,
+            });
+          }
+        }
+      }
     }
 
     return NextResponse.json({ data });
@@ -233,6 +292,44 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (insertError) {
       return NextResponse.json({ error: 'Failed to create offboarding task' }, { status: 500 });
+    }
+
+    if (assignment.assignedTo) {
+      const [assigneeContact, actorName] = await Promise.all([
+        getUserContactByUserId(assignment.assignedTo),
+        getUserDisplayName(user.id),
+      ]);
+
+      if (assigneeContact?.userId && assigneeContact.userId !== user.id) {
+        const isEmployeeAssignee = assigneeContact.role === 'employee' || assigneeContact.role === 'intern';
+        const destination = isEmployeeAssignee ? '/onboarding' : '/admin/employee-management';
+
+        createNotification({
+          userId: assigneeContact.userId,
+          type: 'system' as NotificationType,
+          title: 'Offboarding task assigned',
+          message: `${actorName} assigned you an offboarding task: "${data.title}".`,
+          link: destination,
+          metadata: { offboardingId: id, offboardingTaskId: data.id },
+        });
+
+        if (assigneeContact.email) {
+          const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
+          await sendPortalNotificationEmail({
+            to: assigneeContact.email,
+            subject: 'A new offboarding task was assigned to you',
+            heading: 'Offboarding task assigned',
+            paragraphs: [
+              `${actorName} assigned you an offboarding task: "${data.title}".`,
+              isEmployeeAssignee
+                ? 'Open your onboarding page to review the offboarding checklist and complete your assigned step.'
+                : 'Open Employee Management to review the current offboarding checklist and complete your assigned step.',
+            ],
+            actionLabel: isEmployeeAssignee ? 'Open onboarding' : 'Open Employee Management',
+            actionUrl: appBaseUrl ? `${appBaseUrl}${destination}` : undefined,
+          });
+        }
+      }
     }
 
     return NextResponse.json({ data }, { status: 201 });

@@ -72,8 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status) {
-      // Use the disambiguated relationship name
-      query = query.eq('users!employees_user_id_fkey.status', status);
+      query = query.eq('users.status', status);
     }
 
     // Apply pagination

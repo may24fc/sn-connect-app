@@ -1,12 +1,25 @@
 # Deployment Documentation
 
-This directory contains comprehensive documentation for deploying the HR Portal to Vercel.
+This directory contains deployment documentation for the SN Connect projects, with the HR Portal in `apps/web` as the primary internal app deployment target.
+
+## Deployment Topology
+
+This repository now has two separate Vercel deployments:
+
+- `apps/www` - public website
+- `apps/web` - internal HR portal
+
+Important repository config locations:
+
+- Root [vercel.json](/vercel.json) is for the public `apps/www` deployment.
+- [apps/web/vercel.json](/apps/web/vercel.json) is for the internal HR portal deployment.
+- [.github/workflows/vercel-deploy.yml](/.github/workflows/vercel-deploy.yml) deploys `apps/web` and prefers `VERCEL_WEB_PROJECT_ID`.
 
 ## Quick Start
 
 **New to Vercel deployment?** Start here:
-1. Read [SETUP_SUMMARY.md](SETUP_SUMMARY.md) for an overview
-2. Follow [VERCEL_QUICK_START.md](VERCEL_QUICK_START.md) for rapid deployment
+1. Read [SETUP_SUMMARY.md](SETUP_SUMMARY.md) for the `apps/web` deployment overview
+2. Follow [VERCEL_QUICK_START.md](VERCEL_QUICK_START.md) for rapid `apps/web` deployment
 3. Reference [VERCEL_CHEATSHEET.txt](VERCEL_CHEATSHEET.txt) for quick commands
 
 ## Documentation Files
@@ -22,6 +35,7 @@ This directory contains comprehensive documentation for deploying the HR Portal 
 
 - **[VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md)** - Comprehensive deployment guide with:
   - Prerequisites and requirements
+  - Separate `apps/www` and `apps/web` deployment model
   - Environment variable configuration
   - Performance optimization
   - Security checklist
@@ -41,7 +55,8 @@ The GitHub Actions workflows are documented in:
 ## Configuration Files
 
 Root-level files you'll need:
-- `/vercel.json` - Vercel build and deployment configuration
+- `/vercel.json` - Public-site (`apps/www`) deployment configuration
+- `/apps/web/vercel.json` - HR portal (`apps/web`) deployment configuration
 - `/.vercelignore` - Files to exclude from deployment
 - `/.env.vercel.example` - Environment variables template
 

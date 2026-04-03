@@ -1,11 +1,20 @@
 # Vercel Setup Summary
 
+This summary is for the internal HR portal deployment in `apps/web`.
+
+Repository deployment split:
+
+- Root [vercel.json](/vercel.json) is for `apps/www`
+- [apps/web/vercel.json](/apps/web/vercel.json) is for `apps/web`
+- The GitHub workflow prefers `VERCEL_WEB_PROJECT_ID` for the web deployment
+
 ## What Has Been Configured
 
 ### Files Created/Modified
 
 1. **Configuration Files**
-   - `vercel.json` - Vercel deployment configuration
+   - `apps/web/vercel.json` - HR portal Vercel deployment configuration
+   - `vercel.json` - Public website deployment configuration
    - `.vercelignore` - Files to exclude from deployment
    - `.gitignore` - Updated to exclude Vercel artifacts
    - `.env.vercel.example` - Environment variables template
@@ -24,14 +33,12 @@
 
 ### Vercel Configuration
 
-**Build Settings (vercel.json):**
-- Build Command: `pnpm build:web`
-- Install Command: `pnpm install`
-- Output Directory: `apps/web/.next`
-- Node Runtime: 20.x
-- Function Timeout: 30 seconds
+**Build Settings (apps/web deployment):**
+- Project root: `apps/web`
+- Config file: `apps/web/vercel.json`
+- Next.js build driven from the web app project
 - Security headers configured
-- Monorepo support enabled
+- Daily probation-check cron configured
 
 **Deployment Strategy:**
 - Preview: All PRs and dev branches
@@ -112,7 +119,7 @@ Go to: Settings → Secrets → Actions
 Add:
 - VERCEL_TOKEN
 - VERCEL_ORG_ID
-- VERCEL_PROJECT_ID
+- VERCEL_WEB_PROJECT_ID
 - All environment variables
 
 ### 7. Deploy to Production
@@ -136,7 +143,7 @@ vercel --prod
 ### Vercel/GitHub (CI/CD)
 - `VERCEL_TOKEN`
 - `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
+- `VERCEL_WEB_PROJECT_ID`
 
 ## GitHub Actions Integration
 

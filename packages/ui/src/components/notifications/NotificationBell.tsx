@@ -12,6 +12,7 @@ import {
   Info,
   Loader2,
   Megaphone,
+  Receipt,
   Target,
   Trash2,
   UserCheck,
@@ -36,6 +37,13 @@ export type NotificationType =
   | 'report_submitted'
   | 'report_approved'
   | 'report_rejected'
+  | 'invoice_submitted'
+  | 'invoice_approved'
+  | 'invoice_rejected'
+  | 'intern_log_submitted'
+  | 'intern_log_approved'
+  | 'onboarding_approved'
+  | 'onboarding_rejected'
   | 'announcement_new'
   | 'resource_new'
   | 'reminder'
@@ -51,6 +59,7 @@ export interface NotificationItem {
   link: string | null;
   is_read: boolean;
   created_at: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface NotificationBellProps {
@@ -72,6 +81,13 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   report_submitted: FileText,
   report_approved: CheckCircle,
   report_rejected: XCircle,
+  invoice_submitted: Receipt,
+  invoice_approved: CheckCircle,
+  invoice_rejected: XCircle,
+  intern_log_submitted: FileText,
+  intern_log_approved: CheckCircle,
+  onboarding_approved: UserCheck,
+  onboarding_rejected: XCircle,
   announcement_new: Megaphone,
   resource_new: FolderOpen,
   reminder: Bell,
@@ -86,6 +102,13 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   report_submitted: 'text-blue-500',
   report_approved: 'text-emerald-500',
   report_rejected: 'text-rose-500',
+  invoice_submitted: 'text-indigo-500',
+  invoice_approved: 'text-emerald-500',
+  invoice_rejected: 'text-rose-500',
+  intern_log_submitted: 'text-sky-500',
+  intern_log_approved: 'text-emerald-500',
+  onboarding_approved: 'text-emerald-500',
+  onboarding_rejected: 'text-rose-500',
   announcement_new: 'text-violet-500',
   resource_new: 'text-teal-500',
   reminder: 'text-amber-500',
@@ -254,6 +277,20 @@ export function NotificationBell({
                         />
                       )}
                     </div>
+                    {typeof notification.metadata?.calendarAddUrl === 'string' ? (
+                      <div className="mt-2">
+                        <a
+                          href={notification.metadata.calendarAddUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 transition-colors hover:text-slate-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+                        >
+                          <ExternalLink className="h-3 w-3" strokeWidth={1.5} />
+                          Add to Calendar
+                        </a>
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Delete button (shown on hover) */}

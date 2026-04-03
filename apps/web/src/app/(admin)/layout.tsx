@@ -158,6 +158,7 @@ function AdminLayoutInner({
 /** Wires real notification data into the NotificationBell component */
 function AdminNotificationBell(): ReactNode {
   const router = useRouter();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const { data } = useNotifications({ page: 1, pageSize: 5 });
   const { data: unreadCount } = useUnreadCount();
@@ -179,7 +180,11 @@ function AdminNotificationBell(): ReactNode {
         onError: () => addToast({ title: 'Failed to delete notification', variant: 'error' }),
       })}
       onNavigate={(path) => router.push(path)}
-      onViewAll={() => router.push('/admin/notifications')}
+      onViewAll={() =>
+        router.push(
+          user?.role === 'super_admin' ? '/super-admin/notifications' : '/admin/notifications'
+        )
+      }
     />
   );
 }

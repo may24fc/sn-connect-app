@@ -51,6 +51,7 @@ export interface SidebarProps {
 const employeeNavItems: Array<NavItem> = [
   { label: 'Profile', href: '/profile', icon: User },
   { label: 'Dashboard', href: '/dashboard', icon: Home },
+  { label: 'Calendar', href: '/calendar', icon: Calendar },
   { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
@@ -66,6 +67,7 @@ const employeeNavItems: Array<NavItem> = [
 const internNavItems: Array<NavItem> = [
   { label: 'Profile', href: '/intern/profile', icon: User },
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
+  { label: 'Calendar', href: '/calendar', icon: Calendar },
   { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
@@ -87,7 +89,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Recruitment', href: '/admin/recruitment', icon: Briefcase },
   { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
-  { label: 'Company Pulse', href: '/admin/company-pulse', icon: Calendar },
+  { label: 'Calendar', href: '/admin/calendar', icon: Calendar },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/admin/resources', icon: Library },
@@ -105,7 +107,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
-  { label: 'Company Pulse', href: '/super-admin/company-pulse', icon: Calendar },
+  { label: 'Calendar', href: '/super-admin/calendar', icon: Calendar },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
   { label: 'AI Knowledge', href: '/super-admin/ai-knowledge', icon: Sparkles },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
@@ -149,19 +151,17 @@ export function Sidebar({
             collapsed ? 'justify-center' : 'justify-start gap-3'
           )}
         >
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo" className={cn('h-8 w-auto', collapsed && 'h-6')} />
-          ) : (
-            <>
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 font-bold text-white text-sm">
-                SN
-              </div>
-              {!collapsed && (
-                <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                  SN Connect
-                </span>
-              )}
-            </>
+          <img
+            src={logoUrl ?? '/sn-logo.png'}
+            alt="SN International logo"
+            width={60}
+            height={10}
+            className={cn('h-6 w-auto object-contain', collapsed && 'h-5')}
+          />
+          {!collapsed && (
+            <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
+              SN Connect
+            </span>
           )}
         </div>
 

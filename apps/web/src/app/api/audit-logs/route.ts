@@ -1,5 +1,5 @@
 import { formatLabel } from '@/lib/format';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'] as const;
@@ -48,6 +48,7 @@ const ACTION_LABELS: Record<string, string> = {
   create_knowledge_source: 'Added a knowledge source',
   update_knowledge_source: 'Updated a knowledge source',
   delete_knowledge_source: 'Deleted a knowledge source',
+  create_ticket_comment: 'Added a ticket reply',
   // Internships
   internship_extended: 'Extended an internship',
   // Daily logs
@@ -72,6 +73,9 @@ const TABLE_LABELS: Record<string, string> = {
   announcement_reads: 'announcement read',
   announcement_comments: 'announcement comment',
   announcement_attachments: 'announcement attachment',
+  tickets: 'ticket',
+  ticket_comments: 'ticket comment',
+  ticket_attachments: 'ticket attachment',
   tasks: 'task',
   task_comments: 'task comment',
   resources: 'resource',
@@ -157,6 +161,9 @@ const TABLE_CATEGORIES: Record<string, { label: string; category: string }> = {
   announcement_reads: { label: 'Announcements', category: 'announcements' },
   announcement_comments: { label: 'Announcements', category: 'announcements' },
   announcement_attachments: { label: 'Announcements', category: 'announcements' },
+  tickets: { label: 'Tickets', category: 'system' },
+  ticket_comments: { label: 'Tickets', category: 'system' },
+  ticket_attachments: { label: 'Tickets', category: 'system' },
   tasks: { label: 'Tasks', category: 'tasks' },
   task_comments: { label: 'Tasks', category: 'tasks' },
   resources: { label: 'Resources', category: 'resources' },
@@ -557,7 +564,9 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     let userMap: Record<string, string> = {};
     if (userIds.length > 0) {
-      const { data: users } = await supabase
+      const adminClient = createSupabaseAdminClient();
+
+      const { data: users } = await adminClient
         .from('users')
         .select('id, first_name, last_name, email')
         .in('id', userIds);

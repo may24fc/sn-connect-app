@@ -199,10 +199,18 @@ CREATE INDEX idx_collection_resources_display_order ON public.collection_resourc
 
 -- ============================================
 -- Step 9: Create full-text search index
+-- PG17 requires IMMUTABLE functions in index expressions.
+-- to_tsvector is STABLE, so we create an IMMUTABLE wrapper.
 -- ============================================
 
+CREATE OR REPLACE FUNCTION public.resources_search_vector(title text, description text, tags text[])
+RETURNS tsvector
+LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
+  SELECT to_tsvector('english'::regconfig, coalesce(title, '') || ' ' || coalesce(description, '') || ' ' || array_to_string(tags, ' '));
+$$;
+
 CREATE INDEX idx_resources_search ON public.resources USING GIN(
-  to_tsvector('english', coalesce(title, '') || ' ' || coalesce(description, '') || ' ' || array_to_string(tags, ' '))
+  resources_search_vector(title, description, tags)
 ) WHERE deleted_at IS NULL;
 
 -- ============================================

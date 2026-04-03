@@ -25,6 +25,11 @@
     "test:e2e:ui": "playwright test --ui",
     "typecheck": "pnpm -r typecheck",
     "clean": "pnpm -r clean && rimraf node_modules",
+    "drive:watch": "node scripts/register-drive-watch.mjs",
+    "drive:watch:renew": "node scripts/renew-drive-watches.mjs",
+    "drive:ingest": "node scripts/ingest-drive-doc.mjs",
+    "check:leadership-accounts": "node scripts/check-leadership-accounts.mjs",
+    "check:production-cleanliness": "node scripts/check-production-cleanliness.mjs",
     "db:migrate": "pnpm --filter @hr-portal/database migrate",
     "db:seed": "pnpm --filter @hr-portal/database seed",
     "db:generate": "pnpm --filter @hr-portal/database generate"

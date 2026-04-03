@@ -29,18 +29,8 @@ CREATE INDEX idx_audit_logs_performed_at ON public.audit_logs(performed_at DESC)
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs FORCE ROW LEVEL SECURITY;
 
--- Only admins and HR can view audit logs
-CREATE POLICY "audit_logs_select_policy" ON public.audit_logs
-  FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.users
-      WHERE users.id = auth.uid()
-      AND users.role IN ('admin', 'hr')
-      AND users.deleted_at IS NULL
-    )
-  );
+-- NOTE: The select policy referencing public.users is created in
+-- 20260123000004_create_users_table.sql (after the users table exists).
 
 -- System can insert audit logs (no user restrictions)
 CREATE POLICY "audit_logs_insert_policy" ON public.audit_logs

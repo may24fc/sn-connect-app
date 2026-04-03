@@ -1,3 +1,13 @@
+import { sendPortalNotificationEmail } from '@/lib/email';
+import {
+  createNotificationsForUsers,
+  getUserDisplayName,
+  type NotificationType,
+} from '@/lib/notifications/create-notification';
+import {
+  getAdminNotificationContacts,
+  getEmployeeContactByEmployeeId,
+} from '@/lib/notifications/recipients';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -142,6 +152,52 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    const [employeeContact, adminContacts, requesterName] = await Promise.all([
+      getEmployeeContactByEmployeeId(employee_id),
+      getAdminNotificationContacts(user.id),
+      getUserDisplayName(user.id),
+    ]);
+
+    const changeCount = Object.keys(changes).length;
+    const adminIds = adminContacts.map((contact) => contact.userId);
+    const employeeDirectoryLink = employeeContact?.userId
+      ? `/admin/directory/${employeeContact.userId}`
+      : '/admin/directory';
+
+    if (adminIds.length > 0) {
+      createNotificationsForUsers(adminIds, {
+        type: 'system' as NotificationType,
+        title: 'Profile change request pending review',
+        message: `${employeeContact?.name || requesterName} submitted ${changeCount} profile update${changeCount === 1 ? '' : 's'} for approval.`,
+        link: employeeDirectoryLink,
+        metadata: {
+          employeeId: employee_id,
+          profileChangeRequestId: data.id,
+          requestedBy: user.id,
+          changeCount,
+        },
+      });
+    }
+
+    const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
+    await Promise.allSettled(
+      adminContacts
+        .filter((contact) => contact.email)
+        .map((contact) =>
+          sendPortalNotificationEmail({
+            to: contact.email as string,
+            subject: 'Profile change request pending approval',
+            heading: 'Profile change request pending approval',
+            paragraphs: [
+              `${employeeContact?.name || requesterName} submitted ${changeCount} profile update${changeCount === 1 ? '' : 's'} that require review.`,
+              'Open the employee directory record to review the requested changes and approve or reject them.',
+            ],
+            actionLabel: 'Review request',
+            actionUrl: appBaseUrl ? `${appBaseUrl}${employeeDirectoryLink}` : undefined,
+          })
+        )
+    );
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (err) {

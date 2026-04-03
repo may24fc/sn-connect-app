@@ -1,13 +1,18 @@
 import { logActivity } from '@/lib/audit';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
-import { ticketUpdateSchema } from '@/lib/schemas/ticket.schema';
+import {
+  type TicketCategory,
+  type TicketFeatureArea,
+  ticketUpdateSchema,
+} from '@/lib/schemas/ticket.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
+  canAccessTicket,
+  canWorkAssignedTicket,
   getDisplayName,
   getEmployeeProfilesByUserId,
   getTicketAuthedContext,
   getTicketWriteErrorMessage,
-  isAdminRole,
   isSuperAdminRole,
   validateTicketAssignee,
   type TicketPriority,
@@ -20,8 +25,13 @@ interface TicketRow {
   title: string;
   description: string;
   team: TicketTeam;
+  category: TicketCategory;
+  feature_area: TicketFeatureArea | null;
   priority: TicketPriority;
   status: TicketStatus;
+  steps_to_reproduce: string | null;
+  expected_behavior: string | null;
+  has_attachments: boolean;
   submitted_by: string;
   assigned_to: string | null;
   assigned_by: string | null;
@@ -33,21 +43,6 @@ interface TicketRow {
   updated_at: string;
   created_by: string | null;
   deleted_at: string | null;
-}
-
-function canAccessTicket(ticket: TicketRow, userId: string, role: string | null, isItHandler: boolean): boolean {
-  if (ticket.submitted_by === userId) return true;
-  if (isSuperAdminRole(role)) return true;
-  if (ticket.team === 'hr' && isAdminRole(role) && ticket.assigned_to === userId) return true;
-  if (ticket.team === 'it' && isItHandler && ticket.assigned_to === userId) return true;
-  return false;
-}
-
-function canWorkAssignedTicket(ticket: TicketRow, userId: string, role: string | null, isItHandler: boolean): boolean {
-  if (isSuperAdminRole(role)) return true;
-  if (ticket.team === 'hr' && isAdminRole(role) && ticket.assigned_to === userId) return true;
-  if (ticket.team === 'it' && isItHandler && ticket.assigned_to === userId) return true;
-  return false;
 }
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

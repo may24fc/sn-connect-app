@@ -1,25 +1,26 @@
-# ADR-004: Edge Function + Vercel Cron Pattern
+# ADR-004: Edge Function + n8n Cron Pattern
 
 **Date:** 2026-02-27  
-**Status:** Accepted  
-**Context:** Migration from n8n workflows to Supabase Edge Functions  
+**Updated:** 2026-07-16  
+**Status:** Accepted (amended — Vercel Cron replaced by n8n)  
+**Context:** Migration from n8n workflows to Supabase Edge Functions; scheduling migrated from Vercel Cron to n8n  
 
 ## Decision
 
-All automated workflows (scheduled and webhook-triggered) will follow a standardized three-tier pattern:
+All automated workflows (scheduled and webhook-triggered) will follow a standardized pattern:
 
-1. **Supabase Edge Function** — Contains all business logic
-2. **Next.js API Route** — Thin shim for auth + invocation
-3. **Vercel Cron Config** — Schedule definition (for cron-triggered functions only)
+1. **Supabase Edge Function** — Contains all business logic (Deno runtime)
+2. **n8n Workflow** — Schedule Trigger → HTTP POST → Edge Function (for cron-triggered functions)
+3. **Next.js API Route** — Thin shim for user-initiated invocations (webhook-triggered functions only)
 
 ## Architecture
 
 ```
-Scheduled workflows:
-  Vercel Cron (vercel.json)
-    → GET /api/cron/<name>/route.ts (CRON_SECRET auth)
-      → supabase.functions.invoke('<name>')
-        → Edge Function (service role, Deno runtime)
+Scheduled workflows (cron):
+  n8n Schedule Trigger (cron expression)
+    → HTTP POST {{ $env.SUPABASE_URL }}/functions/v1/<name>
+      → Edge Function (service role auth via Bearer token, Deno runtime)
+    → IF failure → Gmail alert to HR_ADMIN_EMAIL
 
 Webhook-triggered workflows:
   Admin UI / System Event
@@ -30,10 +31,21 @@ Webhook-triggered workflows:
 
 ## Rationale
 
-- **Vercel Cron Jobs** avoid requiring Supabase Pro plan for `pg_cron`
+- **n8n** provides visual workflow management, built-in retry/error handling, execution history, and Gmail alerting without Vercel Pro plan
 - **Edge Functions** provide isolated Deno runtime with service-role access
-- **API Route shims** enforce auth boundaries (JWT for users, CRON_SECRET for cron)
+- **n8n environment variables** (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `HR_ADMIN_EMAIL`) centralize config
+- **Gmail failure alerts** replace Slack for operational notifications
 - **Shared utilities** in `_shared/` reduce duplication across functions
+
+## Amendment: Vercel Cron → n8n Migration (2026-07-16)
+
+The original ADR used Vercel Cron as the scheduler, requiring a Next.js API route shim per cron job. This has been replaced with n8n workflows that call Edge Functions directly via HTTP POST:
+
+- **Removed**: Vercel `crons` config from `vercel.json`
+- **Removed**: Dependency on `CRON_SECRET` for scheduled functions
+- **Added**: 8 n8n workflows on `flow.sngroup.cloud` with Schedule Trigger → HTTP POST pattern
+- **Added**: Gmail failure alerting on every workflow
+- **Kept**: API route shims for webhook-triggered functions (user-initiated)
 
 ## Templates
 
@@ -204,64 +216,53 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 ```
 
-### Vercel Cron Config (`vercel.json`)
+### n8n Cron Workflow Pattern
 
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/<name>",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
+Each cron workflow on `flow.sngroup.cloud` follows this pattern:
+
+```
+Schedule Trigger (cron expression, UTC timezone)
+  → HTTP POST to {{ $env.SUPABASE_URL }}/functions/v1/<name>
+    - Header: Authorization = Bearer {{ $env.SUPABASE_SERVICE_ROLE_KEY }}
+    - Header: Content-Type = application/json
+    - Body: { "source": "n8n-cron" }
+    - continueOnFail: true
+  → IF $json.success == true → Done (NoOp)
+  → ELSE → Gmail: Alert on Failure → HR_ADMIN_EMAIL
 ```
 
-Common schedules (all UTC, PHT = UTC+8):
-| Schedule | UTC | PHT | Use Case |
-|---|---|---|---|
-| `0 0 * * *` | Midnight | 8:00 AM | Daily morning tasks |
-| `0 8 * * *` | 8:00 AM | 4:00 PM | End-of-day tasks |
-| `0 9 * * 5` | 9:00 AM Fri | 5:00 PM Fri | Weekly summaries |
-| `*/15 * * * *` | Every 15 min | Every 15 min | Content lifecycle |
-
-## Secrets Management
-
-### Edge Function Secrets (Supabase)
-
-```bash
-supabase secrets set RESEND_API_KEY=re_...
-supabase secrets set ADMIN_SECRET_KEY=<32+ char secret>
-# SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are auto-injected
-```
-
-### Vercel Environment Variables
+### n8n Environment Variables
 
 | Variable | Description |
 |---|---|
-| `CRON_SECRET` | Auto-injected by Vercel for cron auth (min 16 chars) |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for admin access |
+| `HR_ADMIN_EMAIL` | Email for failure alerts |
+| `APP_URL` | Application URL for deep links |
+
+### Vercel Environment Variables (Webhook Routes Only)
+
+| Variable | Description |
+|---|---|
 | `ADMIN_SECRET_KEY` | Shared with Edge Functions for X-Admin-Key auth |
 
 ## Deployed Functions
 
-| Edge Function | Type | API Route | Schedule |
-|---|---|---|---|
-| `onboarding-new-employee` | Webhook | `/api/onboarding/initiate` | — |
-| `offboarding-exit-process` | Webhook | `/api/offboarding/initiate` | — |
-| `probation-check` | Cron | `/api/cron/probation-check` | `0 0 * * *` (daily) |
-
-## Future Functions (Remaining Batches)
-
-| Edge Function | Type | Schedule | Batch |
-|---|---|---|---|
-| `announcements-lifecycle` | Cron | `*/15 * * * *` | 2 |
-| `resources-lifecycle` | Cron | `*/15 * * * *` | 2 |
-| `birthday-reminder` | Cron | `0 0 * * *` | 3 |
-| `anniversary-reminder` | Cron | `0 0 * * *` | 3 |
-| `payroll-reminder` | Cron | `0 0 * * *` | 3 |
-| `resource-published-notify` | Webhook | — | 3 |
-| `intern-eod-reminder` | Cron | `0 8 * * *` | 4 |
-| `intern-weekly-summary` | Cron | `0 9 * * 5` | 4 |
+| Edge Function | Type | n8n Workflow / API Route | Schedule (UTC) | PHT | CET | AEST |
+|---|---|---|---|---|---|---|
+| `onboarding-new-employee` | Webhook | `/api/onboarding/initiate` | — | — | — | — |
+| `offboarding-exit-process` | Webhook | `/api/offboarding/initiate` | — | — | — | — |
+| `probation-check` | Cron | `[SN Connect] Cron: Probation Check` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
+| `update-fx-rates` | Cron | `[SN Connect] Cron: Update FX Rates` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
+| `milestone-announcements` | Cron | `[SN Connect] Cron: Milestone Announcements` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
+| `announcements-lifecycle` | Cron | `[SN Connect] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
+| `resources-lifecycle` | Cron | `[SN Connect] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
+| `cleanup-soft-deleted` | Cron | `[SN Connect] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
+| `cleanup-old-notifications` | Cron | `[SN Connect] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
+| `intern-eod-reminder` | Cron | `[SN Connect] Cron: Intern EOD Reminder` | `0 8 * * 1-5` | 4 PM | 9 AM | 6 PM |
+| `intern-weekly-summary` | Cron | `[SN Connect] Cron: Intern Weekly Summary` | `0 9 * * 5` | 5 PM Fri | 10 AM Fri | 7 PM Fri |
+| `payroll-reminder` | Cron | `[SN Connect] Cron: Payroll Reminder` | `0 0 25-31 * *` | 8 AM | 1 AM | 10 AM |
+| `check-late-reports` | Cron | `compliance-late-report-escalation` (n8n) | `30 0 * * *` | 8:30 AM | 1:30 AM | 10:30 AM |
 
 ## Shared Utilities
 

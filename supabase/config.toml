@@ -45,6 +45,10 @@ max_client_conn = 100
 # If enabled, seeds the database after migrations during a db reset.
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
+# This repo keeps the default branch seed intentionally safe and minimal in
+# ./seed.sql so preview branches and fresh environments do not receive demo HR data.
+# Development-only sample data is stored separately under ./seed/ and must be
+# applied manually in local or non-production environments.
 # Supports glob patterns relative to supabase directory. For example:
 # sql_paths = ['./seeds/*.sql', '../project-src/seeds/*-load-testing.sql']
 sql_paths = ['./seed.sql']

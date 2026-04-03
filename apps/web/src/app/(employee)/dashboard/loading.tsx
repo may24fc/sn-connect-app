@@ -40,7 +40,7 @@ export default function DashboardLoading(): ReactNode {
           <Skeleton className="h-2 w-full rounded-full" />
         </div>
 
-        {/* Company Pulse (span 2) */}
+        {/* Company Calendar (span 2) */}
         <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-3">
           <Skeleton className="h-5 w-36" />
           {Array.from({ length: 3 }).map((_, i) => (

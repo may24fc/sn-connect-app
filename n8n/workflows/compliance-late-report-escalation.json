@@ -15,7 +15,7 @@
       "id": "trigger-daily",
       "name": "Daily Trigger (00:30 UTC)",
                             "field": "cronExpression",
-                            "expression": "30 0 * * *"
+                            "expression": "30 0 * * *",
       "position": [250, 300]
     },
     {
@@ -111,14 +111,16 @@
     },
     {
       "parameters": {
-        "channel": "#hr-alerts",
-        "text": "Report Escalation Alert\n\nThe following employees are 7+ days late on their reports and require manager and HR follow-up:\n\n{{$json.escalationEmployees}}\n\nLate interns missing EOD reports: {{$json.lateInterns || 'None'}}",
-        "otherOptions": {}
+        "sendTo": "={{$env.HR_ADMIN_EMAIL}}",
+        "subject": "[SN Connect] URGENT: Report Escalation Alert - 7+ Days Late",
+        "message": "Report Escalation Alert\n\nThe following employees are 7+ days late on their reports and require manager and HR follow-up:\n\n{{$json.escalationEmployees}}\n\nLate interns missing EOD reports: {{$json.lateInterns || 'None'}}\n\nReview at: {{$env.APP_URL}}/admin/reports?tab=submissions",
+        "resource": "message",
+        "operation": "send"
       },
-      "id": "slack-escalation",
-      "name": "Slack: Escalation Alert",
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 1,
+      "id": "gmail-escalation",
+      "name": "Gmail: Escalation Alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
       "position": [1350, 100]
     },
     {
@@ -205,7 +207,7 @@
       "main": [
         [
           {
-            "node": "Slack: Escalation Alert",
+            "node": "Gmail: Escalation Alert",
             "type": "main",
             "index": 0
           }

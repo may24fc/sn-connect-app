@@ -6,12 +6,13 @@ import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModa
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
-import { ManageTicketHandlersDialog } from '@/components/tickets/ManageTicketHandlersDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
+import { useAddTicketHandler, useRemoveTicketHandler, useTicketHandlers } from '@/hooks/useTicketHandlers';
 import { type ProbationRecord, useCompleteProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { useTableSort } from '@/hooks/useTableSort';
+import { useEmployees } from '@/hooks/useEmployees';
 import {
   Avatar,
   AvatarFallback,
@@ -32,6 +33,7 @@ import {
   DialogTitle,
   EmptyState,
   Input,
+  Label,
   Progress,
   Select,
   SelectContent,
@@ -60,6 +62,7 @@ import {
   Eye,
   FileText,
   LayoutGrid,
+  LifeBuoy,
   List,
   Search,
   ShieldCheck,
@@ -72,6 +75,8 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+
+type EmployeeManagementTab = 'probation' | 'onboarding' | 'it-handlers';
 
 function getInitials(name: string): string {
   return name
@@ -249,21 +254,251 @@ function formatDateTime(dateString: string): string {
   }).format(date);
 }
 
+function resolveEmployeeManagementTab(
+  value: string | null,
+  canManageItHandlers: boolean
+): EmployeeManagementTab {
+  if (value === 'onboarding') {
+    return 'onboarding';
+  }
+
+  if (value === 'it-handlers' && canManageItHandlers) {
+    return 'it-handlers';
+  }
+
+  return 'probation';
+}
+
+function ItHandlersManagementTab(): ReactNode {
+  const { addToast } = useToast();
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const {
+    data: ticketHandlersData,
+    isLoading: ticketHandlersLoading,
+    error: ticketHandlersError,
+  } = useTicketHandlers();
+  const {
+    data: employeesData,
+    isLoading: employeesLoading,
+    error: employeesError,
+  } = useEmployees({ page: 1, pageSize: 200, status: 'active' });
+  const addTicketHandler = useAddTicketHandler();
+  const removeTicketHandler = useRemoveTicketHandler();
+
+  const activeHandlers = useMemo(
+    () =>
+      [...(ticketHandlersData?.data ?? [])].sort((left, right) =>
+        left.user_name.localeCompare(right.user_name)
+      ),
+    [ticketHandlersData?.data]
+  );
+
+  const activeHandlerIds = useMemo(
+    () => new Set(activeHandlers.map((handler) => handler.user_id)),
+    [activeHandlers]
+  );
+
+  const availableEmployees = useMemo(
+    () =>
+      [...(employeesData?.data ?? [])]
+        .filter(
+          (employee) =>
+            employee.user_id &&
+            employee.employment_type !== 'intern' &&
+            !activeHandlerIds.has(employee.user_id)
+        )
+        .sort((left, right) => {
+          const leftName = `${left.first_name} ${left.last_name}`.trim();
+          const rightName = `${right.first_name} ${right.last_name}`.trim();
+          return leftName.localeCompare(rightName);
+        }),
+    [activeHandlerIds, employeesData?.data]
+  );
+
+  const handleAddTicketHandler = async (): Promise<void> => {
+    if (!selectedUserId) {
+      return;
+    }
+
+    const selectedEmployee = availableEmployees.find(
+      (employee) => employee.user_id === selectedUserId
+    );
+
+    try {
+      await addTicketHandler.mutateAsync(selectedUserId);
+      setSelectedUserId('');
+      addToast({
+        title: 'IT handler added',
+        description: selectedEmployee
+          ? `${selectedEmployee.first_name} ${selectedEmployee.last_name} can now receive IT tickets.`
+          : 'The employee can now receive IT tickets.',
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Failed to add IT handler',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while assigning the IT handler.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleRemoveTicketHandler = async (
+    userId: string,
+    userName: string
+  ): Promise<void> => {
+    try {
+      await removeTicketHandler.mutateAsync(userId);
+      addToast({
+        title: 'IT handler removed',
+        description: `${userName} will no longer appear in the IT ticket assignment list.`,
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Failed to remove IT handler',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while removing the IT handler.',
+        variant: 'error',
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <StatCardGrid columns={2}>
+        <StatCard
+          label="Active IT Handlers"
+          value={activeHandlers.length}
+          icon={<LifeBuoy className="h-4 w-4" strokeWidth={1.5} />}
+        />
+        <StatCard
+          label="Available Employees"
+          value={availableEmployees.length}
+          icon={<UserPlus className="h-4 w-4" strokeWidth={1.5} />}
+        />
+      </StatCardGrid>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">IT Ticket Handlers</CardTitle>
+          <CardDescription>
+            Assign employee accounts that super-admin can route IT tickets to from the intake queue.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2 rounded-lg border border-border p-4">
+            <Label>Add IT Handler</Label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="sm:flex-1">
+                  <SelectValue placeholder="Select an employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableEmployees.map((employee) => (
+                    <SelectItem key={employee.user_id} value={employee.user_id ?? employee.id}>
+                      {employee.first_name} {employee.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={() => {
+                  void handleAddTicketHandler();
+                }}
+                disabled={addTicketHandler.isPending || !selectedUserId || availableEmployees.length === 0}
+              >
+                {addTicketHandler.isPending ? 'Adding...' : 'Add Handler'}
+              </Button>
+            </div>
+            {availableEmployees.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No additional active employee accounts are currently available for IT ticket routing.
+              </p>
+            ) : null}
+          </div>
+
+          {ticketHandlersLoading || employeesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
+            </div>
+          ) : ticketHandlersError || employeesError ? (
+            <EmptyState
+              icon={AlertCircle}
+              title="Failed to load IT handler management"
+              description={
+                ticketHandlersError?.message ||
+                employeesError?.message ||
+                'The IT handler roster could not be loaded.'
+              }
+              size="sm"
+            />
+          ) : activeHandlers.length === 0 ? (
+            <EmptyState
+              icon={LifeBuoy}
+              title="No IT handlers assigned"
+              description="Add at least one active IT handler so super-admin can dispatch IT tickets."
+              size="sm"
+            />
+          ) : (
+            <div className="space-y-3">
+              {activeHandlers.map((handler) => (
+                <div
+                  key={handler.user_id}
+                  className="flex flex-col gap-4 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground">{handler.user_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {handler.user_email ?? 'No email on file'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Assigned by {handler.assigned_by_name ?? 'Super Admin'} on{' '}
+                      {formatDateTime(handler.created_at)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      void handleRemoveTicketHandler(handler.user_id, handler.user_name);
+                    }}
+                    disabled={removeTicketHandler.isPending}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function EmployeeManagementPage(): ReactNode {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'onboarding' ? 'onboarding' : 'probation');
+  const isSuperAdmin = user?.role === 'super_admin';
+  const [activeTab, setActiveTab] = useState<EmployeeManagementTab>(() =>
+    resolveEmployeeManagementTab(searchParams.get('tab'), false)
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [probationView, setProbationView] = useState<ProbationView>('cards');
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [checklistDialogOpen, setChecklistDialogOpen] = useState(false);
-  const [ticketHandlersDialogOpen, setTicketHandlersDialogOpen] = useState(false);
 
   // Onboarding modal states
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
@@ -281,9 +516,9 @@ export default function EmployeeManagementPage(): ReactNode {
   const completeProbation = useCompleteProbation();
 
   useEffect(() => {
-    const tabFromUrl = searchParams.get('tab') === 'onboarding' ? 'onboarding' : 'probation';
+    const tabFromUrl = resolveEmployeeManagementTab(searchParams.get('tab'), isSuperAdmin);
     setActiveTab((prev) => (prev === tabFromUrl ? prev : tabFromUrl));
-  }, [searchParams]);
+  }, [isSuperAdmin, searchParams]);
 
   const currentPathWithSearch = useMemo(() => {
     const query = searchParams.toString();
@@ -291,10 +526,11 @@ export default function EmployeeManagementPage(): ReactNode {
   }, [pathname, searchParams]);
 
   const handleTabChange = (nextTab: string): void => {
-    setActiveTab(nextTab);
+    const resolvedTab = resolveEmployeeManagementTab(nextTab, isSuperAdmin);
+    setActiveTab(resolvedTab);
 
     const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('tab', nextTab);
+    nextParams.set('tab', resolvedTab);
     const nextQuery = nextParams.toString();
 
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
@@ -415,21 +651,13 @@ export default function EmployeeManagementPage(): ReactNode {
             </h1>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Manage employee probation, onboarding, and directory access
+            Manage employee probation, onboarding, and IT ticket routing
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {user?.role === 'super_admin' ? (
-            <Button variant="outline" onClick={() => setTicketHandlersDialogOpen(true)}>
-              <ShieldCheck className="mr-2 h-4 w-4" />
-              Manage IT Handlers
-            </Button>
-          ) : null}
-          <Button onClick={() => setInviteModalOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Invite Employee
-          </Button>
-        </div>
+        <Button onClick={() => setInviteModalOpen(true)}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Invite Employee
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -448,6 +676,7 @@ export default function EmployeeManagementPage(): ReactNode {
                 <CountBadge className="ml-2" variant="info" size="md" count={onboardingProfiles.length} />
               )}
             </TabsTrigger>
+            {isSuperAdmin ? <TabsTrigger value="it-handlers">IT Handlers</TabsTrigger> : null}
           </TabsList>
 
           <Button variant="outline" size="sm" onClick={() => setChecklistDialogOpen(true)}>
@@ -1000,6 +1229,12 @@ export default function EmployeeManagementPage(): ReactNode {
           </Card>
         </TabsContent>
 
+        {isSuperAdmin ? (
+          <TabsContent value="it-handlers" className="mt-4">
+            <ItHandlersManagementTab />
+          </TabsContent>
+        ) : null}
+
 
       </Tabs>
 
@@ -1049,11 +1284,6 @@ export default function EmployeeManagementPage(): ReactNode {
         onOpenChange={setChecklistDialogOpen}
         profiles={onboardingProfiles}
         roleLabel="employee"
-      />
-
-      <ManageTicketHandlersDialog
-        open={ticketHandlersDialogOpen}
-        onOpenChange={setTicketHandlersDialogOpen}
       />
 
       {/* Performance Appraisal Dialog */}

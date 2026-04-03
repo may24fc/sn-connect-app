@@ -53,7 +53,7 @@ export function SuperAdminTicketsPanel(): ReactNode {
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
-          <Link href="/admin/employee-management">Manage IT Handlers</Link>
+          <Link href="/admin/employee-management?tab=it-handlers">Manage IT Handlers</Link>
         </Button>
       </div>
 

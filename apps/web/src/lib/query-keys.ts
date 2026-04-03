@@ -40,16 +40,6 @@ export interface TaskFilters {
   pageSize?: number;
 }
 
-export interface TicketFilters {
-  search?: string;
-  team?: 'hr' | 'it';
-  status?: 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
-  scope?: 'submitter' | 'assigned' | 'triage';
-  page?: number;
-  pageSize?: number;
-}
-
 export interface ReportFilters {
   search?: string;
   status?: 'draft' | 'submitted' | 'approved' | 'rejected';
@@ -197,6 +187,12 @@ export interface NotificationFilters {
   type?: string;
 }
 
+export interface CompanyCalendarFilters {
+  start?: string;
+  end?: string;
+  limit?: number;
+}
+
 export interface JobFilters {
   search?: string;
   employmentType?: 'full-time' | 'part-time' | 'internship' | 'contract';
@@ -209,6 +205,16 @@ export interface ApplicationFiltersQuery {
   search?: string;
   status?: 'pending' | 'reviewed' | 'shortlisted' | 'interview' | 'rejected' | 'approved' | 'hired';
   jobPostingId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TicketFilters {
+  search?: string;
+  team?: 'hr' | 'it';
+  status?: 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  scope?: 'submitter' | 'assigned' | 'triage';
   page?: number;
   pageSize?: number;
 }
@@ -246,20 +252,6 @@ export const queryKeys = {
     list: (filters: TaskFilters) => [...queryKeys.tasks.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.tasks.all, 'detail', id] as const,
     proofs: (taskId: string) => [...queryKeys.tasks.all, 'proofs', taskId] as const,
-  },
-
-  tickets: {
-    all: ['tickets'] as const,
-    lists: () => [...queryKeys.tickets.all, 'list'] as const,
-    list: (filters: TicketFilters) => [...queryKeys.tickets.lists(), filters] as const,
-    detail: (id: string) => [...queryKeys.tickets.all, 'detail', id] as const,
-    assignees: () => [...queryKeys.tickets.all, 'assignees'] as const,
-  },
-
-  ticketHandlers: {
-    all: ['ticket-handlers'] as const,
-    list: () => [...queryKeys.ticketHandlers.all, 'list'] as const,
-    me: () => [...queryKeys.ticketHandlers.all, 'me'] as const,
   },
 
   // Reports
@@ -477,10 +469,30 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.applications.details(), id] as const,
   },
 
-  // Company Pulse (read-only Google Calendar via Service Account)
+  // Tickets
+  tickets: {
+    all: ['tickets'] as const,
+    lists: () => [...queryKeys.tickets.all, 'list'] as const,
+    list: (filters: TicketFilters) => [...queryKeys.tickets.lists(), filters] as const,
+    details: () => [...queryKeys.tickets.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.tickets.details(), id] as const,
+    assignees: () => [...queryKeys.tickets.all, 'assignees'] as const,
+    attachments: (id: string) => [...queryKeys.tickets.all, 'attachments', id] as const,
+    comments: (id: string) => [...queryKeys.tickets.all, 'comments', id] as const,
+  },
+
+  // Ticket Handlers
+  ticketHandlers: {
+    all: ['ticket-handlers'] as const,
+    list: () => [...queryKeys.ticketHandlers.all, 'list'] as const,
+    me: () => [...queryKeys.ticketHandlers.all, 'me'] as const,
+  },
+
+  // Company Calendar (read-only Google Calendar via Service Account)
   companyPulse: {
     all: ['company-pulse'] as const,
-    events: () => [...queryKeys.companyPulse.all, 'events'] as const,
+    events: (filters: CompanyCalendarFilters = {}) =>
+      [...queryKeys.companyPulse.all, 'events', filters] as const,
   },
 } as const;
 
