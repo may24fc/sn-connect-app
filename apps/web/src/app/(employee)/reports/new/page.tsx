@@ -15,6 +15,7 @@ import {
 } from '@/lib/report-utils';
 import type { MarketingCampaignType, MarketingObjective } from '@/lib/schemas/report.schema';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -275,11 +276,6 @@ export default function NewReportPage() {
   };
 
   const validateRequiredSections = (): string | null => {
-    const filledPlans = nextWeekPlans.filter((item) => item.trim());
-    if (filledPlans.length === 0) {
-      return 'Please add at least one next step.';
-    }
-
     const filledMetrics = metrics.filter((metric) => metric.name.trim());
     if (filledMetrics.length === 0) {
       return 'Please add at least one metric.';
@@ -558,8 +554,13 @@ export default function NewReportPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              Metrics <span className="text-rose-500">*</span>
+            <CardTitle className="flex items-center gap-2">
+              <span>
+                Metrics <span className="text-rose-500">*</span>
+              </span>
+              <Badge variant="secondary" className="h-5 rounded-full px-2 text-[11px] font-medium">
+                Preset
+              </Badge>
             </CardTitle>
             <CardDescription>
               Recommended metrics are aligned to the selected objective. Preset names and units stay locked by default, but you can still remove preset rows or add custom metrics.
@@ -567,11 +568,14 @@ export default function NewReportPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {metrics.map((metric, index) => (
-              <div key={`${metric.name}-${index}`} className="flex items-end gap-2">
-                <div className="flex-1 space-y-1">
-                  {index === 0 && (
+              <div
+                key={`${metric.name}-${index}`}
+                className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_104px_40px] md:items-end"
+              >
+                <div className="space-y-1">
+                  {index === 0 ? (
                     <Label className="text-xs text-muted-foreground">Name</Label>
-                  )}
+                  ) : null}
                   <Input
                     placeholder="Metric name"
                     value={metric.name}
@@ -579,11 +583,8 @@ export default function NewReportPage() {
                     onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
                     className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
                   />
-                  {metric.locked ? (
-                    <p className="text-[11px] text-muted-foreground">Preset metric</p>
-                  ) : null}
                 </div>
-                <div className="w-32 space-y-1">
+                <div className="space-y-1">
                   {index === 0 && (
                     <Label className="text-xs text-muted-foreground">Value</Label>
                   )}
@@ -595,7 +596,7 @@ export default function NewReportPage() {
                     onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
                   />
                 </div>
-                <div className="w-24 space-y-1">
+                <div className="space-y-1">
                   {index === 0 && (
                     <Label className="text-xs text-muted-foreground">Unit</Label>
                   )}
@@ -607,17 +608,19 @@ export default function NewReportPage() {
                     className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
                   />
                 </div>
-                {metrics.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Remove metric"
-                    onClick={() => handleRemoveMetric(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+                <div className="flex items-end md:justify-center">
+                  {metrics.length > 1 ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Remove metric"
+                      onClick={() => handleRemoveMetric(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ))}
 
@@ -639,7 +642,7 @@ export default function NewReportPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              Next Steps <span className="text-rose-500">*</span>
+              Next Steps
             </CardTitle>
             <CardDescription>Document the next experiments, fixes, or follow-through for the campaign.</CardDescription>
           </CardHeader>

@@ -400,6 +400,29 @@ export function useUpdateOKR() {
   });
 }
 
+export function useDeleteOKR() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { id: string }) => {
+      const response = await fetch(`/api/performance/okrs?id=${payload.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to delete OKR');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.okrs() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
 export function useUpdateKPI() {
   const queryClient = useQueryClient();
   return useMutation({

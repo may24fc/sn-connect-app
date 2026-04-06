@@ -20,7 +20,7 @@ import { ROLE_TYPE_REGISTRY, useKPIEntries, useRoleMetadata } from '@/hooks/useR
 import { useTasks } from '@/hooks/useTasks';
 import { useTasksRealtime } from '@/hooks/useTasksRealtime';
 import KPIEntryWidget from './components/KPIEntryWidget';
-import { Badge, Button, DashboardAttentionCarousel, EmptyState, MilestoneBanner, Progress, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
+import { Badge, Button, DashboardAttentionCarousel, EmptyState, MilestoneBanner, RoleDashboardWidget, Skeleton } from '@hr-portal/ui';
 import type { KPICardData } from '@hr-portal/ui';
 import {
   Bell,
@@ -186,7 +186,6 @@ export default function DashboardPage(): ReactNode {
   const {
     profile: onboardingProfile,
     progressPercent: onboardingProgress,
-    tasksRemainingCount,
     isLoading: isOnboardingLoading,
   } = useOnboardingProgressSummary();
   const isOnboardingCompleted = onboardingProfile?.is_completed === true;
@@ -299,63 +298,6 @@ export default function DashboardPage(): ReactNode {
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
-        {/* Onboarding Progress (only if not completed) */}
-        {!isOnboardingCompleted && (
-          <BentoCard colSpan={4}>
-            <BentoCardHeader>
-              <BentoCardTitle icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />}>
-                Onboarding Progress
-              </BentoCardTitle>
-              <Badge variant="secondary">
-                {isOnboardingLoading
-                  ? 'Loading…'
-                  : hasOnboardingData
-                    ? 'In Progress'
-                    : 'Not Started'}
-              </Badge>
-            </BentoCardHeader>
-            <BentoCardContent>
-              {isOnboardingLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-2 w-full" />
-                  <Skeleton className="h-4 w-1/3" />
-                </div>
-              ) : hasOnboardingData ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-zinc-500 dark:text-zinc-400">Overall completion</span>
-                      <span className="font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
-                        {onboardingProgress}%
-                      </span>
-                    </div>
-                    <Progress value={onboardingProgress} className="h-2" />
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {tasksRemainingCount} checklist item{tasksRemainingCount === 1 ? '' : 's'} remaining
-                    </span>
-                    <Link
-                      href="/onboarding"
-                      className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300"
-                    >
-                      Open checklist
-                      <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <EmptyState
-                  icon={ClipboardCheck}
-                  title="No onboarding in progress"
-                  description="Your onboarding tasks will appear here when available"
-                  action={{ label: 'View Onboarding', href: '/onboarding' }}
-                />
-              )}
-            </BentoCardContent>
-          </BentoCard>
-        )}
-
         {/* Company Calendar Card */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>

@@ -645,7 +645,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
         <TabsList className="w-full sm:w-auto">
           <TabsTrigger value="view" className="flex items-center gap-2">
             <Eye className="h-4 w-4" />
-            View Performance
+            View OKRs & KPIs
           </TabsTrigger>
           <TabsTrigger value="evaluate" className="flex items-center gap-2">
             <ClipboardCheck className="h-4 w-4" />
@@ -850,8 +850,8 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                   <CardContent className="py-12">
                     <EmptyState
                       icon={Star}
-                      title="No performance reviews yet"
-                      description="Reviews for this employee will appear here once they are created."
+                      title="No review records yet"
+                      description="Review records for this employee will appear here once they are created."
                       size="sm"
                     />
                   </CardContent>

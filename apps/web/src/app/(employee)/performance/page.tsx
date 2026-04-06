@@ -91,8 +91,11 @@ export default function PerformancePage(): ReactNode {
   usePerformanceRealtime();
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
-  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
-  const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
+  const displayCycle = activeCycle || cycles[0] || null;
+  const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
+  const canCreateObjective = Boolean(activeCycle);
+  const { data: okrs = [] } = usePerformanceOKRs(displayCycle?.id);
   const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = usePerformanceOKRs();
   const createOKR = useCreateOKR();
 
@@ -135,15 +138,17 @@ export default function PerformancePage(): ReactNode {
   };
 
   const handleOpenCreate = (): void => {
+    if (!activeCycle) return;
+
     setFormState({
       ...emptyForm,
-      cycleId: activeCycle?.id || '',
+      cycleId: activeCycle.id,
     });
     setCreateDialogOpen(true);
   };
 
   const handleCreateObjective = async (): Promise<void> => {
-    if (!formState.objective.trim() || objectiveWeightInvalid) return;
+    if (!activeCycle || !formState.objective.trim() || objectiveWeightInvalid) return;
 
     const selectedCycleId = formState.cycleId || activeCycle?.id;
 
@@ -184,16 +189,23 @@ export default function PerformancePage(): ReactNode {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-1.5">
-            <h1 className="text-2xl font-bold text-foreground">Performance</h1>
-            <SectionTooltip content="Track your OKRs, KPIs, and review scores across performance cycles." />
+            <h1 className="text-2xl font-bold text-foreground">OKRs &amp; KPIs</h1>
+            <SectionTooltip content="Track your objectives, targets, KPIs, and review-cycle progress in one workspace." />
           </div>
-          <p className="text-muted-foreground">Track your objectives, targets, and KPIs</p>
-          <HelpLink href="/help/performance-reviews" label="Performance FAQ" LinkComponent={Link} />
+          <p className="text-muted-foreground">Track your objectives, targets, and KPI progress</p>
+          <HelpLink href="/help/performance-reviews" label="OKRs & KPIs FAQ" LinkComponent={Link} />
         </div>
-        <Button onClick={handleOpenCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Objective
-        </Button>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <Button onClick={handleOpenCreate} disabled={!canCreateObjective}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Objective
+          </Button>
+          {!canCreateObjective && (
+            <p className="text-xs text-muted-foreground">
+              Objective creation is unavailable until an active cycle is set.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Current Cycle Banner */}
@@ -205,21 +217,21 @@ export default function PerformancePage(): ReactNode {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold">{activeCycle?.name || 'No Active Cycle'}</h2>
+                <h2 className="font-semibold">{displayCycle?.name || 'No Active Cycle'}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {activeCycle
-                    ? `${formatDate(activeCycle.startDate)} - ${formatDate(activeCycle.endDate)}`
+                  {displayCycle
+                    ? `${formatDate(displayCycle.startDate)} - ${formatDate(displayCycle.endDate)}`
                     : 'No performance cycle has been created yet'}
                 </p>
-                {activeCycle && (
+                {displayCycle && (
                   <p className="text-xs font-medium text-primary mt-0.5">
-                    {getQuarterLabel(activeCycle.startDate)}
+                    {getQuarterLabel(displayCycle.startDate)}
                   </p>
                 )}
               </div>
             </div>
             <Badge variant={activeCycle ? 'success' : 'secondary'}>
-              {activeCycle ? 'Active Cycle' : 'No Cycle'}
+              {activeCycle ? 'Active Cycle' : displayCycle ? 'Cycle Not Active' : 'No Active Cycle'}
             </Badge>
           </div>
         </CardContent>
@@ -324,11 +336,16 @@ export default function PerformancePage(): ReactNode {
               <EmptyState
                 icon={Target}
                 title="No objectives yet"
-                description="Create your first objective, then add targets and KPIs to track your progress."
+                description={
+                  canCreateObjective
+                    ? 'Create your first objective, then add targets and KPIs to track your progress.'
+                    : 'Objective creation is disabled until an active review cycle is available.'
+                }
                 action={{
                   label: 'Create objective',
                   onClick: handleOpenCreate,
                   icon: <Plus className="h-4 w-4" />,
+                  disabled: !canCreateObjective,
                 }}
                 size="md"
               />
@@ -460,7 +477,7 @@ export default function PerformancePage(): ReactNode {
                     <SelectValue placeholder="Select a cycle" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cycles.map((cycle) => (
+                    {activeCycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={cycle.id}>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
@@ -538,6 +555,8 @@ export default function PerformancePage(): ReactNode {
                 >
                   {isLoadingAllOkrs
                     ? 'Checking cycle allocation...'
+                    : !canCreateObjective
+                    ? 'Ask HR or an admin to activate a review cycle before creating objectives.'
                     : remainingObjectiveWeight <= 0
                     ? '100% already allocated across objectives'
                     : `${remainingObjectiveWeight}% available in this cycle. Higher = more impact.`}
@@ -554,7 +573,12 @@ export default function PerformancePage(): ReactNode {
               onClick={() => {
                 void handleCreateObjective();
               }}
-              disabled={!formState.objective.trim() || objectiveWeightInvalid || createOKR.isPending}
+              disabled={
+                !canCreateObjective ||
+                !formState.objective.trim() ||
+                objectiveWeightInvalid ||
+                createOKR.isPending
+              }
             >
               <Plus className="mr-2 h-4 w-4" />
               {createOKR.isPending ? 'Creating...' : 'Create Objective'}

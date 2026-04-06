@@ -2,6 +2,48 @@ import { createOKRSchema, updateOKRSchema } from '@/lib/schemas/performance.sche
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
 
+async function authorizeOkrMutation(
+  supabaseAdmin: Awaited<ReturnType<typeof getAuthedPerformanceContext>>['supabaseAdmin'],
+  userId: string,
+  role: string | null,
+  okrId: string
+): Promise<
+  | { okr: { id: string; employee_id: string } }
+  | { error: 'No employee profile found'; status: 400 }
+  | { error: 'OKR not found'; status: 404 }
+  | { error: 'Forbidden'; status: 403 }
+  | { error: 'Failed to resolve OKR'; status: 500 }
+> {
+  const { data: okr, error: okrError } = await supabaseAdmin
+    .from('okrs')
+    .select('id, employee_id')
+    .eq('id', okrId)
+    .maybeSingle();
+
+  if (okrError) {
+    return { error: 'Failed to resolve OKR', status: 500 };
+  }
+
+  if (!okr) {
+    return { error: 'OKR not found', status: 404 };
+  }
+
+  if (isPerformanceAdmin(role)) {
+    return { okr };
+  }
+
+  const ownEmployeeId = await resolveEmployeeIdForUser(supabaseAdmin, userId);
+  if (!ownEmployeeId) {
+    return { error: 'No employee profile found', status: 400 };
+  }
+
+  if (okr.employee_id !== ownEmployeeId) {
+    return { error: 'Forbidden', status: 403 };
+  }
+
+  return { okr };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
@@ -119,7 +161,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { supabaseAdmin, user, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -132,6 +174,11 @@ export async function PATCH(request: NextRequest) {
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
       );
+    }
+
+    const authorization = await authorizeOkrMutation(supabaseAdmin, user.id, role, parsed.data.id);
+    if ('error' in authorization) {
+      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     }
 
     const payload: Record<string, unknown> = {};
@@ -160,6 +207,36 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ data });
   } catch (error) {
     console.error('PATCH /api/performance/okrs error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const id = request.nextUrl.searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing OKR id' }, { status: 400 });
+    }
+
+    const authorization = await authorizeOkrMutation(supabaseAdmin, user.id, role, id);
+    if ('error' in authorization) {
+      return NextResponse.json({ error: authorization.error }, { status: authorization.status });
+    }
+
+    const { error: deleteError } = await supabaseAdmin.from('okrs').delete().eq('id', id);
+
+    if (deleteError) {
+      return NextResponse.json({ error: 'Failed to delete OKR' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('DELETE /api/performance/okrs error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@
 
 import {
   useCreateOKRTarget,
+  useDeleteOKR,
   useDeleteOKRTarget,
   useOKRTargets,
   usePerformanceCycles,
@@ -11,7 +12,7 @@ import {
 } from '@/hooks/usePerformance';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
-import type { OKRTarget, TargetMetricType } from '@hr-portal/ui';
+import type { OKR, OKRTarget, TargetMetricType } from '@hr-portal/ui';
 import {
   Badge,
   Button,
@@ -64,7 +65,7 @@ import {
   ToggleLeft,
   Trash2,
 } from 'lucide-react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 
 // =============================================
@@ -153,6 +154,12 @@ interface TargetFormState {
   rubric4: string;
 }
 
+interface ObjectiveFormState {
+  objective: string;
+  description: string;
+  weight: string;
+}
+
 const emptyTargetForm: TargetFormState = {
   name: '',
   description: '',
@@ -166,6 +173,12 @@ const emptyTargetForm: TargetFormState = {
   rubric2: '',
   rubric3: '',
   rubric4: '',
+};
+
+const emptyObjectiveForm: ObjectiveFormState = {
+  objective: '',
+  description: '',
+  weight: '',
 };
 
 function targetFormForEdit(target: OKRTarget): TargetFormState {
@@ -185,6 +198,14 @@ function targetFormForEdit(target: OKRTarget): TargetFormState {
   };
 }
 
+function objectiveFormForEdit(okr: OKR): ObjectiveFormState {
+  return {
+    objective: okr.objective,
+    description: okr.description || '',
+    weight: String(okr.weight),
+  };
+}
+
 // =============================================
 // Component
 // =============================================
@@ -193,6 +214,7 @@ export default function OKRDetailPage(): ReactNode {
   usePerformanceRealtime();
   const params = useParams<{ id: string }>();
   const handleBack = useBackNavigation({ fallbackPath: '/performance' });
+  const router = useRouter();
   const { addToast } = useToast();
 
   const okrId = params.id;
@@ -205,6 +227,7 @@ export default function OKRDetailPage(): ReactNode {
   const cycle = cycles.find((c) => c.id === okr?.cycleId);
 
   const updateOKR = useUpdateOKR();
+  const deleteOKR = useDeleteOKR();
   const createTarget = useCreateOKRTarget();
   const updateTarget = useUpdateOKRTarget();
   const deleteTarget = useDeleteOKRTarget();
@@ -214,6 +237,10 @@ export default function OKRDetailPage(): ReactNode {
   const [editingTarget, setEditingTarget] = useState<OKRTarget | null>(null);
   const [formState, setFormState] = useState<TargetFormState>(emptyTargetForm);
   const [formStep, setFormStep] = useState<1 | 2>(1);
+  const [objectiveEditorOpen, setObjectiveEditorOpen] = useState(false);
+  const [objectiveFormState, setObjectiveFormState] =
+    useState<ObjectiveFormState>(emptyObjectiveForm);
+  const [objectiveDeleteOpen, setObjectiveDeleteOpen] = useState(false);
 
   // Update progress dialog
   const [progressTarget, setProgressTarget] = useState<OKRTarget | null>(null);
@@ -226,6 +253,20 @@ export default function OKRDetailPage(): ReactNode {
     [targets, editingTarget]
   );
   const remainingWeight = Math.max(0, 100 - usedWeight);
+  const remainingObjectiveWeight = useMemo(() => {
+    if (!okr || !okr.cycleId || okr.cycleId === 'uncategorized') return 100;
+
+    const siblingWeight = allOkrs
+      .filter((objective) => objective.cycleId === okr.cycleId && objective.id !== okr.id)
+      .reduce((sum, objective) => sum + objective.weight, 0);
+
+    return Math.max(0, Math.round((100 - siblingWeight) * 100) / 100);
+  }, [allOkrs, okr]);
+  const objectiveWeightValue = Number(objectiveFormState.weight);
+  const objectiveWeightInvalid =
+    !objectiveFormState.weight ||
+    objectiveWeightValue <= 0 ||
+    objectiveWeightValue > remainingObjectiveWeight;
 
   // Computed: weighted progress from targets
   const computedProgress = useMemo(() => {
@@ -259,6 +300,18 @@ export default function OKRDetailPage(): ReactNode {
     setEditingTarget(null);
     setFormState(emptyTargetForm);
     setFormStep(1);
+  }, []);
+
+  const handleOpenObjectiveEditor = useCallback((): void => {
+    if (!okr) return;
+
+    setObjectiveFormState(objectiveFormForEdit(okr));
+    setObjectiveEditorOpen(true);
+  }, [okr]);
+
+  const handleCloseObjectiveEditor = useCallback((): void => {
+    setObjectiveEditorOpen(false);
+    setObjectiveFormState(emptyObjectiveForm);
   }, []);
 
   const handleMetricTypeChange = useCallback((type: TargetMetricType): void => {
@@ -367,6 +420,36 @@ export default function OKRDetailPage(): ReactNode {
     }
   };
 
+  const handleSaveObjective = async (): Promise<void> => {
+    if (!okr || !objectiveFormState.objective.trim() || objectiveWeightInvalid) return;
+
+    try {
+      await updateOKR.mutateAsync({
+        id: okr.id,
+        objective: objectiveFormState.objective.trim(),
+        description: objectiveFormState.description.trim(),
+        weight: objectiveWeightValue,
+      });
+      addToast({ title: 'Objective updated', variant: 'success' });
+      handleCloseObjectiveEditor();
+    } catch {
+      addToast({ title: 'Error updating objective', variant: 'error' });
+    }
+  };
+
+  const handleDeleteObjective = async (): Promise<void> => {
+    if (!okr) return;
+
+    try {
+      await deleteOKR.mutateAsync({ id: okr.id });
+      addToast({ title: 'Objective deleted', variant: 'success' });
+      setObjectiveDeleteOpen(false);
+      router.push('/performance');
+    } catch {
+      addToast({ title: 'Error deleting objective', variant: 'error' });
+    }
+  };
+
   // =============================================
   // Render
   // =============================================
@@ -380,7 +463,7 @@ export default function OKRDetailPage(): ReactNode {
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Performance
+          Back to OKRs & KPIs
         </button>
         <Card>
           <CardContent className="p-8 text-center">
@@ -404,7 +487,7 @@ export default function OKRDetailPage(): ReactNode {
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Performance
+        Back to OKRs & KPIs
       </button>
 
       {/* Objective Header */}
@@ -446,7 +529,7 @@ export default function OKRDetailPage(): ReactNode {
             </div>
 
             {/* Progress circle */}
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <div className="relative h-20 w-20">
                 <svg className="h-20 w-20 -rotate-90" viewBox="0 0 80 80">
                   <circle
@@ -490,10 +573,143 @@ export default function OKRDetailPage(): ReactNode {
                   Complete
                 </Button>
               )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon-sm" className="shrink-0">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleOpenObjectiveEditor}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Objective
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setObjectiveDeleteOpen(true)}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Objective
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <SlidePanel open={objectiveEditorOpen} onOpenChange={setObjectiveEditorOpen}>
+        <SlidePanelContent size="lg">
+          <SlidePanelHeader>
+            <SlidePanelTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <Target className="h-4 w-4 text-primary" />
+              </div>
+              Edit Objective
+            </SlidePanelTitle>
+            <SlidePanelDescription>
+              Update the objective title, supporting context, and weight allocation.
+            </SlidePanelDescription>
+          </SlidePanelHeader>
+
+          <SlidePanelBody className="space-y-6">
+            <SlidePanelSection label="Objective">
+              <div className="space-y-1.5">
+                <Label htmlFor="objective-name" className="text-sm font-medium">
+                  Objective name
+                </Label>
+                <Input
+                  id="objective-name"
+                  value={objectiveFormState.objective}
+                  onChange={(event) =>
+                    setObjectiveFormState((previous) => ({
+                      ...previous,
+                      objective: event.target.value,
+                    }))
+                  }
+                  placeholder="Describe the outcome you want to achieve"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="objective-description" className="text-sm font-medium">
+                  Description
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    Optional
+                  </span>
+                </Label>
+                <Textarea
+                  id="objective-description"
+                  value={objectiveFormState.description}
+                  onChange={(event) =>
+                    setObjectiveFormState((previous) => ({
+                      ...previous,
+                      description: event.target.value,
+                    }))
+                  }
+                  placeholder="Add context for collaborators and reviewers"
+                  className="min-h-[88px] resize-none"
+                />
+              </div>
+            </SlidePanelSection>
+
+            <SlidePanelSection label="Priority">
+              <div className="space-y-1.5">
+                <Label htmlFor="objective-weight" className="text-sm font-medium">
+                  Weight
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="objective-weight"
+                    type="number"
+                    min="1"
+                    max={remainingObjectiveWeight}
+                    step="1"
+                    value={objectiveFormState.weight}
+                    onChange={(event) =>
+                      setObjectiveFormState((previous) => ({
+                        ...previous,
+                        weight: event.target.value,
+                      }))
+                    }
+                    className="pr-8"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    %
+                  </span>
+                </div>
+                <p
+                  className={`text-xs ${
+                    objectiveWeightInvalid ? 'text-destructive' : 'text-muted-foreground'
+                  }`}
+                >
+                  {remainingObjectiveWeight <= 0
+                    ? '100% is already allocated across the other objectives in this cycle.'
+                    : `${remainingObjectiveWeight}% is available for this objective within the current cycle.`}
+                </p>
+              </div>
+            </SlidePanelSection>
+          </SlidePanelBody>
+
+          <SlidePanelFooter>
+            <Button variant="outline" onClick={handleCloseObjectiveEditor}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void handleSaveObjective()}
+              disabled={
+                !objectiveFormState.objective.trim() ||
+                objectiveWeightInvalid ||
+                updateOKR.isPending
+              }
+            >
+              {updateOKR.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </SlidePanelFooter>
+        </SlidePanelContent>
+      </SlidePanel>
 
       {/* Targets Section */}
       <div>
@@ -1033,6 +1249,36 @@ export default function OKRDetailPage(): ReactNode {
                 Update
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={objectiveDeleteOpen} onOpenChange={setObjectiveDeleteOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete objective?</DialogTitle>
+            <DialogDescription>
+              This will remove the objective and all of its targets from your OKRs & KPIs
+              workspace.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm text-muted-foreground">
+            <p>
+              This action cannot be undone. Reviewers will no longer see this objective once it is
+              deleted.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setObjectiveDeleteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeleteObjective()}
+              disabled={deleteOKR.isPending}
+            >
+              {deleteOKR.isPending ? 'Deleting...' : 'Delete Objective'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

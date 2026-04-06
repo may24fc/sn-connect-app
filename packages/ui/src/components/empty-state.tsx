@@ -11,6 +11,7 @@ type EmptyStateAction = {
   onClick?: () => void;
   href?: string;
   icon?: ReactNode;
+  disabled?: boolean;
 };
 
 export interface EmptyStateProps {
@@ -75,14 +76,14 @@ function renderAction(
 
   if (action.href) {
     return (
-      <Button asChild variant={variant} size={size}>
+      <Button asChild variant={variant} size={size} disabled={action.disabled}>
         <a href={action.href}>{content}</a>
       </Button>
     );
   }
 
   return (
-    <Button variant={variant} size={size} onClick={action.onClick}>
+    <Button variant={variant} size={size} onClick={action.onClick} disabled={action.disabled}>
       {content}
     </Button>
   );

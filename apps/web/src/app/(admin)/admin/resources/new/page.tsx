@@ -52,7 +52,7 @@ const categoryOptions: Array<{ value: string; label: string; icon: LucideIcon }>
   { value: 'tools', label: 'Tools & Software', icon: Wrench },
   { value: 'culture', label: 'Culture & Values', icon: Heart },
   { value: 'forms_templates', label: 'Forms & Templates', icon: FileText },
-  { value: 'performance', label: 'Performance', icon: TrendingUp },
+  { value: 'performance', label: 'OKRs & KPIs', icon: TrendingUp },
   { value: 'emergency', label: 'Emergency Procedures', icon: AlertTriangle },
 ];
 

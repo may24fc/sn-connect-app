@@ -1,5 +1,6 @@
 'use client';
 
+import { getAuthenticatedHomeRedirect } from '@/lib/auth/redirect-config';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
@@ -60,7 +61,12 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 
 const AUTH_TIMEOUT_MS = 12000;
 
-function getHomeRedirectPath(user: Pick<User, 'role' | 'isOnboardingComplete'>): string {
+function getHomeRedirectPath(user: Pick<User, 'role' | 'status'>): string {
+  const statusRedirect = getAuthenticatedHomeRedirect(user.role, user.status);
+  if (statusRedirect === '/onboarding/setup' || statusRedirect === '/onboarding/awaiting-approval') {
+    return statusRedirect;
+  }
+
   switch (user.role) {
     case 'employee':
       return '/dashboard';
@@ -587,28 +593,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         // state after signup → email confirmation → login flow)
         router.refresh();
 
-        // Handle awaiting_approval status - redirect to waiting page
-        if (nextUser.status === 'awaiting_approval') {
-          router.push('/onboarding/awaiting-approval');
-          return;
-        }
-
-        switch (nextUser.role) {
-          case 'employee':
-            router.push(nextUser.isOnboardingComplete ? '/dashboard' : '/onboarding/setup');
-            break;
-          case 'intern':
-            router.push(nextUser.isOnboardingComplete ? '/intern/dashboard' : '/onboarding/setup');
-            break;
-          case 'admin':
-            router.push('/admin/dashboard');
-            break;
-          case 'super_admin':
-            router.push('/super-admin/dashboard');
-            break;
-          default:
-            router.push('/dashboard');
-        }
+        router.push(getHomeRedirectPath(nextUser));
       } finally {
         setIsLoading(false);
       }

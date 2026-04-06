@@ -213,9 +213,9 @@ export default function AdminPerformancePage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Performance</h1>
+          <h1 className="text-2xl font-bold text-foreground">OKRs & KPIs</h1>
           <p className="text-muted-foreground">
-            View and evaluate individual OKRs and performance
+            View, compare, and evaluate individual OKRs and KPIs
           </p>
         </div>
         <div className="flex gap-2">
@@ -351,7 +351,7 @@ export default function AdminPerformancePage(): ReactNode {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
-              Performance
+              OKRs &amp; KPIs
               {pagination && (
                 <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
                   ({pagination.total} total)

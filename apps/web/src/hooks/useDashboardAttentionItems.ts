@@ -145,13 +145,13 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
   if ((pendingData?.pendingReviews.count ?? 0) > 0) {
     items.push({
       id: 'pending-reviews',
-      title: 'Performance Reviews Pending',
-      description: 'Performance reviews are waiting for the next approval step.',
+      title: 'OKRs & KPIs Reviews Pending',
+      description: 'OKRs & KPI reviews are waiting for the next approval step.',
       count: pendingData?.pendingReviews.count ?? 0,
       href: '/admin/performance',
       icon: Star,
       severity: 'info',
-      actionLabel: 'Open reviews',
+      actionLabel: 'Open OKRs & KPIs',
     });
   }
 

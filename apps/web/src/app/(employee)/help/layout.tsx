@@ -8,10 +8,10 @@ import Link from 'next/link';
 
 const helpNav = [
   {
-    title: 'Performance Reviews',
+    title: 'OKRs & KPIs',
     href: '/help/performance-reviews',
     icon: BarChart3,
-    description: 'OKRs, KPIs, and review cycles',
+    description: 'Objectives, metrics, and review-cycle guidance',
   },
   {
     title: 'Marketing Reports',

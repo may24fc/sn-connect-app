@@ -103,12 +103,6 @@ export default function InternReportsPage(): ReactNode {
   const hasNoInternship =
     !listQuery.isLoading && listQuery.data?.data?.length === 0;
 
-  // Redirect if no active internship
-  if (hasNoInternship) {
-    router.push('/intern/setup');
-    return null;
-  }
-
   const logs = (logsQuery.data?.data ?? []) as DailyLogRow[];
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: logs ref is stable from query
@@ -185,6 +179,24 @@ export default function InternReportsPage(): ReactNode {
           title="Loading your reports"
           description="Fetching your internship report history and draft entries."
         />
+      </div>
+    );
+  }
+
+  if (hasNoInternship) {
+    return (
+      <div className="space-y-6">
+        <PageHeader />
+        <Card>
+          <CardContent className="p-8">
+            <EmptyState
+              icon={FileText}
+              title="Reports unlock after internship assignment"
+              description="An administrator still needs to assign your internship details before you can submit or save EOD reports. Once your assignment is active, your reporting history and draft tools will appear here."
+              action={{ label: 'View profile', onClick: () => router.push('/intern/profile') }}
+            />
+          </CardContent>
+        </Card>
       </div>
     );
   }

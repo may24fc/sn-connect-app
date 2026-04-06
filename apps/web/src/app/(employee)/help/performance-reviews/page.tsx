@@ -18,7 +18,7 @@ const faqs: FAQItem[] = [
   {
     question: 'How do I create a new objective?',
     answer:
-      'Click the "+ New Objective" button at the top of the Performance page. Fill in the objective title, optional description, select the review cycle, and set a weight. After saving, click on the objective to add specific targets and KPIs.',
+      'Click the "+ New Objective" button at the top of the OKRs & KPIs page. Fill in the objective title, optional description, confirm the active cycle, and set a weight. After saving, click on the objective to add specific targets and KPIs.',
   },
   {
     question: 'What does the "weight" on an objective mean?',
@@ -58,7 +58,7 @@ const faqs: FAQItem[] = [
   {
     question: 'I can\'t see any objectives. What\'s wrong?',
     answer:
-      'Make sure there is an active review cycle — check the banner at the top of the page. If it says "No Active Cycle," your admin hasn\'t created one yet. Contact HR to set up a review cycle before creating objectives.',
+      'Make sure there is an active review cycle — check the banner at the top of the page. If it says "No Active Cycle," your admin hasn\'t created one yet. Contact HR to activate a cycle before creating objectives.',
   },
 ];
 
@@ -73,7 +73,7 @@ export default function PerformanceHelpPage(): ReactNode {
     <div className="space-y-8">
       {/* Page Title */}
       <div>
-        <h2 className="text-xl font-semibold text-foreground">Performance Reviews</h2>
+        <h2 className="text-xl font-semibold text-foreground">OKRs & KPIs</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Everything you need to know about tracking objectives, KPIs, and review cycles.
         </p>

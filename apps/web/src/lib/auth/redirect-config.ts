@@ -176,6 +176,10 @@ export function getAuthenticatedHomeRedirect(
   status?: string | null,
   returnTo?: string | null
 ): string {
+  if (status === 'pending_onboarding') {
+    return '/onboarding/setup';
+  }
+
   if (status === 'awaiting_approval') {
     return '/onboarding/awaiting-approval';
   }

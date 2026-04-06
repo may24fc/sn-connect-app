@@ -285,8 +285,8 @@ export default function CyclesPage(): ReactNode {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Performance Cycles</h1>
-            <p className="text-muted-foreground">Manage performance review cycles and deadlines</p>
+            <h1 className="text-2xl font-bold text-foreground">Review Cycles</h1>
+            <p className="text-muted-foreground">Manage OKRs &amp; KPIs review cycles and deadlines</p>
           </div>
         </div>
         <Button onClick={handleOpenCreate}>
@@ -428,7 +428,7 @@ export default function CyclesPage(): ReactNode {
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No performance cycles found. Click "New Cycle" to create one.
+                    No review cycles found. Click "New Cycle" to create one.
                   </TableCell>
                 </TableRow>
               )}
@@ -447,8 +447,8 @@ export default function CyclesPage(): ReactNode {
             </DialogTitle>
             <DialogDescription>
               {editingCycle
-                ? 'Update the performance cycle details and deadlines.'
-                : 'Set up a new performance review cycle with submission deadlines.'}
+                ? 'Update the review cycle details and deadlines.'
+                : 'Set up a new OKRs & KPIs review cycle with submission deadlines.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -457,7 +457,7 @@ export default function CyclesPage(): ReactNode {
               <Label htmlFor="name">Cycle Name</Label>
               <Input
                 id="name"
-                placeholder="e.g., Q1 2024 Performance Review"
+                placeholder="e.g., Q1 2024 Review Cycle"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />

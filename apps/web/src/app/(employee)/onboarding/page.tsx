@@ -28,7 +28,8 @@ import {
   LogOut,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { type KeyboardEvent, type ReactNode, useMemo, useState } from 'react';
 
 function formatCategoryLabel(category: string): string {
   return category
@@ -37,7 +38,12 @@ function formatCategoryLabel(category: string): string {
     .replace(/\b\w/g, (segment) => segment.toUpperCase());
 }
 
+function isActivationKey(event: KeyboardEvent<HTMLDivElement>): boolean {
+  return event.key === 'Enter' || event.key === ' ';
+}
+
 export default function OnboardingPage(): ReactNode {
+  const router = useRouter();
   const { addToast } = useToast();
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
   const [togglingOffboardingTaskId, setTogglingOffboardingTaskId] = useState<string | null>(null);
@@ -187,6 +193,53 @@ export default function OnboardingPage(): ReactNode {
     }
   };
 
+  const handleOnboardingRowAction = (
+    item: (typeof checklistItems)[number],
+    task: (typeof checklistTasks)[number] | undefined
+  ): void => {
+    if (item.source === 'wizard' && item.actionHref) {
+      router.push(item.actionHref);
+      return;
+    }
+
+    if (task) {
+      void toggleTask(task);
+    }
+  };
+
+  const handleOnboardingRowKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>,
+    item: (typeof checklistItems)[number],
+    task: (typeof checklistTasks)[number] | undefined
+  ): void => {
+    if (!isActivationKey(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    handleOnboardingRowAction(item, task);
+  };
+
+  const handleOffboardingRowAction = (task: (typeof offboardingChecklistTasks)[number] | undefined): void => {
+    if (!task?.can_complete) {
+      return;
+    }
+
+    void toggleOffboardingTask(task.id);
+  };
+
+  const handleOffboardingRowKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>,
+    task: (typeof offboardingChecklistTasks)[number] | undefined
+  ): void => {
+    if (!isActivationKey(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    handleOffboardingRowAction(task);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -295,11 +348,22 @@ export default function OnboardingPage(): ReactNode {
                   <CardContent className="space-y-3">
                     {items.map((item) => {
                       const task = taskById.get(item.id);
+                      const isInteractive = (item.source === 'wizard' && Boolean(item.actionHref)) || Boolean(task);
 
                       return (
                         <div
                           key={item.id}
-                          className="flex items-start justify-between gap-4 rounded-md border border-zinc-200 dark:border-zinc-800 p-3"
+                          className={`flex items-start justify-between gap-4 rounded-md border border-zinc-200 p-3 dark:border-zinc-800 ${
+                            isInteractive
+                              ? 'cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+                              : ''
+                          }`}
+                          role={isInteractive ? 'button' : undefined}
+                          tabIndex={isInteractive ? 0 : undefined}
+                          onClick={isInteractive ? () => handleOnboardingRowAction(item, task) : undefined}
+                          onKeyDown={
+                            isInteractive ? (event) => handleOnboardingRowKeyDown(event, item, task) : undefined
+                          }
                         >
                           <div className="flex items-start gap-3">
                             {item.isCompleted ? (
@@ -334,6 +398,8 @@ export default function OnboardingPage(): ReactNode {
                                   target="_blank"
                                   rel="noreferrer"
                                   className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+                                  onClick={(event) => event.stopPropagation()}
+                                  onKeyDown={(event) => event.stopPropagation()}
                                 >
                                   Open reference
                                   <ExternalLink className="h-3 w-3" />
@@ -343,7 +409,11 @@ export default function OnboardingPage(): ReactNode {
                           </div>
                           {item.source === 'wizard' && item.actionHref ? (
                             <Button asChild variant="outline" size="sm">
-                              <Link href={item.actionHref}>
+                              <Link
+                                href={item.actionHref}
+                                onClick={(event) => event.stopPropagation()}
+                                onKeyDown={(event) => event.stopPropagation()}
+                              >
                                 {item.actionLabel ?? 'Open'}
                                 <ExternalLink className="ml-1 h-3 w-3" />
                               </Link>
@@ -352,7 +422,11 @@ export default function OnboardingPage(): ReactNode {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => void toggleTask(task)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void toggleTask(task);
+                              }}
+                              onKeyDown={(event) => event.stopPropagation()}
                               disabled={togglingTaskId === task.id}
                             >
                               {togglingTaskId === task.id ? (
@@ -485,11 +559,22 @@ export default function OnboardingPage(): ReactNode {
                       <CardContent className="space-y-3">
                         {items.map((item) => {
                           const task = offboardingTaskById.get(item.id);
+                          const isInteractive = Boolean(task?.can_complete);
 
                           return (
                             <div
                               key={item.id}
-                              className="flex items-start justify-between gap-4 rounded-md border border-zinc-200 p-3 dark:border-zinc-800"
+                              className={`flex items-start justify-between gap-4 rounded-md border border-zinc-200 p-3 dark:border-zinc-800 ${
+                                isInteractive
+                                  ? 'cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+                                  : ''
+                              }`}
+                              role={isInteractive ? 'button' : undefined}
+                              tabIndex={isInteractive ? 0 : undefined}
+                              onClick={isInteractive ? () => handleOffboardingRowAction(task) : undefined}
+                              onKeyDown={
+                                isInteractive ? (event) => handleOffboardingRowKeyDown(event, task) : undefined
+                              }
                             >
                               <div className="flex items-start gap-3">
                                 {item.isCompleted ? (
@@ -515,7 +600,11 @@ export default function OnboardingPage(): ReactNode {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => void toggleOffboardingTask(task.id)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    void toggleOffboardingTask(task.id);
+                                  }}
+                                  onKeyDown={(event) => event.stopPropagation()}
                                   disabled={togglingOffboardingTaskId === task.id}
                                 >
                                   {togglingOffboardingTaskId === task.id ? (

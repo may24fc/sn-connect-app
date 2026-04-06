@@ -136,7 +136,7 @@ function buildFallbackSuggestions(sources: CandidateSource[]): SuggestedQuestion
       prompts.push('What are the remote work guidelines?');
     }
     if (/performance|review|okr|kpi|evaluation/.test(haystack)) {
-      prompts.push('How are performance reviews handled?');
+      prompts.push('How are OKRs & KPIs handled?');
     }
     if (/resource|handbook|policy|guide|manual/.test(haystack)) {
       prompts.push(buildGenericPrompt(source));

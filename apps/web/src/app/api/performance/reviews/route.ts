@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     const { data, error: queryError } = await query;
 
     if (queryError) {
-      return NextResponse.json({ error: 'Failed to fetch performance reviews' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
     }
 
     return NextResponse.json({ data: data || [] });
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !data) {
-      return NextResponse.json({ error: 'Failed to create performance review' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create review' }, { status: 500 });
     }
 
     logActivity(supabaseAdmin, {
@@ -132,8 +132,8 @@ export async function POST(request: NextRequest) {
       createNotification({
         userId: employeeContact.userId,
         type: 'system' as NotificationType,
-        title: 'Performance review assigned',
-        message: `${actorName} created a performance review for you.`,
+        title: 'Review assigned',
+        message: `${actorName} created an OKRs & KPIs review for you.`,
         link: getPerformancePathForRole(employeeContact.role),
         metadata: { reviewId: data.id, cycleId: data.cycle_id, status: data.status },
       });
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       createNotification({
         userId: reviewerContact.userId,
         type: 'system' as NotificationType,
-        title: 'Performance review assigned',
+        title: 'Review assigned',
         message: `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
         link: getPerformancePathForRole(reviewerContact.role),
         metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
@@ -160,13 +160,13 @@ export async function POST(request: NextRequest) {
         ? [
             sendPortalNotificationEmail({
               to: employeeContact.email,
-              subject: 'A performance review has been assigned to you',
-              heading: 'Performance review assigned',
+              subject: 'An OKRs & KPIs review has been assigned to you',
+              heading: 'Review assigned',
               paragraphs: [
-                `${actorName} created a performance review for you.`,
-                'Open the performance page to review the current status and complete the next required step.',
+                `${actorName} created an OKRs & KPIs review for you.`,
+                'Open the OKRs & KPIs page to review the current status and complete the next required step.',
               ],
-              actionLabel: 'Open performance',
+              actionLabel: 'Open OKRs & KPIs',
               actionUrl: appBaseUrl ? `${appBaseUrl}${getPerformancePathForRole(employeeContact.role)}` : undefined,
             }),
           ]
@@ -177,13 +177,13 @@ export async function POST(request: NextRequest) {
         ? [
             sendPortalNotificationEmail({
               to: reviewerContact.email,
-              subject: 'You have been assigned a performance review',
-              heading: 'Performance review assigned',
+              subject: 'You have been assigned a review',
+              heading: 'Review assigned',
               paragraphs: [
                 `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
-                'Open the performance workspace to review and complete your part of the evaluation.',
+                'Open the OKRs & KPIs workspace to review and complete your part of the evaluation.',
               ],
-              actionLabel: 'Open performance reviews',
+              actionLabel: 'Open OKRs & KPIs',
               actionUrl: appBaseUrl ? `${appBaseUrl}${getPerformancePathForRole(reviewerContact.role)}` : undefined,
             }),
           ]
@@ -221,7 +221,7 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (existingError || !existingReview) {
-      return NextResponse.json({ error: 'Performance review not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
 
     const payload: Record<string, unknown> = {};
@@ -246,7 +246,7 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (updateError || !data) {
-      return NextResponse.json({ error: 'Failed to update performance review' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to update review' }, { status: 500 });
     }
 
     logActivity(supabase, {
@@ -277,7 +277,7 @@ export async function PATCH(request: NextRequest) {
       createNotification({
         userId: reviewerContact.userId,
         type: 'system' as NotificationType,
-        title: 'Performance review assigned',
+        title: 'Review assigned',
         message: `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
         link: getPerformancePathForRole(reviewerContact.role),
         metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
@@ -287,13 +287,13 @@ export async function PATCH(request: NextRequest) {
         pendingEmails.push(
           sendPortalNotificationEmail({
             to: reviewerContact.email,
-            subject: 'You have been assigned a performance review',
-            heading: 'Performance review assigned',
+            subject: 'You have been assigned a review',
+            heading: 'Review assigned',
             paragraphs: [
               `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
-              'Open the performance workspace to review and complete your part of the evaluation.',
+              'Open the OKRs & KPIs workspace to review and complete your part of the evaluation.',
             ],
-            actionLabel: 'Open performance reviews',
+            actionLabel: 'Open OKRs & KPIs',
             actionUrl: appBaseUrl ? `${appBaseUrl}${getPerformancePathForRole(reviewerContact.role)}` : undefined,
           })
         );
@@ -305,8 +305,8 @@ export async function PATCH(request: NextRequest) {
         createNotification({
           userId: employeeContact.userId,
           type: 'system' as NotificationType,
-          title: 'Performance self-review ready',
-          message: `${actorName} moved your performance review to self-review.`,
+          title: 'Self-review ready',
+          message: `${actorName} moved your review to self-review.`,
           link: getPerformancePathForRole(employeeContact.role),
           metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
         });
@@ -315,13 +315,13 @@ export async function PATCH(request: NextRequest) {
           pendingEmails.push(
             sendPortalNotificationEmail({
               to: employeeContact.email,
-              subject: 'Your performance self-review is ready',
-              heading: 'Performance self-review ready',
+              subject: 'Your self-review is ready',
+              heading: 'Self-review ready',
               paragraphs: [
-                `${actorName} moved your performance review to self-review.`,
-                'Open the performance page to complete your self-assessment.',
+                `${actorName} moved your review to self-review.`,
+                'Open the OKRs & KPIs page to complete your self-assessment.',
               ],
-              actionLabel: 'Open performance',
+              actionLabel: 'Open OKRs & KPIs',
               actionUrl: appBaseUrl ? `${appBaseUrl}${getPerformancePathForRole(employeeContact.role)}` : undefined,
             })
           );
@@ -337,7 +337,7 @@ export async function PATCH(request: NextRequest) {
         createNotification({
           userId: reviewerContact.userId,
           type: 'system' as NotificationType,
-          title: 'Performance review ready for manager review',
+          title: 'Manager review ready',
           message: `${employeeContact?.name || 'An employee'} submitted a self-review and is ready for your review.`,
           link: getPerformancePathForRole(reviewerContact.role),
           metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
@@ -347,13 +347,13 @@ export async function PATCH(request: NextRequest) {
           pendingEmails.push(
             sendPortalNotificationEmail({
               to: reviewerContact.email,
-              subject: 'A performance review is ready for your review',
+              subject: 'A review is ready for your review',
               heading: 'Manager review required',
               paragraphs: [
                 `${employeeContact?.name || 'An employee'} submitted a self-review and is ready for your review.`,
-                'Open the performance workspace to complete your manager review.',
+                'Open the OKRs & KPIs workspace to complete your manager review.',
               ],
-              actionLabel: 'Open performance reviews',
+              actionLabel: 'Open OKRs & KPIs',
               actionUrl: appBaseUrl ? `${appBaseUrl}${getPerformancePathForRole(reviewerContact.role)}` : undefined,
             })
           );
@@ -365,8 +365,8 @@ export async function PATCH(request: NextRequest) {
           createNotification({
             userId: employeeContact.userId,
             type: 'system' as NotificationType,
-            title: 'Performance review completed',
-            message: `${actorName} completed your performance review.`,
+            title: 'Review completed',
+            message: `${actorName} completed your review.`,
             link: getPerformancePathForRole(employeeContact.role),
             metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
           });
@@ -375,13 +375,13 @@ export async function PATCH(request: NextRequest) {
             pendingEmails.push(
               sendPortalNotificationEmail({
                 to: employeeContact.email,
-                subject: 'Your performance review has been completed',
-                heading: 'Performance review completed',
+                subject: 'Your review has been completed',
+                heading: 'Review completed',
                 paragraphs: [
-                  `${actorName} completed your performance review.`,
-                  'Open the performance page to review the current outcome and next steps.',
+                  `${actorName} completed your review.`,
+                  'Open the OKRs & KPIs page to review the current outcome and next steps.',
                 ],
-                actionLabel: 'Open performance',
+                actionLabel: 'Open OKRs & KPIs',
                 actionUrl: appBaseUrl ? `${appBaseUrl}${getPerformancePathForRole(employeeContact.role)}` : undefined,
               })
             );

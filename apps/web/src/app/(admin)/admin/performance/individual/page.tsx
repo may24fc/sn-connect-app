@@ -91,9 +91,9 @@ export default function IndividualPerformancePage(): ReactNode {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Individual Performance</h1>
+            <h1 className="text-2xl font-bold text-foreground">Individual OKRs &amp; KPIs</h1>
             <p className="text-muted-foreground">
-              Select an employee or intern to view their performance details
+              Select an employee or intern to review their OKRs, targets, and KPI details
             </p>
           </div>
         </div>

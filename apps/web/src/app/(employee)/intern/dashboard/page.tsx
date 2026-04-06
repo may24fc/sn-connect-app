@@ -47,7 +47,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 
 export default function InternDashboardPage(): ReactNode {
   const [showForm, setShowForm] = useState(false);
@@ -130,10 +130,7 @@ export default function InternDashboardPage(): ReactNode {
   }
 
   if (!profile) {
-    // Redirect to setup flow instead of showing a dead-end placeholder.
-    // The useEffect is intentional — we want the redirect to happen after
-    // queries have resolved to confirm no active internship exists.
-    return <InternSetupRedirect />;
+    return <InternshipAssignmentPendingState />;
   }
 
   return (
@@ -410,30 +407,32 @@ export default function InternDashboardPage(): ReactNode {
   );
 }
 
-/**
- * Redirects the intern to the setup flow when no internship record exists.
- * Rendered as a component so the redirect happens via useEffect after queries resolve.
- */
-function InternSetupRedirect(): ReactNode {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.push('/intern/setup');
-  }, [router]);
-
+function InternshipAssignmentPendingState(): ReactNode {
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-4">
-      <GraduationCap
-        className="h-10 w-10 text-slate-700 dark:text-zinc-400 animate-pulse"
-        strokeWidth={1.5}
-      />
-      <div className="text-center">
-        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-          Setting up your internship profile...
+    <div className="h-full flex items-center justify-center">
+      <div className="w-full max-w-xl rounded-xl border border-zinc-200 bg-card p-8 text-center shadow-sm dark:border-zinc-800">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 dark:bg-zinc-900/40">
+          <GraduationCap className="h-7 w-7 text-slate-700 dark:text-zinc-400" strokeWidth={1.5} />
+        </div>
+        <div className="mb-3 flex items-center justify-center gap-2">
+          <Badge variant="secondary">Awaiting Internship Assignment</Badge>
+        </div>
+        <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+          Your onboarding is complete
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+          An administrator still needs to assign your internship details, including your department,
+          internship dates, and required hours. Your dashboard and reporting tools will unlock once
+          that assignment is in place.
         </p>
-        <p className="text-xs text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
-          Redirecting to the setup wizard
-        </p>
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link href="/intern/profile">
+            <Button>View Profile</Button>
+          </Link>
+          <Link href="/onboarding/awaiting-approval">
+            <Button variant="outline">View Onboarding Status</Button>
+          </Link>
+        </div>
       </div>
     </div>
   );

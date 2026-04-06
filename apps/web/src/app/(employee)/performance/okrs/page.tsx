@@ -61,8 +61,11 @@ export default function OKRsPage(): ReactNode {
   const handleBack = useBackNavigation({ fallbackPath: '/performance' });
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
-  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
-  const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
+  const displayCycle = activeCycle || cycles[0] || null;
+  const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
+  const canCreateObjective = Boolean(activeCycle);
+  const { data: okrs = [] } = usePerformanceOKRs(displayCycle?.id);
   const createOKR = useCreateOKR();
   const updateOKR = useUpdateOKR();
 
@@ -158,7 +161,9 @@ export default function OKRsPage(): ReactNode {
   };
 
   const handleCreateOKR = async (): Promise<void> => {
-    if (!newOKR.objective.trim() || !newOKR.kr1.trim() || !newOKR.kr2.trim()) return;
+    if (!activeCycle || !newOKR.objective.trim() || !newOKR.kr1.trim() || !newOKR.kr2.trim()) {
+      return;
+    }
 
     const selectedCycleId = newOKR.cycleId || activeCycle?.id;
     const hasKr3 = newOKR.kr3.trim().length > 0;
@@ -244,9 +249,11 @@ export default function OKRsPage(): ReactNode {
   };
 
   const handleOpenCreate = (): void => {
+    if (!activeCycle) return;
+
     setNewOKR({
       ...emptyForm,
-      cycleId: activeCycle?.id || '',
+      cycleId: activeCycle.id,
     });
     setSubtaskInput('');
     setCreateDialogOpen(true);
@@ -261,14 +268,21 @@ export default function OKRsPage(): ReactNode {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">My OKRs</h1>
-            <p className="text-muted-foreground">Manage your objectives and key results</p>
+            <h1 className="text-2xl font-bold text-foreground">My OKRs &amp; KPIs</h1>
+            <p className="text-muted-foreground">Manage your objectives, key results, and KPI progress</p>
           </div>
         </div>
-        <Button onClick={handleOpenCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Objective
-        </Button>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <Button onClick={handleOpenCreate} disabled={!canCreateObjective}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Objective
+          </Button>
+          {!canCreateObjective && (
+            <p className="text-xs text-muted-foreground">
+              You need an active cycle before you can create an objective.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -330,7 +344,9 @@ export default function OKRsPage(): ReactNode {
           description={
             statusFilter !== 'all'
               ? 'Adjust the status filter to widen the OKR list.'
-              : 'Click "New Objective" to create your first OKR and start tracking progress.'
+              : canCreateObjective
+                ? 'Click "New Objective" to create your first OKR and start tracking progress.'
+                : 'Objective creation is disabled until an active review cycle is available.'
           }
           size="md"
         />
@@ -373,7 +389,7 @@ export default function OKRsPage(): ReactNode {
                     <SelectValue placeholder="Select a cycle" />
                   </SelectTrigger>
                   <SelectContent>
-                    {cycles.map((cycle) => (
+                    {activeCycles.map((cycle) => (
                       <SelectItem key={cycle.id} value={cycle.id}>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground" />

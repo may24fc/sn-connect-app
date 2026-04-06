@@ -34,7 +34,7 @@ const defaultCategories = [
   { value: 'culture', label: 'Culture' },
   { value: 'department_specific', label: 'Department' },
   { value: 'forms_templates', label: 'Forms' },
-  { value: 'performance', label: 'Performance' },
+  { value: 'performance', label: 'OKRs & KPIs' },
   { value: 'emergency', label: 'Emergency' },
 ];
 

@@ -6,6 +6,7 @@ import {
   BentoCardHeader,
   BentoCardTitle,
   BentoGrid,
+  EmptyState,
   StatCard,
   StatCardGrid,
 } from '@/components/data-display';
@@ -15,7 +16,7 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useMilestones } from '@/hooks/useMilestones';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { useRecentActivity } from '@/hooks/useRecentActivity';
-import { Button, DashboardAttentionCarousel, EmptyState, MilestoneBanner } from '@hr-portal/ui';
+import { Button, DashboardAttentionCarousel, MilestoneBanner } from '@hr-portal/ui';
 import {
   Calendar,
   CheckCircle,
@@ -165,15 +166,15 @@ export default function AdminDashboardPage(): ReactNode {
 
       {/* Main Bento Grid */}
       <BentoGrid columns={4}>
-        {/* Company Calendar Card */}
+        {/* Company Pulse Card */}
         <BentoCard colSpan={2}>
           <BentoCardHeader>
             <BentoCardTitle icon={<Calendar className="h-4 w-4" strokeWidth={1.5} />}>
-              Company Calendar
+              Company Pulse
             </BentoCardTitle>
-            <Link href="/admin/calendar">
+            <Link href="/admin/company-pulse">
               <Button variant="ghost" size="xs">
-                View Calendar
+                Manage
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </Link>

@@ -23,10 +23,11 @@ const SAMPLE_ACCOUNTS = [
     password: 'password',
     fullName: 'Sample Employee',
     role: 'employee',
-    position: 'Software Engineer',
-    department: 'Engineering',
+    position: 'Marketing Specialist',
+    department: 'Marketing',
     employmentType: 'regular',
     workArrangement: 'full_time',
+    isItHandler: true,
   },
   {
     email: 'intern@example.com',
@@ -37,6 +38,7 @@ const SAMPLE_ACCOUNTS = [
     department: 'Marketing',
     employmentType: 'intern',
     workArrangement: 'part_time',
+    isItHandler: false,
   },
   {
     email: 'admin@example.com',
@@ -47,6 +49,7 @@ const SAMPLE_ACCOUNTS = [
     department: 'Human Resources',
     employmentType: 'regular',
     workArrangement: 'full_time',
+    isItHandler: false,
   },
   {
     email: 'super-admin@example.com',
@@ -57,6 +60,7 @@ const SAMPLE_ACCOUNTS = [
     department: 'Executive',
     employmentType: 'regular',
     workArrangement: 'full_time',
+    isItHandler: false,
   },
 ];
 
@@ -236,6 +240,35 @@ async function main() {
 
     if (existingEmployee) {
       console.log(`  ✅ public.employees: EXISTS (${existingEmployee.employee_number})`);
+
+      const employeeUpdates = {};
+      if (existingEmployee.department !== account.department) {
+        employeeUpdates.department = account.department;
+      }
+      if (existingEmployee.position !== account.position) {
+        employeeUpdates.position = account.position;
+      }
+      if (existingEmployee.company_email !== account.email) {
+        employeeUpdates.company_email = account.email;
+      }
+
+      if (Object.keys(employeeUpdates).length > 0) {
+        console.log(
+          `  ⚠️  Employee profile mismatch - updating ${Object.keys(employeeUpdates).join(', ')}...`
+        );
+        const updateEmpUrl = new URL('/rest/v1/employees', supabaseUrl);
+        updateEmpUrl.searchParams.set('user_id', `eq.${authUserId}`);
+        await fetchJson(updateEmpUrl.toString(), {
+          method: 'PATCH',
+          headers: {
+            ...adminHeaders,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify(employeeUpdates),
+        });
+        console.log(`  ✅ Updated employee profile`);
+      }
     } else {
       console.log('  ⚠️  public.employees: NOT FOUND - Creating...');
       const empNum = `EMP-${account.role.toUpperCase().replace('_', '')}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
@@ -261,6 +294,75 @@ async function main() {
         }),
       });
       console.log(`  ✅ public.employees: CREATED (${empNum})`);
+    }
+
+    const ticketHandlersUrl = new URL('/rest/v1/ticket_handlers', supabaseUrl);
+    ticketHandlersUrl.searchParams.set('user_id', `eq.${authUserId}`);
+    ticketHandlersUrl.searchParams.set('team', 'eq.it');
+    ticketHandlersUrl.searchParams.set('select', 'id,is_active');
+
+    const existingTicketHandlers = await fetchJson(ticketHandlersUrl.toString(), {
+      headers: adminHeaders,
+    });
+    const existingTicketHandler = existingTicketHandlers?.[0];
+
+    if (account.isItHandler) {
+      if (!existingTicketHandler) {
+        console.log('  ⚠️  IT handler: NOT FOUND - Creating...');
+        const createHandlerUrl = new URL('/rest/v1/ticket_handlers', supabaseUrl);
+        await fetchJson(createHandlerUrl.toString(), {
+          method: 'POST',
+          headers: {
+            ...adminHeaders,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            user_id: authUserId,
+            team: 'it',
+            is_active: true,
+          }),
+        });
+        console.log('  ✅ IT handler: CREATED');
+      } else if (!existingTicketHandler.is_active) {
+        console.log('  ⚠️  IT handler: INACTIVE - Reactivating...');
+        const updateHandlerUrl = new URL('/rest/v1/ticket_handlers', supabaseUrl);
+        updateHandlerUrl.searchParams.set('user_id', `eq.${authUserId}`);
+        updateHandlerUrl.searchParams.set('team', 'eq.it');
+        await fetchJson(updateHandlerUrl.toString(), {
+          method: 'PATCH',
+          headers: {
+            ...adminHeaders,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          }),
+        });
+        console.log('  ✅ IT handler: REACTIVATED');
+      } else {
+        console.log('  ✅ IT handler: ACTIVE');
+      }
+    } else if (existingTicketHandler?.is_active) {
+      console.log('  ⚠️  IT handler: ACTIVE - Deactivating...');
+      const updateHandlerUrl = new URL('/rest/v1/ticket_handlers', supabaseUrl);
+      updateHandlerUrl.searchParams.set('user_id', `eq.${authUserId}`);
+      updateHandlerUrl.searchParams.set('team', 'eq.it');
+      await fetchJson(updateHandlerUrl.toString(), {
+        method: 'PATCH',
+        headers: {
+          ...adminHeaders,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          is_active: false,
+          updated_at: new Date().toISOString(),
+        }),
+      });
+      console.log('  ✅ IT handler: DEACTIVATED');
     }
 
     console.log(`  ✅ ${account.email} is ready!`);

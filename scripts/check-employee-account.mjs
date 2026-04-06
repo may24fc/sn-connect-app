@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const EMPLOYEE_ID = 'd93eb769-b28f-40e4-b5b0-c2bdecbac77a';
+const EMPLOYEE_EMAIL = 'employee@example.com';
 
 function loadEnv() {
   const cwd = process.cwd();
@@ -28,25 +28,43 @@ async function main() {
   const key = env.SUPABASE_SERVICE_ROLE_KEY || '';
   const headers = { apikey: key, Authorization: `Bearer ${key}` };
 
+  const authListRes = await fetch(`${url}/auth/v1/admin/users`, { headers });
+  const authList = await authListRes.json();
+  const authUserSummary = authList.users?.find((user) => user.email === EMPLOYEE_EMAIL);
+
+  if (!authUserSummary?.id) {
+    throw new Error(`Could not find auth user for ${EMPLOYEE_EMAIL}`);
+  }
+
+  const employeeId = authUserSummary.id;
+
   // Check auth user app_metadata
-  const authRes = await fetch(`${url}/auth/v1/admin/users/${EMPLOYEE_ID}`, { headers });
+  const authRes = await fetch(`${url}/auth/v1/admin/users/${employeeId}`, { headers });
   const authUser = await authRes.json();
 
-  console.log('\n=== Auth User (employee@example.com) ===');
+  console.log(`\n=== Auth User (${EMPLOYEE_EMAIL}) ===`);
   console.log('app_metadata:', JSON.stringify(authUser.app_metadata, null, 2));
   console.log('user_metadata:', JSON.stringify(authUser.user_metadata, null, 2));
 
   // Check public.users
-  const usersRes = await fetch(`${url}/rest/v1/users?id=eq.${EMPLOYEE_ID}&select=*`, { headers });
+  const usersRes = await fetch(`${url}/rest/v1/users?id=eq.${employeeId}&select=*`, { headers });
   const users = await usersRes.json();
   console.log('\n=== public.users ===');
   console.log(JSON.stringify(users[0], null, 2));
 
   // Check public.employees
-  const empRes = await fetch(`${url}/rest/v1/employees?user_id=eq.${EMPLOYEE_ID}&select=id,user_id,employee_number,first_name,last_name,deleted_at`, { headers });
+  const empRes = await fetch(`${url}/rest/v1/employees?user_id=eq.${employeeId}&select=id,user_id,employee_number,first_name,last_name,position,department,deleted_at`, { headers });
   const emps = await empRes.json();
   console.log('\n=== public.employees ===');
   console.log(JSON.stringify(emps[0], null, 2));
+
+  const handlerRes = await fetch(
+    `${url}/rest/v1/ticket_handlers?user_id=eq.${employeeId}&team=eq.it&select=id,user_id,team,is_active,assigned_by,created_at,updated_at`,
+    { headers }
+  );
+  const handlers = await handlerRes.json();
+  console.log('\n=== IT handler status ===');
+  console.log(JSON.stringify(handlers[0] ?? null, null, 2));
 
   // Check invoices for this employee
   const empId = emps[0]?.id;

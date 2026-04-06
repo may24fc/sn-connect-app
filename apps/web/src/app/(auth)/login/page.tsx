@@ -35,7 +35,8 @@ export default function LoginPage(): ReactNode {
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get('returnTo') || params.get('redirect');
       const defaultRedirect = getAuthenticatedHomeRedirect(user.role, user.status);
-      const shouldBypassReturnTo = user.status === 'awaiting_approval';
+      const shouldBypassReturnTo =
+        user.status === 'pending_onboarding' || user.status === 'awaiting_approval';
 
       router.replace(shouldBypassReturnTo ? defaultRedirect : returnTo || defaultRedirect);
     }

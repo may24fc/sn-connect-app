@@ -23,3 +23,6 @@ export {
 
 // StatCard exports
 export { StatCard, StatCardGrid } from './StatCard';
+
+// Shared display components
+export { EmptyState, type EmptyStateProps } from '@hr-portal/ui';
