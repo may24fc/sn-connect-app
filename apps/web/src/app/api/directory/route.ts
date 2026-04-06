@@ -190,14 +190,6 @@ export async function GET(request: NextRequest) {
       .from('employee_directory')
       .select('role, status, internship_status, employment_type, department_name');
 
-    const availableDepartments = Array.from(
-      new Set(
-        (allData || [])
-          .map((entry: { department_name: string | null }) => entry.department_name)
-          .filter((value: string | null): value is string => Boolean(value))
-      )
-    ).sort();
-
     const availableRoles = Array.from(
       new Set(
         (allData || [])
@@ -212,7 +204,6 @@ export async function GET(request: NextRequest) {
       interns: allData?.filter((e: { role: string | null }) => e.role === 'intern').length || 0,
       onLeave: allData?.filter((e: { status: string | null }) => e.status === 'on_leave').length || 0,
       probation: allData?.filter((e: { employment_type: string | null }) => e.employment_type === 'probationary').length || 0,
-      availableDepartments,
       availableRoles,
     };
 

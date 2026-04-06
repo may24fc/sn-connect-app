@@ -4,6 +4,7 @@ import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCreateDepartment, useDepartments } from '@/hooks/useDepartments';
 import { useDirectory, useDirectoryExport } from '@/hooks/useDirectory';
 import type { DirectoryEntry, DirectoryFilters } from '@/hooks/useDirectory';
 import {
@@ -63,9 +64,12 @@ import {
   Users,
   UserCheck,
   UserPlus,
+  Plus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useState } from 'react';
+
+const UNASSIGNED_DEPARTMENT = '__unassigned_department__';
 
 function getInitials(name: string): string {
   return name
@@ -128,7 +132,17 @@ export default function AdminDirectoryPage(): ReactNode {
   const [employeeToEdit, setEmployeeToEdit] = useState<DirectoryEntry | null>(null);
   const [editDepartment, setEditDepartment] = useState('');
   const [editPosition, setEditPosition] = useState('');
+  const [showCreateDepartmentForm, setShowCreateDepartmentForm] = useState(false);
+  const [newDepartmentName, setNewDepartmentName] = useState('');
+  const [createDepartmentError, setCreateDepartmentError] = useState('');
   const { addToast } = useToast();
+  const {
+    data: departmentsData,
+    isLoading: departmentsLoading,
+    isError: departmentsIsError,
+    refetch: refetchDepartments,
+  } = useDepartments({ page: 1, pageSize: 200 });
+  const createDepartmentMutation = useCreateDepartment();
 
   const deleteEmployeeMutation = useMutation({
     mutationFn: async (entry: DirectoryEntry) => {
@@ -199,7 +213,20 @@ export default function AdminDirectoryPage(): ReactNode {
     setEmployeeToEdit(entry);
     setEditDepartment(entry.department_name || '');
     setEditPosition(entry.position || '');
+    setShowCreateDepartmentForm(false);
+    setNewDepartmentName('');
+    setCreateDepartmentError('');
     setEditDialogOpen(true);
+  };
+
+  const closeEditDialog = () => {
+    setEditDialogOpen(false);
+    setEmployeeToEdit(null);
+    setEditDepartment('');
+    setEditPosition('');
+    setShowCreateDepartmentForm(false);
+    setNewDepartmentName('');
+    setCreateDepartmentError('');
   };
 
   const handleEditSubmit = () => {
@@ -211,6 +238,31 @@ export default function AdminDirectoryPage(): ReactNode {
         position: editPosition,
       },
     });
+  };
+
+  const handleCreateDepartment = async (): Promise<void> => {
+    const departmentName = newDepartmentName.trim();
+
+    if (!departmentName) {
+      setCreateDepartmentError('Department name is required.');
+      return;
+    }
+
+    setCreateDepartmentError('');
+
+    try {
+      const result = await createDepartmentMutation.mutateAsync({ name: departmentName });
+      await refetchDepartments();
+      setEditDepartment(result.data.name);
+      setNewDepartmentName('');
+      setShowCreateDepartmentForm(false);
+      addToast({ title: 'Department created', variant: 'success' });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create department';
+      setCreateDepartmentError(message);
+      addToast({ title: message, variant: 'error' });
+    }
   };
 
   const filters: DirectoryFilters = {
@@ -267,14 +319,20 @@ export default function AdminDirectoryPage(): ReactNode {
   const entries = data?.data || [];
   const metadata = data?.metadata;
   const pagination = data?.pagination;
-  const departmentOptions = (metadata?.availableDepartments || []).map((department) => ({
-    value: department,
-    label: department,
+  const departmentOptions = (departmentsData?.data ?? []).map((department) => ({
+    value: department.name,
+    label: department.name,
   }));
   const roleOptions = (metadata?.availableRoles || []).map((role) => ({
     value: role,
     label: role.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
   }));
+  const editableDepartmentNames = Array.from(
+    new Set(
+      [employeeToEdit?.department_name, ...(departmentsData?.data ?? []).map((department) => department.name)]
+        .filter((department): department is string => Boolean(department))
+    )
+  );
 
   return (
     <div className="flex flex-col gap-6 p-3">
@@ -671,7 +729,14 @@ export default function AdminDirectoryPage(): ReactNode {
       />
 
       {/* Edit Employee Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeEditDialog();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -689,20 +754,90 @@ export default function AdminDirectoryPage(): ReactNode {
             <div className="space-y-2">
               <Label htmlFor="edit-department">Department</Label>
               <Select
-                value={editDepartment}
-                onValueChange={setEditDepartment}
+                value={editDepartment || UNASSIGNED_DEPARTMENT}
+                onValueChange={(value) => {
+                  setEditDepartment(value === UNASSIGNED_DEPARTMENT ? '' : value);
+                }}
               >
-                <SelectTrigger id="edit-department">
+                <SelectTrigger id="edit-department" disabled={departmentsLoading && editableDepartmentNames.length === 0}>
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(metadata?.availableDepartments || []).map((dept) => (
+                  <SelectItem value={UNASSIGNED_DEPARTMENT}>Unassigned</SelectItem>
+                  {editableDepartmentNames.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {departmentsLoading
+                    ? 'Loading departments...'
+                    : departmentsIsError
+                      ? 'Unable to load the saved departments right now.'
+                      : 'Departments come from your saved Supabase department list.'}
+                </div>
+                {isAdminOrSuperAdmin && !showCreateDepartmentForm && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowCreateDepartmentForm(true);
+                      setCreateDepartmentError('');
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                    Create department
+                  </Button>
+                )}
+              </div>
+              {showCreateDepartmentForm && (
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-department-name">New department name</Label>
+                      <Input
+                        id="new-department-name"
+                        value={newDepartmentName}
+                        onChange={(event) => setNewDepartmentName(event.target.value)}
+                        placeholder="Enter department name"
+                        disabled={createDepartmentMutation.isPending}
+                      />
+                    </div>
+                    {createDepartmentError && (
+                      <p className="text-sm text-rose-600 dark:text-rose-400">
+                        {createDepartmentError}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={createDepartmentMutation.isPending}
+                        onClick={() => {
+                          setShowCreateDepartmentForm(false);
+                          setNewDepartmentName('');
+                          setCreateDepartmentError('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={createDepartmentMutation.isPending}
+                        onClick={() => void handleCreateDepartment()}
+                      >
+                        {createDepartmentMutation.isPending ? 'Creating...' : 'Create'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-position">Position</Label>
@@ -717,17 +852,14 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setEditDialogOpen(false);
-                setEmployeeToEdit(null);
-              }}
-              disabled={updateEmployeeMutation.isPending}
+              onClick={closeEditDialog}
+              disabled={updateEmployeeMutation.isPending || createDepartmentMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               onClick={handleEditSubmit}
-              disabled={updateEmployeeMutation.isPending}
+              disabled={updateEmployeeMutation.isPending || createDepartmentMutation.isPending}
             >
               <Save className="mr-2 h-4 w-4" />
               {updateEmployeeMutation.isPending ? 'Saving...' : 'Save Changes'}

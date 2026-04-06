@@ -69,7 +69,6 @@ export interface DirectoryResponse {
     interns: number;
     onLeave: number;
     probation: number;
-    availableDepartments: string[];
     availableRoles: string[];
   };
   pagination: {

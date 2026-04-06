@@ -1,6 +1,7 @@
 'use client';
 
 import { type DirectoryEntry, useDirectory } from '@/hooks/useDirectory';
+import { useDepartments } from '@/hooks/useDepartments';
 import {
   usePerformanceCycles,
   usePerformanceOKRs,
@@ -131,6 +132,7 @@ export default function AdminPerformancePage(): ReactNode {
   };
 
   const { data, isLoading } = useDirectory(filters);
+  const { data: departmentsData } = useDepartments({ page: 1, pageSize: 200 });
 
   const entries = data?.data || [];
   const pagination = data?.pagination;
@@ -138,9 +140,9 @@ export default function AdminPerformancePage(): ReactNode {
 
   // Extract filter options from metadata
   const metadata = data?.metadata;
-  const departmentOptions = (metadata?.availableDepartments || []).map((dept: string) => ({
-    value: dept,
-    label: dept,
+  const departmentOptions = (departmentsData?.data ?? []).map((department) => ({
+    value: department.name,
+    label: department.name,
   }));
   const roleOptions = (metadata?.availableRoles || []).map((role: string) => ({
     value: role,
