@@ -10,11 +10,11 @@
     },
     {
       "path": "/api/cron/drive-watch-renew",
-      "schedule": "0 */12 * * *"
+      "schedule": "0 1 * * *"
     },
     {
       "path": "/api/cron/drive-doc-sync",
-      "schedule": "0 * * * *"
+      "schedule": "0 2 * * *"
     }
   ],
   "headers": [
