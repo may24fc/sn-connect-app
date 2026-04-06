@@ -23,7 +23,7 @@ import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
-import { type ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 // Lazy-load the chatbot — it's interactive and only opened on demand
 const AIChatbot = dynamic(() => import('@hr-portal/ui').then((m) => ({ default: m.AIChatbot })), {
@@ -190,6 +190,7 @@ function EmployeeNotificationBell(): ReactNode {
 /** Wires useAIChat streaming hook + conversation persistence into the AIChatbot component */
 function EmployeeAIChatbot(): ReactNode {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const activeConversationIdRef = useRef<string | null>(null);
 
   const { messages, sendMessage, isLoading, clearHistory, abort, loadMessages } = useAIChat({
     conversationId: activeConversationId,
@@ -205,6 +206,10 @@ function EmployeeAIChatbot(): ReactNode {
   const renameConversation = useRenameConversation();
   const deleteConversation = useDeleteConversation();
 
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
+
   const conversations: ConversationItem[] = (conversationsData?.data ?? []).map((c) => ({
     id: c.id,
     title: c.title,
@@ -215,6 +220,7 @@ function EmployeeAIChatbot(): ReactNode {
   const handleCreate = (): void => {
     createConversation.mutate(undefined, {
       onSuccess: (conv) => {
+        activeConversationIdRef.current = conv.id;
         setActiveConversationId(conv.id);
         clearHistory();
         void refetchSuggestions();
@@ -223,6 +229,7 @@ function EmployeeAIChatbot(): ReactNode {
   };
 
   const handleSelect = (id: string): void => {
+    activeConversationIdRef.current = id;
     setActiveConversationId(id);
     clearHistory();
     void loadMessages(id);
@@ -232,18 +239,22 @@ function EmployeeAIChatbot(): ReactNode {
   // then pass the new ID directly to sendMessage (before React re-renders).
   const guardedSendMessage = useCallback(
     async (content: string): Promise<void> => {
-      if (activeConversationId) {
-        return sendMessage(content);
+      const currentConversationId = activeConversationIdRef.current;
+
+      if (currentConversationId) {
+        return sendMessage(content, currentConversationId);
       }
+
       try {
         const conv = await createConversation.mutateAsync(undefined);
+        activeConversationIdRef.current = conv.id;
         setActiveConversationId(conv.id);
         return sendMessage(content, conv.id);
       } catch {
         return sendMessage(content);
       }
     },
-    [activeConversationId, sendMessage, createConversation]
+    [sendMessage, createConversation]
   );
 
   const handleRename = (id: string, title: string): void => {
@@ -251,9 +262,12 @@ function EmployeeAIChatbot(): ReactNode {
   };
 
   const handleDelete = (id: string): void => {
+    const isDeletingActiveConversation = activeConversationIdRef.current === id;
+
     deleteConversation.mutate(id, {
       onSuccess: () => {
-        if (activeConversationId === id) {
+        if (isDeletingActiveConversation) {
+          activeConversationIdRef.current = null;
           setActiveConversationId(null);
           clearHistory();
           void refetchSuggestions();

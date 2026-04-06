@@ -95,7 +95,7 @@ export function normalizeAuthError(message: string): string {
     lower.includes('load failed') ||
     lower.includes('the network connection was lost')
   ) {
-    return 'No internet connection. Please check your network and try again.';
+    return 'Unable to reach the authentication service. Check your connection or local Supabase services and try again.';
   }
 
   // Supabase timeout (our own withTimeout message)

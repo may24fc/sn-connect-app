@@ -91,7 +91,7 @@ function getEnv() {
   const cwd = process.cwd();
   const envLocal = loadEnvFile(path.join(cwd, '.env.local'));
   const envBase = loadEnvFile(path.join(cwd, '.env'));
-  return { ...envBase, ...envLocal, ...process.env };
+  return { ...process.env, ...envBase, ...envLocal };
 }
 
 async function fetchJson(url, options) {

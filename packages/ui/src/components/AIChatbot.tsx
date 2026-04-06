@@ -242,7 +242,7 @@ export function AIChatbot({
     }
   };
 
-  const handleSendMessage = async (messageContent?: string): Promise<void> => {
+  const handleSendMessage = React.useCallback(async (messageContent?: string): Promise<void> => {
     const content = messageContent ?? '';
     if (!content.trim() || currentIsLoading) return;
 
@@ -320,7 +320,7 @@ export function AIChatbot({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeConversationId, currentIsLoading, isStreamingMode, onSendMessage, onStreamMessage]);
 
   const handleCitationClick = (id: number, citations: Citation[]): void => {
     setActiveCitations(citations);
@@ -328,15 +328,11 @@ export function AIChatbot({
     setCitationPanelOpen(true);
   };
 
-  const handleChatInputSend = React.useCallback(
-    (data: { message: string; files: AttachedFile[] }) => {
-      const content = data.message.trim();
-      if (!content && data.files.length === 0) return;
-      void handleSendMessage(content || 'Attached files');
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isStreamingMode, currentIsLoading, activeConversationId]
-  );
+  const handleChatInputSend = React.useCallback((data: { message: string; files: AttachedFile[] }) => {
+    const content = data.message.trim();
+    if (!content && data.files.length === 0) return;
+    void handleSendMessage(content || 'Attached files');
+  }, [handleSendMessage]);
 
   // Determine if we should show the welcome/empty state
   const isEmptyState = isStreamingMode
@@ -705,7 +701,7 @@ export function AIChatbot({
                           </Avatar>
                           <div
                             className={cn(
-                              'flex flex-col gap-1',
+                              'flex flex-1 min-w-0 flex-col gap-1',
                               message.role === 'user' ? 'items-end' : 'items-start'
                             )}
                           >

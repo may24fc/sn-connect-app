@@ -46,7 +46,7 @@ function loadEnv() {
   const cwd = process.cwd();
   const envBase = loadEnvFile(path.join(cwd, '.env'));
   const envLocal = loadEnvFile(path.join(cwd, '.env.local'));
-  return { ...envBase, ...envLocal, ...process.env };
+  return { ...process.env, ...envBase, ...envLocal };
 }
 
 async function listAllAuthUsers(supabase) {

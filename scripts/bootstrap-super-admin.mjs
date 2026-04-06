@@ -5,7 +5,15 @@
  * This account is required before the leadership invite flow can be used.
  *
  * Usage:
- *   node scripts/bootstrap-super-admin.mjs
+ *   node scripts/bootstrap-super-admin.mjs \
+ *     --email may@24fitclub.com.au \
+ *     --password '<temporary-password>' \
+ *     --first-name May \
+ *     --last-name Layugan \
+ *     --employee-number EMP-0001 \
+ *     --position COO \
+ *     --department Operations \
+ *     --date-hired 2024-01-01
  *
  * Reads SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY from .env.local
  */
@@ -14,20 +22,8 @@ import path from 'node:path';
 import process from 'node:process';
 import { createClient } from '@supabase/supabase-js';
 
-// ── Configuration ──────────────────────────────────────────────
-const BOOTSTRAP_USER = {
-  email: 'may@24fitclub.com.au',
-  password: 'ChangeMe-2026!',
-  firstName: 'May',
-  lastName: 'Layugan',
-  employeeNumber: 'EMP-0001',
-  position: 'COO',
-  department: 'Operations',
-  departmentSlug: 'operations',
-  employmentType: 'regular',
-  workArrangement: 'full_time',
-  dateHired: '2024-01-01',
-};
+const DEFAULT_EMPLOYMENT_TYPE = 'regular';
+const DEFAULT_WORK_ARRANGEMENT = 'full_time';
 
 // ── Env helpers ────────────────────────────────────────────────
 function parseEnvLine(line) {
@@ -64,8 +60,90 @@ function loadEnv() {
   return { ...process.env, ...envBase, ...envLocal };
 }
 
+function slugifyDepartment(value) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
+function parseArgs(argv) {
+  const options = {
+    employmentType: DEFAULT_EMPLOYMENT_TYPE,
+    workArrangement: DEFAULT_WORK_ARRANGEMENT,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (!arg.startsWith('--')) continue;
+
+    const key = arg.slice(2);
+    const value = argv[index + 1];
+    if (!value || value.startsWith('--')) {
+      throw new Error(`Missing value for --${key}`);
+    }
+
+    index += 1;
+
+    switch (key) {
+      case 'email':
+        options.email = value;
+        break;
+      case 'password':
+        options.password = value;
+        break;
+      case 'first-name':
+        options.firstName = value;
+        break;
+      case 'last-name':
+        options.lastName = value;
+        break;
+      case 'employee-number':
+        options.employeeNumber = value;
+        break;
+      case 'position':
+        options.position = value;
+        break;
+      case 'department':
+        options.department = value;
+        break;
+      case 'date-hired':
+        options.dateHired = value;
+        break;
+      case 'employment-type':
+        options.employmentType = value;
+        break;
+      case 'work-arrangement':
+        options.workArrangement = value;
+        break;
+      default:
+        throw new Error(`Unknown argument: ${arg}`);
+    }
+  }
+
+  const requiredFields = [
+    'email',
+    'password',
+    'firstName',
+    'lastName',
+    'employeeNumber',
+    'position',
+    'department',
+    'dateHired',
+  ];
+
+  for (const field of requiredFields) {
+    if (!options[field]) {
+      throw new Error(`Missing required argument: --${field.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}`);
+    }
+  }
+
+  return {
+    ...options,
+    departmentSlug: slugifyDepartment(options.department),
+  };
+}
+
 // ── Main ───────────────────────────────────────────────────────
 async function main() {
+  const bootstrapUser = parseArgs(process.argv.slice(2));
   const env = loadEnv();
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
@@ -79,7 +157,7 @@ async function main() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { email, password, firstName, lastName, employeeNumber, position, department, departmentSlug, employmentType, workArrangement, dateHired } = BOOTSTRAP_USER;
+  const { email, password, firstName, lastName } = bootstrapUser;
 
   console.log(`\nBootstrapping super_admin: ${email}\n`);
 
@@ -92,7 +170,7 @@ async function main() {
   if (existing) {
     console.log(`Auth user already exists: ${existing.id}`);
     console.log('Skipping auth creation. Checking public.users and employees...');
-    await ensurePublicRows(supabase, existing.id);
+    await ensurePublicRows(supabase, existing.id, bootstrapUser);
     return;
   }
 
@@ -115,7 +193,7 @@ async function main() {
   console.log(`Auth user created: ${userId}`);
 
   // 3. Create public rows
-  await ensurePublicRows(supabase, userId);
+  await ensurePublicRows(supabase, userId, bootstrapUser);
 
   console.log('\n✅ Bootstrap complete!');
   console.log(`\nFirst login credentials:`);
@@ -124,8 +202,19 @@ async function main() {
   console.log(`\n⚠️  Change the password immediately after first login.`);
 }
 
-async function ensurePublicRows(supabase, userId) {
-  const { email, firstName, lastName, employeeNumber, position, department, departmentSlug, employmentType, workArrangement, dateHired } = BOOTSTRAP_USER;
+async function ensurePublicRows(supabase, userId, bootstrapUser) {
+  const {
+    email,
+    firstName,
+    lastName,
+    employeeNumber,
+    position,
+    department,
+    departmentSlug,
+    employmentType,
+    workArrangement,
+    dateHired,
+  } = bootstrapUser;
 
   // Look up department UUID
   const { data: dept } = await supabase
