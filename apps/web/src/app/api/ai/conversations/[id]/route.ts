@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getAuthedSupabase } from '../../_lib';
+import { getAdminClient, getAuthedSupabase } from '../../_lib';
 
 const renameSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255),
@@ -54,7 +54,7 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { supabase, user, error: authError } = await getAuthedSupabase();
+  const { user, error: authError } = await getAuthedSupabase();
 
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -62,16 +62,29 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const { error } = await supabase
-    .from('ai_conversations')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .is('deleted_at', null);
+  try {
+    const adminClient = getAdminClient();
+    const { data, error } = await adminClient
+      .from('ai_conversations')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .is('deleted_at', null)
+      .select('id')
+      .maybeSingle();
 
-  if (error) {
+    if (error) {
+      console.error('Failed to delete AI conversation', error);
+      return NextResponse.json({ error: 'Failed to delete conversation' }, { status: 500 });
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    console.error('Unexpected error deleting AI conversation', error);
     return NextResponse.json({ error: 'Failed to delete conversation' }, { status: 500 });
   }
-
-  return NextResponse.json({ success: true });
 }
