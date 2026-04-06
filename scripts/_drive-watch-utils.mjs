@@ -62,16 +62,33 @@ export function getDriveClient() {
   return google.drive({ version: 'v3', auth });
 }
 
+export function getWebhookAddress() {
+  const baseUrl = process.env.WEBHOOK_BASE_URL?.trim();
+
+  if (!baseUrl) {
+    throw new Error('Missing WEBHOOK_BASE_URL. Google Drive watches require a public HTTPS webhook URL.');
+  }
+
+  if (!baseUrl.startsWith('https://')) {
+    throw new Error(
+      `Invalid WEBHOOK_BASE_URL: ${baseUrl}. Google Drive watches require a public HTTPS webhook URL.`
+    );
+  }
+
+  return `${baseUrl}/api/webhooks/drive`;
+}
+
 export async function registerFileWatch({ drive, fileId, expirationHours }) {
   const channelId = `drive-watch-${fileId}-${randomUUID().slice(0, 8)}`;
   const expirationMs = expirationHours * 60 * 60 * 1000;
+  const address = getWebhookAddress();
 
   const response = await drive.files.watch({
     fileId,
     requestBody: {
       id: channelId,
       type: 'web_hook',
-      address: `${process.env.WEBHOOK_BASE_URL}/api/webhooks/drive`,
+      address,
       token: process.env.GOOGLE_DRIVE_WEBHOOK_TOKEN,
       expiration: String(Date.now() + expirationMs),
     },

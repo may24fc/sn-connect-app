@@ -4,6 +4,29 @@ import { chunkText } from '@hr-portal/ai/drive-chunking';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { inngest } from '../client';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function buildDriveMetadata({
+  existingMetadata,
+  fileId,
+  modifiedTime,
+  syncedAt,
+}: {
+  existingMetadata: unknown;
+  fileId: string;
+  modifiedTime: string;
+  syncedAt: string;
+}): Record<string, unknown> {
+  return {
+    ...(isRecord(existingMetadata) ? existingMetadata : {}),
+    google_drive_file_id: fileId,
+    google_drive_modified_time: modifiedTime,
+    google_drive_synced_at: syncedAt,
+  };
+}
+
 export const processDriveDoc = inngest.createFunction(
   {
     id: 'process-drive-doc',
@@ -83,10 +106,11 @@ export const processDriveDoc = inngest.createFunction(
 
     const result = await step.run('upsert-vectors', async () => {
       const supabase = createSupabaseAdminClient();
+      const syncedAt = new Date().toISOString();
 
       const { data: existingSource } = await supabase
         .from('knowledge_sources')
-        .select('id')
+        .select('id, metadata')
         .eq('metadata->>google_drive_file_id', fileId)
         .is('deleted_at', null)
         .maybeSingle();
@@ -101,6 +125,12 @@ export const processDriveDoc = inngest.createFunction(
             title: docText.title,
             content: docText.text,
             processing_status: 'indexing',
+            metadata: buildDriveMetadata({
+              existingMetadata: existingSource.metadata,
+              fileId,
+              modifiedTime: docText.modifiedTime,
+              syncedAt,
+            }),
             updated_at: new Date().toISOString(),
           })
           .eq('id', sourceId);
@@ -118,7 +148,12 @@ export const processDriveDoc = inngest.createFunction(
             is_active: true,
             processing_status: 'indexing',
             access_level: 'all',
-            metadata: { google_drive_file_id: fileId },
+            metadata: buildDriveMetadata({
+              existingMetadata: null,
+              fileId,
+              modifiedTime: docText.modifiedTime,
+              syncedAt,
+            }),
           })
           .select('id')
           .single();

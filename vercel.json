@@ -2,6 +2,16 @@
   "buildCommand": "pnpm build:www",
   "installCommand": "pnpm install",
   "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/drive-watch-renew",
+      "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/cron/drive-doc-sync",
+      "schedule": "0 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
