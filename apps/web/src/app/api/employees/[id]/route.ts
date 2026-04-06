@@ -81,7 +81,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body: Partial<Employee> = await request.json();
 
     // Admin-only fields require role check
-    const adminOnlyFields = ['department', 'position', 'employment_type', 'immediate_head'];
+    const adminOnlyFields = ['department', 'position', 'employment_type', 'immediate_head', 'date_hired'];
     const hasAdminFields = adminOnlyFields.some((field) => field in body);
 
     if (hasAdminFields) {

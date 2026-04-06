@@ -132,6 +132,7 @@ export default function AdminDirectoryPage(): ReactNode {
   const [employeeToEdit, setEmployeeToEdit] = useState<DirectoryEntry | null>(null);
   const [editDepartment, setEditDepartment] = useState('');
   const [editPosition, setEditPosition] = useState('');
+  const [editStartDate, setEditStartDate] = useState('');
   const [showCreateDepartmentForm, setShowCreateDepartmentForm] = useState(false);
   const [newDepartmentName, setNewDepartmentName] = useState('');
   const [createDepartmentError, setCreateDepartmentError] = useState('');
@@ -180,7 +181,13 @@ export default function AdminDirectoryPage(): ReactNode {
   });
 
   const updateEmployeeMutation = useMutation({
-    mutationFn: async ({ employeeId, data }: { employeeId: string; data: { department?: string; position?: string } }) => {
+    mutationFn: async ({
+      employeeId,
+      data,
+    }: {
+      employeeId: string;
+      data: { department?: string; position?: string; date_hired?: string | null };
+    }) => {
       const response = await fetch(`/api/employees/${employeeId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -213,6 +220,7 @@ export default function AdminDirectoryPage(): ReactNode {
     setEmployeeToEdit(entry);
     setEditDepartment(entry.department_name || '');
     setEditPosition(entry.position || '');
+    setEditStartDate(entry.start_date || '');
     setShowCreateDepartmentForm(false);
     setNewDepartmentName('');
     setCreateDepartmentError('');
@@ -224,6 +232,7 @@ export default function AdminDirectoryPage(): ReactNode {
     setEmployeeToEdit(null);
     setEditDepartment('');
     setEditPosition('');
+    setEditStartDate('');
     setShowCreateDepartmentForm(false);
     setNewDepartmentName('');
     setCreateDepartmentError('');
@@ -236,6 +245,7 @@ export default function AdminDirectoryPage(): ReactNode {
       data: {
         department: editDepartment,
         position: editPosition,
+        date_hired: editStartDate || null,
       },
     });
   };
@@ -652,7 +662,7 @@ export default function AdminDirectoryPage(): ReactNode {
                                     onClick={() => handleEditClick(entry)}
                                   >
                                     <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                                    Edit Department & Position
+                                    Edit Employee Details
                                   </DropdownMenuItem>
                                 </>
                               )}
@@ -744,7 +754,7 @@ export default function AdminDirectoryPage(): ReactNode {
               Edit Employee
             </DialogTitle>
             <DialogDescription>
-              Update department and position for{' '}
+              Update department, position, and start date for{' '}
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToEdit?.full_name}
               </span>
@@ -847,6 +857,18 @@ export default function AdminDirectoryPage(): ReactNode {
                 onChange={(e) => setEditPosition(e.target.value)}
                 placeholder="Enter position title"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-start-date">Start Date</Label>
+              <Input
+                id="edit-start-date"
+                type="date"
+                value={editStartDate}
+                onChange={(event) => setEditStartDate(event.target.value)}
+              />
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                This updates the employee&apos;s hire date used for milestone and anniversary calculations.
+              </p>
             </div>
           </div>
           <DialogFooter>

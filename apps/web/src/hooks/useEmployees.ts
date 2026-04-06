@@ -113,6 +113,7 @@ export function useUpdateEmployee(id: string) {
       // Invalidate specific employee and all lists
       queryClient.invalidateQueries({ queryKey: queryKeys.employees.detail(id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.employees.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.milestones.all });
     },
   });
 }

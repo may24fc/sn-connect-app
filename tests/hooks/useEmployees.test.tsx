@@ -15,8 +15,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 global.fetch = vi.fn();
 
 // Helper to create a wrapper with QueryClient
-function createWrapper() {
-  const queryClient = new QueryClient({
+function createQueryClient() {
+  return new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
@@ -27,7 +27,9 @@ function createWrapper() {
       },
     },
   });
+}
 
+function createWrapper(queryClient = createQueryClient()) {
   return ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
@@ -488,6 +490,33 @@ describe('useUpdateEmployee', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     expect(result.current.data).toEqual({ data: updatedEmployee });
+  });
+
+  it('should invalidate employee and milestone queries after a successful update', async () => {
+    const queryClient = createQueryClient();
+    const invalidateQueriesSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const updates = {
+      date_hired: '2026-04-06',
+    };
+
+    const updatedEmployee = { ...mockEmployee, ...updates };
+
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: updatedEmployee }),
+    });
+
+    const { result } = renderHook(() => useUpdateEmployee('emp-123'), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    result.current.mutate(updates);
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['employees', 'detail', 'emp-123'] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['employees', 'list'] });
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({ queryKey: ['milestones'] });
   });
 
   it('should handle not found error', async () => {

@@ -69,6 +69,15 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
+function formatDisplayLabel(value: string | null): string {
+  if (!value) return '—';
+
+  return value
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function calculateAge(birthday: string | null): string {
   if (!birthday) return '—';
   const today = new Date();
@@ -397,10 +406,10 @@ export default function DirectoryDetailPage({
                 {entry.full_name || 'Unknown'}
               </h1>
               <Badge variant={getStatusBadgeVariant(entry.status)} className="text-xs capitalize">
-                {entry.status?.replace('_', ' ') || '—'}
+                {formatDisplayLabel(entry.status)}
               </Badge>
               <Badge variant="outline" className="text-xs capitalize">
-                {entry.role?.replace('_', ' ') || '—'}
+                {formatDisplayLabel(entry.role)}
               </Badge>
               {pendingRequests.length > 0 && (
                 <Badge className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300">
@@ -510,9 +519,9 @@ export default function DirectoryDetailPage({
                   />
                   <DetailRow
                     label="Employment Type"
-                    value={entry.employment_type?.replace('_', ' ') || null}
+                    value={formatDisplayLabel(entry.employment_type)}
                   />
-                  <DetailRow label="Status" value={entry.status?.replace('_', ' ') || null} />
+                  <DetailRow label="Status" value={formatDisplayLabel(entry.status)} />
                   {entry.internship_id && (
                     <>
                       <Separator className="my-1" />

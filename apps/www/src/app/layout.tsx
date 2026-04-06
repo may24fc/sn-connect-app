@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     template: '%s | SN International Group',
   },
   description:
-    'SN International Group Pty. Ltd. helps growing businesses build dependable offshore support teams across executive assistance, marketing support, content creation, and AI operations.',
+    'SN International Group helps founders, operators, and growing teams build dependable offshore support — executive assistance, marketing support, content creation, and AI operations.',
   keywords: [
     'SN International Group Pty. Ltd.',
     'virtual assistant outsourcing',
@@ -62,9 +62,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_PH',
     siteName: 'SN International Group Pty. Ltd.',
-    title: 'SN International Group Pty. Ltd. — VA Outsourcing and Remote Support',
+    title: 'SN International Group — Remote Support Teams, Matched with Care',
     description:
-      'Dependable offshore support across executive assistance, marketing support, content creation, and AI operations.',
+      'We build dependable offshore support around your workflow — executive assistance, marketing support, content creation, and AI operations.',
   },
   robots: {
     index: true,
