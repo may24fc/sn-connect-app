@@ -160,6 +160,8 @@ export async function POST(request: NextRequest) {
             accountNumber,
             bankCode,
             swiftCode,
+            city: profile.payment_city || null,
+            postCode: profile.payment_zipcode || null,
           });
 
           if (wisePayload) {
@@ -180,11 +182,17 @@ export async function POST(request: NextRequest) {
                 recipientError instanceof WiseApiError
                   ? recipientError.responseBody
                   : null;
-              console.warn('Admin profile setup: failed to create Wise recipient', {
-                userId: user.id,
-                message: baseMessage,
-                wiseResponseBody: wiseBody,
-              });
+              const skipReason = getWiseRecipientApiFailureReason(recipientError);
+              console.warn(
+                skipReason
+                  ? 'Admin profile setup: skipping Wise recipient creation'
+                  : 'Admin profile setup: failed to create Wise recipient',
+                {
+                  userId: user.id,
+                  message: skipReason ?? baseMessage,
+                  wiseResponseBody: wiseBody,
+                }
+              );
             }
           }
         }
@@ -275,6 +283,10 @@ function buildWiseRecipientDetails(params: {
     };
   }
 
+  if (!String(params.city ?? '').trim()) {
+    return null;
+  }
+
   return {
     type: 'iban',
     details: {
@@ -285,4 +297,22 @@ function buildWiseRecipientDetails(params: {
       ...(params.postCode ? { postCode: params.postCode } : {}),
     },
   };
+}
+
+function getWiseRecipientApiFailureReason(error: unknown): string | null {
+  if (!(error instanceof WiseApiError)) {
+    return null;
+  }
+
+  const responseBody = error.responseBody.toLowerCase();
+
+  if (responseBody.includes('bank is not supported') && responseBody.includes('bankcode')) {
+    return 'Selected bank is not currently supported by Wise for automatic recipient creation. Banking details were saved without a Wise recipient ID.';
+  }
+
+  if (responseBody.includes('please enter a city') || responseBody.includes('address.city')) {
+    return 'Payment city is required before a Wise recipient can be created. Banking details were saved without a Wise recipient ID.';
+  }
+
+  return null;
 }

@@ -1,18 +1,22 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveDepartmentById, resolveDivisionById } from '../_organization';
 
 const assignEmployeeSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
-  department: z.string().min(1, 'Department is required'),
-  stage: z.number().min(1).max(4, 'Stage must be between 1 and 4'),
-  status: z.enum(['on-track', 'at-risk']),
-  probationEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  departmentId: z.string().uuid('Department is required'),
+  divisionId: z.string().uuid('Division is required'),
+  assignProbation: z.boolean().default(true),
+  stage: z.number().min(1).max(3, 'Probation stage must be between 1 and 3').optional(),
+  status: z.enum(['on-track', 'at-risk']).optional(),
+  probationEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format').optional(),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     // Get current user
     const {
@@ -55,7 +59,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, department, stage, status, probationEndDate } = parsed.data;
+    const { userId, departmentId, divisionId, assignProbation, stage, status, probationEndDate } =
+      parsed.data;
+
+    if (assignProbation && (!stage || !status || !probationEndDate)) {
+      return NextResponse.json(
+        {
+          error:
+            'Validation failed: probation stage, status, and probationEndDate are required for probationary employees',
+        },
+        { status: 400 }
+      );
+    }
 
     // Get the employee record
     const { data: employee, error: employeeError } = await supabase
@@ -77,12 +92,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const [resolvedDepartment, resolvedDivision] = await Promise.all([
+      resolveDepartmentById(supabaseAdmin, departmentId),
+      resolveDivisionById(supabaseAdmin, divisionId),
+    ]);
+
     // Update employee record with probation details
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('employees')
       .update({
-        department,
-        probation_end_date: probationEndDate,
+        department: resolvedDepartment.name,
+        division: resolvedDivision.name,
+        probation_end_date: assignProbation ? probationEndDate : null,
+        employment_type: assignProbation ? 'probationary' : 'regular',
         updated_at: new Date().toISOString(),
       })
       .eq('id', employee.id);
@@ -95,16 +117,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { error: updateUserError } = await supabaseAdmin
+      .from('users')
+      .update({
+        department_id: resolvedDepartment.id,
+        division_id: resolvedDivision.id,
+      })
+      .eq('id', userId);
+
+    if (updateUserError) {
+      console.error('Failed to sync user department:', updateUserError);
+      return NextResponse.json(
+        { error: 'Failed to sync user department', details: updateUserError.message },
+        { status: 500 }
+      );
+    }
+
+    const employmentStatus = assignProbation ? 'probationary' : 'confirmed';
+
     // Log to audit_logs
     await supabase.from('audit_logs').insert({
       table_name: 'employees',
       record_id: employee.id,
       operation: 'UPDATE',
       new_values: {
-        department,
-        probation_end_date: probationEndDate,
-        probation_stage: stage,
-        probation_status: status,
+        department: resolvedDepartment.name,
+        department_id: resolvedDepartment.id,
+        division: resolvedDivision.name,
+        division_id: resolvedDivision.id,
+        probation_end_date: assignProbation ? probationEndDate : null,
+        probation_stage: assignProbation ? stage : null,
+        probation_status: assignProbation ? status : null,
+        assign_probation: assignProbation,
+        employment_type: assignProbation ? 'probationary' : 'regular',
         assigned_by: user.id,
         assigned_at: new Date().toISOString(),
       },
@@ -112,14 +157,25 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
-      message: 'Employee assigned to probation tracker successfully',
+      message: assignProbation
+        ? 'Employee assigned as probationary successfully'
+        : 'Employee assigned as confirmed successfully',
       data: {
         employeeId: employee.id,
         userId,
-        department,
-        stage,
-        status,
-        probationEndDate,
+        department: resolvedDepartment.name,
+        departmentId: resolvedDepartment.id,
+        division: resolvedDivision.name,
+        divisionId: resolvedDivision.id,
+        employmentStatus,
+        assignProbation,
+        ...(assignProbation
+          ? {
+              stage,
+              status,
+              probationEndDate,
+            }
+          : {}),
       },
     });
   } catch (error) {

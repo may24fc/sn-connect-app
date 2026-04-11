@@ -37,6 +37,48 @@ interface InAppNotificationParams {
   message?: string;
   link?: string;
   metadata?: Record<string, unknown>;
+  dedupeKey?: string;
+  dedupeWindowHours?: number;
+}
+
+const DEFAULT_DEDUPE_WINDOW_HOURS = 24;
+
+function buildNotificationMetadata(
+  metadata: Record<string, unknown> | undefined,
+  dedupeKey: string | undefined
+): Record<string, unknown> {
+  if (!dedupeKey) {
+    return metadata ?? {};
+  }
+
+  return {
+    ...(metadata ?? {}),
+    _dedupeKey: dedupeKey,
+  };
+}
+
+async function hasRecentNotification(
+  supabase: SupabaseClient,
+  userId: string,
+  type: NotificationType,
+  dedupeKey: string,
+  dedupeWindowHours: number
+): Promise<boolean> {
+  const cutoff = new Date(Date.now() - dedupeWindowHours * 60 * 60 * 1000).toISOString();
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('type', type)
+    .gte('created_at', cutoff)
+    .contains('metadata', { _dedupeKey: dedupeKey });
+
+  if (error) {
+    console.error('[in-app-notify] Duplicate check failed:', error.message);
+    return false;
+  }
+
+  return (count ?? 0) > 0;
 }
 
 export async function createInAppNotification(
@@ -44,13 +86,27 @@ export async function createInAppNotification(
   params: InAppNotificationParams
 ): Promise<void> {
   try {
+    if (params.dedupeKey) {
+      const hasDuplicate = await hasRecentNotification(
+        supabase,
+        params.userId,
+        params.type,
+        params.dedupeKey,
+        params.dedupeWindowHours ?? DEFAULT_DEDUPE_WINDOW_HOURS
+      );
+
+      if (hasDuplicate) {
+        return;
+      }
+    }
+
     const { error } = await supabase.from('notifications').insert({
       user_id: params.userId,
       type: params.type,
       title: params.title,
       message: params.message ?? null,
       link: params.link ?? null,
-      metadata: params.metadata ?? {},
+      metadata: buildNotificationMetadata(params.metadata, params.dedupeKey),
       is_read: false,
     });
 
@@ -74,13 +130,40 @@ export async function createBulkInAppNotifications(
   userIds: string[],
   params: Omit<InAppNotificationParams, 'userId'>
 ): Promise<void> {
-  const notifications = userIds.map((userId) => ({
+  let filteredUserIds = userIds;
+
+  if (params.dedupeKey && userIds.length > 0) {
+    const cutoff = new Date(
+      Date.now() - (params.dedupeWindowHours ?? DEFAULT_DEDUPE_WINDOW_HOURS) * 60 * 60 * 1000
+    ).toISOString();
+
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('user_id')
+      .in('user_id', userIds)
+      .eq('type', params.type)
+      .gte('created_at', cutoff)
+      .contains('metadata', { _dedupeKey: params.dedupeKey });
+
+    if (error) {
+      console.error('[in-app-notify] Bulk duplicate check failed:', error.message);
+    } else {
+      const existingUserIds = new Set((data ?? []).map((row) => row.user_id as string));
+      filteredUserIds = userIds.filter((userId) => !existingUserIds.has(userId));
+    }
+  }
+
+  if (filteredUserIds.length === 0) {
+    return;
+  }
+
+  const notifications = filteredUserIds.map((userId) => ({
     user_id: userId,
     type: params.type,
     title: params.title,
     message: params.message ?? null,
     link: params.link ?? null,
-    metadata: params.metadata ?? {},
+    metadata: buildNotificationMetadata(params.metadata, params.dedupeKey),
     is_read: false,
   }));
 

@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+const onboardingReviewStateSchema = z.enum([
+  'in_progress',
+  'awaiting_review',
+  'rejected',
+  'approved',
+]);
+
 export const onboardingProfileViewSchema = z.object({
   id: z.string().uuid(),
   userId: z.string().uuid(),
@@ -9,6 +16,11 @@ export const onboardingProfileViewSchema = z.object({
   departmentId: z.string().uuid().nullable(),
   departmentName: z.string().nullable(),
   status: z.enum(['completed', 'in_progress']),
+  reviewState: onboardingReviewStateSchema,
+  rejectionNotes: z.string().nullable(),
+  rejectedAt: z.string().nullable(),
+  rejectedBy: z.string().uuid().nullable(),
+  rejectionCount: z.number().int().nonnegative(),
   currentStep: z.enum(['personal_info', 'payment_info', 'documents', 'review']),
   startDate: z.string().nullable(),
   createdAt: z.string(),

@@ -29,6 +29,12 @@ export interface DepartmentFilters {
   pageSize?: number;
 }
 
+export interface DivisionFilters {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface TaskFilters {
   search?: string;
   status?: 'pending' | 'in_progress' | 'completed' | 'cancelled';
@@ -167,6 +173,7 @@ export interface DirectoryFilters {
   search?: string;
   role?: string;
   department?: string;
+  division?: string;
   status?: string;
   employmentType?: string;
   sortBy?: string;
@@ -235,6 +242,13 @@ export const queryKeys = {
     lists: () => [...queryKeys.departments.all, 'list'] as const,
     list: (filters: DepartmentFilters) => [...queryKeys.departments.lists(), filters] as const,
     detail: (id: string) => [...queryKeys.departments.all, 'detail', id] as const,
+  },
+
+  divisions: {
+    all: ['divisions'] as const,
+    lists: () => [...queryKeys.divisions.all, 'list'] as const,
+    list: (filters: DivisionFilters) => [...queryKeys.divisions.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.divisions.all, 'detail', id] as const,
   },
 
   // Documents

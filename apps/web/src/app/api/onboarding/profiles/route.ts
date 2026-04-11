@@ -1,6 +1,29 @@
 import { onboardingProfileFiltersSchema } from '@/lib/schemas/onboarding-view.schema';
+import type { OnboardingReviewState } from '@/lib/onboarding-review-state';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedOnboardingContext, isOnboardingAdmin, maskPaymentAccount } from '../_lib';
+
+function deriveReviewState(row: {
+  is_completed: boolean;
+  review_state: string | null;
+  users?: { status?: string | null } | Array<{ status?: string | null }> | null;
+}): OnboardingReviewState {
+  const userInfo = Array.isArray(row.users) ? row.users[0] : row.users;
+
+  if (!row.is_completed) {
+    return 'in_progress';
+  }
+
+  if (userInfo?.status === 'active') {
+    return 'approved';
+  }
+
+  if (row.review_state === 'rejected') {
+    return 'rejected';
+  }
+
+  return 'awaiting_review';
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('onboarding_profiles')
-      .select('*, users!inner(id, role), departments(id, name)', { count: 'exact' })
+      .select('*, users!inner(id, role, status), departments(id, name)', { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -108,6 +131,7 @@ export async function GET(request: NextRequest) {
       ...row,
       employee_id: employeeIdsByUserId.get(row.user_id) ?? null,
       status: row.is_completed ? 'completed' : 'in_progress',
+      review_state: deriveReviewState(row),
       full_name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' '),
       payment_account_masked: maskPaymentAccount(row.payment_account_number),
     }));
@@ -118,6 +142,15 @@ export async function GET(request: NextRequest) {
     const inProgress = normalized.filter(
       (item: { status: string }) => item.status === 'in_progress'
     ).length;
+    const awaitingReview = normalized.filter(
+      (item: { review_state?: OnboardingReviewState }) => item.review_state === 'awaiting_review'
+    ).length;
+    const rejected = normalized.filter(
+      (item: { review_state?: OnboardingReviewState }) => item.review_state === 'rejected'
+    ).length;
+    const approved = normalized.filter(
+      (item: { review_state?: OnboardingReviewState }) => item.review_state === 'approved'
+    ).length;
 
     return NextResponse.json({
       data: normalized,
@@ -125,6 +158,9 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         completed,
         inProgress,
+        awaitingReview,
+        rejected,
+        approved,
       },
       pagination: {
         page: filters.page,

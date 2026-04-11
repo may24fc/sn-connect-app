@@ -1,5 +1,8 @@
 import { logActivity } from '@/lib/audit';
-import { createNotification } from '@/lib/notifications/create-notification';
+import {
+  createNotification,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { probationActionSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin } from '../performance/_lib';
@@ -42,7 +45,7 @@ export async function GET() {
     const { data: employees, error: employeesError } = await supabase
       .from('employees')
       .select(
-        'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head'
+        'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head, manual_probation_status'
       )
       .is('deleted_at', null)
       .order('probation_end_date', { ascending: true, nullsFirst: false });
@@ -129,7 +132,7 @@ export async function GET() {
       baselineEnd.setDate(baselineEnd.getDate() + 90);
       const isExtended = new Date(employee.probation_end_date) > baselineEnd;
 
-      const status =
+      const computedStatus =
         daysRemaining <= 0
           ? 'completed'
           : isExtended
@@ -137,6 +140,11 @@ export async function GET() {
             : daysRemaining <= 14
               ? 'at-risk'
               : 'on-track';
+
+      const status =
+        employee.manual_probation_status && computedStatus !== 'completed' && computedStatus !== 'extended'
+          ? employee.manual_probation_status
+          : computedStatus;
 
       const employeeOkrs = (okrsByEmployee.get(employee.id) || [])
         .filter((okr) => (currentCycleId ? okr.cycle_id === currentCycleId : true))
@@ -178,6 +186,7 @@ export async function GET() {
         department: employee.department,
         position: employee.position,
         startDate: employee.date_hired,
+        probationEndDate: employee.probation_end_date,
         stage: getStage(employee.date_hired, employee.probation_end_date),
         status,
         daysRemaining: Math.max(0, daysRemaining),
@@ -221,7 +230,10 @@ export async function POST(request: NextRequest) {
     if (parsed.data.action === 'extend') {
       const { data, error: updateError } = await supabase
         .from('employees')
-        .update({ probation_end_date: parsed.data.newProbationEndDate })
+        .update({
+          probation_end_date: parsed.data.newProbationEndDate,
+          manual_probation_status: null,
+        })
         .eq('id', parsed.data.employeeId)
         .is('deleted_at', null)
         .select('id, user_id, first_name, last_name, immediate_head, probation_end_date')
@@ -237,6 +249,7 @@ export async function POST(request: NextRequest) {
         month: 'long',
         day: 'numeric',
       });
+      const actorName = await getUserDisplayName(user.id);
 
       const notificationTasks: Array<Promise<void>> = [];
 
@@ -246,11 +259,12 @@ export async function POST(request: NextRequest) {
             userId: data.user_id,
             type: 'probation_update',
             title: 'Probation Period Extended',
-            message: `Your probation period has been extended to ${formattedEndDate}.`,
+            message: `${actorName} extended your probation period to ${formattedEndDate}.`,
             link: '/dashboard',
             metadata: {
               employeeId: data.id,
               action: 'extend',
+              updatedBy: user.id,
               newProbationEndDate: parsed.data.newProbationEndDate,
             },
           })
@@ -263,11 +277,12 @@ export async function POST(request: NextRequest) {
             userId: data.immediate_head,
             type: 'probation_update',
             title: `Probation Extended: ${employeeName}`,
-            message: `${employeeName}'s probation period was extended to ${formattedEndDate}.`,
+            message: `${actorName} extended ${employeeName}'s probation period to ${formattedEndDate}.`,
             link: `/admin/employee-management?employeeId=${data.id}`,
             metadata: {
               employeeId: data.id,
               action: 'extend',
+              updatedBy: user.id,
               newProbationEndDate: parsed.data.newProbationEndDate,
             },
           })
@@ -289,6 +304,33 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ data, message: 'Probation period extended successfully' });
+    }
+
+    if (parsed.data.action === 'set-status') {
+      const { data, error: updateError } = await supabase
+        .from('employees')
+        .update({ manual_probation_status: parsed.data.status })
+        .eq('id', parsed.data.employeeId)
+        .is('deleted_at', null)
+        .select('id, manual_probation_status')
+        .single();
+
+      if (updateError || !data) {
+        return NextResponse.json({ error: 'Failed to update probation status' }, { status: 500 });
+      }
+
+      logActivity(supabase, {
+        userId: user.id,
+        action: 'set_probation_status_override',
+        tableName: 'employees',
+        recordId: parsed.data.employeeId,
+        metadata: {
+          employeeId: parsed.data.employeeId,
+          status: parsed.data.status,
+        },
+      });
+
+      return NextResponse.json({ data, message: 'Probation status updated successfully' });
     }
 
     const { data: employee, error: employeeError } = await supabase
@@ -327,7 +369,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error: updateError } = await supabase
       .from('employees')
-      .update({ probation_end_date: null })
+      .update({ probation_end_date: null, manual_probation_status: null })
       .eq('id', parsed.data.employeeId)
       .is('deleted_at', null)
       .select('id, probation_end_date')
@@ -338,6 +380,7 @@ export async function POST(request: NextRequest) {
     }
 
     const employeeName = `${employee.first_name} ${employee.last_name}`.trim();
+    const actorName = await getUserDisplayName(user.id);
     const notificationTasks: Array<Promise<void>> = [];
 
     if (employee.user_id) {
@@ -348,12 +391,13 @@ export async function POST(request: NextRequest) {
           title: 'Probation Evaluation Completed',
           message:
             typeof parsed.data.finalRating === 'number'
-              ? `Your probation evaluation has been completed with a final rating of ${parsed.data.finalRating}/5.`
-              : 'Your probation evaluation has been completed.',
+              ? `${actorName} completed your probation evaluation with a final rating of ${parsed.data.finalRating}/5.`
+              : `${actorName} completed your probation evaluation.`,
           link: '/dashboard',
           metadata: {
             employeeId: employee.id,
             action: 'complete',
+            completedBy: user.id,
             ...(typeof parsed.data.finalRating === 'number'
               ? { finalRating: parsed.data.finalRating }
               : {}),
@@ -368,11 +412,12 @@ export async function POST(request: NextRequest) {
           userId: employee.immediate_head,
           type: 'probation_update',
           title: `Probation Completed: ${employeeName}`,
-          message: `${employeeName}'s probation evaluation has been completed.`,
+          message: `${actorName} completed ${employeeName}'s probation evaluation.`,
           link: `/admin/employee-management?employeeId=${employee.id}`,
           metadata: {
             employeeId: employee.id,
             action: 'complete',
+            completedBy: user.id,
             ...(typeof parsed.data.finalRating === 'number'
               ? { finalRating: parsed.data.finalRating }
               : {}),

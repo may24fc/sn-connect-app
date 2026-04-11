@@ -7,11 +7,16 @@ export function buildDisplayName(...parts: Array<string | null | undefined>): st
 }
 
 interface ResolveUserDisplayNameOptions {
+  employeeFirstName?: string | null;
+  employeeMiddleName?: string | null;
+  employeeLastName?: string | null;
   metadataFullName?: string | null;
   metadataName?: string | null;
   metadataFirstName?: string | null;
+  metadataMiddleName?: string | null;
   metadataLastName?: string | null;
   onboardingFirstName?: string | null;
+  onboardingMiddleName?: string | null;
   onboardingLastName?: string | null;
   fallbackEmail?: string | null;
   fallbackLabel?: string;
@@ -23,8 +28,21 @@ export function resolveUserDisplayName(options: ResolveUserDisplayNameOptions): 
   return (
     normalizeDisplayText(options.metadataFullName) ||
     normalizeDisplayText(options.metadataName) ||
-    buildDisplayName(options.metadataFirstName, options.metadataLastName) ||
-    buildDisplayName(options.onboardingFirstName, options.onboardingLastName) ||
+    buildDisplayName(
+      options.employeeFirstName,
+      options.employeeMiddleName,
+      options.employeeLastName
+    ) ||
+    buildDisplayName(
+      options.metadataFirstName,
+      options.metadataMiddleName,
+      options.metadataLastName
+    ) ||
+    buildDisplayName(
+      options.onboardingFirstName,
+      options.onboardingMiddleName,
+      options.onboardingLastName
+    ) ||
     normalizeDisplayText(options.fallbackEmail) ||
     fallbackLabel
   );

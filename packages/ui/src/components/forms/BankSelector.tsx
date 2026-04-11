@@ -63,6 +63,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
     const dropdownRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
     const isOtherSelected = value === 'OTHER';
+    const trimmedSearchTerm = searchTerm.trim();
 
     // Filter banks by country code and search term
     const filteredBanks = React.useMemo(() => {
@@ -84,6 +85,14 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
     }, [banks, countryCode, searchTerm]);
 
     const selectedBank = banks.find((b) => b.id === value);
+    const hasExactBankMatch = React.useMemo(() => {
+      if (!trimmedSearchTerm) {
+        return false;
+      }
+
+      const normalizedSearch = trimmedSearchTerm.toLowerCase();
+      return filteredBanks.some((bank) => bank.bankName.toLowerCase() === normalizedSearch);
+    }, [filteredBanks, trimmedSearchTerm]);
 
     // Close dropdown on outside click
     React.useEffect(() => {
@@ -113,10 +122,25 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
       setSearchTerm('');
     };
 
-    const handleSelectOther = () => {
-      onChange?.('OTHER', customBankName || '');
+    const handleSelectOther = (bankName?: string) => {
+      const resolvedBankName = (bankName ?? trimmedSearchTerm ?? customBankName).trim();
+
+      onCustomBankNameChange?.(resolvedBankName);
+      onChange?.('OTHER', resolvedBankName);
       setIsOpen(false);
       setSearchTerm('');
+    };
+
+    const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (
+        event.key === 'Enter' &&
+        allowOther &&
+        trimmedSearchTerm &&
+        filteredBanks.length === 0
+      ) {
+        event.preventDefault();
+        handleSelectOther(trimmedSearchTerm);
+      }
     };
 
     return (
@@ -182,6 +206,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
                   placeholder="Search banks..."
                   className={cn(
                     'w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm',
@@ -218,6 +243,24 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                         )}
                       </button>
                     ))}
+                    {allowOther && trimmedSearchTerm && !hasExactBankMatch && (
+                      <>
+                        <div className="mx-3 my-1 border-t border-zinc-200 dark:border-zinc-700" />
+                        <button
+                          type="button"
+                          role="option"
+                          onClick={() => handleSelectOther(trimmedSearchTerm)}
+                          className={cn(
+                            'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
+                            'hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                          )}
+                        >
+                          <span className="flex-1 text-left">
+                            Use "{trimmedSearchTerm}" as bank name
+                          </span>
+                        </button>
+                      </>
+                    )}
                     {allowOther && (
                       <>
                         <div className="mx-3 my-1 border-t border-zinc-200 dark:border-zinc-700" />
@@ -225,7 +268,7 @@ export const BankSelector = React.forwardRef<HTMLDivElement, BankSelectorProps>(
                           type="button"
                           role="option"
                           aria-selected={isOtherSelected}
-                          onClick={handleSelectOther}
+                          onClick={() => handleSelectOther()}
                           className={cn(
                             'flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors',
                             'hover:bg-zinc-100 dark:hover:bg-zinc-800',

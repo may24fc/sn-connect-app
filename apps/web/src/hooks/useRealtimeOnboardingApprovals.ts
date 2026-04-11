@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { OnboardingReviewState } from '@/lib/onboarding-review-state';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -12,6 +13,11 @@ export interface PendingOnboarding {
   department_id: string | null;
   completed_at: string;
   created_at: string;
+  review_state?: OnboardingReviewState;
+  rejection_notes?: string | null;
+  rejected_at?: string | null;
+  rejected_by?: string | null;
+  rejection_count?: number;
   first_name?: string | null;
   middle_name?: string | null;
   last_name?: string | null;
@@ -61,6 +67,11 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
           payment_city,
           payment_province,
           payment_zipcode,
+          review_state,
+          rejection_notes,
+          rejected_at,
+          rejected_by,
+          rejection_count,
           completed_at,
           created_at,
           users!inner(role, status)
@@ -82,7 +93,7 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
         return;
       }
 
-      const mapped = (data || []).map((profile: any) => {
+      const mapped: PendingOnboarding[] = (data || []).map((profile: any) => {
         const userInfo = Array.isArray(profile.users) ? profile.users[0] : profile.users;
         const maskedPaymentAccount = profile.payment_account_number
           ? `****${String(profile.payment_account_number).slice(-4)}`
@@ -98,6 +109,16 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
           role: userInfo?.role || 'employee',
           position: profile.position,
           department_id: profile.department_id,
+          review_state:
+            userInfo?.status === 'active'
+              ? 'approved'
+              : profile.review_state === 'rejected'
+                ? 'rejected'
+                : 'awaiting_review',
+          rejection_notes: profile.rejection_notes,
+          rejected_at: profile.rejected_at,
+          rejected_by: profile.rejected_by,
+          rejection_count: profile.rejection_count ?? 0,
           completed_at: profile.completed_at,
           created_at: profile.created_at,
           first_name: profile.first_name,
@@ -117,7 +138,7 @@ export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
         };
       });
 
-      setPendingApprovals(mapped);
+      setPendingApprovals(mapped.filter((profile) => profile.review_state !== 'rejected'));
       setIsLoading(false);
     };
 

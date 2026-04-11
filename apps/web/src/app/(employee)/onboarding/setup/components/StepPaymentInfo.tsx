@@ -145,6 +145,9 @@ export function StepPaymentInfo({
               allowOther
               required
             />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              If your bank is not listed, type its name in the field and use that instead.
+            </p>
           </div>
         </div>
       </div>
@@ -200,6 +203,22 @@ export function StepPaymentInfo({
               placeholder="Enter phone number"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="paymentCity">
+              Payment City
+              {paymentCountryCode !== 'PH' && <span className="text-rose-500"> *</span>}
+            </Label>
+            <Input
+              id="paymentCity"
+              value={get('paymentCity')}
+              onChange={(e) => update('paymentCity', e.target.value)}
+              placeholder="Enter city"
+              required={paymentCountryCode !== 'PH'}
+            />
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Required for Wise recipient setup for bank accounts outside the Philippines.
+            </p>
           </div>
         </div>
       </div>

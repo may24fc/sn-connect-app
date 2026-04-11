@@ -8,6 +8,7 @@ import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEmployees } from '@/hooks/useEmployees';
 import { useInternships } from '@/hooks/useInternships';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import { useRealtimeInternDailyLogs } from '@/hooks/useRealtimeInternDailyLogs';
@@ -15,6 +16,11 @@ import { useRealtimeInternships } from '@/hooks/useRealtimeInternships';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { useTableSort } from '@/hooks/useTableSort';
 import { exportToCsv, formatDateForCsv, formatPercentageForCsv } from '@/lib/csv';
+import {
+  getOnboardingReviewStateBadgeVariant,
+  getOnboardingReviewStateLabel,
+} from '@/lib/onboarding-review-state';
+import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import type { InternshipFilters } from '@/lib/query-keys';
 import {
   Avatar,
@@ -77,6 +83,7 @@ import {
   TrendingUp,
   UserPlus,
   Users,
+  XCircle,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
@@ -111,6 +118,9 @@ export default function AdminInternsPage(): ReactNode {
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
+  const [assignmentModalMode, setAssignmentModalMode] = useState<
+    'employee-assignment' | 'employee-probation' | 'intern-assignment'
+  >('intern-assignment');
   const [selectedEodLog, setSelectedEodLog] = useState<(typeof dailyLogs)[number] | null>(null);
 
   // Delete intern state
@@ -207,6 +217,7 @@ export default function AdminInternsPage(): ReactNode {
 
   const internshipsQuery = useInternships(internshipFilters);
   const internshipsForOnboardingQuery = useInternships({ page: 1, pageSize: 500 });
+  const { data: employeeRecordsData } = useEmployees({ page: 1, pageSize: 500, status: 'active' });
 
   // Fetch intern onboarding profiles
   const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
@@ -214,6 +225,17 @@ export default function AdminInternsPage(): ReactNode {
     page: 1,
     pageSize: 50,
   });
+  const rejectedOnboardingProfiles = useMemo(
+    () =>
+      [...(onboardingData?.data ?? [])]
+        .filter((profile) => profile.review_state === 'rejected')
+        .sort((left, right) => {
+          const leftTime = left.rejected_at ? new Date(left.rejected_at).getTime() : 0;
+          const rightTime = right.rejected_at ? new Date(right.rejected_at).getTime() : 0;
+          return rightTime - leftTime;
+        }),
+    [onboardingData?.data]
+  );
 
   const interns = useMemo<Array<InternSummary>>(
     () =>
@@ -236,6 +258,28 @@ export default function AdminInternsPage(): ReactNode {
         pendingReports: internship.pendingReports,
       })),
     [internshipsQuery.data]
+  );
+  const employeeRecords = employeeRecordsData?.data || [];
+  const employeeRecordByUserId = useMemo(
+    () =>
+      new Map(
+        employeeRecords
+          .filter((employee) => employee.user_id)
+          .map((employee) => [employee.user_id, employee])
+      ),
+    [employeeRecords]
+  );
+  const employeeRecordByEmail = useMemo(
+    () =>
+      new Map(
+        employeeRecords
+          .filter((employee) => employee.company_email || employee.personal_email)
+          .map((employee) => [
+            String(employee.company_email || employee.personal_email || '').toLowerCase(),
+            employee,
+          ])
+      ),
+    [employeeRecords]
   );
 
   const internshipDepartmentByEmployeeId = useMemo(
@@ -329,6 +373,49 @@ export default function AdminInternsPage(): ReactNode {
   const buildOnboardingDetailHref = (profileId: string): string => {
     const returnTo = encodeURIComponent(currentPathWithSearch);
     return `/admin/onboarding/${profileId}?returnTo=${returnTo}`;
+  };
+
+  const openAssignmentModal = (data: any): void => {
+    setAssignmentData(data);
+    setAssignmentModalMode('intern-assignment');
+    setAssignmentModalOpen(true);
+  };
+
+  const handleAssignmentModalChange = (open: boolean): void => {
+    setAssignmentModalOpen(open);
+    if (!open) {
+      setAssignmentData(null);
+      setAssignmentModalMode('intern-assignment');
+    }
+  };
+
+  const openInternAssignmentFromProfile = (profile: any): void => {
+    const employeeRecord = employeeRecordByUserId.get(profile.user_id) ||
+      employeeRecordByEmail.get(String(profile.email_address || '').toLowerCase());
+    const relatedInternship = (internshipsForOnboardingQuery.data?.data || []).find(
+      (internship) => internship.employeeId === profile.employee_id
+    );
+    const onboardingDepartment = Array.isArray(profile.departments)
+      ? profile.departments[0]?.name
+      : profile.departments?.name;
+    const assignedDepartment = profile.employee_id
+      ? internshipDepartmentByEmployeeId.get(profile.employee_id)
+      : null;
+
+    openAssignmentModal({
+      userId: profile.user_id,
+      fullName: profile.full_name || 'Unnamed',
+      email: profile.email_address || employeeRecord?.company_email || employeeRecord?.personal_email || '',
+      role: 'intern',
+      position: profile.position || employeeRecord?.position || null,
+      departmentName: employeeRecord?.department || assignedDepartment || onboardingDepartment || null,
+      divisionName: employeeRecord?.division || null,
+      startDate: relatedInternship?.startDate || null,
+      endDate: relatedInternship?.endDate || null,
+      requiredHours: relatedInternship?.requiredHours ?? null,
+      school: relatedInternship?.school || null,
+      program: relatedInternship?.program || null,
+    });
   };
 
   return (
@@ -600,20 +687,25 @@ export default function AdminInternsPage(): ReactNode {
 
         <TabsContent value="onboarding" className="space-y-6">
           {/* Approval Stats */}
-          <StatCardGrid columns={3}>
+          <StatCardGrid columns={4}>
+            <StatCard
+              label="In Progress"
+              value={onboardingData?.summary.inProgress ?? 0}
+              icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
+            />
             <StatCard
               label="Awaiting Approval"
-              value={pendingApprovals.length}
+              value={onboardingData?.summary.awaitingReview ?? pendingApprovals.length}
               icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
-              label="Total Submissions"
-              value={onboardingData?.summary.total ?? 0}
-              icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+              label="Rejected"
+              value={onboardingData?.summary.rejected ?? 0}
+              icon={<XCircle className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
-              label="Completed"
-              value={onboardingData?.summary.completed ?? 0}
+              label="Approved"
+              value={onboardingData?.summary.approved ?? 0}
               icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
             />
           </StatCardGrid>
@@ -680,6 +772,12 @@ export default function AdminInternsPage(): ReactNode {
                             </Avatar>
                             <div>
                               <p className="font-medium">{approval.full_name || 'Unnamed'}</p>
+                              {(approval.rejection_count ?? 0) > 0 && (
+                                <p className="text-xs text-amber-700 dark:text-amber-300">
+                                  Resubmission · rejected {approval.rejection_count} time
+                                  {approval.rejection_count === 1 ? '' : 's'}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </TableCell>
@@ -723,6 +821,91 @@ export default function AdminInternsPage(): ReactNode {
           </Card>
 
           {/* All Onboarding Submissions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Rejected Submissions</CardTitle>
+              <CardDescription>
+                Completed intern onboarding submissions that were rejected and are waiting on updates.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Intern</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Rejected</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rejectedOnboardingProfiles.length > 0 ? (
+                    rejectedOnboardingProfiles.map((profile) => (
+                      <TableRow key={profile.id} className="hover:bg-rose-50/40 dark:hover:bg-rose-950/10">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback className="text-xs bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+                                {profile.full_name
+                                  ?.split(' ')
+                                  .map((name: string) => name[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2) || 'NA'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{profile.full_name || 'Unnamed'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Rejected {profile.rejection_count ?? 0} time
+                                {(profile.rejection_count ?? 0) === 1 ? '' : 's'}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {profile.email_address || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-sm">{profile.position || 'Not specified'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {profile.rejected_at ? formatDateTime(profile.rejected_at) : '—'}
+                        </TableCell>
+                        <TableCell className="max-w-[280px]">
+                          <p className="line-clamp-2 text-sm text-muted-foreground">
+                            {profile.rejection_notes || 'No rejection notes captured.'}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                          >
+                            <Eye className="mr-1 h-4 w-4" />
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8">
+                        <EmptyState
+                          icon={XCircle}
+                          title="No rejected submissions"
+                          description="Rejected intern onboarding submissions will appear here with their latest review notes."
+                          size="sm"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">All Onboarding Submissions</CardTitle>
@@ -787,15 +970,21 @@ export default function AdminInternsPage(): ReactNode {
                           </TableCell>
                           <TableCell>{department || 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
-                              {profile.status === 'completed' ? 'Completed' : 'In Progress'}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={getOnboardingReviewStateBadgeVariant(profile.review_state ?? 'in_progress')}>
+                                {getOnboardingReviewStateLabel(profile.review_state ?? 'in_progress')}
+                              </Badge>
+                              {(profile.rejection_count ?? 0) > 0 &&
+                                (profile.review_state ?? 'in_progress') === 'awaiting_review' && (
+                                  <Badge variant="secondary">Resubmitted</Badge>
+                                )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-sm">
-                            {profile.current_step.replace('_', ' ')}
+                            {getOnboardingStepLabel(profile.current_step)}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(profile.created_at).toLocaleDateString()}
+                            {new Date(profile.completed_at ?? profile.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
                             {isPendingApproval ? (
@@ -815,6 +1004,23 @@ export default function AdminInternsPage(): ReactNode {
                                 <CheckCircle2 className="mr-1 h-4 w-4" />
                                 Review & Approve
                               </Button>
+                            ) : (profile.review_state ?? 'in_progress') === 'approved' ? (
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openInternAssignmentFromProfile(profile)}
+                                >
+                                  {department ? 'Edit Assignment' : 'Complete Assignment'}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => router.push(buildOnboardingDetailHref(profile.id))}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
                             ) : (
                               <Button
                                 variant="outline"
@@ -1018,15 +1224,20 @@ export default function AdminInternsPage(): ReactNode {
 
       <AssignEmployeeModal
         open={assignmentModalOpen}
-        onOpenChange={setAssignmentModalOpen}
+        onOpenChange={handleAssignmentModalChange}
         assignmentData={assignmentData}
+        mode={assignmentModalMode}
         onSuccess={() => {
           // Invalidate queries to refresh the UI
           queryClient.invalidateQueries({ queryKey: ['internships'] });
           queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
           queryClient.invalidateQueries({ queryKey: ['probation'] });
+          queryClient.invalidateQueries({ queryKey: ['employees'] });
+          queryClient.invalidateQueries({ queryKey: ['directory'] });
+          queryClient.invalidateQueries({ queryKey: ['users'] });
           setAssignmentData(null);
           setAssignmentModalOpen(false);
+          setAssignmentModalMode('intern-assignment');
         }}
       />
 

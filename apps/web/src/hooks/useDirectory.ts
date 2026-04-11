@@ -7,6 +7,8 @@ export interface DirectoryFilters {
   roles?: string[];
   department?: string;
   departments?: string[];
+  division?: string;
+  divisions?: string[];
   status?: string;
   employmentType?: string;
   sortBy?: string;
@@ -26,6 +28,8 @@ export interface DirectoryEntry {
   role: string;
   department_name: string | null;
   department_id: string | null;
+  division_name: string | null;
+  division_id: string | null;
   position: string | null;
   status: string | null;
   employment_type: string | null;
@@ -89,6 +93,8 @@ export function useDirectory(filters: DirectoryFilters = {}) {
       if (filters.roles?.length) params.append('roles', filters.roles.join(','));
       if (filters.department) params.append('department', filters.department);
       if (filters.departments?.length) params.append('departments', filters.departments.join(','));
+      if (filters.division) params.append('division', filters.division);
+      if (filters.divisions?.length) params.append('divisions', filters.divisions.join(','));
       if (filters.status) params.append('status', filters.status);
       if (filters.employmentType) params.append('employment_type', filters.employmentType);
       if (filters.sortBy) params.append('sort_by', filters.sortBy);
@@ -117,6 +123,8 @@ export function useDirectoryExport(filters: DirectoryFilters = {}) {
     if (filters.roles?.length) params.append('roles', filters.roles.join(','));
     if (filters.department) params.append('department', filters.department);
     if (filters.departments?.length) params.append('departments', filters.departments.join(','));
+    if (filters.division) params.append('division', filters.division);
+    if (filters.divisions?.length) params.append('divisions', filters.divisions.join(','));
     if (filters.status) params.append('status', filters.status);
 
     const response = await fetch(`/api/directory/export?${params.toString()}`);

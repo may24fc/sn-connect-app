@@ -199,13 +199,13 @@ serve(async (req: Request): Promise<Response> => {
 
       if (emp.days_late <= 1) {
         title = 'Report Reminder';
-        message = `Your weekly report is due. Please submit it at your earliest convenience.`;
+        message = `${emp.first_name}, your weekly report is due. Please submit it at your earliest convenience.`;
       } else if (emp.days_late <= 3) {
         title = 'Report Overdue';
-        message = `Your weekly report is ${emp.days_late} days overdue. Please submit as soon as possible.`;
+        message = `${emp.first_name}, your weekly report is ${emp.days_late} day(s) overdue. Please submit it as soon as possible.`;
       } else {
         title = 'Report Significantly Overdue';
-        message = `Your weekly report is ${emp.days_late} days overdue. This has been escalated to your manager.`;
+        message = `${emp.first_name}, your weekly report is ${emp.days_late} day(s) overdue. This has been escalated to your manager.`;
       }
 
       await createInAppNotification(supabase, {
@@ -214,6 +214,7 @@ serve(async (req: Request): Promise<Response> => {
         title,
         message,
         link: '/reports',
+        dedupeKey: `late-report:${emp.id}:${emp.report_type}:${emp.days_late}`,
         metadata: {
           daysLate: emp.days_late,
           reportType: emp.report_type,
@@ -230,6 +231,7 @@ serve(async (req: Request): Promise<Response> => {
           title: 'Direct Report Escalation',
           message: `${emp.first_name} ${emp.last_name} has a weekly report overdue by ${emp.days_late} days.`,
           link: '/admin/reports?tab=submissions&late=true',
+          dedupeKey: `late-report-manager:${emp.id}:${emp.days_late}`,
           metadata: {
             employeeId: emp.id,
             employeeUserId: emp.user_id,
@@ -247,8 +249,9 @@ serve(async (req: Request): Promise<Response> => {
         userId: intern.user_id,
         type: 'reminder',
         title: 'EOD Report Missing',
-        message: `You did not submit your End-of-Day report for ${yesterdayStr}. Please submit it.`,
+        message: `${intern.first_name}, you did not submit your End-of-Day report for ${yesterdayStr}. Please submit it.`,
         link: '/intern/dashboard',
+        dedupeKey: `intern-eod-missing:${intern.employee_id}:${yesterdayStr}`,
         metadata: {
           missingDate: yesterdayStr,
           type: 'intern_eod',
@@ -263,6 +266,7 @@ serve(async (req: Request): Promise<Response> => {
           title: 'Intern EOD Missing',
           message: `${intern.first_name} ${intern.last_name} did not submit an EOD report for ${yesterdayStr}.`,
           link: '/admin/interns?tab=eod-reports',
+          dedupeKey: `intern-eod-supervisor:${intern.employee_id}:${yesterdayStr}`,
           metadata: {
             employeeId: intern.employee_id,
             missingDate: yesterdayStr,
@@ -292,6 +296,7 @@ serve(async (req: Request): Promise<Response> => {
           title: 'Late Reports Summary',
           message: `${lateEmployees.length} employee(s) and ${lateInterns.length} intern(s) have late report submissions.`,
           link: '/admin/reports?tab=submissions',
+          dedupeKey: `late-reports-summary:${today}`,
           metadata: {
             date: today,
             lateEmployeeCount: lateEmployees.length,

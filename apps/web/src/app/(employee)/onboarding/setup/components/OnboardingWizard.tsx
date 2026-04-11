@@ -11,6 +11,7 @@ import {
   type SupportedCountryCode,
 } from '@/lib/validation/phone';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -19,7 +20,7 @@ import {
   CardTitle,
   useToast,
 } from '@hr-portal/ui';
-import { LogOut, SkipForward } from 'lucide-react';
+import { AlertTriangle, LogOut, SkipForward } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { NavigationControls } from './NavigationControls';
@@ -72,6 +73,23 @@ function parsePersonalAddress(rawAddress: string | null): {
   }
 
   return base;
+}
+
+function formatReviewDate(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function OnboardingWizard(): ReactNode {
@@ -302,11 +320,16 @@ export function OnboardingWizard(): ReactNode {
 
       const paymentBankId = String(draft.paymentInfo.paymentBankId ?? '').trim();
       const paymentBankName = String(draft.paymentInfo.paymentBankName ?? '').trim();
+      const paymentCountryCode = String(draft.paymentInfo.paymentCountryCode ?? 'PH').trim();
+      const paymentCity = String(draft.paymentInfo.paymentCity ?? '').trim();
       if (!paymentBankId) {
         return 'Please select a bank.';
       }
       if (paymentBankId === 'OTHER' && !paymentBankName) {
         return 'Please provide the bank name when selecting Other.';
+      }
+      if (paymentCountryCode !== 'PH' && !paymentCity) {
+        return 'Payment city is required for non-Philippine bank accounts.';
       }
     }
 
@@ -451,7 +474,10 @@ export function OnboardingWizard(): ReactNode {
   };
 
   // Onboarding can be skipped — users will see a reminder on their dashboard.
-  const isCompleted = profileQuery.data?.data?.is_completed === true;
+  const profile = profileQuery.data?.data ?? null;
+  const isCompleted = profile?.is_completed === true;
+  const isRejected = profile?.review_state === 'rejected';
+  const rejectedAtLabel = formatReviewDate(profile?.rejected_at);
 
   return (
     <Card className="w-full max-w-5xl">
@@ -478,6 +504,44 @@ export function OnboardingWizard(): ReactNode {
         <ProgressStepper currentStep={draft.currentStep as Step} />
       </CardHeader>
       <CardContent className="space-y-6">
+        {isRejected && (
+          <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-left dark:border-rose-900 dark:bg-rose-950/20">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400" />
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-rose-800 dark:text-rose-200">
+                    Admin requested changes before approval
+                  </p>
+                  <Badge variant="rejected">Rejected</Badge>
+                </div>
+                <p className="text-sm text-rose-700 dark:text-rose-300">
+                  Update the sections below, then submit your onboarding form again for review.
+                </p>
+                <div className="rounded-md bg-white/70 p-3 dark:bg-zinc-950/30">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">
+                    Reviewer notes
+                  </p>
+                  <p className="mt-1 text-sm text-rose-800 dark:text-rose-200">
+                    {profile?.rejection_notes?.trim() ||
+                      'The admin team requested updates to your onboarding submission.'}
+                  </p>
+                </div>
+                {(rejectedAtLabel || (profile?.rejection_count ?? 0) > 0) && (
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-rose-700 dark:text-rose-300">
+                    {rejectedAtLabel ? <span>Last reviewed on {rejectedAtLabel}</span> : null}
+                    {(profile?.rejection_count ?? 0) > 0 ? (
+                      <span>
+                        Returned for revision {profile?.rejection_count}{' '}
+                        {(profile?.rejection_count ?? 0) === 1 ? 'time' : 'times'}
+                      </span>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         {errorMessage && (
           <div className="rounded-md border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 p-4 text-sm text-rose-700 dark:text-rose-300 flex items-start gap-2">
             <svg

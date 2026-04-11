@@ -1,4 +1,7 @@
-import { createBulkNotifications } from '@/lib/notifications/create';
+import {
+  createNotificationsForUsers,
+  getUserDisplayName,
+} from '@/lib/notifications/create-notification';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -44,16 +47,16 @@ async function sendRoleScopedReminders(
   }
 
   let total = 0;
+  const senderName = await getUserDisplayName(senderId);
   for (const [link, ids] of grouped) {
-    const count = await createBulkNotifications({
-      userIds: ids,
+    await createNotificationsForUsers(ids, {
       type: 'reminder',
       title: `Reminder: ${announcement.title}`,
-      message: 'You have an unread announcement. Please review it.',
+      message: `${senderName} reminded you to review "${announcement.title}".`,
       link,
       metadata: { announcementId, reminderSentBy: senderId },
     });
-    total += count;
+    total += ids.length;
   }
   return total;
 }

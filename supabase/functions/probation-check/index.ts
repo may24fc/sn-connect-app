@@ -353,11 +353,12 @@ serve(async (req: Request): Promise<Response> => {
             ? `Probation Update: ${fullName}`
             : `${milestone.subjectPrefix}: ${fullName}`,
           message: isEmployeeRecipient
-            ? `Your probation ${daysRemaining === 0 ? 'ends today' : `ends in ${daysRemaining} days`}. Please check your dashboard for details.`
+            ? `${fullName}, your probation ${daysRemaining === 0 ? 'ends today' : `ends in ${daysRemaining} days`}. Please check your dashboard for details.`
             : `Probation ${daysRemaining === 0 ? 'ends today' : `ends in ${daysRemaining} days`}. Action required.`,
           link: isEmployeeRecipient
             ? '/dashboard'
             : `/admin/employee-management?employeeId=${emp.id}`,
+          dedupeKey: `probation:${emp.id}:${milestone.type}:${daysRemaining}:${isEmployeeRecipient ? 'employee' : 'admin'}`,
           metadata: {
             employeeId: emp.id,
             daysRemaining,

@@ -8,8 +8,19 @@ import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
+import {
+  getOnboardingReviewStateBadgeVariant,
+  getOnboardingReviewStateLabel,
+} from '@/lib/onboarding-review-state';
+import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import { useAddTicketHandler, useRemoveTicketHandler, useTicketHandlers } from '@/hooks/useTicketHandlers';
-import { type ProbationRecord, useCompleteProbation, useProbation } from '@/hooks/useProbation';
+import {
+  type ProbationRecord,
+  useCompleteProbation,
+  useExtendProbation,
+  useProbation,
+  useSetProbationStatus,
+} from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { useTableSort } from '@/hooks/useTableSort';
 import { useEmployees } from '@/hooks/useEmployees';
@@ -31,6 +42,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   Input,
   Label,
@@ -71,6 +86,8 @@ import {
   TrendingUp,
   UserCog,
   UserPlus,
+  MoreHorizontal,
+  XCircle,
   X,
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -504,6 +521,9 @@ export default function EmployeeManagementPage(): ReactNode {
   const [selectedApproval, setSelectedApproval] = useState<any | null>(null);
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
+  const [assignmentModalMode, setAssignmentModalMode] = useState<
+    'employee-assignment' | 'employee-probation' | 'intern-assignment'
+  >('employee-assignment');
 
   // Appraisal dialog state
   const [appraisalDialogOpen, setAppraisalDialogOpen] = useState(false);
@@ -513,7 +533,15 @@ export default function EmployeeManagementPage(): ReactNode {
   const [appraisalFeedback, setAppraisalFeedback] = useState('');
   const [okrRatings, setOkrRatings] = useState<Record<string, number>>({});
   const [kpiRatings, setKpiRatings] = useState<Record<string, number>>({});
+  const [directCompleteDialogOpen, setDirectCompleteDialogOpen] = useState(false);
+  const [selectedDirectCompleteEmp, setSelectedDirectCompleteEmp] =
+    useState<ProbationRecord | null>(null);
+  const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+  const [selectedExtendEmp, setSelectedExtendEmp] = useState<ProbationRecord | null>(null);
+  const [extendDate, setExtendDate] = useState('');
   const completeProbation = useCompleteProbation();
+  const extendProbation = useExtendProbation();
+  const setProbationStatus = useSetProbationStatus();
 
   useEffect(() => {
     const tabFromUrl = resolveEmployeeManagementTab(searchParams.get('tab'), isSuperAdmin);
@@ -575,8 +603,100 @@ export default function EmployeeManagementPage(): ReactNode {
     setSelectedProbationEmp(null);
   };
 
+  const openDirectCompleteDialog = (emp: ProbationRecord): void => {
+    setSelectedDirectCompleteEmp(emp);
+    setDirectCompleteDialogOpen(true);
+  };
+
+  const handleDirectCompleteProbation = async (): Promise<void> => {
+    if (!selectedDirectCompleteEmp) return;
+
+    try {
+      await completeProbation.mutateAsync({
+        employeeId: selectedDirectCompleteEmp.id,
+      });
+      addToast({
+        title: 'Probation completed',
+        description: `${selectedDirectCompleteEmp.name} has been marked as completed without an appraisal.`,
+        variant: 'success',
+      });
+      setDirectCompleteDialogOpen(false);
+      setSelectedDirectCompleteEmp(null);
+    } catch (error) {
+      addToast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to complete probation',
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleQuickSetProbationStatus = async (
+    emp: ProbationRecord,
+    status: 'on-track' | 'at-risk'
+  ): Promise<void> => {
+    try {
+      await setProbationStatus.mutateAsync({ employeeId: emp.id, status });
+      addToast({
+        title: 'Probation status updated',
+        description: `${emp.name} is now marked as ${status === 'on-track' ? 'On Track' : 'At Risk'}.`,
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Failed to update status',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const openExtendDialog = (emp: ProbationRecord): void => {
+    const baseDate = emp.probationEndDate ? new Date(emp.probationEndDate) : new Date();
+    baseDate.setDate(baseDate.getDate() + 30);
+
+    setSelectedExtendEmp(emp);
+    setExtendDate(baseDate.toISOString().slice(0, 10));
+    setExtendDialogOpen(true);
+  };
+
+  const handleSubmitExtendProbation = async (): Promise<void> => {
+    if (!selectedExtendEmp || !extendDate) {
+      addToast({
+        title: 'Extension date is required',
+        description: 'Please select a probation end date.',
+        variant: 'error',
+      });
+      return;
+    }
+
+    try {
+      await extendProbation.mutateAsync({
+        employeeId: selectedExtendEmp.id,
+        newProbationEndDate: extendDate,
+      });
+
+      addToast({
+        title: 'Probation extended',
+        description: `${selectedExtendEmp.name}'s probation end date has been updated.`,
+        variant: 'success',
+      });
+
+      setExtendDialogOpen(false);
+      setSelectedExtendEmp(null);
+      setExtendDate('');
+    } catch (error) {
+      addToast({
+        title: 'Failed to extend probation',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    }
+  };
+
   // Probation data
   const { data: probationData, isLoading: probationLoading } = useProbation();
+  const { data: employeeRecordsData } = useEmployees({ page: 1, pageSize: 500, status: 'active' });
 
   // Onboarding profiles
   const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
@@ -607,6 +727,17 @@ export default function EmployeeManagementPage(): ReactNode {
   const onboardSortHeadProps = { sortColumn: onboardSort.sortColumn, sortDirection: onboardSort.sortDirection, onSort: onboardSort.handleSort };
 
   const probationEmployees = probationData?.data || [];
+  const employeeRecords = employeeRecordsData?.data || [];
+  const isExtendDateEarlierThanCurrent = Boolean(
+    selectedExtendEmp?.probationEndDate && extendDate && extendDate < selectedExtendEmp.probationEndDate
+  );
+  const formattedCurrentExtendDate = selectedExtendEmp?.probationEndDate
+    ? new Date(selectedExtendEmp.probationEndDate).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
   const probationDepartmentByEmployeeId = useMemo(
     () =>
       new Map(
@@ -616,12 +747,46 @@ export default function EmployeeManagementPage(): ReactNode {
       ),
     [probationEmployees]
   );
+  const probationByEmployeeId = useMemo(
+    () => new Map(probationEmployees.map((employee: ProbationRecord) => [employee.id, employee])),
+    [probationEmployees]
+  );
+  const employeeRecordByUserId = useMemo(
+    () =>
+      new Map(
+        employeeRecords
+          .filter((employee) => employee.user_id)
+          .map((employee) => [employee.user_id, employee])
+      ),
+    [employeeRecords]
+  );
+  const employeeRecordByEmail = useMemo(
+    () =>
+      new Map(
+        employeeRecords
+          .filter((employee) => employee.company_email || employee.personal_email)
+          .map((employee) => [
+            String(employee.company_email || employee.personal_email || '').toLowerCase(),
+            employee,
+          ])
+      ),
+    [employeeRecords]
+  );
   const onboardingProfiles = onboardingData?.data || [];
-  const totalOnboardingSubmissions = onboardingData?.summary.total ?? 0;
-  const completedOnboardingSubmissions = onboardingData?.summary.completed ?? 0;
-  const pendingOnboardingCount = Math.max(
-    totalOnboardingSubmissions - completedOnboardingSubmissions,
-    0
+  const inProgressOnboardingCount = onboardingData?.summary.inProgress ?? 0;
+  const awaitingReviewCount = onboardingData?.summary.awaitingReview ?? pendingApprovals.length;
+  const rejectedOnboardingCount = onboardingData?.summary.rejected ?? 0;
+  const approvedOnboardingCount = onboardingData?.summary.approved ?? 0;
+  const rejectedOnboardingProfiles = useMemo(
+    () =>
+      [...onboardingProfiles]
+        .filter((profile) => profile.review_state === 'rejected')
+        .sort((left, right) => {
+          const leftTime = left.rejected_at ? new Date(left.rejected_at).getTime() : 0;
+          const rightTime = right.rejected_at ? new Date(right.rejected_at).getTime() : 0;
+          return rightTime - leftTime;
+        }),
+    [onboardingProfiles]
   );
 
   const onProbationCount = probationEmployees.filter((e: ProbationRecord) => e.status === 'on-track' || e.status === 'at-risk' || e.status === 'extended').length;
@@ -638,6 +803,93 @@ export default function EmployeeManagementPage(): ReactNode {
     const matchesDepartment = departmentFilter === 'all' || emp.department === departmentFilter;
     return matchesSearch && matchesStatus && matchesDepartment;
   });
+
+  const openAssignmentModal = (
+    data: any,
+    mode: 'employee-assignment' | 'employee-probation' | 'intern-assignment'
+  ): void => {
+    setAssignmentData(data);
+    setAssignmentModalMode(mode);
+    setAssignmentModalOpen(true);
+  };
+
+  const handleAssignmentModalChange = (open: boolean): void => {
+    setAssignmentModalOpen(open);
+    if (!open) {
+      setAssignmentData(null);
+      setAssignmentModalMode('employee-assignment');
+    }
+  };
+
+  const openEmployeeAssignmentFromProfile = (
+    profile: any,
+    mode: 'employee-assignment' | 'employee-probation'
+  ): void => {
+    const employeeRecord = employeeRecordByUserId.get(profile.user_id) ||
+      employeeRecordByEmail.get(String(profile.email_address || '').toLowerCase());
+    const probationRecord = profile.employee_id ? probationByEmployeeId.get(profile.employee_id) : undefined;
+    const onboardingDepartment = Array.isArray(profile.departments)
+      ? profile.departments[0]?.name
+      : profile.departments?.name;
+    const assignedDepartment = profile.employee_id
+      ? probationDepartmentByEmployeeId.get(profile.employee_id)
+      : null;
+
+    openAssignmentModal(
+      {
+        userId: profile.user_id,
+        fullName: profile.full_name || 'Unnamed',
+        email: profile.email_address || employeeRecord?.company_email || employeeRecord?.personal_email || '',
+        role: 'employee',
+        position: profile.position || employeeRecord?.position || null,
+        inviteProbationMode: profile.invite_probation_mode,
+        inviteProbationAuto90: profile.invite_probation_auto_90,
+        inviteProbationEndDate: profile.invite_probation_end_date,
+        departmentName: employeeRecord?.department || assignedDepartment || onboardingDepartment || null,
+        divisionName: employeeRecord?.division || null,
+        employmentStatus: probationRecord ? 'probationary' : undefined,
+        stage: probationRecord?.stage,
+        status: probationRecord?.status === 'completed' || probationRecord?.status === 'extended'
+          ? 'on-track'
+          : probationRecord?.status,
+        probationEndDate: probationRecord?.probationEndDate,
+      },
+      mode
+    );
+  };
+
+  const openEmployeeProbationFromRecord = (
+    emp: ProbationRecord,
+    mode: 'employee-assignment' | 'employee-probation'
+  ): void => {
+    const employeeRecord = employeeRecordByEmail.get(emp.email.toLowerCase());
+
+    if (!employeeRecord?.user_id) {
+      addToast({
+        title: 'Unable to reopen assignment',
+        description: 'This employee could not be matched to an active user record.',
+        variant: 'error',
+      });
+      return;
+    }
+
+    openAssignmentModal(
+      {
+        userId: employeeRecord.user_id,
+        fullName: emp.name,
+        email: emp.email,
+        role: 'employee',
+        position: emp.position || null,
+        departmentName: employeeRecord?.department || emp.department || null,
+        divisionName: employeeRecord?.division || null,
+        employmentStatus: 'probationary',
+        stage: emp.stage,
+        status: emp.status === 'completed' || emp.status === 'extended' ? 'on-track' : emp.status,
+        probationEndDate: emp.probationEndDate,
+      },
+      mode
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6 p-3">
@@ -845,15 +1097,55 @@ export default function EmployeeManagementPage(): ReactNode {
                                   : `${emp.daysRemaining} days remaining`}
                               </span>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full mt-1"
-                              onClick={() => handleOpenAppraisal(emp)}
-                            >
-                              <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
-                              Evaluate
-                            </Button>
+                            <div className="mt-1 flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleOpenAppraisal(emp)}
+                              >
+                                <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+                                Evaluate
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+                                    <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => openEmployeeProbationFromRecord(emp, 'employee-assignment')}
+                                  >
+                                    Edit assignment
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => openEmployeeProbationFromRecord(emp, 'employee-probation')}
+                                  >
+                                    Edit probation
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleOpenAppraisal(emp)}>
+                                    Mark completed
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openDirectCompleteDialog(emp)}>
+                                    Complete probation now
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => openExtendDialog(emp)}>
+                                    Extend probation
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => void handleQuickSetProbationStatus(emp, 'on-track')}
+                                  >
+                                    Set as on-track
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => void handleQuickSetProbationStatus(emp, 'at-risk')}
+                                  >
+                                    Set as at-risk
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </CardContent>
                         </Card>
                       );
@@ -936,10 +1228,44 @@ export default function EmployeeManagementPage(): ReactNode {
                             <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
                             {statusCfg.label}
                           </span>
-                          <Button variant="ghost" size="xs" onClick={() => handleOpenAppraisal(emp)}>
-                            <Eye className="mr-1 h-3.5 w-3.5" strokeWidth={1.5} />
-                            View
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="xs" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => openEmployeeProbationFromRecord(emp, 'employee-assignment')}
+                              >
+                                Edit assignment
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => openEmployeeProbationFromRecord(emp, 'employee-probation')}
+                              >
+                                Edit probation
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleOpenAppraisal(emp)}>
+                                Mark completed
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openDirectCompleteDialog(emp)}>
+                                Complete probation now
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openExtendDialog(emp)}>
+                                Extend probation
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => void handleQuickSetProbationStatus(emp, 'on-track')}
+                              >
+                                Set as on-track
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => void handleQuickSetProbationStatus(emp, 'at-risk')}
+                              >
+                                Set as at-risk
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       );
                     })}
@@ -955,38 +1281,35 @@ export default function EmployeeManagementPage(): ReactNode {
           {/* Approval Stats */}
           <StatCardGrid columns={4}>
             <StatCard
-              label="Pending Onboarding"
-              value={pendingOnboardingCount}
-              trend={{ direction: 'stable', value: 'Not yet completed' }}
+              label="In Progress"
+              value={inProgressOnboardingCount}
+              trend={{ direction: 'stable', value: 'Still being completed' }}
               icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
               label="Awaiting Approval"
-              value={pendingApprovals.length}
+              value={awaitingReviewCount}
               trend={{
-                direction: pendingApprovals.length > 0 ? 'up' : 'stable',
-                value: pendingApprovals.length > 0 ? 'Ready for review' : 'No pending reviews',
+                direction: awaitingReviewCount > 0 ? 'up' : 'stable',
+                value: awaitingReviewCount > 0 ? 'Ready for review' : 'No pending reviews',
               }}
               icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
-              label="Total Submissions"
-              value={totalOnboardingSubmissions}
+              label="Rejected"
+              value={rejectedOnboardingCount}
               trend={{
-                direction: 'stable',
-                value: `${completedOnboardingSubmissions} completed`,
+                direction: rejectedOnboardingCount > 0 ? 'up' : 'stable',
+                value: rejectedOnboardingCount > 0 ? 'Needs resubmission' : 'No rejected submissions',
               }}
-              icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
+              icon={<XCircle className="h-4 w-4" strokeWidth={1.5} />}
             />
             <StatCard
-              label="Complete"
-              value={completedOnboardingSubmissions}
+              label="Approved"
+              value={approvedOnboardingCount}
               trend={{
-                direction: completedOnboardingSubmissions > 0 ? 'up' : 'stable',
-                value:
-                  totalOnboardingSubmissions > completedOnboardingSubmissions
-                    ? `${totalOnboardingSubmissions - completedOnboardingSubmissions} remaining`
-                    : 'All submissions processed',
+                direction: approvedOnboardingCount > 0 ? 'up' : 'stable',
+                value: approvedOnboardingCount > 0 ? 'Already processed' : 'No approved submissions yet',
               }}
               icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
             />
@@ -1054,6 +1377,12 @@ export default function EmployeeManagementPage(): ReactNode {
                             </Avatar>
                             <div>
                               <p className="font-medium">{approval.full_name || 'Unnamed'}</p>
+                              {(approval.rejection_count ?? 0) > 0 && (
+                                <p className="text-xs text-amber-700 dark:text-amber-300">
+                                  Resubmission · rejected {approval.rejection_count} time
+                                  {approval.rejection_count === 1 ? '' : 's'}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </TableCell>
@@ -1086,6 +1415,91 @@ export default function EmployeeManagementPage(): ReactNode {
                           icon={Clock}
                           title="No pending approvals"
                           description="All onboarding submissions have been processed."
+                          size="sm"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Rejected Submissions</CardTitle>
+              <CardDescription>
+                Completed onboarding submissions that were rejected and are waiting on employee edits.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Rejected</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rejectedOnboardingProfiles.length > 0 ? (
+                    rejectedOnboardingProfiles.map((profile) => (
+                      <TableRow key={profile.id} className="hover:bg-rose-50/40 dark:hover:bg-rose-950/10">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback className="text-xs bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+                                {profile.full_name
+                                  ?.split(' ')
+                                  .map((name) => name[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2) || 'NA'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{profile.full_name || 'Unnamed'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Rejected {profile.rejection_count ?? 0} time
+                                {(profile.rejection_count ?? 0) === 1 ? '' : 's'}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {profile.email_address || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-sm">{profile.position || 'Not specified'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {profile.rejected_at ? formatDateTime(profile.rejected_at) : '—'}
+                        </TableCell>
+                        <TableCell className="max-w-[280px]">
+                          <p className="line-clamp-2 text-sm text-muted-foreground">
+                            {profile.rejection_notes || 'No rejection notes captured.'}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(buildOnboardingDetailHref(profile.id))}
+                          >
+                            <Eye className="mr-1 h-4 w-4" />
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8">
+                        <EmptyState
+                          icon={XCircle}
+                          title="No rejected submissions"
+                          description="Rejected onboarding submissions will appear here with their latest review notes."
                           size="sm"
                         />
                       </TableCell>
@@ -1161,15 +1575,21 @@ export default function EmployeeManagementPage(): ReactNode {
                           </TableCell>
                           <TableCell>{department || 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
-                              {profile.status === 'completed' ? 'Completed' : 'In Progress'}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={getOnboardingReviewStateBadgeVariant(profile.review_state ?? 'in_progress')}>
+                                {getOnboardingReviewStateLabel(profile.review_state ?? 'in_progress')}
+                              </Badge>
+                              {(profile.rejection_count ?? 0) > 0 &&
+                                (profile.review_state ?? 'in_progress') === 'awaiting_review' && (
+                                  <Badge variant="secondary">Resubmitted</Badge>
+                                )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-sm">
-                            {profile.current_step.replace('_', ' ')}
+                            {getOnboardingStepLabel(profile.current_step)}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(profile.created_at).toLocaleDateString()}
+                            {new Date(profile.completed_at ?? profile.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
                             {isPendingApproval ? (
@@ -1189,6 +1609,34 @@ export default function EmployeeManagementPage(): ReactNode {
                                 <CheckCircle2 className="mr-1 h-4 w-4" />
                                 Review & Approve
                               </Button>
+                            ) : (profile.review_state ?? 'in_progress') === 'approved' ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <MoreHorizontal className="mr-1 h-4 w-4" />
+                                    Manage
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => openEmployeeAssignmentFromProfile(profile, 'employee-assignment')}
+                                  >
+                                    {department ? 'Edit assignment' : 'Complete assignment'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => openEmployeeAssignmentFromProfile(profile, 'employee-probation')}
+                                  >
+                                    {profile.employee_id && probationByEmployeeId.has(profile.employee_id)
+                                      ? 'Edit probation'
+                                      : 'Assign probation'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => router.push(buildOnboardingDetailHref(profile.id))}
+                                  >
+                                    View details
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             ) : (
                               <Button
                                 variant="outline"
@@ -1256,23 +1704,29 @@ export default function EmployeeManagementPage(): ReactNode {
 
       <AssignEmployeeModal
         open={assignmentModalOpen}
-        onOpenChange={setAssignmentModalOpen}
+        onOpenChange={handleAssignmentModalChange}
         assignmentData={assignmentData}
-        onSuccess={() => {
+        mode={assignmentModalMode}
+        onSuccess={(result) => {
           const completedName = assignmentData?.fullName;
-          const completedRole = assignmentData?.role;
 
           queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
           queryClient.invalidateQueries({ queryKey: ['probation'] });
+          queryClient.invalidateQueries({ queryKey: ['employees'] });
+          queryClient.invalidateQueries({ queryKey: ['directory'] });
+          queryClient.invalidateQueries({ queryKey: ['users'] });
           setAssignmentData(null);
           setAssignmentModalOpen(false);
+          setAssignmentModalMode('employee-assignment');
 
           addToast({
             title: 'Assignment completed',
             description: completedName
-              ? `${completedName} has been assigned to the ${
-                  completedRole === 'intern' ? 'internship tracker' : 'probation tracker'
-                }.`
+              ? result.role === 'intern'
+                ? `${completedName} has been assigned to the internship tracker.`
+                : result.employmentStatus === 'confirmed'
+                  ? `${completedName} has been assigned as confirmed.`
+                  : `${completedName} has been assigned as probationary.`
               : 'The user has been assigned successfully.',
             variant: 'success',
           });
@@ -1285,6 +1739,115 @@ export default function EmployeeManagementPage(): ReactNode {
         profiles={onboardingProfiles}
         roleLabel="employee"
       />
+
+      <Dialog
+        open={extendDialogOpen}
+        onOpenChange={(open) => {
+          setExtendDialogOpen(open);
+          if (!open) {
+            setSelectedExtendEmp(null);
+            setExtendDate('');
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>Extend Probation</DialogTitle>
+            <DialogDescription>
+              Set a new probation end date for {selectedExtendEmp?.name ?? 'this employee'}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="extend-probation-date">New end date</Label>
+            <Input
+              id="extend-probation-date"
+              type="date"
+              value={extendDate}
+              onChange={(event) => setExtendDate(event.target.value)}
+              min={new Date().toISOString().slice(0, 10)}
+              disabled={extendProbation.isPending}
+            />
+            {isExtendDateEarlierThanCurrent && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Warning: selected date is earlier than the current probation end date
+                {formattedCurrentExtendDate ? ` (${formattedCurrentExtendDate})` : ''}. This will shorten the probation period.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setExtendDialogOpen(false);
+                setSelectedExtendEmp(null);
+                setExtendDate('');
+              }}
+              disabled={extendProbation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleSubmitExtendProbation();
+              }}
+              disabled={extendProbation.isPending || !extendDate}
+            >
+              {extendProbation.isPending ? 'Updating...' : 'Update End Date'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={directCompleteDialogOpen}
+        onOpenChange={(open) => {
+          setDirectCompleteDialogOpen(open);
+          if (!open) {
+            setSelectedDirectCompleteEmp(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle>Complete Probation Now</DialogTitle>
+            <DialogDescription>
+              Mark {selectedDirectCompleteEmp?.name ?? 'this employee'} as having already completed
+              probation without opening the appraisal form.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              This action immediately removes the active probation record and sends the usual
+              completion notifications.
+            </p>
+            <p>Use this when the employee already finished probation before being added here.</p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDirectCompleteDialogOpen(false);
+                setSelectedDirectCompleteEmp(null);
+              }}
+              disabled={completeProbation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleDirectCompleteProbation();
+              }}
+              disabled={completeProbation.isPending || !selectedDirectCompleteEmp}
+            >
+              {completeProbation.isPending ? 'Completing...' : 'Complete probation'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Performance Appraisal Dialog */}
       <Dialog open={appraisalDialogOpen} onOpenChange={setAppraisalDialogOpen}>

@@ -65,6 +65,7 @@ export const personalInfoSchema = z.object({
     .min(1, 'Personal email is required')
     .max(150),
   departmentId: optionalUuid,
+  divisionId: optionalUuid,
   startDate: optionalDate,
   nationality: z.string().min(1, 'Nationality is required').max(120),
   contactNumber: phoneNumber,
@@ -149,6 +150,14 @@ export const paymentInfoSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ['paymentBankName'],
       message: 'Please provide the bank name when selecting Other.',
+    });
+  }
+
+  if (data.paymentCountryCode !== 'PH' && !String(data.paymentCity ?? '').trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['paymentCity'],
+      message: 'Payment city is required for non-Philippine bank accounts.',
     });
   }
 });

@@ -2,6 +2,19 @@ import { logActivity } from '@/lib/audit';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import type { Employee } from '@hr-portal/database';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { resolveDepartmentById, resolveDivisionById } from '@/app/api/users/_organization';
+
+const employeePatchSchema = z.object({
+  departmentId: z.string().uuid().nullable().optional(),
+  divisionId: z.string().uuid().nullable().optional(),
+  department: z.string().optional(),
+  division: z.string().nullable().optional(),
+  position: z.string().optional(),
+  date_hired: z.union([z.string().date(), z.null()]).optional(),
+  employment_type: z.string().optional(),
+  immediate_head: z.string().uuid().nullable().optional(),
+});
 
 /**
  * GET /api/employees/[id]
@@ -78,10 +91,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Parse request body
-    const body: Partial<Employee> = await request.json();
+    const rawBody = await request.json();
+    const parsedBody = employeePatchSchema.safeParse(rawBody);
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsedBody.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const body = parsedBody.data;
 
     // Admin-only fields require role check
-    const adminOnlyFields = ['department', 'position', 'employment_type', 'immediate_head', 'date_hired'];
+    const adminOnlyFields = [
+      'department',
+      'departmentId',
+      'division',
+      'divisionId',
+      'position',
+      'employment_type',
+      'immediate_head',
+      'date_hired',
+    ];
     const hasAdminFields = adminOnlyFields.some((field) => field in body);
 
     if (hasAdminFields) {
@@ -100,11 +132,62 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
-    // Update employee (use admin client to bypass RLS)
     const adminClient = createSupabaseAdminClient();
+    const updates: Omit<Partial<Employee>, 'date_hired' | 'immediate_head'> & {
+      division?: string | null;
+      date_hired?: string | null;
+      immediate_head?: string | null;
+    } = {};
+
+    if (typeof body.position !== 'undefined') {
+      updates.position = body.position;
+    }
+
+    if (typeof body.date_hired !== 'undefined') {
+      updates.date_hired = body.date_hired;
+    }
+
+    if (typeof body.employment_type !== 'undefined') {
+      updates.employment_type = body.employment_type as Employee['employment_type'];
+    }
+
+    if (typeof body.immediate_head !== 'undefined') {
+      updates.immediate_head = body.immediate_head;
+    }
+
+    let resolvedDepartmentId: string | null | undefined;
+    let resolvedDivisionId: string | null | undefined;
+
+    if (typeof body.departmentId !== 'undefined') {
+      if (body.departmentId) {
+        const resolvedDepartment = await resolveDepartmentById(adminClient, body.departmentId);
+        updates.department = resolvedDepartment.name;
+        resolvedDepartmentId = resolvedDepartment.id;
+      } else {
+        updates.department = body.department ?? 'Unassigned';
+        resolvedDepartmentId = null;
+      }
+    } else if (typeof body.department !== 'undefined') {
+      updates.department = body.department;
+    }
+
+    if (typeof body.divisionId !== 'undefined') {
+      if (body.divisionId) {
+        const resolvedDivision = await resolveDivisionById(adminClient, body.divisionId);
+        updates.division = resolvedDivision.name;
+        resolvedDivisionId = resolvedDivision.id;
+      } else {
+        updates.division = null;
+        resolvedDivisionId = null;
+      }
+    } else if (typeof body.division !== 'undefined') {
+      updates.division = body.division;
+    }
+
+    // Update employee (use admin client to bypass RLS)
     const { data, error } = await adminClient
       .from('employees')
-      .update(body)
+      .update(updates)
       .eq('id', id)
       .is('deleted_at', null)
       .select()
@@ -117,6 +200,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (!data) {
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+    }
+
+    if (typeof resolvedDepartmentId !== 'undefined' || typeof resolvedDivisionId !== 'undefined') {
+      const userUpdates: Record<string, string | null> = {};
+
+      if (typeof resolvedDepartmentId !== 'undefined') {
+        userUpdates.department_id = resolvedDepartmentId;
+      }
+
+      if (typeof resolvedDivisionId !== 'undefined') {
+        userUpdates.division_id = resolvedDivisionId;
+      }
+
+      if (Object.keys(userUpdates).length > 0) {
+        const { error: syncUserError } = await adminClient
+          .from('users')
+          .update(userUpdates)
+          .eq('id', data.user_id);
+
+        if (syncUserError) {
+          console.error('Error syncing employee org placement:', syncUserError);
+          return NextResponse.json({ error: 'Failed to sync employee organization data' }, { status: 500 });
+        }
+      }
     }
 
     logActivity(supabase, {

@@ -10,6 +10,7 @@ const partialProfileSchema = z
   .object({
     nationality: z.string().max(120).optional(),
     contactNumber: z.string().max(30).optional(),
+    personalEmail: z.union([z.string().email(), z.literal('')]).optional(),
     emailAddress: z.union([z.string().email(), z.literal('')]).optional(),
     companyEmail: z.union([z.string().email(), z.literal('')]).optional(),
     education: z.string().max(300).optional(),
@@ -30,6 +31,7 @@ export type PartialProfileUpdate = z.infer<typeof partialProfileSchema>;
 const fieldMap: Record<string, string> = {
   nationality: 'nationality',
   contactNumber: 'contact_number',
+  personalEmail: 'personal_email',
   emailAddress: 'email_address',
   companyEmail: 'company_email',
   education: 'education',

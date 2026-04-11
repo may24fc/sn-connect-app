@@ -42,6 +42,104 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 type MetricEntry = MarketingMetricTemplate;
 
 const REPORT_TYPE = 'marketing' as const;
+const INTEGER_ONLY_UNITS = new Set(['count']);
+const TENTH_STEP_UNITS = new Set(['seconds']);
+const HUNDREDTH_STEP_UNITS = new Set(['%', 'php', 'x']);
+
+interface MetricValueRule {
+  min?: number;
+  step: string;
+  allowDecimal: boolean;
+}
+
+function normalizeMetricUnit(unit: string): string {
+  return unit.trim().toLowerCase();
+}
+
+function normalizeMetricName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+function getMetricValueRule(metricName: string, unit: string): MetricValueRule {
+  const normalizedUnit = normalizeMetricUnit(unit);
+  const normalizedName = normalizeMetricName(metricName);
+
+  if (normalizedName === 'frequency') {
+    return {
+      min: 1,
+      step: '0.01',
+      allowDecimal: true,
+    };
+  }
+
+  if (INTEGER_ONLY_UNITS.has(normalizedUnit)) {
+    return {
+      min: 0,
+      step: '1',
+      allowDecimal: false,
+    };
+  }
+
+  if (TENTH_STEP_UNITS.has(normalizedUnit)) {
+    return {
+      min: 0,
+      step: '0.1',
+      allowDecimal: true,
+    };
+  }
+
+  if (HUNDREDTH_STEP_UNITS.has(normalizedUnit)) {
+    return {
+      min: 0,
+      step: '0.01',
+      allowDecimal: true,
+    };
+  }
+
+  return {
+    min: 0,
+    step: '0.01',
+    allowDecimal: true,
+  };
+}
+
+function sanitizeMetricValue(value: string, metricName: string, unit: string): string {
+  if (!value.trim()) {
+    return '';
+  }
+
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return '0';
+  }
+
+  const rule = getMetricValueRule(metricName, unit);
+
+  if (!rule.allowDecimal) {
+    const roundedValue = Math.round(parsedValue);
+    const clampedValue = rule.min !== undefined ? Math.max(rule.min, roundedValue) : roundedValue;
+    return String(clampedValue);
+  }
+
+  const clampedValue = rule.min !== undefined ? Math.max(rule.min, parsedValue) : parsedValue;
+  return String(clampedValue);
+}
+
+function parseMetricValue(value: string, metricName: string, unit: string): number {
+  const parsedValue = Number(value);
+  if (!Number.isFinite(parsedValue)) {
+    return 0;
+  }
+
+  const rule = getMetricValueRule(metricName, unit);
+
+  if (!rule.allowDecimal) {
+    const roundedValue = Math.round(parsedValue);
+    return rule.min !== undefined ? Math.max(rule.min, roundedValue) : roundedValue;
+  }
+
+  return rule.min !== undefined ? Math.max(rule.min, parsedValue) : parsedValue;
+}
 
 export default function NewReportPage() {
   const router = useRouter();
@@ -114,7 +212,7 @@ export default function NewReportPage() {
         .filter((metric) => metric.name.trim().length > 0)
         .map((metric) => ({
           metricName: metric.name,
-          metricValue: Number.isFinite(Number(metric.value)) ? Number(metric.value) : 0,
+          metricValue: parseMetricValue(metric.value, metric.name, metric.unit),
           metricUnit: metric.unit || 'count',
         }));
 
@@ -243,11 +341,34 @@ export default function NewReportPage() {
     setMetrics((previous) =>
       previous.map((metric, metricIndex) =>
         metricIndex === index
+          ? (() => {
+              const nextUnit = field === 'unit' ? value : metric.unit;
+              const nextValue =
+                field === 'value'
+                  ? value
+                  : field === 'unit'
+                    ? sanitizeMetricValue(metric.value, metric.name, nextUnit)
+                    : metric.value;
+
+              return {
+                ...metric,
+                name: field === 'name' ? value : metric.name,
+                value: nextValue,
+                unit: nextUnit,
+              };
+            })()
+          : metric
+      )
+    );
+  };
+
+  const handleMetricBlur = (index: number) => {
+    setMetrics((previous) =>
+      previous.map((metric, metricIndex) =>
+        metricIndex === index
           ? {
               ...metric,
-              name: field === 'name' ? value : metric.name,
-              value: field === 'value' ? value : metric.value,
-              unit: field === 'unit' ? value : metric.unit,
+              value: sanitizeMetricValue(metric.value, metric.name, metric.unit),
             }
           : metric
       )
@@ -590,10 +711,11 @@ export default function NewReportPage() {
                   )}
                   <Input
                     type="number"
-                    min="0"
-                    step="0.01"
+                    min={getMetricValueRule(metric.name, metric.unit).min ?? 0}
+                    step={getMetricValueRule(metric.name, metric.unit).step}
                     value={metric.value}
                     onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
+                    onBlur={() => handleMetricBlur(index)}
                   />
                 </div>
                 <div className="space-y-1">
@@ -605,6 +727,7 @@ export default function NewReportPage() {
                     value={metric.unit}
                     readOnly={metric.locked}
                     onChange={(event) => handleMetricChange(index, 'unit', event.target.value)}
+                    onBlur={() => handleMetricBlur(index)}
                     className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
                   />
                 </div>

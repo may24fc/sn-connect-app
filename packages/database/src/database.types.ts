@@ -282,6 +282,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      divisions: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          deleted_at: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       documents: {
         Row: {
           created_at: string;
@@ -355,6 +385,7 @@ export type Database = {
           date_hired: string;
           deleted_at: string | null;
           department: string;
+          division: string | null;
           education: string | null;
           emergency_contact_name: string | null;
           emergency_contact_number: string | null;
@@ -367,6 +398,7 @@ export type Database = {
           last_name: string;
           linkedin_profile_url: string | null;
           middle_name: string | null;
+          manual_probation_status: string | null;
           nationality: string | null;
           payment_account_name: string | null;
           payment_account_number: string | null;
@@ -398,6 +430,7 @@ export type Database = {
           date_hired: string;
           deleted_at?: string | null;
           department: string;
+          division?: string | null;
           education?: string | null;
           emergency_contact_name?: string | null;
           emergency_contact_number?: string | null;
@@ -410,6 +443,7 @@ export type Database = {
           last_name: string;
           linkedin_profile_url?: string | null;
           middle_name?: string | null;
+          manual_probation_status?: string | null;
           nationality?: string | null;
           payment_account_name?: string | null;
           payment_account_number?: string | null;
@@ -441,6 +475,7 @@ export type Database = {
           date_hired?: string;
           deleted_at?: string | null;
           department?: string;
+          division?: string | null;
           education?: string | null;
           emergency_contact_name?: string | null;
           emergency_contact_number?: string | null;
@@ -453,6 +488,7 @@ export type Database = {
           last_name?: string;
           linkedin_profile_url?: string | null;
           middle_name?: string | null;
+          manual_probation_status?: string | null;
           nationality?: string | null;
           payment_account_name?: string | null;
           payment_account_number?: string | null;
@@ -591,6 +627,7 @@ export type Database = {
           created_by: string | null;
           deleted_at: string | null;
           department: string;
+          division: string | null;
           employee_id: string;
           end_date: string;
           id: string;
@@ -608,6 +645,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           department: string;
+          division?: string | null;
           employee_id: string;
           end_date: string;
           id?: string;
@@ -625,6 +663,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           department?: string;
+          division?: string | null;
           employee_id?: string;
           end_date?: string;
           id?: string;
@@ -966,6 +1005,7 @@ export type Database = {
           current_step: Database['public']['Enums']['onboarding_step'] | null;
           deleted_at: string | null;
           department_id: string | null;
+          division_id: string | null;
           education: string | null;
           email_address: string | null;
           emergency_contact_email: string | null;
@@ -975,6 +1015,9 @@ export type Database = {
           first_name: string | null;
           id: string;
           is_completed: boolean;
+          invite_probation_auto_90: boolean;
+          invite_probation_end_date: string | null;
+          invite_probation_mode: string;
           last_name: string | null;
           linkedin_profile_url: string | null;
           major: string | null;
@@ -990,6 +1033,11 @@ export type Database = {
           payment_zipcode: string | null;
           personal_email: string | null;
           position: string | null;
+          rejection_count: number;
+          rejection_notes: string | null;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          review_state: string | null;
           start_date: string | null;
           updated_at: string;
           user_id: string;
@@ -1005,6 +1053,7 @@ export type Database = {
           current_step?: Database['public']['Enums']['onboarding_step'] | null;
           deleted_at?: string | null;
           department_id?: string | null;
+          division_id?: string | null;
           education?: string | null;
           email_address?: string | null;
           emergency_contact_email?: string | null;
@@ -1014,6 +1063,9 @@ export type Database = {
           first_name?: string | null;
           id?: string;
           is_completed?: boolean;
+          invite_probation_auto_90?: boolean;
+          invite_probation_end_date?: string | null;
+          invite_probation_mode?: string;
           last_name?: string | null;
           linkedin_profile_url?: string | null;
           major?: string | null;
@@ -1029,6 +1081,11 @@ export type Database = {
           payment_zipcode?: string | null;
           personal_email?: string | null;
           position?: string | null;
+          rejection_count?: number;
+          rejection_notes?: string | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          review_state?: string | null;
           start_date?: string | null;
           updated_at?: string;
           user_id: string;
@@ -1044,6 +1101,7 @@ export type Database = {
           current_step?: Database['public']['Enums']['onboarding_step'] | null;
           deleted_at?: string | null;
           department_id?: string | null;
+          division_id?: string | null;
           education?: string | null;
           email_address?: string | null;
           emergency_contact_email?: string | null;
@@ -1053,6 +1111,9 @@ export type Database = {
           first_name?: string | null;
           id?: string;
           is_completed?: boolean;
+          invite_probation_auto_90?: boolean;
+          invite_probation_end_date?: string | null;
+          invite_probation_mode?: string;
           last_name?: string | null;
           linkedin_profile_url?: string | null;
           major?: string | null;
@@ -1068,6 +1129,11 @@ export type Database = {
           payment_zipcode?: string | null;
           personal_email?: string | null;
           position?: string | null;
+          rejection_count?: number;
+          rejection_notes?: string | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          review_state?: string | null;
           start_date?: string | null;
           updated_at?: string;
           user_id?: string;
@@ -1699,6 +1765,7 @@ export type Database = {
           created_by: string | null;
           deleted_at: string | null;
           department_id: string | null;
+          division_id: string | null;
           id: string;
           manager_id: string | null;
           role: Database['public']['Enums']['user_role'];
@@ -1710,6 +1777,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           department_id?: string | null;
+          division_id?: string | null;
           id: string;
           manager_id?: string | null;
           role?: Database['public']['Enums']['user_role'];
@@ -1721,6 +1789,7 @@ export type Database = {
           created_by?: string | null;
           deleted_at?: string | null;
           department_id?: string | null;
+          division_id?: string | null;
           id?: string;
           manager_id?: string | null;
           role?: Database['public']['Enums']['user_role'];
@@ -1736,6 +1805,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'users_division_id_fkey';
+            columns: ['division_id'];
+            isOneToOne: false;
+            referencedRelation: 'divisions';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'fk_users_manager';
             columns: ['manager_id'];
             isOneToOne: false;
@@ -1748,6 +1824,7 @@ export type Database = {
     Views: {
       employee_directory: {
         Row: {
+          avatar_url: string | null;
           user_id: string | null;
           employee_id: string | null;
           full_name: string | null;
@@ -1757,6 +1834,8 @@ export type Database = {
           role: Database['public']['Enums']['user_role'] | null;
           department_name: string | null;
           department_id: string | null;
+          division_name: string | null;
+          division_id: string | null;
           position: string | null;
           status: Database['public']['Enums']['user_status'] | null;
           employment_type: Database['public']['Enums']['employment_type'] | null;

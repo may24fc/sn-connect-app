@@ -13,6 +13,7 @@ import {
   formatCompanyCalendarNotificationLabel,
   type CompanyCalendarEvent,
 } from '@/lib/company-calendar';
+import { getNotificationUserIdentity, getNotificationUserIdentities } from '@/lib/notifications/user-identity';
 
 // ---- Types ----------------------------------------------------------------
 
@@ -43,6 +44,24 @@ export interface CreateNotificationPayload {
   message?: string;
   link?: string;
   metadata?: Record<string, unknown>;
+  dedupeKey?: string;
+  dedupeWindowHours?: number;
+}
+
+const DEFAULT_DEDUPE_WINDOW_HOURS = 24;
+
+function buildNotificationMetadata(
+  metadata: Record<string, unknown> | undefined,
+  dedupeKey: string | undefined
+): Record<string, unknown> {
+  if (!dedupeKey) {
+    return metadata ?? {};
+  }
+
+  return {
+    ...(metadata ?? {}),
+    _dedupeKey: dedupeKey,
+  };
 }
 
 // ---- Helpers ---------------------------------------------------------------
@@ -54,13 +73,32 @@ export interface CreateNotificationPayload {
 export async function createNotification(payload: CreateNotificationPayload): Promise<void> {
   try {
     const admin = createSupabaseAdminClient();
+    if (payload.dedupeKey) {
+      const cutoff = new Date(
+        Date.now() - (payload.dedupeWindowHours ?? DEFAULT_DEDUPE_WINDOW_HOURS) * 60 * 60 * 1000
+      ).toISOString();
+      const { count, error: duplicateError } = await admin
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', payload.userId)
+        .eq('type', payload.type)
+        .gte('created_at', cutoff)
+        .contains('metadata', { _dedupeKey: payload.dedupeKey });
+
+      if (duplicateError) {
+        console.error('[notifications] Failed duplicate check:', duplicateError);
+      } else if ((count ?? 0) > 0) {
+        return;
+      }
+    }
+
     const { error } = await admin.from('notifications').insert({
       user_id: payload.userId,
       type: payload.type,
       title: payload.title,
       message: payload.message ?? null,
       link: payload.link ?? null,
-      metadata: payload.metadata ?? {},
+      metadata: buildNotificationMetadata(payload.metadata, payload.dedupeKey),
     });
 
     if (error) {
@@ -83,13 +121,39 @@ export async function createNotificationsForUsers(
 
   try {
     const admin = createSupabaseAdminClient();
-    const rows = userIds.map((userId) => ({
+    let filteredUserIds = userIds;
+
+    if (notification.dedupeKey) {
+      const cutoff = new Date(
+        Date.now() - (notification.dedupeWindowHours ?? DEFAULT_DEDUPE_WINDOW_HOURS) * 60 * 60 * 1000
+      ).toISOString();
+      const { data, error: duplicateError } = await admin
+        .from('notifications')
+        .select('user_id')
+        .in('user_id', userIds)
+        .eq('type', notification.type)
+        .gte('created_at', cutoff)
+        .contains('metadata', { _dedupeKey: notification.dedupeKey });
+
+      if (duplicateError) {
+        console.error('[notifications] Failed bulk duplicate check:', duplicateError);
+      } else {
+        const existingUserIds = new Set((data ?? []).map((row) => row.user_id as string));
+        filteredUserIds = userIds.filter((userId) => !existingUserIds.has(userId));
+      }
+    }
+
+    if (filteredUserIds.length === 0) {
+      return;
+    }
+
+    const rows = filteredUserIds.map((userId) => ({
       user_id: userId,
       type: notification.type,
       title: notification.title,
       message: notification.message ?? null,
       link: notification.link ?? null,
-      metadata: notification.metadata ?? {},
+      metadata: buildNotificationMetadata(notification.metadata, notification.dedupeKey),
     }));
 
     const { error } = await admin.from('notifications').insert(rows);
@@ -132,22 +196,14 @@ export async function getAdminUserIds(): Promise<string[]> {
  */
 export async function getUserDisplayName(userId: string): Promise<string> {
   try {
-    const admin = createSupabaseAdminClient();
-    const { data } = await admin
-      .from('employees')
-      .select('first_name, last_name')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (data) {
-      return `${data.first_name} ${data.last_name}`.trim();
-    }
-    return 'A user';
+    const identity = await getNotificationUserIdentity(userId);
+    return identity?.displayName ?? 'Team member';
   } catch {
-    return 'A user';
+    return 'Team member';
   }
 }
+
+export { getNotificationUserIdentity, getNotificationUserIdentities };
 
 /**
  * Get all active user IDs (for broad notifications like announcements).

@@ -6,6 +6,11 @@ import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
+import {
+  getOnboardingReviewStateBadgeVariant,
+  getOnboardingReviewStateLabel,
+} from '@/lib/onboarding-review-state';
+import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import { useCompleteProbation, useExtendProbation, useProbation } from '@/hooks/useProbation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import { useRealtimeProbationEmployees } from '@/hooks/useRealtimeProbationEmployees';
@@ -70,10 +75,11 @@ import {
   TrendingUp,
   UserPlus,
   Users,
+  XCircle,
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 function formatDateTime(dateString: string): string {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-US', {
@@ -360,6 +366,18 @@ export default function ProbationPage(): ReactNode {
     atRisk: employeeRecords.filter((e) => e.status === 'at-risk').length,
     completed: employeeRecords.filter((e) => e.status === 'completed').length,
   };
+
+  const rejectedOnboardingProfiles = useMemo(
+    () =>
+      [...(onboardingData?.data ?? [])]
+        .filter((profile) => profile.review_state === 'rejected')
+        .sort((left, right) => {
+          const leftTime = left.rejected_at ? new Date(left.rejected_at).getTime() : 0;
+          const rightTime = right.rejected_at ? new Date(right.rejected_at).getTime() : 0;
+          return rightTime - leftTime;
+        }),
+    [onboardingData?.data]
+  );
 
   const probationTrackerViewState = getProbationTrackerViewState({
     isLoading: probationLoading,
@@ -972,7 +990,7 @@ export default function ProbationPage(): ReactNode {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Awaiting Approval</p>
-                    <p className="text-2xl font-bold">{pendingApprovals.length}</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.awaitingReview ?? pendingApprovals.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -980,12 +998,12 @@ export default function ProbationPage(): ReactNode {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-900/20">
+                    <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Total Submissions</p>
-                    <p className="text-2xl font-bold">{onboardingData?.summary.total ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Rejected</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.rejected ?? 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -997,8 +1015,8 @@ export default function ProbationPage(): ReactNode {
                     <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Completed</p>
-                    <p className="text-2xl font-bold">{onboardingData?.summary.completed ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Approved</p>
+                    <p className="text-2xl font-bold">{onboardingData?.summary.approved ?? 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1067,6 +1085,12 @@ export default function ProbationPage(): ReactNode {
                             </Avatar>
                             <div>
                               <p className="font-medium">{approval.full_name || 'Unnamed'}</p>
+                              {(approval.rejection_count ?? 0) > 0 && (
+                                <p className="text-xs text-amber-700 dark:text-amber-300">
+                                  Resubmission · rejected {approval.rejection_count} time
+                                  {approval.rejection_count === 1 ? '' : 's'}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </TableCell>
@@ -1099,6 +1123,91 @@ export default function ProbationPage(): ReactNode {
                           icon={Clock}
                           title="No pending approvals"
                           description="All onboarding submissions have been processed."
+                          size="sm"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Rejected Submissions</CardTitle>
+              <CardDescription>
+                Completed onboarding submissions that were rejected and are waiting on employee edits.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Employee</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Rejected</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rejectedOnboardingProfiles.length > 0 ? (
+                    rejectedOnboardingProfiles.map((profile: any) => (
+                      <TableRow key={profile.id} className="hover:bg-rose-50/40 dark:hover:bg-rose-950/10">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback className="text-xs bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+                                {profile.full_name
+                                  ?.split(' ')
+                                  .map((name: string) => name[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2) || 'NA'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">{profile.full_name || 'Unnamed'}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Rejected {profile.rejection_count ?? 0} time
+                                {(profile.rejection_count ?? 0) === 1 ? '' : 's'}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {profile.email_address || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-sm">{profile.position || 'Not specified'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {profile.rejected_at ? formatDateTime(profile.rejected_at) : '—'}
+                        </TableCell>
+                        <TableCell className="max-w-[280px]">
+                          <p className="line-clamp-2 text-sm text-muted-foreground">
+                            {profile.rejection_notes || 'No rejection notes captured.'}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                          >
+                            <Eye className="mr-1 h-4 w-4" />
+                            View Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8">
+                        <EmptyState
+                          icon={XCircle}
+                          title="No rejected submissions"
+                          description="Rejected onboarding submissions will appear here with their latest review notes."
                           size="sm"
                         />
                       </TableCell>
@@ -1169,15 +1278,21 @@ export default function ProbationPage(): ReactNode {
                           </TableCell>
                           <TableCell>{department || 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge variant={profile.status === 'completed' ? 'success' : 'warning'}>
-                              {profile.status === 'completed' ? 'Completed' : 'In Progress'}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant={getOnboardingReviewStateBadgeVariant(profile.review_state ?? 'in_progress')}>
+                                {getOnboardingReviewStateLabel(profile.review_state ?? 'in_progress')}
+                              </Badge>
+                              {(profile.rejection_count ?? 0) > 0 &&
+                                (profile.review_state ?? 'in_progress') === 'awaiting_review' && (
+                                  <Badge variant="secondary">Resubmitted</Badge>
+                                )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-sm">
-                            {profile.current_step.replace('_', ' ')}
+                            {getOnboardingStepLabel(profile.current_step)}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {new Date(profile.created_at).toLocaleDateString()}
+                            {new Date(profile.completed_at ?? profile.created_at).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
                             <Button

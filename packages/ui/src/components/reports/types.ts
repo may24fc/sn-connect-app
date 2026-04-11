@@ -72,6 +72,7 @@ export interface WeekComparison {
 export interface MetricComparison {
   name: string;
   category: string;
+  unit?: string | null;
   currentValue: number;
   previousValue: number;
   change: number; // Absolute change

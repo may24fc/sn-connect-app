@@ -6,6 +6,11 @@ import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
 import {
+  getOnboardingReviewStateBadgeVariant,
+  getOnboardingReviewStateLabel,
+} from '@/lib/onboarding-review-state';
+import { getOnboardingStepLabel } from '@/lib/onboarding-step';
+import {
   Avatar,
   AvatarFallback,
   Badge,
@@ -33,6 +38,7 @@ import {
   MapPin,
   Phone,
   User,
+  XCircle,
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -125,14 +131,9 @@ export default function OnboardingDetailPage(): ReactNode {
     ? profile.departments[0]?.name
     : profile.departments?.name;
   const isPendingApproval = pendingApprovals.some((approval) => approval.id === profile.id);
-  const statusLabel = profile.status === 'completed' || profile.is_completed ? 'Completed' : 'In Progress';
-
-  const currentStepMap: Record<string, string> = {
-    personal_info: 'Personal Information',
-    payment_info: 'Payment Information',
-    documents: 'Documents',
-    review: 'Review',
-  };
+  const reviewState = profile.review_state ?? (profile.is_completed ? 'awaiting_review' : 'in_progress');
+  const statusLabel = getOnboardingReviewStateLabel(reviewState);
+  const hasRejectionHistory = (profile.rejection_count ?? 0) > 0;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -155,9 +156,12 @@ export default function OnboardingDetailPage(): ReactNode {
               <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
                 {fullName}
               </h1>
-              <Badge variant={statusLabel === 'Completed' ? 'success' : 'warning'}>
+              <Badge variant={getOnboardingReviewStateBadgeVariant(reviewState)}>
                 {statusLabel}
               </Badge>
+              {hasRejectionHistory && reviewState === 'awaiting_review' && (
+                <Badge variant="secondary">Resubmission</Badge>
+              )}
               {role && (
                 <Badge variant="outline" className="capitalize">
                   {role}
@@ -185,7 +189,7 @@ export default function OnboardingDetailPage(): ReactNode {
               )}
             </div>
             <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
-              Current Step: {currentStepMap[profile.current_step] || profile.current_step} · Submitted {formatDate(profile.created_at)}
+              Current Step: {getOnboardingStepLabel(profile.current_step)} · Submitted {formatDate(profile.created_at)}
             </p>
           </div>
         </div>
@@ -210,6 +214,26 @@ export default function OnboardingDetailPage(): ReactNode {
           </Button>
         )}
       </div>
+
+      {hasRejectionHistory && (
+        <Card className="border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base text-rose-900 dark:text-rose-100">
+              <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+              Latest Rejection Context
+            </CardTitle>
+            <CardDescription className="text-rose-700 dark:text-rose-300">
+              Rejected {profile.rejection_count} time{profile.rejection_count === 1 ? '' : 's'}
+              {profile.rejected_at ? ` · Last rejected ${formatDate(profile.rejected_at)}` : ''}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-rose-900 dark:text-rose-100">
+              {profile.rejection_notes || 'No rejection notes were captured for the latest rejection.'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabbed Details */}
       <Tabs defaultValue="personal" className="w-full">
@@ -385,9 +409,8 @@ export default function OnboardingDetailPage(): ReactNode {
         open={assignmentModalOpen}
         onOpenChange={setAssignmentModalOpen}
         assignmentData={assignmentData}
-        onSuccess={() => {
+        onSuccess={(result) => {
           const completedName = assignmentData?.fullName;
-          const completedRole = assignmentData?.role;
 
           setAssignmentData(null);
           setAssignmentModalOpen(false);
@@ -396,9 +419,11 @@ export default function OnboardingDetailPage(): ReactNode {
           addToast({
             title: 'Assignment completed',
             description: completedName
-              ? `${completedName} has been assigned to the ${
-                  completedRole === 'intern' ? 'internship tracker' : 'probation tracker'
-                }.`
+              ? result.role === 'intern'
+                ? `${completedName} has been assigned to the internship tracker.`
+                : result.employmentStatus === 'confirmed'
+                  ? `${completedName} has been assigned as confirmed.`
+                  : `${completedName} has been assigned as probationary.`
               : 'The user has been assigned successfully.',
             variant: 'success',
           });

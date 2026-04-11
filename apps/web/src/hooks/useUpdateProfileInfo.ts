@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 export interface ProfileInfoUpdate {
   nationality?: string;
   contactNumber?: string;
+  personalEmail?: string;
   emailAddress?: string;
   companyEmail?: string;
   education?: string;

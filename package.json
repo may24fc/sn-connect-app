@@ -35,6 +35,10 @@
     "env:use-prodops": "node scripts/switch-env-target.mjs prodops",
     "check:leadership-accounts": "node scripts/check-leadership-accounts.mjs",
     "check:production-cleanliness": "node scripts/check-production-cleanliness.mjs",
+    "notifications:backfill-names": "node scripts/backfill-notification-names.mjs --dry-run",
+    "notifications:backfill-names:apply": "node scripts/backfill-notification-names.mjs --apply",
+    "notifications:backfill-names:both": "node scripts/run-notification-backfill-targets.mjs",
+    "notifications:backfill-names:both:apply": "node scripts/run-notification-backfill-targets.mjs --apply --confirm-prod",
     "db:migrate": "pnpm --filter @hr-portal/database migrate",
     "db:seed": "pnpm --filter @hr-portal/database seed",
     "db:generate": "pnpm --filter @hr-portal/database generate"

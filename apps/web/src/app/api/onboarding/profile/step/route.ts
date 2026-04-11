@@ -69,6 +69,7 @@ export async function PATCH(request: NextRequest) {
       updatePayload.position = payload.position;
       updatePayload.personal_email = payload.personalEmail;
       updatePayload.department_id = payload.departmentId ?? null;
+      updatePayload.division_id = payload.divisionId ?? null;
       updatePayload.start_date = payload.startDate ?? null;
       updatePayload.nationality = payload.nationality ?? null;
       updatePayload.contact_number = payload.contactNumber ?? null;

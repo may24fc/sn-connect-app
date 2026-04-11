@@ -1,6 +1,7 @@
 'use client';
 
 import type { OnboardingProfileListItem } from '@/hooks/useOnboardingProfiles';
+import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import { queryKeys } from '@/lib/query-keys';
 import {
   Badge,
@@ -145,8 +146,8 @@ function buildWizardSummary(profile: OnboardingProfileListItem | undefined): {
   }
 
   return {
-    description: `The onboarding wizard is still in progress. Current step: ${profile.current_step.replaceAll('_', ' ')}.`,
-    statusLabel: profile.current_step.replaceAll('_', ' '),
+    description: `The onboarding wizard is still in progress. Current step: ${getOnboardingStepLabel(profile.current_step)}.`,
+        statusLabel: getOnboardingStepLabel(profile.current_step),
     isComplete: false,
   };
 }

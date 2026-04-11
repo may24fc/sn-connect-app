@@ -226,9 +226,16 @@ export const probationCompleteSchema = z.object({
   comments: z.string().optional().nullable(),
 });
 
+export const probationSetStatusSchema = z.object({
+  action: z.literal('set-status'),
+  employeeId: z.string().uuid(),
+  status: z.enum(['on-track', 'at-risk']),
+});
+
 export const probationActionSchema = z.discriminatedUnion('action', [
   probationExtendSchema,
   probationCompleteSchema,
+  probationSetStatusSchema,
 ]);
 
 export type CreateReviewCycleInput = z.infer<typeof createReviewCycleSchema>;

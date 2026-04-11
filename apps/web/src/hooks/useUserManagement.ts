@@ -8,7 +8,11 @@ interface InviteUserPayload {
   firstName: string;
   lastName: string;
   departmentId?: string | undefined;
+  divisionId?: string | undefined;
   position?: string | undefined;
+  probationMode?: 'under_probation' | 'no_probation';
+  probationAuto90?: boolean;
+  probationEndDate?: string | undefined;
 }
 
 interface InviteUserResponse {

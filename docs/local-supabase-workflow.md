@@ -48,6 +48,7 @@ pnpm env:use-local
 Notes:
 
 - `pnpm supabase:start` wraps `pnpm exec supabase start -x vector` so it works even when `supabase` is not installed globally or not available on `PATH`.
+- This machine cannot reliably bind the default `54321`-`54324` local Supabase ports because Windows reserves that range. The local config uses `55321`-`55324` instead.
 - The local stack is started with `-x vector` on this machine because the optional `vector` container expects Docker to expose the daemon on `tcp://localhost:2375`.
 - Keep production bootstrap and verification scripts on the `prodops` env target only.
 - Do not run production ops commands while `localdev` is the active target.

@@ -7,6 +7,7 @@ import {
 } from '@/components/checklists/ChecklistManagementDialog';
 import { type OffboardingRecord, useOffboardingAdminList } from '@/hooks/useOffboarding';
 import { type OnboardingProfileListItem, useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
+import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import { queryKeys } from '@/lib/query-keys';
 import {
   Badge,
@@ -94,7 +95,7 @@ function getWizardStatus(profile: OnboardingProfileListItem): {
   }
 
   return {
-    label: `In ${profile.current_step.replaceAll('_', ' ')}`,
+    label: `In ${getOnboardingStepLabel(profile.current_step)}`,
     variant: 'warning',
   };
 }

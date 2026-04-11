@@ -114,6 +114,19 @@ export async function POST(request: NextRequest) {
     const loginUrl = getLoginUrl();
 
     if (approved) {
+      if (onboardingProfile) {
+        const { error: reviewStateError } = await supabaseAdmin
+          .from('onboarding_profiles')
+          .update({
+            review_state: null,
+          })
+          .eq('id', onboardingProfile.id);
+
+        if (reviewStateError) {
+          console.error('Failed to clear onboarding review state during approval:', reviewStateError);
+        }
+      }
+
       // Approve: Update user status to 'active'
       const { error: updateError } = await supabase
         .from('users')
@@ -272,14 +285,17 @@ export async function POST(request: NextRequest) {
               // Surface Wise's full validation error body for debugging.
               const wiseBody =
                 recipientError instanceof WiseApiError ? recipientError.responseBody : null;
-              recipientCreationError = wiseBody
+              const skipReason = getWiseRecipientApiFailureReason(recipientError);
+              recipientCreationError = skipReason ?? (wiseBody
                 ? `${baseMessage} — Wise response: ${wiseBody}`
-                : baseMessage;
+                : baseMessage);
 
-              console.warn('Onboarding approval: failed to auto-create Wise recipient', {
+              console.warn(skipReason
+                ? 'Onboarding approval: skipping Wise recipient creation'
+                : 'Onboarding approval: failed to auto-create Wise recipient', {
                 userId,
                 employeeId,
-                message: baseMessage,
+                message: recipientCreationError,
                 wiseResponseBody: wiseBody,
               });
             }
@@ -367,8 +383,26 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      // Reject: Update status back to pending_onboarding or keep awaiting_approval
-      // For now, we'll keep them as awaiting_approval with notes
+      if (onboardingProfile) {
+        const { error: rejectionStateError } = await supabaseAdmin
+          .from('onboarding_profiles')
+          .update({
+            review_state: 'rejected',
+            rejection_notes: notes || null,
+            rejected_at: new Date().toISOString(),
+            rejected_by: user.id,
+            rejection_count: (onboardingProfile.rejection_count ?? 0) + 1,
+          })
+          .eq('id', onboardingProfile.id);
+
+        if (rejectionStateError) {
+          console.error('Failed to persist onboarding rejection state:', rejectionStateError);
+          return NextResponse.json(
+            { error: 'Failed to save rejection state', details: rejectionStateError.message },
+            { status: 500 }
+          );
+        }
+      }
 
       logActivity(supabase, {
         userId: user.id,
@@ -486,6 +520,10 @@ function buildWiseRecipientDetails(params: {
     };
   }
 
+  if (!String(params.city ?? '').trim()) {
+    return null;
+  }
+
   // IBAN / international bank transfer
   return {
     type: 'iban',
@@ -497,4 +535,22 @@ function buildWiseRecipientDetails(params: {
       ...(params.postCode ? { postCode: params.postCode } : {}),
     },
   };
+}
+
+function getWiseRecipientApiFailureReason(error: unknown): string | null {
+  if (!(error instanceof WiseApiError)) {
+    return null;
+  }
+
+  const responseBody = error.responseBody.toLowerCase();
+
+  if (responseBody.includes('bank is not supported') && responseBody.includes('bankcode')) {
+    return 'Selected bank is not currently supported by Wise for automatic recipient creation. Banking details were saved without a Wise recipient ID.';
+  }
+
+  if (responseBody.includes('please enter a city') || responseBody.includes('address.city')) {
+    return 'Payment city is required before a Wise recipient can be created. Banking details were saved without a Wise recipient ID.';
+  }
+
+  return null;
 }

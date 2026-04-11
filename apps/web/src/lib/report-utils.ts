@@ -120,6 +120,47 @@ export interface MarketingMetricTemplate {
   analyticsCategory: MarketingMetricAnalyticsCategory;
 }
 
+function normalizeMetricUnit(unit: string | null | undefined): string {
+  return unit?.trim().toLowerCase() ?? '';
+}
+
+export function formatMetricValue(value: number, unit?: string | null): string {
+  const normalizedUnit = normalizeMetricUnit(unit);
+
+  if (normalizedUnit === 'count') {
+    return Math.round(value).toLocaleString('en-US');
+  }
+
+  const fractionDigits = Number.isInteger(value) ? 0 : 2;
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: fractionDigits,
+  });
+}
+
+export function formatMetricValueWithUnit(value: number, unit?: string | null): string {
+  const normalizedUnit = normalizeMetricUnit(unit);
+  const formattedValue = formatMetricValue(value, unit);
+
+  if (!normalizedUnit) {
+    return formattedValue;
+  }
+
+  if (normalizedUnit === 'php') {
+    return `PHP ${formattedValue}`;
+  }
+
+  if (normalizedUnit === '%') {
+    return `${formattedValue}%`;
+  }
+
+  if (normalizedUnit === 'x') {
+    return `${formattedValue}x`;
+  }
+
+  return `${formattedValue} ${unit}`;
+}
+
 function createLockedMetric(
   name: string,
   unit: string,

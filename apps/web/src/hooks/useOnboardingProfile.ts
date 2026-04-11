@@ -1,4 +1,5 @@
 import { queryKeys } from '@/lib/query-keys';
+import type { OnboardingReviewState } from '@/lib/onboarding-review-state';
 import { useQuery } from '@tanstack/react-query';
 
 export interface OnboardingProfileRecord {
@@ -45,8 +46,15 @@ export interface OnboardingProfileRecord {
   updated_at: string;
   full_name?: string;
   status?: 'completed' | 'in_progress';
+  review_state?: OnboardingReviewState;
+  rejection_notes?: string | null;
+  rejected_at?: string | null;
+  rejected_by?: string | null;
+  rejection_count?: number;
   payment_account_masked?: string | null;
-  users?: { role?: 'employee' | 'intern' | null } | Array<{ role?: 'employee' | 'intern' | null }>;
+  users?:
+    | { role?: 'employee' | 'intern' | null; status?: string | null }
+    | Array<{ role?: 'employee' | 'intern' | null; status?: string | null }>;
   departments?: { id: string; name: string } | Array<{ id: string; name: string }> | null;
 }
 

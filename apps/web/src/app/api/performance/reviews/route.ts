@@ -7,6 +7,7 @@ import {
 } from '@/lib/notifications/create-notification';
 import {
   getEmployeeContactByEmployeeId,
+  getEmployeeDisplayNameByEmployeeId,
   getPerformancePathForRole,
   getUserContactByUserId,
 } from '@/lib/notifications/recipients';
@@ -122,11 +123,13 @@ export async function POST(request: NextRequest) {
       metadata: { employeeId: data.employee_id, cycleId: data.cycle_id },
     });
 
-    const [employeeContact, reviewerContact, actorName] = await Promise.all([
+    const [employeeContact, reviewerContact, employeeName, actorName] = await Promise.all([
       getEmployeeContactByEmployeeId(data.employee_id),
       data.reviewer_id ? getUserContactByUserId(data.reviewer_id) : Promise.resolve(null),
+      getEmployeeDisplayNameByEmployeeId(data.employee_id),
       getUserDisplayName(user.id),
     ]);
+    const reviewSubjectName = employeeName ?? employeeContact?.name ?? 'Team member';
 
     if (employeeContact?.userId && employeeContact.userId !== user.id) {
       createNotification({
@@ -148,7 +151,7 @@ export async function POST(request: NextRequest) {
         userId: reviewerContact.userId,
         type: 'system' as NotificationType,
         title: 'Review assigned',
-        message: `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
+        message: `${actorName} assigned you to review ${reviewSubjectName}.`,
         link: getPerformancePathForRole(reviewerContact.role),
         metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
       });
@@ -180,7 +183,7 @@ export async function POST(request: NextRequest) {
               subject: 'You have been assigned a review',
               heading: 'Review assigned',
               paragraphs: [
-                `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
+                `${actorName} assigned you to review ${reviewSubjectName}.`,
                 'Open the OKRs & KPIs workspace to review and complete your part of the evaluation.',
               ],
               actionLabel: 'Open OKRs & KPIs',
@@ -257,11 +260,13 @@ export async function PATCH(request: NextRequest) {
       metadata: { status: data.status },
     });
 
-    const [employeeContact, reviewerContact, actorName] = await Promise.all([
+    const [employeeContact, reviewerContact, employeeName, actorName] = await Promise.all([
       getEmployeeContactByEmployeeId(data.employee_id),
       data.reviewer_id ? getUserContactByUserId(data.reviewer_id) : Promise.resolve(null),
+      getEmployeeDisplayNameByEmployeeId(data.employee_id),
       getUserDisplayName(user.id),
     ]);
+    const reviewSubjectName = employeeName ?? employeeContact?.name ?? 'Team member';
 
     const statusChanged = parsed.data.status !== undefined && parsed.data.status !== existingReview.status;
     const reviewerChanged = parsed.data.reviewerId !== undefined && parsed.data.reviewerId !== existingReview.reviewer_id;
@@ -278,7 +283,7 @@ export async function PATCH(request: NextRequest) {
         userId: reviewerContact.userId,
         type: 'system' as NotificationType,
         title: 'Review assigned',
-        message: `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
+        message: `${actorName} assigned you to review ${reviewSubjectName}.`,
         link: getPerformancePathForRole(reviewerContact.role),
         metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
       });
@@ -290,7 +295,7 @@ export async function PATCH(request: NextRequest) {
             subject: 'You have been assigned a review',
             heading: 'Review assigned',
             paragraphs: [
-              `${actorName} assigned you to review ${employeeContact?.name || 'an employee'}.`,
+              `${actorName} assigned you to review ${reviewSubjectName}.`,
               'Open the OKRs & KPIs workspace to review and complete your part of the evaluation.',
             ],
             actionLabel: 'Open OKRs & KPIs',
@@ -338,7 +343,7 @@ export async function PATCH(request: NextRequest) {
           userId: reviewerContact.userId,
           type: 'system' as NotificationType,
           title: 'Manager review ready',
-          message: `${employeeContact?.name || 'An employee'} submitted a self-review and is ready for your review.`,
+          message: `${reviewSubjectName} submitted a self-review and is ready for your review.`,
           link: getPerformancePathForRole(reviewerContact.role),
           metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
         });
@@ -350,7 +355,7 @@ export async function PATCH(request: NextRequest) {
               subject: 'A review is ready for your review',
               heading: 'Manager review required',
               paragraphs: [
-                `${employeeContact?.name || 'An employee'} submitted a self-review and is ready for your review.`,
+                `${reviewSubjectName} submitted a self-review and is ready for your review.`,
                 'Open the OKRs & KPIs workspace to complete your manager review.',
               ],
               actionLabel: 'Open OKRs & KPIs',

@@ -9,6 +9,7 @@ export interface ProbationRecord {
   department: string;
   position: string;
   startDate: string;
+  probationEndDate: string;
   stage: 1 | 2 | 3 | 4;
   status: 'on-track' | 'at-risk' | 'completed' | 'extended';
   daysRemaining: number;
@@ -100,6 +101,33 @@ export function useCompleteProbation() {
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to complete probation');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.probation.all });
+    },
+  });
+}
+
+export function useSetProbationStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      employeeId: string;
+      status: 'on-track' | 'at-risk';
+    }) => {
+      const response = await fetch('/api/probation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set-status', ...payload }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update probation status');
       }
 
       return response.json();

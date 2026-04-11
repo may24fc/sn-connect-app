@@ -1,8 +1,10 @@
 'use client';
 
+import { useDepartments } from '@/hooks/useDepartments';
+import { useDivisions } from '@/hooks/useDivisions';
 import { type InviteUserRole, useInviteUser } from '@/hooks/useUserManagement';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useToast } from '@hr-portal/ui';
+import { Checkbox, useToast } from '@hr-portal/ui';
 import { FormGroup } from '@hr-portal/ui/components/forms';
 import { Button } from '@hr-portal/ui/primitives/button';
 import {
@@ -29,6 +31,7 @@ import {
   Copy,
   Loader2,
   Mail,
+  CalendarDays,
   User,
   UserPlus,
   Users,
@@ -44,11 +47,23 @@ const inviteSchema = z.object({
   role: z.enum(['employee', 'intern', 'admin', 'super_admin'], {
     required_error: 'Role is required',
   }),
+  probationMode: z.enum(['under_probation', 'no_probation']).optional(),
+  probationAuto90: z.boolean().optional(),
+  probationDays: z.coerce.number().int().min(1).max(365).optional(),
   position: z.string().optional(),
   departmentId: z.string().uuid('Invalid department ID').optional(),
+  divisionId: z.string().uuid('Invalid division ID').optional(),
 });
 
 type InviteFormData = z.infer<typeof inviteSchema>;
+const UNASSIGNED_ORG_VALUE = '__org_unassigned__';
+
+function formatDateOnly(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 const roleLabels: Record<InviteUserRole, string> = {
   employee: 'Employee',
@@ -63,6 +78,7 @@ interface InviteUserModalProps {
   defaultRole?: InviteUserRole;
   allowedRoles?: InviteUserRole[];
   departments?: Array<{ id: string; name: string }>;
+  divisions?: Array<{ id: string; name: string }>;
 }
 
 export function InviteUserModal({
@@ -71,6 +87,7 @@ export function InviteUserModal({
   defaultRole,
   allowedRoles,
   departments = [],
+  divisions = [],
 }: InviteUserModalProps) {
   const [invitedCredentials, setInvitedCredentials] = useState<{
     email: string;
@@ -89,15 +106,40 @@ export function InviteUserModal({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
       role: defaultRole || 'employee',
+      probationMode: 'under_probation',
+      probationAuto90: true,
+      probationDays: 90,
     },
   });
 
   const inviteUser = useInviteUser();
   const { addToast } = useToast();
+  const departmentsQuery = useDepartments({ page: 1, pageSize: 200 });
+  const divisionsQuery = useDivisions({ page: 1, pageSize: 200 });
   const availableRoles = allowedRoles ?? (defaultRole ? [defaultRole] : ['employee', 'intern']);
+  const departmentOptions = departments.length > 0 ? departments : departmentsQuery.data?.data ?? [];
+  const divisionOptions = divisions.length > 0 ? divisions : divisionsQuery.data?.data ?? [];
 
   const onSubmit = async (data: InviteFormData) => {
     try {
+      const isEmployeeInvite = data.role === 'employee';
+      const shouldApplyProbation = isEmployeeInvite && (data.probationMode ?? 'under_probation') === 'under_probation';
+      const isAuto90 = shouldApplyProbation ? (data.probationAuto90 ?? true) : false;
+
+      if (shouldApplyProbation && !isAuto90 && !data.probationDays) {
+        addToast({
+          title: 'Probation duration is required',
+          description: 'Enter manual days left when auto 90 days is turned off.',
+          variant: 'error',
+        });
+        return;
+      }
+
+      const probationEndDate =
+        shouldApplyProbation && !isAuto90
+          ? formatDateOnly(new Date(Date.now() + (data.probationDays ?? 90) * 24 * 60 * 60 * 1000))
+          : undefined;
+
       const result = await inviteUser.mutateAsync({
         email: data.email,
         firstName: data.firstName,
@@ -105,6 +147,12 @@ export function InviteUserModal({
         role: data.role,
         position: data.position,
         departmentId: data.departmentId,
+        divisionId: data.divisionId,
+        ...(isEmployeeInvite
+          ? { probationMode: data.probationMode ?? 'under_probation' }
+          : {}),
+        probationAuto90: shouldApplyProbation ? isAuto90 : false,
+        ...(probationEndDate ? { probationEndDate } : {}),
       });
 
       // Show credentials to admin
@@ -182,6 +230,10 @@ export function InviteUserModal({
   };
 
   const selectedRole = watch('role');
+  const probationMode = watch('probationMode') ?? 'under_probation';
+  const probationAuto90 = watch('probationAuto90') ?? true;
+  const probationDays = watch('probationDays') ?? 90;
+  const isEmployeeRole = selectedRole === 'employee';
   const selectedRoleLabel = roleLabels[selectedRole];
   const modalTitle = defaultRole ? `Invite New ${roleLabels[defaultRole]}` : 'Invite New User';
   const isPrivilegedRole = selectedRole === 'admin' || selectedRole === 'super_admin';
@@ -259,31 +311,99 @@ export function InviteUserModal({
                 </FormGroup>
               </div>
 
-              <FormGroup
-                label="Role"
-                htmlFor="role"
-                required
-                showOptional={false}
-                error={errors.role?.message}
-                icon={<Users className="h-3.5 w-3.5" />}
-              >
-                <Select
-                  value={selectedRole}
-                  onValueChange={(value) => setValue('role', value as InviteUserRole)}
-                  disabled={inviteUser.isPending || !!defaultRole}
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormGroup
+                  label="Role"
+                  htmlFor="role"
+                  required
+                  showOptional={false}
+                  error={errors.role?.message}
+                  icon={<Users className="h-3.5 w-3.5" />}
                 >
-                  <SelectTrigger id="role" className={errors.role ? 'border-rose-500' : ''}>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableRoles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {roleLabels[role]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormGroup>
+                  <Select
+                    value={selectedRole}
+                    onValueChange={(value) => setValue('role', value as InviteUserRole)}
+                    disabled={inviteUser.isPending || !!defaultRole}
+                  >
+                    <SelectTrigger id="role" className={errors.role ? 'border-rose-500' : ''}>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableRoles.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {roleLabels[role]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormGroup>
+
+                <FormGroup
+                  label="Probation Status"
+                  htmlFor="probation-status"
+                  required
+                  showOptional={false}
+                  icon={<CalendarDays className="h-3.5 w-3.5" />}
+                >
+                  <Select
+                    value={probationMode}
+                    onValueChange={(value) => setValue('probationMode', value as 'under_probation' | 'no_probation')}
+                    disabled={inviteUser.isPending || !isEmployeeRole}
+                  >
+                    <SelectTrigger id="probation-status">
+                      <SelectValue placeholder="Select probation status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="under_probation">Probationary</SelectItem>
+                      <SelectItem value="no_probation">Confirmed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormGroup>
+              </div>
+
+              {isEmployeeRole && probationMode === 'under_probation' && (
+                <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/60">
+                  <div className="flex items-center space-x-2.5">
+                    <Checkbox
+                      id="probation-auto-90"
+                      checked={probationAuto90}
+                      onCheckedChange={(checked) => setValue('probationAuto90', checked === true)}
+                      disabled={inviteUser.isPending}
+                    />
+                    <Label htmlFor="probation-auto-90" className="cursor-pointer select-none">
+                      Auto-set to 90 days
+                    </Label>
+                  </div>
+
+                  {!probationAuto90 && (
+                    <FormGroup
+                      label="Manual days left"
+                      htmlFor="probation-days"
+                      required
+                      showOptional={false}
+                      error={errors.probationDays?.message}
+                    >
+                      <Input
+                        id="probation-days"
+                        type="number"
+                        min={1}
+                        max={365}
+                        placeholder="Enter number of days"
+                        {...register('probationDays')}
+                        disabled={inviteUser.isPending}
+                        error={!!errors.probationDays}
+                        className="h-10"
+                      />
+                    </FormGroup>
+                  )}
+
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {probationAuto90
+                      ? 'Probation end date will be auto-set to 90 days after assignment.'
+                      : `Probation end date will be computed from ${probationDays} day${probationDays === 1 ? '' : 's'}.`}
+                  </p>
+                </div>
+              )}
 
               {isPrivilegedRole && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
@@ -305,22 +425,25 @@ export function InviteUserModal({
                 />
               </FormGroup>
 
-              {departments.length > 0 && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormGroup
                   label="Department"
                   htmlFor="department"
                   icon={<Building2 className="h-3.5 w-3.5" />}
                 >
                   <Select
-                    value={watch('departmentId') ?? ''}
-                    onValueChange={(value) => setValue('departmentId', value)}
-                    disabled={inviteUser.isPending}
+                    value={watch('departmentId') ?? UNASSIGNED_ORG_VALUE}
+                    onValueChange={(value) =>
+                      setValue('departmentId', value === UNASSIGNED_ORG_VALUE ? undefined : value)
+                    }
+                    disabled={inviteUser.isPending || departmentsQuery.isLoading}
                   >
                     <SelectTrigger id="department">
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments.map((dept) => (
+                      <SelectItem value={UNASSIGNED_ORG_VALUE}>Assign later</SelectItem>
+                      {departmentOptions.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name}
                         </SelectItem>
@@ -328,7 +451,37 @@ export function InviteUserModal({
                     </SelectContent>
                   </Select>
                 </FormGroup>
-              )}
+
+                <FormGroup
+                  label="Division"
+                  htmlFor="division"
+                  icon={<Building2 className="h-3.5 w-3.5" />}
+                >
+                  <Select
+                    value={watch('divisionId') ?? UNASSIGNED_ORG_VALUE}
+                    onValueChange={(value) =>
+                      setValue('divisionId', value === UNASSIGNED_ORG_VALUE ? undefined : value)
+                    }
+                    disabled={inviteUser.isPending || divisionsQuery.isLoading}
+                  >
+                    <SelectTrigger id="division">
+                      <SelectValue placeholder="Select division" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={UNASSIGNED_ORG_VALUE}>Assign later</SelectItem>
+                      {divisionOptions.map((division) => (
+                        <SelectItem key={division.id} value={division.id}>
+                          {division.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormGroup>
+              </div>
+
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Department and Division are optional during invite and can be finalized during assignment.
+              </p>
 
               {inviteUser.isError && (
                 <div className="flex items-start gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 p-3.5 text-sm text-rose-600 dark:text-rose-400 animate-in slide-in-from-top-2 fade-in duration-200">

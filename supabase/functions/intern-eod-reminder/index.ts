@@ -119,6 +119,7 @@ serve(async (req: Request): Promise<Response> => {
         title: 'EOD Log Reminder',
         message: `Hi ${intern.first_name}, please submit your daily log for ${today} before end of day.`,
         link: '/intern/daily-log',
+        dedupeKey: `intern-eod-reminder:${intern.employee_id}:${today}`,
         metadata: { internshipId: intern.id, logDate: today },
       });
       remindedCount++;

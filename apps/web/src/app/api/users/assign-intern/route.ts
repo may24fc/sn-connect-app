@@ -1,10 +1,12 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveDepartmentById, resolveDivisionById } from '../_organization';
 
 const assignInternSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
-  department: z.string().min(1, 'Department is required'),
+  departmentId: z.string().uuid('Department is required'),
+  divisionId: z.string().uuid('Division is required'),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid start date format'),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid end date format'),
   requiredHours: z.number().min(1, 'Required hours must be at least 1'),
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, department, startDate, endDate, requiredHours, school, program } = parsed.data;
+    const { userId, departmentId, divisionId, startDate, endDate, requiredHours, school, program } = parsed.data;
 
     // Validate date range
     if (new Date(endDate) <= new Date(startDate)) {
@@ -84,11 +86,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabaseAdmin = createSupabaseAdminClient();
+    const [resolvedDepartment, resolvedDivision] = await Promise.all([
+      resolveDepartmentById(supabaseAdmin, departmentId),
+      resolveDivisionById(supabaseAdmin, divisionId),
+    ]);
+
     // Update employee department
-    const { error: updateEmployeeError } = await supabase
+    const { error: updateEmployeeError } = await supabaseAdmin
       .from('employees')
       .update({
-        department,
+        department: resolvedDepartment.name,
+        division: resolvedDivision.name,
         updated_at: new Date().toISOString(),
       })
       .eq('id', employee.id);
@@ -96,6 +105,22 @@ export async function POST(request: NextRequest) {
     if (updateEmployeeError) {
       console.error('Failed to update employee:', updateEmployeeError);
       return NextResponse.json({ error: 'Failed to update employee department' }, { status: 500 });
+    }
+
+    const { error: updateUserError } = await supabaseAdmin
+      .from('users')
+      .update({
+        department_id: resolvedDepartment.id,
+        division_id: resolvedDivision.id,
+      })
+      .eq('id', userId);
+
+    if (updateUserError) {
+      console.error('Failed to sync user department:', updateUserError);
+      return NextResponse.json(
+        { error: 'Failed to sync user department', details: updateUserError.message },
+        { status: 500 }
+      );
     }
 
     // Check if internship record already exists
@@ -108,14 +133,14 @@ export async function POST(request: NextRequest) {
     if (existingInternship) {
       // Update existing internship using admin client to bypass RLS
       // (user is already verified as admin above)
-      const supabaseAdmin = createSupabaseAdminClient();
       const { error: updateError } = await supabaseAdmin
         .from('internships')
         .update({
           start_date: startDate,
           end_date: endDate,
           required_hours: requiredHours,
-          department,
+          department: resolvedDepartment.name,
+          division: resolvedDivision.name,
           school: school || null,
           program: program || null,
           status: 'active',
@@ -139,7 +164,10 @@ export async function POST(request: NextRequest) {
           start_date: startDate,
           end_date: endDate,
           required_hours: requiredHours,
-          department,
+          department: resolvedDepartment.name,
+          department_id: resolvedDepartment.id,
+          division: resolvedDivision.name,
+          division_id: resolvedDivision.id,
           school,
           program,
           assigned_by: user.id,
@@ -153,7 +181,10 @@ export async function POST(request: NextRequest) {
           internshipId: existingInternship.id,
           employeeId: employee.id,
           userId,
-          department,
+          department: resolvedDepartment.name,
+          departmentId: resolvedDepartment.id,
+          division: resolvedDivision.name,
+          divisionId: resolvedDivision.id,
           startDate,
           endDate,
         },
@@ -162,7 +193,6 @@ export async function POST(request: NextRequest) {
 
     // Create new internship record using admin client to bypass RLS
     // (user is already verified as admin above)
-    const supabaseAdmin = createSupabaseAdminClient();
     const { data: newInternship, error: insertError } = await supabaseAdmin
       .from('internships')
       .insert({
@@ -172,7 +202,8 @@ export async function POST(request: NextRequest) {
         required_hours: requiredHours,
         completed_hours: 0,
         status: 'active',
-        department,
+        department: resolvedDepartment.name,
+        division: resolvedDivision.name,
         school: school || null,
         program: program || null,
       })
@@ -197,7 +228,10 @@ export async function POST(request: NextRequest) {
         start_date: startDate,
         end_date: endDate,
         required_hours: requiredHours,
-        department,
+        department: resolvedDepartment.name,
+        department_id: resolvedDepartment.id,
+        division: resolvedDivision.name,
+        division_id: resolvedDivision.id,
         school,
         program,
         assigned_by: user.id,
@@ -211,7 +245,10 @@ export async function POST(request: NextRequest) {
         internshipId: newInternship.id,
         employeeId: employee.id,
         userId,
-        department,
+        department: resolvedDepartment.name,
+        departmentId: resolvedDepartment.id,
+        division: resolvedDivision.name,
+        divisionId: resolvedDivision.id,
         startDate,
         endDate,
         requiredHours,

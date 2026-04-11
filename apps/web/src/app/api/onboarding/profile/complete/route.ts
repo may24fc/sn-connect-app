@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
         is_completed: true,
         completed_at: new Date().toISOString(),
         current_step: 'review',
+        review_state: 'pending_review',
       })
       .eq('id', profile.id)
       .select('*')

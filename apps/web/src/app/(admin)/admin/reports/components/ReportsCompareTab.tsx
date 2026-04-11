@@ -136,39 +136,54 @@ function getComparisonPeriods(
   };
 }
 
-function aggregateReportMetrics(reports: ReportRecord[]): Map<string, number> {
-  const metricsMap = new Map<string, number>();
-  metricsMap.set('Total Submissions', reports.length);
-  metricsMap.set('Approved', reports.filter((r) => r.status === 'approved').length);
-  metricsMap.set('Rejected', reports.filter((r) => r.status === 'rejected').length);
-  metricsMap.set('Pending', reports.filter((r) => r.status === 'submitted').length);
-  metricsMap.set(
+function aggregateReportMetrics(
+  reports: ReportRecord[]
+): Map<string, { value: number; unit: string | null }> {
+  const metricsMap = new Map<string, { value: number; unit: string | null }>();
+  const setMetric = (name: string, value: number, unit: string | null = null) => {
+    metricsMap.set(name, { value, unit });
+  };
+  const incrementMetric = (name: string, value: number, unit: string | null = null) => {
+    const existing = metricsMap.get(name);
+    metricsMap.set(name, {
+      value: (existing?.value || 0) + value,
+      unit: existing?.unit ?? unit,
+    });
+  };
+
+  setMetric('Total Submissions', reports.length);
+  setMetric('Approved', reports.filter((r) => r.status === 'approved').length);
+  setMetric('Rejected', reports.filter((r) => r.status === 'rejected').length);
+  setMetric('Pending', reports.filter((r) => r.status === 'submitted').length);
+  setMetric(
     'Unique Campaigns',
     new Set(
-      reports.map((report) => report.marketing_context?.campaignName).filter((campaignName): campaignName is string => Boolean(campaignName))
+      reports
+        .map((report) => report.marketing_context?.campaignName)
+        .filter((campaignName): campaignName is string => Boolean(campaignName))
     ).size
   );
 
   for (const report of reports) {
     if (report.marketing_context?.campaignType) {
       const campaignTypeLabel = getMarketingCampaignTypeLabel(report.marketing_context.campaignType);
-      metricsMap.set(
+      incrementMetric(
         `Campaign Type: ${campaignTypeLabel}`,
-        (metricsMap.get(`Campaign Type: ${campaignTypeLabel}`) || 0) + 1
+        1
       );
     }
 
     if (report.marketing_context?.objective) {
       const objectiveLabel = getMarketingObjectiveLabel(report.marketing_context.objective);
-      metricsMap.set(
+      incrementMetric(
         `Objective: ${objectiveLabel}`,
-        (metricsMap.get(`Objective: ${objectiveLabel}`) || 0) + 1
+        1
       );
     }
 
     for (const metric of report.report_metrics || []) {
       const name = metric.metric_name || 'Unknown';
-      metricsMap.set(name, (metricsMap.get(name) || 0) + (metric.metric_value || 0));
+      incrementMetric(name, metric.metric_value || 0, metric.metric_unit || null);
     }
   }
   return metricsMap;
@@ -268,13 +283,16 @@ export function ReportsCompareTab({
 
     const allMetricNames = new Set([...currentMetrics.keys(), ...previousMetrics.keys()]);
     const metrics = Array.from(allMetricNames).map((name) => {
-      const current = currentMetrics.get(name) || 0;
-      const previous = previousMetrics.get(name) || 0;
+      const currentMetric = currentMetrics.get(name);
+      const previousMetric = previousMetrics.get(name);
+      const current = currentMetric?.value || 0;
+      const previous = previousMetric?.value || 0;
       const pctChange =
         previous > 0 ? ((current - previous) / previous) * 100 : current > 0 ? 100 : 0;
       return {
         name,
         category: 'Report Metrics',
+        unit: currentMetric?.unit ?? previousMetric?.unit ?? null,
         currentValue: current,
         previousValue: previous,
         change: current - previous,
@@ -320,8 +338,8 @@ export function ReportsCompareTab({
         metric: 'Report Count',
         insight: `${currentTotal} reports in current period vs ${previousTotal} in previous period`,
       });
-      const currentCampaigns = currentMetrics.get('Unique Campaigns') || 0;
-      const previousCampaigns = previousMetrics.get('Unique Campaigns') || 0;
+      const currentCampaigns = currentMetrics.get('Unique Campaigns')?.value || 0;
+      const previousCampaigns = previousMetrics.get('Unique Campaigns')?.value || 0;
       keyFindings.push({
         metric: 'Campaign Coverage',
         insight: `${currentCampaigns} active campaigns vs ${previousCampaigns} previously`,

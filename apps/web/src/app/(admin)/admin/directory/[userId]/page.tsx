@@ -419,7 +419,13 @@ export default function DirectoryDetailPage({
               )}
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              {entry.position || '—'} · {entry.department_name || '—'}
+              {[
+                entry.position || null,
+                entry.department_name || null,
+                entry.division_name || null,
+              ]
+                .filter(Boolean)
+                .join(' · ') || '—'}
             </p>
           </div>
         </div>
@@ -512,6 +518,7 @@ export default function DirectoryDetailPage({
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   <DetailRow label="Position" value={entry.position} />
                   <DetailRow label="Department" value={entry.department_name} />
+                  <DetailRow label="Division" value={entry.division_name} />
                   <DetailRow
                     label="Start Date"
                     value={formatDate(entry.start_date)}

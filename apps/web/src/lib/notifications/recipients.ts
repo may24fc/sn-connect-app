@@ -1,3 +1,4 @@
+import { getNotificationUserIdentities } from '@/lib/notifications/user-identity';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 export interface NotificationRecipientContact {
@@ -6,6 +7,16 @@ export interface NotificationRecipientContact {
   employeeId: string | null;
   name: string;
   email: string | null;
+}
+
+interface EmployeeNotificationIdentityRow {
+  id: string;
+  user_id?: string | null;
+  first_name: string | null;
+  middle_name?: string | null;
+  last_name: string | null;
+  company_email: string | null;
+  personal_email?: string | null;
 }
 
 const ADMIN_NOTIFICATION_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'] as const;
@@ -24,53 +35,30 @@ export function getPerformancePathForRole(role: string | null): string {
     : '/performance';
 }
 
+function buildEmployeeDisplayName(employee: EmployeeNotificationIdentityRow | null | undefined): string | null {
+  if (!employee) {
+    return null;
+  }
+
+  const fullName = `${employee.first_name ?? ''} ${employee.middle_name ?? ''} ${employee.last_name ?? ''}`
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  return fullName || employee.company_email || employee.personal_email || null;
+}
+
 export async function getUserContactsByIds(
   userIds: string[]
 ): Promise<Array<NotificationRecipientContact>> {
-  if (userIds.length === 0) {
-    return [];
-  }
+  const identities = await getNotificationUserIdentities(userIds);
 
-  const admin = createSupabaseAdminClient();
-  const uniqueIds = Array.from(new Set(userIds));
-  const [{ data: users, error: usersError }, { data: employees, error: employeesError }] =
-    await Promise.all([
-      admin.from('users').select('id, role').in('id', uniqueIds).is('deleted_at', null),
-      admin
-        .from('employees')
-        .select('id, user_id, first_name, last_name, company_email')
-        .in('user_id', uniqueIds)
-        .is('deleted_at', null),
-    ]);
-
-  if (usersError) {
-    console.error('[notifications] Failed to load user contacts:', usersError);
-    return [];
-  }
-
-  if (employeesError) {
-    console.error('[notifications] Failed to load employee contacts:', employeesError);
-    return [];
-  }
-
-  const employeeByUserId = new Map(
-    (employees ?? []).map((employee) => [employee.user_id, employee])
-  );
-
-  return (users ?? []).map((user) => {
-    const employee = employeeByUserId.get(user.id);
-    const fullName = employee
-      ? `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim()
-      : '';
-
-    return {
-      userId: user.id,
-      role: user.role ?? null,
-      employeeId: employee?.id ?? null,
-      name: fullName || 'Team member',
-      email: employee?.company_email ?? null,
-    };
-  });
+  return identities.map((identity) => ({
+    userId: identity.userId,
+    role: identity.role,
+    employeeId: identity.employeeId,
+    name: identity.displayName,
+    email: identity.email,
+  }));
 }
 
 export async function getUserContactByUserId(
@@ -86,7 +74,7 @@ export async function getEmployeeContactByEmployeeId(
   const admin = createSupabaseAdminClient();
   const { data: employee, error: employeeError } = await admin
     .from('employees')
-    .select('id, user_id, first_name, last_name, company_email')
+    .select('id, user_id, first_name, middle_name, last_name, company_email, personal_email')
     .eq('id', employeeId)
     .is('deleted_at', null)
     .maybeSingle();
@@ -116,9 +104,28 @@ export async function getEmployeeContactByEmployeeId(
     userId: employee.user_id,
     role: user?.role ?? null,
     employeeId: employee.id,
-    name: `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim() || 'Team member',
-    email: employee.company_email ?? null,
+    name: buildEmployeeDisplayName(employee) ?? 'Team member',
+    email: employee.company_email ?? employee.personal_email ?? null,
   };
+}
+
+export async function getEmployeeDisplayNameByEmployeeId(
+  employeeId: string
+): Promise<string | null> {
+  const admin = createSupabaseAdminClient();
+  const { data: employee, error } = await admin
+    .from('employees')
+    .select('id, first_name, middle_name, last_name, company_email, personal_email')
+    .eq('id', employeeId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[notifications] Failed to resolve employee display name:', error);
+    return null;
+  }
+
+  return buildEmployeeDisplayName(employee);
 }
 
 export async function getAdminNotificationContacts(

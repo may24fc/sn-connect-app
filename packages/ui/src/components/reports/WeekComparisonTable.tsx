@@ -23,7 +23,41 @@ export function WeekComparisonTable({
   comparison,
   className,
 }: WeekComparisonTableProps): React.ReactNode {
-  const formatValue = (value: number, category: string): string => {
+  const formatValue = (value: number, category: string, unit?: string | null): string => {
+    const normalizedUnit = unit?.trim().toLowerCase() ?? '';
+
+    if (normalizedUnit === 'count') {
+      return Math.round(value).toLocaleString('en-US');
+    }
+
+    if (normalizedUnit === 'php') {
+      return `PHP ${value.toLocaleString('en-PH', {
+        minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    if (normalizedUnit === '%') {
+      return `${value.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      })}%`;
+    }
+
+    if (normalizedUnit === 'x') {
+      return `${value.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      })}x`;
+    }
+
+    if (unit) {
+      return `${value.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      })} ${unit}`;
+    }
+
     if (category === 'Revenue' || category === 'Expenditure') {
       return `PHP ${value.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`;
     }
@@ -65,7 +99,7 @@ export function WeekComparisonTable({
               <div key={metric.name} className="flex justify-between items-center text-sm">
                 <span className="text-zinc-500 dark:text-zinc-400">{metric.name}</span>
                 <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                  {formatValue(metric.currentValue, metric.category)}
+                  {formatValue(metric.currentValue, metric.category, metric.unit)}
                 </span>
               </div>
             ))}
@@ -86,7 +120,7 @@ export function WeekComparisonTable({
               <div key={metric.name} className="flex justify-between items-center text-sm">
                 <span className="text-zinc-500 dark:text-zinc-400">{metric.name}</span>
                 <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                  {formatValue(metric.previousValue, metric.category)}
+                  {formatValue(metric.previousValue, metric.category, metric.unit)}
                 </span>
               </div>
             ))}
@@ -133,10 +167,10 @@ export function WeekComparisonTable({
                         </span>
                       </TableCell>
                       <TableCell className="text-right text-zinc-600 dark:text-zinc-400">
-                        {formatValue(metric.previousValue, metric.category)}
+                        {formatValue(metric.previousValue, metric.category, metric.unit)}
                       </TableCell>
                       <TableCell className="text-right text-zinc-900 dark:text-zinc-50">
-                        {formatValue(metric.currentValue, metric.category)}
+                        {formatValue(metric.currentValue, metric.category, metric.unit)}
                       </TableCell>
                       <TableCell className="text-right">
                         <span

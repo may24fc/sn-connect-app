@@ -75,8 +75,10 @@ function calculateAge(dateStr: string | null | undefined): string | null {
 export default function InternProfilePage() {
   const { user, refreshUser } = useAuth();
   const { data: employeesData, isLoading } = useEmployees({
-    search: user?.email || '',
+    userId: user?.id,
     pageSize: 1,
+  }, {
+    enabled: !!user?.id,
   });
   const employee = employeesData?.data?.[0] ?? null;
 
@@ -158,7 +160,7 @@ export default function InternProfilePage() {
     return {
       nationality: profile?.nationality ?? null,
       contactNumber: profile?.contact_number ?? employee?.phone ?? null,
-      emailAddress: profile?.email_address ?? employee?.company_email ?? user?.email ?? null,
+      personalEmail: profile?.personal_email ?? user?.email ?? null,
       education: profile?.education ?? null,
       major: profile?.major ?? null,
       educationDisplay: profile?.education
@@ -190,7 +192,7 @@ export default function InternProfilePage() {
     [updateProfileInfo, addToast]
   );
 
-  if (isLoading) {
+  if (!user?.id || isLoading || isProfileLoading) {
     return (
       <div className="space-y-6">
         {/* Header Card skeleton */}
@@ -289,11 +291,11 @@ export default function InternProfilePage() {
       inputType: 'tel',
     },
     {
-      key: 'emailAddress',
-      label: 'Email Address',
+      key: 'personalEmail',
+      label: 'Personal Email',
       icon: <Mail className="h-4 w-4" />,
-      displayValue: mergedData.emailAddress,
-      href: mergedData.emailAddress ? `mailto:${mergedData.emailAddress}` : undefined,
+      displayValue: mergedData.personalEmail,
+      href: mergedData.personalEmail ? `mailto:${mergedData.personalEmail}` : undefined,
       inputType: 'email',
     },
     {

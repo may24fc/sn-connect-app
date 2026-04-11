@@ -5,6 +5,7 @@ import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/sup
 import type { User } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveDepartmentById, resolveDivisionById } from '../_organization';
 
 const inviteableRoles = ['employee', 'intern', 'admin', 'super_admin'] as const;
 const privilegedInviteRoles = ['admin', 'super_admin'] as const;
@@ -17,7 +18,11 @@ const inviteUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   departmentId: z.string().uuid().optional(),
+  divisionId: z.string().uuid().optional(),
   position: z.string().optional(),
+  probationMode: z.enum(['under_probation', 'no_probation']).optional(),
+  probationAuto90: z.boolean().optional(),
+  probationEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format').optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -64,10 +69,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { role, firstName, lastName, departmentId, position } = parsed.data;
+    const {
+      role,
+      firstName,
+      lastName,
+      departmentId,
+      divisionId,
+      position,
+      probationMode,
+      probationAuto90,
+      probationEndDate,
+    } = parsed.data;
     const isPrivilegedInvite = privilegedInviteRoles.includes(
       role as (typeof privilegedInviteRoles)[number]
     );
+
+    const inviteProbationMode = role === 'employee' ? (probationMode ?? 'under_probation') : 'no_probation';
+    const inviteProbationAuto90 = role === 'employee' ? (probationAuto90 ?? true) : false;
+    const inviteProbationEndDate =
+      role === 'employee'
+        ? inviteProbationMode === 'under_probation'
+          ? inviteProbationAuto90
+            ? null
+            : (probationEndDate ?? null)
+          : null
+        : null;
+
+    if (role === 'employee' && inviteProbationMode === 'under_probation' && !inviteProbationAuto90 && !inviteProbationEndDate) {
+      return NextResponse.json(
+        {
+          error:
+            'Validation failed: probationEndDate is required when probation is manual',
+        },
+        { status: 400 }
+      );
+    }
 
     if (isPrivilegedInvite && userRecord.role !== 'super_admin') {
       return NextResponse.json(
@@ -177,6 +213,7 @@ export async function POST(request: NextRequest) {
         role,
         status: nextStatus,
         department_id: departmentId || null,
+        division_id: divisionId || null,
         created_by: user.id,
         deleted_at: null,
       },
@@ -196,7 +233,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (isPrivilegedInvite) {
-      const departmentName = await resolveDepartmentName(supabaseAdmin, departmentId);
+      const departmentName = departmentId
+        ? (await resolveDepartmentById(supabaseAdmin, departmentId)).name
+        : 'Unassigned';
+      const divisionName = divisionId
+        ? (await resolveDivisionById(supabaseAdmin, divisionId)).name
+        : null;
 
       const { data: existingEmployee } = await supabaseAdmin
         .from('employees')
@@ -216,6 +258,7 @@ export async function POST(request: NextRequest) {
           work_arrangement: 'full_time',
           position: position || formatRoleLabel(role),
           department: departmentName,
+          division: divisionName,
           company_email: email,
           created_by: user.id,
         });
@@ -247,9 +290,13 @@ export async function POST(request: NextRequest) {
           email_address: email,
           position: position || null,
           department_id: departmentId || null,
+          division_id: divisionId || null,
           is_completed: false,
           completed_at: null,
           current_step: 'personal_info',
+          invite_probation_mode: inviteProbationMode,
+          invite_probation_auto_90: inviteProbationAuto90,
+          invite_probation_end_date: inviteProbationEndDate,
           deleted_at: null,
         },
         { onConflict: 'user_id' }
@@ -266,7 +313,16 @@ export async function POST(request: NextRequest) {
       action: 'invite_user',
       tableName: 'users',
       recordId: invitedUserId,
-      metadata: { email, role, reinvite: isReinvite },
+      metadata: {
+        email,
+        role,
+        reinvite: isReinvite,
+        departmentId: departmentId ?? null,
+        divisionId: divisionId ?? null,
+        inviteProbationMode,
+        inviteProbationAuto90,
+        inviteProbationEndDate,
+      },
     });
 
     // Best-effort email delivery: invite should still succeed even if provider fails.
@@ -303,23 +359,6 @@ export async function POST(request: NextRequest) {
     console.error('POST /api/users/invite error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-async function resolveDepartmentName(
-  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
-  departmentId?: string
-): Promise<string> {
-  if (!departmentId) {
-    return 'Unassigned';
-  }
-
-  const { data } = await supabaseAdmin
-    .from('departments')
-    .select('name')
-    .eq('id', departmentId)
-    .maybeSingle();
-
-  return data?.name ?? 'Assigned Department';
 }
 
 function formatRoleLabel(role: (typeof inviteableRoles)[number]): string {

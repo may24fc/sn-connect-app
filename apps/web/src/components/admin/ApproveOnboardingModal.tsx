@@ -1,6 +1,11 @@
 'use client';
 
 import { useApproveOnboarding } from '@/hooks/useUserManagement';
+import {
+  getOnboardingReviewStateBadgeVariant,
+  getOnboardingReviewStateLabel,
+  type OnboardingReviewState,
+} from '@/lib/onboarding-review-state';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@hr-portal/ui/primitives/button';
 import {
@@ -13,7 +18,7 @@ import {
 import { Label } from '@hr-portal/ui/primitives/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hr-portal/ui/primitives/tabs';
 import { Textarea } from '@hr-portal/ui/primitives/textarea';
-import { useToast } from '@hr-portal/ui';
+import { Badge, useToast } from '@hr-portal/ui';
 import {
   Briefcase,
   Calendar,
@@ -110,6 +115,14 @@ interface OnboardingData {
   payment_account_number?: string;
   payment_account_name?: string;
   payment_bank_name?: string;
+  review_state?: OnboardingReviewState;
+  rejection_notes?: string | null;
+  rejected_at?: string | null;
+  rejected_by?: string | null;
+  rejection_count?: number;
+  invite_probation_mode?: 'under_probation' | 'no_probation';
+  invite_probation_auto_90?: boolean;
+  invite_probation_end_date?: string | null;
 }
 
 interface ApproverModalProps {
@@ -122,6 +135,9 @@ interface ApproverModalProps {
     email: string;
     role: 'employee' | 'intern';
     position: string | null;
+    inviteProbationMode?: 'under_probation' | 'no_probation';
+    inviteProbationAuto90?: boolean;
+    inviteProbationEndDate?: string | null;
   }) => void;
 }
 
@@ -170,6 +186,15 @@ export function ApproveOnboardingModal({
           email: onboarding.email_address,
           role: onboarding.role,
           position: onboarding.position,
+          ...(onboarding.invite_probation_mode
+            ? { inviteProbationMode: onboarding.invite_probation_mode }
+            : {}),
+          ...(typeof onboarding.invite_probation_auto_90 === 'boolean'
+            ? { inviteProbationAuto90: onboarding.invite_probation_auto_90 }
+            : {}),
+          ...(onboarding.invite_probation_end_date
+            ? { inviteProbationEndDate: onboarding.invite_probation_end_date }
+            : {}),
         });
       }
 
@@ -202,6 +227,7 @@ export function ApproveOnboardingModal({
     .filter(Boolean)
     .join(', ');
   const displayAddress = normalizedAddress || fallbackAddress || 'Not provided';
+  const hasRejectionHistory = (onboarding.rejection_count ?? 0) > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -235,19 +261,55 @@ export function ApproveOnboardingModal({
                     <Calendar className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                     Submitted on {formatDateTime(onboarding.completed_at)}
                   </span>
+                  {onboarding.review_state && onboarding.review_state !== 'in_progress' && (
+                    <Badge variant={getOnboardingReviewStateBadgeVariant(onboarding.review_state)}>
+                      {getOnboardingReviewStateLabel(onboarding.review_state)}
+                    </Badge>
+                  )}
                 </div>
               </div>
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  onboarding.role === 'intern'
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
-                    : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                }`}
-              >
-                {onboarding.role === 'intern' ? 'Intern' : 'Employee'}
-              </span>
+              <div className="flex flex-col items-end gap-2">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${
+                    onboarding.role === 'intern'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                  }`}
+                >
+                  {onboarding.role === 'intern' ? 'Intern' : 'Employee'}
+                </span>
+                {hasRejectionHistory && onboarding.review_state === 'awaiting_review' && (
+                  <Badge variant="secondary">Resubmission</Badge>
+                )}
+              </div>
             </div>
           </div>
+
+          {hasRejectionHistory && (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/60 dark:bg-rose-950/20">
+              <div className="flex items-start gap-3">
+                <XCircle className="mt-0.5 h-5 w-5 text-rose-600 dark:text-rose-400" />
+                <div className="space-y-2">
+                  <div>
+                    <p className="font-medium text-rose-900 dark:text-rose-100">
+                      {onboarding.review_state === 'awaiting_review'
+                        ? 'Previous rejection on this submission'
+                        : 'Latest rejection details'}
+                    </p>
+                    <p className="text-sm text-rose-700 dark:text-rose-300">
+                      Rejected {onboarding.rejection_count} time{onboarding.rejection_count === 1 ? '' : 's'}
+                      {onboarding.rejected_at
+                        ? ` · Last rejected ${formatDateTime(onboarding.rejected_at)}`
+                        : ''}
+                    </p>
+                  </div>
+                  <p className="text-sm text-rose-800 dark:text-rose-200">
+                    {onboarding.rejection_notes || 'No rejection notes were captured.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Detailed Information Tabs */}
           <Tabs defaultValue="personal" className="w-full">

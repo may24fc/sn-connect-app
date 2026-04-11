@@ -164,6 +164,7 @@ serve(async (req: Request): Promise<Response> => {
         title: 'Weekly Hours Summary',
         message: `Week of ${weekStartStr} to ${weekEnd}: You logged ${hours.total.toFixed(1)} hours across ${hours.count} day(s). Average: ${summary.avgHoursPerDay} hrs/day.`,
         link: '/intern/daily-log',
+        dedupeKey: `intern-weekly-summary:${internship.employee_id}:${weekStartStr}:${weekEnd}`,
         metadata: {
           weekStart: weekStartStr,
           weekEnd,
@@ -196,6 +197,7 @@ serve(async (req: Request): Promise<Response> => {
           title: `Weekly Summary: ${emp.first_name} ${emp.last_name}`,
           message: `${emp.first_name} logged ${hours.total.toFixed(1)} hours across ${hours.count} day(s) this week.`,
           link: `/admin/interns/${internship.employee_id}`,
+          dedupeKey: `intern-weekly-summary-supervisor:${internship.employee_id}:${weekStartStr}:${weekEnd}`,
           metadata: {
             internshipId: internship.id,
             weekStart: weekStartStr,

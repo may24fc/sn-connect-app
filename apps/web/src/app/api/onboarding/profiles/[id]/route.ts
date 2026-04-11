@@ -1,6 +1,28 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedOnboardingContext, isOnboardingAdmin, maskPaymentAccount } from '../../_lib';
 
+function deriveReviewState(row: {
+  is_completed: boolean;
+  review_state: string | null;
+  users?: { status?: string | null } | Array<{ status?: string | null }> | null;
+}) {
+  const userInfo = Array.isArray(row.users) ? row.users[0] : row.users;
+
+  if (!row.is_completed) {
+    return 'in_progress';
+  }
+
+  if (userInfo?.status === 'active') {
+    return 'approved';
+  }
+
+  if (row.review_state === 'rejected') {
+    return 'rejected';
+  }
+
+  return 'awaiting_review';
+}
+
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -16,7 +38,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
     const { data, error: queryError } = await supabase
       .from('onboarding_profiles')
-      .select('*, users!inner(id, role), departments(id, name)')
+      .select('*, users!inner(id, role, status), departments(id, name)')
       .eq('id', id)
       .is('deleted_at', null)
       .maybeSingle();
@@ -51,6 +73,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         payment_bank_name: resolvedPaymentBankName || data.payment_bank_name,
         full_name: fullName,
         status: data.is_completed ? 'completed' : 'in_progress',
+        review_state: deriveReviewState(data),
         payment_account_masked: maskPaymentAccount(data.payment_account_number),
       },
     });

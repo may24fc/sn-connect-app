@@ -9,6 +9,7 @@ interface DirectoryRow {
   position: string | null;
   role: string | null;
   department_name: string | null;
+  division_name: string | null;
   status: string | null;
   employment_type: string | null;
 }
@@ -85,6 +86,11 @@ export async function GET(request: NextRequest) {
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
+    const division = searchParams.get('division') || '';
+    const divisionFilters = (searchParams.get('divisions') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const status = searchParams.get('status') || '';
     const employmentType = searchParams.get('employment_type') || '';
     const sortBy = searchParams.get('sort_by') || 'full_name';
@@ -109,6 +115,13 @@ export async function GET(request: NextRequest) {
     }
     if (departmentFilters.length > 0) {
       query = query.in('department_name', departmentFilters);
+    }
+
+    if (division) {
+      query = query.eq('division_name', division);
+    }
+    if (divisionFilters.length > 0) {
+      query = query.in('division_name', divisionFilters);
     }
 
     // Status filter (supports comma-separated values for multi-status filtering)
@@ -141,6 +154,7 @@ export async function GET(request: NextRequest) {
     const validSortColumns = [
       'full_name',
       'department_name',
+      'division_name',
       'start_date',
       'status',
       'role',
@@ -188,7 +202,7 @@ export async function GET(request: NextRequest) {
     // Get aggregate metadata
     const { data: allData } = await supabase
       .from('employee_directory')
-      .select('role, status, internship_status, employment_type, department_name');
+      .select('role, status, internship_status, employment_type, department_name, division_name');
 
     const availableRoles = Array.from(
       new Set(

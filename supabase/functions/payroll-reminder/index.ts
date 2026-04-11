@@ -73,6 +73,12 @@ serve(async (req: Request): Promise<Response> => {
     const usersWithInvoice = new Set(
       (allInvoices ?? []).map((i: { created_by: string }) => i.created_by).filter(Boolean)
     );
+    const userNameById = new Map(
+      (allEmployees ?? []).map((employee) => [
+        employee.id,
+        `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim() || employee.email || 'Team member',
+      ])
+    );
 
     // ----- Step 3: Send reminders -----
     let remindedCount = 0;
@@ -82,13 +88,15 @@ serve(async (req: Request): Promise<Response> => {
     for (const invoice of draftInvoices ?? []) {
       if (!invoice.created_by || draftUserIds.has(invoice.created_by)) continue;
       draftUserIds.add(invoice.created_by);
+      const recipientName = userNameById.get(invoice.created_by) ?? 'Team member';
 
       await createInAppNotification(supabase, {
         userId: invoice.created_by,
         type: 'reminder',
         title: 'Invoice Submission Reminder',
-        message: `You have a ${invoice.status} invoice for ${currentMonth}. Please finalize and submit it — ${daysRemaining} day(s) left until month-end.`,
+        message: `${recipientName}, you have a ${invoice.status} invoice for ${currentMonth}. Please finalize and submit it. ${daysRemaining} day(s) remain until month-end.`,
         link: '/invoices',
+        dedupeKey: `payroll-draft:${invoice.id}:${daysRemaining}`,
         metadata: {
           invoiceId: invoice.id,
           periodStart,
@@ -103,13 +111,15 @@ serve(async (req: Request): Promise<Response> => {
     let noInvoiceCount = 0;
     for (const emp of allEmployees ?? []) {
       if (usersWithInvoice.has(emp.id) || draftUserIds.has(emp.id)) continue;
+      const recipientName = userNameById.get(emp.id) ?? 'Team member';
 
       await createInAppNotification(supabase, {
         userId: emp.id,
         type: 'reminder',
         title: 'Invoice Submission Reminder',
-        message: `No invoice found for ${currentMonth}. Please create and submit your invoice — ${daysRemaining} day(s) left until month-end.`,
+        message: `${recipientName}, no invoice was found for ${currentMonth}. Please create and submit your invoice. ${daysRemaining} day(s) remain until month-end.`,
         link: '/invoices/new',
+        dedupeKey: `payroll-missing:${emp.id}:${periodStart}:${daysRemaining}`,
         metadata: { periodStart, periodEnd, daysRemaining },
       });
       remindedCount++;

@@ -12,12 +12,20 @@ interface EmployeeListResponse {
   };
 }
 
+interface UseEmployeesOptions {
+  enabled?: boolean;
+}
+
 /**
  * Hook to fetch list of employees with pagination and filters
  */
-export function useEmployees(filters: EmployeeFilters = {}) {
+export function useEmployees(
+  filters: EmployeeFilters = {},
+  options: UseEmployeesOptions = {}
+) {
   return useQuery({
     queryKey: queryKeys.employees.list(filters),
+    enabled: options.enabled ?? true,
     queryFn: async (): Promise<EmployeeListResponse> => {
       const params = new URLSearchParams();
 

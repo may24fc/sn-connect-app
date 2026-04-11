@@ -9,6 +9,8 @@ import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
 import {
+  formatMetricValue,
+  formatMetricValueWithUnit,
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveLabel,
   getReportTypeDescription,
@@ -149,9 +151,7 @@ export default function ReportDetailPage({
   // Build KPI cards from metrics
   const kpiCards = metrics.slice(0, 4).map((metric, index) => ({
     label: metric.metric_name,
-    value: metric.metric_unit
-      ? `${metric.metric_unit} ${metric.metric_value.toLocaleString()}`
-      : metric.metric_value.toLocaleString(),
+    value: formatMetricValueWithUnit(metric.metric_value, metric.metric_unit),
     change: {
       absolute: metric.notes || '—',
       trend: 'stable' as const,
@@ -412,7 +412,7 @@ export default function ReportDetailPage({
                     <TableRow key={metric.id}>
                       <TableCell className="font-medium">{metric.metric_name}</TableCell>
                       <TableCell className="font-mono">
-                        {metric.metric_value.toLocaleString()}
+                        {formatMetricValue(metric.metric_value, metric.metric_unit)}
                       </TableCell>
                       <TableCell>{metric.metric_unit || '—'}</TableCell>
                       <TableCell>{metric.notes || '—'}</TableCell>

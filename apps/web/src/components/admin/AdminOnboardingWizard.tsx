@@ -457,9 +457,14 @@ export function AdminOnboardingWizard({ userRole }: AdminOnboardingWizardProps):
 
       const paymentBankId = String(paymentInfo.paymentBankId ?? '').trim();
       const paymentBankName = String(paymentInfo.paymentBankName ?? '').trim();
+      const paymentCountryCode = String(paymentInfo.paymentCountryCode ?? 'PH').trim();
+      const paymentCity = String(paymentInfo.paymentCity ?? '').trim();
       if (!paymentBankId) return 'Please select a bank.';
       if (paymentBankId === 'OTHER' && !paymentBankName) {
         return 'Please provide the bank name when selecting Other.';
+      }
+      if (paymentCountryCode !== 'PH' && !paymentCity) {
+        return 'Payment city is required for non-Philippine bank accounts.';
       }
     }
 

@@ -8,6 +8,7 @@ interface DirectoryExportRow {
   full_name: string | null;
   role: string | null;
   department_name: string | null;
+  division_name: string | null;
   position: string | null;
   status: string | null;
   employment_type: string | null;
@@ -59,20 +60,27 @@ export async function GET(request: NextRequest) {
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
+    const division = searchParams.get('division') || '';
+    const divisionFilters = (searchParams.get('divisions') || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
     const status = searchParams.get('status') || '';
 
     // Fetch all directory data for export
     let query = supabase
       .from('employee_directory')
       .select(
-        'full_name, role, department_name, position, status, employment_type, start_date, email, contact_number'
+        'full_name, role, department_name, division_name, position, status, employment_type, start_date, email, contact_number'
       )
       .order('full_name', { ascending: true });
 
     if (roleFilter) query = query.eq('role', roleFilter);
-  if (roleFilters.length > 0) query = query.in('role', roleFilters);
+    if (roleFilters.length > 0) query = query.in('role', roleFilters);
     if (department) query = query.eq('department_name', department);
-  if (departmentFilters.length > 0) query = query.in('department_name', departmentFilters);
+    if (departmentFilters.length > 0) query = query.in('department_name', departmentFilters);
+    if (division) query = query.eq('division_name', division);
+    if (divisionFilters.length > 0) query = query.in('division_name', divisionFilters);
     if (status) query = query.eq('status', status);
 
     const { data, error } = await query;
@@ -91,6 +99,7 @@ export async function GET(request: NextRequest) {
         'Full Name',
         'Role',
         'Department',
+        'Division',
         'Position',
         'Status',
         'Employment Type',
@@ -104,6 +113,7 @@ export async function GET(request: NextRequest) {
           escapeCsv(row.full_name),
           escapeCsv(row.role),
           escapeCsv(row.department_name),
+          escapeCsv(row.division_name),
           escapeCsv(row.position),
           escapeCsv(row.status),
           escapeCsv(row.employment_type),
@@ -132,6 +142,7 @@ export async function GET(request: NextRequest) {
         { header: 'Full Name', key: 'full_name', width: 25 },
         { header: 'Role', key: 'role', width: 15 },
         { header: 'Department', key: 'department', width: 20 },
+        { header: 'Division', key: 'division', width: 24 },
         { header: 'Position', key: 'position', width: 20 },
         { header: 'Status', key: 'status', width: 15 },
         { header: 'Employment Type', key: 'employment_type', width: 18 },
@@ -145,6 +156,7 @@ export async function GET(request: NextRequest) {
           full_name: row.full_name || '',
           role: row.role || '',
           department: row.department_name || '',
+          division: row.division_name || '',
           position: row.position || '',
           status: row.status || '',
           employment_type: row.employment_type || '',

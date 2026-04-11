@@ -1,4 +1,5 @@
 import { type OnboardingProfileFilters, queryKeys } from '@/lib/query-keys';
+import type { OnboardingReviewState } from '@/lib/onboarding-review-state';
 import { useQuery } from '@tanstack/react-query';
 
 export interface OnboardingProfileListItem {
@@ -7,11 +8,21 @@ export interface OnboardingProfileListItem {
   employee_id: string | null;
   full_name: string;
   email_address: string | null;
+  position: string | null;
   status: 'completed' | 'in_progress';
   current_step: 'personal_info' | 'payment_info' | 'documents' | 'review';
+  completed_at?: string | null;
   payment_account_masked: string | null;
   users?: { role?: 'employee' | 'intern' | null } | Array<{ role?: 'employee' | 'intern' | null }>;
   departments?: { id: string; name: string } | Array<{ id: string; name: string }> | null;
+  review_state?: OnboardingReviewState;
+  rejection_notes?: string | null;
+  rejected_at?: string | null;
+  rejected_by?: string | null;
+  rejection_count?: number;
+  invite_probation_mode?: 'under_probation' | 'no_probation';
+  invite_probation_auto_90?: boolean;
+  invite_probation_end_date?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +33,9 @@ interface OnboardingProfileListResponse {
     total: number;
     completed: number;
     inProgress: number;
+    awaitingReview: number;
+    rejected: number;
+    approved: number;
   };
   pagination: {
     page: number;
