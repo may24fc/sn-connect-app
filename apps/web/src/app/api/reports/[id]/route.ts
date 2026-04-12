@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { notifySuperAdminsAboutSubmittedReport } from '@/app/api/reports/_notifications';
 import { extractMarketingContext, normalizeReportRecord, serializeReportNotes } from '@/lib/report-utils';
 import { reportMetricSchema, reportSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
@@ -67,6 +68,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -75,6 +77,42 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isPrivileged = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+
+    const { data: existingReport, error: existingReportError } = await supabaseAdmin
+      .from('reports')
+      .select('id, report_type, notes, status, employees(user_id)')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingReportError) {
+      console.error('Error loading report before update:', existingReportError);
+      return NextResponse.json({ error: 'Failed to load report' }, { status: 500 });
+    }
+
+    if (!existingReport) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+    }
+
+    const reportOwner = Array.isArray(existingReport.employees)
+      ? existingReport.employees[0]
+      : existingReport.employees;
+
+    if (!isPrivileged) {
+      if (!reportOwner || reportOwner.user_id !== user.id) {
+        return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+      }
+
+      if (existingReport.status !== 'draft') {
+        return NextResponse.json(
+          { error: 'Only draft reports can be edited.' },
+          { status: 409 }
+        );
+      }
     }
 
     const body = await request.json();
@@ -89,17 +127,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       hasMarketingContext;
 
     if (hasReportFields) {
-      const { data: existingReport, error: existingReportError } = await supabase
-        .from('reports')
-        .select('id, report_type, notes')
-        .eq('id', id)
-        .is('deleted_at', null)
-        .single();
-
-      if (existingReportError || !existingReport) {
-        return NextResponse.json({ error: 'Report not found' }, { status: 404 });
-      }
-
       const parsedReport = reportSchema.partial().safeParse({
         reportType: body.reportType,
         periodStart: body.periodStart,
@@ -149,7 +176,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         updates.notes = serializeReportNotes(nextNotes, nextMarketingContext);
       }
 
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('reports')
         .update(updates)
         .eq('id', id)
@@ -174,7 +201,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         );
       }
 
-      const { error: deleteMetricsError } = await supabase
+      const { error: deleteMetricsError } = await supabaseAdmin
         .from('report_metrics')
         .delete()
         .eq('report_id', id);
@@ -196,7 +223,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           };
         });
 
-        const { error: insertMetricsError } = await supabase
+        const { error: insertMetricsError } = await supabaseAdmin
           .from('report_metrics')
           .insert(metricRows);
 
@@ -207,9 +234,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('reports')
-      .select('*, report_metrics(*)')
+      .select('*, employees(id, user_id, first_name, last_name, department), report_metrics(*)')
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -224,6 +251,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       tableName: 'reports',
       recordId: id,
     });
+
+    if (existingReport.status !== 'submitted' && data.status === 'submitted') {
+      await notifySuperAdminsAboutSubmittedReport({
+        reportId: id,
+        reportType: data.report_type,
+        submittedBy: user.id,
+      });
+    }
 
     return NextResponse.json({ data: normalizeReportRecord(data) });
   } catch (error) {
@@ -243,6 +278,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -253,7 +289,43 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { error } = await supabase
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isPrivileged = ['admin', 'super_admin', 'hr', 'cos', 'ceo'].includes(role ?? '');
+
+    const { data: existingReport, error: existingReportError } = await supabaseAdmin
+      .from('reports')
+      .select('id, status, employees(user_id)')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingReportError) {
+      console.error('Error loading report before delete:', existingReportError);
+      return NextResponse.json({ error: 'Failed to load report' }, { status: 500 });
+    }
+
+    if (!existingReport) {
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+    }
+
+    const reportOwner = Array.isArray(existingReport.employees)
+      ? existingReport.employees[0]
+      : existingReport.employees;
+
+    if (!isPrivileged) {
+      if (!reportOwner || reportOwner.user_id !== user.id) {
+        return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+      }
+
+      if (existingReport.status !== 'draft') {
+        return NextResponse.json(
+          { error: 'Only draft reports can be deleted.' },
+          { status: 409 }
+        );
+      }
+    }
+
+    const { error } = await supabaseAdmin
       .from('reports')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', id)

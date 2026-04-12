@@ -38,8 +38,7 @@ import {
   TooltipTrigger,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertCircle, Eye, Loader2, Search } from 'lucide-react';
-import Link from 'next/link';
+import { AlertCircle, CheckCircle2, Loader2, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
@@ -112,15 +111,13 @@ export function ReportsSubmissionsTab({
   department,
   campaignType,
   objective,
-  timeRange,
+  timeRange: _timeRange,
   customStartDate,
   customEndDate,
 }: ReportsSubmissionsTabProps) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<string>('all');
-  const [localPeriod, setLocalPeriod] = useState<'all' | 'weekly' | 'monthly' | 'custom'>(
-    timeRange
-  );
+  const [localPeriod, setLocalPeriod] = useState<'all' | 'weekly' | 'monthly' | 'custom'>('all');
   const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
   const { addToast } = useToast();
@@ -152,6 +149,8 @@ export function ReportsSubmissionsTab({
   const reports = useMemo(() => {
     let all = data?.data || [];
 
+    all = all.filter((report) => report.status !== 'draft');
+
     all = all.filter((report) =>
       matchesMarketingReportFilters(report, {
         campaignType,
@@ -162,7 +161,7 @@ export function ReportsSubmissionsTab({
     return all;
   }, [campaignType, data?.data, objective, search]);
 
-  const reportStatusOrder: Record<string, number> = { submitted: 0, draft: 1, rejected: 2, approved: 3 };
+  const reportStatusOrder: Record<string, number> = { submitted: 0, rejected: 1, approved: 2 };
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'period', initialDirection: 'desc' });
 
@@ -184,11 +183,10 @@ export function ReportsSubmissionsTab({
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
   const stats = useMemo(() => {
-    const draft = reports.filter((report) => report.status === 'draft').length;
     const submitted = reports.filter((report) => report.status === 'submitted').length;
     const approved = reports.filter((report) => report.status === 'approved').length;
     const rejected = reports.filter((report) => report.status === 'rejected').length;
-    return { draft, submitted, approved, rejected, total: reports.length };
+    return { submitted, approved, rejected, total: reports.length };
   }, [reports]);
 
   const handleAction = async (id: string, action: 'approved' | 'rejected') => {
@@ -199,11 +197,20 @@ export function ReportsSubmissionsTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, notes: actionNotes[id] || undefined }),
       });
-      if (!res.ok) throw new Error('Request failed');
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error || 'Request failed');
+      }
       addToast({ title: `Report ${action}`, variant: 'success' });
       await refetch();
-    } catch {
-      addToast({ title: `Failed to ${action === 'approved' ? 'approve' : 'reject'} report`, variant: 'error' });
+    } catch (error) {
+      addToast({
+        title:
+          error instanceof Error
+            ? error.message
+            : `Failed to ${action === 'approved' ? 'approve' : 'reject'} report`,
+        variant: 'error',
+      });
     } finally {
       setWorkingId(null);
     }
@@ -212,17 +219,11 @@ export function ReportsSubmissionsTab({
   return (
     <div className="space-y-6">
       {/* Stats row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-sm text-muted-foreground">Visible Reports</p>
             <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Drafts</p>
-            <p className="text-2xl font-bold">{stats.draft}</p>
           </CardContent>
         </Card>
         <Card>
@@ -261,10 +262,10 @@ export function ReportsSubmissionsTab({
         </div>
         <Select value={localPeriod} onValueChange={(v) => setLocalPeriod(v as typeof localPeriod)}>
           <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Period" />
+            <SelectValue placeholder="Submission Window" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Time</SelectItem>
+            <SelectItem value="all">All Time</SelectItem>
             <SelectItem value="weekly">This Week</SelectItem>
             <SelectItem value="monthly">This Month</SelectItem>
             {customStartDate && customEndDate && (
@@ -281,7 +282,6 @@ export function ReportsSubmissionsTab({
             <SelectItem value="submitted">Submitted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -333,7 +333,7 @@ export function ReportsSubmissionsTab({
                       <EmptyState
                         icon={Search}
                         title="No marketing reports found"
-                        description="Adjust the filters or wait for submissions to appear in this queue."
+                        description="Adjust the filters or wait for submitted reports to appear in this queue."
                         size="sm"
                       />
                     </TableCell>
@@ -346,9 +346,6 @@ export function ReportsSubmissionsTab({
                           ? `${report.employees.first_name} ${report.employees.last_name}`
                           : '-'}
                       </TableCell>
-                        {report.marketing_context?.campaignType
-                          ? getMarketingCampaignTypeLabel(report.marketing_context.campaignType)
-                          : '—'}
                       <TableCell>
                         <div className="space-y-0.5">
                           <p className="font-medium text-foreground">
@@ -358,6 +355,11 @@ export function ReportsSubmissionsTab({
                             {getMarketingReportContextSummary(report.marketing_context)}
                           </p>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {report.marketing_context?.campaignType
+                          ? getMarketingCampaignTypeLabel(report.marketing_context.campaignType)
+                          : '—'}
                       </TableCell>
                       <TableCell>
                         {report.marketing_context?.objective
@@ -386,26 +388,20 @@ export function ReportsSubmissionsTab({
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="ghost" asChild>
-                            <Link href={`/admin/reports/${report.id}`}>
-                              <Eye className="mr-1 h-3.5 w-3.5" />
-                              View
-                            </Link>
-                          </Button>
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span>
                                   <Button
                                     size="sm"
-                                    variant="outline"
+                                    variant="destructive"
                                     className={report.status !== 'submitted' ? 'opacity-50' : ''}
                                     disabled={
                                       workingId === report.id || report.status !== 'submitted'
                                     }
-                                    onClick={() => handleAction(report.id, 'approved')}
+                                    onClick={() => handleAction(report.id, 'rejected')}
                                   >
-                                    Approve
+                                    Reject
                                   </Button>
                                 </span>
                               </TooltipTrigger>
@@ -425,14 +421,15 @@ export function ReportsSubmissionsTab({
                                 <span>
                                   <Button
                                     size="sm"
-                                    variant="destructive"
+                                    variant="success"
                                     className={report.status !== 'submitted' ? 'opacity-50' : ''}
                                     disabled={
                                       workingId === report.id || report.status !== 'submitted'
                                     }
-                                    onClick={() => handleAction(report.id, 'rejected')}
+                                    onClick={() => handleAction(report.id, 'approved')}
                                   >
-                                    Reject
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                    Approve
                                   </Button>
                                 </span>
                               </TooltipTrigger>

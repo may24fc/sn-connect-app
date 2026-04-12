@@ -17,6 +17,14 @@ export interface ApplicationRecord {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  // ATS AI evaluation fields
+  parsed_resume_markdown: string | null;
+  ai_match_score: number | null;
+  ai_top_strengths: string[] | null;
+  ai_missing_requirements: string[] | null;
+  ai_executive_summary: string | null;
+  ai_evaluated_at: string | null;
+  ai_evaluation_model: string | null;
   job_postings: {
     id: string;
     title: string;
@@ -55,6 +63,9 @@ export function useApplications(filters: ApplicationFiltersQuery = {}) {
       if (filters.search) params.set('search', filters.search);
       if (filters.status) params.set('status', filters.status);
       if (filters.jobPostingId) params.set('jobPostingId', filters.jobPostingId);
+      if (filters.sortBy) params.set('sortBy', filters.sortBy);
+      if (filters.minScore != null) params.set('minScore', String(filters.minScore));
+      if (filters.maxScore != null) params.set('maxScore', String(filters.maxScore));
       if (filters.page) params.set('page', String(filters.page));
       if (filters.pageSize) params.set('pageSize', String(filters.pageSize));
 

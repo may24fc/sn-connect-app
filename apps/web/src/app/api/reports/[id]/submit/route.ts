@@ -1,9 +1,5 @@
 import { logActivity } from '@/lib/audit';
-import {
-  createNotificationsForUsers,
-  getAdminUserIds,
-  getUserDisplayName,
-} from '@/lib/notifications/create-notification';
+import { notifySuperAdminsAboutSubmittedReport } from '@/app/api/reports/_notifications';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -41,20 +37,13 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: 'Failed to submit report' }, { status: 500 });
     }
 
-    // Notify all admins about the submitted report
-    const submitterName = await getUserDisplayName(user.id);
-    const adminIds = await getAdminUserIds();
-    const adminRecipients = adminIds.filter((adminId) => adminId !== user.id);
-
-    createNotificationsForUsers(adminRecipients, {
-      type: 'report_submitted',
-      title: 'Report Submitted for Review',
-      message: `${submitterName} submitted a ${data.report_type?.replace(/_/g, ' ') ?? 'report'} for review`,
-      link: `/admin/reports`,
-      metadata: { reportId: id, submittedBy: user.id },
+    await notifySuperAdminsAboutSubmittedReport({
+      reportId: id,
+      reportType: data.report_type,
+      submittedBy: user.id,
     });
 
-    logActivity(supabase, {
+    await logActivity(supabase, {
       userId: user.id,
       action: 'submit_report',
       tableName: 'reports',

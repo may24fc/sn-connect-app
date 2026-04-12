@@ -212,6 +212,9 @@ export interface ApplicationFiltersQuery {
   search?: string;
   status?: 'pending' | 'reviewed' | 'shortlisted' | 'interview' | 'rejected' | 'approved' | 'hired';
   jobPostingId?: string;
+  sortBy?: 'created_at' | 'ai_match_score';
+  minScore?: number;
+  maxScore?: number;
   page?: number;
   pageSize?: number;
 }

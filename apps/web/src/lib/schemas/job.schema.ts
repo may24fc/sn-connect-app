@@ -34,6 +34,9 @@ export const applicationFiltersSchema = z.object({
     .enum(['pending', 'reviewed', 'shortlisted', 'interview', 'rejected', 'approved', 'hired'])
     .optional(),
   jobPostingId: z.string().uuid().optional(),
+  sortBy: z.enum(['created_at', 'ai_match_score']).default('created_at'),
+  minScore: z.coerce.number().int().min(0).max(100).optional(),
+  maxScore: z.coerce.number().int().min(0).max(100).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(20),
 });

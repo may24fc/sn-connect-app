@@ -2,7 +2,7 @@
 
 import { useApplications, type ApplicationRecord } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
-import { useHireApplication, useUpdateApplicationStatus } from '@/hooks/useJobMutations';
+import { useBulkImportApplications, useEvaluateApplication, useHireApplication, useUpdateApplicationStatus } from '@/hooks/useJobMutations';
 import { useTableSort } from '@/hooks/useTableSort';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
@@ -44,6 +44,7 @@ import {
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
+  Bot,
   CheckCircle,
   Clock,
   Columns,
@@ -54,12 +55,13 @@ import {
   Search,
   Star,
   ThumbsDown,
+  Upload,
   UserCheck,
   Users,
   XCircle,
 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type ApplicationStatus =
   | 'pending'
@@ -149,6 +151,33 @@ export default function ApplicationsPage() {
   const { data: jobsData } = useJobPostings({ page: 1, pageSize: 100 });
   const updateStatus = useUpdateApplicationStatus();
   const hireApplication = useHireApplication();
+  const bulkImport = useBulkImportApplications();
+  const evaluateApp = useEvaluateApplication();
+
+  // Bulk import state
+  const [importOpen, setImportOpen] = useState(false);
+  const [importJobId, setImportJobId] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBulkImport = useCallback(async (files: FileList) => {
+    if (!importJobId) {
+      addToast({ variant: 'error', title: 'Select a job posting first' });
+      return;
+    }
+    try {
+      const result = await bulkImport.mutateAsync({ jobPostingId: importJobId, files: Array.from(files) });
+      const { summary } = result.data;
+      addToast({
+        variant: 'success',
+        title: `Imported ${summary.queued} of ${summary.total} CVs`,
+        description: summary.failed > 0 ? `${summary.failed} failed — check console for details.` : 'Resumes are being parsed and evaluated by AI.',
+      });
+      setImportOpen(false);
+      setImportJobId('');
+    } catch (err) {
+      addToast({ variant: 'error', title: 'Import failed', description: err instanceof Error ? err.message : 'Please try again.' });
+    }
+  }, [importJobId, bulkImport, addToast]);
 
   const applications = data?.data || [];
   const jobPostings = jobsData?.data || [];
@@ -163,6 +192,7 @@ export default function ApplicationsPage() {
     email: (a) => a.email.toLowerCase(),
     position: (a) => a.job_postings?.title?.toLowerCase() || '',
     status: (a) => PIPELINE_ORDER.indexOf(a.status as ApplicationStatus),
+    ai_score: (a) => a.ai_match_score ?? -1,
     created_at: (a) => a.created_at,
   });
 
@@ -279,6 +309,12 @@ export default function ApplicationsPage() {
                 Screen, shortlist, and manage candidate applications
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4 mr-1.5" />
+              Import CVs
+            </Button>
           </div>
         </div>
 
@@ -415,6 +451,9 @@ export default function ApplicationsPage() {
                   <SortableTableHead column="created_at" {...sortHeadProps}>
                     Applied
                   </SortableTableHead>
+                  <SortableTableHead column="ai_score" {...sortHeadProps}>
+                    AI Score
+                  </SortableTableHead>
                   <TableHead className="text-sm font-medium text-zinc-600 dark:text-zinc-400 text-right">
                     Actions
                   </TableHead>
@@ -443,6 +482,16 @@ export default function ApplicationsPage() {
                       </TableCell>
                       <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
                         {formatDate(app.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        {app.ai_match_score != null ? (
+                          <Badge variant={app.ai_match_score >= 70 ? 'success' : app.ai_match_score >= 40 ? 'warning' : 'destructive'}>
+                            <Bot className="h-3 w-3 mr-1" />
+                            {app.ai_match_score}%
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-zinc-400">—</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         {/* biome-ignore lint/a11y/useKeyWithClickEvents: row click handled */}
@@ -536,9 +585,17 @@ export default function ApplicationsPage() {
                           <p className="text-xs text-slate-700 dark:text-zinc-400 mt-1">
                             {app.job_postings?.title || 'Unknown Position'}
                           </p>
-                          <p className="text-xs text-zinc-400 mt-2">
-                            {formatDate(app.created_at)}
-                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <p className="text-xs text-zinc-400">
+                              {formatDate(app.created_at)}
+                            </p>
+                            {app.ai_match_score != null && (
+                              <Badge variant={app.ai_match_score >= 70 ? 'success' : app.ai_match_score >= 40 ? 'warning' : 'destructive'} className="text-[10px] px-1.5 py-0">
+                                <Bot className="h-2.5 w-2.5 mr-0.5" />
+                                {app.ai_match_score}%
+                              </Badge>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     ))}
@@ -690,6 +747,91 @@ export default function ApplicationsPage() {
                     )}
                   </SlidePanelSection>
 
+                  {/* AI Evaluation */}
+                  <SlidePanelSection label="AI Evaluation">
+                    {selectedApp.ai_match_score != null ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Bot className="h-4 w-4 text-indigo-500" />
+                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Match Score</span>
+                          </div>
+                          <Badge variant={selectedApp.ai_match_score >= 70 ? 'success' : selectedApp.ai_match_score >= 40 ? 'warning' : 'destructive'} className="text-base px-3 py-0.5">
+                            {selectedApp.ai_match_score}%
+                          </Badge>
+                        </div>
+
+                        {selectedApp.ai_executive_summary && (
+                          <div>
+                            <p className="text-xs font-medium text-zinc-500 mb-1">Summary</p>
+                            <p className="text-sm text-zinc-700 dark:text-zinc-300">{selectedApp.ai_executive_summary}</p>
+                          </div>
+                        )}
+
+                        {Array.isArray(selectedApp.ai_top_strengths) && selectedApp.ai_top_strengths.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-zinc-500 mb-1">Top Strengths</p>
+                            <ul className="space-y-1">
+                              {selectedApp.ai_top_strengths.map((s: string, i: number) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                  <CheckCircle className="h-3.5 w-3.5 mt-0.5 text-emerald-500 flex-shrink-0" />
+                                  {s}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {Array.isArray(selectedApp.ai_missing_requirements) && selectedApp.ai_missing_requirements.length > 0 && (
+                          <div>
+                            <p className="text-xs font-medium text-zinc-500 mb-1">Missing Requirements</p>
+                            <ul className="space-y-1">
+                              {selectedApp.ai_missing_requirements.map((r: string, i: number) => (
+                                <li key={i} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                  <XCircle className="h-3.5 w-3.5 mt-0.5 text-red-400 flex-shrink-0" />
+                                  {r}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {selectedApp.ai_evaluated_at && (
+                          <p className="text-xs text-zinc-400">
+                            Evaluated {formatDateTime(selectedApp.ai_evaluated_at)}
+                            {selectedApp.ai_evaluation_model ? ` · ${selectedApp.ai_evaluation_model}` : ''}
+                          </p>
+                        )}
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => evaluateApp.mutate(selectedApp.id)}
+                          disabled={evaluateApp.isPending}
+                        >
+                          <Bot className="h-4 w-4 mr-1" />
+                          {evaluateApp.isPending ? 'Re-evaluating…' : 'Re-evaluate'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-zinc-500 mb-3">No AI evaluation yet</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => evaluateApp.mutate(selectedApp.id)}
+                          disabled={evaluateApp.isPending || !(selectedApp.cv_url || selectedApp.resume_url || selectedApp.parsed_resume_markdown)}
+                        >
+                          <Bot className="h-4 w-4 mr-1" />
+                          {evaluateApp.isPending ? 'Evaluating…' : 'Run AI Evaluation'}
+                        </Button>
+                        {!(selectedApp.cv_url || selectedApp.resume_url || selectedApp.parsed_resume_markdown) && (
+                          <p className="text-xs text-zinc-400 mt-2">Requires a resume to evaluate</p>
+                        )}
+                      </div>
+                    )}
+                  </SlidePanelSection>
+
                   {/* Cover Letter */}
                   {selectedApp.cover_letter && (
                     <SlidePanelSection label="Cover Letter">
@@ -800,6 +942,62 @@ export default function ApplicationsPage() {
               </SlidePanelFooter>
             </>
           )}
+        </SlidePanelContent>
+      </SlidePanel>
+
+      {/* ─── BULK IMPORT DIALOG ─── */}
+      <SlidePanel open={importOpen} onOpenChange={setImportOpen}>
+        <SlidePanelContent size="md">
+          <SlidePanelHeader>
+            <SlidePanelTitle>Import CVs</SlidePanelTitle>
+            <p className="text-sm text-zinc-500 mt-1">Upload resumes to parse and evaluate with AI</p>
+          </SlidePanelHeader>
+          <SlidePanelBody>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 block">Job Posting</label>
+                <Select value={importJobId} onValueChange={setImportJobId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a job posting…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobPostings.map((jp) => (
+                      <SelectItem key={jp.id} value={jp.id}>
+                        {jp.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1.5 block">Resume Files</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      void handleBulkImport(e.target.files);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!importJobId || bulkImport.isPending}
+                  className="w-full border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-8 text-center hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-zinc-400" />
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    {bulkImport.isPending ? 'Uploading…' : 'Click to select PDF or DOCX files'}
+                  </p>
+                  <p className="text-xs text-zinc-500 mt-1">Max 50 files, 10 MB each</p>
+                </button>
+              </div>
+            </div>
+          </SlidePanelBody>
         </SlidePanelContent>
       </SlidePanel>
     </div>

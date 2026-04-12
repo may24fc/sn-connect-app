@@ -43,6 +43,9 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') || undefined,
       status: searchParams.get('status') || undefined,
       jobPostingId: searchParams.get('jobPostingId') || undefined,
+      sortBy: searchParams.get('sortBy') || undefined,
+      minScore: searchParams.get('minScore') || undefined,
+      maxScore: searchParams.get('maxScore') || undefined,
       page: searchParams.get('page') || undefined,
       pageSize: searchParams.get('pageSize') || undefined,
     });
@@ -61,14 +64,22 @@ export async function GET(request: NextRequest) {
       .select('*, job_postings(id, title, is_active, closes_at, job_requisitions(*))', {
         count: 'exact',
       })
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .is('deleted_at', null);
+
+    // Apply sorting
+    if (filters.sortBy === 'ai_match_score') {
+      query = query.order('ai_match_score', { ascending: false, nullsFirst: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
 
     if (filters.search) {
       query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
     }
     if (filters.status) query = query.eq('status', filters.status);
     if (filters.jobPostingId) query = query.eq('job_posting_id', filters.jobPostingId);
+    if (filters.minScore != null) query = query.gte('ai_match_score', filters.minScore);
+    if (filters.maxScore != null) query = query.lte('ai_match_score', filters.maxScore);
 
     const from = (filters.page - 1) * filters.pageSize;
     const to = from + filters.pageSize - 1;

@@ -88,27 +88,6 @@ export function WeekComparisonTable({
         <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-3">
           <div>
             <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-              {comparison.currentWeek.label}
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {formatPeriodLabel(comparison.currentWeek.startDate, comparison.currentWeek.endDate)}
-            </p>
-          </div>
-          <div className="space-y-2">
-            {comparison.metrics.slice(0, 4).map((metric) => (
-              <div key={metric.name} className="flex justify-between items-center text-sm">
-                <span className="text-zinc-500 dark:text-zinc-400">{metric.name}</span>
-                <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                  {formatValue(metric.currentValue, metric.category, metric.unit)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-3">
-          <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
               {comparison.previousWeek.label}
             </p>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -121,6 +100,27 @@ export function WeekComparisonTable({
                 <span className="text-zinc-500 dark:text-zinc-400">{metric.name}</span>
                 <span className="font-medium text-zinc-900 dark:text-zinc-50">
                   {formatValue(metric.previousValue, metric.category, metric.unit)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-3">
+          <div>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              {comparison.currentWeek.label}
+            </p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {formatPeriodLabel(comparison.currentWeek.startDate, comparison.currentWeek.endDate)}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {comparison.metrics.slice(0, 4).map((metric) => (
+              <div key={metric.name} className="flex justify-between items-center text-sm">
+                <span className="text-zinc-500 dark:text-zinc-400">{metric.name}</span>
+                <span className="font-medium text-zinc-900 dark:text-zinc-50">
+                  {formatValue(metric.currentValue, metric.category, metric.unit)}
                 </span>
               </div>
             ))}

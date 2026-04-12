@@ -119,8 +119,10 @@ export function ReportsAnalyticsTab({
   const { data, isLoading, error } = useReports(filters);
   const reports = useMemo(
     () =>
-      (data?.data || []).filter((report) =>
-        matchesMarketingReportFilters(report, { campaignType, objective })
+      (data?.data || []).filter(
+        (report) =>
+          report.status !== 'draft' &&
+          matchesMarketingReportFilters(report, { campaignType, objective })
       ),
     [campaignType, data?.data, objective]
   );

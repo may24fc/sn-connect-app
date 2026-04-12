@@ -3,6 +3,7 @@
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { MarketingReportsAccessState } from '@/components/reports/MarketingReportsAccessState';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
+import { useDeleteReport } from '@/hooks/useDeleteReport';
 import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import { useReport } from '@/hooks/useReport';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
@@ -24,6 +25,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   InsightsSummary,
   type KeyFinding,
@@ -40,7 +47,9 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import type { ProgressTimelineStep } from '@hr-portal/ui';
-import { AlertCircle, ArrowLeft, BarChart3, ListChecks, Loader2, Send, TableIcon } from 'lucide-react';
+import { AlertCircle, ArrowLeft, BarChart3, ListChecks, Loader2, Pencil, Send, TableIcon, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { use, useState } from 'react';
 
 const statusVariant: Record<
@@ -62,14 +71,31 @@ export default function ReportDetailPage({
 }) {
   const { addToast } = useToast();
   const { id } = use(params);
+  const router = useRouter();
   const handleBack = useBackNavigation({ fallbackPath: '/reports' });
   const marketingAccess = useMarketingReportsAccess();
   const { data, isLoading, error } = useReport(id);
   const submitReport = useSubmitReport();
+  const deleteReport = useDeleteReport();
 
   const [metricsView, setMetricsView] = useState<'table' | 'chart'>('table');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const report = data?.data;
+  const metrics = report?.report_metrics || [];
+  const marketingContext = report?.marketing_context;
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
+    initialColumn: 'metric_name',
+  });
+
+  const sortedMetrics = sortItems(metrics, {
+    metric_name: (m) => m.metric_name,
+    metric_value: (m) => m.metric_value,
+    metric_unit: (m) => m.metric_unit ?? '',
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
   if (marketingAccess.isLoading) {
     return (
@@ -135,19 +161,6 @@ export default function ReportDetailPage({
     );
   }
 
-  const metrics = report.report_metrics || [];
-  const marketingContext = report.marketing_context;
-
-  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'metric_name' });
-
-  const sortedMetrics = sortItems(metrics, {
-    metric_name: (m) => m.metric_name,
-    metric_value: (m) => m.metric_value,
-    metric_unit: (m) => m.metric_unit ?? '',
-  });
-
-  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
-
   // Build KPI cards from metrics
   const kpiCards = metrics.slice(0, 4).map((metric, index) => ({
     label: metric.metric_name,
@@ -168,8 +181,32 @@ export default function ReportDetailPage({
     highlight: index === 0,
   }));
 
+  const draftLabel = marketingContext?.campaignName || `${getReportTypeLabel(report.report_type)} report`;
+
+  const handleDeleteDraft = () => {
+    deleteReport.mutate(report.id, {
+      onSuccess: () => {
+        addToast({
+          title: 'Draft deleted',
+          description: 'The marketing report draft has been removed.',
+          variant: 'success',
+        });
+        setDeleteDialogOpen(false);
+        router.push('/reports');
+      },
+      onError: (deleteError) => {
+        addToast({
+          title: 'Delete failed',
+          description: deleteError.message,
+          variant: 'error',
+        });
+      },
+    });
+  };
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <>
+      <div className="mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={handleBack}>
@@ -195,30 +232,48 @@ export default function ReportDetailPage({
         <div className="flex items-center gap-2">
           <Badge variant={statusVariant[report.status]}>{formatLabel(report.status)}</Badge>
           {report.status === 'draft' && (
-            <Button
-              onClick={() =>
-                submitReport.mutate(report.id, {
-                  onSuccess: () => {
-                    addToast({
-                      title: 'Report submitted',
-                      description: `${report.report_type} report has been submitted for review`,
-                      variant: 'success',
-                    });
-                  },
-                  onError: () => {
-                    addToast({
-                      title: 'Error',
-                      description: 'Failed to submit report',
-                      variant: 'error',
-                    });
-                  },
-                })
-              }
-              disabled={submitReport.isPending}
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Submit
-            </Button>
+            <>
+              <Button variant="outline" asChild>
+                <Link href={`/reports/${report.id}/edit`}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Draft
+                </Link>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-rose-600 hover:text-rose-700"
+                onClick={() => setDeleteDialogOpen(true)}
+                disabled={deleteReport.isPending}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Draft
+              </Button>
+              <Button
+                onClick={() =>
+                  submitReport.mutate(report.id, {
+                    onSuccess: () => {
+                      addToast({
+                        title: 'Report submitted',
+                        description: `${report.report_type} report has been submitted for review`,
+                        variant: 'success',
+                      });
+                    },
+                    onError: (submitError) => {
+                      addToast({
+                        title: 'Submission failed',
+                        description: submitError.message,
+                        variant: 'error',
+                      });
+                    },
+                  })
+                }
+                disabled={submitReport.isPending}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                Submit
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -448,6 +503,31 @@ export default function ReportDetailPage({
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete draft report?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove {draftLabel}. Once deleted, the draft cannot be recovered from this page.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              disabled={deleteReport.isPending}
+              onClick={handleDeleteDraft}
+            >
+              {deleteReport.isPending ? 'Deleting...' : 'Delete Draft'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

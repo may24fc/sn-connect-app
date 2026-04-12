@@ -15,6 +15,20 @@ type Events = {
       timestamp: string;
     };
   };
+  'ats/resume.upload': {
+    data: {
+      /** UUID of the job_applications row. */
+      applicationId: string;
+      /** Supabase Storage path to the uploaded CV file. */
+      filePath: string;
+    };
+  };
+  'ats/resume.parsed': {
+    data: {
+      /** UUID of the job_applications row whose resume was parsed. */
+      applicationId: string;
+    };
+  };
 };
 
 export const inngest = new Inngest({

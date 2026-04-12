@@ -99,7 +99,7 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
     });
   }
 
-  if ((pendingData?.pendingReports.count ?? 0) > 0) {
+  if (role === 'super_admin' && (pendingData?.pendingReports.count ?? 0) > 0) {
     const overdueCount = pendingData?.pendingReports.overdue ?? 0;
 
     items.push({

@@ -156,3 +156,62 @@ export function useHireApplication() {
     },
   });
 }
+
+export function useBulkImportApplications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      jobPostingId,
+      files,
+    }: {
+      jobPostingId: string;
+      files: File[];
+    }) => {
+      const formData = new FormData();
+      formData.set('job_posting_id', jobPostingId);
+      for (const file of files) {
+        formData.append('files', file);
+      }
+
+      const res = await fetch('/api/applications/bulk-import', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to import' }));
+        throw new Error(err.error ?? 'Failed to import applications');
+      }
+      return res.json() as Promise<{
+        data: {
+          imported: Array<{ applicationId: string; fileName: string; status: string }>;
+          errors: Array<{ fileName: string; error: string }>;
+          summary: { total: number; queued: number; failed: number };
+        };
+      }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+    },
+  });
+}
+
+export function useEvaluateApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/applications/${id}/evaluate`, {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to evaluate' }));
+        throw new Error(err.error ?? 'Failed to evaluate application');
+      }
+      return res.json() as Promise<{
+        data: { status: string; applicationId: string };
+      }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+    },
+  });
+}

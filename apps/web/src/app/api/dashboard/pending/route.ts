@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { getAuthedSupabase, isNotificationAdmin } from '../../notifications/_lib';
 
 /**
@@ -10,7 +11,8 @@ import { getAuthedSupabase, isNotificationAdmin } from '../../notifications/_lib
  */
 export async function GET(): Promise<NextResponse> {
   try {
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { user, role, error } = await getAuthedSupabase();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,7 +23,7 @@ export async function GET(): Promise<NextResponse> {
     }
 
     // Pending report submissions (status = 'submitted', awaiting review)
-    const { count: pendingReportsCount, data: pendingReports } = await supabase
+    const { count: pendingReportsCount, data: pendingReports, error: pendingReportsError } = await supabaseAdmin
       .from('reports')
       .select('id, employee_id, report_type, period_start, period_end, submitted_at, created_at', {
         count: 'exact',
@@ -31,8 +33,13 @@ export async function GET(): Promise<NextResponse> {
       .order('submitted_at', { ascending: false })
       .limit(5);
 
+    if (pendingReportsError) {
+      console.error('Failed to fetch pending report approvals:', pendingReportsError);
+      return NextResponse.json({ error: 'Failed to fetch pending report approvals' }, { status: 500 });
+    }
+
     // Pending invoice approvals (status = 'submitted')
-    const { count: pendingInvoicesCount, data: pendingInvoices } = await supabase
+    const { count: pendingInvoicesCount, data: pendingInvoices } = await supabaseAdmin
       .from('invoices')
       .select('id, employee_id, invoice_number, gross_amount, net_amount, created_at', {
         count: 'exact',
@@ -43,7 +50,7 @@ export async function GET(): Promise<NextResponse> {
       .limit(5);
 
     // Pending performance reviews (status = 'pending' or 'in_progress')
-    const { count: pendingReviewsCount, data: pendingReviews } = await supabase
+    const { count: pendingReviewsCount, data: pendingReviews } = await supabaseAdmin
       .from('performance_reviews')
       .select('id, employee_id, review_period, reviewer_id, created_at', { count: 'exact' })
       .in('status', ['pending', 'in_progress'])
@@ -57,7 +64,7 @@ export async function GET(): Promise<NextResponse> {
     const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
     // Get active interns (need both internship id and employee_id)
-    const { data: activeInterns } = await supabase
+    const { data: activeInterns } = await supabaseAdmin
       .from('internships')
       .select('id, employee_id')
       .eq('status', 'active');
@@ -67,7 +74,7 @@ export async function GET(): Promise<NextResponse> {
       const internshipIds = activeInterns.map((i: { id: string }) => i.id);
 
       // Get interns who submitted yesterday — intern_daily_logs uses internship_id, not employee_id
-      const { data: submittedLogs } = await supabase
+      const { data: submittedLogs } = await supabaseAdmin
         .from('intern_daily_logs')
         .select('internship_id')
         .in('internship_id', internshipIds)

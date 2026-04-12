@@ -1,4 +1,7 @@
+import { context as otelContext, trace as otelTrace } from '@opentelemetry/api';
 import { chatMessageSchema } from '@/lib/schemas/ai.schema';
+import { getLangWatchTracer } from 'langwatch';
+import type { LangWatchSpanRAGContext } from 'langwatch/observability';
 import OpenAI from 'openai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAdminClient, getAllowedKnowledgeAccessLevels, getAuthedSupabase } from '../_lib';
@@ -10,6 +13,7 @@ const EMBEDDING_MATCH_THRESHOLD = 0.25;
 const EMBEDDING_MATCH_COUNT = 8;
 const FAST_MODEL = 'gpt-4o-mini'; // Cheap: routing + low-complexity generation
 const STRONG_MODEL = 'gpt-4o';     // Expensive: high-complexity analysis
+const langWatchTracer = getLangWatchTracer('sn-connect-ai-rag');
 
 // ─── System Prompts ──────────────────────────────────────────────────────────
 const GUARDRAIL_SYSTEM_PROMPT = `You are SN Connect, an internal AI HR assistant for the company. You must follow these rules STRICTLY:
@@ -49,6 +53,12 @@ interface EmbeddingMatch {
 interface ComplexityResult {
   complexity: 'low' | 'high';
   requires_analysis: boolean;
+}
+
+interface UsageMetrics {
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
 }
 
 // ─── PII Detection ──────────────────────────────────────────────────────────
@@ -209,6 +219,14 @@ function buildContextPrompt(matches: EmbeddingMatch[]): string {
   return `=== KNOWLEDGE BASE CONTEXT ===\n${contextParts.join('\n\n')}\n=== END OF CONTEXT ===`;
 }
 
+function buildLangWatchRagContexts(matches: EmbeddingMatch[]): LangWatchSpanRAGContext[] {
+  return matches.map((match) => ({
+    document_id: match.metadata.source_id,
+    chunk_id: `${match.metadata.source_id}:${match.metadata.chunk_index}`,
+    content: match.content,
+  }));
+}
+
 interface Citation {
   id: number;
   sourceId: string;
@@ -286,203 +304,306 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No user message found' }, { status: 400 });
     }
 
-    // ── Privacy Pre-filter: hard refusal for PII requests ──
-    if (detectsPIIRequest(latestUserMessage)) {
-      return streamSingleResponse(PII_REFUSAL, [], conversationId);
-    }
-
-    const openai = getOpenAIClient();
-    const adminClient = getAdminClient();
-
-    // ── Build context-enhanced search query for follow-up questions ──
-    // When conversation history exists, include recent assistant context so
-    // the embedding captures the topic being discussed (e.g. "tell me more").
-    let searchQuery = latestUserMessage;
-    if (historyMessages && historyMessages.length > 2) {
-      const recentAssistantContext = historyMessages
-        .filter((m) => m.role === 'assistant')
-        .slice(-2)
-        .map((m) => m.content.slice(0, 200))
-        .join(' ');
-      if (recentAssistantContext) {
-        searchQuery = `${recentAssistantContext}\n\nCurrent question: ${latestUserMessage}`;
-      }
-    }
-
-    // ── Stage 1: Semantic Cache ──
-    let queryEmbedding: number[];
-    try {
-      queryEmbedding = await generateQueryEmbedding(openai, searchQuery);
-    } catch (embeddingError) {
-      console.error('Embedding generation failed:', embeddingError);
-      return NextResponse.json({ error: 'Failed to process query' }, { status: 500 });
-    }
-
-    try {
-      const cacheHit = await lookupCache(adminClient, queryEmbedding);
-      if (cacheHit) {
-        const cacheAllowed = await isCacheHitAllowed(adminClient, cacheHit.source_citations, isAdminRole);
-        if (cacheAllowed) {
-          const cachedCitations = Array.isArray(cacheHit.source_citations)
-            ? (cacheHit.source_citations as Citation[])
-            : [];
-          return streamSingleResponse(cacheHit.response_text, cachedCitations, conversationId);
-        }
-        // Admin-only content in cache — fall through to role-filtered full pipeline
-      }
-    } catch {
-      // Cache miss or error — continue to full pipeline
-    }
-
-    // ── Stage 2: Complexity Router ──
-    const complexity = await classifyComplexity(openai, latestUserMessage);
-
-    // ── Stage 3: Vector Retrieval ──
-    const contextMatches = await retrieveContext(adminClient, queryEmbedding, allowedAccessLevels);
-    const contextPrompt = buildContextPrompt(contextMatches);
-    // Always extract citations (for the LLM to reference) but only send to client if requested
-    const sourceCitations = extractSourceCitations(contextMatches);
-    const citationsToSend = includeSourceCitations !== false ? sourceCitations : [];
-
-    // ── Stage 4: Generation with Guardrails ──
-    const selectedModel = complexity.complexity === 'high' ? STRONG_MODEL : FAST_MODEL;
-
-    // Build conversation messages for the API
-    const conversationMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-      { role: 'system', content: `${GUARDRAIL_SYSTEM_PROMPT}\n\n${contextPrompt}` },
-    ];
-
-    if (historyMessages && historyMessages.length > 1) {
-      // Include up to 10 previous messages for context (excluding the latest which we handle separately)
-      const previousMessages = historyMessages.slice(-11, -1);
-      for (const m of previousMessages) {
-        conversationMessages.push({ role: m.role, content: m.content });
-      }
-    }
-
-    conversationMessages.push({ role: 'user', content: latestUserMessage });
-
-    // ── Persist user message if conversationId is provided ──
+    const requestSpan = langWatchTracer.startSpan('ai-chat-request');
+    requestSpan.setType('workflow');
+    requestSpan.setInput('text', latestUserMessage);
+    requestSpan.setAttribute('langwatch.user.id', user.id);
+    requestSpan.setAttribute('ai.chat.include_source_citations', includeSourceCitations !== false);
+    requestSpan.setAttribute('ai.chat.allowed_access_levels', JSON.stringify(allowedAccessLevels));
+    requestSpan.setAttribute('ai.chat.role', role ?? 'unknown');
     if (conversationId) {
-      adminClient
-        .from('ai_messages')
-        .insert({
-          conversation_id: conversationId,
-          role: 'user',
-          content: latestUserMessage,
-          created_by: user.id,
-        })
-        .then(({ error: insertError }) => {
-          if (insertError) console.error('Failed to persist user message:', insertError);
+      requestSpan.setAttribute('langwatch.thread.id', conversationId);
+      requestSpan.setAttribute('gen_ai.conversation.id', conversationId);
+    }
+
+    const traceContext = otelTrace.setSpan(otelContext.active(), requestSpan);
+
+    return await otelContext.with(traceContext, async () => {
+      // ── Privacy Pre-filter: hard refusal for PII requests ──
+      if (detectsPIIRequest(latestUserMessage)) {
+        requestSpan.setAttribute('ai.chat.outcome', 'pii_refusal');
+        requestSpan.setOutput('text', PII_REFUSAL);
+        requestSpan.end();
+        return streamSingleResponse(PII_REFUSAL, [], conversationId);
+      }
+
+      const openai = getOpenAIClient();
+      const adminClient = getAdminClient();
+
+      // ── Build context-enhanced search query for follow-up questions ──
+      // When conversation history exists, include recent assistant context so
+      // the embedding captures the topic being discussed (e.g. "tell me more").
+      let searchQuery = latestUserMessage;
+      if (historyMessages && historyMessages.length > 2) {
+        const recentAssistantContext = historyMessages
+          .filter((m) => m.role === 'assistant')
+          .slice(-2)
+          .map((m) => m.content.slice(0, 200))
+          .join(' ');
+        if (recentAssistantContext) {
+          searchQuery = `${recentAssistantContext}\n\nCurrent question: ${latestUserMessage}`;
+        }
+      }
+
+      // ── Stage 1: Semantic Cache ──
+      let queryEmbedding: number[];
+      try {
+        queryEmbedding = await generateQueryEmbedding(openai, searchQuery);
+      } catch (embeddingError) {
+        requestSpan.recordException(embeddingError instanceof Error ? embeddingError : new Error(String(embeddingError)));
+        requestSpan.end();
+        console.error('Embedding generation failed:', embeddingError);
+        return NextResponse.json({ error: 'Failed to process query' }, { status: 500 });
+      }
+
+      try {
+        const cacheHit = await lookupCache(adminClient, queryEmbedding);
+        if (cacheHit) {
+          const cacheAllowed = await isCacheHitAllowed(adminClient, cacheHit.source_citations, isAdminRole);
+          if (cacheAllowed) {
+            const cachedCitations = Array.isArray(cacheHit.source_citations)
+              ? (cacheHit.source_citations as Citation[])
+              : [];
+            requestSpan.setAttribute('ai.chat.cache_hit', true);
+            requestSpan.setAttribute('ai.chat.outcome', 'cache_hit');
+            requestSpan.setOutput('text', cacheHit.response_text);
+            requestSpan.end();
+            return streamSingleResponse(cacheHit.response_text, cachedCitations, conversationId);
+          }
+          // Admin-only content in cache — fall through to role-filtered full pipeline
+        }
+      } catch {
+        // Cache miss or error — continue to full pipeline
+      }
+
+      // ── Stage 2: Complexity Router ──
+      const complexity = await classifyComplexity(openai, latestUserMessage);
+      requestSpan.setAttribute('ai.chat.complexity', complexity.complexity);
+      requestSpan.setAttribute('ai.chat.requires_analysis', complexity.requires_analysis);
+
+      // ── Stage 3: Vector Retrieval ──
+      const contextMatches = await langWatchTracer.withActiveSpan('supabase-pgvector-retrieval', async (ragSpan) => {
+        ragSpan.setType('rag');
+        ragSpan.setInput('text', searchQuery);
+        ragSpan.setAttribute('langwatch.user.id', user.id);
+        ragSpan.setAttribute('rag.source', 'supabase_pgvector');
+        ragSpan.setAttribute('rag.match_count', EMBEDDING_MATCH_COUNT);
+        ragSpan.setAttribute('rag.match_threshold', EMBEDDING_MATCH_THRESHOLD);
+        ragSpan.setAttribute('rag.allowed_access_levels', JSON.stringify(allowedAccessLevels));
+        if (conversationId) {
+          ragSpan.setAttribute('langwatch.thread.id', conversationId);
+        }
+
+        const matches = await retrieveContext(adminClient, queryEmbedding, allowedAccessLevels);
+        const ragContexts = buildLangWatchRagContexts(matches);
+
+        if (ragContexts.length > 0) {
+          ragSpan.setRAGContexts(ragContexts);
+        }
+
+        ragSpan.setOutput('json', {
+          matchCount: matches.length,
+          sources: matches.map((match) => ({
+            sourceId: match.metadata.source_id,
+            sourceTitle: match.metadata.source_title,
+            chunkIndex: match.metadata.chunk_index,
+            similarity: match.similarity,
+          })),
         });
 
-      // Update conversation title from first user message if still default
-      adminClient
-        .from('ai_conversations')
-        .update({ title: latestUserMessage.slice(0, 60) })
-        .eq('id', conversationId)
-        .eq('title', 'New conversation')
-        .then(() => {});
-    }
+        return matches;
+      });
 
-    // ── Stream the response ──
-    const encoder = new TextEncoder();
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Send source citations first (always send if we have any, unless explicitly disabled)
-          if (citationsToSend.length > 0) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources: citationsToSend })}\n\n`)
-            );
-          }
+      const contextPrompt = buildContextPrompt(contextMatches);
+      // Always extract citations (for the LLM to reference) but only send to client if requested
+      const sourceCitations = extractSourceCitations(contextMatches);
+      const citationsToSend = includeSourceCitations !== false ? sourceCitations : [];
+      requestSpan.setAttribute('ai.chat.retrieved_context_count', contextMatches.length);
 
-          const stream = await openai.chat.completions.create({
-            model: selectedModel,
-            max_tokens: complexity.complexity === 'high' ? 2048 : 1024,
-            temperature: 0.3,
-            stream: true,
-            messages: conversationMessages,
+      // ── Stage 4: Generation with Guardrails ──
+      const selectedModel = complexity.complexity === 'high' ? STRONG_MODEL : FAST_MODEL;
+
+      // Build conversation messages for the API
+      const conversationMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+        { role: 'system', content: `${GUARDRAIL_SYSTEM_PROMPT}\n\n${contextPrompt}` },
+      ];
+
+      if (historyMessages && historyMessages.length > 1) {
+        // Include up to 10 previous messages for context (excluding the latest which we handle separately)
+        const previousMessages = historyMessages.slice(-11, -1);
+        for (const m of previousMessages) {
+          conversationMessages.push({ role: m.role, content: m.content });
+        }
+      }
+
+      conversationMessages.push({ role: 'user', content: latestUserMessage });
+
+      // ── Persist user message if conversationId is provided ──
+      if (conversationId) {
+        adminClient
+          .from('ai_messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'user',
+            content: latestUserMessage,
+            created_by: user.id,
+          })
+          .then(({ error: insertError }) => {
+            if (insertError) console.error('Failed to persist user message:', insertError);
           });
 
-          let fullResponse = '';
+        // Update conversation title from first user message if still default
+        adminClient
+          .from('ai_conversations')
+          .update({ title: latestUserMessage.slice(0, 60) })
+          .eq('id', conversationId)
+          .eq('title', 'New conversation')
+          .then(() => {});
+      }
 
-          for await (const chunk of stream) {
-            const text = chunk.choices[0]?.delta?.content ?? '';
-            if (text) {
-              fullResponse += text;
+      // ── Stream the response ──
+      const encoder = new TextEncoder();
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            // Send source citations first (always send if we have any, unless explicitly disabled)
+            if (citationsToSend.length > 0) {
               controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ type: 'content', text })}\n\n`)
+                encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources: citationsToSend })}\n\n`)
               );
             }
-          }
 
-          // Send done event
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'done', conversationId: conversationId || null })}\n\n`)
-          );
+            await otelContext.with(traceContext, async () => {
+              await langWatchTracer.withActiveSpan('openai-rag-generation', async (llmSpan) => {
+                llmSpan.setType('llm');
+                llmSpan.setRequestModel(selectedModel);
+                llmSpan.setInput('chat_messages', conversationMessages);
+                llmSpan.setAttribute('langwatch.user.id', user.id);
+                llmSpan.setAttribute('langwatch.gen_ai.streaming', true);
+                llmSpan.setAttribute('ai.chat.retrieved_context_count', contextMatches.length);
+                if (conversationId) {
+                  llmSpan.setAttribute('langwatch.thread.id', conversationId);
+                  llmSpan.setAttribute('gen_ai.conversation.id', conversationId);
+                }
 
-          // ── Stage 5: Cache the response (async) ──
-          // Only cache if we had real context matches — never cache refusal/fallback responses
-          if (fullResponse.length > 0 && contextMatches.length > 0) {
-            cacheResponse(adminClient, latestUserMessage, queryEmbedding, fullResponse, sourceCitations);
-          }
+                const stream = await openai.chat.completions.create({
+                  model: selectedModel,
+                  max_tokens: complexity.complexity === 'high' ? 2048 : 1024,
+                  temperature: 0.3,
+                  stream: true,
+                  stream_options: { include_usage: true },
+                  messages: conversationMessages,
+                });
 
-          // ── Persist assistant message if conversationId is provided ──
-          if (conversationId && fullResponse.length > 0) {
-            adminClient
-              .from('ai_messages')
-              .insert({
-                conversation_id: conversationId,
-                role: 'assistant',
-                content: fullResponse,
-                citations: sourceCitations.length > 0 ? sourceCitations : null,
-                created_by: user.id,
-              })
-              .then(({ error: insertError }) => {
-                if (insertError) console.error('Failed to persist assistant message:', insertError);
+                let fullResponse = '';
+                let usageMetrics: UsageMetrics = {};
+
+                for await (const chunk of stream) {
+                  const text = chunk.choices[0]?.delta?.content ?? '';
+                  if (chunk.usage) {
+                    usageMetrics = {
+                      promptTokens: chunk.usage.prompt_tokens ?? undefined,
+                      completionTokens: chunk.usage.completion_tokens ?? undefined,
+                      totalTokens: chunk.usage.total_tokens ?? undefined,
+                    };
+                  }
+
+                  if (text) {
+                    fullResponse += text;
+                    controller.enqueue(
+                      encoder.encode(`data: ${JSON.stringify({ type: 'content', text })}\n\n`)
+                    );
+                  }
+                }
+
+                llmSpan.setOutput('text', fullResponse);
+                if (usageMetrics.promptTokens !== undefined || usageMetrics.completionTokens !== undefined) {
+                  llmSpan.setMetrics({
+                    ...(usageMetrics.promptTokens !== undefined
+                      ? { promptTokens: usageMetrics.promptTokens }
+                      : {}),
+                    ...(usageMetrics.completionTokens !== undefined
+                      ? { completionTokens: usageMetrics.completionTokens }
+                      : {}),
+                  });
+                }
+
+                // Send done event
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ type: 'done', conversationId: conversationId || null })}\n\n`)
+                );
+
+                // ── Stage 5: Cache the response (async) ──
+                // Only cache if we had real context matches — never cache refusal/fallback responses
+                if (fullResponse.length > 0 && contextMatches.length > 0) {
+                  cacheResponse(adminClient, latestUserMessage, queryEmbedding, fullResponse, sourceCitations);
+                }
+
+                // ── Persist assistant message if conversationId is provided ──
+                if (conversationId && fullResponse.length > 0) {
+                  adminClient
+                    .from('ai_messages')
+                    .insert({
+                      conversation_id: conversationId,
+                      role: 'assistant',
+                      content: fullResponse,
+                      citations: sourceCitations.length > 0 ? sourceCitations : null,
+                      created_by: user.id,
+                    })
+                    .then(({ error: insertError }) => {
+                      if (insertError) console.error('Failed to persist assistant message:', insertError);
+                    });
+                }
+
+                // Audit log (fire and forget)
+                adminClient
+                  .from('audit_logs')
+                  .insert({
+                    table_name: 'ai_chat',
+                    record_id: user.id,
+                    operation: 'INSERT',
+                    performed_by: user.id,
+                    action: 'ai_chat_query',
+                    metadata: {
+                      message_length: latestUserMessage.length,
+                      response_length: fullResponse.length,
+                      sources_used: sourceCitations.length,
+                      model_used: selectedModel,
+                      complexity: complexity.complexity,
+                      cache_hit: false,
+                      conversation_id: conversationId || null,
+                    },
+                  })
+                  .then(({ error: auditError }) => {
+                    if (auditError) console.error('Failed to log AI chat audit:', auditError);
+                  });
+
+                requestSpan.setAttribute('ai.chat.cache_hit', false);
+                requestSpan.setAttribute('ai.chat.outcome', 'generated');
+                requestSpan.setOutput('text', fullResponse);
               });
-          }
-
-          // Audit log (fire and forget)
-          adminClient
-            .from('audit_logs')
-            .insert({
-              table_name: 'ai_chat',
-              record_id: user.id,
-              operation: 'INSERT',
-              performed_by: user.id,
-              action: 'ai_chat_query',
-              metadata: {
-                message_length: latestUserMessage.length,
-                response_length: fullResponse.length,
-                sources_used: sourceCitations.length,
-                model_used: selectedModel,
-                complexity: complexity.complexity,
-                cache_hit: false,
-                conversation_id: conversationId || null,
-              },
-            })
-            .then(({ error: auditError }) => {
-              if (auditError) console.error('Failed to log AI chat audit:', auditError);
             });
 
-          controller.close();
-        } catch (streamError) {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Stream processing failed' })}\n\n`)
-          );
-          controller.close();
-        }
-      },
-    });
+            controller.close();
+            requestSpan.end();
+          } catch (streamError) {
+            requestSpan.recordException(streamError instanceof Error ? streamError : new Error(String(streamError)));
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Stream processing failed' })}\n\n`)
+            );
+            controller.close();
+            requestSpan.end();
+          }
+        },
+      });
 
-    return new Response(readableStream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
+      return new Response(readableStream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
+        },
+      });
     });
   } catch (error) {
     console.error('Unexpected error in POST /api/ai/chat:', error);

@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { notifySuperAdminsAboutSubmittedReport } from '@/app/api/reports/_notifications';
 import { normalizeReportRecord, serializeReportNotes } from '@/lib/report-utils';
 import { reportCreateSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
@@ -302,6 +303,14 @@ export async function POST(request: NextRequest) {
       recordId: report.id,
       metadata: { employeeId, reportType: parsed.data.reportType },
     });
+
+    if (parsed.data.status === 'submitted') {
+      await notifySuperAdminsAboutSubmittedReport({
+        reportId: report.id,
+        reportType: parsed.data.reportType,
+        submittedBy: user.id,
+      });
+    }
 
     return NextResponse.json({ data: normalizeReportRecord(fullReport) }, { status: 201 });
   } catch (error) {

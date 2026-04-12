@@ -3,6 +3,7 @@
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { MarketingReportsAccessState } from '@/components/reports/MarketingReportsAccessState';
+import { useDeleteReport } from '@/hooks/useDeleteReport';
 import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
@@ -15,6 +16,12 @@ import {
   Card,
   CardContent,
   CountBadge,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   Input,
   Select,
@@ -37,7 +44,7 @@ import {
   HelpLink,
   useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, ChevronDown, ChevronRight, CheckCircle2, FileText, Layers, List, Loader2, Plus, Search, Send } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronRight, CheckCircle2, FileText, Layers, List, Loader2, Pencil, Plus, Search, Send, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -60,6 +67,7 @@ export default function ReportsPage() {
   const [status, setStatus] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'flat' | 'grouped'>('flat');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [draftPendingDelete, setDraftPendingDelete] = useState<ReportRecord | null>(null);
 
   if (marketingAccess.isLoading) {
     return (
@@ -94,6 +102,7 @@ export default function ReportsPage() {
   const { data, isLoading, error, refetch } = useReports(reportFilters);
 
   const submitReport = useSubmitReport();
+  const deleteReport = useDeleteReport();
 
   const reports = data?.data || [];
 
@@ -142,8 +151,37 @@ export default function ReportsPage() {
     { status: 'Rejected', count: reports.filter((r) => r.status === 'rejected').length, color: '#E74C3C' },
   ].filter((d) => d.count > 0), [stats, reports]);
 
+  const draftLabel =
+    draftPendingDelete?.marketing_context?.campaignName ||
+    (draftPendingDelete ? getReportTypeLabel(draftPendingDelete.report_type) : 'this draft');
+
+  const handleDeleteDraft = () => {
+    if (!draftPendingDelete) {
+      return;
+    }
+
+    deleteReport.mutate(draftPendingDelete.id, {
+      onSuccess: () => {
+        addToast({
+          title: 'Draft deleted',
+          description: 'The marketing report draft has been removed.',
+          variant: 'success',
+        });
+        setDraftPendingDelete(null);
+      },
+      onError: (deleteError) => {
+        addToast({
+          title: 'Delete failed',
+          description: deleteError.message,
+          variant: 'error',
+        });
+      },
+    });
+  };
+
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-1.5">
@@ -315,6 +353,8 @@ export default function ReportsPage() {
                       expandedIds={expandedIds}
                       onToggleExpand={toggleExpanded}
                       submitReport={submitReport}
+                      onDeleteDraft={setDraftPendingDelete}
+                      deletePending={deleteReport.isPending}
                       addToast={addToast}
                     />
                   ))
@@ -354,30 +394,49 @@ export default function ReportsPage() {
                             <Link href={`/reports/${report.id}`}>View</Link>
                           </Button>
                           {report.status === 'draft' && (
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                submitReport.mutate(report.id, {
-                                  onSuccess: () => {
-                                    addToast({
-                                      title: 'Marketing report submitted',
-                                      description: 'Your marketing report has been submitted for review',
-                                      variant: 'success',
-                                    });
-                                  },
-                                  onError: () => {
-                                    addToast({
-                                      title: 'Error',
-                                      description: 'Failed to submit report',
-                                      variant: 'error',
-                                    });
-                                  },
-                                })
-                              }
-                              disabled={submitReport.isPending}
-                            >
-                              Submit
-                            </Button>
+                            <>
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/reports/${report.id}/edit`}>
+                                  <Pencil className="mr-1 h-3.5 w-3.5" />
+                                  Edit
+                                </Link>
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-rose-600 hover:text-rose-700"
+                                onClick={() => setDraftPendingDelete(report)}
+                                disabled={deleteReport.isPending}
+                              >
+                                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                                Delete
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  submitReport.mutate(report.id, {
+                                    onSuccess: () => {
+                                      addToast({
+                                        title: 'Marketing report submitted',
+                                        description: 'Your marketing report has been submitted for review',
+                                        variant: 'success',
+                                      });
+                                    },
+                                    onError: (submitError) => {
+                                      addToast({
+                                        title: 'Submission failed',
+                                        description: submitError.message,
+                                        variant: 'error',
+                                      });
+                                    },
+                                  })
+                                }
+                                disabled={submitReport.isPending}
+                              >
+                                Submit
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>
@@ -389,7 +448,32 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+
+      <Dialog open={Boolean(draftPendingDelete)} onOpenChange={(open) => !open && setDraftPendingDelete(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete draft report?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove {draftLabel}. Submitted or reviewed reports cannot be restored from here.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDraftPendingDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              disabled={deleteReport.isPending}
+              onClick={handleDeleteDraft}
+            >
+              {deleteReport.isPending ? 'Deleting...' : 'Delete Draft'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -414,6 +498,8 @@ interface GroupedReportRowProps {
   expandedIds: Set<string>;
   onToggleExpand: (id: string) => void;
   submitReport: ReturnType<typeof useSubmitReport>;
+  onDeleteDraft: (report: ReportRecord) => void;
+  deletePending: boolean;
   addToast: ReturnType<typeof useToast>['addToast'];
 }
 
@@ -423,6 +509,8 @@ function GroupedReportRow({
   expandedIds,
   onToggleExpand,
   submitReport,
+  onDeleteDraft,
+  deletePending,
   addToast,
 }: GroupedReportRowProps) {
   const isExpanded = expandedIds.has(report.id);
@@ -500,30 +588,49 @@ function GroupedReportRow({
               <Link href={`/reports/${report.id}`}>View</Link>
             </Button>
             {report.status === 'draft' && (
-              <Button
-                size="sm"
-                onClick={() =>
-                  submitReport.mutate(report.id, {
-                    onSuccess: () => {
-                      addToast({
-                        title: 'Marketing report submitted',
-                        description: 'Your marketing report has been submitted for review',
-                        variant: 'success',
-                      });
-                    },
-                    onError: () => {
-                      addToast({
-                        title: 'Error',
-                        description: 'Failed to submit report',
-                        variant: 'error',
-                      });
-                    },
-                  })
-                }
-                disabled={submitReport.isPending}
-              >
-                Submit
-              </Button>
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/reports/${report.id}/edit`}>
+                    <Pencil className="mr-1 h-3.5 w-3.5" />
+                    Edit
+                  </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-rose-600 hover:text-rose-700"
+                  onClick={() => onDeleteDraft(report)}
+                  disabled={deletePending}
+                >
+                  <Trash2 className="mr-1 h-3.5 w-3.5" />
+                  Delete
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    submitReport.mutate(report.id, {
+                      onSuccess: () => {
+                        addToast({
+                          title: 'Marketing report submitted',
+                          description: 'Your marketing report has been submitted for review',
+                          variant: 'success',
+                        });
+                      },
+                      onError: (submitError) => {
+                        addToast({
+                          title: 'Submission failed',
+                          description: submitError.message,
+                          variant: 'error',
+                        });
+                      },
+                    })
+                  }
+                  disabled={submitReport.isPending}
+                >
+                  Submit
+                </Button>
+              </>
             )}
           </div>
         </TableCell>
@@ -549,6 +656,8 @@ function GroupedReportRow({
             expandedIds={expandedIds}
             onToggleExpand={onToggleExpand}
             submitReport={submitReport}
+            onDeleteDraft={onDeleteDraft}
+            deletePending={deletePending}
             addToast={addToast}
           />
         ))}

@@ -131,10 +131,17 @@ export function Sidebar({
           ? superAdminNavItems
           : adminNavItems;
 
-  const navItems =
-    variant === 'employee' && !showMarketingReports
-      ? baseNavItems.filter((item) => item.href !== '/reports')
-      : baseNavItems;
+  const navItems = baseNavItems.filter((item) => {
+    if (variant === 'employee' && !showMarketingReports && item.href === '/reports') {
+      return false;
+    }
+
+    if (variant === 'admin' && item.href === '/admin/reports') {
+      return false;
+    }
+
+    return true;
+  });
 
   return (
     <TooltipProvider delayDuration={0}>

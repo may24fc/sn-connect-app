@@ -707,11 +707,11 @@ export function AIChatbot({
                           >
                             <div
                               className={cn(
-                                'rounded-xl px-4 py-2.5',
-                                isFullscreen ? 'max-w-[70%]' : 'max-w-[85%]',
+                                'w-fit border px-4 py-2.5 shadow-sm',
+                                isFullscreen ? 'max-w-[72%]' : 'max-w-[88%] sm:max-w-[82%]',
                                 message.role === 'user'
-                                  ? 'bg-slate-900 text-white rounded-tr-sm'
-                                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-tl-sm'
+                                  ? 'rounded-2xl rounded-tr-md border-primary/90 bg-primary text-primary-foreground shadow-primary/15 dark:border-primary/80 dark:bg-primary dark:text-primary-foreground dark:shadow-black/25'
+                                  : 'rounded-2xl rounded-tl-md border-zinc-200 bg-white/95 text-zinc-900 shadow-zinc-200/70 dark:border-zinc-700/80 dark:bg-zinc-900/90 dark:text-zinc-100 dark:shadow-black/20'
                               )}
                             >
                               {message.role === 'assistant' && message.citations && message.citations.length > 0 ? (
@@ -742,7 +742,12 @@ export function AIChatbot({
                                 View {message.citations.length} source{message.citations.length !== 1 ? 's' : ''}
                               </button>
                             )}
-                            <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                            <p
+                              className={cn(
+                                'px-1 text-[11px] text-zinc-400 dark:text-zinc-500',
+                                message.role === 'user' ? 'text-right' : 'text-left'
+                              )}
+                            >
                               {formatTime(message.timestamp)}
                             </p>
                           </div>
@@ -757,7 +762,7 @@ export function AIChatbot({
                             <Sparkles className="h-3.5 w-3.5" strokeWidth={1.5} />
                           </AvatarFallback>
                         </Avatar>
-                        <div className="rounded-xl rounded-tl-sm bg-zinc-100 dark:bg-zinc-800 px-4 py-2.5">
+                        <div className="w-fit max-w-[88%] rounded-2xl rounded-tl-md border border-zinc-200 bg-white/95 px-4 py-2.5 text-zinc-900 shadow-sm shadow-zinc-200/70 dark:border-zinc-700/80 dark:bg-zinc-900/90 dark:text-zinc-100 dark:shadow-black/20 sm:max-w-[82%]">
                           <TextShimmer
                             as="span"
                             duration={1.8}

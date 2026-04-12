@@ -35,7 +35,7 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertCircle, ArrowLeft, ListChecks } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, ListChecks } from 'lucide-react';
 import { use, useState } from 'react';
 
 const statusVariant: Record<
@@ -63,6 +63,20 @@ export default function AdminReportDetailPage({
   const { addToast } = useToast();
 
   const report = data?.data;
+  const metrics = report?.report_metrics || [];
+  const marketingContext = report?.marketing_context;
+
+  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
+    initialColumn: 'metric_name',
+  });
+
+  const sortedMetrics = sortItems(metrics, {
+    metric_name: (m) => m.metric_name,
+    metric_value: (m) => m.metric_value,
+    metric_unit: (m) => m.metric_unit ?? '',
+  });
+
+  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
   const handleAction = async (action: 'approved' | 'rejected'): Promise<void> => {
     if (!report) return;
@@ -73,11 +87,20 @@ export default function AdminReportDetailPage({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, notes: actionNotes || undefined }),
       });
-      if (!res.ok) throw new Error('Request failed');
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error || 'Request failed');
+      }
       addToast({ title: `Report ${action}`, variant: 'success' });
       window.location.reload();
-    } catch {
-      addToast({ title: `Failed to ${action === 'approved' ? 'approve' : 'reject'} report`, variant: 'error' });
+    } catch (error) {
+      addToast({
+        title:
+          error instanceof Error
+            ? error.message
+            : `Failed to ${action === 'approved' ? 'approve' : 'reject'} report`,
+        variant: 'error',
+      });
     } finally {
       setWorkingAction(null);
     }
@@ -125,19 +148,6 @@ export default function AdminReportDetailPage({
     );
   }
 
-  const metrics = report.report_metrics || [];
-  const marketingContext = report.marketing_context;
-
-  const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'metric_name' });
-
-  const sortedMetrics = sortItems(metrics, {
-    metric_name: (m) => m.metric_name,
-    metric_value: (m) => m.metric_value,
-    metric_unit: (m) => m.metric_unit ?? '',
-  });
-
-  const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
-
   // Build KPI cards from metrics
   const kpiCards = metrics.slice(0, 4).map((metric, index) => ({
     label: metric.metric_name,
@@ -159,7 +169,7 @@ export default function AdminReportDetailPage({
   }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -352,10 +362,11 @@ export default function AdminReportDetailPage({
             </div>
             <div className="flex gap-2">
               <Button
-                variant="outline"
+                variant="success"
                 disabled={workingAction !== null}
                 onClick={() => handleAction('approved')}
               >
+                <CheckCircle2 className="h-4 w-4" />
                 {workingAction === 'approved' ? 'Approving...' : 'Approve'}
               </Button>
               <Button

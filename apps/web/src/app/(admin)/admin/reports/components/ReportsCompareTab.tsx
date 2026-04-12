@@ -264,15 +264,19 @@ export function ReportsCompareTab({
   const error = currentError || previousError;
   const currentReports = useMemo(
     () =>
-      (currentData?.data || []).filter((report) =>
-        matchesMarketingReportFilters(report, { campaignType, objective })
+      (currentData?.data || []).filter(
+        (report) =>
+          report.status !== 'draft' &&
+          matchesMarketingReportFilters(report, { campaignType, objective })
       ),
     [campaignType, currentData?.data, objective]
   );
   const previousReports = useMemo(
     () =>
-      (previousData?.data || []).filter((report) =>
-        matchesMarketingReportFilters(report, { campaignType, objective })
+      (previousData?.data || []).filter(
+        (report) =>
+          report.status !== 'draft' &&
+          matchesMarketingReportFilters(report, { campaignType, objective })
       ),
     [campaignType, objective, previousData?.data]
   );
@@ -291,7 +295,7 @@ export function ReportsCompareTab({
         previous > 0 ? ((current - previous) / previous) * 100 : current > 0 ? 100 : 0;
       return {
         name,
-        category: 'Report Metrics',
+        category: '',
         unit: currentMetric?.unit ?? previousMetric?.unit ?? null,
         currentValue: current,
         previousValue: previous,
