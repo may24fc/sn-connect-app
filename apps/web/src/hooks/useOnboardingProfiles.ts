@@ -7,13 +7,16 @@ export interface OnboardingProfileListItem {
   user_id: string;
   employee_id: string | null;
   full_name: string;
+  avatar_url?: string | null;
   email_address: string | null;
   position: string | null;
   status: 'completed' | 'in_progress';
   current_step: 'personal_info' | 'payment_info' | 'documents' | 'review';
   completed_at?: string | null;
   payment_account_masked: string | null;
-  users?: { role?: 'employee' | 'intern' | null } | Array<{ role?: 'employee' | 'intern' | null }>;
+  users?:
+    | { role?: 'employee' | 'intern' | null; avatar_url?: string | null }
+    | Array<{ role?: 'employee' | 'intern' | null; avatar_url?: string | null }>;
   departments?: { id: string; name: string } | Array<{ id: string; name: string }> | null;
   review_state?: OnboardingReviewState;
   rejection_notes?: string | null;

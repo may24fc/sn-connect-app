@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('onboarding_profiles')
-      .select('*, users!inner(id, role, status), departments(id, name)', { count: 'exact' })
+      .select('*, users!inner(id, role, status, avatar_url), departments(id, name)', { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -127,14 +127,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const normalized = (data ?? []).map((row: any) => ({
-      ...row,
-      employee_id: employeeIdsByUserId.get(row.user_id) ?? null,
-      status: row.is_completed ? 'completed' : 'in_progress',
-      review_state: deriveReviewState(row),
-      full_name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' '),
-      payment_account_masked: maskPaymentAccount(row.payment_account_number),
-    }));
+    const normalized = (data ?? []).map((row: any) => {
+      const userInfo = Array.isArray(row.users) ? row.users[0] : row.users;
+
+      return {
+        ...row,
+        employee_id: employeeIdsByUserId.get(row.user_id) ?? null,
+        avatar_url: userInfo?.avatar_url ?? null,
+        status: row.is_completed ? 'completed' : 'in_progress',
+        review_state: deriveReviewState(row),
+        full_name: [row.first_name, row.middle_name, row.last_name].filter(Boolean).join(' '),
+        payment_account_masked: maskPaymentAccount(row.payment_account_number),
+      };
+    });
 
     const completed = normalized.filter(
       (item: { status: string }) => item.status === 'completed'

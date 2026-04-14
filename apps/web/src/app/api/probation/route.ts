@@ -45,7 +45,7 @@ export async function GET() {
     const { data: employees, error: employeesError } = await supabase
       .from('employees')
       .select(
-        'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head, manual_probation_status'
+        'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head, manual_probation_status, users!employees_user_id_fkey(avatar_url)'
       )
       .is('deleted_at', null)
       .order('probation_end_date', { ascending: true, nullsFirst: false });
@@ -183,6 +183,7 @@ export async function GET() {
         id: employee.id,
         name: `${employee.first_name} ${employee.last_name}`,
         email: employee.company_email,
+        avatarUrl: employee.users?.avatar_url ?? null,
         department: employee.department,
         position: employee.position,
         startDate: employee.date_hired,

@@ -34,6 +34,7 @@ export interface InternshipSummaryRecord {
   userId: string;
   name: string;
   email: string;
+  avatarUrl?: string;
   school: string;
   program: string;
   department: string;
@@ -76,6 +77,7 @@ export interface InternshipDetailRecord {
   userId: string;
   name: string;
   email: string;
+  avatarUrl?: string;
   phone: string | null;
   school: string;
   program: string;

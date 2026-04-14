@@ -32,6 +32,9 @@ interface EmployeeRow {
   last_name: string;
   company_email: string | null;
   department: string;
+  users: {
+    avatar_url: string | null;
+  } | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -134,7 +137,9 @@ export async function GET(request: NextRequest) {
       [
         supabase
           .from('employees')
-          .select('id, user_id, first_name, last_name, company_email, department')
+          .select(
+            'id, user_id, first_name, last_name, company_email, department, users!employees_user_id_fkey(avatar_url)'
+          )
           .in('id', employeeIds)
           .is('deleted_at', null),
         supervisorIds.length > 0
@@ -198,6 +203,7 @@ export async function GET(request: NextRequest) {
           userId: employee.user_id,
           name: fullName,
           email: employee.company_email || '',
+          avatarUrl: employee.users?.avatar_url ?? undefined,
           school: row.school || 'N/A',
           program: row.program || 'N/A',
           department: row.department || employee.department,

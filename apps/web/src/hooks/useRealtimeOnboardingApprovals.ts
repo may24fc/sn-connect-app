@@ -8,6 +8,7 @@ export interface PendingOnboarding {
   id: string;
   user_id: string;
   full_name: string;
+  avatar_url?: string | null;
   email_address: string;
   role: 'employee' | 'intern';
   position: string | null;
@@ -67,7 +68,7 @@ async function fetchPendingApprovals(role?: 'employee' | 'intern'): Promise<Pend
       rejection_count,
       completed_at,
       created_at,
-      users!inner(role, status)
+      users!inner(role, status, avatar_url)
     `)
     .eq('is_completed', true)
     .eq('users.status', 'awaiting_approval')
@@ -97,6 +98,7 @@ async function fetchPendingApprovals(role?: 'employee' | 'intern'): Promise<Pend
       full_name: [profile.first_name, profile.middle_name, profile.last_name]
         .filter(Boolean)
         .join(' '),
+      avatar_url: userInfo?.avatar_url ?? null,
       email_address: profile.email_address,
       role: userInfo?.role || 'employee',
       position: profile.position,

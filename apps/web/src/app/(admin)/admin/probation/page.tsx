@@ -1075,6 +1075,7 @@ export default function ProbationPage(): ReactNode {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
+                              <AvatarImage src={approval.avatar_url || undefined} />
                               <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                                 {approval.full_name
                                   ?.split(' ')
@@ -1160,6 +1161,7 @@ export default function ProbationPage(): ReactNode {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
+                              <AvatarImage src={profile.avatar_url || undefined} />
                               <AvatarFallback className="text-xs bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
                                 {profile.full_name
                                   ?.split(' ')
@@ -1267,6 +1269,7 @@ export default function ProbationPage(): ReactNode {
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <Avatar className="h-9 w-9">
+                                <AvatarImage src={profile.avatar_url || undefined} />
                                 <AvatarFallback className="text-xs">
                                   {profile.full_name
                                     ?.split(' ')
