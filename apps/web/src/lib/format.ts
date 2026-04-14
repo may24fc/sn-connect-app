@@ -28,6 +28,19 @@ function formatLabelToken(token: string): string {
   return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
 }
 
+function formatPersonNameToken(token: string): string {
+  return token
+    .split(/(['’-])/)
+    .map((segment) => {
+      if (segment === '' || segment === "'" || segment === '’' || segment === '-') {
+        return segment;
+      }
+
+      return segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase();
+    })
+    .join('');
+}
+
 /**
  * Converts a snake_case or lowercase database value to a human-friendly Title Case label.
  * e.g. "in_progress" → "In Progress", "pending" → "Pending", "approved" → "Approved"
@@ -41,6 +54,22 @@ export function formatLabel(value: string | null | undefined): string {
     .split(/\s+/)
     .filter(Boolean)
     .map((token) => formatLabelToken(token))
+    .join(' ');
+}
+
+/**
+ * Formats a person's full name in capital case while preserving apostrophes and hyphens.
+ * e.g. "ava castillo" → "Ava Castillo", "anne-marie o'neal" → "Anne-Marie O'Neal"
+ */
+export function formatPersonName(value: string | null | undefined): string {
+  if (!value) return '—';
+
+  return value
+    .trim()
+    .replace(/_/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token) => formatPersonNameToken(token))
     .join(' ');
 }
 

@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "pnpm --filter @sn-group/www dev",
     "dev:web": "pnpm --filter @hr-portal/web dev",
+    "inngest:dev": "npx inngest-cli@latest dev -u http://localhost:3001/api/inngest",
+    "inngest:status": "node scripts/inngest-dev-status.mjs",
+    "inngest:stop": "node scripts/stop-inngest-dev.mjs",
     "dev:web:e2e": "node scripts/start-playwright-web.js",
     "dev:all": "pnpm --filter @sn-group/www --filter @hr-portal/web dev",
     "dev:mobile": "pnpm --filter @hr-portal/mobile dev",

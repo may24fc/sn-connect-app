@@ -1,14 +1,15 @@
 'use client';
 
-import { useApplications, type ApplicationRecord } from '@/hooks/useApplications';
+import { useApplication, useApplications, type ApplicationRecord } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { useBulkImportApplications, useEvaluateApplication, useHireApplication, useUpdateApplicationStatus } from '@/hooks/useJobMutations';
+import { useRealtimeApplications } from '@/hooks/useRealtimeApplications';
 import { useTableSort } from '@/hooks/useTableSort';
 import { useAuth } from '@/contexts/AuthContext';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
-import { formatDate, formatDateTime } from '@/lib/format';
+import { formatDate, formatDateTime, formatPersonName } from '@/lib/format';
 import {
   Badge,
   Button,
@@ -98,6 +99,47 @@ const PIPELINE_ORDER: ApplicationStatus[] = [
   'hired',
 ];
 
+type AiEvaluationStatus = ApplicationRecord['ai_evaluation_status'];
+
+const APPLICATIONS_POLL_INTERVAL_MS = 2000;
+const AI_IN_PROGRESS_STATUSES = new Set<AiEvaluationStatus>(['queued', 'parsing', 'evaluating']);
+const AI_ACTIVE_EVALUATION_STATUSES = new Set<AiEvaluationStatus>(['parsing', 'evaluating']);
+
+function renderAiEvaluationBadge(application: ApplicationRecord) {
+  if (application.ai_evaluation_status === 'queued') {
+    return (
+      <Badge variant="outline" className="text-zinc-600 dark:text-zinc-300">
+        <Clock className="mr-1 h-3 w-3" />
+        Queued
+      </Badge>
+    );
+  }
+
+  if (AI_ACTIVE_EVALUATION_STATUSES.has(application.ai_evaluation_status)) {
+    return (
+      <Badge variant="outline" className="text-zinc-600 dark:text-zinc-300">
+        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+        Evaluating…
+      </Badge>
+    );
+  }
+
+  if (application.ai_evaluation_status === 'failed') {
+    return <Badge variant="destructive">Failed</Badge>;
+  }
+
+  if (application.ai_match_score != null) {
+    return (
+      <Badge variant={application.ai_match_score >= 70 ? 'success' : application.ai_match_score >= 40 ? 'warning' : 'destructive'}>
+        <Bot className="h-3 w-3 mr-1" />
+        {application.ai_match_score}%
+      </Badge>
+    );
+  }
+
+  return <span className="text-xs text-zinc-400">—</span>;
+}
+
 export default function ApplicationsPage() {
   const { user } = useAuth();
   const handleBack = useBackNavigation({ fallbackPath: '/admin/jobs' });
@@ -110,34 +152,14 @@ export default function ApplicationsPage() {
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
 
   // Candidate detail drawer
-  const [selectedApp, setSelectedApp] = useState<ApplicationRecord | null>(null);
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notes, setNotes] = useState('');
+  const [applicationsRefetchInterval, setApplicationsRefetchInterval] = useState<number | false>(false);
+  const [selectedApplicationRefetchInterval, setSelectedApplicationRefetchInterval] = useState<number | false>(false);
 
   // Signed URL for resume preview (private bucket — generate on demand)
   const [resumeSignedUrl, setResumeSignedUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    setResumeSignedUrl(null);
-    const raw = selectedApp?.cv_url || selectedApp?.resume_url;
-    if (!raw) return;
-
-    // Extract storage path from either a legacy full URL or a plain path
-    let storagePath = raw;
-    if (raw.startsWith('http')) {
-      const match = raw.match(/\/storage\/v1\/object\/(?:public|sign(?:ed)?)\/applications\/(.+?)(?:\?|$)/);
-      storagePath = match?.[1] ?? raw;
-    }
-
-    const supabase = createSupabaseBrowserClient();
-    const run = async () => {
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from('applications')
-        .createSignedUrl(storagePath, 3600);
-      if (!signedError && signedData?.signedUrl) setResumeSignedUrl(signedData.signedUrl);
-    };
-    void run();
-  }, [selectedApp?.cv_url, selectedApp?.resume_url]);
 
   const queryFilters = {
     ...(search ? { search } : {}),
@@ -147,12 +169,22 @@ export default function ApplicationsPage() {
     pageSize: 200,
   };
 
-  const { data, isLoading, error } = useApplications(queryFilters);
+  const { data, isLoading, error } = useApplications(queryFilters, {
+    refetchInterval: applicationsRefetchInterval,
+  });
+  const { data: selectedApplicationData } = useApplication(selectedApplicationId, {
+    refetchInterval: selectedApplicationRefetchInterval,
+  });
   const { data: jobsData } = useJobPostings({ page: 1, pageSize: 100 });
   const updateStatus = useUpdateApplicationStatus();
   const hireApplication = useHireApplication();
   const bulkImport = useBulkImportApplications();
   const evaluateApp = useEvaluateApplication();
+
+  useRealtimeApplications({
+    applicationId: selectedApplicationId,
+    enabled: Boolean(user),
+  });
 
   // Bulk import state
   const [importOpen, setImportOpen] = useState(false);
@@ -181,6 +213,60 @@ export default function ApplicationsPage() {
 
   const applications = data?.data || [];
   const jobPostings = jobsData?.data || [];
+  const selectedApp = useMemo(() => {
+    if (selectedApplicationData?.data) {
+      return selectedApplicationData.data;
+    }
+
+    if (!selectedApplicationId) {
+      return null;
+    }
+
+    return applications.find((application) => application.id === selectedApplicationId) ?? null;
+  }, [applications, selectedApplicationData?.data, selectedApplicationId]);
+
+  useEffect(() => {
+    const hasActiveAiProcessing = applications.some((application) =>
+      AI_IN_PROGRESS_STATUSES.has(application.ai_evaluation_status)
+    );
+
+    setApplicationsRefetchInterval(
+      hasActiveAiProcessing ? APPLICATIONS_POLL_INTERVAL_MS : false
+    );
+  }, [applications]);
+
+  useEffect(() => {
+    const shouldPollSelectedApplication =
+      drawerOpen &&
+      selectedApp != null &&
+      AI_IN_PROGRESS_STATUSES.has(selectedApp.ai_evaluation_status);
+
+    setSelectedApplicationRefetchInterval(
+      shouldPollSelectedApplication ? APPLICATIONS_POLL_INTERVAL_MS : false
+    );
+  }, [drawerOpen, selectedApp]);
+
+  useEffect(() => {
+    setResumeSignedUrl(null);
+    const raw = selectedApp?.cv_url || selectedApp?.resume_url;
+    if (!raw) return;
+
+    // Extract storage path from either a legacy full URL or a plain path
+    let storagePath = raw;
+    if (raw.startsWith('http')) {
+      const match = raw.match(/\/storage\/v1\/object\/(?:public|sign(?:ed)?)\/applications\/(.+?)(?:\?|$)/);
+      storagePath = match?.[1] ?? raw;
+    }
+
+    const supabase = createSupabaseBrowserClient();
+    const run = async () => {
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from('applications')
+        .createSignedUrl(storagePath, 3600);
+      if (!signedError && signedData?.signedUrl) setResumeSignedUrl(signedData.signedUrl);
+    };
+    void run();
+  }, [selectedApp?.cv_url, selectedApp?.resume_url]);
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
     initialColumn: 'created_at',
@@ -218,19 +304,16 @@ export default function ApplicationsPage() {
   }, [applications]);
 
   function openCandidate(app: ApplicationRecord) {
-    setSelectedApp(app);
+    setSelectedApplicationId(app.id);
     setNotes(app.notes || '');
     setDrawerOpen(true);
   }
 
   async function handleStatusChange(appId: string, newStatus: string) {
-    const candidateName = selectedApp?.full_name ?? 'Candidate';
+    const candidateName = formatPersonName(selectedApp?.full_name ?? 'Candidate');
     const statusLabel = STATUS_CONFIG[newStatus as ApplicationStatus]?.label ?? newStatus;
     try {
       await updateStatus.mutateAsync({ id: appId, status: newStatus, ...(notes ? { notes } : {}) });
-      if (selectedApp?.id === appId) {
-        setSelectedApp((prev) => (prev ? { ...prev, status: newStatus as ApplicationStatus } : null));
-      }
       if (newStatus === 'approved') {
         addToast({
           variant: 'success',
@@ -262,15 +345,11 @@ export default function ApplicationsPage() {
   async function handleHire(appId: string) {
     const fallbackName = applications.find((application) => application.id === appId)?.full_name;
     const candidateName =
-      selectedApp?.id === appId ? selectedApp.full_name : (fallbackName ?? 'Candidate');
+      formatPersonName(selectedApp?.id === appId ? selectedApp.full_name : (fallbackName ?? 'Candidate'));
 
     try {
       const response = await hireApplication.mutateAsync(appId);
       const hireData = response.data;
-
-      if (selectedApp?.id === appId) {
-        setSelectedApp((prev) => (prev ? { ...prev, status: 'hired' } : null));
-      }
 
       addToast({
         variant: 'success',
@@ -283,6 +362,26 @@ export default function ApplicationsPage() {
       addToast({
         variant: 'error',
         title: 'Failed to hire candidate',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    }
+  }
+
+  async function handleEvaluate(appId: string) {
+    try {
+      const response = await evaluateApp.mutateAsync(appId);
+      addToast({
+        variant: 'default',
+        title: 'AI evaluation queued',
+        description:
+          response.data.status === 'parse_and_evaluation_queued'
+            ? 'Resume parsing started. The AI score and summary will appear automatically.'
+            : 'The AI score and summary will update automatically when the evaluation finishes.',
+      });
+    } catch (error) {
+      addToast({
+        variant: 'error',
+        title: 'Failed to queue AI evaluation',
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     }
@@ -469,7 +568,7 @@ export default function ApplicationsPage() {
                       onDoubleClick={() => openCandidate(app)}
                     >
                       <TableCell className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                        {app.full_name}
+                        {formatPersonName(app.full_name)}
                       </TableCell>
                       <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
                         {app.email}
@@ -483,16 +582,7 @@ export default function ApplicationsPage() {
                       <TableCell className="text-sm text-zinc-600 dark:text-zinc-400">
                         {formatDate(app.created_at)}
                       </TableCell>
-                      <TableCell>
-                        {app.ai_match_score != null ? (
-                          <Badge variant={app.ai_match_score >= 70 ? 'success' : app.ai_match_score >= 40 ? 'warning' : 'destructive'}>
-                            <Bot className="h-3 w-3 mr-1" />
-                            {app.ai_match_score}%
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-zinc-400">—</span>
-                        )}
-                      </TableCell>
+                      <TableCell>{renderAiEvaluationBadge(app)}</TableCell>
                       <TableCell className="text-right">
                         {/* biome-ignore lint/a11y/useKeyWithClickEvents: row click handled */}
                         <div
@@ -579,7 +669,7 @@ export default function ApplicationsPage() {
                       >
                         <CardContent className="p-0">
                           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                            {app.full_name}
+                            {formatPersonName(app.full_name)}
                           </p>
                           <p className="text-xs text-zinc-500 mt-1">{app.email}</p>
                           <p className="text-xs text-slate-700 dark:text-zinc-400 mt-1">
@@ -589,12 +679,7 @@ export default function ApplicationsPage() {
                             <p className="text-xs text-zinc-400">
                               {formatDate(app.created_at)}
                             </p>
-                            {app.ai_match_score != null && (
-                              <Badge variant={app.ai_match_score >= 70 ? 'success' : app.ai_match_score >= 40 ? 'warning' : 'destructive'} className="text-[10px] px-1.5 py-0">
-                                <Bot className="h-2.5 w-2.5 mr-0.5" />
-                                {app.ai_match_score}%
-                              </Badge>
-                            )}
+                            <div className="flex items-center justify-end">{renderAiEvaluationBadge(app)}</div>
                           </div>
                         </CardContent>
                       </Card>
@@ -613,12 +698,20 @@ export default function ApplicationsPage() {
       </div>
 
       {/* ─── CANDIDATE DETAIL DRAWER ─── */}
-      <SlidePanel open={drawerOpen} onOpenChange={setDrawerOpen}>
+      <SlidePanel
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open) {
+            setSelectedApplicationId(null);
+          }
+        }}
+      >
         <SlidePanelContent size="2xl">
           {selectedApp && (
             <>
               <SlidePanelHeader>
-                <SlidePanelTitle>{selectedApp.full_name}</SlidePanelTitle>
+                <SlidePanelTitle>{formatPersonName(selectedApp.full_name)}</SlidePanelTitle>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge
                     variant={
@@ -749,7 +842,46 @@ export default function ApplicationsPage() {
 
                   {/* AI Evaluation */}
                   <SlidePanelSection label="AI Evaluation">
-                    {selectedApp.ai_match_score != null ? (
+                    {selectedApp.ai_evaluation_status === 'queued' ? (
+                      <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/40 px-4 py-5">
+                        <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                          <Clock className="h-4 w-4 text-amber-500" />
+                          Queued for evaluation
+                        </div>
+                        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                          This resume is waiting for the background worker to pick it up. Results will appear automatically once processing starts and finishes.
+                        </p>
+                      </div>
+                    ) : AI_ACTIVE_EVALUATION_STATUSES.has(selectedApp.ai_evaluation_status) ? (
+                      <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/40 px-4 py-5">
+                        <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                          <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                          Evaluating candidate
+                        </div>
+                        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                          AI scoring is in progress. The score and summary will appear automatically when processing finishes.
+                        </p>
+                      </div>
+                    ) : selectedApp.ai_evaluation_status === 'failed' ? (
+                      <div className="space-y-4 rounded-lg border border-red-200 bg-red-50 px-4 py-5 dark:border-red-900/50 dark:bg-red-950/20">
+                        <div className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
+                          <XCircle className="h-4 w-4" />
+                          AI evaluation failed
+                        </div>
+                        <p className="text-sm text-red-600 dark:text-red-300/90">
+                          The last background run did not complete. Re-run the evaluation to try again.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => void handleEvaluate(selectedApp.id)}
+                          disabled={evaluateApp.isPending || !(selectedApp.cv_url || selectedApp.resume_url || selectedApp.parsed_resume_markdown)}
+                        >
+                          <Bot className="h-4 w-4 mr-1" />
+                          {evaluateApp.isPending ? 'Evaluating…' : 'Retry AI Evaluation'}
+                        </Button>
+                      </div>
+                    ) : selectedApp.ai_match_score != null ? (
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -806,7 +938,7 @@ export default function ApplicationsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => evaluateApp.mutate(selectedApp.id)}
+                          onClick={() => void handleEvaluate(selectedApp.id)}
                           disabled={evaluateApp.isPending}
                         >
                           <Bot className="h-4 w-4 mr-1" />
@@ -819,7 +951,7 @@ export default function ApplicationsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => evaluateApp.mutate(selectedApp.id)}
+                          onClick={() => void handleEvaluate(selectedApp.id)}
                           disabled={evaluateApp.isPending || !(selectedApp.cv_url || selectedApp.resume_url || selectedApp.parsed_resume_markdown)}
                         >
                           <Bot className="h-4 w-4 mr-1" />

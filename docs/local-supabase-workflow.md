@@ -22,6 +22,14 @@ pnpm supabase:status
 pnpm supabase:stop
 ```
 
+Use these commands to control the local Inngest dev runner when testing background jobs:
+
+```bash
+pnpm inngest:dev
+pnpm inngest:status
+pnpm inngest:stop
+```
+
 `localdev` is intended for everyday app development against local Supabase.
 
 `prodops` is intended only for controlled operational scripts against the live project.
@@ -35,6 +43,8 @@ pnpm supabase:status
 node scripts/setup-sample-accounts.mjs
 pnpm dev:web
 ```
+
+Only start `pnpm inngest:dev` when you are actively testing background jobs such as ATS resume parsing/evaluation or Drive document ingestion. The Inngest dev runner continuously syncs with `PUT /api/inngest`, so leaving it running when unused creates avoidable request logs and trace noise.
 
 Recommended controlled production-ops workflow:
 

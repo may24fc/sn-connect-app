@@ -45,6 +45,20 @@ export async function POST(_request: NextRequest, { params }: Params) {
     }
 
     if (application.parsed_resume_markdown) {
+      const { error: queueError } = await supabase
+        .from('job_applications')
+        .update({
+          ai_evaluation_status: 'queued',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .is('deleted_at', null);
+
+      if (queueError) {
+        console.error('Failed to mark application as queued for evaluation:', queueError);
+        return NextResponse.json({ error: 'Failed to queue application for evaluation' }, { status: 500 });
+      }
+
       // Resume already parsed — trigger evaluation directly
       await inngest.send({
         name: 'ats/resume.parsed',
@@ -63,6 +77,20 @@ export async function POST(_request: NextRequest, { params }: Params) {
         { error: 'Application has no resume file to evaluate' },
         { status: 400 },
       );
+    }
+
+    const { error: queueError } = await supabase
+      .from('job_applications')
+      .update({
+        ai_evaluation_status: 'queued',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .is('deleted_at', null);
+
+    if (queueError) {
+      console.error('Failed to mark application as queued for parsing:', queueError);
+      return NextResponse.json({ error: 'Failed to queue application for parsing' }, { status: 500 });
     }
 
     await inngest.send({

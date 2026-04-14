@@ -1,8 +1,30 @@
 import OpenAI from 'openai';
+import { getLangWatchTracer } from 'langwatch/observability';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { inngest } from '../client';
 
 const EVALUATION_MODEL = 'gpt-4o-mini';
+const atsTracer = getLangWatchTracer('sn-connect-ai-ats');
+
+async function updateApplicationEvaluationStatus(
+  applicationId: string,
+  status: 'evaluating' | 'completed' | 'failed',
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+
+  const { error } = await supabase
+    .from('job_applications')
+    .update({
+      ai_evaluation_status: status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', applicationId)
+    .is('deleted_at', null);
+
+  if (error) {
+    throw new Error(`Failed to update ATS evaluation status: ${error.message}`);
+  }
+}
 
 /**
  * JSON Schema passed to OpenAI structured outputs. Mirrors the Zod
@@ -82,6 +104,16 @@ interface EvaluationResult {
   executiveSummary: string;
 }
 
+interface EvaluationContext {
+  resumeMarkdown: string;
+  applicantName: string;
+  jobPostingId: string;
+  jobTitle: string;
+  jobDescription: string;
+  jobRequirements: string;
+  totalHeadcount: number | null;
+}
+
 /**
  * Inngest function: Evaluate a parsed resume against job requirements.
  *
@@ -99,165 +131,230 @@ export const evaluateResume = inngest.createFunction(
   async ({ event, step }) => {
     const { applicationId } = event.data;
 
-    const context = await step.run('fetch-data', async () => {
-      const supabase = createSupabaseAdminClient();
+    return await atsTracer.withActiveSpan('ats-evaluate-resume', async (workflowSpan) => {
+      workflowSpan.setType('workflow');
+      workflowSpan.setInput('json', { applicationId, model: EVALUATION_MODEL });
+      workflowSpan.setAttribute('ai.feature', 'ats');
+      workflowSpan.setAttribute('ats.stage', 'evaluate');
+      workflowSpan.setAttribute('ats.application.id', applicationId);
+      workflowSpan.setAttribute('langwatch.thread.id', `ats:${applicationId}`);
+      workflowSpan.setAttribute('langwatch.labels', ['ATS', 'Resume Evaluation']);
 
-      const { data: application, error: appError } = await supabase
-        .from('job_applications')
-        .select(
-          'id, parsed_resume_markdown, job_posting_id, full_name',
-        )
-        .eq('id', applicationId)
-        .is('deleted_at', null)
-        .single();
+      try {
+        await step.run('mark-evaluating', async () => {
+          await updateApplicationEvaluationStatus(applicationId, 'evaluating');
+        });
 
-      if (appError || !application) {
-        throw new Error(
-          `Application ${applicationId} not found: ${appError?.message ?? 'no data'}`,
-        );
-      }
+        const context = await step.run('fetch-data', async () => {
+          const supabase = createSupabaseAdminClient();
 
-      if (!application.parsed_resume_markdown) {
-        throw new Error(
-          `Application ${applicationId} has no parsed resume text.`,
-        );
-      }
+          const { data: application, error: appError } = await supabase
+            .from('job_applications')
+            .select(
+              'id, parsed_resume_markdown, job_posting_id, full_name',
+            )
+            .eq('id', applicationId)
+            .is('deleted_at', null)
+            .single();
 
-      if (!application.job_posting_id) {
-        throw new Error(
-          `Application ${applicationId} is not linked to a job posting.`,
-        );
-      }
+          if (appError || !application) {
+            throw new Error(
+              `Application ${applicationId} not found: ${appError?.message ?? 'no data'}`,
+            );
+          }
 
-      const { data: posting, error: postError } = await supabase
-        .from('job_postings')
-        .select('id, title, description, requirements, job_requisitions(total_headcount)')
-        .eq('id', application.job_posting_id)
-        .is('deleted_at', null)
-        .single();
+          if (!application.parsed_resume_markdown) {
+            throw new Error(
+              `Application ${applicationId} has no parsed resume text.`,
+            );
+          }
 
-      if (postError || !posting) {
-        throw new Error(
-          `Job posting ${application.job_posting_id} not found: ${postError?.message ?? 'no data'}`,
-        );
-      }
+          if (!application.job_posting_id) {
+            throw new Error(
+              `Application ${applicationId} is not linked to a job posting.`,
+            );
+          }
 
-      const requisitions = Array.isArray(posting.job_requisitions)
-        ? posting.job_requisitions
-        : [];
-      const totalHeadcount = requisitions[0]?.total_headcount ?? null;
+          const { data: posting, error: postError } = await supabase
+            .from('job_postings')
+            .select('id, title, description, requirements, job_requisitions(total_headcount)')
+            .eq('id', application.job_posting_id)
+            .is('deleted_at', null)
+            .single();
 
-      return {
-        resumeMarkdown: application.parsed_resume_markdown as string,
-        applicantName: application.full_name as string,
-        jobTitle: posting.title as string,
-        jobDescription: (posting.description ?? '') as string,
-        jobRequirements: (posting.requirements ?? '') as string,
-        totalHeadcount,
-      };
-    });
+          if (postError || !posting) {
+            throw new Error(
+              `Job posting ${application.job_posting_id} not found: ${postError?.message ?? 'no data'}`,
+            );
+          }
 
-    const evaluation = await step.run('evaluate', async () => {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error('OPENAI_API_KEY is not configured.');
-      }
+          const requisitions = Array.isArray(posting.job_requisitions)
+            ? posting.job_requisitions
+            : [];
+          const totalHeadcount = requisitions[0]?.total_headcount ?? null;
 
-      const openai = new OpenAI({ apiKey });
+          return {
+            resumeMarkdown: application.parsed_resume_markdown as string,
+            applicantName: application.full_name as string,
+            jobPostingId: application.job_posting_id as string,
+            jobTitle: posting.title as string,
+            jobDescription: (posting.description ?? '') as string,
+            jobRequirements: (posting.requirements ?? '') as string,
+            totalHeadcount,
+          } satisfies EvaluationContext;
+        });
 
-      const userMessage = [
-        `## Job: ${context.jobTitle}`,
-        context.totalHeadcount != null
-          ? `Hiring ${context.totalHeadcount} candidate(s).`
-          : '',
-        '',
-        '### Job Description',
-        context.jobDescription,
-        '',
-        '### Job Requirements',
-        context.jobRequirements || '(No specific requirements listed)',
-        '',
-        '---',
-        '',
-        `## Candidate: ${context.applicantName}`,
-        '',
-        '### Resume',
-        context.resumeMarkdown,
-      ]
-        .filter(Boolean)
-        .join('\n');
+        workflowSpan.setAttribute('ats.job_posting.id', context.jobPostingId);
+        workflowSpan.setAttribute('ats.job_title', context.jobTitle);
+        workflowSpan.setAttribute('langwatch.labels', ['ATS', 'Resume Evaluation', context.jobTitle]);
 
-      const response = await openai.chat.completions.create({
-        model: EVALUATION_MODEL,
-        temperature: 0.2,
-        max_tokens: 1024,
-        messages: [
-          { role: 'system', content: buildSystemPrompt() },
-          { role: 'user', content: userMessage },
-        ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: EVALUATION_JSON_SCHEMA,
-        },
-      });
+        const evaluation = await atsTracer.withActiveSpan('ats-openai-evaluation', async (llmSpan) => {
+          llmSpan.setType('llm');
+          llmSpan.setRequestModel(EVALUATION_MODEL);
+          llmSpan.setInput('json', {
+            applicationId,
+            jobPostingId: context.jobPostingId,
+            jobTitle: context.jobTitle,
+            totalHeadcount: context.totalHeadcount,
+            jobDescriptionCharacters: context.jobDescription.length,
+            jobRequirementsCharacters: context.jobRequirements.length,
+            resumeCharacters: context.resumeMarkdown.length,
+            promptTemplate: 'strict-hr-executive-assistant-v1',
+          });
+          llmSpan.setAttribute('ai.feature', 'ats');
+          llmSpan.setAttribute('ats.stage', 'llm');
+          llmSpan.setAttribute('ats.application.id', applicationId);
+          llmSpan.setAttribute('ats.job_posting.id', context.jobPostingId);
+          llmSpan.setAttribute('langwatch.thread.id', `ats:${applicationId}`);
+          llmSpan.setAttribute('langwatch.labels', ['ATS', 'Resume Evaluation']);
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('OpenAI returned an empty response.');
-      }
+          const apiKey = process.env.OPENAI_API_KEY;
+          if (!apiKey) {
+            throw new Error('OPENAI_API_KEY is not configured.');
+          }
 
-      const parsed: EvaluationResult = JSON.parse(content);
+          const openai = new OpenAI({ apiKey });
 
-      // Clamp score to valid range
-      parsed.matchScore = Math.max(0, Math.min(100, Math.round(parsed.matchScore)));
-      // Cap strengths at 3
-      parsed.topStrengths = (parsed.topStrengths ?? []).slice(0, 3);
+          const userMessage = [
+            `## Job: ${context.jobTitle}`,
+            context.totalHeadcount != null
+              ? `Hiring ${context.totalHeadcount} candidate(s).`
+              : '',
+            '',
+            '### Job Description',
+            context.jobDescription,
+            '',
+            '### Job Requirements',
+            context.jobRequirements || '(No specific requirements listed)',
+            '',
+            '---',
+            '',
+            `## Candidate: ${context.applicantName}`,
+            '',
+            '### Resume',
+            context.resumeMarkdown,
+          ]
+            .filter(Boolean)
+            .join('\n');
 
-      return parsed;
-    });
+          const response = await openai.chat.completions.create({
+            model: EVALUATION_MODEL,
+            temperature: 0.2,
+            max_tokens: 1024,
+            messages: [
+              { role: 'system', content: buildSystemPrompt() },
+              { role: 'user', content: userMessage },
+            ],
+            response_format: {
+              type: 'json_schema',
+              json_schema: EVALUATION_JSON_SCHEMA,
+            },
+          });
 
-    await step.run('save-result', async () => {
-      const supabase = createSupabaseAdminClient();
+          const content = response.choices[0]?.message?.content;
+          if (!content) {
+            throw new Error('OpenAI returned an empty response.');
+          }
 
-      const { error } = await supabase
-        .from('job_applications')
-        .update({
-          ai_match_score: evaluation.matchScore,
-          ai_top_strengths: evaluation.topStrengths,
-          ai_missing_requirements: evaluation.missingRequirements,
-          ai_executive_summary: evaluation.executiveSummary,
-          ai_evaluated_at: new Date().toISOString(),
-          ai_evaluation_model: EVALUATION_MODEL,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', applicationId)
-        .is('deleted_at', null);
+          const parsed: EvaluationResult = JSON.parse(content);
+          parsed.matchScore = Math.max(0, Math.min(100, Math.round(parsed.matchScore)));
+          parsed.topStrengths = (parsed.topStrengths ?? []).slice(0, 3);
 
-      if (error) {
-        throw new Error(`Failed to save evaluation: ${error.message}`);
-      }
-    });
+          llmSpan.setOutput('json', {
+            matchScore: parsed.matchScore,
+            topStrengthCount: parsed.topStrengths.length,
+            missingRequirementCount: parsed.missingRequirements.length,
+            executiveSummaryCharacters: parsed.executiveSummary.length,
+          });
 
-    await step.run('audit-log', async () => {
-      const supabase = createSupabaseAdminClient();
+          return parsed;
+        });
 
-      await supabase.from('audit_logs').insert({
-        action: 'ats_resume_evaluated',
-        table_name: 'job_applications',
-        record_id: applicationId,
-        metadata: {
-          model: EVALUATION_MODEL,
+        await step.run('save-result', async () => {
+          const supabase = createSupabaseAdminClient();
+
+          const { error } = await supabase
+            .from('job_applications')
+            .update({
+              ai_evaluation_status: 'completed',
+              ai_match_score: evaluation.matchScore,
+              ai_top_strengths: evaluation.topStrengths,
+              ai_missing_requirements: evaluation.missingRequirements,
+              ai_executive_summary: evaluation.executiveSummary,
+              ai_evaluated_at: new Date().toISOString(),
+              ai_evaluation_model: EVALUATION_MODEL,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', applicationId)
+            .is('deleted_at', null);
+
+          if (error) {
+            throw new Error(`Failed to save evaluation: ${error.message}`);
+          }
+        });
+
+        await step.run('audit-log', async () => {
+          const supabase = createSupabaseAdminClient();
+
+          await supabase.from('audit_logs').insert({
+            action: 'ats_resume_evaluated',
+            table_name: 'job_applications',
+            record_id: applicationId,
+            metadata: {
+              model: EVALUATION_MODEL,
+              matchScore: evaluation.matchScore,
+              topStrengths: evaluation.topStrengths,
+              missingRequirements: evaluation.missingRequirements,
+            },
+          });
+        });
+
+        const result = {
+          status: 'evaluated',
+          applicationId,
           matchScore: evaluation.matchScore,
-          topStrengths: evaluation.topStrengths,
-          missingRequirements: evaluation.missingRequirements,
-        },
-      });
-    });
+        };
 
-    return {
-      status: 'evaluated',
-      applicationId,
-      matchScore: evaluation.matchScore,
-    };
+        workflowSpan.setOutput('json', {
+          ...result,
+          jobPostingId: context.jobPostingId,
+          jobTitle: context.jobTitle,
+          topStrengthCount: evaluation.topStrengths.length,
+          missingRequirementCount: evaluation.missingRequirements.length,
+        });
+
+        return result;
+      } catch (error) {
+        await step.run('mark-evaluation-failed', async () => {
+          try {
+            await updateApplicationEvaluationStatus(applicationId, 'failed');
+          } catch (statusError) {
+            console.error('Failed to mark evaluation status as failed:', statusError);
+          }
+        });
+        workflowSpan.recordException(error instanceof Error ? error : new Error(String(error)));
+        throw error;
+      }
+    });
   },
 );

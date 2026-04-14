@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
             cv_url: storagePath,
             resume_url: storagePath,
             status: 'pending',
+            ai_evaluation_status: 'queued',
           })
           .select('id')
           .single();

@@ -1,6 +1,10 @@
 import { type ApplicationFiltersQuery, queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
 
+interface UseApplicationsOptions {
+  refetchInterval?: number | false;
+}
+
 export interface ApplicationRecord {
   id: string;
   job_posting_id: string | null;
@@ -19,6 +23,7 @@ export interface ApplicationRecord {
   deleted_at: string | null;
   // ATS AI evaluation fields
   parsed_resume_markdown: string | null;
+  ai_evaluation_status: 'idle' | 'queued' | 'parsing' | 'evaluating' | 'completed' | 'failed';
   ai_match_score: number | null;
   ai_top_strengths: string[] | null;
   ai_missing_requirements: string[] | null;
@@ -55,8 +60,11 @@ interface ApplicationListResponse {
   };
 }
 
-export function useApplications(filters: ApplicationFiltersQuery = {}) {
-  return useQuery({
+export function useApplications(
+  filters: ApplicationFiltersQuery = {},
+  options: UseApplicationsOptions = {},
+) {
+  return useQuery<ApplicationListResponse>({
     queryKey: queryKeys.applications.list(filters),
     queryFn: async (): Promise<ApplicationListResponse> => {
       const params = new URLSearchParams();
@@ -75,11 +83,14 @@ export function useApplications(filters: ApplicationFiltersQuery = {}) {
       }
       return res.json();
     },
+    ...(options.refetchInterval !== undefined
+      ? { refetchInterval: options.refetchInterval }
+      : {}),
   });
 }
 
-export function useApplication(id: string | null) {
-  return useQuery({
+export function useApplication(id: string | null, options: UseApplicationsOptions = {}) {
+  return useQuery<{ data: ApplicationRecord }>({
     queryKey: queryKeys.applications.detail(id ?? ''),
     queryFn: async (): Promise<{ data: ApplicationRecord }> => {
       const res = await fetch(`/api/applications/${id}`);
@@ -89,5 +100,8 @@ export function useApplication(id: string | null) {
       return res.json();
     },
     enabled: !!id,
+    ...(options.refetchInterval !== undefined
+      ? { refetchInterval: options.refetchInterval }
+      : {}),
   });
 }
