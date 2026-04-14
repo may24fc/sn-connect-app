@@ -1,5 +1,5 @@
 import { queryKeys } from '@/lib/query-keys';
-import type { CreateReviewCycleInput } from '@/lib/schemas/performance.schema';
+import type { CreateReviewCycleInput, UpdateReviewCycleInput } from '@/lib/schemas/performance.schema';
 import type {
   KPI,
   KPIType,
@@ -18,6 +18,8 @@ interface ReviewCycleRow {
   description: string | null;
   start_date: string;
   end_date: string;
+  okr_submission_deadline: string | null;
+  kpi_submission_deadline: string | null;
   self_review_deadline: string | null;
   manager_review_deadline: string | null;
   status: 'draft' | 'active' | 'completed' | 'archived';
@@ -119,6 +121,12 @@ function toUiCycle(row: ReviewCycleRow): PerformanceCycle {
     startDate: row.start_date,
     endDate: row.end_date,
     status: mapCycleStatus(row.status),
+    ...(row.okr_submission_deadline
+      ? { okrSubmissionDeadline: row.okr_submission_deadline }
+      : {}),
+    ...(row.kpi_submission_deadline
+      ? { kpiSubmissionDeadline: row.kpi_submission_deadline }
+      : {}),
     ...(row.self_review_deadline ? { selfAssessmentDeadline: row.self_review_deadline } : {}),
     ...(row.manager_review_deadline ? { managerReviewDeadline: row.manager_review_deadline } : {}),
     createdAt: row.created_at,
@@ -324,7 +332,7 @@ export function useUpdatePerformanceCycle() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: Record<string, unknown>) => {
+    mutationFn: async (payload: UpdateReviewCycleInput) => {
       const response = await fetch('/api/performance/cycles', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

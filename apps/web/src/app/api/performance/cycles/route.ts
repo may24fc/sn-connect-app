@@ -1,7 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import { createReviewCycleSchema, updateReviewCycleSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedPerformanceContext, isPerformanceAdmin } from '../_lib';
+import { canManagePerformance, getAuthedPerformanceContext, isPerformanceAdmin } from '../_lib';
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isPerformanceAdmin(role)) {
+    if (!canManagePerformance(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
         description: parsed.data.description || null,
         start_date: parsed.data.startDate,
         end_date: parsed.data.endDate,
+        okr_submission_deadline: parsed.data.okrSubmissionDeadline || null,
+        kpi_submission_deadline: parsed.data.kpiSubmissionDeadline || null,
         self_review_deadline: parsed.data.selfReviewDeadline || null,
         manager_review_deadline: parsed.data.managerReviewDeadline || null,
         status: parsed.data.status,
@@ -72,6 +74,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !data) {
+      console.error('POST /api/performance/cycles insert error:', insertError);
       return NextResponse.json({ error: 'Failed to create review cycle' }, { status: 500 });
     }
 
@@ -92,12 +95,12 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isPerformanceAdmin(role)) {
+    if (!canManagePerformance(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -116,13 +119,17 @@ export async function PATCH(request: NextRequest) {
     if (parsed.data.description !== undefined) payload.description = parsed.data.description;
     if (parsed.data.startDate !== undefined) payload.start_date = parsed.data.startDate;
     if (parsed.data.endDate !== undefined) payload.end_date = parsed.data.endDate;
+    if (parsed.data.okrSubmissionDeadline !== undefined)
+      payload.okr_submission_deadline = parsed.data.okrSubmissionDeadline;
+    if (parsed.data.kpiSubmissionDeadline !== undefined)
+      payload.kpi_submission_deadline = parsed.data.kpiSubmissionDeadline;
     if (parsed.data.selfReviewDeadline !== undefined)
       payload.self_review_deadline = parsed.data.selfReviewDeadline;
     if (parsed.data.managerReviewDeadline !== undefined)
       payload.manager_review_deadline = parsed.data.managerReviewDeadline;
     if (parsed.data.status !== undefined) payload.status = parsed.data.status;
 
-    const { data, error: updateError } = await supabase
+    const { data, error: updateError } = await supabaseAdmin
       .from('review_cycles')
       .update(payload)
       .eq('id', parsed.data.id)
@@ -130,10 +137,11 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (updateError || !data) {
+      console.error('PATCH /api/performance/cycles update error:', updateError);
       return NextResponse.json({ error: 'Failed to update review cycle' }, { status: 500 });
     }
 
-    logActivity(supabase, {
+    logActivity(supabaseAdmin, {
       userId: user.id,
       action: 'update_review_cycle',
       tableName: 'review_cycles',

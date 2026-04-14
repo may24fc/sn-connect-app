@@ -10,7 +10,10 @@ import {
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import {
+  Badge,
   Button,
+  Card,
+  CardContent,
   EmptyState,
   Input,
   Label,
@@ -284,6 +287,73 @@ export default function OKRsPage(): ReactNode {
           )}
         </div>
       </div>
+
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-semibold">{displayCycle?.name || 'No Active Cycle'}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {displayCycle
+                    ? `${formatDate(displayCycle.startDate)} - ${formatDate(displayCycle.endDate)}`
+                    : 'No performance cycle has been created yet'}
+                </p>
+              </div>
+            </div>
+            <Badge variant={activeCycle ? 'success' : 'secondary'}>
+              {activeCycle ? 'Active Cycle' : displayCycle ? 'Cycle Not Active' : 'No Active Cycle'}
+            </Badge>
+          </div>
+          {displayCycle && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  OKR Due
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {displayCycle.okrSubmissionDeadline
+                    ? formatDate(displayCycle.okrSubmissionDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  KPI Due
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {displayCycle.kpiSubmissionDeadline
+                    ? formatDate(displayCycle.kpiSubmissionDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Self-Assessment
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {displayCycle.selfAssessmentDeadline
+                    ? formatDate(displayCycle.selfAssessmentDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Manager Review
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {displayCycle.managerReviewDeadline
+                    ? formatDate(displayCycle.managerReviewDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Stats Cards */}
       <StatCardGrid columns={4}>

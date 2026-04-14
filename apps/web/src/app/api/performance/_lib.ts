@@ -1,9 +1,20 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const PERFORMANCE_ADMIN_ROLES = ['admin', 'super_admin'];
+export const PERFORMANCE_ADMIN_ROLES: readonly string[] = ['admin', 'super_admin'];
+export const PERFORMANCE_MANAGER_ROLES: readonly string[] = [
+  'admin',
+  'hr',
+  'cos',
+  'ceo',
+  'super_admin',
+] as const;
 
 export function isPerformanceAdmin(role: string | null): boolean {
   return role ? PERFORMANCE_ADMIN_ROLES.includes(role) : false;
+}
+
+export function canManagePerformance(role: string | null): boolean {
+  return role ? PERFORMANCE_MANAGER_ROLES.includes(role) : false;
 }
 
 export function toUiReviewStatus(

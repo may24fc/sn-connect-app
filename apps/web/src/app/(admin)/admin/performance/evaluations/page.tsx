@@ -413,6 +413,66 @@ export default function EvaluationsPage(): ReactNode {
         </div>
       </div>
 
+      {activeCycle && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-semibold">{activeCycle.name}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(activeCycle.startDate)} - {formatDate(activeCycle.endDate)}
+                </p>
+              </div>
+              <Badge variant={activeCycle.status === 'active' ? 'success' : 'secondary'}>
+                {activeCycle.status === 'active' ? 'Active Cycle' : 'Cycle Not Active'}
+              </Badge>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  OKR Due
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {activeCycle.okrSubmissionDeadline
+                    ? formatDate(activeCycle.okrSubmissionDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  KPI Due
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {activeCycle.kpiSubmissionDeadline
+                    ? formatDate(activeCycle.kpiSubmissionDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Self-Assessment
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {activeCycle.selfAssessmentDeadline
+                    ? formatDate(activeCycle.selfAssessmentDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Manager Review
+                </p>
+                <p className="text-sm font-medium text-foreground mt-1">
+                  {activeCycle.managerReviewDeadline
+                    ? formatDate(activeCycle.managerReviewDeadline)
+                    : 'Not set'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* OKR Tables by Status */}
       <div className="space-y-6">
         <OKREvaluationTable

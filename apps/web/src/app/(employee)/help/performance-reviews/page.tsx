@@ -43,12 +43,12 @@ const faqs: FAQItem[] = [
   {
     question: 'What is a review cycle?',
     answer:
-      'A review cycle is a time period (usually a quarter) during which performance is assessed. Your admin creates review cycles with start/end dates and deadlines for self-assessments and manager reviews. You can only create objectives within an active cycle.',
+      'A review cycle is a time period (usually a quarter) during which performance is assessed. Your admin creates review cycles with start/end dates plus due dates for OKR submissions, KPI submissions, self-assessments, and manager reviews. You can only create objectives within an active cycle.',
   },
   {
     question: 'What is a self-assessment?',
     answer:
-      'During an active review cycle, you\'ll be asked to rate yourself on each objective and KPI, and provide a written self-reflection. After you submit, your manager reviews your assessment, followed by HR\'s final evaluation.',
+      'During an active review cycle, you\'ll first work against the OKR and KPI due dates set on the cycle. Later, you\'ll be asked to rate yourself on each objective and KPI, and provide a written self-reflection. After you submit, your manager reviews your assessment, followed by HR\'s final evaluation.',
   },
   {
     question: 'What do the performance ratings mean?',

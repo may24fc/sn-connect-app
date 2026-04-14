@@ -115,6 +115,8 @@ export default function CyclesPage(): ReactNode {
   const sortedCycles = sortItems(cycles, {
     name: (c) => c.name.toLowerCase(),
     period: (c) => c.startDate,
+    okrSubmission: (c) => c.okrSubmissionDeadline ?? '',
+    kpiSubmission: (c) => c.kpiSubmissionDeadline ?? '',
     selfAssessment: (c) => c.selfAssessmentDeadline ?? '',
     managerReview: (c) => c.managerReviewDeadline ?? '',
     status: (c) => cycleStatusOrder[c.status] ?? 99,
@@ -156,6 +158,8 @@ export default function CyclesPage(): ReactNode {
           name: formData.name,
           startDate: formData.startDate,
           endDate: formData.endDate,
+          okrSubmissionDeadline: formData.okrSubmissionDeadline || null,
+          kpiSubmissionDeadline: formData.kpiSubmissionDeadline || null,
           selfReviewDeadline: formData.selfAssessmentDeadline || null,
           managerReviewDeadline: formData.managerReviewDeadline || null,
         });
@@ -170,6 +174,8 @@ export default function CyclesPage(): ReactNode {
           name: formData.name,
           startDate: formData.startDate,
           endDate: formData.endDate,
+          okrSubmissionDeadline: formData.okrSubmissionDeadline || null,
+          kpiSubmissionDeadline: formData.kpiSubmissionDeadline || null,
           selfReviewDeadline: formData.selfAssessmentDeadline || null,
           managerReviewDeadline: formData.managerReviewDeadline || null,
           status,
@@ -327,6 +333,8 @@ export default function CyclesPage(): ReactNode {
               <TableRow>
                 <SortableTableHead column="name" {...sortHeadProps}>Cycle Name</SortableTableHead>
                 <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
+                <SortableTableHead column="okrSubmission" {...sortHeadProps}>OKR Due</SortableTableHead>
+                <SortableTableHead column="kpiSubmission" {...sortHeadProps}>KPI Due</SortableTableHead>
                 <SortableTableHead column="selfAssessment" {...sortHeadProps}>Self-Assessment</SortableTableHead>
                 <SortableTableHead column="managerReview" {...sortHeadProps}>Manager Review</SortableTableHead>
                 <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
@@ -356,6 +364,20 @@ export default function CyclesPage(): ReactNode {
                       <TableCell>
                         <p className="text-sm">
                           {formatDate(cycle.startDate)} - {formatDate(cycle.endDate)}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">
+                          {cycle.okrSubmissionDeadline
+                            ? formatDate(cycle.okrSubmissionDeadline)
+                            : '-'}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm">
+                          {cycle.kpiSubmissionDeadline
+                            ? formatDate(cycle.kpiSubmissionDeadline)
+                            : '-'}
                         </p>
                       </TableCell>
                       <TableCell>
@@ -427,7 +449,7 @@ export default function CyclesPage(): ReactNode {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No review cycles found. Click "New Cycle" to create one.
                   </TableCell>
                 </TableRow>
