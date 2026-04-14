@@ -6,6 +6,7 @@ import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModa
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
+import { RejectedOnboardingDeleteButton } from '@/components/admin/RejectedOnboardingDeleteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingProfiles } from '@/hooks/useOnboardingProfiles';
 import {
@@ -1482,14 +1483,21 @@ export default function EmployeeManagementPage(): ReactNode {
                           </p>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(buildOnboardingDetailHref(profile.id))}
-                          >
-                            <Eye className="mr-1 h-4 w-4" />
-                            View Details
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(buildOnboardingDetailHref(profile.id))}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View Details
+                            </Button>
+                            <RejectedOnboardingDeleteButton
+                              profileId={profile.id}
+                              fullName={profile.full_name || 'This employee'}
+                              subjectLabel="employee"
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

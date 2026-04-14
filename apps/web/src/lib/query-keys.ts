@@ -344,6 +344,8 @@ export const queryKeys = {
     template: (scope: 'employee' | 'intern') =>
       [...queryKeys.onboarding.all, 'template', scope] as const,
     profile: () => [...queryKeys.onboarding.all, 'profile'] as const,
+    pendingApprovals: (role?: 'employee' | 'intern') =>
+      [...queryKeys.onboarding.all, 'pending-approvals', role ?? 'all'] as const,
     profiles: {
       all: () => [...queryKeys.onboarding.all, 'profiles'] as const,
       list: (filters: OnboardingProfileFilters) =>

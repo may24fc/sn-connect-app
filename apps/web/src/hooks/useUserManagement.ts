@@ -1,3 +1,4 @@
+import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export type InviteUserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
@@ -88,10 +89,52 @@ export function useApproveOnboarding() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate onboarding queries to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['onboarding', 'profiles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.all });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       // Refresh internship and probation tables so approved users appear immediately
+      queryClient.invalidateQueries({ queryKey: ['internships'] });
+      queryClient.invalidateQueries({ queryKey: ['probation'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+interface DeleteRejectedOnboardingSubmissionPayload {
+  profileId: string;
+}
+
+interface DeleteRejectedOnboardingSubmissionResponse {
+  message: string;
+  data: {
+    profileId: string;
+    userId: string;
+    status: string;
+  };
+}
+
+export function useDeleteRejectedOnboardingSubmission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      payload: DeleteRejectedOnboardingSubmissionPayload
+    ): Promise<DeleteRejectedOnboardingSubmissionResponse> => {
+      const response = await fetch(`/api/onboarding/profiles/${payload.profileId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to delete rejected onboarding submission' }));
+        throw new Error(error.error || 'Failed to delete rejected onboarding submission');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.all });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['internships'] });
       queryClient.invalidateQueries({ queryKey: ['probation'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });

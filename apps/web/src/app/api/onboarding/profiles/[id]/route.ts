@@ -1,3 +1,5 @@
+import { logActivity } from '@/lib/audit';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedOnboardingContext, isOnboardingAdmin, maskPaymentAccount } from '../../_lib';
 
@@ -79,6 +81,112 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     });
   } catch (error) {
     console.error('GET /api/onboarding/profiles/[id] error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const { supabase, user, role, error } = await getAuthedOnboardingContext();
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isOnboardingAdmin(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const supabaseAdmin = createSupabaseAdminClient();
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('onboarding_profiles')
+      .select('id, user_id, is_completed, review_state, users!inner(status)')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Failed to fetch rejected onboarding submission for deletion:', profileError);
+      return NextResponse.json(
+        { error: 'Failed to fetch onboarding submission' },
+        { status: 500 }
+      );
+    }
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Onboarding submission not found' }, { status: 404 });
+    }
+
+    if (deriveReviewState(profile) !== 'rejected') {
+      return NextResponse.json(
+        { error: 'Only rejected onboarding submissions can be deleted' },
+        { status: 400 }
+      );
+    }
+
+    const { error: resetStatusError } = await supabaseAdmin
+      .from('users')
+      .update({ status: 'pending_onboarding' })
+      .eq('id', profile.user_id)
+      .is('deleted_at', null);
+
+    if (resetStatusError) {
+      console.error('Failed to reset user status before deleting onboarding submission:', resetStatusError);
+      return NextResponse.json(
+        { error: 'Failed to reset user onboarding state' },
+        { status: 500 }
+      );
+    }
+
+    const { error: deleteError } = await supabaseAdmin
+      .from('onboarding_profiles')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      console.error('Failed to delete rejected onboarding submission:', deleteError);
+
+      const { error: rollbackError } = await supabaseAdmin
+        .from('users')
+        .update({ status: 'awaiting_approval' })
+        .eq('id', profile.user_id)
+        .is('deleted_at', null);
+
+      if (rollbackError) {
+        console.error('Failed to rollback user status after onboarding delete failure:', rollbackError);
+      }
+
+      return NextResponse.json(
+        { error: 'Failed to delete onboarding submission' },
+        { status: 500 }
+      );
+    }
+
+    await logActivity(supabase, {
+      userId: user.id,
+      action: 'delete_rejected_onboarding_submission',
+      tableName: 'onboarding_profiles',
+      recordId: id,
+      metadata: {
+        userId: profile.user_id,
+        previousReviewState: profile.review_state,
+      },
+    });
+
+    return NextResponse.json({
+      message: 'Rejected onboarding submission deleted successfully',
+      data: {
+        profileId: id,
+        userId: profile.user_id,
+        status: 'pending_onboarding',
+      },
+    });
+  } catch (error) {
+    console.error('DELETE /api/onboarding/profiles/[id] error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -7,6 +7,7 @@ import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
 import { EODReportDetailModal } from '@/components/admin/EODReportDetailModal';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
 import { OnboardingChecklistDialog } from '@/components/admin/OnboardingChecklistDialog';
+import { RejectedOnboardingDeleteButton } from '@/components/admin/RejectedOnboardingDeleteButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useInternships } from '@/hooks/useInternships';
@@ -878,14 +879,21 @@ export default function AdminInternsPage(): ReactNode {
                           </p>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
-                          >
-                            <Eye className="mr-1 h-4 w-4" />
-                            View Details
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View Details
+                            </Button>
+                            <RejectedOnboardingDeleteButton
+                              profileId={profile.id}
+                              fullName={profile.full_name || 'This intern'}
+                              subjectLabel="intern"
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

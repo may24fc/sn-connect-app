@@ -2,6 +2,7 @@
 
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { RejectedOnboardingDeleteButton } from '@/components/admin/RejectedOnboardingDeleteButton';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { useRealtimeOnboardingApprovals } from '@/hooks/useRealtimeOnboardingApprovals';
@@ -194,25 +195,34 @@ export default function OnboardingDetailPage(): ReactNode {
           </div>
         </div>
 
-        {isPendingApproval && (
-          <Button
-            variant="default"
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 text-white"
-            onClick={() =>
-              setSelectedApproval({
-                ...profile,
-                role: normalizedRole,
-                full_name: fullName,
-                user_id: profile.user_id,
-                   completed_at: profile.created_at,
-              })
-            }
-          >
-            <CheckCircle2 className="mr-1 h-4 w-4" />
-            Review & Approve
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {reviewState === 'rejected' && (
+            <RejectedOnboardingDeleteButton
+              profileId={profile.id}
+              fullName={fullName}
+              subjectLabel={normalizedRole}
+            />
+          )}
+          {isPendingApproval && (
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() =>
+                setSelectedApproval({
+                  ...profile,
+                  role: normalizedRole,
+                  full_name: fullName,
+                  user_id: profile.user_id,
+                  completed_at: profile.created_at,
+                })
+              }
+            >
+              <CheckCircle2 className="mr-1 h-4 w-4" />
+              Review & Approve
+            </Button>
+          )}
+        </div>
       </div>
 
       {hasRejectionHistory && (

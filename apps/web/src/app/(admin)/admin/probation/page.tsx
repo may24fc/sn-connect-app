@@ -2,6 +2,7 @@
 
 import { ApproveOnboardingModal } from '@/components/admin/ApproveOnboardingModal';
 import { AssignEmployeeModal } from '@/components/admin/AssignEmployeeModal';
+import { RejectedOnboardingDeleteButton } from '@/components/admin/RejectedOnboardingDeleteButton';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { InviteUserModal } from '@/components/admin/InviteUserModal';
@@ -1190,14 +1191,21 @@ export default function ProbationPage(): ReactNode {
                           </p>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
-                          >
-                            <Eye className="mr-1 h-4 w-4" />
-                            View Details
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => router.push(`/admin/onboarding/${profile.id}`)}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View Details
+                            </Button>
+                            <RejectedOnboardingDeleteButton
+                              profileId={profile.id}
+                              fullName={profile.full_name || 'This employee'}
+                              subjectLabel="employee"
+                            />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
