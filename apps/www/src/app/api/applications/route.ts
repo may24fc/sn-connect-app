@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert application
-    const { error: insertError } = await supabase.from('job_applications').insert({
+    const { data: insertedApp, error: insertError } = await supabase.from('job_applications').insert({
       full_name: parsed.data.full_name,
       email: parsed.data.email,
       phone: parsed.data.phone ?? null,
@@ -126,11 +126,34 @@ export async function POST(request: NextRequest) {
       cover_letter: parsed.data.cover_letter ?? null,
       cv_url: resumeUrl ?? '',
       resume_url: resumeUrl,
-    });
+    })
+      .select('id')
+      .single();
 
-    if (insertError) {
-      console.error('Application insert error:', insertError.message);
+    if (insertError || !insertedApp) {
+      console.error('Application insert error:', insertError?.message);
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 });
+    }
+
+    // Trigger ATS AI evaluation if a resume was uploaded (non-blocking)
+    if (resumeUrl) {
+      const inngestEventKey = process.env.INNGEST_EVENT_KEY;
+      const inngestBaseUrl = process.env.INNGEST_BASE_URL || 'https://inn.gs';
+      if (inngestEventKey) {
+        fetch(`${inngestBaseUrl}/e/${inngestEventKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: 'ats/resume.upload',
+            data: {
+              applicationId: insertedApp.id,
+              filePath: resumeUrl,
+            },
+          }),
+        }).catch((err) => {
+          console.error('[ATS] Failed to send Inngest event for public application:', err);
+        });
+      }
     }
 
     // Send confirmation email (non-blocking — failure won't affect the response)

@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 const MAX_FILES = 50;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_EXTENSIONS = new Set(['.pdf', '.docx', '.doc']);
-const APPLICATION_RESUMES_BUCKET = 'application-resumes';
+const APPLICATION_RESUMES_BUCKET = 'applications';
 
 function getExtension(filename: string): string {
   const lastDot = filename.lastIndexOf('.');

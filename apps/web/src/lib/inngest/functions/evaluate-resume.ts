@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { z } from 'zod';
 import { getLangWatchTracer } from 'langwatch/observability';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { inngest } from '../client';
@@ -97,12 +98,12 @@ Expected Output:
 Now evaluate the candidate below.`;
 }
 
-interface EvaluationResult {
-  matchScore: number;
-  topStrengths: string[];
-  missingRequirements: string[];
-  executiveSummary: string;
-}
+const evaluationResultSchema = z.object({
+  matchScore: z.number().min(0).max(100),
+  topStrengths: z.array(z.string()).max(3).default([]),
+  missingRequirements: z.array(z.string()).default([]),
+  executiveSummary: z.string().min(1),
+});
 
 interface EvaluationContext {
   resumeMarkdown: string;
@@ -276,9 +277,9 @@ export const evaluateResume = inngest.createFunction(
             throw new Error('OpenAI returned an empty response.');
           }
 
-          const parsed: EvaluationResult = JSON.parse(content);
+          const parsed = evaluationResultSchema.parse(JSON.parse(content));
           parsed.matchScore = Math.max(0, Math.min(100, Math.round(parsed.matchScore)));
-          parsed.topStrengths = (parsed.topStrengths ?? []).slice(0, 3);
+          parsed.topStrengths = parsed.topStrengths.slice(0, 3);
 
           llmSpan.setOutput('json', {
             matchScore: parsed.matchScore,

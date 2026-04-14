@@ -4,7 +4,7 @@ import mammoth from 'mammoth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { inngest } from '../client';
 
-const APPLICATION_RESUMES_BUCKET = 'application-resumes';
+const APPLICATION_RESUMES_BUCKET = 'applications';
 const atsTracer = getLangWatchTracer('sn-connect-ai-ats');
 
 async function updateApplicationEvaluationStatus(
