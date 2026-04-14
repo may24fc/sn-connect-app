@@ -184,12 +184,12 @@ export default function LoginPage(): ReactNode {
 
           <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
             <p>
-              Need help?{' '}
+              Need help with your account?{' '}
               <a
-                href="mailto:support@company.com"
+                href="mailto:hr@24fitclub.com"
                 className="text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300"
               >
-                Contact IT Support
+                Contact HR Support at hr@24fitclub.com
               </a>
             </p>
           </div>
