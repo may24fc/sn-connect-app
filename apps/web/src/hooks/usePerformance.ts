@@ -21,7 +21,6 @@ interface ReviewCycleRow {
   okr_submission_deadline: string | null;
   kpi_submission_deadline: string | null;
   self_review_deadline: string | null;
-  manager_review_deadline: string | null;
   status: 'draft' | 'active' | 'completed' | 'archived';
   created_at: string;
   updated_at: string;
@@ -128,7 +127,6 @@ function toUiCycle(row: ReviewCycleRow): PerformanceCycle {
       ? { kpiSubmissionDeadline: row.kpi_submission_deadline }
       : {}),
     ...(row.self_review_deadline ? { selfAssessmentDeadline: row.self_review_deadline } : {}),
-    ...(row.manager_review_deadline ? { managerReviewDeadline: row.manager_review_deadline } : {}),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

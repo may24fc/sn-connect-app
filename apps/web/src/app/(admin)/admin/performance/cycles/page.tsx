@@ -59,7 +59,6 @@ interface CycleFormData {
   okrSubmissionDeadline: string;
   kpiSubmissionDeadline: string;
   selfAssessmentDeadline: string;
-  managerReviewDeadline: string;
 }
 
 const emptyFormData: CycleFormData = {
@@ -69,7 +68,6 @@ const emptyFormData: CycleFormData = {
   okrSubmissionDeadline: '',
   kpiSubmissionDeadline: '',
   selfAssessmentDeadline: '',
-  managerReviewDeadline: '',
 };
 
 const statusConfig: Record<
@@ -118,7 +116,6 @@ export default function CyclesPage(): ReactNode {
     okrSubmission: (c) => c.okrSubmissionDeadline ?? '',
     kpiSubmission: (c) => c.kpiSubmissionDeadline ?? '',
     selfAssessment: (c) => c.selfAssessmentDeadline ?? '',
-    managerReview: (c) => c.managerReviewDeadline ?? '',
     status: (c) => cycleStatusOrder[c.status] ?? 99,
   });
 
@@ -139,7 +136,6 @@ export default function CyclesPage(): ReactNode {
       okrSubmissionDeadline: cycle.okrSubmissionDeadline || '',
       kpiSubmissionDeadline: cycle.kpiSubmissionDeadline || '',
       selfAssessmentDeadline: cycle.selfAssessmentDeadline || '',
-      managerReviewDeadline: cycle.managerReviewDeadline || '',
     });
     setDialogOpen(true);
   };
@@ -161,7 +157,6 @@ export default function CyclesPage(): ReactNode {
           okrSubmissionDeadline: formData.okrSubmissionDeadline || null,
           kpiSubmissionDeadline: formData.kpiSubmissionDeadline || null,
           selfReviewDeadline: formData.selfAssessmentDeadline || null,
-          managerReviewDeadline: formData.managerReviewDeadline || null,
         });
 
         addToast({
@@ -177,7 +172,6 @@ export default function CyclesPage(): ReactNode {
           okrSubmissionDeadline: formData.okrSubmissionDeadline || null,
           kpiSubmissionDeadline: formData.kpiSubmissionDeadline || null,
           selfReviewDeadline: formData.selfAssessmentDeadline || null,
-          managerReviewDeadline: formData.managerReviewDeadline || null,
           status,
           description: null,
         });
@@ -336,7 +330,6 @@ export default function CyclesPage(): ReactNode {
                 <SortableTableHead column="okrSubmission" {...sortHeadProps}>OKR Due</SortableTableHead>
                 <SortableTableHead column="kpiSubmission" {...sortHeadProps}>KPI Due</SortableTableHead>
                 <SortableTableHead column="selfAssessment" {...sortHeadProps}>Self-Assessment</SortableTableHead>
-                <SortableTableHead column="managerReview" {...sortHeadProps}>Manager Review</SortableTableHead>
                 <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -384,13 +377,6 @@ export default function CyclesPage(): ReactNode {
                         <p className="text-sm">
                           {cycle.selfAssessmentDeadline
                             ? formatDate(cycle.selfAssessmentDeadline)
-                            : '-'}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-sm">
-                          {cycle.managerReviewDeadline
-                            ? formatDate(cycle.managerReviewDeadline)
                             : '-'}
                         </p>
                       </TableCell>
@@ -449,7 +435,7 @@ export default function CyclesPage(): ReactNode {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No review cycles found. Click "New Cycle" to create one.
                   </TableCell>
                 </TableRow>
@@ -540,17 +526,6 @@ export default function CyclesPage(): ReactNode {
                   value={formData.selfAssessmentDeadline}
                   onChange={(e) =>
                     setFormData({ ...formData, selfAssessmentDeadline: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="managerDeadline">Manager Review Deadline</Label>
-                <Input
-                  id="managerDeadline"
-                  type="date"
-                  value={formData.managerReviewDeadline}
-                  onChange={(e) =>
-                    setFormData({ ...formData, managerReviewDeadline: e.target.value })
                   }
                 />
               </div>

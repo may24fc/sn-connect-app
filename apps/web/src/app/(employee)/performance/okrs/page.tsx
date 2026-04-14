@@ -309,7 +309,7 @@ export default function OKRsPage(): ReactNode {
             </Badge>
           </div>
           {displayCycle && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   OKR Due
@@ -337,16 +337,6 @@ export default function OKRsPage(): ReactNode {
                 <p className="text-sm font-medium text-foreground mt-1">
                   {displayCycle.selfAssessmentDeadline
                     ? formatDate(displayCycle.selfAssessmentDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Manager Review
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {displayCycle.managerReviewDeadline
-                    ? formatDate(displayCycle.managerReviewDeadline)
                     : 'Not set'}
                 </p>
               </div>

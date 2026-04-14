@@ -427,7 +427,7 @@ export default function EvaluationsPage(): ReactNode {
                 {activeCycle.status === 'active' ? 'Active Cycle' : 'Cycle Not Active'}
               </Badge>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   OKR Due
@@ -455,16 +455,6 @@ export default function EvaluationsPage(): ReactNode {
                 <p className="text-sm font-medium text-foreground mt-1">
                   {activeCycle.selfAssessmentDeadline
                     ? formatDate(activeCycle.selfAssessmentDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Manager Review
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {activeCycle.managerReviewDeadline
-                    ? formatDate(activeCycle.managerReviewDeadline)
                     : 'Not set'}
                 </p>
               </div>

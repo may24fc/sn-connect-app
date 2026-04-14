@@ -22,7 +22,6 @@ export interface PerformanceCycle {
   okrSubmissionDeadline?: string;
   kpiSubmissionDeadline?: string;
   selfAssessmentDeadline?: string;
-  managerReviewDeadline?: string;
   createdAt: string;
   updatedAt: string;
 }
