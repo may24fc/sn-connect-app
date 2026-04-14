@@ -1,7 +1,7 @@
 import { context as otelContext, trace as otelTrace } from '@opentelemetry/api';
 import { chatMessageSchema } from '@/lib/schemas/ai.schema';
-import { getLangWatchTracer } from 'langwatch';
 import type { LangWatchSpanRAGContext } from 'langwatch/observability';
+import { getLangWatchTracer } from 'langwatch/observability';
 import OpenAI from 'openai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAdminClient, getAllowedKnowledgeAccessLevels, getAuthedSupabase } from '../_lib';

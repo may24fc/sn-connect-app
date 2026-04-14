@@ -5,7 +5,7 @@ export async function register() {
     return;
   }
 
-  const { LangWatchExporter } = await import('langwatch');
+  const { LangWatchExporter } = await import('langwatch/observability');
 
   registerOTel({
     serviceName: 'sn-connect-web',
