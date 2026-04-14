@@ -35,6 +35,7 @@
     "supabase:status": "pnpm exec supabase status",
     "supabase:stop": "pnpm exec supabase stop",
     "env:use-local": "node scripts/switch-env-target.mjs localdev",
+    "env:use-staging": "node scripts/switch-env-target.mjs stagingdev",
     "env:use-prodops": "node scripts/switch-env-target.mjs prodops",
     "check:leadership-accounts": "node scripts/check-leadership-accounts.mjs",
     "check:production-cleanliness": "node scripts/check-production-cleanliness.mjs",
