@@ -186,10 +186,10 @@ export default function LoginPage(): ReactNode {
             <p>
               Need help with your account?{' '}
               <a
-                href="mailto:hr@24fitclub.com"
+                href="mailto:hr@24fitclub.com.au"
                 className="text-slate-700 dark:text-zinc-400 hover:text-slate-700 dark:hover:text-zinc-300"
               >
-                Contact HR Support at hr@24fitclub.com
+                Contact HR Support at hr@24fitclub.com.au
               </a>
             </p>
           </div>

@@ -386,6 +386,14 @@ export default function DirectoryDetailPage({
     .filter(Boolean)
     .join(', ');
 
+  const hasInternshipDetails =
+    entry.role === 'intern' ||
+    !!entry.internship_id ||
+    !!entry.school ||
+    !!entry.program ||
+    entry.completed_hours != null ||
+    entry.required_hours != null;
+
   return (
     <div className="flex flex-col gap-6 p-6">
       {/* Header */}
@@ -529,7 +537,7 @@ export default function DirectoryDetailPage({
                     value={formatDisplayLabel(entry.employment_type)}
                   />
                   <DetailRow label="Status" value={formatDisplayLabel(entry.status)} />
-                  {entry.internship_id && (
+                  {hasInternshipDetails && (
                     <>
                       <Separator className="my-1" />
                       <DetailRow label="School" value={entry.school} />
