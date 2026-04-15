@@ -1,6 +1,11 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { SELECTABLE_SUPPORTED_COUNTRIES } from '@/lib/validation/phone';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+const selectableCountryCodes = new Set<string>(
+  SELECTABLE_SUPPORTED_COUNTRIES.map((country) => country.value)
+);
 
 /**
  * Partial profile info schema — all fields optional for inline editing.
@@ -22,6 +27,15 @@ const partialProfileSchema = z
     emergencyContactNumber: z.string().max(30).optional(),
     emergencyContactRelationship: z.string().max(80).optional(),
     linkedinProfileUrl: z.union([z.string().url(), z.literal('')]).optional(),
+    paymentBankName: z.string().max(160).optional(),
+    paymentCountryCode: z.string().refine((value) => selectableCountryCodes.has(value), {
+      message: 'Invalid payment country',
+    }).optional(),
+    paymentAccountName: z.string().max(160).optional(),
+    paymentAccountNumber: z.string().max(80).optional(),
+    paymentEmail: z.union([z.string().email(), z.literal('')]).optional(),
+    paymentPhoneNumber: z.string().max(30).optional(),
+    paymentCity: z.string().max(120).optional(),
   })
   .strict();
 
@@ -43,6 +57,13 @@ const fieldMap: Record<string, string> = {
   emergencyContactNumber: 'emergency_contact_number',
   emergencyContactRelationship: 'emergency_contact_relationship',
   linkedinProfileUrl: 'linkedin_profile_url',
+  paymentBankName: 'payment_bank_name',
+  paymentCountryCode: 'payment_country_code',
+  paymentAccountName: 'payment_account_name',
+  paymentAccountNumber: 'payment_account_number',
+  paymentEmail: 'payment_email',
+  paymentPhoneNumber: 'payment_phone_number',
+  paymentCity: 'payment_city',
 };
 
 /**

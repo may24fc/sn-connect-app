@@ -69,7 +69,7 @@ export async function GET(
       supabase
         .from('onboarding_profiles')
         .select(
-          'birthday, nationality, education, major, address, linkedin_profile_url, emergency_contact_name, emergency_contact_number, emergency_contact_relationship, payment_account_name, payment_account_number, payment_email, payment_phone_number, payment_address, payment_city, payment_province, payment_zipcode, contact_number, email_address, personal_email'
+          'birthday, nationality, education, major, address, linkedin_profile_url, emergency_contact_name, emergency_contact_number, emergency_contact_relationship, payment_bank_name, payment_account_name, payment_account_number, payment_email, payment_phone_number, payment_address, payment_city, payment_province, payment_zipcode, contact_number, email_address, personal_email'
         )
         .eq('user_id', userId)
         .is('deleted_at', null)
@@ -143,6 +143,7 @@ export async function GET(
           null,
         personal_email:
           directoryEntry.personal_email ?? latestOnboardingProfile?.personal_email ?? null,
+        payment_bank_name: latestOnboardingProfile?.payment_bank_name ?? null,
         payment_account_name:
           directoryEntry.payment_account_name ?? latestOnboardingProfile?.payment_account_name ?? null,
         payment_account_number:

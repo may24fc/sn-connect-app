@@ -48,6 +48,7 @@ export interface DirectoryEntry {
   emergency_contact_number: string | null;
   emergency_contact_relationship: string | null;
   personal_email: string | null;
+  payment_bank_name?: string | null;
   payment_account_name: string | null;
   payment_account_number: string | null;
   payment_email: string | null;

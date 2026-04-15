@@ -17,6 +17,17 @@ export const SUPPORTED_COUNTRIES = [
 
 export type SupportedCountryCode = (typeof SUPPORTED_COUNTRIES)[number]['code'];
 
+export const SELECTABLE_SUPPORTED_COUNTRIES = SUPPORTED_COUNTRIES.filter(
+  (country) => country.code !== 'GLOBAL'
+).map((country) => ({ value: country.code, label: country.label }));
+
+export function getSupportedCountryLabel(countryCode?: string | null): string | null {
+  if (!countryCode) return null;
+
+  const match = SUPPORTED_COUNTRIES.find((country) => country.code === countryCode);
+  return match?.label ?? countryCode;
+}
+
 export function isSupportedPhoneCountryCode(value: string): value is SupportedCountryCode {
   return SUPPORTED_COUNTRIES.some((country) => country.code === value);
 }

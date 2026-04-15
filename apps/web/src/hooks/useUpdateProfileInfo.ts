@@ -16,6 +16,13 @@ export interface ProfileInfoUpdate {
   emergencyContactNumber?: string;
   emergencyContactRelationship?: string;
   linkedinProfileUrl?: string;
+  paymentBankName?: string;
+  paymentCountryCode?: string;
+  paymentAccountName?: string;
+  paymentAccountNumber?: string;
+  paymentEmail?: string;
+  paymentPhoneNumber?: string;
+  paymentCity?: string;
 }
 
 /**

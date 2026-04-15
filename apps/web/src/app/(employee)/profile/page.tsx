@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useOnboardingProfile } from '@/hooks/useOnboardingProfile';
 import { buildDisplayName, getDisplayNameInitials } from '@/lib/user-display';
+import { getSupportedCountryLabel, SELECTABLE_SUPPORTED_COUNTRIES } from '@/lib/validation/phone';
 import {
   useRoleMetadata,
   useUpdateRoleMetadata,
@@ -29,6 +30,7 @@ import {
   Building2,
   Calendar,
   Camera,
+  CreditCard,
   Flag,
   GraduationCap,
   Heart,
@@ -182,6 +184,14 @@ export default function ProfilePage() {
       companyEmail: profile?.company_email ?? employee?.company_email ?? null,
       emergencyContactRelationship: profile?.emergency_contact_relationship ?? null,
       linkedinUrl: profile?.linkedin_profile_url ?? null,
+      paymentBankName: profile?.payment_bank_name ?? null,
+      paymentCountryCode: profile?.payment_country_code ?? 'PH',
+      paymentCountryLabel: getSupportedCountryLabel(profile?.payment_country_code ?? 'PH'),
+      paymentAccountName: profile?.payment_account_name ?? null,
+      paymentAccountNumber: profile?.payment_account_number ?? null,
+      paymentEmail: profile?.payment_email ?? null,
+      paymentPhoneNumber: profile?.payment_phone_number ?? null,
+      paymentCity: profile?.payment_city ?? null,
     };
   }, [profile, employee, user?.email]);
 
@@ -378,6 +388,60 @@ export default function ProfilePage() {
     },
   ];
 
+  const paymentFields: EditableField[] = [
+    {
+      key: 'paymentBankName',
+      label: 'Bank Name',
+      icon: <Building2 className="h-4 w-4" />,
+      displayValue: mergedData.paymentBankName,
+      placeholder: 'e.g. BDO Unibank',
+    },
+    {
+      key: 'paymentCountryCode',
+      label: 'Payment Country',
+      icon: <MapPin className="h-4 w-4" />,
+      displayValue: mergedData.paymentCountryLabel,
+      editValue: mergedData.paymentCountryCode,
+      inputType: 'select',
+      options: SELECTABLE_SUPPORTED_COUNTRIES,
+      placeholder: 'Select country',
+    },
+    {
+      key: 'paymentAccountName',
+      label: 'Account Name',
+      icon: <User className="h-4 w-4" />,
+      displayValue: mergedData.paymentAccountName,
+    },
+    {
+      key: 'paymentAccountNumber',
+      label: 'Account Number',
+      icon: <CreditCard className="h-4 w-4" />,
+      displayValue: mergedData.paymentAccountNumber,
+      placeholder: 'Account number',
+    },
+    {
+      key: 'paymentEmail',
+      label: 'Payment Email',
+      icon: <Mail className="h-4 w-4" />,
+      displayValue: mergedData.paymentEmail,
+      href: mergedData.paymentEmail ? `mailto:${mergedData.paymentEmail}` : undefined,
+      inputType: 'email',
+    },
+    {
+      key: 'paymentPhoneNumber',
+      label: 'Payment Phone Number',
+      icon: <Phone className="h-4 w-4" />,
+      displayValue: mergedData.paymentPhoneNumber,
+      inputType: 'tel',
+    },
+    {
+      key: 'paymentCity',
+      label: 'Payment City',
+      icon: <MapPin className="h-4 w-4" />,
+      displayValue: mergedData.paymentCity,
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header Card */}
@@ -508,6 +572,16 @@ export default function ProfilePage() {
             isLoading={isProfileLoading}
             onSave={handleSectionSave}
             isSaving={updateProfileInfo.isPending}
+          />
+
+          <EditableProfileSection
+            title="Payment Details"
+            titleIcon={<CreditCard className="h-4 w-4" />}
+            fields={paymentFields}
+            isLoading={isProfileLoading}
+            onSave={handleSectionSave}
+            isSaving={updateProfileInfo.isPending}
+            colSpan={2}
           />
         </BentoGrid>
       </div>

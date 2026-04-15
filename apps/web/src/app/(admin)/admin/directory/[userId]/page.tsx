@@ -161,6 +161,7 @@ const FIELD_LABELS: Record<string, string> = {
   emergency_contact_name: 'Emergency Contact Name',
   emergency_contact_number: 'Emergency Contact Number',
   emergency_contact_relationship: 'Emergency Contact Relationship',
+  payment_bank_name: 'Bank Name',
   payment_account_name: 'Payment Account Name',
   payment_account_number: 'Payment Account Number',
   payment_email: 'Payment Email',
@@ -597,6 +598,7 @@ export default function DirectoryDetailPage({
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  <DetailRow label="Bank Name" value={entry.payment_bank_name ?? null} />
                   <DetailRow label="Account Name" value={entry.payment_account_name} />
                   <DetailRow label="Account Number" value={entry.payment_account_number} />
                   <DetailRow

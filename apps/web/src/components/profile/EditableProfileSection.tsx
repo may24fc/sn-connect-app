@@ -6,7 +6,7 @@ import {
   BentoCardTitle,
   BentoCardContent,
 } from '@/components/data-display';
-import { Input, Skeleton } from '@hr-portal/ui';
+import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton } from '@hr-portal/ui';
 import { Check, Pencil, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -24,7 +24,9 @@ export interface EditableField {
   /** Raw editable value (unformatted, e.g. ISO date for birthday) */
   editValue?: string | undefined;
   /** Input type: text | email | url | date | tel */
-  inputType?: 'text' | 'email' | 'url' | 'date' | 'tel' | undefined;
+  inputType?: 'text' | 'email' | 'url' | 'date' | 'tel' | 'select' | undefined;
+  /** Select options for inputType=select */
+  options?: Array<{ value: string; label: string }> | undefined;
   /** If true, this field cannot be edited (e.g. computed "age") */
   readOnly?: boolean | undefined;
   /** Optional link href for view mode */
@@ -93,6 +95,31 @@ function EditField({
 }): React.ReactNode {
   if (field.readOnly) {
     return <ViewField field={field} />;
+  }
+
+  if (field.inputType === 'select') {
+    return (
+      <div className="flex items-start gap-3">
+        <span className="mt-1.5 text-zinc-400 dark:text-zinc-500">{field.icon}</span>
+        <div className="min-w-0 flex-1">
+          <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-0.5 block">
+            {field.label}
+          </label>
+          <Select value={value} onValueChange={(nextValue) => onChange(field.key, nextValue)}>
+            <SelectTrigger className="h-8 text-sm">
+              <SelectValue placeholder={field.placeholder ?? field.label} />
+            </SelectTrigger>
+            <SelectContent>
+              {(field.options ?? []).map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
   }
 
   return (
