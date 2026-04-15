@@ -1,6 +1,14 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+interface BankRegistryRow {
+  id: string;
+  bank_name: string | null;
+  bank_code: string | null;
+  swift_code: string | null;
+  country_code: string | null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -27,7 +35,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const filteredBanks = (data || []).filter((bank) => {
+    const filteredBanks = ((data || []) as BankRegistryRow[]).filter((bank) => {
       const normalizedName = String(bank.bank_name || '').toLowerCase();
       const normalizedCode = String(bank.bank_code || '').toLowerCase();
 
