@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isJobAdmin } from '../../../jobs/_lib';
+import {
+  getApplicationEvaluationStatus,
+  resetApplicationEvaluationState,
+} from '@/lib/ats/evaluation';
 import { inngest } from '@/lib/inngest/client';
 
 interface Params {
@@ -44,18 +48,19 @@ export async function POST(_request: NextRequest, { params }: Params) {
       );
     }
 
-    if (application.parsed_resume_markdown) {
-      const { error: queueError } = await supabase
-        .from('job_applications')
-        .update({
-          ai_evaluation_status: 'queued',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .is('deleted_at', null);
+    const currentStatus = await getApplicationEvaluationStatus(id);
+    if (currentStatus === 'queued' || currentStatus === 'parsing' || currentStatus === 'evaluating') {
+      return NextResponse.json(
+        { error: `Application is already being processed (${currentStatus})` },
+        { status: 409 },
+      );
+    }
 
-      if (queueError) {
-        console.error('Failed to mark application as queued for evaluation:', queueError);
+    if (application.parsed_resume_markdown) {
+      try {
+        await resetApplicationEvaluationState(id);
+      } catch (queueError) {
+        console.error('Failed to reset application before evaluation:', queueError);
         return NextResponse.json({ error: 'Failed to queue application for evaluation' }, { status: 500 });
       }
 
@@ -79,17 +84,10 @@ export async function POST(_request: NextRequest, { params }: Params) {
       );
     }
 
-    const { error: queueError } = await supabase
-      .from('job_applications')
-      .update({
-        ai_evaluation_status: 'queued',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .is('deleted_at', null);
-
-    if (queueError) {
-      console.error('Failed to mark application as queued for parsing:', queueError);
+    try {
+      await resetApplicationEvaluationState(id);
+    } catch (queueError) {
+      console.error('Failed to reset application before parsing:', queueError);
       return NextResponse.json({ error: 'Failed to queue application for parsing' }, { status: 500 });
     }
 

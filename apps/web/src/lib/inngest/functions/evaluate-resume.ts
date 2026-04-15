@@ -2,30 +2,14 @@ import OpenAI from 'openai';
 import { z } from 'zod';
 import { getLangWatchTracer } from 'langwatch/observability';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import {
+  claimApplicationEvaluationStatus,
+  getApplicationEvaluationStatus,
+  updateApplicationEvaluationStatus,
+} from '@/lib/ats/evaluation';
 import { inngest } from '../client';
 
 const EVALUATION_MODEL = 'gpt-4o-mini';
-const atsTracer = getLangWatchTracer('sn-connect-ai-ats');
-
-async function updateApplicationEvaluationStatus(
-  applicationId: string,
-  status: 'evaluating' | 'completed' | 'failed',
-): Promise<void> {
-  const supabase = createSupabaseAdminClient();
-
-  const { error } = await supabase
-    .from('job_applications')
-    .update({
-      ai_evaluation_status: status,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', applicationId)
-    .is('deleted_at', null);
-
-  if (error) {
-    throw new Error(`Failed to update ATS evaluation status: ${error.message}`);
-  }
-}
 
 /**
  * JSON Schema passed to OpenAI structured outputs. Mirrors the Zod
@@ -131,6 +115,7 @@ export const evaluateResume = inngest.createFunction(
   { event: 'ats/resume.parsed' },
   async ({ event, step }) => {
     const { applicationId } = event.data;
+    const atsTracer = getLangWatchTracer('sn-connect-ai-ats');
 
     return await atsTracer.withActiveSpan('ats-evaluate-resume', async (workflowSpan) => {
       workflowSpan.setType('workflow');
@@ -142,9 +127,31 @@ export const evaluateResume = inngest.createFunction(
       workflowSpan.setAttribute('langwatch.labels', ['ATS', 'Resume Evaluation']);
 
       try {
-        await step.run('mark-evaluating', async () => {
-          await updateApplicationEvaluationStatus(applicationId, 'evaluating');
+        const evaluationClaim = await step.run('claim-evaluation-work', async () => {
+          const claimed = await claimApplicationEvaluationStatus(
+            applicationId,
+            'evaluating',
+            ['queued', 'failed'],
+          );
+
+          if (claimed) {
+            return { claimed: true, status: 'evaluating' };
+          }
+
+          const currentStatus = await getApplicationEvaluationStatus(applicationId);
+          return { claimed: false, status: currentStatus };
         });
+
+        if (!evaluationClaim.claimed) {
+          const result = {
+            status: 'ignored',
+            reason: `Evaluation already handled with status ${evaluationClaim.status ?? 'unknown'}`,
+            applicationId,
+          };
+
+          workflowSpan.setOutput('json', result);
+          return result;
+        }
 
         const context = await step.run('fetch-data', async () => {
           const supabase = createSupabaseAdminClient();
@@ -261,7 +268,7 @@ export const evaluateResume = inngest.createFunction(
           const response = await openai.chat.completions.create({
             model: EVALUATION_MODEL,
             temperature: 0.2,
-            max_tokens: 1024,
+            max_tokens: 2048,
             messages: [
               { role: 'system', content: buildSystemPrompt() },
               { role: 'user', content: userMessage },

@@ -9,6 +9,18 @@ const MAX_FILES = 50;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_EXTENSIONS = new Set(['.pdf', '.docx', '.doc']);
 const APPLICATION_RESUMES_BUCKET = 'applications';
+const FILENAME_NOISE_TOKENS = new Set([
+  'resume',
+  'cv',
+  'curriculum',
+  'vitae',
+  'final',
+  'latest',
+  'updated',
+  'update',
+  'draft',
+  'copy',
+]);
 
 function getExtension(filename: string): string {
   const lastDot = filename.lastIndexOf('.');
@@ -21,10 +33,23 @@ function getExtension(filename: string): string {
  */
 function nameFromFilename(filename: string): string {
   const withoutExt = filename.replace(/\.[^.]+$/, '');
-  return withoutExt
-    .replace(/[-_]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim() || 'Imported Applicant';
+
+  const cleanedTokens = withoutExt
+    .replace(/[()\[\]{}]+/g, ' ')
+    .replace(/[._-]+/g, ' ')
+    .replace(/\b\d{4}(?:\d{2})?(?:\d{2})?\b/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .filter((token) => !FILENAME_NOISE_TOKENS.has(token.toLowerCase()));
+
+  if (cleanedTokens.length === 0) {
+    return 'Imported Applicant';
+  }
+
+  return cleanedTokens
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1).toLowerCase())
+    .join(' ');
 }
 
 export async function POST(request: NextRequest) {

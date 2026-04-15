@@ -25,6 +25,10 @@ function getResendClient(): Resend | null {
   return new Resend(apiKey);
 }
 
+function isSyntheticApplicantEmail(email: string): boolean {
+  return /@placeholder\.local$/i.test(email.trim());
+}
+
 const STATUS_EMAIL_CONTENT: Record<string, { subject: string; heading: string; bodyFn: (name: string, position: string) => string } | undefined> = {
   reviewed: {
     subject: 'Application Under Review',
@@ -116,6 +120,10 @@ export async function sendApplicationStatusUpdate({
 }) {
   const content = STATUS_EMAIL_CONTENT[status];
   if (!content) return; // No email for 'pending' or unknown statuses
+  if (isSyntheticApplicantEmail(to)) {
+    console.warn(`[Email] Skipping status update for imported applicant placeholder email: ${to}`);
+    return;
+  }
 
   const resend = getResendClient();
   if (!resend) return;

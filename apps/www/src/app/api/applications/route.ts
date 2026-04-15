@@ -4,6 +4,8 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { sendApplicationConfirmation } from '@/lib/email';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_APPLICATIONS_PER_EMAIL_PER_HOUR = 3;
+const MAX_APPLICATIONS_PER_IP_PER_HOUR = 10;
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/msword',
@@ -17,6 +19,44 @@ const applicationBodySchema = z.object({
   job_posting_id: z.string().min(1, { message: 'Job posting ID is required' }),
   cover_letter: z.string().max(10000).optional(),
 });
+
+function getClientIp(request: NextRequest): string | null {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(',')[0]?.trim();
+    if (firstIp) {
+      return firstIp;
+    }
+  }
+
+  const realIp = request.headers.get('x-real-ip')?.trim();
+  return realIp || null;
+}
+
+async function countRecentApplicationAttempts({
+  supabase,
+  metadata,
+}: {
+  supabase: ReturnType<typeof createSupabaseAdminClient>;
+  metadata: Record<string, string>;
+}): Promise<number> {
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+  const { count, error } = await supabase
+    .from('audit_logs')
+    .select('id', { count: 'exact', head: true })
+    .eq('action', 'public_job_application_submit')
+    .eq('table_name', 'job_applications')
+    .gte('created_at', oneHourAgo)
+    .contains('metadata', metadata);
+
+  if (error) {
+    console.error('[Applications] Failed to count recent application attempts:', error.message);
+    return 0;
+  }
+
+  return count ?? 0;
+}
 
 /**
  * GET /api/applications
@@ -84,6 +124,33 @@ export async function POST(request: NextRequest) {
     // Validate file
     let resumeUrl: string | null = null;
     const supabase = createSupabaseAdminClient();
+    const clientIp = getClientIp(request);
+
+    const recentAttemptsByEmail = await countRecentApplicationAttempts({
+      supabase,
+      metadata: { email: parsed.data.email },
+    });
+
+    if (recentAttemptsByEmail >= MAX_APPLICATIONS_PER_EMAIL_PER_HOUR) {
+      return NextResponse.json(
+        { error: 'Too many applications submitted for this email. Please try again later.' },
+        { status: 429 },
+      );
+    }
+
+    if (clientIp) {
+      const recentAttemptsByIp = await countRecentApplicationAttempts({
+        supabase,
+        metadata: { ipAddress: clientIp },
+      });
+
+      if (recentAttemptsByIp >= MAX_APPLICATIONS_PER_IP_PER_HOUR) {
+        return NextResponse.json(
+          { error: 'Too many applications submitted from this network. Please try again later.' },
+          { status: 429 },
+        );
+      }
+    }
 
     if (resumeFile) {
       if (resumeFile.size > MAX_FILE_SIZE) {
@@ -124,6 +191,7 @@ export async function POST(request: NextRequest) {
       phone: parsed.data.phone ?? null,
       job_posting_id: parsed.data.job_posting_id,
       cover_letter: parsed.data.cover_letter ?? null,
+      ai_evaluation_status: resumeUrl ? 'queued' : 'idle',
       cv_url: resumeUrl ?? '',
       resume_url: resumeUrl,
     })
@@ -155,6 +223,18 @@ export async function POST(request: NextRequest) {
         });
       }
     }
+
+    await supabase.from('audit_logs').insert({
+      action: 'public_job_application_submit',
+      table_name: 'job_applications',
+      record_id: insertedApp.id,
+      metadata: {
+        email: parsed.data.email,
+        ipAddress: clientIp,
+        jobPostingId: parsed.data.job_posting_id,
+        hasResume: Boolean(resumeUrl),
+      },
+    });
 
     // Send confirmation email (non-blocking — failure won't affect the response)
     let positionTitle = 'the position you applied for';
