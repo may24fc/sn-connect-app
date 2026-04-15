@@ -217,7 +217,7 @@ export function StepPaymentInfo({
               required={paymentCountryCode !== 'PH'}
             />
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Required for Wise recipient setup for bank accounts outside the Philippines.
+              Required for recipient setup for bank accounts outside the Philippines.
             </p>
           </div>
         </div>

@@ -27,8 +27,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const filteredBanks = (data || []).filter((bank) => {
+      const normalizedName = String(bank.bank_name || '').toLowerCase();
+      const normalizedCode = String(bank.bank_code || '').toLowerCase();
+
+      return !normalizedName.includes('wise') && normalizedCode !== 'wise';
+    });
+
     return NextResponse.json(
-      { data: data || [] },
+      { data: filteredBanks },
       {
         status: 200,
         headers: {
