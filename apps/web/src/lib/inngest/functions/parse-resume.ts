@@ -1,3 +1,4 @@
+import '@/lib/pdf-parse-polyfill';
 import { createRequire } from 'node:module';
 import { getLangWatchTracer } from 'langwatch/observability';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';

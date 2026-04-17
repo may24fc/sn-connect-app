@@ -21,6 +21,12 @@ import {
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -76,6 +82,9 @@ import {
 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+// ── Remove-confirmation dialog state ──
+type RemoveTarget = { id: string; name: string } | null;
 
 type ApplicationStatus =
   | 'pending'
@@ -173,6 +182,9 @@ export default function ApplicationsPage() {
 
   // Signed URL for resume preview (private bucket — generate on demand)
   const [resumeSignedUrl, setResumeSignedUrl] = useState<string | null>(null);
+
+  // Remove-confirmation dialog
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget>(null);
 
   const queryFilters = {
     ...(search ? { search } : {}),
@@ -390,10 +402,13 @@ export default function ApplicationsPage() {
 
   async function handleRemoveApplication(appId: string) {
     const candidateName = getApplicationName(appId);
+    setRemoveTarget({ id: appId, name: candidateName });
+  }
 
-    if (!window.confirm(`Remove ${candidateName} from the application pipeline?`)) {
-      return;
-    }
+  async function confirmRemoveApplication() {
+    if (!removeTarget) return;
+    const { id: appId, name: candidateName } = removeTarget;
+    setRemoveTarget(null);
 
     try {
       await removeApplication.mutateAsync(appId);
@@ -1193,6 +1208,42 @@ export default function ApplicationsPage() {
           </SlidePanelBody>
         </SlidePanelContent>
       </SlidePanel>
+
+      {/* ─── Remove Application Confirmation Dialog ─── */}
+      <Dialog open={!!removeTarget} onOpenChange={(open) => { if (!open) setRemoveTarget(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove application</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove{' '}
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{removeTarget?.name}</span>{' '}
+              from the application pipeline? This action can be undone by an administrator.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setRemoveTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void confirmRemoveApplication()}
+              disabled={removeApplication.isPending}
+            >
+              {removeApplication.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Removing…
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Remove
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

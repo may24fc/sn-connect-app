@@ -1,3 +1,4 @@
+import '@/lib/pdf-parse-polyfill';
 import { createRequire } from 'node:module';
 import { chunkDocument, generateBatchEmbeddings } from '@hr-portal/ai';
 import { type NextRequest, NextResponse } from 'next/server';
