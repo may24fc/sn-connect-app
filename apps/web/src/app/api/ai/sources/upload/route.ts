@@ -1,6 +1,9 @@
+import { createRequire } from 'node:module';
 import { chunkDocument, generateBatchEmbeddings } from '@hr-portal/ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '../../_lib';
+
+const require = createRequire(import.meta.url);
 
 // Ensure Node.js runtime (required for pdfjs-dist)
 export const runtime = 'nodejs';
@@ -164,7 +167,7 @@ export async function POST(request: NextRequest) {
         let rawText = '';
 
         if (sourceType === 'pdf') {
-          const { PDFParse } = await import('pdf-parse');
+          const { PDFParse } = require('pdf-parse') as typeof import('pdf-parse');
           const parser = new PDFParse({ data: new Uint8Array(fileBuffer) });
           const textResult = await parser.getText();
           rawText = textResult.text;
