@@ -10,7 +10,7 @@ process.on('warning', (warning) => {
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@hr-portal/ui', '@hr-portal/database', '@hr-portal/auth', '@hr-portal/ai'],
-  serverExternalPackages: ['pdf-parse', 'pdfjs-dist', 'googleapis'],
+  serverExternalPackages: ['googleapis'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
   async redirects() {
     return [

@@ -1,6 +1,5 @@
-import '@/lib/pdf-parse-polyfill';
-import { createRequire } from 'node:module';
 import { getLangWatchTracer } from 'langwatch/observability';
+import { extractText, getDocumentProxy } from 'unpdf';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import {
   claimApplicationEvaluationStatus,
@@ -8,8 +7,6 @@ import {
   updateApplicationEvaluationStatus,
 } from '@/lib/ats/evaluation';
 import { inngest } from '../client';
-
-const require = createRequire(import.meta.url);
 
 const APPLICATION_RESUMES_BUCKET = 'applications';
 const ALLOWED_RESUME_EXTENSIONS = new Set(['pdf', 'doc', 'docx']);
@@ -126,10 +123,9 @@ export const parseResume = inngest.createFunction(
             let extractedText: string;
 
             if (fileData.ext === 'pdf') {
-              const { PDFParse } = require('pdf-parse') as typeof import('pdf-parse');
-              const pdf = new PDFParse({ data: new Uint8Array(buffer) });
-              const result = await pdf.getText();
-              extractedText = result.text;
+              const pdf = await getDocumentProxy(new Uint8Array(buffer));
+              const { text } = await extractText(pdf, { mergePages: true });
+              extractedText = text;
               await pdf.destroy();
             } else if (fileData.ext === 'docx' || fileData.ext === 'doc') {
               const mammoth = await import('mammoth');

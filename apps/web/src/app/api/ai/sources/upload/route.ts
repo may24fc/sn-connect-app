@@ -1,12 +1,9 @@
-import '@/lib/pdf-parse-polyfill';
-import { createRequire } from 'node:module';
 import { chunkDocument, generateBatchEmbeddings } from '@hr-portal/ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import { extractText, getDocumentProxy } from 'unpdf';
 import { getAdminClient, getAuthedSupabase, isAiAdmin } from '../../_lib';
 
-const require = createRequire(import.meta.url);
-
-// Ensure Node.js runtime (required for pdfjs-dist)
+// Ensure Node.js runtime
 export const runtime = 'nodejs';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -168,11 +165,10 @@ export async function POST(request: NextRequest) {
         let rawText = '';
 
         if (sourceType === 'pdf') {
-          const { PDFParse } = require('pdf-parse') as typeof import('pdf-parse');
-          const parser = new PDFParse({ data: new Uint8Array(fileBuffer) });
-          const textResult = await parser.getText();
-          rawText = textResult.text;
-          await parser.destroy();
+          const pdf = await getDocumentProxy(new Uint8Array(fileBuffer));
+          const { text } = await extractText(pdf, { mergePages: true });
+          rawText = text;
+          await pdf.destroy();
         } else if (sourceType === 'docx') {
           // Strip XML tags for basic DOCX support
           rawText = buf.toString('utf-8')
