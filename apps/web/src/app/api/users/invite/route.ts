@@ -1,6 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import { getLoginUrl } from '@/lib/auth/redirect-config';
 import { sendUserInviteEmail } from '@/lib/email';
+import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import type { User } from '@supabase/supabase-js';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -30,7 +31,6 @@ export async function POST(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const supabaseAdmin = createSupabaseAdminClient();
 
-    // Get current user
     const {
       data: { user },
       error: authError,
@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin or super_admin
     const { data: userRecord, error: userError } = await supabase
       .from('users')
       .select('role')
@@ -58,7 +57,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse and validate request body
     const body = await request.json();
     const parsed = inviteUserSchema.safeParse(body);
 
@@ -80,10 +78,11 @@ export async function POST(request: NextRequest) {
       probationAuto90,
       probationEndDate,
     } = parsed.data;
+
     const isPrivilegedInvite = privilegedInviteRoles.includes(
       role as (typeof privilegedInviteRoles)[number]
     );
-
+    const requiresOnboarding = !isPrivilegedInvite;
     const inviteProbationMode = role === 'employee' ? (probationMode ?? 'under_probation') : 'no_probation';
     const inviteProbationAuto90 = role === 'employee' ? (probationAuto90 ?? true) : false;
     const inviteProbationEndDate =
@@ -95,7 +94,12 @@ export async function POST(request: NextRequest) {
           : null
         : null;
 
-    if (role === 'employee' && inviteProbationMode === 'under_probation' && !inviteProbationAuto90 && !inviteProbationEndDate) {
+    if (
+      role === 'employee' &&
+      inviteProbationMode === 'under_probation' &&
+      !inviteProbationAuto90 &&
+      !inviteProbationEndDate
+    ) {
       return NextResponse.json(
         {
           error:
@@ -115,10 +119,7 @@ export async function POST(request: NextRequest) {
     const email = parsed.data.email.trim().toLowerCase();
     const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
     const nextStatus = isPrivilegedInvite ? 'active' : 'pending_onboarding';
-
     const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email);
-
-    // Generate a temporary password (user should change on first login)
     const temporaryPassword = generateTemporaryPassword();
 
     let invitedUserId: string;
@@ -136,7 +137,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to validate existing user' }, { status: 500 });
       }
 
-      // Existing active users should not be re-invited through onboarding.
       if (existingUserRecord?.status && existingUserRecord.status !== 'pending_onboarding') {
         return NextResponse.json(
           { error: 'A user with this email already exists and is already onboarded' },
@@ -174,12 +174,11 @@ export async function POST(request: NextRequest) {
       invitedUserId = existingAuthUser.id;
       isReinvite = true;
     } else {
-      // Create auth user (using admin client)
       const { data: newAuthUser, error: createAuthError } =
         await supabaseAdmin.auth.admin.createUser({
           email,
           password: temporaryPassword,
-          email_confirm: true, // Auto-confirm email
+          email_confirm: true,
           app_metadata: {
             provider: 'email',
             providers: ['email'],
@@ -204,9 +203,6 @@ export async function POST(request: NextRequest) {
       invitedUserId = newAuthUser.user.id;
     }
 
-    // Upsert public.users record with pending_onboarding status.
-    // A DB trigger already auto-creates public.users on auth.users insert,
-    // so plain insert can fail with duplicate PK on retries/new invites.
     const { error: createUserError } = await supabaseAdmin.from('users').upsert(
       {
         id: invitedUserId,
@@ -222,7 +218,6 @@ export async function POST(request: NextRequest) {
 
     if (createUserError) {
       console.error('Error creating public user:', createUserError);
-      // Rollback only for newly created auth users.
       if (!isReinvite) {
         await supabaseAdmin.auth.admin.deleteUser(invitedUserId);
       }
@@ -281,7 +276,6 @@ export async function POST(request: NextRequest) {
         .eq('user_id', invitedUserId)
         .is('deleted_at', null);
     } else {
-      // Create or refresh onboarding profile with pre-filled data.
       const { error: createProfileError } = await supabaseAdmin.from('onboarding_profiles').upsert(
         {
           user_id: invitedUserId,
@@ -304,7 +298,6 @@ export async function POST(request: NextRequest) {
 
       if (createProfileError) {
         console.error('Error creating onboarding profile:', createProfileError);
-        // Continue anyway - the user can create their profile on first login
       }
     }
 
@@ -325,7 +318,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Best-effort email delivery: invite should still succeed even if provider fails.
+    const inviterName = await getUserDisplayName(user.id);
+
+    createNotification({
+      userId: invitedUserId,
+      type: 'system',
+      title: isReinvite ? 'Your invite was refreshed' : 'You have been invited to SN Connect',
+      message: requiresOnboarding
+        ? `${inviterName} invited you to SN Connect. Sign in to complete your onboarding steps.`
+        : `${inviterName} invited you to SN Connect. Your account is ready to use.`,
+      link: getInviteNotificationLink(role, requiresOnboarding),
+      metadata: {
+        invitedBy: user.id,
+        invitedRole: role,
+        reinvite: isReinvite,
+        requiresOnboarding,
+      },
+      dedupeKey: `user-invite:${invitedUserId}:${isReinvite ? 'refresh' : 'new'}:${nextStatus}`,
+      dedupeWindowHours: 1,
+    });
+
     const loginUrl = getLoginUrl();
     const inviteEmailResult = await sendUserInviteEmail({
       to: email,
@@ -333,7 +345,7 @@ export async function POST(request: NextRequest) {
       role,
       temporaryPassword,
       loginUrl,
-      requiresOnboarding: !isPrivilegedInvite,
+      requiresOnboarding,
     });
 
     if (!inviteEmailResult.sent) {
@@ -346,7 +358,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: invitedUserId,
           email,
-          temporaryPassword, // Return this so admin can share with the new user
+          temporaryPassword,
           role,
           status: nextStatus,
           reinvite: isReinvite,
@@ -365,6 +377,29 @@ function formatRoleLabel(role: (typeof inviteableRoles)[number]): string {
   return role
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function getInviteNotificationLink(
+  role: (typeof inviteableRoles)[number],
+  requiresOnboarding: boolean
+): string {
+  if (requiresOnboarding) {
+    return '/onboarding';
+  }
+
+  if (role === 'super_admin') {
+    return '/super-admin/dashboard';
+  }
+
+  if (role === 'admin') {
+    return '/admin/dashboard';
+  }
+
+  if (role === 'intern') {
+    return '/intern/dashboard';
+  }
+
+  return '/dashboard';
 }
 
 function generateEmployeeNumber(): string {
@@ -409,27 +444,22 @@ async function findAuthUserByEmail(
 }
 
 function generateTemporaryPassword(): string {
-  // Generate a secure 12-character password with mix of characters
   const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   const lowercase = 'abcdefghjkmnpqrstuvwxyz';
   const numbers = '23456789';
   const special = '!@#$%&*';
-
   const all = uppercase + lowercase + numbers + special;
 
   let password = '';
-  // Ensure at least one of each type
   password += uppercase[Math.floor(Math.random() * uppercase.length)];
   password += lowercase[Math.floor(Math.random() * lowercase.length)];
   password += numbers[Math.floor(Math.random() * numbers.length)];
   password += special[Math.floor(Math.random() * special.length)];
 
-  // Fill the rest randomly
   for (let i = 4; i < 12; i++) {
     password += all[Math.floor(Math.random() * all.length)];
   }
 
-  // Shuffle the password
   return password
     .split('')
     .sort(() => Math.random() - 0.5)
