@@ -100,7 +100,7 @@ export function AtsAccessManagerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-h-[85vh] max-w-3xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>Manage ATS access</DialogTitle>
           <DialogDescription>
@@ -108,7 +108,7 @@ export function AtsAccessManagerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="max-h-[calc(85vh-7rem)] space-y-6 overflow-y-auto pr-1">
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
