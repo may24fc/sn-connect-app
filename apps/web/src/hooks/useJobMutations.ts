@@ -125,6 +125,26 @@ export function useUpdateApplicationStatus() {
   });
 }
 
+export function useRemoveApplication() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/applications/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed to remove application' }));
+        throw new Error(err.error ?? 'Failed to remove application');
+      }
+      return res.json() as Promise<{ data: { id: string } }>;
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
+      queryClient.removeQueries({ queryKey: queryKeys.applications.detail(id) });
+    },
+  });
+}
+
 export function useHireApplication() {
   const queryClient = useQueryClient();
   return useMutation({

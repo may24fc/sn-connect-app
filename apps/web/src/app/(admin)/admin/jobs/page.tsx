@@ -16,6 +16,11 @@ import {
   Button,
   Card,
   CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   Input,
   Label,
@@ -39,7 +44,7 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, Archive, Briefcase, Edit, Loader2, Plus, Search } from 'lucide-react';
+import { AlertCircle, Archive, Briefcase, ChevronDown, Edit, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
@@ -417,23 +422,31 @@ export default function AdminJobsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => openEditForm(job)}
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4 text-zinc-500" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleArchive(job.id)}
-                          title="Archive"
-                          disabled={!job.is_active}
-                        >
-                          <Archive className="h-4 w-4 text-zinc-500" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline" className="h-8 gap-1.5">
+                              Manage
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onSelect={() => openEditForm(job)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit posting
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link href="/admin/jobs/applications">View applications</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              disabled={!job.is_active}
+                              onSelect={() => handleArchive(job.id)}
+                            >
+                              <Archive className="mr-2 h-4 w-4" />
+                              Archive posting
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>

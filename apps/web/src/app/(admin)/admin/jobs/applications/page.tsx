@@ -2,7 +2,13 @@
 
 import { useApplication, useApplications, type ApplicationRecord } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
-import { useBulkImportApplications, useEvaluateApplication, useHireApplication, useUpdateApplicationStatus } from '@/hooks/useJobMutations';
+import {
+  useBulkImportApplications,
+  useEvaluateApplication,
+  useHireApplication,
+  useRemoveApplication,
+  useUpdateApplicationStatus,
+} from '@/hooks/useJobMutations';
 import { useRealtimeApplications } from '@/hooks/useRealtimeApplications';
 import { useTableSort } from '@/hooks/useTableSort';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +21,11 @@ import {
   Button,
   Card,
   CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   Input,
   ProgressTimeline,
@@ -46,6 +57,7 @@ import {
 import {
   ArrowLeft,
   Bot,
+  ChevronDown,
   CheckCircle,
   Clock,
   Columns,
@@ -55,6 +67,7 @@ import {
   Loader2,
   Search,
   Star,
+  Trash2,
   ThumbsDown,
   Upload,
   UserCheck,
@@ -180,6 +193,7 @@ export default function ApplicationsPage() {
   const hireApplication = useHireApplication();
   const bulkImport = useBulkImportApplications();
   const evaluateApp = useEvaluateApplication();
+  const removeApplication = useRemoveApplication();
 
   useRealtimeApplications({
     applicationId: selectedApplicationId,
@@ -309,8 +323,17 @@ export default function ApplicationsPage() {
     setDrawerOpen(true);
   }
 
+  function getApplicationName(appId: string): string {
+    if (selectedApp?.id === appId) {
+      return formatPersonName(selectedApp.full_name);
+    }
+
+    const fallbackName = applications.find((application) => application.id === appId)?.full_name;
+    return formatPersonName(fallbackName ?? 'Candidate');
+  }
+
   async function handleStatusChange(appId: string, newStatus: string) {
-    const candidateName = formatPersonName(selectedApp?.full_name ?? 'Candidate');
+    const candidateName = getApplicationName(appId);
     const statusLabel = STATUS_CONFIG[newStatus as ApplicationStatus]?.label ?? newStatus;
     try {
       await updateStatus.mutateAsync({ id: appId, status: newStatus, ...(notes ? { notes } : {}) });
@@ -343,9 +366,7 @@ export default function ApplicationsPage() {
   }
 
   async function handleHire(appId: string) {
-    const fallbackName = applications.find((application) => application.id === appId)?.full_name;
-    const candidateName =
-      formatPersonName(selectedApp?.id === appId ? selectedApp.full_name : (fallbackName ?? 'Candidate'));
+    const candidateName = getApplicationName(appId);
 
     try {
       const response = await hireApplication.mutateAsync(appId);
@@ -362,6 +383,36 @@ export default function ApplicationsPage() {
       addToast({
         variant: 'error',
         title: 'Failed to hire candidate',
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    }
+  }
+
+  async function handleRemoveApplication(appId: string) {
+    const candidateName = getApplicationName(appId);
+
+    if (!window.confirm(`Remove ${candidateName} from the application pipeline?`)) {
+      return;
+    }
+
+    try {
+      await removeApplication.mutateAsync(appId);
+
+      if (selectedApplicationId === appId) {
+        setDrawerOpen(false);
+        setSelectedApplicationId(null);
+        setNotes('');
+      }
+
+      addToast({
+        variant: 'default',
+        title: 'Application removed',
+        description: `${candidateName} has been removed from the active application pipeline.`,
+      });
+    } catch (error) {
+      addToast({
+        variant: 'error',
+        title: 'Failed to remove application',
         description: error instanceof Error ? error.message : 'Please try again.',
       });
     }
@@ -589,54 +640,64 @@ export default function ApplicationsPage() {
                           className="flex items-center justify-end gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => openCandidate(app)}
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4 text-zinc-500" />
-                          </Button>
-                          {app.status === 'pending' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleStatusChange(app.id, 'shortlisted')}
-                              title="Shortlist"
-                            >
-                              <Star className="h-4 w-4 text-amber-500" />
-                            </Button>
-                          )}
-                          {(app.status === 'shortlisted' || app.status === 'reviewed') && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleStatusChange(app.id, 'interview')}
-                              title="Move to Interview"
-                            >
-                              <Users className="h-4 w-4 text-slate-500" />
-                            </Button>
-                          )}
-                          {app.status === 'interview' && isAdmin && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleStatusChange(app.id, 'approved')}
-                              title="Approve"
-                            >
-                              <CheckCircle className="h-4 w-4 text-emerald-600" />
-                            </Button>
-                          )}
-                          {app.status === 'approved' && isAdmin && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleHire(app.id)}
-                              title="Mark as Hired"
-                            >
-                              <UserCheck className="h-4 w-4 text-emerald-600" />
-                            </Button>
-                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="outline" className="h-8 gap-1.5">
+                                Manage
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-52">
+                              <DropdownMenuItem onSelect={() => openCandidate(app)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View details
+                              </DropdownMenuItem>
+                              {!AI_IN_PROGRESS_STATUSES.has(app.ai_evaluation_status) && (
+                                <DropdownMenuItem onSelect={() => void handleEvaluate(app.id)}>
+                                  <Bot className="mr-2 h-4 w-4" />
+                                  Run AI review
+                                </DropdownMenuItem>
+                              )}
+                              {(app.status === 'pending' || app.status === 'reviewed') && (
+                                <DropdownMenuItem onSelect={() => void handleStatusChange(app.id, 'shortlisted')}>
+                                  <Star className="mr-2 h-4 w-4" />
+                                  Move to shortlisted
+                                </DropdownMenuItem>
+                              )}
+                              {(app.status === 'shortlisted' || app.status === 'reviewed') && (
+                                <DropdownMenuItem onSelect={() => void handleStatusChange(app.id, 'interview')}>
+                                  <Users className="mr-2 h-4 w-4" />
+                                  Move to interview
+                                </DropdownMenuItem>
+                              )}
+                              {app.status === 'interview' && isAdmin && (
+                                <DropdownMenuItem onSelect={() => void handleStatusChange(app.id, 'approved')}>
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Approve candidate
+                                </DropdownMenuItem>
+                              )}
+                              {app.status === 'approved' && isAdmin && (
+                                <DropdownMenuItem onSelect={() => void handleHire(app.id)}>
+                                  <UserCheck className="mr-2 h-4 w-4" />
+                                  Mark as hired
+                                </DropdownMenuItem>
+                              )}
+                              {app.status !== 'rejected' && app.status !== 'hired' && (
+                                <DropdownMenuItem onSelect={() => void handleStatusChange(app.id, 'rejected')}>
+                                  <ThumbsDown className="mr-2 h-4 w-4" />
+                                  Reject application
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600"
+                                onSelect={() => void handleRemoveApplication(app.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Remove application
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>

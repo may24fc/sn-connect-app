@@ -135,3 +135,62 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(_request: NextRequest, { params }: Params) {
+  try {
+    const { id } = await params;
+    const { supabase, user, role, error } = await getAuthedSupabase();
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isJobAdmin(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const deletedAt = new Date().toISOString();
+
+    const { data, error: deleteError } = await supabase
+      .from('job_applications')
+      .update({
+        deleted_at: deletedAt,
+        updated_at: deletedAt,
+      })
+      .eq('id', id)
+      .is('deleted_at', null)
+      .select('id, full_name, email, job_postings(title)')
+      .single();
+
+    if (deleteError) {
+      console.error('Error removing application:', deleteError);
+      return NextResponse.json({ error: 'Failed to remove application' }, { status: 500 });
+    }
+
+    await supabase.from('audit_logs').insert({
+      user_id: user.id,
+      action: 'remove_job_application',
+      table_name: 'job_applications',
+      record_id: id,
+      metadata: {
+        applicantName: data.full_name,
+        applicantEmail: data.email,
+        jobTitle:
+          typeof data.job_postings === 'object' &&
+          data.job_postings !== null &&
+          'title' in data.job_postings
+            ? data.job_postings.title
+            : null,
+      },
+    });
+
+    return NextResponse.json({
+      data: {
+        id: data.id,
+      },
+    });
+  } catch (error) {
+    console.error('Error in DELETE /api/applications/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
