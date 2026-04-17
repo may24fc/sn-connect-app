@@ -5,6 +5,32 @@ import { reportCreateSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+function applyArchivedScope<TQuery extends { is: Function; not: Function }>(
+  query: TQuery,
+  archivedScope: 'exclude' | 'only' | 'include'
+): TQuery {
+  if (archivedScope === 'only') {
+    return query.not('deleted_at', 'is', null) as TQuery;
+  }
+
+  if (archivedScope === 'include') {
+    return query;
+  }
+
+  return query.is('deleted_at', null) as TQuery;
+}
+
+function buildDuplicateReportErrorMessage(
+  reportType: string,
+  periodStart: string,
+  periodEnd: string,
+  existingStatus: string
+): string {
+  const title = `${reportType.charAt(0).toUpperCase()}${reportType.slice(1)} report`;
+  const statusLabel = existingStatus === 'draft' ? 'draft' : `${existingStatus} submission`;
+  return `${title} for ${periodStart} to ${periodEnd} already exists as a ${statusLabel}. Use the existing report instead of creating another one for the same period.`;
+}
+
 /**
  * GET /api/reports
  * List reports with filters and pagination.
@@ -30,6 +56,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
+    const archivedScope = (searchParams.get('archived') || 'exclude') as 'exclude' | 'only' | 'include';
     const reportType = searchParams.get('reportType') || '';
     const employeeId = searchParams.get('employeeId') || '';
     const groupBy = searchParams.get('groupBy') || '';
@@ -46,11 +73,12 @@ export async function GET(request: NextRequest) {
       .select('*, employees(id, user_id, first_name, last_name, department), report_metrics(*)', {
         count: 'exact',
       })
-      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
+    query = applyArchivedScope(query, archivedScope);
+
     if (search) {
-      query = query.or(`report_type.ilike.%${search}%,notes.ilike.%${search}%`);
+      query = query.or(`report_type.ilike.%${search}%,notes.ilike.%${search}%,review_notes.ilike.%${search}%`);
     }
 
     if (status) {
@@ -138,15 +166,18 @@ export async function GET(request: NextRequest) {
 
       if (rootIds.length > 0) {
         // Count children for each root report
-        const { data: childCounts, error: childError } = await supabaseAdmin
+        let childQuery = supabaseAdmin
           .from('reports')
           .select('parent_report_id')
-          .in('parent_report_id', rootIds)
-          .is('deleted_at', null);
+          .in('parent_report_id', rootIds);
 
-        if (!childError && childCounts) {
+        childQuery = applyArchivedScope(childQuery, archivedScope);
+
+        const { data: scopedChildCounts, error: scopedChildError } = await childQuery;
+
+        if (!scopedChildError && scopedChildCounts) {
           const countMap = new Map<string, number>();
-          for (const child of childCounts) {
+          for (const child of scopedChildCounts) {
             const parentId = child.parent_report_id as string;
             countMap.set(parentId, (countMap.get(parentId) || 0) + 1);
           }
@@ -239,6 +270,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Cannot create reports for other employees' },
         { status: 403 }
+      );
+    }
+
+    const { data: duplicateReport, error: duplicateReportError } = await supabaseAdmin
+      .from('reports')
+      .select('id, status')
+      .eq('employee_id', employeeId)
+      .eq('report_type', parsed.data.reportType)
+      .eq('period_start', parsed.data.periodStart)
+      .eq('period_end', parsed.data.periodEnd)
+      .is('deleted_at', null)
+      .limit(1)
+      .maybeSingle();
+
+    if (duplicateReportError) {
+      console.error('Error checking for duplicate report period:', duplicateReportError);
+      return NextResponse.json({ error: 'Failed to validate report period' }, { status: 500 });
+    }
+
+    if (duplicateReport) {
+      return NextResponse.json(
+        {
+          error: buildDuplicateReportErrorMessage(
+            parsed.data.reportType,
+            parsed.data.periodStart,
+            parsed.data.periodEnd,
+            duplicateReport.status
+          ),
+          existingReportId: duplicateReport.id,
+        },
+        { status: 409 }
       );
     }
 

@@ -3,10 +3,12 @@
  */
 
 import {
+  marketingPrimaryChannelValues,
   marketingContextSchema,
   type MarketingCampaignType,
   type MarketingContext,
   type MarketingObjective,
+  type MarketingPrimaryChannel,
 } from '@/lib/schemas/report.schema';
 
 export type MarketingCampaignFilterValue = 'all' | MarketingCampaignType;
@@ -52,6 +54,19 @@ export const MARKETING_CAMPAIGN_TYPE_OPTIONS: Array<{
     description: 'Bottom-funnel campaigns optimized for purchases, conversions, and store visits.',
   },
 ];
+
+export const MARKETING_PRIMARY_CHANNEL_OPTIONS: Array<{
+  value: MarketingPrimaryChannel;
+  label: string;
+  description: string;
+}> = marketingPrimaryChannelValues.map((channel) => ({
+  value: channel,
+  label: channel,
+  description:
+    channel === 'Google Ads'
+      ? 'Use for campaigns managed in Google Ads, including Search, Display, YouTube, and Performance Max.'
+      : 'Use for campaigns managed across Meta placements, including Facebook and Instagram ads.',
+}));
 
 export const MARKETING_OBJECTIVE_INFO: Record<
   MarketingObjective,
@@ -120,6 +135,12 @@ export interface MarketingMetricTemplate {
   analyticsCategory: MarketingMetricAnalyticsCategory;
 }
 
+interface MarketingMetricLike {
+  metric_name: string;
+  metric_value: number;
+  metric_unit?: string | null;
+}
+
 function normalizeMetricUnit(unit: string | null | undefined): string {
   return unit?.trim().toLowerCase() ?? '';
 }
@@ -146,8 +167,13 @@ export function formatMetricValueWithUnit(value: number, unit?: string | null): 
     return formattedValue;
   }
 
-  if (normalizedUnit === 'php') {
-    return `PHP ${formattedValue}`;
+  if (normalizedUnit === 'php' || normalizedUnit === 'usd') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(value);
   }
 
   if (normalizedUnit === '%') {
@@ -159,6 +185,10 @@ export function formatMetricValueWithUnit(value: number, unit?: string | null): 
   }
 
   return `${formattedValue} ${unit}`;
+}
+
+export function formatUsdAmount(value: number): string {
+  return formatMetricValueWithUnit(value, 'USD');
 }
 
 function createLockedMetric(
@@ -181,20 +211,20 @@ const MARKETING_METRIC_PRESETS: Record<MarketingObjective, Array<MarketingMetric
     createLockedMetric('Reach', 'count', 'outcome'),
     createLockedMetric('Impressions', 'count', 'supporting'),
     createLockedMetric('Frequency', 'x', 'supporting'),
-    createLockedMetric('CPM', 'PHP', 'spend'),
+    createLockedMetric('CPM', 'USD', 'spend'),
   ],
   reach: [
     createLockedMetric('Impressions', 'count', 'supporting'),
     createLockedMetric('Reach', 'count', 'outcome'),
     createLockedMetric('Frequency', 'x', 'supporting'),
-    createLockedMetric('CPM', 'PHP', 'spend'),
+    createLockedMetric('CPM', 'USD', 'spend'),
     createLockedMetric('Unique Reach', 'count', 'supporting'),
   ],
   traffic: [
     createLockedMetric('Link Clicks', 'count', 'outcome'),
     createLockedMetric('Landing Page Views', 'count', 'outcome'),
     createLockedMetric('CTR', '%', 'supporting'),
-    createLockedMetric('CPC', 'PHP', 'spend'),
+    createLockedMetric('CPC', 'USD', 'spend'),
     createLockedMetric('Sessions', 'count', 'supporting'),
     createLockedMetric('Bounce Rate', '%', 'supporting'),
   ],
@@ -205,50 +235,50 @@ const MARKETING_METRIC_PRESETS: Record<MarketingObjective, Array<MarketingMetric
     createLockedMetric('Page Likes', 'count', 'supporting'),
     createLockedMetric('Event Responses', 'count', 'supporting'),
     createLockedMetric('Engagement Rate', '%', 'supporting'),
-    createLockedMetric('Cost per Engagement', 'PHP', 'spend'),
+    createLockedMetric('Cost per Engagement', 'USD', 'spend'),
   ],
   app_installs: [
     createLockedMetric('Installs', 'count', 'outcome'),
-    createLockedMetric('CPI', 'PHP', 'spend'),
+    createLockedMetric('CPI', 'USD', 'spend'),
     createLockedMetric('Retention Rate', '%', 'supporting'),
     createLockedMetric('In-App Events', 'count', 'supporting'),
   ],
   video_views: [
     createLockedMetric('Video Plays (2s/3s/10s)', 'count', 'outcome'),
     createLockedMetric('ThruPlay', 'count', 'outcome'),
-    createLockedMetric('Cost per View', 'PHP', 'spend'),
+    createLockedMetric('Cost per View', 'USD', 'spend'),
     createLockedMetric('Avg Watch Time', 'seconds', 'supporting'),
     createLockedMetric('Audience Retention', '%', 'supporting'),
   ],
   lead_generation: [
     createLockedMetric('Leads Submitted', 'count', 'outcome'),
-    createLockedMetric('CPL', 'PHP', 'spend'),
+    createLockedMetric('CPL', 'USD', 'spend'),
     createLockedMetric('Form Completion Rate', '%', 'supporting'),
     createLockedMetric('Click-to-Lead Conversion Rate', '%', 'supporting'),
   ],
   messages: [
     createLockedMetric('Conversations Started', 'count', 'outcome'),
     createLockedMetric('Response Rate', '%', 'supporting'),
-    createLockedMetric('Cost per Conversation', 'PHP', 'spend'),
+    createLockedMetric('Cost per Conversation', 'USD', 'spend'),
     createLockedMetric('Message Open/Click Rate', '%', 'supporting'),
   ],
   conversions: [
     createLockedMetric('Conversions', 'count', 'outcome'),
-    createLockedMetric('Cost per Conversion', 'PHP', 'spend'),
+    createLockedMetric('Cost per Conversion', 'USD', 'spend'),
     createLockedMetric('ROAS', 'x', 'supporting'),
     createLockedMetric('Conversion Rate', '%', 'supporting'),
     createLockedMetric('Add to Cart/Purchase Events', 'count', 'supporting'),
   ],
   catalog_sales: [
     createLockedMetric('Purchases', 'count', 'outcome'),
-    createLockedMetric('Cost per Purchase', 'PHP', 'spend'),
+    createLockedMetric('Cost per Purchase', 'USD', 'spend'),
     createLockedMetric('ROAS', 'x', 'supporting'),
     createLockedMetric('CTR', '%', 'supporting'),
     createLockedMetric('Product Engagement', 'count', 'supporting'),
   ],
   store_traffic: [
     createLockedMetric('Store Visits', 'count', 'outcome'),
-    createLockedMetric('Cost per Store Visit', 'PHP', 'spend'),
+    createLockedMetric('Cost per Store Visit', 'USD', 'spend'),
     createLockedMetric('Check-ins', 'count', 'supporting'),
     createLockedMetric('Reach within Location', 'count', 'supporting'),
   ],
@@ -263,6 +293,111 @@ const MARKETING_METRIC_ANALYTICS_LOOKUP = new Map<string, MarketingMetricAnalyti
     .flat()
     .map((metric) => [normalizeMetricName(metric.name), metric.analyticsCategory])
 );
+
+function getMetricNumericValue(
+  metrics: Array<MarketingMetricLike>,
+  metricNames: string | Array<string>
+): number | null {
+  const candidateNames = Array.isArray(metricNames) ? metricNames : [metricNames];
+
+  for (const metricName of candidateNames) {
+    const match = metrics.find((metric) => normalizeMetricName(metric.metric_name) === normalizeMetricName(metricName));
+    if (match && Number.isFinite(match.metric_value) && match.metric_value > 0) {
+      return match.metric_value;
+    }
+  }
+
+  return null;
+}
+
+export function deriveMarketingSpendFromMetrics(
+  metrics: Array<MarketingMetricLike> | null | undefined
+): number | null {
+  if (!metrics || metrics.length === 0) {
+    return null;
+  }
+
+  const safeMetrics = metrics.filter(
+    (metric) => metric.metric_name && Number.isFinite(metric.metric_value) && metric.metric_value > 0
+  );
+
+  if (safeMetrics.length === 0) {
+    return null;
+  }
+
+  const directSpendMetric = safeMetrics.find(
+    (metric) => normalizeMetricName(metric.metric_name) === 'total spend'
+  );
+
+  if (directSpendMetric) {
+    return directSpendMetric.metric_value;
+  }
+
+  const derivedFormulas: Array<{ spendMetric: string; driverMetric: string | Array<string>; divisor?: number; aggregate?: 'sum' | 'max' }> = [
+    { spendMetric: 'CPM', driverMetric: 'Impressions', divisor: 1000 },
+  ];
+
+  for (const formula of derivedFormulas) {
+    const spendRate = getMetricNumericValue(safeMetrics, formula.spendMetric);
+
+    if (!spendRate) {
+      continue;
+    }
+
+    let driverValue: number | null = null;
+
+    if (Array.isArray(formula.driverMetric)) {
+      const driverValues = formula.driverMetric
+        .map((metricName) => getMetricNumericValue(safeMetrics, metricName))
+        .filter((value): value is number => value !== null);
+
+      if (driverValues.length > 0) {
+        driverValue = formula.aggregate === 'max'
+          ? Math.max(...driverValues)
+          : driverValues.reduce((sum, value) => sum + value, 0);
+      }
+    } else {
+      driverValue = getMetricNumericValue(safeMetrics, formula.driverMetric);
+    }
+
+    if (!driverValue || driverValue <= 0) {
+      continue;
+    }
+
+    const divisor = formula.divisor ?? 1;
+    const derivedSpend = (spendRate * driverValue) / divisor;
+
+    if (Number.isFinite(derivedSpend) && derivedSpend > 0) {
+      return derivedSpend;
+    }
+  }
+
+  return null;
+}
+
+export function hydrateMarketingContextWithDerivedSpend(
+  marketingContext: MarketingContext | null | undefined,
+  metrics: Array<MarketingMetricLike> | null | undefined
+): MarketingContext | null {
+  if (!marketingContext) {
+    return null;
+  }
+
+  if (marketingContext.totalSpend > 0) {
+    return marketingContext;
+  }
+
+  const derivedSpend = deriveMarketingSpendFromMetrics(metrics);
+
+  if (!derivedSpend || derivedSpend <= 0) {
+    return marketingContext;
+  }
+
+  return {
+    ...marketingContext,
+    totalSpend: derivedSpend,
+  };
+}
 
 const AWARENESS_OBJECTIVES = new Set<string>(['brand_awareness', 'reach']);
 const CONSIDERATION_OBJECTIVES = new Set<string>([
@@ -472,16 +607,25 @@ export function extractMarketingContext(notes: string | null | undefined): {
   }
 }
 
-export function normalizeReportRecord<T extends { notes: string | null }>(report: T): Omit<T, 'notes'> & {
+export function normalizeReportRecord<
+  T extends {
+    notes: string | null;
+    report_metrics?: Array<MarketingMetricLike> | null;
+  },
+>(report: T): Omit<T, 'notes'> & {
   notes: string | null;
   marketing_context: MarketingContext | null;
 } {
   const { marketingContext, cleanNotes } = extractMarketingContext(report.notes);
+  const hydratedMarketingContext = hydrateMarketingContextWithDerivedSpend(
+    marketingContext,
+    report.report_metrics ?? null
+  );
 
   return {
     ...report,
     notes: cleanNotes || null,
-    marketing_context: marketingContext,
+    marketing_context: hydratedMarketingContext,
   };
 }
 
@@ -538,6 +682,7 @@ export function matchesMarketingReportFilters(
     report.employees?.department || '',
     report.notes || '',
     marketingContext?.campaignName || '',
+    marketingContext?.totalSpend?.toString() || '',
     marketingContext?.primaryChannel || '',
     marketingContext?.targetAudience || '',
     marketingContext?.campaignType

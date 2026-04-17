@@ -26,11 +26,18 @@ export const marketingObjectiveSchema = z.enum([
   'store_traffic',
 ]);
 
+export const marketingPrimaryChannelValues = ['Google Ads', 'Meta Ads'] as const;
+
+export const marketingPrimaryChannelSchema = z.enum(marketingPrimaryChannelValues, {
+  errorMap: () => ({ message: 'Select either Google Ads or Meta Ads' }),
+});
+
 export const marketingContextSchema = z.object({
   campaignName: z.string().trim().min(1, 'Campaign name is required').max(120),
   campaignType: marketingCampaignTypeSchema,
   objective: marketingObjectiveSchema,
-  primaryChannel: z.string().trim().min(1, 'Primary channel is required').max(80),
+  totalSpend: z.coerce.number().min(0, 'Total spend cannot be negative').default(0),
+  primaryChannel: marketingPrimaryChannelSchema,
   targetAudience: z.string().trim().min(1, 'Target audience is required').max(160),
 });
 
@@ -67,4 +74,5 @@ export type ReportMetricInput = z.infer<typeof reportMetricSchema>;
 export type ReportCreateInput = z.infer<typeof reportCreateSchema>;
 export type MarketingCampaignType = z.infer<typeof marketingCampaignTypeSchema>;
 export type MarketingObjective = z.infer<typeof marketingObjectiveSchema>;
+export type MarketingPrimaryChannel = z.infer<typeof marketingPrimaryChannelSchema>;
 export type MarketingContext = z.infer<typeof marketingContextSchema>;

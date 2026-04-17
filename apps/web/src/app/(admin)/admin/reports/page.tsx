@@ -9,9 +9,6 @@ import {
   type MarketingObjectiveFilterValue,
 } from '@/lib/report-utils';
 import {
-  Card,
-  CardContent,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -59,9 +56,9 @@ export default function AdminReportsPage() {
   // The subscription is active for as long as this page is mounted.
   useReportsRealtime();
 
-  const [timeRange, setTimeRange] = useState<'weekly' | 'monthly' | 'custom'>('weekly');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const timeRange: 'weekly' | 'monthly' | 'custom' = 'weekly';
+  const customStartDate = '';
+  const customEndDate = '';
   const [campaignType, setCampaignType] = useState<MarketingCampaignFilterValue>('all');
   const [objective, setObjective] = useState<MarketingObjectiveFilterValue>('all');
 
@@ -87,7 +84,9 @@ export default function AdminReportsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Marketing Reports</h1>
-          <p className="text-muted-foreground">Review the marketing team's submissions, performance trends, and campaign comparisons</p>
+          <p className="text-muted-foreground">
+            Review campaign submissions, model concurrent sales forecast scenarios, and compare reporting windows from one admin workspace.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Select value={campaignType} onValueChange={(value) => setCampaignType(value as MarketingCampaignFilterValue)}>
@@ -118,7 +117,7 @@ export default function AdminReportsPage() {
             </SelectContent>
           </Select>
 
-          {/* Time range selector */}
+          {/* Time range selector
           <Select
             value={timeRange}
             onValueChange={(value) => setTimeRange(value as 'weekly' | 'monthly' | 'custom')}
@@ -131,46 +130,16 @@ export default function AdminReportsPage() {
               <SelectItem value="monthly">Monthly</SelectItem>
               <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
-          </Select>
+          </Select> */}
 
-          {/* Custom date range inputs */}
-          {timeRange === 'custom' && (
-            <>
-              <Input
-                type="date"
-                className="w-[160px]"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                placeholder="Start date"
-              />
-              <Input
-                type="date"
-                className="w-[160px]"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                placeholder="End date"
-              />
-            </>
-          )}
         </div>
       </div>
-
-      <Card>
-        <CardContent className="flex flex-col gap-2 p-4 text-sm text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
-          <p>
-            This admin view is scoped to the <span className="font-medium text-foreground">Marketing team</span>. Use <span className="font-medium text-foreground">Campaign Type</span> to group reports into awareness, consideration, or conversion work, and use <span className="font-medium text-foreground">Goal</span> when you need a specific objective like reach, lead generation, or catalog sales.
-          </p>
-          <p>
-            Open <span className="font-medium text-foreground">Submissions</span> to review individual campaign reports, then switch to <span className="font-medium text-foreground">Analytics</span> or <span className="font-medium text-foreground">Compare</span> with the same campaign filters already applied.
-          </p>
-        </CardContent>
-      </Card>
 
       {/* Tabbed Content */}
       <Tabs defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="submissions">Submissions</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="analytics">Sales Forecast</TabsTrigger>
           <TabsTrigger value="compare">Compare</TabsTrigger>
         </TabsList>
 

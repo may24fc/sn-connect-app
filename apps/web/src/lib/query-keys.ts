@@ -49,6 +49,7 @@ export interface TaskFilters {
 export interface ReportFilters {
   search?: string;
   status?: 'draft' | 'submitted' | 'approved' | 'rejected';
+  archived?: 'exclude' | 'only' | 'include';
   reportType?: string;
   employeeId?: string;
   groupBy?: 'report_group' | 'hierarchy';

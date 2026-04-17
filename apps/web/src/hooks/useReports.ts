@@ -12,6 +12,8 @@ export interface ReportRecord {
   submitted_at: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  review_notes: string | null;
+  deleted_at: string | null;
   notes: string | null;
   marketing_context: MarketingContext | null;
   parent_report_id: string | null;
@@ -54,6 +56,7 @@ export function useReports(filters: ReportFilters = {}) {
 
       if (filters.search) params.append('search', filters.search);
       if (filters.status) params.append('status', filters.status);
+      if (filters.archived) params.append('archived', filters.archived);
       if (filters.reportType) params.append('reportType', filters.reportType);
       if (filters.employeeId) params.append('employeeId', filters.employeeId);
       if (filters.groupBy) params.append('groupBy', filters.groupBy);

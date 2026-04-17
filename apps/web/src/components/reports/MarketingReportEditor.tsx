@@ -12,11 +12,17 @@ import {
   getMarketingObjectivesForCampaignType,
   MARKETING_CAMPAIGN_TYPE_OPTIONS,
   MARKETING_OBJECTIVE_INFO,
+  MARKETING_PRIMARY_CHANNEL_OPTIONS,
   parseNoteSections,
   REPORT_TYPE_INFO,
   type MarketingMetricTemplate,
 } from '@/lib/report-utils';
-import type { MarketingCampaignType, MarketingObjective } from '@/lib/schemas/report.schema';
+import type {
+  MarketingCampaignType,
+  MarketingObjective,
+  MarketingPrimaryChannel,
+  ReportCreateInput,
+} from '@/lib/schemas/report.schema';
 import {
   Badge,
   Button,
@@ -25,6 +31,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   EmptyState,
   FormGroup,
   Input,
@@ -52,8 +59,6 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
-  type Dispatch,
-  type SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -66,7 +71,10 @@ type MetricEntry = MarketingMetricTemplate;
 const REPORT_TYPE = 'marketing' as const;
 const INTEGER_ONLY_UNITS = new Set(['count']);
 const TENTH_STEP_UNITS = new Set(['seconds']);
-const HUNDREDTH_STEP_UNITS = new Set(['%', 'php', 'x']);
+const HUNDREDTH_STEP_UNITS = new Set(['%', 'php', 'usd', 'x']);
+const MARKETING_PRIMARY_CHANNEL_SET = new Set(
+  MARKETING_PRIMARY_CHANNEL_OPTIONS.map((option) => option.value)
+);
 
 interface MetricValueRule {
   min?: number;
@@ -77,6 +85,11 @@ interface MetricValueRule {
 interface MarketingReportEditorProps {
   mode: 'create' | 'edit';
   reportId?: string;
+}
+
+interface NumericInputAdornment {
+  prefix?: string;
+  suffix?: string;
 }
 
 function normalizeMetricUnit(unit: string): string {
@@ -205,6 +218,36 @@ function mapMetricsFromDraft(
   return resolvedMetrics.length > 0 ? resolvedMetrics : createMarketingMetricPreset(objective);
 }
 
+function normalizePrimaryChannel(channel: string | null | undefined): MarketingPrimaryChannel | '' {
+  if (!channel || !MARKETING_PRIMARY_CHANNEL_SET.has(channel as MarketingPrimaryChannel)) {
+    return '';
+  }
+
+  return channel as MarketingPrimaryChannel;
+}
+
+function getNumericInputAdornment(unit: string): NumericInputAdornment {
+  const normalizedUnit = normalizeMetricUnit(unit);
+
+  if (normalizedUnit === 'usd' || normalizedUnit === 'php') {
+    return { prefix: '$' };
+  }
+
+  if (normalizedUnit === '%') {
+    return { suffix: '%' };
+  }
+
+  if (normalizedUnit === 'seconds') {
+    return { suffix: 'sec' };
+  }
+
+  if (normalizedUnit === 'x') {
+    return { suffix: 'x' };
+  }
+
+  return {};
+}
+
 export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorProps) {
   const isEditMode = mode === 'edit';
   const router = useRouter();
@@ -227,7 +270,8 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const [campaignName, setCampaignName] = useState('');
   const [campaignType, setCampaignType] = useState<MarketingCampaignType>('awareness');
   const [objective, setObjective] = useState<MarketingObjective>('brand_awareness');
-  const [primaryChannel, setPrimaryChannel] = useState('');
+  const [totalSpend, setTotalSpend] = useState('0');
+  const [primaryChannel, setPrimaryChannel] = useState<MarketingPrimaryChannel | ''>('');
   const [targetAudience, setTargetAudience] = useState('');
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
@@ -237,7 +281,6 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const [metrics, setMetrics] = useState<Array<MetricEntry>>(() =>
     createMarketingMetricPreset('brand_awareness')
   );
-  const [nextWeekPlans, setNextWeekPlans] = useState<Array<string>>(['']);
 
   const typeInfo = REPORT_TYPE_INFO[REPORT_TYPE];
   const selectedCampaignType = useMemo(
@@ -250,6 +293,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   );
   const selectedObjectiveInfo = MARKETING_OBJECTIVE_INFO[objective];
   const isMutating = createReport.isPending || updateReport.isPending;
+  const totalSpendAdornment = getNumericInputAdornment('usd');
 
   useEffect(() => {
     if (!isEditMode || !report || hydratedDraftIdRef.current === report.id) {
@@ -269,13 +313,13 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     setCampaignName(marketingContext?.campaignName ?? '');
     setCampaignType(marketingContext?.campaignType ?? 'awareness');
     setObjective(nextObjective);
-    setPrimaryChannel(marketingContext?.primaryChannel ?? '');
+    setTotalSpend(String(marketingContext?.totalSpend ?? 0));
+    setPrimaryChannel(normalizePrimaryChannel(marketingContext?.primaryChannel));
     setTargetAudience(marketingContext?.targetAudience ?? '');
     setPeriodStart(report.period_start ?? '');
     setPeriodEnd(report.period_end ?? '');
     setNotes(noteSections.summary ?? '');
     setMetrics(mapMetricsFromDraft(nextObjective, report.report_metrics));
-    setNextWeekPlans(noteSections.nextWeekPlans.length > 0 ? noteSections.nextWeekPlans : ['']);
     setActiveReportId(report.id);
     setLastSavedAt(report.updated_at ? new Date(report.updated_at) : null);
     setErrorMessage(null);
@@ -292,6 +336,11 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       return 'Select the reporting period start and end dates.';
     }
 
+    const parsedSpend = Number(totalSpend);
+    if (!Number.isFinite(parsedSpend) || parsedSpend < 0) {
+      return 'Total spend must be a valid non-negative amount.';
+    }
+
     if (!primaryChannel.trim()) {
       return 'Primary channel is required.';
     }
@@ -300,11 +349,15 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       return 'Target audience is required.';
     }
 
+    if (!notes.trim()) {
+      return 'Campaign summary is required.';
+    }
+
     return null;
-  }, [campaignName, periodEnd, periodStart, primaryChannel, targetAudience]);
+  }, [campaignName, notes, periodEnd, periodStart, primaryChannel, targetAudience, totalSpend]);
 
   const buildReportPayload = useCallback(
-    (asDraft: boolean) => {
+    (asDraft: boolean): ReportCreateInput => {
       const validMetrics = metrics
         .filter((metric) => metric.name.trim().length > 0)
         .map((metric) => ({
@@ -320,13 +373,13 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         status: asDraft ? ('draft' as const) : ('submitted' as const),
         notes: buildNarrativeReportNotes({
           summary: notes,
-          nextWeekPlans,
         }),
         marketingContext: {
           campaignName: campaignName.trim(),
           campaignType,
           objective,
-          primaryChannel: primaryChannel.trim(),
+          totalSpend: Number(totalSpend),
+          primaryChannel: primaryChannel as MarketingPrimaryChannel,
           targetAudience: targetAudience.trim(),
         },
         metrics: validMetrics,
@@ -336,13 +389,13 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       campaignName,
       campaignType,
       metrics,
-      nextWeekPlans,
       notes,
       objective,
       periodEnd,
       periodStart,
       primaryChannel,
       targetAudience,
+      totalSpend,
     ]
   );
 
@@ -396,40 +449,15 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     campaignType,
     isFormReady,
     metrics,
-    nextWeekPlans,
     notes,
     objective,
     periodEnd,
     periodStart,
     primaryChannel,
     targetAudience,
+    totalSpend,
     validateBaseFields,
   ]);
-
-  const handleStringArrayChange = (
-    index: number,
-    value: string,
-    setter: Dispatch<SetStateAction<Array<string>>>
-  ) => {
-    setter((previous) => {
-      const updated = [...previous];
-      updated[index] = value;
-      return updated;
-    });
-  };
-
-  const handleAddItem = (setter: Dispatch<SetStateAction<Array<string>>>) => {
-    setter((previous) => [...previous, '']);
-  };
-
-  const handleRemoveItem = (
-    index: number,
-    setter: Dispatch<SetStateAction<Array<string>>>
-  ) => {
-    setter((previous) =>
-      previous.length > 1 ? previous.filter((_, itemIndex) => itemIndex !== index) : previous
-    );
-  };
 
   const handleMetricChange = (index: number, field: keyof MetricEntry, value: string) => {
     setMetrics((previous) =>
@@ -781,16 +809,23 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                   htmlFor="primaryChannel"
                   required
                   showOptional={false}
-                  description="Examples: Meta Ads, Google Search, Email, LinkedIn Organic"
+                  description="Only paid marketing channels used in the super-admin review flow are allowed here."
                 >
-                  <Input
-                    id="primaryChannel"
+                  <Select
                     value={primaryChannel}
-                    onChange={(event) => setPrimaryChannel(event.target.value)}
-                    placeholder="Meta Ads"
-                    className="h-10"
-                    required
-                  />
+                    onValueChange={(value) => setPrimaryChannel(value as MarketingPrimaryChannel)}
+                  >
+                    <SelectTrigger id="primaryChannel" className="h-10">
+                      <SelectValue placeholder="Select a primary channel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MARKETING_PRIMARY_CHANNEL_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormGroup>
                 <FormGroup
                   label="Target Audience"
@@ -810,17 +845,43 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                 </FormGroup>
               </div>
 
-              <FormGroup label="Campaign Summary" htmlFor="notes">
-                <Textarea
-                  id="notes"
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  rows={3}
-                  placeholder="Briefly explain the campaign angle, creative direction, or what changed during this reporting window..."
-                  className="resize-none"
-                />
-              </FormGroup>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Spend</CardTitle>
+            <CardDescription>
+              Log the full amount spent for this reporting window. Keep efficiency metrics like CPM or CPC inside the metrics section below.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FormGroup
+              htmlFor="totalSpend"
+              required
+              showOptional={false}
+              description="Use the actual spend for the campaign during this period, in US dollars."
+            >
+              <div className="relative">
+                {totalSpendAdornment.prefix ? (
+                  <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">
+                    {totalSpendAdornment.prefix}
+                  </span>
+                ) : null}
+                <Input
+                  id="totalSpend"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={totalSpend}
+                  onChange={(event) => setTotalSpend(event.target.value)}
+                  placeholder="0.00"
+                  className={cn('h-10', totalSpendAdornment.prefix ? 'pl-7' : undefined)}
+                  required
+                />
+              </div>
+            </FormGroup>
           </CardContent>
         </Card>
 
@@ -839,60 +900,84 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {metrics.map((metric, index) => (
-              <div
-                key={`${metric.name}-${index}`}
-                className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_104px_40px] md:items-end"
-              >
-                <div className="space-y-1">
-                  {index === 0 ? (
-                    <Label className="text-xs text-muted-foreground">Name</Label>
-                  ) : null}
-                  <Input
-                    placeholder="Metric name"
-                    value={metric.name}
-                    readOnly={metric.locked}
-                    onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
-                    className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
-                  />
+            {metrics.map((metric, index) => {
+              const metricValueRule = getMetricValueRule(metric.name, metric.unit);
+              const metricValueAdornment = getNumericInputAdornment(metric.unit);
+
+              return (
+                <div
+                  key={`${metric.name}-${index}`}
+                  className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_104px_40px] md:items-end"
+                >
+                  <div className="space-y-1">
+                    {index === 0 ? (
+                      <Label className="text-xs text-muted-foreground">Name</Label>
+                    ) : null}
+                    <Input
+                      placeholder="Metric name"
+                      value={metric.name}
+                      readOnly={metric.locked}
+                      onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
+                      className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    {index === 0 && <Label className="text-xs text-muted-foreground">Value</Label>}
+                    <div className="relative">
+                      {metricValueAdornment.prefix ? (
+                        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">
+                          {metricValueAdornment.prefix}
+                        </span>
+                      ) : null}
+                      <Input
+                        type="text"
+                        inputMode={metricValueRule.allowDecimal ? 'decimal' : 'numeric'}
+                        value={metric.value}
+                        onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
+                        onBlur={() => handleMetricBlur(index)}
+                        className={cn(
+                          metricValueAdornment.prefix ? 'pl-7' : undefined,
+                          metricValueAdornment.suffix === 'sec'
+                            ? 'pr-12'
+                            : metricValueAdornment.suffix
+                              ? 'pr-8'
+                              : undefined
+                        )}
+                      />
+                      {metricValueAdornment.suffix ? (
+                        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
+                          {metricValueAdornment.suffix}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    {index === 0 && <Label className="text-xs text-muted-foreground">Unit</Label>}
+                    <Input
+                      placeholder="count"
+                      value={metric.unit}
+                      readOnly={metric.locked}
+                      onChange={(event) => handleMetricChange(index, 'unit', event.target.value)}
+                      onBlur={() => handleMetricBlur(index)}
+                      className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                    />
+                  </div>
+                  <div className="flex items-end md:justify-center">
+                    {metrics.length > 1 ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Remove metric"
+                        onClick={() => handleRemoveMetric(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {index === 0 && <Label className="text-xs text-muted-foreground">Value</Label>}
-                  <Input
-                    type="number"
-                    min={getMetricValueRule(metric.name, metric.unit).min ?? 0}
-                    step={getMetricValueRule(metric.name, metric.unit).step}
-                    value={metric.value}
-                    onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
-                    onBlur={() => handleMetricBlur(index)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  {index === 0 && <Label className="text-xs text-muted-foreground">Unit</Label>}
-                  <Input
-                    placeholder="count"
-                    value={metric.unit}
-                    readOnly={metric.locked}
-                    onChange={(event) => handleMetricChange(index, 'unit', event.target.value)}
-                    onBlur={() => handleMetricBlur(index)}
-                    className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
-                  />
-                </div>
-                <div className="flex items-end md:justify-center">
-                  {metrics.length > 1 ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Remove metric"
-                      onClick={() => handleRemoveMetric(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             <Separator />
 
@@ -911,35 +996,25 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
         <Card>
           <CardHeader>
-            <CardTitle>Next Steps</CardTitle>
-            <CardDescription>Document the next experiments, fixes, or follow-through for the campaign.</CardDescription>
+            <CardTitle>
+              <span>
+                Campaign Summary <span className="text-rose-500">*</span>
+              </span>
+            </CardTitle>
+            <CardDescription>
+              Summarize the campaign angle, creative direction, performance context, or important changes during this reporting window.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {nextWeekPlans.map((item, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  placeholder={`Next step ${index + 1}`}
-                  value={item}
-                  onChange={(event) => handleStringArrayChange(index, event.target.value, setNextWeekPlans)}
-                  className="flex-1"
-                />
-                {nextWeekPlans.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Remove next step"
-                    onClick={() => handleRemoveItem(index, setNextWeekPlans)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button type="button" variant="outline" size="sm" onClick={() => handleAddItem(setNextWeekPlans)}>
-              <Plus className="mr-1 h-4 w-4" />
-              Add Next Step
-            </Button>
+          <CardContent>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              rows={5}
+              placeholder="Summarize what happened in this campaign period, what changed, and the key context reviewers should know..."
+              className="resize-none"
+              required
+            />
           </CardContent>
         </Card>
 

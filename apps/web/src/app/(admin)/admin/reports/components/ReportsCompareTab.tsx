@@ -6,6 +6,7 @@ import {
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveLabel,
   matchesMarketingReportFilters,
+  parseNoteSections,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
 } from '@/lib/report-utils';
@@ -14,16 +15,23 @@ import {
   Card,
   CardContent,
   EmptyState,
-  InsightsSummary,
+  // InsightsSummary,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
   type WeekComparison,
-  WeekComparisonTable,
-  WeekDropdownSelector,
   type WeekPeriod,
-  getCurrentWeekPeriod,
 } from '@hr-portal/ui';
-import { AlertCircle, Download } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { AlertCircle, CalendarRange, Download } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  CompareExecutiveDashboard,
+  type CompareCampaignSummaries,
+  type CompareCampaignSummaryItem,
+} from './CompareExecutiveDashboard';
 
 interface ReportsCompareTabProps {
   department: string;
@@ -151,10 +159,7 @@ function aggregateReportMetrics(
     });
   };
 
-  setMetric('Total Submissions', reports.length);
-  setMetric('Approved', reports.filter((r) => r.status === 'approved').length);
-  setMetric('Rejected', reports.filter((r) => r.status === 'rejected').length);
-  setMetric('Pending', reports.filter((r) => r.status === 'submitted').length);
+  setMetric('Total Reports', reports.length);
   setMetric(
     'Unique Campaigns',
     new Set(
@@ -162,6 +167,11 @@ function aggregateReportMetrics(
         .map((report) => report.marketing_context?.campaignName)
         .filter((campaignName): campaignName is string => Boolean(campaignName))
     ).size
+  );
+  setMetric(
+    'Total Spend',
+    reports.reduce((sum, report) => sum + (report.marketing_context?.totalSpend ?? 0), 0),
+    'USD'
   );
 
   for (const report of reports) {
@@ -189,6 +199,241 @@ function aggregateReportMetrics(
   return metricsMap;
 }
 
+function formatReportDateRangeLabel(startDate: string, endDate: string): string {
+  const start = new Date(`${extractDateString(startDate)}T12:00:00.000Z`);
+  const end = new Date(`${extractDateString(endDate)}T12:00:00.000Z`);
+  const startMonth = start.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+  const endMonth = end.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+  const startDay = start.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' });
+  const endDay = end.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'UTC' });
+  const startYear = start.toLocaleDateString('en-US', { year: 'numeric', timeZone: 'UTC' });
+  const endYear = end.toLocaleDateString('en-US', { year: 'numeric', timeZone: 'UTC' });
+
+  if (startYear === endYear && startMonth === endMonth) {
+    return `${startMonth} ${startDay} - ${endDay}, ${endYear}`;
+  }
+
+  if (startYear === endYear) {
+    return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${endYear}`;
+  }
+
+  return `${startMonth} ${startDay}, ${startYear} - ${endMonth} ${endDay}, ${endYear}`;
+}
+
+function dedupeReportsByWindow(reports: ReportRecord[]): ReportRecord[] {
+  const dedupedReports = new Map<string, ReportRecord>();
+
+  for (const report of reports) {
+    const key = [
+      report.employee_id,
+      report.report_type,
+      extractDateString(report.period_start),
+      extractDateString(report.period_end),
+    ].join('__');
+    const existingReport = dedupedReports.get(key);
+
+    if (!existingReport) {
+      dedupedReports.set(key, report);
+      continue;
+    }
+
+    const existingTimestamp = new Date(
+      existingReport.reviewed_at ?? existingReport.submitted_at ?? existingReport.updated_at
+    ).getTime();
+    const nextTimestamp = new Date(
+      report.reviewed_at ?? report.submitted_at ?? report.updated_at
+    ).getTime();
+
+    if (nextTimestamp >= existingTimestamp) {
+      dedupedReports.set(key, report);
+    }
+  }
+
+  return Array.from(dedupedReports.values());
+}
+
+const EMPTY_CAMPAIGN_SUMMARY = 'No campaign summary provided.';
+
+type CampaignSummaryAccumulator = CompareCampaignSummaryItem & {
+  primaryTimestamp: number;
+  primarySpend: number;
+  hasRealSummary: boolean;
+};
+
+function normalizeCampaignKeyPart(value: string | null | undefined): string {
+  return value?.trim().toLowerCase() ?? '';
+}
+
+function buildCampaignSummaryKey(marketingContext: NonNullable<ReportRecord['marketing_context']>): string {
+  return [
+    normalizeCampaignKeyPart(marketingContext.campaignName),
+    normalizeCampaignKeyPart(marketingContext.campaignType),
+    normalizeCampaignKeyPart(marketingContext.objective),
+    normalizeCampaignKeyPart(marketingContext.primaryChannel),
+  ].join('__');
+}
+
+function getReportSortTimestamp(
+  report: Pick<ReportRecord, 'reviewed_at' | 'submitted_at' | 'updated_at' | 'created_at'>
+): number {
+  const timestamp = report.reviewed_at ?? report.submitted_at ?? report.updated_at ?? report.created_at;
+  const value = new Date(timestamp).getTime();
+
+  return Number.isFinite(value) ? value : 0;
+}
+
+function shouldPromoteCampaignPrimary(
+  existing: CampaignSummaryAccumulator,
+  nextTimestamp: number,
+  nextSpend: number,
+  nextHasRealSummary: boolean
+): boolean {
+  if (nextHasRealSummary !== existing.hasRealSummary) {
+    return nextHasRealSummary;
+  }
+
+  if (nextTimestamp !== existing.primaryTimestamp) {
+    return nextTimestamp > existing.primaryTimestamp;
+  }
+
+  return nextSpend > existing.primarySpend;
+}
+
+function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSummaryItem[] {
+  const groupedCampaigns = new Map<string, CampaignSummaryAccumulator>();
+
+  for (const report of reports) {
+    const marketingContext = report.marketing_context;
+    const campaignName = marketingContext?.campaignName?.trim();
+
+    if (!marketingContext || !campaignName) {
+      continue;
+    }
+
+    const key = buildCampaignSummaryKey(marketingContext);
+    const totalSpend = marketingContext.totalSpend ?? 0;
+    const timestamp = getReportSortTimestamp(report);
+    const summary = parseNoteSections(report.notes || '').summary.trim();
+    const hasRealSummary = summary.length > 0;
+    const existing = groupedCampaigns.get(key);
+
+    if (!existing) {
+      groupedCampaigns.set(key, {
+        key,
+        campaignName,
+        campaignTypeLabel: getMarketingCampaignTypeLabel(marketingContext.campaignType),
+        objectiveLabel: getMarketingObjectiveLabel(marketingContext.objective),
+        primaryChannel: marketingContext.primaryChannel,
+        targetAudience: marketingContext.targetAudience,
+        totalSpend,
+        summary: hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY,
+        reportCount: 1,
+        appearsInOppositePeriod: false,
+        comparisonLabel: '',
+        primaryTimestamp: timestamp,
+        primarySpend: totalSpend,
+        hasRealSummary,
+      });
+      continue;
+    }
+
+    existing.totalSpend += totalSpend;
+    existing.reportCount += 1;
+
+    if (shouldPromoteCampaignPrimary(existing, timestamp, totalSpend, hasRealSummary)) {
+      existing.campaignName = campaignName;
+      existing.campaignTypeLabel = getMarketingCampaignTypeLabel(marketingContext.campaignType);
+      existing.objectiveLabel = getMarketingObjectiveLabel(marketingContext.objective);
+      existing.primaryChannel = marketingContext.primaryChannel;
+      existing.targetAudience = marketingContext.targetAudience;
+      existing.summary = hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY;
+      existing.primaryTimestamp = timestamp;
+      existing.primarySpend = totalSpend;
+      existing.hasRealSummary = hasRealSummary;
+    }
+  }
+
+  return Array.from(groupedCampaigns.values())
+    .sort((left, right) => {
+      if (right.totalSpend !== left.totalSpend) {
+        return right.totalSpend - left.totalSpend;
+      }
+
+      return left.campaignName.localeCompare(right.campaignName, 'en-US', {
+        sensitivity: 'base',
+      });
+    })
+    .map(({ primaryTimestamp: _primaryTimestamp, primarySpend: _primarySpend, hasRealSummary: _hasRealSummary, ...item }) => item);
+}
+
+function buildWeekPeriodFromReport(report: Pick<ReportRecord, 'period_start' | 'period_end'>): WeekPeriod {
+  const periodStart = extractDateString(report.period_start);
+  const periodEnd = extractDateString(report.period_end);
+  const startDate = new Date(`${periodStart}T00:00:00.000Z`);
+
+  const firstThursday = new Date(startDate.valueOf());
+  const dayNum = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - dayNum + 3);
+  const firstThursdayValue = firstThursday.valueOf();
+  firstThursday.setUTCMonth(0, 1);
+  if (firstThursday.getUTCDay() !== 4) {
+    firstThursday.setUTCMonth(0, 1 + ((4 - firstThursday.getUTCDay() + 7) % 7));
+  }
+
+  const weekNumber =
+    1 + Math.ceil((firstThursdayValue - firstThursday.valueOf()) / 604800000);
+  const year = startDate.getUTCFullYear();
+  const formattedRange = formatReportDateRangeLabel(periodStart, periodEnd);
+
+  return {
+    weekNumber,
+    year,
+    startDate: periodStart,
+    endDate: periodEnd,
+    label: formattedRange,
+  };
+}
+
+function findNextComparableWeek(
+  weeks: WeekPeriod[],
+  selectedWeek: WeekPeriod | null
+): WeekPeriod | null {
+  if (weeks.length < 2) {
+    return null;
+  }
+
+  if (!selectedWeek) {
+    return weeks[1] ?? null;
+  }
+
+  const selectedIndex = weeks.findIndex(
+    (week) =>
+      week.startDate === selectedWeek.startDate &&
+      week.endDate === selectedWeek.endDate
+  );
+
+  if (selectedIndex >= 0) {
+    return (
+      weeks[selectedIndex + 1] ??
+      weeks.find(
+        (week) =>
+          week.startDate !== selectedWeek.startDate || week.endDate !== selectedWeek.endDate
+      ) ??
+      null
+    );
+  }
+
+  return weeks[1] ?? weeks[0] ?? null;
+}
+
+function renderWeekValue(week: WeekPeriod | null): string {
+  if (!week) {
+    return '';
+  }
+
+  return `${week.startDate}__${week.endDate}`;
+}
+
 export function ReportsCompareTab({
   department,
   campaignType,
@@ -202,24 +447,81 @@ export function ReportsCompareTab({
     [timeRange, customStartDate, customEndDate]
   );
 
-  const currentWeekInit = getCurrentWeekPeriod();
-  const [currentWeek, setCurrentWeek] = useState<WeekPeriod>(currentWeekInit);
-  const [previousWeek, setPreviousWeek] = useState<WeekPeriod>(() => {
-    const prevStart = new Date(currentWeekInit.startDate);
-    prevStart.setDate(prevStart.getDate() - 7);
-    const prevEnd = new Date(currentWeekInit.endDate);
-    prevEnd.setDate(prevEnd.getDate() - 7);
-    return {
-      weekNumber: Math.max(1, currentWeekInit.weekNumber - 1),
-      year: currentWeekInit.year,
-      startDate: prevStart.toISOString(),
-      endDate: prevEnd.toISOString(),
-      label: `Week ${Math.max(1, currentWeekInit.weekNumber - 1)}, ${currentWeekInit.year}`,
-    };
+  const {
+    data: allReportsData,
+    isLoading: allReportsLoading,
+    error: allReportsError,
+  } = useReports({
+    ...(department !== 'all' ? { department } : {}),
+    reportType: 'marketing' as const,
+    pageSize: 500,
   });
 
+  const comparableReports = useMemo(
+    () =>
+      dedupeReportsByWindow((allReportsData?.data || []).filter(
+        (report) =>
+          report.status !== 'draft' &&
+          matchesMarketingReportFilters(report, { campaignType, objective })
+      )),
+    [allReportsData?.data, campaignType, objective]
+  );
+
+  const availableWeeks = useMemo(() => {
+    const uniquePeriods = new Map<string, WeekPeriod>();
+
+    for (const report of comparableReports) {
+      const key = `${extractDateString(report.period_start)}__${extractDateString(report.period_end)}`;
+      if (!uniquePeriods.has(key)) {
+        uniquePeriods.set(key, buildWeekPeriodFromReport(report));
+      }
+    }
+
+    return Array.from(uniquePeriods.values()).sort(
+      (left, right) => new Date(right.startDate).getTime() - new Date(left.startDate).getTime()
+    );
+  }, [comparableReports]);
+
+  const [currentWeek, setCurrentWeek] = useState<WeekPeriod | null>(null);
+  const [previousWeek, setPreviousWeek] = useState<WeekPeriod | null>(null);
+
+  useEffect(() => {
+    const nextCurrent = availableWeeks[0] ?? null;
+    const currentStillAvailable =
+      currentWeek &&
+      availableWeeks.some(
+        (week) => week.startDate === currentWeek.startDate && week.endDate === currentWeek.endDate
+      )
+        ? currentWeek
+        : nextCurrent;
+    const nextPrevious =
+      previousWeek &&
+      availableWeeks.some(
+        (week) => week.startDate === previousWeek.startDate && week.endDate === previousWeek.endDate
+      ) &&
+      (!currentStillAvailable ||
+        previousWeek.startDate !== currentStillAvailable.startDate ||
+        previousWeek.endDate !== currentStillAvailable.endDate)
+        ? previousWeek
+        : findNextComparableWeek(availableWeeks, currentStillAvailable);
+
+    if (
+      (currentStillAvailable?.startDate ?? null) !== (currentWeek?.startDate ?? null) ||
+      (currentStillAvailable?.endDate ?? null) !== (currentWeek?.endDate ?? null)
+    ) {
+      setCurrentWeek(currentStillAvailable);
+    }
+
+    if (
+      (nextPrevious?.startDate ?? null) !== (previousWeek?.startDate ?? null) ||
+      (nextPrevious?.endDate ?? null) !== (previousWeek?.endDate ?? null)
+    ) {
+      setPreviousWeek(nextPrevious);
+    }
+  }, [availableWeeks, currentWeek, previousWeek]);
+
   const actualPeriods = useMemo(() => {
-    if (timeRange === 'weekly') {
+    if (timeRange === 'weekly' && currentWeek && previousWeek) {
       return {
         current: {
           start: extractDateString(currentWeek.startDate),
@@ -233,6 +535,7 @@ export function ReportsCompareTab({
         },
       };
     }
+
     return periods;
   }, [timeRange, currentWeek, previousWeek, periods]);
 
@@ -260,28 +563,52 @@ export function ReportsCompareTab({
     pageSize: 500,
   });
 
-  const isLoading = currentLoading || previousLoading;
-  const error = currentError || previousError;
+  const isLoading = allReportsLoading || currentLoading || previousLoading;
+  const error = allReportsError || currentError || previousError;
   const currentReports = useMemo(
     () =>
-      (currentData?.data || []).filter(
+      dedupeReportsByWindow((currentData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
           matchesMarketingReportFilters(report, { campaignType, objective })
-      ),
+      )),
     [campaignType, currentData?.data, objective]
   );
   const previousReports = useMemo(
     () =>
-      (previousData?.data || []).filter(
+      dedupeReportsByWindow((previousData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
           matchesMarketingReportFilters(report, { campaignType, objective })
-      ),
+      )),
     [campaignType, objective, previousData?.data]
   );
 
-  const { comparison, insightsData } = useMemo(() => {
+  const campaignSummaries = useMemo<CompareCampaignSummaries>(() => {
+    const previousItems = buildCampaignSummaryItems(previousReports);
+    const currentItems = buildCampaignSummaryItems(currentReports);
+    const previousKeys = new Set(previousItems.map((item) => item.key));
+    const currentKeys = new Set(currentItems.map((item) => item.key));
+
+    return {
+      previous: previousItems.map((item) => ({
+        ...item,
+        appearsInOppositePeriod: currentKeys.has(item.key),
+        comparisonLabel: currentKeys.has(item.key)
+          ? 'Also in current period'
+          : 'Only in previous period',
+      })),
+      current: currentItems.map((item) => ({
+        ...item,
+        appearsInOppositePeriod: previousKeys.has(item.key),
+        comparisonLabel: previousKeys.has(item.key)
+          ? 'Also in previous period'
+          : 'New this period',
+      })),
+    };
+  }, [currentReports, previousReports]);
+
+  const { comparison } = useMemo(() => {
     const currentMetrics = aggregateReportMetrics(currentReports);
     const previousMetrics = aggregateReportMetrics(previousReports);
 
@@ -353,27 +680,14 @@ export function ReportsCompareTab({
       if (totalChange > 0)
         keyFindings.push({
           metric: 'Growth',
-          insight: `Report submissions increased by ${totalChange.toFixed(1)}%`,
+          insight: `Report volume increased by ${totalChange.toFixed(1)}%`,
           highlight: true,
         });
       else if (totalChange < 0)
         keyFindings.push({
           metric: 'Decline',
-          insight: `Report submissions decreased by ${Math.abs(totalChange).toFixed(1)}%`,
+          insight: `Report volume decreased by ${Math.abs(totalChange).toFixed(1)}%`,
         });
-
-      const currentApprovalRate =
-        currentTotal > 0
-          ? (currentReports.filter((r) => r.status === 'approved').length / currentTotal) * 100
-          : 0;
-      const prevApprovalRate =
-        previousTotal > 0
-          ? (previousReports.filter((r) => r.status === 'approved').length / previousTotal) * 100
-          : 0;
-      if (currentApprovalRate > prevApprovalRate)
-        recommendations.push('Approval rate is improving. Keep up the quality!');
-      else if (currentApprovalRate < prevApprovalRate)
-        recommendations.push('Approval rate has decreased. Review submission quality.');
 
       if (currentCampaigns < previousCampaigns) {
         recommendations.push('Fewer campaigns were reported in the current period. Check for missing submissions or campaign pauses.');
@@ -395,17 +709,15 @@ export function ReportsCompareTab({
 
   const handleCurrentWeekChange = (week: WeekPeriod): void => {
     setCurrentWeek(week);
-    const prevStart = new Date(week.startDate);
-    prevStart.setDate(prevStart.getDate() - 7);
-    const prevEnd = new Date(week.endDate);
-    prevEnd.setDate(prevEnd.getDate() - 7);
-    setPreviousWeek({
-      weekNumber: week.weekNumber - 1,
-      year: week.year,
-      startDate: prevStart.toISOString(),
-      endDate: prevEnd.toISOString(),
-      label: `Week ${week.weekNumber - 1}, ${week.year}`,
-    });
+    if (
+      previousWeek &&
+      previousWeek.startDate !== week.startDate &&
+      previousWeek.endDate !== week.endDate
+    ) {
+      return;
+    }
+
+    setPreviousWeek(findNextComparableWeek(availableWeeks, week));
   };
 
   const handleExport = () => {
@@ -445,6 +757,49 @@ export function ReportsCompareTab({
       </Card>
     );
 
+  if (timeRange === 'weekly' && availableWeeks.length === 0)
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <EmptyState
+            icon={CalendarRange}
+            title="No submitted report weeks yet"
+            description="Submitted or reviewed marketing reports will appear here once the team has at least one non-draft report for a reporting week."
+            size="sm"
+          />
+        </CardContent>
+      </Card>
+    );
+
+  if (timeRange === 'weekly' && (!currentWeek || !previousWeek))
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <EmptyState
+            icon={CalendarRange}
+            title="Choose two submitted weeks to compare"
+            description="At least two submitted reporting weeks are needed before the compare view can show a week-over-week breakdown."
+            size="sm"
+          />
+        </CardContent>
+      </Card>
+    );
+
+  const previousWeekOptions =
+    timeRange === 'weekly' && currentWeek
+      ? availableWeeks.filter(
+          (week) =>
+            week.startDate !== currentWeek.startDate || week.endDate !== currentWeek.endDate
+        )
+      : availableWeeks;
+  const currentWeekOptions =
+    timeRange === 'weekly' && previousWeek
+      ? availableWeeks.filter(
+          (week) =>
+            week.startDate !== previousWeek.startDate || week.endDate !== previousWeek.endDate
+        )
+      : availableWeeks;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -470,19 +825,47 @@ export function ReportsCompareTab({
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">Previous Week</span>
-              <WeekDropdownSelector
-                selectedWeek={previousWeek}
-                onWeekChange={setPreviousWeek}
-                weeksToShow={12}
-              />
+              <Select value={renderWeekValue(previousWeek)} onValueChange={(value) => {
+                const selected = availableWeeks.find(
+                  (week) => renderWeekValue(week) === value
+                );
+                if (selected) {
+                  setPreviousWeek(selected);
+                }
+              }}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="No submitted weeks" />
+                </SelectTrigger>
+                <SelectContent>
+                  {previousWeekOptions.map((week) => (
+                    <SelectItem key={renderWeekValue(week)} value={renderWeekValue(week)}>
+                      {week.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <span className="text-xs text-zinc-500 dark:text-zinc-400">Current Week</span>
-              <WeekDropdownSelector
-                selectedWeek={currentWeek}
-                onWeekChange={handleCurrentWeekChange}
-                weeksToShow={12}
-              />
+              <Select value={renderWeekValue(currentWeek)} onValueChange={(value) => {
+                const selected = availableWeeks.find(
+                  (week) => renderWeekValue(week) === value
+                );
+                if (selected) {
+                  handleCurrentWeekChange(selected);
+                }
+              }}>
+                <SelectTrigger className="w-[280px]">
+                  <SelectValue placeholder="No submitted weeks" />
+                </SelectTrigger>
+                <SelectContent>
+                  {currentWeekOptions.map((week) => (
+                    <SelectItem key={renderWeekValue(week)} value={renderWeekValue(week)}>
+                      {week.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -503,14 +886,14 @@ export function ReportsCompareTab({
         </div>
       )}
 
-      <InsightsSummary
+      {/* <InsightsSummary
         title={`${timeRange === 'monthly' ? 'Month' : timeRange === 'custom' ? 'Period' : 'Week'}-over-${timeRange === 'monthly' ? 'Month' : timeRange === 'custom' ? 'Period' : 'Week'} Marketing Analysis`}
         summary={insightsData.summary}
         keyFindings={insightsData.keyFindings}
         recommendations={insightsData.recommendations}
-      />
+      /> */}
 
-      <WeekComparisonTable comparison={comparison} />
+      <CompareExecutiveDashboard comparison={comparison} campaignSummaries={campaignSummaries} />
     </div>
   );
 }

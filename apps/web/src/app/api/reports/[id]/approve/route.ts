@@ -79,12 +79,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
+    const normalizedReviewNotes = parsed.data.notes?.trim() ? parsed.data.notes.trim() : null;
+
     const { data, error } = await supabaseAdmin
       .from('reports')
       .update({
         status: parsed.data.action,
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
+        review_notes: normalizedReviewNotes,
       })
       .eq('id', id)
       .eq('status', 'submitted')
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         userId: data.created_by,
         type: isApproved ? 'report_approved' : 'report_rejected',
         title: isApproved ? 'Report Approved' : 'Report Rejected',
-        message: `${reviewerName} ${isApproved ? 'approved' : 'rejected'} your ${data.report_type?.replace(/_/g, ' ') ?? 'report'}${parsed.data.notes ? `: ${parsed.data.notes}` : ''}`,
+        message: `${reviewerName} ${isApproved ? 'approved' : 'rejected'} your ${data.report_type?.replace(/_/g, ' ') ?? 'report'}${normalizedReviewNotes ? `: ${normalizedReviewNotes}` : ''}`,
         link: `/reports`,
         metadata: { reportId: id, reviewedBy: user.id, action: parsed.data.action },
       });
@@ -127,7 +130,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       metadata: {
         reportType: data.report_type,
         action: parsed.data.action,
-        ...(parsed.data.notes ? { reviewNotes: parsed.data.notes } : {}),
+        ...(normalizedReviewNotes ? { reviewNotes: normalizedReviewNotes } : {}),
       },
     });
 

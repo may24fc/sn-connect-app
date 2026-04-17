@@ -1,7 +1,9 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
-import { useReports } from '@/hooks/useReports';
+import { useDeleteReport } from '@/hooks/useDeleteReport';
+import { useRestoreReport } from '@/hooks/useRestoreReport';
+import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
 import {
@@ -18,6 +20,17 @@ import {
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   EmptyState,
   Input,
   Select,
@@ -32,15 +45,14 @@ import {
   TableHeader,
   TableRow,
   Textarea,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { AlertCircle, CheckCircle2, Loader2, Search } from 'lucide-react';
+import { AlertCircle, ArchiveRestore, CheckCircle2, Eye, Loader2, MoreHorizontal, Search, Trash2, XCircle } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+
+type ReportReviewFilter = 'all' | 'submitted' | 'approved' | 'rejected' | 'archived';
 
 const statusVariant: Record<
   'draft' | 'submitted' | 'approved' | 'rejected',
@@ -116,12 +128,16 @@ export function ReportsSubmissionsTab({
   customEndDate,
 }: ReportsSubmissionsTabProps) {
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<string>('all');
+  const [status, setStatus] = useState<ReportReviewFilter>('all');
   const [localPeriod, setLocalPeriod] = useState<'all' | 'weekly' | 'monthly' | 'custom'>('all');
   const [actionNotes, setActionNotes] = useState<Record<string, string>>({});
   const [workingId, setWorkingId] = useState<string | null>(null);
+  const [reportPendingDelete, setReportPendingDelete] = useState<ReportRecord | null>(null);
+  const archivedView = status === 'archived';
   const { addToast } = useToast();
   const router = useRouter();
+  const deleteReport = useDeleteReport();
+  const restoreReport = useRestoreReport();
 
   // Calculate period dates for API filtering
   const periodDates = useMemo(() => {
@@ -134,9 +150,10 @@ export function ReportsSubmissionsTab({
   }, [localPeriod, customStartDate, customEndDate]);
 
   const filters = {
-    ...(status !== 'all'
+    ...(status !== 'all' && status !== 'archived'
       ? { status: status as 'draft' | 'submitted' | 'approved' | 'rejected' }
       : {}),
+    archived: archivedView ? 'only' as const : 'exclude' as const,
     ...(department !== 'all' ? { department } : {}),
     reportType: 'marketing' as const,
     ...(periodDates ? { periodStart: periodDates.start, periodEnd: periodDates.end } : {}),
@@ -149,7 +166,9 @@ export function ReportsSubmissionsTab({
   const reports = useMemo(() => {
     let all = data?.data || [];
 
-    all = all.filter((report) => report.status !== 'draft');
+    if (!archivedView) {
+      all = all.filter((report) => report.status !== 'draft');
+    }
 
     all = all.filter((report) =>
       matchesMarketingReportFilters(report, {
@@ -159,7 +178,7 @@ export function ReportsSubmissionsTab({
       })
     );
     return all;
-  }, [campaignType, data?.data, objective, search]);
+  }, [archivedView, campaignType, data?.data, objective, search]);
 
   const reportStatusOrder: Record<string, number> = { submitted: 0, rejected: 1, approved: 2 };
 
@@ -214,6 +233,53 @@ export function ReportsSubmissionsTab({
     } finally {
       setWorkingId(null);
     }
+  };
+
+  const pendingReportLabel = reportPendingDelete
+    ? getMarketingReportDisplayName(reportPendingDelete.marketing_context)
+    : 'this report';
+
+  const handleDeleteReport = () => {
+    if (!reportPendingDelete) {
+      return;
+    }
+
+    deleteReport.mutate(reportPendingDelete.id, {
+      onSuccess: () => {
+        addToast({
+          title: 'Report archived',
+          description: 'The marketing report has been archived.',
+          variant: 'success',
+        });
+        setReportPendingDelete(null);
+      },
+      onError: (deleteError) => {
+        addToast({
+          title: 'Archive failed',
+          description: deleteError.message,
+          variant: 'error',
+        });
+      },
+    });
+  };
+
+  const handleRestoreReport = (reportId: string) => {
+    restoreReport.mutate(reportId, {
+      onSuccess: () => {
+        addToast({
+          title: 'Report restored',
+          description: 'The marketing report is back in the active submissions list.',
+          variant: 'success',
+        });
+      },
+      onError: (restoreError) => {
+        addToast({
+          title: 'Restore failed',
+          description: restoreError.message,
+          variant: 'error',
+        });
+      },
+    });
   };
 
   return (
@@ -273,7 +339,7 @@ export function ReportsSubmissionsTab({
             )}
           </SelectContent>
         </Select>
-        <Select value={status} onValueChange={setStatus}>
+        <Select value={status} onValueChange={(value) => setStatus(value as ReportReviewFilter)}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Review Status" />
           </SelectTrigger>
@@ -282,6 +348,7 @@ export function ReportsSubmissionsTab({
             <SelectItem value="submitted">Submitted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
             <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="archived">Archived</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -332,15 +399,27 @@ export function ReportsSubmissionsTab({
                     <TableCell colSpan={8} className="py-10">
                       <EmptyState
                         icon={Search}
-                        title="No marketing reports found"
-                        description="Adjust the filters or wait for submitted reports to appear in this queue."
+                        title={archivedView ? 'No archived marketing reports found' : 'No marketing reports found'}
+                        description={
+                          archivedView
+                            ? 'Archived marketing reports will appear here once a report has been archived.'
+                            : 'Adjust the filters or wait for submitted reports to appear in this queue.'
+                        }
                         size="sm"
                       />
                     </TableCell>
                   </TableRow>
                 ) : (
                   sortedReports.map((report) => (
-                    <TableRow key={report.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => router.push(`/admin/reports/${report.id}`)}>
+                    <TableRow
+                      key={report.id}
+                      className={`${archivedView ? 'cursor-default' : 'cursor-pointer'} hover:bg-muted/50 transition-colors`}
+                      onDoubleClick={() => {
+                        if (!archivedView) {
+                          router.push(`/admin/reports/${report.id}`);
+                        }
+                      }}
+                    >
                       <TableCell>
                         {report.employees
                           ? `${report.employees.first_name} ${report.employees.last_name}`
@@ -377,72 +456,93 @@ export function ReportsSubmissionsTab({
                       <TableCell className="min-w-[220px]">
                         <Textarea
                           rows={2}
-                          value={actionNotes[report.id] || ''}
+                          value={
+                            report.status === 'submitted'
+                              ? (actionNotes[report.id] ?? report.review_notes ?? '')
+                              : (report.review_notes ?? '')
+                          }
+                          readOnly={report.status !== 'submitted'}
+                          disabled={workingId === report.id}
+                          placeholder={
+                            report.status === 'submitted'
+                              ? 'Add optional review notes'
+                              : 'Review notes are locked after the report is reviewed'
+                          }
                           onChange={(event) =>
                             setActionNotes((prev) => ({
                               ...prev,
                               [report.id]: event.target.value,
                             }))
                           }
+                          className={
+                            report.status !== 'submitted'
+                              ? 'bg-muted/40 text-muted-foreground'
+                              : undefined
+                          }
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span>
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className={report.status !== 'submitted' ? 'opacity-50' : ''}
-                                    disabled={
-                                      workingId === report.id || report.status !== 'submitted'
-                                    }
-                                    onClick={() => handleAction(report.id, 'rejected')}
-                                  >
-                                    Reject
-                                  </Button>
-                                </span>
-                              </TooltipTrigger>
-                              {report.status !== 'submitted' && (
-                                <TooltipContent>
-                                  <p>Only submitted reports can be approved</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Current status: {formatLabel(report.status)}
-                                  </p>
-                                </TooltipContent>
+                        <div className="flex items-center justify-end" onClick={(event) => event.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreHorizontal className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
+                                Manage
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {!archivedView && (
+                                <>
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/admin/reports/${report.id}`}>
+                                      <Eye className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                      View report
+                                    </Link>
+                                  </DropdownMenuItem>
+                                  {report.status === 'submitted' && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        disabled={workingId === report.id}
+                                        onClick={() => handleAction(report.id, 'approved')}
+                                      >
+                                        <CheckCircle2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                        Approve report
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        disabled={workingId === report.id}
+                                        onClick={() => handleAction(report.id, 'rejected')}
+                                      >
+                                        <XCircle className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                        Reject report
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </>
                               )}
-                            </Tooltip>
-                          </TooltipProvider>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span>
-                                  <Button
-                                    size="sm"
-                                    variant="success"
-                                    className={report.status !== 'submitted' ? 'opacity-50' : ''}
-                                    disabled={
-                                      workingId === report.id || report.status !== 'submitted'
-                                    }
-                                    onClick={() => handleAction(report.id, 'approved')}
+                              {archivedView ? (
+                                <DropdownMenuItem
+                                  disabled={restoreReport.isPending}
+                                  onClick={() => handleRestoreReport(report.id)}
+                                >
+                                  <ArchiveRestore className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                  Restore report
+                                </DropdownMenuItem>
+                              ) : (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    disabled={deleteReport.isPending}
+                                    onClick={() => setReportPendingDelete(report)}
+                                    className="text-rose-600 focus:text-rose-700"
                                   >
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                    Approve
-                                  </Button>
-                                </span>
-                              </TooltipTrigger>
-                              {report.status !== 'submitted' && (
-                                <TooltipContent>
-                                  <p>Only submitted reports can be rejected</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Current status: {formatLabel(report.status)}
-                                  </p>
-                                </TooltipContent>
+                                    <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                    Archive report
+                                  </DropdownMenuItem>
+                                </>
                               )}
-                            </Tooltip>
-                          </TooltipProvider>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -453,6 +553,30 @@ export function ReportsSubmissionsTab({
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={Boolean(reportPendingDelete)} onOpenChange={(open) => !open && setReportPendingDelete(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Archive report?</DialogTitle>
+            <DialogDescription>
+              This will archive {pendingReportLabel}. Archived reports are removed from the submissions queue.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReportPendingDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              className="bg-rose-600 text-white hover:bg-rose-700"
+              disabled={deleteReport.isPending}
+              onClick={handleDeleteReport}
+            >
+              {deleteReport.isPending ? 'Archiving...' : 'Archive Report'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

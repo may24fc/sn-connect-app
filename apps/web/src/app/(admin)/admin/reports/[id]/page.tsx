@@ -8,6 +8,7 @@ import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
 import {
   formatMetricValue,
   formatMetricValueWithUnit,
+  formatUsdAmount,
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveLabel,
   getReportTypeDescription,
@@ -50,6 +51,23 @@ const statusVariant: Record<
 
 const KPI_COLORS: Array<'blue' | 'green' | 'orange' | 'red'> = ['blue', 'green', 'orange', 'red'];
 
+function getSubmittedTimestamp(report: {
+  status: 'draft' | 'submitted' | 'approved' | 'rejected';
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  updated_at: string;
+}): string | null {
+  if (report.submitted_at) {
+    return report.submitted_at;
+  }
+
+  if (report.status !== 'draft') {
+    return report.reviewed_at ?? report.updated_at;
+  }
+
+  return null;
+}
+
 export default function AdminReportDetailPage({
   params,
 }: {
@@ -65,6 +83,7 @@ export default function AdminReportDetailPage({
   const report = data?.data;
   const metrics = report?.report_metrics || [];
   const marketingContext = report?.marketing_context;
+  const submittedTimestamp = report ? getSubmittedTimestamp(report) : null;
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
     initialColumn: 'metric_name',
@@ -222,13 +241,14 @@ export default function AdminReportDetailPage({
           </p>
           <p>
             <span className="text-muted-foreground">Submitted At:</span>{' '}
-            {formatDateTime(report.submitted_at)}
+            {submittedTimestamp ? formatDateTime(submittedTimestamp) : '—'}
           </p>
-          {noteSections.summary && (
-            <p>
-              <span className="text-muted-foreground">Notes:</span> {noteSections.summary}
+          <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <p className="text-muted-foreground">Campaign Summary</p>
+            <p className="whitespace-pre-wrap text-foreground">
+              {noteSections.summary || 'No campaign summary was provided for this report.'}
             </p>
-          )}
+          </div>
         </CardContent>
       </Card>
 
@@ -249,6 +269,10 @@ export default function AdminReportDetailPage({
             <p>
               <span className="text-muted-foreground">Primary Channel:</span>{' '}
               {marketingContext.primaryChannel}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Total Spend:</span>{' '}
+              {formatUsdAmount(marketingContext.totalSpend ?? 0)}
             </p>
             <p>
               <span className="text-muted-foreground">Target Audience:</span>{' '}
@@ -396,6 +420,12 @@ export default function AdminReportDetailPage({
               <p>
                 <span className="text-muted-foreground">Reviewed At:</span>{' '}
                 {formatDateTime(report.reviewed_at)}
+              </p>
+            )}
+            {report.review_notes && (
+              <p>
+                <span className="text-muted-foreground">Review Notes:</span>{' '}
+                {report.review_notes}
               </p>
             )}
           </CardContent>

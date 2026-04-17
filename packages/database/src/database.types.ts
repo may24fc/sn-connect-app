@@ -1349,6 +1349,7 @@ export type Database = {
           report_type: string;
           reviewed_at: string | null;
           reviewed_by: string | null;
+          review_notes: string | null;
           status: string;
           submitted_at: string | null;
           updated_at: string;
@@ -1365,6 +1366,7 @@ export type Database = {
           report_type: string;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          review_notes?: string | null;
           status?: string;
           submitted_at?: string | null;
           updated_at?: string;
@@ -1381,6 +1383,7 @@ export type Database = {
           report_type?: string;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          review_notes?: string | null;
           status?: string;
           submitted_at?: string | null;
           updated_at?: string;
@@ -1948,6 +1951,7 @@ export type Database = {
       user_role: 'employee' | 'intern' | 'admin' | 'super_admin';
       user_status:
         | 'active'
+        | 'inactive'
         | 'on_leave'
         | 'terminated'
         | 'pending_onboarding'
@@ -2127,7 +2131,7 @@ export const Constants = {
       task_priority: ['low', 'medium', 'high', 'urgent'],
       task_status: ['pending', 'in_progress', 'completed', 'cancelled'],
       user_role: ['employee', 'intern', 'admin', 'super_admin'],
-      user_status: ['active', 'on_leave', 'terminated', 'pending_onboarding', 'awaiting_approval'],
+      user_status: ['active', 'inactive', 'on_leave', 'terminated', 'pending_onboarding', 'awaiting_approval'],
       work_arrangement: ['part_time', 'full_time'],
     },
   },

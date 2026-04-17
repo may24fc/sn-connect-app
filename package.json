@@ -39,6 +39,8 @@
     "env:use-prodops": "node scripts/switch-env-target.mjs prodops",
     "check:leadership-accounts": "node scripts/check-leadership-accounts.mjs",
     "check:production-cleanliness": "node scripts/check-production-cleanliness.mjs",
+    "reports:backfill-total-spend": "node scripts/backfill-marketing-total-spend.mjs",
+    "reports:backfill-total-spend:apply": "node scripts/backfill-marketing-total-spend.mjs --apply",
     "notifications:backfill-names": "node scripts/backfill-notification-names.mjs --dry-run",
     "notifications:backfill-names:apply": "node scripts/backfill-notification-names.mjs --apply",
     "notifications:backfill-names:both": "node scripts/run-notification-backfill-targets.mjs",
