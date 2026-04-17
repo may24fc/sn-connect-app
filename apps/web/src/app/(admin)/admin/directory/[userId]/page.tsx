@@ -96,6 +96,8 @@ function getStatusBadgeVariant(
   switch (status) {
     case 'active':
       return 'default';
+    case 'inactive':
+      return 'secondary';
     case 'on_leave':
       return 'secondary';
     case 'terminated':

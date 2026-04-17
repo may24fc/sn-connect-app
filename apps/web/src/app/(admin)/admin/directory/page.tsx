@@ -65,6 +65,7 @@ import {
   Users,
   UserCheck,
   UserPlus,
+  UserX,
   Plus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -85,6 +86,8 @@ function getStatusBadgeVariant(
   switch (status) {
     case 'active':
       return 'default';
+    case 'inactive':
+      return 'secondary';
     case 'on_leave':
       return 'secondary';
     case 'terminated':
@@ -103,6 +106,10 @@ function formatDate(dateStr: string | null): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+function isManageableDirectoryEntry(entry: DirectoryEntry): boolean {
+  return entry.role === 'employee' || entry.role === 'intern';
 }
 
 export default function AdminDirectoryPage(): ReactNode {
@@ -126,6 +133,8 @@ export default function AdminDirectoryPage(): ReactNode {
   // Delete employee state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<DirectoryEntry | null>(null);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [employeeToDeactivate, setEmployeeToDeactivate] = useState<DirectoryEntry | null>(null);
 
   // Edit employee state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -158,24 +167,12 @@ export default function AdminDirectoryPage(): ReactNode {
 
   const deleteEmployeeMutation = useMutation({
     mutationFn: async (entry: DirectoryEntry) => {
-      // If the user has an employee record, delete that; otherwise delete the user record
-      if (entry.employee_id) {
-        const response = await fetch(`/api/employees/${entry.employee_id}`, {
-          method: 'DELETE',
-        });
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({ error: 'Failed to remove employee' }));
-          throw new Error(error.error || 'Failed to remove employee');
-        }
-        return response.json();
-      }
-      // No employee record – soft-delete the user record
       const response = await fetch(`/api/users/${entry.user_id}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to remove user' }));
-        throw new Error(error.error || 'Failed to remove user');
+        const error = await response.json().catch(() => ({ error: 'Failed to remove account' }));
+        throw new Error(error.error || 'Failed to remove account');
       }
       return response.json();
     },
@@ -184,10 +181,37 @@ export default function AdminDirectoryPage(): ReactNode {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       setDeleteDialogOpen(false);
       setEmployeeToDelete(null);
-      addToast({ title: 'Employee deleted', variant: 'success' });
+      addToast({ title: 'Account removed', variant: 'success' });
     },
     onError: () => {
-      addToast({ title: 'Failed to delete employee', variant: 'error' });
+      addToast({ title: 'Failed to remove account', variant: 'error' });
+    },
+  });
+
+  const deactivateEmployeeMutation = useMutation({
+    mutationFn: async (entry: DirectoryEntry) => {
+      const response = await fetch(`/api/users/${entry.user_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'inactive' }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to deactivate account' }));
+        throw new Error(error.error || 'Failed to deactivate account');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setDeactivateDialogOpen(false);
+      setEmployeeToDeactivate(null);
+      addToast({ title: 'Account deactivated', variant: 'success' });
+    },
+    onError: () => {
+      addToast({ title: 'Failed to deactivate account', variant: 'error' });
     },
   });
 
@@ -230,6 +254,11 @@ export default function AdminDirectoryPage(): ReactNode {
   const handleDeleteClick = (entry: DirectoryEntry) => {
     setEmployeeToDelete(entry);
     setDeleteDialogOpen(true);
+  };
+
+  const handleDeactivateClick = (entry: DirectoryEntry) => {
+    setEmployeeToDeactivate(entry);
+    setDeactivateDialogOpen(true);
   };
 
   const handleEditClick = (entry: DirectoryEntry) => {
@@ -524,6 +553,7 @@ export default function AdminDirectoryPage(): ReactNode {
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
                 <SelectItem value="probation">Probation</SelectItem>
                 <SelectItem value="on_leave">On Leave</SelectItem>
                 <SelectItem value="terminated">Terminated</SelectItem>
@@ -740,7 +770,16 @@ export default function AdminDirectoryPage(): ReactNode {
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              {isSuperAdmin && (
+                              {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && entry.status !== 'inactive' && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleDeactivateClick(entry)}>
+                                    <UserX className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                    Deactivate
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && (
                                 <>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
@@ -770,14 +809,14 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
               <Trash2 className="h-5 w-5" />
-              Remove Employee
+              Remove Employee/Intern
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to remove{' '}
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                 {employeeToDelete?.full_name}
               </span>
-              ? This action will soft-delete their employee record. This can be reversed by a database administrator.
+              ? This action will soft-delete their account and linked employee record. This can be reversed by a database administrator.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -800,7 +839,47 @@ export default function AdminDirectoryPage(): ReactNode {
               }}
               disabled={deleteEmployeeMutation.isPending}
             >
-              {deleteEmployeeMutation.isPending ? 'Removing...' : 'Remove Employee'}
+              {deleteEmployeeMutation.isPending ? 'Removing...' : 'Remove Account'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserX className="h-5 w-5" />
+              Deactivate Employee/Intern
+            </DialogTitle>
+            <DialogDescription>
+              This will set{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {employeeToDeactivate?.full_name}
+              </span>{' '}
+              to inactive without removing their directory record.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeactivateDialogOpen(false);
+                setEmployeeToDeactivate(null);
+              }}
+              disabled={deactivateEmployeeMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (employeeToDeactivate) {
+                  deactivateEmployeeMutation.mutate(employeeToDeactivate);
+                }
+              }}
+              disabled={deactivateEmployeeMutation.isPending}
+            >
+              {deactivateEmployeeMutation.isPending ? 'Deactivating...' : 'Deactivate'}
             </Button>
           </DialogFooter>
         </DialogContent>

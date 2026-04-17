@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 export type UserRoleType = 'employee' | 'intern' | 'admin' | 'super_admin';
 export type UserStatusType =
   | 'active'
+  | 'inactive'
   | 'on_leave'
   | 'terminated'
   | 'pending_onboarding'

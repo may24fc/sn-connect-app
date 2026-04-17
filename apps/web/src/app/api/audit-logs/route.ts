@@ -35,6 +35,7 @@ const ACTION_LABELS: Record<string, string> = {
   // Employees
   update_employee: 'Updated an employee record',
   delete_employee: 'Deleted an employee record',
+  deactivate_user: 'Deactivated a user account',
   // Reports
   approve_report: 'Approved a report',
   reject_report: 'Rejected a report',

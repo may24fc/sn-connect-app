@@ -29,6 +29,7 @@ export const UserRoleValues = Object.values(UserRole);
 
 export const UserStatus = {
   Active: 'active',
+  Inactive: 'inactive',
   OnLeave: 'on_leave',
   Terminated: 'terminated',
 } as const;
