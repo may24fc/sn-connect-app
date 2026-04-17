@@ -1,6 +1,4 @@
-import { PDFParse } from 'pdf-parse';
 import { getLangWatchTracer } from 'langwatch/observability';
-import mammoth from 'mammoth';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import {
   claimApplicationEvaluationStatus,
@@ -124,11 +122,13 @@ export const parseResume = inngest.createFunction(
             let extractedText: string;
 
             if (fileData.ext === 'pdf') {
+              const { PDFParse } = await import('pdf-parse');
               const pdf = new PDFParse({ data: new Uint8Array(buffer) });
               const result = await pdf.getText();
               extractedText = result.text;
               await pdf.destroy();
             } else if (fileData.ext === 'docx' || fileData.ext === 'doc') {
+              const mammoth = await import('mammoth');
               const result = await mammoth.extractRawText({ buffer });
               extractedText = result.value;
             } else {
@@ -185,6 +185,70 @@ export const parseResume = inngest.createFunction(
           if (error) {
             throw new Error(`Failed to save parsed resume: ${error.message}`);
           }
+        });
+
+        // For bulk-imported rows with placeholder emails, extract real
+        // name and email from the parsed resume text.
+        await step.run('extract-contact-info', async () => {
+          const supabase = createSupabaseAdminClient();
+
+          const { data: app } = await supabase
+            .from('job_applications')
+            .select('email, full_name')
+            .eq('id', applicationId)
+            .single();
+
+          if (!app) return;
+
+          const isPlaceholder = app.email?.endsWith('@placeholder.local');
+          if (!isPlaceholder) return;
+
+          const updates: Record<string, string> = {};
+
+          // Extract email from resume text
+          const emailMatch = truncated.match(
+            /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/,
+          );
+          if (emailMatch) {
+            const extracted = emailMatch[0].toLowerCase();
+            // Skip obviously fake/example emails
+            if (
+              !extracted.endsWith('@example.com') &&
+              !extracted.endsWith('@placeholder.local')
+            ) {
+              updates.email = extracted;
+            }
+          }
+
+          // Extract name: first non-empty line that looks like a name
+          // (no digits, no @, 2-5 words, under 60 chars)
+          const lines = truncated.split('\n').map((l) => l.trim()).filter(Boolean);
+          for (const line of lines.slice(0, 10)) {
+            const clean = line.replace(/^#+\s*/, '').trim();
+            if (
+              clean.length >= 3 &&
+              clean.length <= 60 &&
+              !/\d/.test(clean) &&
+              !clean.includes('@') &&
+              !clean.includes('http') &&
+              !clean.includes(':') &&
+              clean.split(/\s+/).length >= 2 &&
+              clean.split(/\s+/).length <= 5
+            ) {
+              updates.full_name = clean;
+              break;
+            }
+          }
+
+          if (Object.keys(updates).length === 0) return;
+
+          updates.updated_at = new Date().toISOString();
+
+          await supabase
+            .from('job_applications')
+            .update(updates)
+            .eq('id', applicationId)
+            .is('deleted_at', null);
         });
 
         await step.sendEvent('trigger-evaluation', {

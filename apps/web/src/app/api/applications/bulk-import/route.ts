@@ -37,6 +37,9 @@ function nameFromFilename(filename: string): string {
   const cleanedTokens = withoutExt
     .replace(/[()\[\]{}]+/g, ' ')
     .replace(/[._-]+/g, ' ')
+    // Split camelCase / PascalCase boundaries: "ResumeArabellaAndrada" → "Resume Arabella Andrada"
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
     .replace(/\b\d{4}(?:\d{2})?(?:\d{2})?\b/g, ' ')
     .split(/\s+/)
     .map((token) => token.trim())

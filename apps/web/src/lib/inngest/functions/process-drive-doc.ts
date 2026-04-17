@@ -1,4 +1,3 @@
-import { google } from 'googleapis';
 import { generateBatchEmbeddings } from '@hr-portal/ai';
 import { chunkText } from '@hr-portal/ai/drive-chunking';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
@@ -38,6 +37,7 @@ export const processDriveDoc = inngest.createFunction(
     const { fileId } = event.data;
 
     const docText = await step.run('fetch-google-doc', async () => {
+      const { google } = await import('googleapis');
       const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
       const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(
         /\\n/g,
