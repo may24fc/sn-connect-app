@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateJobPostingSchema } from '@/lib/schemas/job.schema';
-import { getAuthedSupabase, isJobAdmin } from '../_lib';
+import { getAuthedSupabase, hasAtsAccess } from '../_lib';
 
 function normalizeJobPosting<T extends Record<string, unknown>>(row: T) {
   const requisitions = Array.isArray(row.job_requisitions) ? row.job_requisitions : [];
@@ -22,13 +22,13 @@ interface Params {
 export async function GET(_request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -53,13 +53,13 @@ export async function GET(_request: NextRequest, { params }: Params) {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -156,13 +156,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(_request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

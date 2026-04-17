@@ -11,7 +11,6 @@ import {
 } from '@/hooks/useJobMutations';
 import { useRealtimeApplications } from '@/hooks/useRealtimeApplications';
 import { useTableSort } from '@/hooks/useTableSort';
-import { useAuth } from '@/contexts/AuthContext';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
@@ -81,7 +80,9 @@ import {
   XCircle,
 } from 'lucide-react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 // ── Remove-confirmation dialog state ──
 type RemoveTarget = { id: string; name: string } | null;
@@ -162,11 +163,11 @@ function renderAiEvaluationBadge(application: ApplicationRecord) {
   return <span className="text-xs text-zinc-400">—</span>;
 }
 
-export default function ApplicationsPage() {
-  const { user } = useAuth();
-  const handleBack = useBackNavigation({ fallbackPath: '/admin/jobs' });
+export default function ApplicationsPage(): ReactNode {
+  const pathname = usePathname();
+  const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
+  const handleBack = useBackNavigation({ fallbackPath: `${basePath}/jobs` });
   const { addToast } = useToast();
-  const isAdmin = user?.role === 'admin';
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -209,7 +210,7 @@ export default function ApplicationsPage() {
 
   useRealtimeApplications({
     applicationId: selectedApplicationId,
-    enabled: Boolean(user),
+    enabled: true,
   });
 
   // Bulk import state
@@ -685,13 +686,13 @@ export default function ApplicationsPage() {
                                   Move to interview
                                 </DropdownMenuItem>
                               )}
-                              {app.status === 'interview' && isAdmin && (
+                              {app.status === 'interview' && (
                                 <DropdownMenuItem onSelect={() => void handleStatusChange(app.id, 'approved')}>
                                   <CheckCircle className="mr-2 h-4 w-4" />
                                   Approve candidate
                                 </DropdownMenuItem>
                               )}
-                              {app.status === 'approved' && isAdmin && (
+                              {app.status === 'approved' && (
                                 <DropdownMenuItem onSelect={() => void handleHire(app.id)}>
                                   <UserCheck className="mr-2 h-4 w-4" />
                                   Mark as hired
@@ -1105,7 +1106,7 @@ export default function ApplicationsPage() {
                   )}
 
                   {/* Approve after interview */}
-                  {isAdmin && selectedApp.status === 'interview' && (
+                  {selectedApp.status === 'interview' && (
                     <Button
                       size="sm"
                       onClick={() => handleStatusChange(selectedApp.id, 'approved')}
@@ -1118,8 +1119,7 @@ export default function ApplicationsPage() {
                   )}
 
                   {/* Final approval override for earlier stages */}
-                  {isAdmin &&
-                    selectedApp.status !== 'interview' &&
+                  {selectedApp.status !== 'interview' &&
                     selectedApp.status !== 'approved' &&
                     selectedApp.status !== 'hired' &&
                     selectedApp.status !== 'rejected' && (
@@ -1135,7 +1135,7 @@ export default function ApplicationsPage() {
                     )}
 
                   {/* Mark as hired after approval */}
-                  {isAdmin && selectedApp.status === 'approved' && (
+                  {selectedApp.status === 'approved' && (
                     <Button
                       size="sm"
                       onClick={() => handleHire(selectedApp.id)}

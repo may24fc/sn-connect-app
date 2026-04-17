@@ -1,7 +1,7 @@
 'use client';
 
 import { StatCard, StatCardGrid } from '@/components/data-display';
-import { useRequireAuth } from '@/contexts/AuthContext';
+import { AtsAccessManagerButton } from '@/components/admin/AtsAccessManagerDialog';
 import { useApplications } from '@/hooks/useApplications';
 import { useJobPostings } from '@/hooks/useJobPostings';
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, EmptyState } from '@hr-portal/ui';
@@ -18,6 +18,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 
@@ -54,7 +55,9 @@ function formatDate(value: string): string {
 }
 
 export default function AdminRecruitmentPage(): ReactNode {
-  const user = useRequireAuth(['admin']);
+  const pathname = usePathname();
+  const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
+  const showAccessManager = basePath === '/admin';
   const {
     data: jobsData,
     isLoading: isJobsLoading,
@@ -140,10 +143,6 @@ export default function AdminRecruitmentPage(): ReactNode {
       .slice(0, 5);
   }, [applications]);
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="h-full space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -157,14 +156,15 @@ export default function AdminRecruitmentPage(): ReactNode {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {showAccessManager ? <AtsAccessManagerButton /> : null}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`${basePath}/jobs/archive`}>View archive</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`${basePath}/jobs/applications`}>Review applicants</Link>
+          </Button>
           <Button asChild size="sm">
-            <Link href="/admin/jobs">Manage postings</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/jobs/applications">Review applicants</Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/admin/jobs/archive">View archive</Link>
+            <Link href={`${basePath}/jobs`}>Manage postings</Link>
           </Button>
         </div>
       </div>
@@ -212,7 +212,7 @@ export default function AdminRecruitmentPage(): ReactNode {
               </p>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link href="/admin/jobs">
+              <Link href={`${basePath}/jobs`}>
                 All postings
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -231,7 +231,7 @@ export default function AdminRecruitmentPage(): ReactNode {
                 description="Create a posting to start tracking headcount, applicants, and hires from one place."
                 action={{
                   label: 'Create a posting',
-                  href: '/admin/jobs',
+                  href: `${basePath}/jobs`,
                 }}
               />
             ) : (
@@ -301,7 +301,7 @@ export default function AdminRecruitmentPage(): ReactNode {
                 </p>
               </div>
               <Button asChild variant="ghost" size="sm">
-                <Link href="/admin/jobs/applications">
+                <Link href={`${basePath}/jobs/applications`}>
                   Open pipeline
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -339,7 +339,7 @@ export default function AdminRecruitmentPage(): ReactNode {
                 </p>
               </div>
               <Button asChild variant="ghost" size="sm">
-                <Link href="/admin/jobs/applications">
+                <Link href={`${basePath}/jobs/applications`}>
                   Review queue
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -374,6 +374,11 @@ export default function AdminRecruitmentPage(): ReactNode {
                         <div className="text-xs text-zinc-500 dark:text-zinc-400">
                           Applied {formatDate(candidate.created_at)}
                         </div>
+                        {candidate.reviewer_display_name ? (
+                          <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                            Updated by {candidate.reviewer_display_name}
+                          </div>
+                          ) : null}
                       </div>
                       <Badge
                         variant={candidate.status === 'hired' ? 'success' : candidate.status === 'approved' ? 'warning' : 'secondary'}
@@ -396,7 +401,7 @@ export default function AdminRecruitmentPage(): ReactNode {
             </CardHeader>
             <CardContent>
               <Button asChild variant="outline" size="sm">
-                <Link href="/admin/jobs/archive">
+                <Link href={`${basePath}/jobs/archive`}>
                   <Archive className="h-4 w-4" strokeWidth={1.5} />
                   Open archived postings
                 </Link>

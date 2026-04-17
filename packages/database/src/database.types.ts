@@ -210,6 +210,51 @@ export type Database = {
           },
         ];
       };
+      ats_access_grants: {
+        Row: {
+          access_level: string;
+          created_at: string;
+          deleted_at: string | null;
+          granted_by: string | null;
+          id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          access_level?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          granted_by?: string | null;
+          id?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          access_level?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          granted_by?: string | null;
+          id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ats_access_grants_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ats_access_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       audit_logs: {
         Row: {
           id: string;
@@ -1899,6 +1944,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      user_has_ats_access: { Args: { target_user_id: string }; Returns: boolean };
       user_is_admin: { Args: { user_id: string }; Returns: boolean };
     };
     Enums: {

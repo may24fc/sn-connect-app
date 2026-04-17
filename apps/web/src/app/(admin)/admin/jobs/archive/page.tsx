@@ -24,6 +24,8 @@ import {
 } from '@hr-portal/ui';
 import { AlertCircle, Archive, ArrowLeft, Loader2, RotateCcw, Search } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { useState } from 'react';
 
 function useArchivedJobs(search?: string) {
@@ -45,7 +47,9 @@ function useArchivedJobs(search?: string) {
   });
 }
 
-export default function ArchivedJobsPage() {
+export default function AdminArchivedJobsPage(): ReactNode {
+  const pathname = usePathname();
+  const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
   const { addToast } = useToast();
   const [search, setSearch] = useState('');
 
@@ -94,7 +98,7 @@ export default function ArchivedJobsPage() {
         <div className="flex items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-3">
             <Link
-              href="/admin/jobs"
+              href={`${basePath}/jobs`}
               className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
             >
               <ArrowLeft className="h-5 w-5" />

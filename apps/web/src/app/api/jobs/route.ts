@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { jobPostingFiltersSchema, createJobPostingSchema } from '@/lib/schemas/job.schema';
-import { getAuthedSupabase, isJobAdmin } from './_lib';
+import { getAuthedSupabase, hasAtsAccess } from './_lib';
 
 function normalizeJobPosting<T extends Record<string, unknown>>(row: T) {
   const requisitions = Array.isArray(row.job_requisitions) ? row.job_requisitions : [];
@@ -17,13 +17,13 @@ function normalizeJobPosting<T extends Record<string, unknown>>(row: T) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -84,13 +84,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

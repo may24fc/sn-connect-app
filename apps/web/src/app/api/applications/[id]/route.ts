@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateApplicationStatusSchema } from '@/lib/schemas/job.schema';
 import { sendApplicationStatusUpdate } from '@/lib/email';
-import { getAuthedSupabase, isJobAdmin } from '../../jobs/_lib';
+import { getAuthedSupabase, hasAtsAccess, resolveReviewerIdentities } from '../../jobs/_lib';
 
 function normalizeApplication<T extends Record<string, unknown>>(row: T) {
   const jobPosting =
@@ -34,13 +34,13 @@ interface Params {
 export async function GET(_request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -55,7 +55,16 @@ export async function GET(_request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data: normalizeApplication(data as Record<string, unknown>) });
+    const normalized = normalizeApplication(data as Record<string, unknown>);
+    const reviewerId = typeof normalized.reviewed_by === 'string' ? normalized.reviewed_by : null;
+    const identities = reviewerId ? await resolveReviewerIdentities([reviewerId]) : new Map();
+
+    return NextResponse.json({
+      data: {
+        ...normalized,
+        reviewer_display_name: reviewerId ? (identities.get(reviewerId)?.displayName ?? null) : null,
+      },
+    });
   } catch (error) {
     console.error('Error in GET /api/applications/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -65,13 +74,13 @@ export async function GET(_request: NextRequest, { params }: Params) {
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -129,7 +138,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       console.error('[Email] Unhandled error sending status update:', err);
     });
 
-    return NextResponse.json({ data: normalizeApplication(data as Record<string, unknown>) });
+    const normalized = normalizeApplication(data as Record<string, unknown>);
+    const reviewerId = typeof normalized.reviewed_by === 'string' ? normalized.reviewed_by : null;
+    const identities = reviewerId ? await resolveReviewerIdentities([reviewerId]) : new Map();
+
+    return NextResponse.json({
+      data: {
+        ...normalized,
+        reviewer_display_name: reviewerId ? (identities.get(reviewerId)?.displayName ?? null) : null,
+      },
+    });
   } catch (error) {
     console.error('Error in PATCH /api/applications/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -139,13 +157,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(_request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

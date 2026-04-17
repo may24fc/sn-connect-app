@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/app/api/jobs/_lib', () => ({
   getAuthedSupabase: vi.fn(),
-  isJobAdmin: vi.fn(),
+  hasAtsAccess: vi.fn(),
 }));
 
 import { POST } from '@/app/api/jobs/route';
-import { getAuthedSupabase, isJobAdmin } from '@/app/api/jobs/_lib';
+import { getAuthedSupabase, hasAtsAccess } from '@/app/api/jobs/_lib';
 
 describe('/api/jobs route', () => {
   beforeEach(() => {
@@ -22,6 +22,7 @@ describe('/api/jobs route', () => {
       supabase: {},
       user: null,
       role: null,
+      hasAtsGrant: false,
       error: 'Unauthorized',
     });
 
@@ -42,9 +43,10 @@ describe('/api/jobs route', () => {
       supabase: {},
       user: { id: 'user-1' },
       role: 'employee',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(false);
+    vi.mocked(hasAtsAccess).mockReturnValue(false);
 
     const response = await POST(
       new Request('http://localhost/api/jobs', {
@@ -63,9 +65,10 @@ describe('/api/jobs route', () => {
       supabase: {},
       user: { id: 'user-1' },
       role: 'admin',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(true);
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
 
     const response = await POST(
       new Request('http://localhost/api/jobs', {
@@ -101,9 +104,10 @@ describe('/api/jobs route', () => {
       supabase,
       user: { id: 'admin-1' },
       role: 'admin',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(true);
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
 
     const payload = {
       title: 'QA Role',
@@ -170,9 +174,10 @@ describe('/api/jobs route', () => {
       supabase,
       user: { id: 'admin-1' },
       role: 'admin',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(true);
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
 
     const response = await POST(
       new Request('http://localhost/api/jobs', {
@@ -190,5 +195,48 @@ describe('/api/jobs route', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: 'Total headcount must be at least 1' });
+  });
+
+  it('allows ATS-granted non-admin users to create jobs', async () => {
+    const rpc = vi.fn(async () => ({
+      data: {
+        id: 'job-2',
+        title: 'Recruitment Coordinator',
+        is_active: true,
+        job_requisition: {
+          id: 'req-2',
+          total_headcount: 1,
+          filled_headcount: 0,
+          status: 'open',
+        },
+      },
+      error: null,
+    }));
+    const supabase = { rpc };
+
+    vi.mocked(getAuthedSupabase).mockResolvedValue({
+      supabase,
+      user: { id: 'employee-1' },
+      role: 'employee',
+      hasAtsGrant: true,
+      error: null,
+    });
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
+
+    const response = await POST(
+      new Request('http://localhost/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Recruitment Coordinator',
+          total_headcount: 1,
+          employment_type: 'full-time',
+          description: 'ATS delegate should be able to create postings.',
+          is_active: true,
+        }),
+      }) as never
+    );
+
+    expect(response.status).toBe(201);
   });
 });

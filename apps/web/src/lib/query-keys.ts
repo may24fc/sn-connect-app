@@ -489,6 +489,12 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.applications.details(), id] as const,
   },
 
+  ats: {
+    all: ['ats'] as const,
+    access: () => [...queryKeys.ats.all, 'access'] as const,
+    accessGrants: () => [...queryKeys.ats.all, 'access-grants'] as const,
+  },
+
   // Tickets
   tickets: {
     all: ['tickets'] as const,

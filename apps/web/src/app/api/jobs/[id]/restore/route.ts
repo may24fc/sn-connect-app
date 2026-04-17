@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase, isJobAdmin } from '../../_lib';
+import { getAuthedSupabase, hasAtsAccess } from '../../_lib';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -8,13 +8,13 @@ interface RouteContext {
 export async function POST(_: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

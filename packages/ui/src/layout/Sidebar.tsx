@@ -45,7 +45,13 @@ export interface SidebarProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   showMarketingReports?: boolean;
+  showAtsAccess?: boolean;
 }
+
+const employeeAtsNavItems: Array<NavItem> = [
+  { label: 'Recruitment', href: '/ats/recruitment', icon: Briefcase },
+  { label: 'Jobs', href: '/ats/jobs', icon: ClipboardList },
+];
 
 // Employee navigation
 const employeeNavItems: Array<NavItem> = [
@@ -121,6 +127,7 @@ export function Sidebar({
   collapsed = false,
   onToggleCollapse,
   showMarketingReports = true,
+  showAtsAccess = false,
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
     variant === 'employee'
@@ -131,7 +138,7 @@ export function Sidebar({
           ? superAdminNavItems
           : adminNavItems;
 
-  const navItems = baseNavItems.filter((item) => {
+  const filteredNavItems = baseNavItems.filter((item) => {
     if (variant === 'employee' && !showMarketingReports && item.href === '/reports') {
       return false;
     }
@@ -142,6 +149,11 @@ export function Sidebar({
 
     return true;
   });
+
+  const navItems =
+    (variant === 'employee' || variant === 'intern') && showAtsAccess
+      ? [...filteredNavItems, ...employeeAtsNavItems]
+      : filteredNavItems;
 
   return (
     <TooltipProvider delayDuration={0}>

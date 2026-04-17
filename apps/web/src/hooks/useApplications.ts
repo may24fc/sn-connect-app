@@ -18,6 +18,7 @@ export interface ApplicationRecord {
   notes: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  reviewer_display_name: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

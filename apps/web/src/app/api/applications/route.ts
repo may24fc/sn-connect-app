@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { applicationFiltersSchema } from '@/lib/schemas/job.schema';
-import { getAuthedSupabase, isJobAdmin } from '../jobs/_lib';
+import { getAuthedSupabase, hasAtsAccess, resolveReviewerIdentities } from '../jobs/_lib';
 
 function normalizeApplication<T extends Record<string, unknown>>(row: T) {
   const jobPosting =
@@ -26,15 +26,19 @@ function normalizeApplication<T extends Record<string, unknown>>(row: T) {
   };
 }
 
+type ApplicationRow = Record<string, unknown> & {
+  reviewed_by?: unknown;
+};
+
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -91,8 +95,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch applications' }, { status: 500 });
     }
 
+    const reviewerIdentities = await resolveReviewerIdentities(
+      (data ?? [])
+        .map((row: ApplicationRow) => (typeof row.reviewed_by === 'string' ? row.reviewed_by : null))
+        .filter((value: string | null): value is string => Boolean(value)),
+    );
+
     return NextResponse.json({
-      data: (data ?? []).map((row: Record<string, unknown>) => normalizeApplication(row)),
+      data: (data ?? []).map((row: ApplicationRow) => {
+        const normalizedRow = normalizeApplication(row);
+        const reviewedBy = typeof normalizedRow.reviewed_by === 'string' ? normalizedRow.reviewed_by : null;
+
+        return {
+          ...normalizedRow,
+          reviewer_display_name: reviewedBy ? (reviewerIdentities.get(reviewedBy)?.displayName ?? null) : null,
+        };
+      }),
       pagination: {
         page: filters.page,
         pageSize: filters.pageSize,

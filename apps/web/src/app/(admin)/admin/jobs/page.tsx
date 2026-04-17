@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useTableSort } from '@/hooks/useTableSort';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
+import { AtsAccessManagerButton } from '@/components/admin/AtsAccessManagerDialog';
 import { formatDate } from '@/lib/format';
 import {
   Badge,
@@ -46,6 +47,8 @@ import {
 } from '@hr-portal/ui';
 import { AlertCircle, Archive, Briefcase, ChevronDown, Edit, Loader2, Plus, Search } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
 interface JobFormData {
@@ -80,7 +83,10 @@ const EMPTY_FORM: JobFormData = {
   closes_at: '',
 };
 
-export default function AdminJobsPage() {
+export default function AdminJobsPage(): ReactNode {
+  const pathname = usePathname();
+  const basePath = pathname.startsWith('/ats') ? '/ats' : '/admin';
+  const showAccessManager = basePath === '/admin';
   const { addToast } = useToast();
   const { data: businessUnits = [] } = useQuery({
     queryKey: ['business-units-list'],
@@ -250,14 +256,15 @@ export default function AdminJobsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {showAccessManager ? <AtsAccessManagerButton /> : null}
             <Button asChild variant="outline" size="sm">
-              <Link href="/admin/jobs/archive">
+              <Link href={`${basePath}/jobs/archive`}>
                 <Archive className="h-4 w-4 mr-1.5" />
                 View Archive
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link href="/admin/jobs/applications">View Applications</Link>
+              <Link href={`${basePath}/jobs/applications`}>View Applications</Link>
             </Button>
             <Button
               onClick={openCreateForm}
@@ -435,7 +442,7 @@ export default function AdminJobsPage() {
                               Edit posting
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                              <Link href="/admin/jobs/applications">View applications</Link>
+                              <Link href={`${basePath}/jobs/applications`}>View applications</Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem

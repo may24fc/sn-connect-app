@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase, isJobAdmin } from '../../../jobs/_lib';
+import { getAuthedSupabase, hasAtsAccess } from '../../../jobs/_lib';
 import {
   getApplicationEvaluationStatus,
   resetApplicationEvaluationState,
@@ -20,13 +20,13 @@ interface Params {
 export async function POST(_request: NextRequest, { params }: Params) {
   try {
     const { id } = await params;
-    const { supabase, user, role, error: authError } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error: authError } = await getAuthedSupabase();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

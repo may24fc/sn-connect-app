@@ -1,15 +1,15 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase, isJobAdmin } from '../_lib';
+import { getAuthedSupabase, hasAtsAccess } from '../_lib';
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

@@ -17,6 +17,7 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/hooks/useNotifications';
+import { useAtsAccess } from '@/hooks/useAtsAccess';
 import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
 import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
@@ -111,6 +112,7 @@ function EmployeeLayoutInner({
   const { startTour, currentGroup } = useTour();
   const { theme, setTheme } = useTheme();
   const marketingReportsAccess = useMarketingReportsAccess();
+  const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'intern');
 
   // Determine sidebar variant based on user role
   const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
@@ -126,6 +128,7 @@ function EmployeeLayoutInner({
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           showMarketingReports={marketingReportsAccess.canAccess}
+          showAtsAccess={Boolean(atsAccess.data?.canAccess)}
         />
       </div>
 
@@ -139,6 +142,7 @@ function EmployeeLayoutInner({
               currentPath={pathname}
               onNavigate={onNavigate}
               showMarketingReports={marketingReportsAccess.canAccess}
+              showAtsAccess={Boolean(atsAccess.data?.canAccess)}
             />
           </div>
         </div>
