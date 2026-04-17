@@ -1,5 +1,6 @@
 import { getLangWatchTracer } from 'langwatch/observability';
 import { extractText, getDocumentProxy } from 'unpdf';
+import { extractApplicantContactInfoFromResumeText } from '@/lib/ats/resume-contact';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import {
   claimApplicationEvaluationStatus,
@@ -203,42 +204,7 @@ export const parseResume = inngest.createFunction(
           const isPlaceholder = app.email?.endsWith('@placeholder.local');
           if (!isPlaceholder) return;
 
-          const updates: Record<string, string> = {};
-
-          // Extract email from resume text
-          const emailMatch = truncated.match(
-            /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/,
-          );
-          if (emailMatch) {
-            const extracted = emailMatch[0].toLowerCase();
-            // Skip obviously fake/example emails
-            if (
-              !extracted.endsWith('@example.com') &&
-              !extracted.endsWith('@placeholder.local')
-            ) {
-              updates.email = extracted;
-            }
-          }
-
-          // Extract name: first non-empty line that looks like a name
-          // (no digits, no @, 2-5 words, under 60 chars)
-          const lines = truncated.split('\n').map((l) => l.trim()).filter(Boolean);
-          for (const line of lines.slice(0, 10)) {
-            const clean = line.replace(/^#+\s*/, '').trim();
-            if (
-              clean.length >= 3 &&
-              clean.length <= 60 &&
-              !/\d/.test(clean) &&
-              !clean.includes('@') &&
-              !clean.includes('http') &&
-              !clean.includes(':') &&
-              clean.split(/\s+/).length >= 2 &&
-              clean.split(/\s+/).length <= 5
-            ) {
-              updates.full_name = clean;
-              break;
-            }
-          }
+          const updates = extractApplicantContactInfoFromResumeText(truncated) as Record<string, string>;
 
           if (Object.keys(updates).length === 0) return;
 

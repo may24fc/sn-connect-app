@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { extractText, getDocumentProxy } from 'unpdf';
+import { extractApplicantContactInfoFromResumeText } from '@/lib/ats/resume-contact';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
-import { getAuthedSupabase, isJobAdmin } from '../../jobs/_lib';
+import { getAuthedSupabase, hasAtsAccess } from '../../jobs/_lib';
 import { inngest } from '@/lib/inngest/client';
 
 export const runtime = 'nodejs';
@@ -55,15 +57,43 @@ function nameFromFilename(filename: string): string {
     .join(' ');
 }
 
+async function extractResumeText(buffer: Buffer, ext: string): Promise<string> {
+  if (ext === '.pdf') {
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    try {
+      const { text } = await extractText(pdf, { mergePages: true });
+      return text
+        .replace(/\r\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .replace(/[ \t]+/g, ' ')
+        .trim();
+    } finally {
+      await pdf.destroy();
+    }
+  }
+
+  if (ext === '.docx' || ext === '.doc') {
+    const mammoth = await import('mammoth');
+    const result = await mammoth.extractRawText({ buffer });
+    return result.value
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+/g, ' ')
+      .trim();
+  }
+
+  return '';
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { supabase, user, role, error: authError } = await getAuthedSupabase();
+    const { supabase, user, role, hasAtsGrant, error: authError } = await getAuthedSupabase();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isJobAdmin(role)) {
+    if (!hasAtsAccess(role, hasAtsGrant)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -142,6 +172,20 @@ export async function POST(request: NextRequest) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
+        let applicantIdentity: {
+          email?: string;
+          full_name?: string;
+        } = {};
+
+        try {
+          const extractedText = await extractResumeText(buffer, ext);
+          if (extractedText.length > 0) {
+            applicantIdentity = extractApplicantContactInfoFromResumeText(extractedText);
+          }
+        } catch (contactError) {
+          console.error('[ATS] Failed to extract applicant contact info during import:', contactError);
+        }
+
         // Upload to Supabase Storage
         const { error: uploadError } = await adminClient.storage
           .from(APPLICATION_RESUMES_BUCKET)
@@ -160,8 +204,8 @@ export async function POST(request: NextRequest) {
           .from('job_applications')
           .insert({
             job_posting_id: jobPostingId,
-            full_name: nameFromFilename(file.name),
-            email: `imported-${crypto.randomUUID().slice(0, 8)}@placeholder.local`,
+            full_name: applicantIdentity.full_name ?? nameFromFilename(file.name),
+            email: applicantIdentity.email ?? `imported-${crypto.randomUUID().slice(0, 8)}@placeholder.local`,
             cv_url: storagePath,
             resume_url: storagePath,
             status: 'pending',

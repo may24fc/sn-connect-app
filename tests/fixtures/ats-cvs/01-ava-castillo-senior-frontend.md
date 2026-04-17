@@ -1,7 +1,7 @@
 # Ava Castillo
 
 Manila, Philippines  
-ava.castillo@example.com  
+cefjumaoas29@gmail.com  
 +63 917 555 0141  
 LinkedIn: linkedin.com/in/avacastillo  
 Portfolio: avacastillo.dev

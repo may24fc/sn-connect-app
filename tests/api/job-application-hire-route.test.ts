@@ -2,15 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/app/api/jobs/_lib', () => ({
   getAuthedSupabase: vi.fn(),
-  isJobAdmin: vi.fn(),
+  hasAtsAccess: vi.fn(),
 }));
 
 vi.mock('@/lib/audit', () => ({
   logActivity: vi.fn(),
 }));
 
+vi.mock('@/lib/email', () => ({
+  sendApplicationStatusUpdate: vi.fn(() => Promise.resolve()),
+}));
+
 import { POST } from '@/app/api/applications/[id]/hire/route';
-import { getAuthedSupabase, isJobAdmin } from '@/app/api/jobs/_lib';
+import { getAuthedSupabase, hasAtsAccess } from '@/app/api/jobs/_lib';
 import { logActivity } from '@/lib/audit';
 
 describe('/api/applications/[id]/hire route', () => {
@@ -27,6 +31,7 @@ describe('/api/applications/[id]/hire route', () => {
       supabase: {},
       user: null,
       role: null,
+      hasAtsGrant: false,
       error: 'Unauthorized',
     });
 
@@ -43,9 +48,10 @@ describe('/api/applications/[id]/hire route', () => {
       supabase: {},
       user: { id: 'user-1' },
       role: 'employee',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(false);
+    vi.mocked(hasAtsAccess).mockReturnValue(false);
 
     const response = await POST(new Request('http://localhost/api/applications/app-1/hire') as never, {
       params: Promise.resolve({ id: 'app-1' }),
@@ -56,6 +62,17 @@ describe('/api/applications/[id]/hire route', () => {
   });
 
   it('calls the hire RPC and logs activity on success', async () => {
+    const single = vi.fn(async () => ({
+      data: {
+        email: 'candidate@example.com',
+        full_name: 'Candidate One',
+        job_postings: { title: 'QA Role' },
+      },
+      error: null,
+    }));
+    const is = vi.fn(() => ({ single }));
+    const eq = vi.fn(() => ({ is }));
+    const select = vi.fn(() => ({ eq }));
     const rpc = vi.fn(async () => ({
       data: {
         applicationId: 'app-1',
@@ -70,15 +87,19 @@ describe('/api/applications/[id]/hire route', () => {
       },
       error: null,
     }));
-    const supabase = { rpc };
+    const supabase = {
+      rpc,
+      from: vi.fn(() => ({ select })),
+    };
 
     vi.mocked(getAuthedSupabase).mockResolvedValue({
       supabase,
       user: { id: 'admin-1' },
       role: 'admin',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(true);
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
 
     const response = await POST(new Request('http://localhost/api/applications/app-1/hire') as never, {
       params: Promise.resolve({ id: 'app-1' }),
@@ -88,6 +109,7 @@ describe('/api/applications/[id]/hire route', () => {
     expect(rpc).toHaveBeenCalledWith('hire_job_application_transaction', {
       application_uuid: 'app-1',
     });
+    expect(supabase.from).toHaveBeenCalledWith('job_applications');
     expect(logActivity).toHaveBeenCalledWith(supabase, {
       userId: 'admin-1',
       action: 'hire_job_application',
@@ -132,9 +154,10 @@ describe('/api/applications/[id]/hire route', () => {
       supabase,
       user: { id: 'admin-1' },
       role: 'admin',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(true);
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
 
     const response = await POST(new Request('http://localhost/api/applications/missing/hire') as never, {
       params: Promise.resolve({ id: 'missing' }),
@@ -156,9 +179,10 @@ describe('/api/applications/[id]/hire route', () => {
       supabase,
       user: { id: 'admin-1' },
       role: 'admin',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(true);
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
 
     const response = await POST(new Request('http://localhost/api/applications/app-1/hire') as never, {
       params: Promise.resolve({ id: 'app-1' }),
@@ -182,9 +206,10 @@ describe('/api/applications/[id]/hire route', () => {
       supabase,
       user: { id: 'admin-1' },
       role: 'admin',
+      hasAtsGrant: false,
       error: null,
     });
-    vi.mocked(isJobAdmin).mockReturnValue(true);
+    vi.mocked(hasAtsAccess).mockReturnValue(true);
 
     const response = await POST(new Request('http://localhost/api/applications/app-1/hire') as never, {
       params: Promise.resolve({ id: 'app-1' }),
