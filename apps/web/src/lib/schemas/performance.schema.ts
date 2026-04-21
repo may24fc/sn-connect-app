@@ -216,6 +216,12 @@ export const createKPIEvidenceSchema = z.object({
   label: z.string().max(200).optional().nullable(),
 });
 
+export const createOKRTargetEvidenceSchema = z.object({
+  evidenceType: z.enum(['link', 'note', 'file']),
+  content: z.string().min(1).max(2000),
+  label: z.string().max(200).optional().nullable(),
+});
+
 export const probationExtendSchema = z.object({
   action: z.literal('extend'),
   employeeId: z.string().uuid(),
@@ -252,4 +258,5 @@ export type CreateOKRTargetInput = z.infer<typeof createOKRTargetSchema>;
 export type UpdateOKRTargetInput = z.infer<typeof updateOKRTargetSchema>;
 export type CreateKPIInput = z.infer<typeof createKPISchema>;
 export type UpdateKPIInput = z.infer<typeof updateKPISchema>;
+export type CreateOKRTargetEvidenceInput = z.infer<typeof createOKRTargetEvidenceSchema>;
 export type ProbationActionInput = z.infer<typeof probationActionSchema>;

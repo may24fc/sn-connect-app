@@ -1,5 +1,8 @@
 import { queryKeys } from '@/lib/query-keys';
-import type { CreateReviewCycleInput, UpdateReviewCycleInput } from '@/lib/schemas/performance.schema';
+import type {
+  CreateReviewCycleInput,
+  UpdateReviewCycleInput,
+} from '@/lib/schemas/performance.schema';
 import type {
   KPI,
   KPIType,
@@ -120,12 +123,8 @@ function toUiCycle(row: ReviewCycleRow): PerformanceCycle {
     startDate: row.start_date,
     endDate: row.end_date,
     status: mapCycleStatus(row.status),
-    ...(row.okr_submission_deadline
-      ? { okrSubmissionDeadline: row.okr_submission_deadline }
-      : {}),
-    ...(row.kpi_submission_deadline
-      ? { kpiSubmissionDeadline: row.kpi_submission_deadline }
-      : {}),
+    ...(row.okr_submission_deadline ? { okrSubmissionDeadline: row.okr_submission_deadline } : {}),
+    ...(row.kpi_submission_deadline ? { kpiSubmissionDeadline: row.kpi_submission_deadline } : {}),
     ...(row.self_review_deadline ? { selfAssessmentDeadline: row.self_review_deadline } : {}),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -262,6 +261,21 @@ export function usePerformanceOKRs(cycleId?: string) {
     queryKey: [...queryKeys.performance.okrs(), cycleId || 'all'],
     queryFn: async (): Promise<Array<OKR>> => {
       const params = new URLSearchParams();
+      if (cycleId) params.set('cycleId', cycleId);
+      const response = await fetch(`/api/performance/okrs?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch OKRs');
+      const payload = (await response.json()) as { data: Array<OkrRow> };
+      return (payload.data || []).map(toUiOKR);
+    },
+  });
+}
+
+export function useMyPerformanceOKRs(cycleId?: string) {
+  return useQuery({
+    queryKey: [...queryKeys.performance.okrs(), 'self', cycleId || 'all'],
+    queryFn: async (): Promise<Array<OKR>> => {
+      const params = new URLSearchParams();
+      params.set('scope', 'self');
       if (cycleId) params.set('cycleId', cycleId);
       const response = await fetch(`/api/performance/okrs?${params.toString()}`);
       if (!response.ok) throw new Error('Failed to fetch OKRs');

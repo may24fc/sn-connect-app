@@ -1,6 +1,94 @@
-import { createOKRSchema, updateOKRSchema } from '@/lib/schemas/performance.schema';
+import {
+  type UpdateOKRInput,
+  createOKRSchema,
+  updateOKRSchema,
+} from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
+
+async function resolveRequestedEmployeeId(
+  supabaseAdmin: Awaited<ReturnType<typeof getAuthedPerformanceContext>>['supabaseAdmin'],
+  userId: string,
+  role: string | null,
+  scope: string | undefined,
+  explicitEmployeeId: string | undefined
+): Promise<string | undefined | null> {
+  if (explicitEmployeeId) {
+    return explicitEmployeeId;
+  }
+
+  if (scope === 'self' || !isPerformanceAdmin(role)) {
+    return resolveEmployeeIdForUser(supabaseAdmin, userId);
+  }
+
+  return undefined;
+}
+
+function buildOkrsListQuery(
+  supabaseAdmin: Awaited<ReturnType<typeof getAuthedPerformanceContext>>['supabaseAdmin'],
+  filters: {
+    employeeId?: string | null | undefined;
+    cycleId?: string | undefined;
+    status?: string | undefined;
+  }
+) {
+  let query = supabaseAdmin
+    .from('okrs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (filters.employeeId) {
+    query = query.eq('employee_id', filters.employeeId);
+  }
+  if (filters.cycleId) {
+    query = query.eq('cycle_id', filters.cycleId);
+  }
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+
+  return query;
+}
+
+async function resolveCreateEmployeeId(
+  supabaseAdmin: Awaited<ReturnType<typeof getAuthedPerformanceContext>>['supabaseAdmin'],
+  userId: string,
+  role: string | null,
+  explicitEmployeeId: string | undefined
+): Promise<string | null> {
+  if (isPerformanceAdmin(role) && explicitEmployeeId) {
+    return explicitEmployeeId;
+  }
+
+  return resolveEmployeeIdForUser(supabaseAdmin, userId);
+}
+
+function buildOkrUpdatePayload(data: UpdateOKRInput): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+
+  const fieldMap: Array<[keyof UpdateOKRInput, string]> = [
+    ['objective', 'objective'],
+    ['description', 'description'],
+    ['keyResults', 'key_results'],
+    ['progress', 'progress'],
+    ['status', 'status'],
+    ['weight', 'weight'],
+    ['adminRating', 'admin_rating'],
+    ['adminComments', 'admin_comments'],
+    ['evaluatedBy', 'evaluated_by'],
+    ['evaluatedAt', 'evaluated_at'],
+  ];
+
+  for (const [sourceKey, targetKey] of fieldMap) {
+    const value = data[sourceKey];
+    if (value !== undefined) {
+      payload[targetKey] = value;
+    }
+  }
+
+  return payload;
+}
 
 async function authorizeOkrMutation(
   supabaseAdmin: Awaited<ReturnType<typeof getAuthedPerformanceContext>>['supabaseAdmin'],
@@ -54,36 +142,27 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const cycleId = searchParams.get('cycleId') || undefined;
     const status = searchParams.get('status') || undefined;
+    const scope = searchParams.get('scope') || undefined;
     const explicitEmployeeId = searchParams.get('employeeId') || undefined;
 
-    let employeeId: string | null | undefined = explicitEmployeeId;
-    if (!employeeId && !isPerformanceAdmin(role)) {
-      // Use admin client for employee lookup to avoid RLS failures
-      employeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
-      if (!employeeId) {
-        return NextResponse.json({ data: [] });
-      }
+    const employeeId = await resolveRequestedEmployeeId(
+      supabaseAdmin,
+      user.id,
+      role,
+      scope,
+      explicitEmployeeId
+    );
+    if (employeeId === null) {
+      return NextResponse.json({ data: [] });
     }
 
     // Use admin client to bypass RLS cross-table subquery failures.
     // App-level auth scopes non-admin users to their own employee_id above.
-    let query = supabaseAdmin
-      .from('okrs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(200);
-
-    if (employeeId) {
-      query = query.eq('employee_id', employeeId);
-    }
-    if (cycleId) {
-      query = query.eq('cycle_id', cycleId);
-    }
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error: queryError } = await query;
+    const { data, error: queryError } = await buildOkrsListQuery(supabaseAdmin, {
+      employeeId,
+      cycleId,
+      status,
+    });
 
     if (queryError) {
       return NextResponse.json({ error: 'Failed to fetch OKRs' }, { status: 500 });
@@ -117,20 +196,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let employeeId: string | null | undefined = parsed.data.employeeId;
-
-    if (!isPerformanceAdmin(role)) {
-      // Use admin client—regular client's employee query may return null due to RLS
-      const ownEmployeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
-      if (!ownEmployeeId) {
-        return NextResponse.json({ error: 'No employee profile found' }, { status: 400 });
-      }
-      employeeId = ownEmployeeId;
-    } else if (!employeeId) {
-      return NextResponse.json(
-        { error: 'employeeId is required for admin-created OKRs' },
-        { status: 400 }
-      );
+    const employeeId = await resolveCreateEmployeeId(
+      supabaseAdmin,
+      user.id,
+      role,
+      parsed.data.employeeId
+    );
+    if (!employeeId) {
+      return NextResponse.json({ error: 'No employee profile found' }, { status: 400 });
     }
 
     const { data, error: insertError } = await supabaseAdmin
@@ -181,17 +254,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: authorization.error }, { status: authorization.status });
     }
 
-    const payload: Record<string, unknown> = {};
-    if (parsed.data.objective !== undefined) payload.objective = parsed.data.objective;
-    if (parsed.data.description !== undefined) payload.description = parsed.data.description;
-    if (parsed.data.keyResults !== undefined) payload.key_results = parsed.data.keyResults;
-    if (parsed.data.progress !== undefined) payload.progress = parsed.data.progress;
-    if (parsed.data.status !== undefined) payload.status = parsed.data.status;
-    if (parsed.data.weight !== undefined) payload.weight = parsed.data.weight;
-    if (parsed.data.adminRating !== undefined) payload.admin_rating = parsed.data.adminRating;
-    if (parsed.data.adminComments !== undefined) payload.admin_comments = parsed.data.adminComments;
-    if (parsed.data.evaluatedBy !== undefined) payload.evaluated_by = parsed.data.evaluatedBy;
-    if (parsed.data.evaluatedAt !== undefined) payload.evaluated_at = parsed.data.evaluatedAt;
+    const payload = buildOkrUpdatePayload(parsed.data);
 
     const { data, error: updateError } = await supabaseAdmin
       .from('okrs')

@@ -223,7 +223,14 @@ export interface ApplicationFiltersQuery {
 export interface TicketFilters {
   search?: string;
   team?: 'hr' | 'it';
-  status?: 'new' | 'triaged' | 'assigned' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
+  status?:
+    | 'new'
+    | 'triaged'
+    | 'assigned'
+    | 'in_progress'
+    | 'waiting_on_user'
+    | 'resolved'
+    | 'closed';
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   scope?: 'submitter' | 'assigned' | 'triage';
   page?: number;
@@ -317,6 +324,8 @@ export const queryKeys = {
     kpis: () => [...queryKeys.performance.all, 'kpis'] as const,
     kpiEvidence: (kpiId: string) => [...queryKeys.performance.all, 'kpi-evidence', kpiId] as const,
     okrs: () => [...queryKeys.performance.all, 'okrs'] as const,
+    okrTargetEvidence: (okrTargetId: string) =>
+      [...queryKeys.performance.all, 'okr-target-evidence', okrTargetId] as const,
     okrTargets: (okrId?: string) =>
       [...queryKeys.performance.all, 'okr-targets', okrId || 'all'] as const,
     individual: (employeeId: string) =>
@@ -341,7 +350,8 @@ export const queryKeys = {
     all: ['onboarding'] as const,
     progress: () => [...queryKeys.onboarding.all, 'progress'] as const,
     tasks: () => [...queryKeys.onboarding.all, 'tasks'] as const,
-    checklist: (employeeId: string) => [...queryKeys.onboarding.all, 'checklist', employeeId] as const,
+    checklist: (employeeId: string) =>
+      [...queryKeys.onboarding.all, 'checklist', employeeId] as const,
     template: (scope: 'employee' | 'intern') =>
       [...queryKeys.onboarding.all, 'template', scope] as const,
     profile: () => [...queryKeys.onboarding.all, 'profile'] as const,
@@ -366,7 +376,8 @@ export const queryKeys = {
     list: (employeeId?: string) =>
       [...queryKeys.offboarding.all, 'list', employeeId ?? 'all'] as const,
     me: () => [...queryKeys.offboarding.all, 'me'] as const,
-    tasks: (offboardingId: string) => [...queryKeys.offboarding.all, 'tasks', offboardingId] as const,
+    tasks: (offboardingId: string) =>
+      [...queryKeys.offboarding.all, 'tasks', offboardingId] as const,
     template: () => [...queryKeys.offboarding.all, 'template', 'default'] as const,
   },
 

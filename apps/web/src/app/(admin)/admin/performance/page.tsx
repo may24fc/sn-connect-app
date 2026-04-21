@@ -1,11 +1,8 @@
 'use client';
 
-import { type DirectoryEntry, useDirectory } from '@/hooks/useDirectory';
 import { useDepartments } from '@/hooks/useDepartments';
-import {
-  usePerformanceCycles,
-  usePerformanceOKRs,
-} from '@/hooks/usePerformance';
+import { type DirectoryEntry, useDirectory } from '@/hooks/useDirectory';
+import { usePerformanceCycles, usePerformanceOKRs } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
   Avatar,
@@ -219,6 +216,9 @@ export default function AdminPerformancePage(): ReactNode {
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href="/my-performance?create=1">
+            <Button>Create My Objective</Button>
+          </Link>
           <Link href="/admin/performance/cycles">
             <Button variant="outline">
               <Settings className="mr-2 h-4 w-4" />
@@ -365,7 +365,10 @@ export default function AdminPerformancePage(): ReactNode {
           </button>
         </div>
         {viewMode === 'cards' && (
-          <Select value={cardSortMode} onValueChange={(value) => setCardSortMode(value as CardSortMode)}>
+          <Select
+            value={cardSortMode}
+            onValueChange={(value) => setCardSortMode(value as CardSortMode)}
+          >
             <SelectTrigger className="w-[230px]">
               <SelectValue placeholder="Sort cards" />
             </SelectTrigger>
@@ -393,8 +396,8 @@ export default function AdminPerformancePage(): ReactNode {
             {pagination && totalPages > 1 && (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {(page - 1) * pageSize + 1}-
-                  {Math.min(page * pageSize, pagination.total)} of {pagination.total}
+                  {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, pagination.total)} of{' '}
+                  {pagination.total}
                 </span>
                 <div className="flex items-center gap-1">
                   <Button
@@ -431,7 +434,11 @@ export default function AdminPerformancePage(): ReactNode {
             <EmptyState
               icon={Users}
               title="No employees found"
-              description={search ? 'Try adjusting your search or filters.' : 'There are no employees to show yet.'}
+              description={
+                search
+                  ? 'Try adjusting your search or filters.'
+                  : 'There are no employees to show yet.'
+              }
               size="sm"
             />
           ) : (
@@ -468,7 +475,10 @@ export default function AdminPerformancePage(): ReactNode {
                               </p>
                             </div>
                           </div>
-                          <Badge variant={getRoleBadgeVariant(entry.role)} className="text-xs capitalize">
+                          <Badge
+                            variant={getRoleBadgeVariant(entry.role)}
+                            className="text-xs capitalize"
+                          >
                             {entry.role?.replace('_', ' ') || '—'}
                           </Badge>
                         </div>
@@ -477,14 +487,20 @@ export default function AdminPerformancePage(): ReactNode {
                           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                             Overall Weighted Average
                           </p>
-                          <p className={`mt-1 text-2xl font-bold tabular-nums ${getProgressColor(perf?.weightedMean || 0)}`}>
+                          <p
+                            className={`mt-1 text-2xl font-bold tabular-nums ${getProgressColor(perf?.weightedMean || 0)}`}
+                          >
                             {perf ? `${perf.weightedMean}%` : '—'}
                           </p>
                         </div>
 
                         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                           <span>{entry.department_name || 'No department'}</span>
-                          <span>{perf ? `${perf.okrCount} objective${perf.okrCount === 1 ? '' : 's'}` : 'No objectives'}</span>
+                          <span>
+                            {perf
+                              ? `${perf.okrCount} objective${perf.okrCount === 1 ? '' : 's'}`
+                              : 'No objectives'}
+                          </span>
                         </div>
 
                         <div className="mt-2">
