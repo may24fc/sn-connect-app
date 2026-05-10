@@ -1,0 +1,517 @@
+{
+  "name": "intern-eod-telegram-department-digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 1 * * 1-6"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily Trigger (09:00 PHT)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 280]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "reportDate",
+              "value": "={{ $now.setZone('Asia/Manila').minus({ days: 1 }).toFormat('yyyy-MM-dd') }}"
+            },
+            {
+              "name": "destinationKey",
+              "value": "department-boss-digest"
+            }
+          ]
+        }
+      },
+      "id": "set-report-context",
+      "name": "Set Report Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/rpc/get_intern_eod_digest_source",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { target_date: $json.reportDate } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fetch-digest-rows",
+      "name": "Fetch Digest Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 280],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oiiTiTwKwkzLjGEc",
+          "name": "[Dev] SN Connect Supabase REST"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = items.map((item) => item.json);\nconst reportDate = $('Set Report Context').first().json.reportDate;\nconst destinationKey = $('Set Report Context').first().json.destinationKey;\nconst departments = new Map();\n\nfor (const row of rows) {\n  const departmentName = row.department || 'Unassigned';\n  if (!departments.has(departmentName)) {\n    departments.set(departmentName, {\n      department: departmentName,\n      totalHours: 0,\n      logCount: 0,\n      interns: [],\n      blockerCount: 0,\n      attachmentCount: 0,\n      projectEntries: []\n    });\n  }\n\n  const bucket = departments.get(departmentName);\n  const blockers = Array.isArray(row.blockers) ? row.blockers : [];\n  const attachments = Array.isArray(row.attachments) ? row.attachments : [];\n  const projectEntries = Array.isArray(row.project_entries) ? row.project_entries : [];\n\n  bucket.totalHours += Number(row.hours_worked || 0);\n  bucket.logCount += 1;\n  bucket.blockerCount += blockers.length;\n  bucket.attachmentCount += attachments.length;\n  bucket.projectEntries.push(...projectEntries);\n  bucket.interns.push({\n    name: row.intern_name,\n    hoursWorked: row.hours_worked,\n    blockers,\n    nextSteps: Array.isArray(row.next_steps) ? row.next_steps : [],\n    attachments: attachments.map((attachment) => attachment.fileName || 'Attachment'),\n    summary: row.tasks_completed_summary,\n    adminDetailPath: row.admin_detail_path\n  });\n}\n\nreturn [{\n  json: {\n    reportDate,\n    destinationKey,\n    totalLogs: rows.length,\n    totalDepartments: departments.size,\n    departments: Array.from(departments.values()).sort((left, right) => left.department.localeCompare(right.department))\n  }\n}];"
+      },
+      "id": "group-by-department",
+      "name": "Group By Department",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 280]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "number": [
+            {
+              "value1": "={{ $json.totalLogs }}",
+              "operation": "larger",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "has-data",
+      "name": "Has Prior-Day Logs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1160, 280]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/intern_eod_digest_runs?select=id,status&report_date=eq.' + $json.reportDate + '&channel=eq.telegram&destination_key=eq.' + $json.destinationKey + '&deleted_at=is.null' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "check-existing-run",
+      "name": "Check Existing Run",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oiiTiTwKwkzLjGEc",
+          "name": "[Dev] SN Connect Supabase REST"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "const existingRows = items.map((item) => item.json).filter((row) => row && typeof row === 'object');\nconst grouped = $('Group By Department').first().json;\nconst runExists = existingRows.some((row) => row.status === 'sent');\n\nreturn [{\n  json: {\n    ...grouped,\n    existingRunId: existingRows.length > 0 ? existingRows[0].id ?? null : null,\n    runExists\n  }\n}];"
+      },
+      "id": "merge-run-state",
+      "name": "Merge Run State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1600, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "boolean": [
+            {
+              "value1": "={{ $json.runExists }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "already-sent",
+      "name": "Already Sent?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1820, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { model: 'gpt-4o', max_tokens: 1400, messages: [ { role: 'system', content: 'You summarize intern end-of-day reports for a boss in Telegram. Respond with plain text only. Preserve department headings. Keep the message concise, factual, and executive-friendly. Mention blockers and attachment proofs when they materially matter. Do not invent facts.' }, { role: 'user', content: 'Summarize this prior-day intern EOD dataset by department for Telegram. Report date: ' + $json.reportDate + '\n\nDataset:\n' + JSON.stringify($json.departments) } ] } }}",
+        "options": {
+          "continueOnFail": true,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "summarize-with-ai",
+      "name": "Summarize With AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2040, 280],
+      "credentials": {
+        "openAiApi": {
+          "id": "iuc44Cp6qiyVISxA",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const grouped = $('Merge Run State').first().json;\nconst aiResponse = items[0]?.json;\nconst aiText = aiResponse?.choices?.[0]?.message?.content?.trim();\n\nconst fallbackLines = [\n  `Intern EOD Digest for ${grouped.reportDate}`,\n  `Total logs: ${grouped.totalLogs} across ${grouped.totalDepartments} department(s)`,\n  ''\n];\n\nfor (const department of grouped.departments) {\n  fallbackLines.push(`${department.department}`);\n  fallbackLines.push(`- ${department.logCount} log(s), ${department.totalHours.toFixed(2)} hours`);\n  if (department.blockerCount > 0) {\n    fallbackLines.push(`- ${department.blockerCount} blocker item(s) raised`);\n  }\n  if (department.attachmentCount > 0) {\n    fallbackLines.push(`- ${department.attachmentCount} attachment proof file(s)`);\n  }\n  const highlightedInterns = department.interns.slice(0, 3).map((intern) => `${intern.name}: ${intern.summary}`).filter(Boolean);\n  if (highlightedInterns.length > 0) {\n    fallbackLines.push(`- Highlights: ${highlightedInterns.join(' | ')}`);\n  }\n  fallbackLines.push('');\n}\n\nreturn [{\n  json: {\n    ...grouped,\n    telegramText: aiText || fallbackLines.join('\\n').trim(),\n    usedAiSummary: Boolean(aiText)\n  }\n}];"
+      },
+      "id": "build-telegram-message",
+      "name": "Build Telegram Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2260, 280]
+    },
+    {
+      "parameters": {
+        "chatId": "6708968435",
+        "text": "={{ $json.telegramText }}",
+        "resource": "message",
+        "operation": "sendMessage",
+        "additionalFields": {}
+      },
+      "id": "send-telegram",
+      "name": "Send Telegram Digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2480, 280],
+      "credentials": {
+        "telegramApi": {
+          "id": "br7oYixc6HEh3DQc",
+          "name": "SN Connect Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/intern_eod_digest_runs?on_conflict=report_date,channel,destination_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { report_date: $('Build Telegram Message').first().json.reportDate, channel: 'telegram', destination_key: $('Build Telegram Message').first().json.destinationKey, workflow_execution_id: $execution.id, status: $json.message_id ? 'sent' : 'failed', sent_at: $json.message_id ? $now.toISO() : null, error_message: $json.message_id ? null : 'Telegram delivery failed', summary_json: { totalLogs: $('Build Telegram Message').first().json.totalLogs, totalDepartments: $('Build Telegram Message').first().json.totalDepartments, usedAiSummary: $('Build Telegram Message').first().json.usedAiSummary, telegramMessageId: $json.message_id ?? null } } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "record-run",
+      "name": "Record Digest Run",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oiiTiTwKwkzLjGEc",
+          "name": "[Dev] SN Connect Supabase REST"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2700, 280]
+    },
+    {
+      "parameters": {},
+      "id": "skip-already-sent",
+      "name": "Skip Already Sent",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2040, 120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/intern_eod_digest_runs?on_conflict=report_date,channel,destination_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { report_date: $('Group By Department').first().json.reportDate, channel: 'telegram', destination_key: $('Group By Department').first().json.destinationKey, workflow_execution_id: $execution.id, status: 'skipped', summary_json: { reason: 'no-prior-day-submitted-logs', totalLogs: 0, totalDepartments: 0 } } }}"
+      },
+      "id": "record-skip-no-data",
+      "name": "Record Skip (No Data)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "oiiTiTwKwkzLjGEc",
+          "name": "[Dev] SN Connect Supabase REST"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1380, 420]
+    },
+    {
+      "parameters": {},
+      "id": "finish-no-data",
+      "name": "No Prior-Day Logs",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1600, 420]
+    }
+  ],
+  "connections": {
+    "Daily Trigger (09:00 PHT)": {
+      "main": [
+        [
+          {
+            "node": "Set Report Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Report Context": {
+      "main": [
+        [
+          {
+            "node": "Fetch Digest Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Digest Rows": {
+      "main": [
+        [
+          {
+            "node": "Group By Department",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group By Department": {
+      "main": [
+        [
+          {
+            "node": "Has Prior-Day Logs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Prior-Day Logs?": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Skip (No Data)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Run": {
+      "main": [
+        [
+          {
+            "node": "Merge Run State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Run State": {
+      "main": [
+        [
+          {
+            "node": "Already Sent?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Sent?": {
+      "main": [
+        [
+          {
+            "node": "Skip Already Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarize With AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize With AI": {
+      "main": [
+        [
+          {
+            "node": "Build Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Digest": {
+      "main": [
+        [
+          {
+            "node": "Record Digest Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Skip (No Data)": {
+      "main": [
+        [
+          {
+            "node": "No Prior-Day Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "internships"
+    },
+    {
+      "name": "reports"
+    },
+    {
+      "name": "telegram"
+    },
+    {
+      "name": "ai"
+    }
+  ]
+}
