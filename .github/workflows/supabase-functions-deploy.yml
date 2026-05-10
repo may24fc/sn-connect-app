@@ -61,6 +61,7 @@ jobs:
       - name: Deploy all Edge Functions
         run: |
           supabase functions deploy \
-            --project-ref ${{ steps.project.outputs.ref }}
+            --project-ref ${{ steps.project.outputs.ref }} \
+            --import-map ./supabase/functions/deno.json
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
