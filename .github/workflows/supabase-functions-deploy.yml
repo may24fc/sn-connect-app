@@ -1,0 +1,66 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches: [master, dev]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/supabase-functions-deploy.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: supabase-functions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Edge Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+            ENV="production"
+          else
+            ENV="staging"
+          fi
+          echo "name=$ENV" >> $GITHUB_OUTPUT
+          echo "Deploying to: $ENV"
+
+      - name: Set Supabase project ref
+        id: project
+        run: |
+          if [[ "${{ steps.env.outputs.name }}" == "production" ]]; then
+            echo "ref=${{ secrets.SUPABASE_PROJECT_REF }}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{ secrets.SUPABASE_STAGING_PROJECT_REF }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy all Edge Functions
+        run: |
+          supabase functions deploy \
+            --project-ref ${{ steps.project.outputs.ref }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
