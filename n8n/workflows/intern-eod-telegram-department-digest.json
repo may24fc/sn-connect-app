@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "intern-eod-telegram-department-digest",
   "nodes": [
     {
@@ -16,14 +16,27 @@
       "name": "Daily Trigger (09:00 PHT)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [240, 280]
+      "position": [
+        240,
+        280
+      ]
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "a1", "name": "reportDate", "type": "string", "value": "={{ $now.setZone('Asia/Manila').minus({ days: 1 }).toFormat('yyyy-MM-dd') }}" },
-            { "id": "a2", "name": "destinationKey", "type": "string", "value": "department-boss-digest" }
+            {
+              "id": "a1",
+              "name": "reportDate",
+              "type": "string",
+              "value": "={{ $now.setZone('Asia/Manila').minus({ days: 1 }).toFormat('yyyy-MM-dd') }}"
+            },
+            {
+              "id": "a2",
+              "name": "destinationKey",
+              "type": "string",
+              "value": "department-boss-digest"
+            }
           ]
         },
         "includeOtherFields": false,
@@ -33,7 +46,10 @@
       "name": "Set Report Context",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [460, 280]
+      "position": [
+        460,
+        280
+      ]
     },
     {
       "parameters": {
@@ -44,8 +60,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -53,7 +75,10 @@
         "specifyBody": "keypair",
         "bodyParameters": {
           "parameters": [
-            { "name": "target_date", "value": "={{ $json.reportDate }}" }
+            {
+              "name": "target_date",
+              "value": "={{ $json.reportDate }}"
+            }
           ]
         },
         "options": {
@@ -69,7 +94,10 @@
       "name": "Fetch Digest Rows",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [700, 280],
+      "position": [
+        700,
+        280
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "oiiTiTwKwkzLjGEc",
@@ -79,13 +107,16 @@
     },
     {
       "parameters": {
-        "jsCode": "// fullResponse wraps body in an object \u2192 always 1 input item even when body is []\nconst rows = Array.isArray($json.body) ? $json.body : JSON.parse($json.body || '[]');\nreturn [{ json: { rows } }];"
+        "jsCode": "// fullResponse wraps body in an object → always 1 input item even when body is []\nconst rows = Array.isArray($json.body) ? $json.body : JSON.parse($json.body || '[]');\nreturn [{ json: { rows } }];"
       },
       "id": "collect-rows",
       "name": "Collect Rows",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [940, 280]
+      "position": [
+        940,
+        280
+      ]
     },
     {
       "parameters": {
@@ -95,7 +126,10 @@
       "name": "Group By Department",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1160, 280]
+      "position": [
+        1160,
+        280
+      ]
     },
     {
       "parameters": {
@@ -106,17 +140,30 @@
               "id": "cond-total-logs",
               "leftValue": "={{ $json.totalLogs }}",
               "rightValue": 0,
-              "operator": { "type": "number", "operation": "gt", "name": "filter.operator.gt", "rightType": "any" }
+              "operator": {
+                "type": "number",
+                "operation": "gt",
+                "name": "filter.operator.gt",
+                "rightType": "any"
+              }
             }
           ],
-          "options": { "version": 2, "leftValue": "", "caseSensitive": true, "typeValidation": "strict" }
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
         }
       },
       "id": "has-data",
       "name": "Has Prior-Day Logs?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [1380, 280]
+      "position": [
+        1380,
+        280
+      ]
     },
     {
       "parameters": {
@@ -127,7 +174,10 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM" }
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            }
           ]
         },
         "options": {
@@ -143,7 +193,10 @@
       "name": "Check Existing Run",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1600, 180],
+      "position": [
+        1600,
+        180
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "oiiTiTwKwkzLjGEc",
@@ -159,7 +212,10 @@
       "name": "Merge Run State",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1820, 180]
+      "position": [
+        1820,
+        180
+      ]
     },
     {
       "parameters": {
@@ -170,17 +226,30 @@
               "id": "cond-run-exists",
               "leftValue": "={{ $json.runExists }}",
               "rightValue": "",
-              "operator": { "name": "filter.operator.true", "operation": "true", "singleValue": true, "type": "boolean" }
+              "operator": {
+                "name": "filter.operator.true",
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              }
             }
           ],
-          "options": { "version": 2, "leftValue": "", "caseSensitive": true, "typeValidation": "strict" }
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
         }
       },
       "id": "already-sent",
       "name": "Already Sent?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [2040, 180]
+      "position": [
+        2040,
+        180
+      ]
     },
     {
       "parameters": {},
@@ -188,7 +257,10 @@
       "name": "Skip Already Sent",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [2260, 100]
+      "position": [
+        2260,
+        100
+      ]
     },
     {
       "parameters": {
@@ -199,7 +271,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"max_tokens\": 2000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are formatting intern end-of-day (EOD) reports into a Telegram digest message for a boss. Rules: (1) Add a header line: 📋 EOD Digest — [date]. (2) Group by department with a 🏢 emoji heading. (3) List EACH INTERN INDIVIDUALLY by full name with 👤 emoji — never merge or aggregate multiple interns into a group summary. (4) For each intern: name and hours worked on the same line, then their specific accomplishments in 1-2 sentences, then any blockers prefixed with 🚧 Blocker:, then next steps prefixed with ✅ Next:, then 📎 N attachment(s) if any. (5) Footer: total intern count and department count. (6) Plain text only — no asterisks, no HTML, no markdown. Do not invent facts not present in the dataset.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Format this intern EOD dataset as a Telegram digest. Report date: ' + $json.reportDate + '\\n\\nIMPORTANT: List EACH intern individually by name under their department heading. Do not merge or combine interns together.\\n\\nDataset:\\n' + JSON.stringify($json.departments)) }}\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"max_tokens\": 2000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are formatting intern end-of-day (EOD) reports into a Telegram HTML digest message. Output ONLY valid Telegram HTML — supported tags are <b>, <i>, <code>, <pre>, <a>. No markdown, no asterisks, no unsupported tags. Follow this exact template structure:\\n\\n<b>[Project Name] | Daily Operations Summary</b>\\n\\n📅 Date: [date]\\n\\n━━━━━━━━━━━━━━━━━━\\n\\nFor each department:\\n<b>🏢 DEPARTMENT: [DEPARTMENT NAME]</b>\\n\\nFor each intern in that department:\\n👤 <b>[Intern Full Name]</b>\\n\\n🚀 <b>Progress &amp; Impact:</b> [1-2 sentence summary of their specific accomplishments]\\n\\n⚠️ <b>Blockers:</b> [blockers or None]\\n\\n📅 <b>Next Steps:</b> [their next priorities]\\n\\n[repeat 👤 block for every intern in the department]\\n\\n━━━━━━━━━━━━━━━━━━\\n\\n[repeat 🏢 block for every department]\\n\\nFooter: [total intern count] intern(s) across [department count] department(s). List EACH intern individually under their department — never merge or aggregate. Do not invent facts not in the dataset.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Format this intern EOD dataset as a Telegram HTML digest following the template. Report date: ' + $json.reportDate + '\\n\\nIMPORTANT: List EACH intern individually by name under their department heading. Do not merge or combine interns together.\\n\\nDataset:\\n' + JSON.stringify($json.departments)) }}\n    }\n  ]\n}",
         "options": {
           "continueOnFail": true,
           "response": {
@@ -213,7 +285,10 @@
       "name": "Summarize With AI",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2260, 280],
+      "position": [
+        2260,
+        280
+      ],
       "credentials": {
         "openAiApi": {
           "id": "iuc44Cp6qiyVISxA",
@@ -223,14 +298,16 @@
     },
     {
       "parameters": {
-        "jsCode": "const grouped = $('Merge Run State').first().json;\nconst aiResponse = items[0]?.json;\nconst aiText = aiResponse?.choices?.[0]?.message?.content?.trim();\n\nconst lines = [`📋 EOD Digest — ${grouped.reportDate}`, ''];\n\nfor (const dept of grouped.departments) {\n  lines.push(`🏢 ${dept.department} (${dept.logCount} intern${dept.logCount !== 1 ? 's' : ''})`);
-  lines.push('');\n  for (const intern of dept.interns) {\n    lines.push(`👤 ${intern.name} (${Number(intern.hoursWorked || 0).toFixed(1)}h)`);\n    if (intern.summary) lines.push(intern.summary);\n    if (intern.blockers && intern.blockers.length > 0) {\n      lines.push(`🚧 Blocker: ${intern.blockers.join('; ')}`);\n    }\n    if (intern.nextSteps && intern.nextSteps.length > 0) {\n      lines.push(`✅ Next: ${intern.nextSteps.join('; ')}`);\n    }\n    if (intern.attachments && intern.attachments.length > 0) {\n      lines.push(`📎 ${intern.attachments.length} attachment(s)`);\n    }\n    lines.push('');\n  }\n}\n\nlines.push(`${grouped.totalLogs} log(s) across ${grouped.totalDepartments} department(s)`);\n\nreturn [{\n  json: {\n    ...grouped,\n    telegramText: aiText || lines.join('\\n').trim(),\n    usedAiSummary: Boolean(aiText)\n  }\n}];"
+        "jsCode": "const grouped = $('Merge Run State').first().json;\nconst aiResponse = items[0]?.json;\nconst aiText = aiResponse?.choices?.[0]?.message?.content?.trim();\n\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst lines = [\n  `<b>SN Connect | Daily Operations Summary</b>`,\n  ``,\n  `📅 Date: ${grouped.reportDate}`,\n  ``\n];\n\nfor (const dept of grouped.departments) {\n  lines.push(div);\n  lines.push(``);\n  lines.push(`<b>🏢 DEPARTMENT: ${dept.department.toUpperCase()}</b>`);\n  lines.push(``);\n  for (const intern of dept.interns) {\n    lines.push(`👤 <b>${intern.name}</b>`);\n    lines.push(``);\n    lines.push(`🚀 <b>Progress &amp; Impact:</b> ${intern.summary || 'No summary provided.'}`);\n    lines.push(``);\n    const blockerText = (intern.blockers && intern.blockers.length > 0) ? intern.blockers.join('; ') : 'None';\n    lines.push(`⚠️ <b>Blockers:</b> ${blockerText}`);\n    lines.push(``);\n    const nextText = (intern.nextSteps && intern.nextSteps.length > 0) ? intern.nextSteps.join('; ') : 'TBD';\n    lines.push(`📅 <b>Next Steps:</b> ${nextText}`);\n    lines.push(``);\n  }\n}\n\nlines.push(div);\nlines.push(``);\nlines.push(`${grouped.totalLogs} intern(s) across ${grouped.totalDepartments} department(s)`);\n\nreturn [{\n  json: {\n    ...grouped,\n    telegramText: aiText || lines.join('\\n').trim(),\n    usedAiSummary: Boolean(aiText)\n  }\n}];"
       },
       "id": "build-telegram-message",
       "name": "Build Telegram Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2480, 280]
+      "position": [
+        2480,
+        280
+      ]
     },
     {
       "parameters": {
@@ -238,13 +315,18 @@
         "text": "={{ $json.telegramText }}",
         "resource": "message",
         "operation": "sendMessage",
-        "additionalFields": {}
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
       },
       "id": "send-telegram",
       "name": "Send Telegram Digest",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [2700, 280],
+      "position": [
+        2700,
+        280
+      ],
       "webhookId": "414102d0-e5f1-40be-9275-1b4d1ae8b43d",
       "credentials": {
         "telegramApi": {
@@ -262,9 +344,18 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
           ]
         },
         "sendBody": true,
@@ -283,7 +374,10 @@
       "name": "Record Digest Run",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2920, 280],
+      "position": [
+        2920,
+        280
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "oiiTiTwKwkzLjGEc",
@@ -300,9 +394,18 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM" },
-            { "name": "Content-Type", "value": "application/json" },
-            { "name": "Prefer", "value": "resolution=merge-duplicates,return=representation" }
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
           ]
         },
         "sendBody": true,
@@ -321,7 +424,10 @@
       "name": "Record Skip (No Data)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1600, 420],
+      "position": [
+        1600,
+        420
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "oiiTiTwKwkzLjGEc",
@@ -335,55 +441,169 @@
       "name": "No Prior-Day Logs",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1820, 420]
+      "position": [
+        1820,
+        420
+      ]
     }
   ],
   "connections": {
     "Daily Trigger (09:00 PHT)": {
-      "main": [[{ "node": "Set Report Context", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Set Report Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Set Report Context": {
-      "main": [[{ "node": "Fetch Digest Rows", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Fetch Digest Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Fetch Digest Rows": {
-      "main": [[{ "node": "Collect Rows", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Collect Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Collect Rows": {
-      "main": [[{ "node": "Group By Department", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Group By Department",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Group By Department": {
-      "main": [[{ "node": "Has Prior-Day Logs?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Has Prior-Day Logs?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has Prior-Day Logs?": {
       "main": [
-        [{ "node": "Check Existing Run", "type": "main", "index": 0 }],
-        [{ "node": "Record Skip (No Data)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Check Existing Run",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Skip (No Data)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check Existing Run": {
-      "main": [[{ "node": "Merge Run State", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Merge Run State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Merge Run State": {
-      "main": [[{ "node": "Already Sent?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Already Sent?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Already Sent?": {
       "main": [
-        [{ "node": "Skip Already Sent", "type": "main", "index": 0 }],
-        [{ "node": "Summarize With AI", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Skip Already Sent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarize With AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-
     "Summarize With AI": {
-      "main": [[{ "node": "Build Telegram Message", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Build Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Build Telegram Message": {
-      "main": [[{ "node": "Send Telegram Digest", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Send Telegram Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Send Telegram Digest": {
-      "main": [[{ "node": "Record Digest Run", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Record Digest Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Record Skip (No Data)": {
-      "main": [[{ "node": "No Prior-Day Logs", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "No Prior-Day Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
@@ -391,5 +611,9 @@
     "saveManualExecutions": true,
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "tags": [{ "name": "SN Connect" }]
+  "tags": [
+    {
+      "name": "SN Connect"
+    }
+  ]
 }
