@@ -178,6 +178,11 @@ export function EODReportDetailModal({
                 {projectEntries.map((entry) => (
                   <div key={entry.id} className="rounded-md border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950/60">
                     <p className="text-sm font-medium">{entry.projectFocus}</p>
+                    {entry.challenge && (
+                      <p className="mt-2 text-sm whitespace-pre-wrap leading-relaxed">
+                        <span className="font-medium">Challenge:</span> {entry.challenge}
+                      </p>
+                    )}
                     <p className="mt-2 text-sm whitespace-pre-wrap leading-relaxed">
                       <span className="font-medium">Action Taken:</span> {entry.actionTaken}
                     </p>

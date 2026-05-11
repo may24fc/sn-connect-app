@@ -25,6 +25,7 @@ export function normalizeProjectEntries(
         }
 
         const projectFocus = toNonEmptyString(entry.projectFocus);
+        const challenge = toNonEmptyString(entry.challenge);
         const actionTaken = toNonEmptyString(entry.actionTaken);
         const outcome = toNonEmptyString(entry.outcome);
 
@@ -35,6 +36,7 @@ export function normalizeProjectEntries(
         return {
           id: toNonEmptyString(entry.id) ?? crypto.randomUUID(),
           projectFocus,
+          ...(challenge ? { challenge } : {}),
           actionTaken,
           outcome,
         } satisfies ProjectFocusEntry;

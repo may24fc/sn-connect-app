@@ -81,6 +81,11 @@ export function DailyReportCard({
                 {projectEntries.map((entry) => (
                   <div key={entry.id} className="rounded-lg border border-border bg-muted/30 p-3">
                     <p className="text-sm font-medium">{entry.projectFocus}</p>
+                    {entry.challenge && (
+                      <p className="mt-2 text-sm whitespace-pre-wrap">
+                        <span className="font-medium">Challenge:</span> {entry.challenge}
+                      </p>
+                    )}
                     <p className="mt-2 text-sm whitespace-pre-wrap">
                       <span className="font-medium">Action Taken:</span> {entry.actionTaken}
                     </p>

@@ -7,6 +7,7 @@ export type SupervisorId = string & { __brand: 'SupervisorId' };
 export interface ProjectFocusEntry {
   id: string;
   projectFocus: string;
+  challenge?: string;
   actionTaken: string;
   outcome: string;
 }

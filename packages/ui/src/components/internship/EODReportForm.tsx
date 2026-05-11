@@ -41,6 +41,9 @@ interface StringListFieldProps {
   icon: React.ReactNode;
   title: string;
   description: string;
+  required?: boolean;
+  invalid?: boolean;
+  errorMessage?: string;
 }
 
 function StringListField({
@@ -51,6 +54,9 @@ function StringListField({
   icon,
   title,
   description,
+  required = false,
+  invalid = false,
+  errorMessage,
 }: StringListFieldProps): React.ReactNode {
   const normalizedEntries = entries.length > 0 ? entries : [''];
 
@@ -74,6 +80,7 @@ function StringListField({
         <Label className="flex items-center gap-2 text-sm font-medium">
           {icon}
           {title}
+          {required && <span className="text-error">*</span>}
         </Label>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
@@ -85,7 +92,7 @@ function StringListField({
               value={entry}
               onChange={(event) => updateEntry(index, event.target.value)}
               placeholder={placeholder}
-              className="h-9 text-sm"
+              className={cn('h-9 text-sm', invalid ? 'border-error' : '')}
             />
             <button
               type="button"
@@ -107,6 +114,8 @@ function StringListField({
         <Plus className="h-3.5 w-3.5" />
         {addLabel}
       </button>
+
+      {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
     </div>
   );
 }
@@ -163,7 +172,9 @@ function ProjectEntryField({
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label className="text-sm font-medium">Project / Focus</Label>
+          <Label className="text-sm font-medium">
+            Project / Focus <span className="text-error">*</span>
+          </Label>
           <Input
             value={entry.projectFocus}
             onChange={(event) => updateField('projectFocus', event.target.value)}
@@ -173,7 +184,21 @@ function ProjectEntryField({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-sm font-medium">Action Taken</Label>
+          <Label className="text-sm font-medium">
+            Challenge <span className="text-error">*</span>
+          </Label>
+          <Textarea
+            value={entry.challenge ?? ''}
+            onChange={(event) => updateField('challenge', event.target.value)}
+            placeholder="Describe the challenge, blocker, or constraint for this focus area"
+            rows={3}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-sm font-medium">
+            Action Taken <span className="text-error">*</span>
+          </Label>
           <Textarea
             value={entry.actionTaken}
             onChange={(event) => updateField('actionTaken', event.target.value)}
@@ -183,7 +208,9 @@ function ProjectEntryField({
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-sm font-medium">Outcome</Label>
+          <Label className="text-sm font-medium">
+            Outcome <span className="text-error">*</span>
+          </Label>
           <Textarea
             value={entry.outcome}
             onChange={(event) => updateField('outcome', event.target.value)}
@@ -213,6 +240,8 @@ interface FormErrors {
   date?: string | undefined;
   hoursLogged?: string | undefined;
   projectEntries?: string | undefined;
+  blockers?: string | undefined;
+  nextSteps?: string | undefined;
 }
 
 function splitLines(value?: string): string[] {
@@ -233,6 +262,7 @@ function buildFallbackProjectEntries(value?: string): Array<ProjectFocusEntry> {
       {
         id: crypto.randomUUID(),
         projectFocus: '',
+        challenge: '',
         actionTaken: '',
         outcome: '',
       },
@@ -242,6 +272,7 @@ function buildFallbackProjectEntries(value?: string): Array<ProjectFocusEntry> {
   return lines.map((line, index) => ({
     id: crypto.randomUUID(),
     projectFocus: `Project / Focus ${index + 1}`,
+    challenge: '',
     actionTaken: line,
     outcome: 'Completed for the day',
   }));
@@ -251,6 +282,7 @@ function trimEntry(entry: ProjectFocusEntry): ProjectFocusEntry {
   return {
     id: entry.id,
     projectFocus: entry.projectFocus.trim(),
+    ...(entry.challenge?.trim() ? { challenge: entry.challenge.trim() } : {}),
     actionTaken: entry.actionTaken.trim(),
     outcome: entry.outcome.trim(),
   };
@@ -263,6 +295,7 @@ function buildInitialProjectEntries(
     return defaultValues.projectEntries.map((entry) => ({
       id: entry.id || crypto.randomUUID(),
       projectFocus: entry.projectFocus,
+      challenge: entry.challenge ?? '',
       actionTaken: entry.actionTaken,
       outcome: entry.outcome,
     }));
@@ -349,7 +382,7 @@ export function EODReportForm({
   } => {
     const trimmedEntries = projectEntries.map(trimEntry);
     const hasPartialEntry = trimmedEntries.some((entry) => {
-      const values = [entry.projectFocus, entry.actionTaken, entry.outcome];
+      const values = [entry.projectFocus, entry.challenge ?? '', entry.actionTaken, entry.outcome];
       const filledCount = values.filter(Boolean).length;
       return filledCount > 0 && filledCount < values.length;
     });
@@ -357,7 +390,8 @@ export function EODReportForm({
     return {
       hasPartialEntry,
       entries: trimmedEntries.filter(
-        (entry) => entry.projectFocus && entry.actionTaken && entry.outcome
+        (entry) =>
+          entry.projectFocus && entry.challenge && entry.actionTaken && entry.outcome
       ),
     };
   };
@@ -377,7 +411,16 @@ export function EODReportForm({
     }
 
     if (normalizedEntries.hasPartialEntry || normalizedEntries.entries.length === 0) {
-      nextErrors.projectEntries = 'Add at least one complete project entry with action taken and outcome';
+      nextErrors.projectEntries =
+        'Add at least one complete project entry with project/focus, challenge, action taken, and outcome';
+    }
+
+    if (blockers.map((entry) => entry.trim()).filter(Boolean).length === 0) {
+      nextErrors.blockers = 'Add at least one current blocker';
+    }
+
+    if (nextSteps.map((entry) => entry.trim()).filter(Boolean).length === 0) {
+      nextErrors.nextSteps = 'Add at least one next step';
     }
 
     setErrors(nextErrors);
@@ -449,6 +492,7 @@ export function EODReportForm({
       {
         id: crypto.randomUUID(),
         projectFocus: '',
+        challenge: '',
         actionTaken: '',
         outcome: '',
       },
@@ -510,6 +554,7 @@ export function EODReportForm({
               <Label htmlFor="date" className="flex items-center gap-2 text-sm font-medium">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 Date
+                <span className="text-error">*</span>
               </Label>
               <Input
                 id="date"
@@ -531,6 +576,7 @@ export function EODReportForm({
               <Label htmlFor="hours" className="flex items-center gap-2 text-sm font-medium">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 Hours Logged
+                <span className="text-error">*</span>
               </Label>
               <Input
                 id="hours"
@@ -590,22 +636,38 @@ export function EODReportForm({
 
           <StringListField
             entries={blockers}
-            onChange={setBlockers}
+            onChange={(entries) => {
+              setBlockers(entries);
+              if (errors.blockers) {
+                setErrors((currentErrors) => ({ ...currentErrors, blockers: undefined }));
+              }
+            }}
             placeholder="Waiting on approval, feedback, or dependency"
             addLabel="Add another blocker"
             icon={<AlertCircle className="h-4 w-4 text-muted-foreground" />}
             title="Current Blockers"
             description=""
+            required
+            invalid={Boolean(errors.blockers)}
+            errorMessage={errors.blockers ?? ''}
           />
 
           <StringListField
             entries={nextSteps}
-            onChange={setNextSteps}
+            onChange={(entries) => {
+              setNextSteps(entries);
+              if (errors.nextSteps) {
+                setErrors((currentErrors) => ({ ...currentErrors, nextSteps: undefined }));
+              }
+            }}
             placeholder="Next action or follow-up planned"
             addLabel="Add another next step"
             icon={<Target className="h-4 w-4 text-muted-foreground" />}
             title="Next Steps"
             description=""
+            required
+            invalid={Boolean(errors.nextSteps)}
+            errorMessage={errors.nextSteps ?? ''}
           />
 
           <div className="space-y-3">

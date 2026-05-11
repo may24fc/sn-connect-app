@@ -7,6 +7,7 @@ const stringListSchema = z.array(nonEmptyTrimmedStringSchema).max(20);
 export const dailyLogProjectEntrySchema = z.object({
   id: z.string().uuid().optional(),
   projectFocus: nonEmptyTrimmedStringSchema,
+  challenge: nonEmptyTrimmedStringSchema.optional(),
   actionTaken: nonEmptyTrimmedStringSchema,
   outcome: nonEmptyTrimmedStringSchema,
 });

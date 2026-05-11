@@ -161,6 +161,7 @@ function buildDailyLogInsertValues(
   const projectEntries = payload.projectEntries.map((entry) => ({
     id: entry.id || crypto.randomUUID(),
     projectFocus: entry.projectFocus,
+    ...(entry.challenge ? { challenge: entry.challenge } : {}),
     actionTaken: entry.actionTaken,
     outcome: entry.outcome,
   }));
@@ -435,6 +436,7 @@ export async function PATCH(
           ? payload.projectEntries.map((entry) => ({
               id: entry.id || crypto.randomUUID(),
               projectFocus: entry.projectFocus,
+              ...(entry.challenge ? { challenge: entry.challenge } : {}),
               actionTaken: entry.actionTaken,
               outcome: entry.outcome,
             }))
