@@ -199,7 +199,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"max_tokens\": 1400,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You summarize intern end-of-day reports for a boss in Telegram. Respond with plain text only. Preserve department headings. Keep the message concise, factual, and executive-friendly. Mention blockers and attachment proofs when they materially matter. Do not invent facts.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Summarize this prior-day intern EOD dataset by department for Telegram. Report date: ' + $json.reportDate + '\\n\\nDataset:\\n' + JSON.stringify($json.departments)) }}\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"max_tokens\": 2000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are formatting intern end-of-day (EOD) reports into a Telegram digest message for a boss. Rules: (1) Add a header line: 📋 EOD Digest — [date]. (2) Group by department with a 🏢 emoji heading. (3) List EACH INTERN INDIVIDUALLY by full name with 👤 emoji — never merge or aggregate multiple interns into a group summary. (4) For each intern: name and hours worked on the same line, then their specific accomplishments in 1-2 sentences, then any blockers prefixed with 🚧 Blocker:, then next steps prefixed with ✅ Next:, then 📎 N attachment(s) if any. (5) Footer: total intern count and department count. (6) Plain text only — no asterisks, no HTML, no markdown. Do not invent facts not present in the dataset.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Format this intern EOD dataset as a Telegram digest. Report date: ' + $json.reportDate + '\\n\\nIMPORTANT: List EACH intern individually by name under their department heading. Do not merge or combine interns together.\\n\\nDataset:\\n' + JSON.stringify($json.departments)) }}\n    }\n  ]\n}",
         "options": {
           "continueOnFail": true,
           "response": {
@@ -223,7 +223,8 @@
     },
     {
       "parameters": {
-        "jsCode": "const grouped = $('Merge Run State').first().json;\nconst aiResponse = items[0]?.json;\nconst aiText = aiResponse?.choices?.[0]?.message?.content?.trim();\n\nconst fallbackLines = [\n  `Intern EOD Digest for ${grouped.reportDate}`,\n  `Total logs: ${grouped.totalLogs} across ${grouped.totalDepartments} department(s)`,\n  ''\n];\n\nfor (const department of grouped.departments) {\n  fallbackLines.push(`${department.department}`);\n  fallbackLines.push(`- ${department.logCount} log(s), ${department.totalHours.toFixed(2)} hours`);\n  if (department.blockerCount > 0) {\n    fallbackLines.push(`- ${department.blockerCount} blocker item(s) raised`);\n  }\n  if (department.attachmentCount > 0) {\n    fallbackLines.push(`- ${department.attachmentCount} attachment proof file(s)`);\n  }\n  const highlightedInterns = department.interns.slice(0, 3).map((intern) => `${intern.name}: ${intern.summary}`).filter(Boolean);\n  if (highlightedInterns.length > 0) {\n    fallbackLines.push(`- Highlights: ${highlightedInterns.join(' | ')}`);\n  }\n  fallbackLines.push('');\n}\n\nreturn [{\n  json: {\n    ...grouped,\n    telegramText: aiText || fallbackLines.join('\\n').trim(),\n    usedAiSummary: Boolean(aiText)\n  }\n}];"
+        "jsCode": "const grouped = $('Merge Run State').first().json;\nconst aiResponse = items[0]?.json;\nconst aiText = aiResponse?.choices?.[0]?.message?.content?.trim();\n\nconst lines = [`📋 EOD Digest — ${grouped.reportDate}`, ''];\n\nfor (const dept of grouped.departments) {\n  lines.push(`🏢 ${dept.department} (${dept.logCount} intern${dept.logCount !== 1 ? 's' : ''})`);
+  lines.push('');\n  for (const intern of dept.interns) {\n    lines.push(`👤 ${intern.name} (${Number(intern.hoursWorked || 0).toFixed(1)}h)`);\n    if (intern.summary) lines.push(intern.summary);\n    if (intern.blockers && intern.blockers.length > 0) {\n      lines.push(`🚧 Blocker: ${intern.blockers.join('; ')}`);\n    }\n    if (intern.nextSteps && intern.nextSteps.length > 0) {\n      lines.push(`✅ Next: ${intern.nextSteps.join('; ')}`);\n    }\n    if (intern.attachments && intern.attachments.length > 0) {\n      lines.push(`📎 ${intern.attachments.length} attachment(s)`);\n    }\n    lines.push('');\n  }\n}\n\nlines.push(`${grouped.totalLogs} log(s) across ${grouped.totalDepartments} department(s)`);\n\nreturn [{\n  json: {\n    ...grouped,\n    telegramText: aiText || lines.join('\\n').trim(),\n    usedAiSummary: Boolean(aiText)\n  }\n}];"
       },
       "id": "build-telegram-message",
       "name": "Build Telegram Message",
@@ -371,6 +372,7 @@
         [{ "node": "Summarize With AI", "type": "main", "index": 0 }]
       ]
     },
+
     "Summarize With AI": {
       "main": [[{ "node": "Build Telegram Message", "type": "main", "index": 0 }]]
     },
