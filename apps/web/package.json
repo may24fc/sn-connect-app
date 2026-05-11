@@ -41,7 +41,7 @@
     "exceljs": "^4.4.0",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
-    "inngest": "^3.52.6",
+    "inngest": "^3.54.2",
     "langwatch": "^0.20.0",
     "libphonenumber-js": "^1.12.38",
     "lucide-react": "^0.468.0",
