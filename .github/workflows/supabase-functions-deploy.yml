@@ -2,7 +2,7 @@ name: Deploy Supabase Edge Functions
 
 on:
   push:
-    branches: [master, dev]
+    branches: [main, dev]
     paths:
       - 'supabase/functions/**'
       - '.github/workflows/supabase-functions-deploy.yml'
@@ -36,7 +36,7 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             ENV="${{ github.event.inputs.environment }}"
-          elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             ENV="production"
           else
             ENV="staging"
