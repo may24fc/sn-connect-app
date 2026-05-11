@@ -511,16 +511,17 @@ Central hub for intern activities.
    - Internship period timeline progress bar
 
 5. **EOD Report Form** (when submitting)
-   - Tasks Completed (required text area)
+   - Date (required)
    - Hours Logged (required number input)
-   - Key Learnings (optional)
-   - Challenges Faced (optional)
+   - Progress & Impact (required text area)
+   - Current Blockers (optional)
+   - Next Steps (optional)
    - Submit/Cancel buttons
 
 6. **Recent Reports List**
    - Date and status badge
    - Hours logged
-   - Preview of tasks completed
+   - Preview of your progress update
    - "View All" link to full reports
 
 ### Intern Navigation

@@ -37,102 +37,99 @@ export interface PendingOnboarding {
 }
 
 async function fetchPendingApprovals(role?: 'employee' | 'intern'): Promise<PendingOnboarding[]> {
-  const supabase = createSupabaseBrowserClient();
-
-  let query = supabase
-    .from('onboarding_profiles')
-    .select(`
-      id,
-      user_id,
-      first_name,
-      middle_name,
-      last_name,
-      birthday,
-      contact_number,
-      address,
-      emergency_contact_name,
-      emergency_contact_relationship,
-      emergency_contact_number,
-      email_address,
-      position,
-      department_id,
-      payment_account_name,
-      payment_account_number,
-      payment_city,
-      payment_province,
-      payment_zipcode,
-      review_state,
-      rejection_notes,
-      rejected_at,
-      rejected_by,
-      rejection_count,
-      completed_at,
-      created_at,
-      users!inner(role, status, avatar_url)
-    `)
-    .eq('is_completed', true)
-    .eq('users.status', 'awaiting_approval')
-    .is('deleted_at', null)
-    .order('completed_at', { ascending: false });
+  const params = new URLSearchParams({
+    status: 'completed',
+    page: '1',
+    pageSize: '100',
+  });
 
   if (role) {
-    query = query.eq('users.role', role);
+    params.set('role', role);
   }
 
-  const { data, error } = await query;
+  const response = await fetch(`/api/onboarding/profiles?${params.toString()}`);
 
-  if (error) {
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => ({ error: 'Failed to fetch pending approvals' }));
     console.error('Error fetching pending approvals:', error);
     throw new Error('Failed to fetch pending approvals');
   }
 
-  const mapped: PendingOnboarding[] = (data || []).map((profile: any) => {
+  const payload = (await response.json()) as {
+    data?: Array<{
+      id: string;
+      user_id: string;
+      full_name: string;
+      avatar_url?: string | null;
+      email_address: string | null;
+      position: string | null;
+      department_id?: string | null;
+      review_state?: OnboardingReviewState;
+      rejection_notes?: string | null;
+      rejected_at?: string | null;
+      rejected_by?: string | null;
+      rejection_count?: number;
+      completed_at?: string | null;
+      created_at: string;
+      first_name?: string | null;
+      middle_name?: string | null;
+      last_name?: string | null;
+      birthday?: string | null;
+      contact_number?: string | null;
+      address?: string | null;
+      emergency_contact_name?: string | null;
+      emergency_contact_relationship?: string | null;
+      emergency_contact_number?: string | null;
+      payment_account_name?: string | null;
+      payment_account_masked?: string | null;
+      payment_city?: string | null;
+      payment_province?: string | null;
+      payment_zipcode?: string | null;
+      users?:
+        | { role?: 'employee' | 'intern' | null; avatar_url?: string | null }
+        | Array<{ role?: 'employee' | 'intern' | null; avatar_url?: string | null }>;
+    }>;
+  };
+
+  const mapped: PendingOnboarding[] = (payload.data || []).map((profile) => {
     const userInfo = Array.isArray(profile.users) ? profile.users[0] : profile.users;
-    const maskedPaymentAccount = profile.payment_account_number
-      ? `****${String(profile.payment_account_number).slice(-4)}`
-      : null;
 
     return {
       id: profile.id,
       user_id: profile.user_id,
-      full_name: [profile.first_name, profile.middle_name, profile.last_name]
-        .filter(Boolean)
-        .join(' '),
+      full_name: profile.full_name,
       avatar_url: userInfo?.avatar_url ?? null,
-      email_address: profile.email_address,
-      role: userInfo?.role || 'employee',
+      email_address: profile.email_address ?? '',
+      role: userInfo?.role || role || 'employee',
       position: profile.position,
-      department_id: profile.department_id,
-      review_state:
-        userInfo?.status === 'active'
-          ? 'approved'
-          : profile.review_state === 'rejected'
-            ? 'rejected'
-            : 'awaiting_review',
-      rejection_notes: profile.rejection_notes,
-      rejected_at: profile.rejected_at,
-      rejected_by: profile.rejected_by,
+      department_id: profile.department_id ?? null,
+      review_state: profile.review_state ?? 'awaiting_review',
+      rejection_notes: profile.rejection_notes ?? null,
+      rejected_at: profile.rejected_at ?? null,
+      rejected_by: profile.rejected_by ?? null,
       rejection_count: profile.rejection_count ?? 0,
-      completed_at: profile.completed_at,
+      completed_at: profile.completed_at ?? profile.created_at,
       created_at: profile.created_at,
-      first_name: profile.first_name,
-      middle_name: profile.middle_name,
-      last_name: profile.last_name,
-      birthday: profile.birthday,
-      contact_number: profile.contact_number,
-      address: profile.address,
-      emergency_contact_name: profile.emergency_contact_name,
-      emergency_contact_relationship: profile.emergency_contact_relationship,
-      emergency_contact_number: profile.emergency_contact_number,
-      payment_account_name: profile.payment_account_name,
-      payment_account_number: maskedPaymentAccount,
-      payment_city: profile.payment_city,
-      payment_province: profile.payment_province,
-      payment_zipcode: profile.payment_zipcode,
+      first_name: profile.first_name ?? null,
+      middle_name: profile.middle_name ?? null,
+      last_name: profile.last_name ?? null,
+      birthday: profile.birthday ?? null,
+      contact_number: profile.contact_number ?? null,
+      address: profile.address ?? null,
+      emergency_contact_name: profile.emergency_contact_name ?? null,
+      emergency_contact_relationship: profile.emergency_contact_relationship ?? null,
+      emergency_contact_number: profile.emergency_contact_number ?? null,
+      payment_account_name: profile.payment_account_name ?? null,
+      payment_account_number: profile.payment_account_masked ?? null,
+      payment_city: profile.payment_city ?? null,
+      payment_province: profile.payment_province ?? null,
+      payment_zipcode: profile.payment_zipcode ?? null,
     };
   });
 
-  return mapped.filter((profile) => profile.review_state !== 'rejected');
+  return mapped.filter((profile) => profile.review_state === 'awaiting_review');
 }
 
 export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {

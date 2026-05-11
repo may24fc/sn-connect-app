@@ -16,6 +16,28 @@ const approveOnboardingSchema = z.object({
   notes: z.string().optional(),
 });
 
+function isMissingOnboardingReviewColumnError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code = 'code' in error ? error.code : null;
+  const message = 'message' in error ? error.message : null;
+
+  return (
+    code === 'PGRST204' &&
+    typeof message === 'string' &&
+    message.includes('onboarding_profiles') &&
+    (
+      message.includes('review_state') ||
+      message.includes('rejection_notes') ||
+      message.includes('rejected_at') ||
+      message.includes('rejected_by') ||
+      message.includes('rejection_count')
+    )
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -123,7 +145,17 @@ export async function POST(request: NextRequest) {
           .eq('id', onboardingProfile.id);
 
         if (reviewStateError) {
-          console.error('Failed to clear onboarding review state during approval:', reviewStateError);
+          if (isMissingOnboardingReviewColumnError(reviewStateError)) {
+            console.warn(
+              'Skipping onboarding review state reset during approval because review-state columns are unavailable:',
+              reviewStateError
+            );
+          } else {
+            console.error(
+              'Failed to clear onboarding review state during approval:',
+              reviewStateError
+            );
+          }
         }
       }
 
@@ -396,6 +428,16 @@ export async function POST(request: NextRequest) {
           .eq('id', onboardingProfile.id);
 
         if (rejectionStateError) {
+          if (isMissingOnboardingReviewColumnError(rejectionStateError)) {
+            return NextResponse.json(
+              {
+                error:
+                  'Onboarding rejection tracking columns are unavailable. Apply the latest onboarding review-state migration before rejecting submissions.',
+              },
+              { status: 409 }
+            );
+          }
+
           console.error('Failed to persist onboarding rejection state:', rejectionStateError);
           return NextResponse.json(
             { error: 'Failed to save rejection state', details: rejectionStateError.message },

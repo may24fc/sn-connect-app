@@ -207,6 +207,13 @@ const TABLE_CATEGORIES: Record<string, { label: string; category: string }> = {
   user_role_metadata: { label: 'System', category: 'system' },
 };
 
+const EXCLUDED_SUPER_ADMIN_SYSTEM_TABLES = new Set([
+  'projects',
+  'project_milestones',
+  'project_contributors',
+  'project_milestone_checklist',
+]);
+
 /** Formats a raw table_name into a readable label as fallback */
 function formatTableName(tableName: string): string {
   return formatLabel(tableName);
@@ -325,6 +332,21 @@ function buildSubject(row: {
   }
 
   return '';
+}
+
+function shouldIncludeLogForScope(
+  scope: ActivityScope,
+  log: { table_name: string; performed_by: string | null }
+): boolean {
+  if (
+    scope === 'super_admin' &&
+    log.performed_by === null &&
+    EXCLUDED_SUPER_ADMIN_SYSTEM_TABLES.has(log.table_name)
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function buildChangeSummary(changedFields: string[]): string {
@@ -581,7 +603,11 @@ export async function GET(request: Request): Promise<NextResponse> {
       }
     }
 
-    const activities = (logs ?? []).map(
+    const scopedLogs = (logs ?? []).filter((log: { table_name: string; performed_by: string | null }) =>
+      shouldIncludeLogForScope(scope, log)
+    );
+
+    const activities = scopedLogs.map(
       (log: {
         id: string;
         table_name: string;

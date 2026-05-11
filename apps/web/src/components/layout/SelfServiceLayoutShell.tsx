@@ -117,7 +117,12 @@ function SelfServiceLayoutInner({
   const { theme, setTheme } = useTheme();
   const marketingReportsAccess = useMarketingReportsAccess();
   const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'intern');
-  const sidebarVariant = user.role === 'intern' ? 'intern' : 'employee';
+  const sidebarVariant =
+    user.role === 'intern'
+      ? 'intern'
+      : user.role === 'admin' || user.role === 'super_admin'
+        ? user.role
+        : 'employee';
   const sidebarPath = pathname.startsWith('/my-performance') ? '/performance' : pathname;
 
   return (

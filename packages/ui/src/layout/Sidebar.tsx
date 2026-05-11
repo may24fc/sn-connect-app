@@ -9,6 +9,7 @@ import {
   ChevronRight,
   FileCheck,
   FileText,
+  FolderKanban,
   FolderOpen,
   GraduationCap,
   Home,
@@ -19,6 +20,7 @@ import {
   Receipt,
   Sparkles,
   Target,
+  Trophy,
   User,
   UserCog,
   Users,
@@ -62,6 +64,8 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'OKRs & KPIs', href: '/performance', icon: Target },
+  { label: 'Projects', href: '/projects', icon: FolderKanban },
+  { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Marketing Reports', href: '/reports', icon: FileText },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Documents', href: '/files', icon: FolderOpen },
@@ -78,6 +82,8 @@ const internNavItems: Array<NavItem> = [
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'OKRs & KPIs', href: '/performance', icon: Target },
+  { label: 'Projects', href: '/projects', icon: FolderKanban },
+  { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'EOD Reports', href: '/intern/reports', icon: FileText },
   { label: 'Documents', href: '/files', icon: FolderOpen },
   { label: 'Announcements', href: '/announcements', icon: Megaphone },
@@ -90,6 +96,8 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Directory', href: '/admin/directory', icon: Users },
   { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
   { label: 'Intern Management', href: '/admin/interns', icon: GraduationCap },
+  { label: 'War Room', href: '/admin/war-room', icon: FolderKanban },
+  { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Checklists', href: '/admin/checklists', icon: ClipboardList },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
@@ -108,6 +116,8 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Directory', href: '/admin/directory', icon: Users },
   { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
   { label: 'Intern Management', href: '/admin/interns', icon: GraduationCap },
+  { label: 'War Room', href: '/admin/war-room', icon: FolderKanban },
+  { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Checklists', href: '/super-admin/checklists', icon: ClipboardList },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
@@ -140,10 +150,6 @@ export function Sidebar({
 
   const filteredNavItems = baseNavItems.filter((item) => {
     if (variant === 'employee' && !showMarketingReports && item.href === '/reports') {
-      return false;
-    }
-
-    if (variant === 'admin' && item.href === '/admin/reports') {
       return false;
     }
 

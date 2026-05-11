@@ -3,118 +3,72 @@
 > **SN Connect** is an enterprise HR Portal with an AI Agent.  
 > "Where Policy Meets Productivity"
 
-This index maps each audience to its documentation entry point.
+This hub maps each application and audience to its documentation entry point.
 
 ---
 
-## By Audience
+## Applications
+
+| App | Description | Docs |
+|-----|-------------|------|
+| `apps/web` | HR Portal — employee & admin portal | [apps/web/README.md](apps/web/README.md) |
+| `apps/www` | Corporate public website | [apps/www/README.md](apps/www/README.md) |
+
+---
+
+## apps/web — HR Portal
 
 ### End Users (Employees & Interns)
 
-Start here: **[User Guides](user/README.md)**
+→ **[apps/web/user/README.md](apps/web/user/README.md)**
 
 | Document | Description |
 |----------|-------------|
-| [user/getting-started.md](user/getting-started.md) | First login, onboarding wizard, browser support |
-| [user/dashboard.md](user/dashboard.md) | Dashboard overview and stat cards |
-| [user/tasks.md](user/tasks.md) | Viewing and managing assigned tasks |
-| [user/documents.md](user/documents.md) | Uploading and managing 201 files |
-| [user/reports.md](user/reports.md) | Submitting weekly reports (employees) |
-| [user/invoices.md](user/invoices.md) | Submitting payroll invoices (employees) |
-| [user/performance.md](user/performance.md) | OKRs, KPIs, and self-assessments |
-| [user/information-hub.md](user/information-hub.md) | Announcements, resources, and My Growth |
-| [user/ai-assistant.md](user/ai-assistant.md) | Using the AI HR chatbot |
-| [user/intern-guide.md](user/intern-guide.md) | Intern-specific features: hours tracking, EOD reports |
+| [apps/web/user/getting-started.md](apps/web/user/getting-started.md) | First login, onboarding wizard, browser support |
+| [apps/web/user/dashboard.md](apps/web/user/dashboard.md) | Dashboard overview and stat cards |
+| [apps/web/user/tasks.md](apps/web/user/tasks.md) | Viewing and managing assigned tasks |
+| [apps/web/user/documents.md](apps/web/user/documents.md) | Uploading and managing 201 files |
+| [apps/web/user/reports.md](apps/web/user/reports.md) | Submitting weekly reports (employees) |
+| [apps/web/user/invoices.md](apps/web/user/invoices.md) | Submitting payroll invoices (employees) |
+| [apps/web/user/performance.md](apps/web/user/performance.md) | OKRs, KPIs, and self-assessments |
+| [apps/web/user/information-hub.md](apps/web/user/information-hub.md) | Announcements, resources, and My Growth |
+| [apps/web/user/ai-assistant.md](apps/web/user/ai-assistant.md) | Using the AI HR chatbot |
+| [apps/web/user/intern-guide.md](apps/web/user/intern-guide.md) | Intern-specific features: hours tracking, EOD reports |
+| [apps/web/user/notifications.md](apps/web/user/notifications.md) | In-app notifications |
+| [apps/web/user/profile.md](apps/web/user/profile.md) | Profile, payment details, and avatar |
 
 ### Admins & HR
 
-Start here: **[Admin Guides](admin/README.md)**
+→ **[apps/web/admin/README.md](apps/web/admin/README.md)**
 
 | Document | Description |
 |----------|-------------|
-| [admin/getting-started.md](admin/getting-started.md) | Admin/Super Admin dashboard orientation |
-| [admin/employee-management.md](admin/employee-management.md) | Inviting, approving, and managing employees |
-| [admin/intern-management.md](admin/intern-management.md) | Overseeing interns and reviewing daily reports |
-| [admin/performance-management.md](admin/performance-management.md) | Review cycles, OKRs, KPIs, appraisals |
-| [admin/probation.md](admin/probation.md) | Monitoring and evaluating probationary employees |
-| [admin/reports.md](admin/reports.md) | Tracking staff submissions and analytics |
-| [admin/announcements.md](admin/announcements.md) | Creating, targeting, and publishing announcements |
-| [admin/resources.md](admin/resources.md) | Managing company resources and collections |
-| [admin/ai-knowledge.md](admin/ai-knowledge.md) | Managing the AI assistant's knowledge base |
-| [admin/super-admin.md](admin/super-admin.md) | Task management, payroll approvals, system health |
+| [apps/web/admin/getting-started.md](apps/web/admin/getting-started.md) | Admin/Super Admin dashboard orientation |
+| [apps/web/admin/employee-management.md](apps/web/admin/employee-management.md) | Inviting, approving, and managing employees |
+| [apps/web/admin/intern-management.md](apps/web/admin/intern-management.md) | Overseeing interns and reviewing daily reports |
+| [apps/web/admin/performance-management.md](apps/web/admin/performance-management.md) | Review cycles, OKRs, KPIs, appraisals |
+| [apps/web/admin/probation.md](apps/web/admin/probation.md) | Monitoring and evaluating probationary employees |
+| [apps/web/admin/reports.md](apps/web/admin/reports.md) | Tracking staff submissions and analytics |
+| [apps/web/admin/announcements.md](apps/web/admin/announcements.md) | Creating, targeting, and publishing announcements |
+| [apps/web/admin/resources.md](apps/web/admin/resources.md) | Managing company resources and collections |
+| [apps/web/admin/ai-knowledge.md](apps/web/admin/ai-knowledge.md) | Managing the AI assistant's knowledge base |
+| [apps/web/admin/jobs-management.md](apps/web/admin/jobs-management.md) | Job postings, ATS pipeline, and hiring |
+| [apps/web/admin/recruitment.md](apps/web/admin/recruitment.md) | Job requisitions and delegated ATS access |
+| [apps/web/admin/tickets.md](apps/web/admin/tickets.md) | Managing IT/HR support tickets and triage |
+| [apps/web/admin/super-admin.md](apps/web/admin/super-admin.md) | Task management, payroll approvals, system health |
 
 ### Developers
 
 | Document | Description |
 |----------|-------------|
-| [api/README.md](api/README.md) | API endpoint index (~250 handlers across 37 domains) |
-| [components/README.md](components/README.md) | UI component index (25 primitives + 100+ composites) |
-| [architecture/README.md](architecture/README.md) | System architecture, layers, request flows, design decisions |
-| [architecture/auth.md](architecture/auth.md) | Auth provider (PKCE), middleware, role system, RLS |
-| [architecture/data-flow.md](architecture/data-flow.md) | TanStack Query patterns, cache, realtime, file uploads |
-| [architecture/database.md](architecture/database.md) | Database schema reference (20+ tables, enums, functions) |
+| [apps/web/api/README.md](apps/web/api/README.md) | API endpoint index (~300 handlers across 40+ domains) |
+| [apps/web/components/README.md](apps/web/components/README.md) | UI component index |
+| [apps/web/architecture/README.md](apps/web/architecture/README.md) | System architecture, layers, request flows |
+| [apps/web/architecture/auth.md](apps/web/architecture/auth.md) | Auth provider (PKCE), middleware, role system, RLS |
+| [apps/web/architecture/data-flow.md](apps/web/architecture/data-flow.md) | TanStack Query patterns, cache, realtime |
+| [apps/web/architecture/database.md](apps/web/architecture/database.md) | Database schema reference |
 | [AGENT-GUIDELINES.md](AGENT-GUIDELINES.md) | Agent coding standards and self-review process |
 | [adr/](adr/) | Architecture Decision Records (ADR-001 through ADR-006) |
-
-#### API Domain Docs
-
-| Domain | Endpoints | Doc |
-|--------|-----------|-----|
-| Auth | 3 | [api/auth.md](api/auth.md) |
-| Employees | 5 | [api/employees.md](api/employees.md) |
-| Documents | 4 | [api/documents.md](api/documents.md) |
-| Departments | 2 | [api/departments.md](api/departments.md) |
-| Tasks | 12 | [api/tasks.md](api/tasks.md) |
-| Reports | 7 | [api/reports.md](api/reports.md) |
-| Invoices | 6 | [api/invoices.md](api/invoices.md) |
-| Onboarding | 16 | [api/onboarding.md](api/onboarding.md) |
-| Users | 9 | [api/users.md](api/users.md) |
-| Announcements | 22 | [api/announcements.md](api/announcements.md) |
-| Collections | 8 | [api/collections.md](api/collections.md) |
-| Performance | 20 | [api/performance.md](api/performance.md) |
-| Probation | 3 | [api/probation.md](api/probation.md) |
-| Internships | 11 | [api/internships.md](api/internships.md) |
-| Standups | 6 | [api/standups.md](api/standups.md) |
-| AI | 15 | [api/ai.md](api/ai.md) |
-| Resources | 27 | [api/resources.md](api/resources.md) |
-| Notifications | 4 | [api/notifications.md](api/notifications.md) |
-| Dashboard | 3 | [api/dashboard.md](api/dashboard.md) |
-| Directory | 3 | [api/directory.md](api/directory.md) |
-| Jobs | 7 | [api/jobs.md](api/jobs.md) |
-| Applications | 4 | [api/applications.md](api/applications.md) |
-| Profile | 3 | [api/profile.md](api/profile.md) |
-| Profile Change Requests | 3 | [api/profile-change-requests.md](api/profile-change-requests.md) |
-| Banks | 1 | [api/banks.md](api/banks.md) |
-| Audit Logs | 1 | — |
-| Milestones | 1 | — |
-| Webhooks | 2 | — |
-| Tickets | 5 | — |
-| Ticket Handlers | 4 | — |
-| Checklist Templates | 2 | — |
-| Admin | 2 | — |
-| Offboarding | 5 | — |
-| Calendar | 1 | — |
-| Cron | 1 | — |
-| Health | 1 | — |
-| Inngest | 3 | — |
-
-#### Component Docs
-
-| Doc | Coverage |
-|-----|----------|
-| [components/primitives.md](components/primitives.md) | 25 Radix-based primitives (Button, Input, Dialog, SlidePanel, FileDropZone, ProgressTimeline, CountBadge, etc.) |
-| [components/forms.md](components/forms.md) | Form, FormField, FormGroup, PhoneInput, CurrencySelector, BankSelector |
-| [components/tasks.md](components/tasks.md) | TaskCard, TaskList, TaskFilters, TaskDetailView |
-| [components/announcements.md](components/announcements.md) | AnnouncementCard, Editor, TargetingSelector |
-| [components/reports.md](components/reports.md) | ReportCard, ReportForm, analytics charts |
-| [components/performance.md](components/performance.md) | OKRCard, KPICard, PerformanceCharts |
-| [components/internship.md](components/internship.md) | InternCard, DailyReportCard, EODReportForm |
-| [components/ai-knowledge.md](components/ai-knowledge.md) | ChatInterface, SourcesInventory, UploadZone |
-| [components/data-display.md](components/data-display.md) | StatCard, BentoGrid, DataTable, SortableTableHead |
-| [components/feedback.md](components/feedback.md) | SkeletonCard, SkeletonTable, EmptyState, ProfilePageSkeleton |
-| [components/resources.md](components/resources.md) | Resource components reference |
-| [components/dashboard.md](components/dashboard.md) | PendingApprovalsCard, RoleDashboardWidget, MilestoneFeed |
-| [components/profile.md](components/profile.md) | RoleMetadataForm, EditableProfileSection, AvatarPreviewModal |
 
 #### Package READMEs
 
@@ -126,7 +80,23 @@ Start here: **[Admin Guides](admin/README.md)**
 | `@hr-portal/config` | [packages/config/README.md](../packages/config/README.md) |
 | `@hr-portal/auth` | [packages/auth/README.md](../packages/auth/README.md) |
 
-### DevOps
+---
+
+## apps/www — Corporate Website
+
+→ **[apps/www/README.md](apps/www/README.md)**
+
+| Document | Description |
+|----------|-------------|
+| [apps/www/hidden-sections-2026-03-30.md](apps/www/hidden-sections-2026-03-30.md) | Feature-flagged hidden routes and restore checklist |
+| [apps/www/priority-handoff.csv](apps/www/priority-handoff.csv) | Content handoff priority matrix |
+| [apps/www/real-data-checklist.csv](apps/www/real-data-checklist.csv) | Mock-to-real-data replacement checklist |
+| [apps/www/ui-enhancement-checklist.md](apps/www/ui-enhancement-checklist.md) | UI/UX audit and improvement checklist |
+| [apps/www/testing-guide.md](apps/www/testing-guide.md) | Playwright testing guide |
+
+---
+
+## DevOps & Infrastructure
 
 | Document | Description |
 |----------|-------------|
@@ -136,24 +106,24 @@ Start here: **[Admin Guides](admin/README.md)**
 
 ---
 
-## Existing Guides
-
-These guides in `docs/guides/` provide additional reference:
+## Developer Guides
 
 | Document | Description |
 |----------|-------------|
 | [guides/quick-start.md](guides/quick-start.md) | Developer quick start |
 | [guides/QUICK-START-RBAC.md](guides/QUICK-START-RBAC.md) | RBAC quick start reference |
-| [guides/ui-architecture.md](guides/ui-architecture.md) | UI architecture and route map (532 lines) |
-| [guides/user-workflows.md](guides/user-workflows.md) | Comprehensive user workflow reference (1180 lines) |
+| [guides/ui-architecture.md](guides/ui-architecture.md) | UI architecture and route map |
+| [guides/user-workflows.md](guides/user-workflows.md) | Comprehensive user workflow reference |
 | [guides/user-testing-guide.md](guides/user-testing-guide.md) | QA testing guide with test accounts |
+
+---
 
 ## Project-Level References
 
 | Document | Location | Description |
 |----------|----------|-------------|
 | [CLAUDE.md](../CLAUDE.md) | Root | Master project guide (tech stack, conventions, design system) |
-| [CHANGELOG.md](../CHANGELOG.md) | Root | Release history ([Keep a Changelog](https://keepachangelog.com/)) |
+| [CHANGELOG.md](../CHANGELOG.md) | Root | Release history |
 | [PENDING_TASKS.md](../PENDING_TASKS.md) | Root | Tracked work items and progress |
 | [RBAC-IMPLEMENTATION.md](../RBAC-IMPLEMENTATION.md) | Root | Role-based access control implementation details |
 | [supabase/SCHEMA_SUMMARY.md](../supabase/SCHEMA_SUMMARY.md) | Supabase | Schema overview (30+ tables, 3 views, 70+ RLS policies) |
@@ -167,7 +137,7 @@ All documentation follows the rules in [AGENT-GUIDELINES.md](AGENT-GUIDELINES.md
 
 - **Every doc states its audience** in the first line
 - **Unimplemented features** are marked: `> **Not yet implemented** — tracked in PENDING_TASKS.md`
-- **Docs are updated immediately** when the corresponding code changes (see §2.1 trigger table)
+- **Docs are updated immediately** when the corresponding code changes
 - **ADRs are immutable** once accepted — new decisions supersede the old
 
-*Last updated: 2026-03-08*
+*Last updated: 2026-05-04*

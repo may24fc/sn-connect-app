@@ -48,11 +48,16 @@ interface DailyLogRow {
   tasks_completed: string;
   learnings: string | null;
   challenges: string | null;
+  project_entries?: DailyReport['projectEntries'];
+  blockers?: DailyReport['blockers'];
+  next_steps?: DailyReport['nextSteps'];
+  attachments?: DailyReport['attachments'];
   supervisor_notes: string | null;
   is_approved: boolean;
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  updated_at?: string;
   status?: string;
 }
 
@@ -74,12 +79,16 @@ function logToReport(log: DailyLogRow, internshipId: string): DailyReport {
     hoursLogged: Number(log.hours_worked),
     learnings: log.learnings ?? '',
     ...(log.challenges ? { challenges: log.challenges } : {}),
+    ...(log.project_entries ? { projectEntries: log.project_entries } : {}),
+    ...(log.blockers ? { blockers: log.blockers } : {}),
+    ...(log.next_steps ? { nextSteps: log.next_steps } : {}),
+    ...(log.attachments ? { attachments: log.attachments } : {}),
     ...(log.supervisor_notes ? { supervisorFeedback: log.supervisor_notes } : {}),
     status,
     submittedAt: log.created_at,
     ...(log.approved_at ? { reviewedAt: log.approved_at } : {}),
     createdAt: log.created_at,
-    updatedAt: log.created_at,
+    updatedAt: log.updated_at ?? log.created_at,
   };
 }
 
@@ -131,8 +140,13 @@ export default function InternReportsPage(): ReactNode {
         internshipId,
         logDate: data.date,
         hoursWorked: data.hoursLogged,
-        tasksCompleted: data.tasksCompleted,
-        ...(data.challenges ? { challenges: data.challenges } : {}),
+        projectEntries: data.projectEntries,
+        ...(data.blockers ? { blockers: data.blockers } : {}),
+        ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
+        ...(data.attachments ? { attachments: data.attachments } : {}),
+        ...(data.existingAttachments
+          ? { retainedAttachments: data.existingAttachments }
+          : {}),
         status: data.status,
       });
       setViewMode('list');
@@ -148,8 +162,13 @@ export default function InternReportsPage(): ReactNode {
         logId: editingLogId,
         logDate: data.date,
         hoursWorked: data.hoursLogged,
-        tasksCompleted: data.tasksCompleted,
-        challenges: data.challenges ?? null,
+        projectEntries: data.projectEntries,
+        ...(data.blockers ? { blockers: data.blockers } : {}),
+        ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
+        ...(data.attachments ? { attachments: data.attachments } : {}),
+        ...(data.existingAttachments
+          ? { retainedAttachments: data.existingAttachments }
+          : {}),
         status: data.status,
       });
       setEditingLogId(null);
@@ -239,11 +258,19 @@ export default function InternReportsPage(): ReactNode {
           defaultValues={{
             date: editingLog.log_date,
             hoursLogged: Number(editingLog.hours_worked),
-            tasksCompleted:
-              editingLog.tasks_completed === '(draft)'
-                ? ''
-                : editingLog.tasks_completed,
+            ...(editingLog.project_entries && editingLog.project_entries.length > 0
+              ? { projectEntries: editingLog.project_entries }
+              : {}),
+            ...(editingLog.blockers ? { blockers: editingLog.blockers } : {}),
+            ...(editingLog.next_steps ? { nextSteps: editingLog.next_steps } : {}),
+            ...(editingLog.attachments
+              ? { existingAttachments: editingLog.attachments }
+              : {}),
+            ...(editingLog.tasks_completed !== '(draft)'
+              ? { tasksCompleted: editingLog.tasks_completed }
+              : {}),
             ...(editingLog.challenges ? { challenges: editingLog.challenges } : {}),
+            ...(editingLog.learnings ? { focusTomorrow: editingLog.learnings } : {}),
           }}
           onCancel={() => {
             setEditingLogId(null);
@@ -325,9 +352,11 @@ export default function InternReportsPage(): ReactNode {
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">
-                    {log.tasks_completed === '(draft)'
-                      ? 'No tasks entered yet'
-                      : log.tasks_completed}
+                    {log.project_entries?.[0]
+                      ? `${log.project_entries[0].projectFocus}: ${log.project_entries[0].actionTaken}`
+                      : log.tasks_completed === '(draft)'
+                        ? 'No tasks entered yet'
+                        : log.tasks_completed}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

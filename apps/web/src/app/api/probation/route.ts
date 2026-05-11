@@ -7,6 +7,16 @@ import { probationActionSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin } from '../performance/_lib';
 
+function isMissingColumnError(error: unknown, columnName: string): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const message = 'message' in error ? error.message : null;
+
+  return typeof message === 'string' && message.includes(columnName);
+}
+
 function daysBetweenToday(dateValue: string): number {
   const target = new Date(dateValue);
   const now = new Date();
@@ -32,7 +42,7 @@ function getStage(dateHired: string, probationEndDate: string): 1 | 2 | 3 | 4 {
 
 export async function GET() {
   try {
-    const { supabase, user, role, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -42,15 +52,37 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { data: employees, error: employeesError } = await supabase
+    const employeeSelectBase =
+      'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head, users!employees_user_id_fkey(avatar_url)';
+
+    let employees: Array<any> | null = null;
+    let employeesError: any = null;
+
+    const primaryEmployeesQuery = await supabaseAdmin
       .from('employees')
-      .select(
-        'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head, manual_probation_status, users!employees_user_id_fkey(avatar_url)'
-      )
+      .select(`${employeeSelectBase}, manual_probation_status`)
       .is('deleted_at', null)
       .order('probation_end_date', { ascending: true, nullsFirst: false });
 
+    if (
+      primaryEmployeesQuery.error &&
+      isMissingColumnError(primaryEmployeesQuery.error, 'manual_probation_status')
+    ) {
+      const fallbackEmployeesQuery = await supabaseAdmin
+        .from('employees')
+        .select(employeeSelectBase)
+        .is('deleted_at', null)
+        .order('probation_end_date', { ascending: true, nullsFirst: false });
+
+      employees = fallbackEmployeesQuery.data;
+      employeesError = fallbackEmployeesQuery.error;
+    } else {
+      employees = primaryEmployeesQuery.data;
+      employeesError = primaryEmployeesQuery.error;
+    }
+
     if (employeesError) {
+      console.error('Failed to fetch probation employee records:', employeesError);
       return NextResponse.json({ error: 'Failed to fetch probation records' }, { status: 500 });
     }
 
@@ -69,18 +101,18 @@ export async function GET() {
 
     const [{ data: okrs }, { data: kpis }, { data: documents }, { data: activeCycle }] =
       await Promise.all([
-        supabase
+        supabaseAdmin
           .from('okrs')
           .select('*')
           .in('employee_id', employeeIds)
           .order('updated_at', { ascending: false }),
-        supabase
+        supabaseAdmin
           .from('kpis')
           .select('*')
           .in('employee_id', employeeIds)
           .order('updated_at', { ascending: false }),
-        supabase.from('documents').select('id, employee_id').in('employee_id', employeeIds),
-        supabase
+        supabaseAdmin.from('documents').select('id, employee_id').in('employee_id', employeeIds),
+        supabaseAdmin
           .from('review_cycles')
           .select('id')
           .eq('status', 'active')
@@ -91,7 +123,7 @@ export async function GET() {
 
     const { data: managerEmployees } =
       managerIds.length > 0
-        ? await supabase
+        ? await supabaseAdmin
             .from('employees')
             .select('user_id, first_name, last_name')
             .in('user_id', managerIds)

@@ -18,13 +18,14 @@ import {
   Textarea,
 } from '@hr-portal/ui';
 import {
-  BookOpen,
   Calendar,
   CheckCircle2,
   Clock,
   GraduationCap,
   ListChecks,
   MessageSquare,
+  Paperclip,
+  Target,
   ThumbsUp,
   TriangleAlert,
 } from 'lucide-react';
@@ -77,6 +78,10 @@ export function EODReportDetailModal({
     .join('')
     .toUpperCase()
     .slice(0, 2);
+  const projectEntries = log.project_entries ?? [];
+  const blockers = log.blockers ?? [];
+  const nextSteps = log.next_steps ?? [];
+  const attachments = log.attachments ?? [];
 
   const handleApprove = async (): Promise<void> => {
     setIsApproving(true);
@@ -161,39 +166,98 @@ export function EODReportDetailModal({
 
         <Separator />
 
-        {/* Tasks Completed */}
+        {/* Progress & Impact */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <Label className="text-sm font-medium">Tasks Completed</Label>
+            <Label className="text-sm font-medium">Progress &amp; Impact</Label>
           </div>
           <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-3">
-            <p className="text-sm whitespace-pre-wrap leading-relaxed">{log.tasks_completed}</p>
+            {projectEntries.length > 0 ? (
+              <div className="space-y-3">
+                {projectEntries.map((entry) => (
+                  <div key={entry.id} className="rounded-md border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950/60">
+                    <p className="text-sm font-medium">{entry.projectFocus}</p>
+                    <p className="mt-2 text-sm whitespace-pre-wrap leading-relaxed">
+                      <span className="font-medium">Action Taken:</span> {entry.actionTaken}
+                    </p>
+                    <p className="mt-1 text-sm whitespace-pre-wrap leading-relaxed">
+                      <span className="font-medium">Outcome:</span> {entry.outcome}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{log.tasks_completed}</p>
+            )}
           </div>
         </div>
 
-        {/* Learnings */}
-        {log.learnings && (
+        {/* Next Steps */}
+        {(nextSteps.length > 0 || log.learnings) && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-slate-700" />
-              <Label className="text-sm font-medium">Learnings</Label>
+              <Target className="h-4 w-4 text-slate-700" />
+              <Label className="text-sm font-medium">Next Steps</Label>
             </div>
             <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-3">
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{log.learnings}</p>
+              {nextSteps.length > 0 ? (
+                <ul className="space-y-1 text-sm leading-relaxed">
+                  {nextSteps.map((nextStep) => (
+                    <li key={nextStep} className="list-disc whitespace-pre-wrap ml-5">
+                      {nextStep}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{log.learnings}</p>
+              )}
             </div>
           </div>
         )}
 
-        {/* Challenges */}
-        {log.challenges && (
+        {/* Current Blockers */}
+        {(blockers.length > 0 || log.challenges) && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <TriangleAlert className="h-4 w-4 text-amber-600" />
-              <Label className="text-sm font-medium">Challenges</Label>
+              <Label className="text-sm font-medium">Current Blockers</Label>
             </div>
             <div className="rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-3">
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{log.challenges}</p>
+              {blockers.length > 0 ? (
+                <ul className="space-y-1 text-sm leading-relaxed">
+                  {blockers.map((blocker) => (
+                    <li key={blocker} className="list-disc whitespace-pre-wrap ml-5">
+                      {blocker}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{log.challenges}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Attachments */}
+        {attachments.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Paperclip className="h-4 w-4 text-slate-700" />
+              <Label className="text-sm font-medium">Proof Attachments</Label>
+            </div>
+            <div className="space-y-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
+              {attachments.map((attachment) => (
+                <a
+                  key={attachment.id}
+                  href={attachment.signedUrl ?? '#'}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"
+                >
+                  {attachment.fileName}
+                </a>
+              ))}
             </div>
           </div>
         )}

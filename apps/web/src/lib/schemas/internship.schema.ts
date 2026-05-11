@@ -1,6 +1,26 @@
 import { z } from 'zod';
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+const nonEmptyTrimmedStringSchema = z.string().trim().min(1);
+const stringListSchema = z.array(nonEmptyTrimmedStringSchema).max(20);
+
+export const dailyLogProjectEntrySchema = z.object({
+  id: z.string().uuid().optional(),
+  projectFocus: nonEmptyTrimmedStringSchema,
+  actionTaken: nonEmptyTrimmedStringSchema,
+  outcome: nonEmptyTrimmedStringSchema,
+});
+
+export const dailyLogAttachmentSchema = z.object({
+  id: z.string().uuid(),
+  fileName: nonEmptyTrimmedStringSchema,
+  filePath: nonEmptyTrimmedStringSchema,
+  fileSize: z.coerce.number().int().min(0),
+  mimeType: nonEmptyTrimmedStringSchema,
+  signedUrl: z.string().url().nullable().optional(),
+});
+
+export const dailyLogAttachmentPersistedSchema = dailyLogAttachmentSchema.omit({ signedUrl: true });
 
 export const internshipStatusSchema = z.enum(['active', 'completed', 'terminated', 'converted']);
 
@@ -48,9 +68,10 @@ export const internDailyLogStatusSchema = z.enum(['draft', 'submitted']);
 export const createInternDailyLogSchema = z.object({
   logDate: isoDateSchema,
   hoursWorked: z.coerce.number().min(0.25).max(24),
-  tasksCompleted: z.string().trim().min(1),
-  learnings: z.string().trim().nullable().optional(),
-  challenges: z.string().trim().nullable().optional(),
+  projectEntries: z.array(dailyLogProjectEntrySchema).min(1).max(20),
+  blockers: stringListSchema.optional(),
+  nextSteps: stringListSchema.optional(),
+  retainedAttachments: z.array(dailyLogAttachmentPersistedSchema).optional(),
   status: internDailyLogStatusSchema.default('submitted'),
 });
 
@@ -59,9 +80,10 @@ export const updateInternDraftLogSchema = z.object({
   logId: z.string().uuid(),
   logDate: isoDateSchema.optional(),
   hoursWorked: z.coerce.number().min(0.25).max(24).optional(),
-  tasksCompleted: z.string().trim().min(1).optional(),
-  learnings: z.string().trim().nullable().optional(),
-  challenges: z.string().trim().nullable().optional(),
+  projectEntries: z.array(dailyLogProjectEntrySchema).min(1).max(20).optional(),
+  blockers: stringListSchema.optional(),
+  nextSteps: stringListSchema.optional(),
+  retainedAttachments: z.array(dailyLogAttachmentPersistedSchema).optional(),
   status: internDailyLogStatusSchema.optional(),
 });
 

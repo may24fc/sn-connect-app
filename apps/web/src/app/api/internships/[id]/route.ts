@@ -1,4 +1,10 @@
+import {
+  normalizeAttachmentRecords,
+  normalizeProjectEntries,
+  normalizeStringList,
+} from '@/lib/intern-daily-log';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { updateInternshipSchema } from '@/lib/schemas/internship.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -16,10 +22,35 @@ interface DailyLogRow {
   tasks_completed: string;
   learnings: string | null;
   challenges: string | null;
+  project_entries?: unknown;
+  attachments?: unknown;
   supervisor_notes: string | null;
   is_approved: boolean;
   approved_at: string | null;
   created_at: string;
+  updated_at?: string;
+  status?: string;
+}
+
+const DAILY_LOG_ATTACHMENT_BUCKET = 'intern-daily-log-attachments';
+const DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 10;
+
+async function signDailyLogAttachments(attachments: unknown) {
+  const adminClient = createSupabaseAdminClient();
+  const normalizedAttachments = normalizeAttachmentRecords(attachments);
+
+  return Promise.all(
+    normalizedAttachments.map(async (attachment) => {
+      const { data, error } = await adminClient.storage
+        .from(DAILY_LOG_ATTACHMENT_BUCKET)
+        .createSignedUrl(attachment.filePath, DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS);
+
+      return {
+        ...attachment,
+        signedUrl: error ? null : data?.signedUrl ?? null,
+      };
+    })
+  );
 }
 
 function getWeekRange(dateValue: Date): { start: string; end: string; label: string } {
@@ -99,22 +130,28 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Intern profile not found' }, { status: 404 });
     }
 
-    const reportRows = ((logs as Array<DailyLogRow> | null) || []).map((log) => ({
-      id: log.id,
-      internId: internship.employee_id,
-      internshipPeriodId: internship.id,
-      date: log.log_date,
-      tasksCompleted: log.tasks_completed,
-      hoursLogged: Number(log.hours_worked),
-      learnings: log.learnings || '',
-      challenges: log.challenges || undefined,
-      supervisorFeedback: log.supervisor_notes || undefined,
-      status: log.is_approved ? 'reviewed' : 'submitted',
-      submittedAt: log.created_at,
-      reviewedAt: log.approved_at || undefined,
-      createdAt: log.created_at,
-      updatedAt: log.created_at,
-    }));
+    const reportRows = await Promise.all(
+      (((logs as Array<DailyLogRow> | null) || []).map(async (log) => ({
+        id: log.id,
+        internId: internship.employee_id,
+        internshipPeriodId: internship.id,
+        date: log.log_date,
+        tasksCompleted: log.tasks_completed,
+        hoursLogged: Number(log.hours_worked),
+        learnings: log.learnings || '',
+        challenges: log.challenges || undefined,
+        projectEntries: normalizeProjectEntries(log.project_entries, log.tasks_completed),
+        blockers: normalizeStringList(undefined, log.challenges),
+        nextSteps: normalizeStringList(undefined, log.learnings),
+        attachments: await signDailyLogAttachments(log.attachments),
+        supervisorFeedback: log.supervisor_notes || undefined,
+        status: log.status === 'draft' ? 'draft' : log.is_approved ? 'reviewed' : 'submitted',
+        submittedAt: log.created_at,
+        reviewedAt: log.approved_at || undefined,
+        createdAt: log.created_at,
+        updatedAt: log.updated_at || log.created_at,
+      })))
+    );
 
     const weeklyMap = new Map<string, { week: string; hours: number; target: number }>();
     for (const log of (logs as Array<DailyLogRow> | null) || []) {

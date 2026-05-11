@@ -90,7 +90,7 @@ Extensions are logged and visible in the intern's history.
 
 1. Navigate to an intern's detail page
 2. Scroll to the reports section
-3. Review the tasks completed, hours logged, learnings, and challenges
+3. Review the progress and impact update, hours logged, next steps, and any current blockers
 4. Approve the report — this confirms the logged hours
 
 ## Exporting Reports

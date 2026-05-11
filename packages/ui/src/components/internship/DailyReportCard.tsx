@@ -8,6 +8,8 @@ import {
   ChevronUp,
   Clock,
   MessageSquare,
+  Paperclip,
+  Target,
 } from 'lucide-react';
 import * as React from 'react';
 import { Badge } from '../../primitives/badge';
@@ -29,6 +31,10 @@ export function DailyReportCard({
   defaultExpanded = false,
 }: DailyReportCardProps): React.ReactNode {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
+  const projectEntries = report.projectEntries ?? [];
+  const blockers = report.blockers ?? [];
+  const nextSteps = report.nextSteps ?? [];
+  const attachments = report.attachments ?? [];
 
   const formattedDate = new Date(report.date).toLocaleDateString('en-US', {
     weekday: 'long',
@@ -64,32 +70,93 @@ export function DailyReportCard({
 
       {expanded && (
         <CardContent className="space-y-4 pt-2">
-          {/* Tasks Completed */}
+          {/* Progress & Impact */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <BookOpen className="h-4 w-4" />
-              Tasks Completed
+              Progress & Impact
             </div>
-            <p className="text-sm pl-6 whitespace-pre-wrap">{report.tasksCompleted}</p>
+            {projectEntries.length > 0 ? (
+              <div className="space-y-3 pl-6">
+                {projectEntries.map((entry) => (
+                  <div key={entry.id} className="rounded-lg border border-border bg-muted/30 p-3">
+                    <p className="text-sm font-medium">{entry.projectFocus}</p>
+                    <p className="mt-2 text-sm whitespace-pre-wrap">
+                      <span className="font-medium">Action Taken:</span> {entry.actionTaken}
+                    </p>
+                    <p className="mt-1 text-sm whitespace-pre-wrap">
+                      <span className="font-medium">Outcome:</span> {entry.outcome}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm pl-6 whitespace-pre-wrap">{report.tasksCompleted}</p>
+            )}
           </div>
 
-          {/* Learnings */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <BookOpen className="h-4 w-4" />
-              Key Learnings
+          {/* Next Steps */}
+          {(nextSteps.length > 0 || report.learnings) && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Target className="h-4 w-4" />
+                Next Steps
+              </div>
+              {nextSteps.length > 0 ? (
+                <ul className="space-y-1 pl-6 text-sm">
+                  {nextSteps.map((nextStep) => (
+                    <li key={nextStep} className="list-disc whitespace-pre-wrap">
+                      {nextStep}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm pl-6 whitespace-pre-wrap">{report.learnings}</p>
+              )}
             </div>
-            <p className="text-sm pl-6 whitespace-pre-wrap">{report.learnings}</p>
-          </div>
+          )}
 
-          {/* Challenges */}
-          {report.challenges && (
+          {/* Current Blockers */}
+          {(blockers.length > 0 || report.challenges) && (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium text-warning">
                 <AlertCircle className="h-4 w-4" />
-                Challenges Faced
+                Current Blockers
               </div>
-              <p className="text-sm pl-6 whitespace-pre-wrap">{report.challenges}</p>
+              {blockers.length > 0 ? (
+                <ul className="space-y-1 pl-6 text-sm">
+                  {blockers.map((blocker) => (
+                    <li key={blocker} className="list-disc whitespace-pre-wrap">
+                      {blocker}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm pl-6 whitespace-pre-wrap">{report.challenges}</p>
+              )}
+            </div>
+          )}
+
+          {/* Attachments */}
+          {attachments.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Paperclip className="h-4 w-4" />
+                Proof Attachments
+              </div>
+              <div className="space-y-2 pl-6">
+                {attachments.map((attachment) => (
+                  <a
+                    key={attachment.id}
+                    href={attachment.signedUrl ?? '#'}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm font-medium hover:bg-muted/40"
+                  >
+                    {attachment.fileName}
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 
@@ -157,6 +224,10 @@ export function DailyReportSummary({
     month: 'short',
     day: 'numeric',
   });
+  const firstProjectEntry = report.projectEntries?.[0];
+  const summaryText = firstProjectEntry
+    ? `${firstProjectEntry.projectFocus}: ${firstProjectEntry.actionTaken}`
+    : report.tasksCompleted;
 
   return (
     <div
@@ -175,8 +246,8 @@ export function DailyReportSummary({
         </div>
         <div className="border-l border-border pl-3">
           <p className="text-sm font-medium line-clamp-1">
-            {report.tasksCompleted.slice(0, 60)}
-            {report.tasksCompleted.length > 60 ? '...' : ''}
+            {summaryText.slice(0, 60)}
+            {summaryText.length > 60 ? '...' : ''}
           </p>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-muted-foreground">{report.hoursLogged} hrs</span>

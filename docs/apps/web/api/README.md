@@ -4,7 +4,7 @@
 
 All API routes live under `apps/web/src/app/api/`. Every endpoint requires authentication via Supabase session cookie unless noted otherwise. Row Level Security (RLS) is the final gatekeeper — application-level checks are secondary.
 
-**Total: ~250 HTTP method handlers across 37 domains.**
+**Total: ~300 HTTP method handlers across 40+ domains.**
 
 ---
 
@@ -33,22 +33,23 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Dashboard](#dashboard) | 3 | `/api/dashboard/` | [dashboard.md](dashboard.md) |
 | [Directory](#directory) | 3 | `/api/directory/` | [directory.md](directory.md) |
 | [Jobs](#jobs) | 7 | `/api/jobs/` | [jobs.md](jobs.md) |
-| [Applications](#applications) | 4 | `/api/applications/` | [applications.md](applications.md) |
+| [Applications](#applications) | 6 | `/api/applications/` | [applications.md](applications.md) |
+| [ATS Access](#ats-access) | 4 | `/api/ats/` | [ats.md](ats.md) |
 | [Profile](#profile) | 3 | `/api/profile/` | [profile.md](profile.md) |
 | [Profile Change Requests](#profile-change-requests) | 3 | `/api/profile-change-requests/` | [profile-change-requests.md](profile-change-requests.md) |
 | [Banks](#banks) | 1 | `/api/banks/` | [banks.md](banks.md) |
+| [Tickets](#tickets) | 9 | `/api/tickets/` | [tickets.md](tickets.md) |
+| [Ticket Handlers](#ticket-handlers) | 4 | `/api/ticket-handlers/` | [tickets.md](tickets.md) |
+| [Calendar](#calendar) | 1 | `/api/calendar/` | [calendar.md](calendar.md) |
 | [Audit Logs](#audit-logs) | 1 | `/api/audit-logs/` | — |
 | [Milestones](#milestones) | 1 | `/api/milestones/` | — |
-| [Tickets](#tickets) | 5 | `/api/tickets/` | — |
-| [Ticket Handlers](#ticket-handlers) | 4 | `/api/ticket-handlers/` | — |
 | [Checklist Templates](#checklist-templates) | 2 | `/api/checklist-templates/` | — |
 | [Offboarding](#offboarding) | 5 | `/api/offboarding/` | — |
 | [Admin](#admin) | 2 | `/api/admin/` | — |
 | [Webhooks](#webhooks) | 2 | `/api/webhooks/` | — |
-| [Calendar](#calendar) | 1 | `/api/calendar/` | — |
-| [Cron](#cron) | 1 | `/api/cron/` | — |
+| [Cron](#cron) | 3 | `/api/cron/` | — |
 | [Health](#health) | 1 | `/api/health` | — |
-| [Inngest](#inngest) | 3 | `/api/inngest` | — |
+| [Inngest](#inngest) | 1 | `/api/inngest` | — |
 
 ---
 

@@ -77,10 +77,11 @@ Interns submit an **End-of-Day (EOD) report** every working day instead of weekl
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| Tasks Completed | Yes | What you accomplished today |
+| Date | Yes | The work date this EOD report covers |
 | Hours Logged | Yes | Number of hours worked |
-| Key Learnings | No | What you learned |
-| Challenges Faced | No | Any problems or blockers |
+| Progress & Impact | Yes | Start with the project or focus, then describe the action you took and the outcome |
+| Current Blockers | No | Any dependency, issue, or support need that is still open |
+| Next Steps | No | What you will continue, follow up on, or prioritize next |
 
 3. Click **Submit**
 
@@ -90,7 +91,7 @@ Below the submission form, you'll see your recent EOD reports showing:
 
 - Date and status badge
 - Hours logged that day
-- Preview of tasks completed
+- Preview of your progress update
 - **"View All"** link to full report history
 
 ## Supervisor Approval
@@ -111,6 +112,7 @@ Interns have full access to these features — see the respective guides:
 
 - **Submit your EOD report daily** — Your dashboard clearly shows whether today's report is pending
 - **Log hours accurately** — Hours auto-accumulate toward your required total
+- **Lead with outcomes** — For each progress item, state the project or focus, the action you took, and the result
 - **Upload documents early** — Get your 201 file complete as soon as possible
 - **Check announcements** — Stay informed about company events and policies
 

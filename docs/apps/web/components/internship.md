@@ -110,7 +110,7 @@ Display components for daily log entries.
 
 ## EODReportForm
 
-End-of-day report submission form. Fields: date, hours worked, tasks completed, challenges, learnings.
+End-of-day report submission form. Fields: date, hours worked, progress and impact, current blockers, and next steps.
 
 ```tsx
 <EODReportForm

@@ -134,9 +134,9 @@ You will be redirected to your role-specific dashboard automatically.
 
 1. Go to **Dashboard**
 2. Click **Submit EOD Report**
-3. Enter tasks completed
-4. Enter hours logged
-5. Add learnings and challenges (optional)
+3. Enter the date and hours logged
+4. Add your progress and impact update
+5. Add any current blockers and next steps (optional)
 6. Click **Submit**
 
 ### Review Team Performance (Managers)

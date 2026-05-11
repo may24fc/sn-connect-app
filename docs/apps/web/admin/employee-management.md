@@ -137,6 +137,36 @@ When approved, the system updates the employee record and marks the request as c
 
 ---
 
-*Last updated: 2026-03-08*
+## Inactive Account Management
+
+Admins can deactivate and reactivate employee accounts directly from the Directory.
+
+### Deactivating an Employee
+
+1. Open the employee's detail view (`/admin/directory/[userId]`).
+2. Click **Deactivate Account** in the action menu.
+3. Confirm the dialog — this sets `status = inactive` and blocks the user from logging in.
+
+Deactivated accounts remain in the directory and all historical records are preserved. They do not count toward active headcount.
+
+### Reactivating an Employee
+
+1. In the Directory, use the **Status** filter to show inactive employees.
+2. Open the employee's detail view.
+3. Click **Reactivate Account** — sets `status = active` and restores login access.
+
+### Hire Date Updates
+
+When an employee's hire date is corrected:
+
+1. Open the employee's detail view.
+2. Click **Edit** on the hire date field.
+3. Enter the corrected date and save.
+
+Updating the hire date triggers a **milestone recalculation** — any anniversary or tenure milestones are recomputed based on the new date.
+
+---
+
+*Last updated: 2026-04-10*
 
 Next: [Intern Management](intern-management.md) · Previous: [Getting Started](getting-started.md)

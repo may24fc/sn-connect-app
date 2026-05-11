@@ -280,6 +280,44 @@ export {
   type InternHoursProgressBarProps,
 } from './components/internship/InternHoursProgressBar';
 
+// Project Tracker Components
+export { ProgressRing, type ProgressRingProps } from './components/projects/ProgressRing';
+export {
+  HealthPill,
+  type HealthPillProps,
+  type ProjectHealth,
+} from './components/projects/HealthPill';
+export {
+  MilestoneStatusBadge,
+  type MilestoneStatus,
+} from './components/projects/MilestoneStatusBadge';
+export {
+  ContributorAvatarStack,
+  type ContributorAvatar,
+  type ContributorAvatarStackProps,
+} from './components/projects/ContributorAvatarStack';
+export { ProjectCard, type ProjectCardProps } from './components/projects/ProjectCard';
+export { ChecklistItem, type ChecklistItemProps } from './components/projects/ChecklistItem';
+
+// Leaderboard / Gamification Components
+export {
+  TierBadge,
+  type Tier,
+  type TierBadgeProps,
+  TIER_THRESHOLDS,
+} from './components/leaderboard/TierBadge';
+export { StreakChip, type StreakChipProps } from './components/leaderboard/StreakChip';
+export {
+  LeaderboardPodium,
+  type LeaderboardPodiumProps,
+  type PodiumEntry,
+} from './components/leaderboard/LeaderboardPodium';
+export {
+  LeaderboardTable,
+  type LeaderboardTableProps,
+  type LeaderboardTableRow,
+} from './components/leaderboard/LeaderboardTable';
+
 // Dashboard Components
 export {
   MilestoneBanner,
@@ -440,6 +478,7 @@ export {
 } from './types/performance.types';
 
 export type {
+  DailyLogAttachment,
   InternId,
   InternshipPeriodId,
   DailyReportId,
@@ -448,6 +487,7 @@ export type {
   ReportStatus as InternReportStatus,
   InternshipPeriod,
   DailyReport,
+  ProjectFocusEntry,
   Intern,
   InternSummary,
   InternDashboardStats,

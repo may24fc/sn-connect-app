@@ -46,6 +46,15 @@ export interface TaskFilters {
   pageSize?: number;
 }
 
+export interface ProjectFilters {
+  status?: 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
+  health?: 'on_track' | 'at_risk' | 'overdue';
+  leadUserId?: string;
+  mineOnly?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
 export interface ReportFilters {
   search?: string;
   status?: 'draft' | 'submitted' | 'approved' | 'rejected';
@@ -530,6 +539,30 @@ export const queryKeys = {
     all: ['company-pulse'] as const,
     events: (filters: CompanyCalendarFilters = {}) =>
       [...queryKeys.companyPulse.all, 'events', filters] as const,
+  },
+
+  // Projects (Intern Project Tracker)
+  projects: {
+    all: ['projects'] as const,
+    lists: () => [...queryKeys.projects.all, 'list'] as const,
+    list: (filters: ProjectFilters) => [...queryKeys.projects.lists(), filters] as const,
+    details: () => [...queryKeys.projects.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.projects.details(), id] as const,
+    milestones: (projectId: string) =>
+      [...queryKeys.projects.all, 'milestones', projectId] as const,
+    checklist: (milestoneId: string) =>
+      [...queryKeys.projects.all, 'checklist', milestoneId] as const,
+  },
+
+  warRoom: {
+    all: ['warRoom'] as const,
+    overview: () => [...queryKeys.warRoom.all, 'overview'] as const,
+  },
+
+  leaderboard: {
+    all: ['leaderboard'] as const,
+    list: (scope: string, period: string) =>
+      [...queryKeys.leaderboard.all, scope, period] as const,
   },
 } as const;
 

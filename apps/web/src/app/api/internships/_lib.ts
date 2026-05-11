@@ -1,6 +1,6 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
-export const INTERNSHIP_ADMIN_ROLES = ['admin', 'super_admin'];
+export const INTERNSHIP_ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
 
 export function isInternshipAdmin(role: string | null): boolean {
   return role ? INTERNSHIP_ADMIN_ROLES.includes(role) : false;
@@ -57,7 +57,7 @@ export async function resolveEmployeeByUserId(supabase: any, userId: string) {
 }
 
 export async function canAccessInternship(
-  supabase: any,
+  _supabase: any,
   internshipId: string,
   userId: string,
   role: string | null
@@ -66,11 +66,13 @@ export async function canAccessInternship(
   internship: Record<string, unknown> | null;
   employeeId: string | null;
 }> {
-  const { data: internship, error: internshipError } = await supabase
+  const adminClient = createSupabaseAdminClient();
+
+  const { data: internship, error: internshipError } = await adminClient
     .from('internships')
     .select('*')
     .eq('id', internshipId)
-    .single();
+    .maybeSingle();
 
   if (internshipError || !internship) {
     return { allowed: false, internship: null, employeeId: null };
@@ -100,7 +102,7 @@ export async function canAccessInternship(
     };
   }
 
-  const { data: employee } = await resolveEmployeeByUserId(supabase, userId);
+  const { data: employee } = await resolveEmployeeByUserId(adminClient, userId);
   const employeeId = employee?.id ?? null;
 
   return {

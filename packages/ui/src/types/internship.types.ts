@@ -4,6 +4,22 @@ export type InternshipPeriodId = string & { __brand: 'InternshipPeriodId' };
 export type DailyReportId = string & { __brand: 'DailyReportId' };
 export type SupervisorId = string & { __brand: 'SupervisorId' };
 
+export interface ProjectFocusEntry {
+  id: string;
+  projectFocus: string;
+  actionTaken: string;
+  outcome: string;
+}
+
+export interface DailyLogAttachment {
+  id: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  signedUrl?: string | null;
+}
+
 // Internship Status Types
 export type InternshipStatus = 'active' | 'completed' | 'terminated' | 'on_hold';
 export type ReportStatus = 'draft' | 'submitted' | 'reviewed' | 'needs_revision';
@@ -35,6 +51,10 @@ export interface DailyReport {
   hoursLogged: number;
   learnings: string;
   challenges?: string;
+  projectEntries?: Array<ProjectFocusEntry>;
+  blockers?: string[];
+  nextSteps?: string[];
+  attachments?: Array<DailyLogAttachment>;
   supervisorFeedback?: string;
   status: ReportStatus;
   submittedAt: string;
@@ -110,7 +130,12 @@ export interface InternFilters {
 export interface EODReportFormData {
   date: string;
   hoursLogged: number;
-  tasksCompleted: string;
+  projectEntries: Array<ProjectFocusEntry>;
+  blockers?: string[];
+  nextSteps?: string[];
+  attachments?: File[];
+  existingAttachments?: Array<DailyLogAttachment>;
+  tasksCompleted?: string;
   challenges?: string;
   focusTomorrow?: string;
 }

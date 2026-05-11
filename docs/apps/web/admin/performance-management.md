@@ -203,6 +203,28 @@ Click **"Export Report"** to download performance data for payroll processing, t
 
 ---
 
-*Last updated: 2026-03-26*
+## My OKRs Workspace (`/admin/performance/my-okrs`)
+
+Admins and super admins who also have OKRs assigned to them (e.g., leadership OKRs) can use the **My OKRs** self-service workspace to:
+
+- View and update their own objectives and targets
+- Submit OKRs for evaluation without needing a manager to initiate it
+- Track personal progress against cycle targets
+
+This route is distinct from the admin-wide **Evaluations** view (`/admin/performance/evaluations`), which is for reviewing other employees' OKRs.
+
+---
+
+## Submission Deadlines
+
+Each review cycle can now have a **Self-assessment submission deadline** separately from the cycle end date. Employees receive a deadline reminder notification 3 days before the cut-off.
+
+When creating or editing a cycle, the deadline picker appears below the cycle end date field. Leave it blank to have no enforced deadline.
+
+> **Note:** The manager review deadline field was removed in a schema simplification. Managers are now expected to complete reviews within the cycle's end date.
+
+---
+
+*Last updated: 2026-04-10*
 
 Next: [Probation Tracking](probation.md) · Previous: [Intern Management](intern-management.md)

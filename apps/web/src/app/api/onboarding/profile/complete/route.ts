@@ -49,13 +49,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: updatedProfile, error: updateError } = await supabase
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    const { data: updatedProfile, error: updateError } = await supabaseAdmin
       .from('onboarding_profiles')
       .update({
         is_completed: true,
         completed_at: new Date().toISOString(),
         current_step: 'review',
-        review_state: 'pending_review',
       })
       .eq('id', profile.id)
       .select('*')
@@ -67,7 +68,6 @@ export async function POST(request: NextRequest) {
 
     // Update user status to awaiting_approval for credentials-first flow.
     // Use admin client to avoid RLS blocking self-service status escalation.
-    const supabaseAdmin = createSupabaseAdminClient();
     const { error: statusUpdateError } = await supabaseAdmin
       .from('users')
       .update({ status: 'awaiting_approval' })

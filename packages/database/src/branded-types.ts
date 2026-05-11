@@ -21,6 +21,9 @@ export type ReviewCycleId = string & { readonly __brand: 'ReviewCycleId' };
 export type PerformanceReviewId = string & { readonly __brand: 'PerformanceReviewId' };
 export type OkrId = string & { readonly __brand: 'OkrId' };
 export type KpiId = string & { readonly __brand: 'KpiId' };
+export type ProjectId = string & { readonly __brand: 'ProjectId' };
+export type ProjectMilestoneId = string & { readonly __brand: 'ProjectMilestoneId' };
+export type ProjectChecklistItemId = string & { readonly __brand: 'ProjectChecklistItemId' };
 
 // ============================================
 // Brand Helper Functions
@@ -109,6 +112,27 @@ export function brandOkrId(id: string): OkrId {
  */
 export function brandKpiId(id: string): KpiId {
   return id as KpiId;
+}
+
+/**
+ * Brands a string as a ProjectId.
+ */
+export function brandProjectId(id: string): ProjectId {
+  return id as ProjectId;
+}
+
+/**
+ * Brands a string as a ProjectMilestoneId.
+ */
+export function brandProjectMilestoneId(id: string): ProjectMilestoneId {
+  return id as ProjectMilestoneId;
+}
+
+/**
+ * Brands a string as a ProjectChecklistItemId.
+ */
+export function brandProjectChecklistItemId(id: string): ProjectChecklistItemId {
+  return id as ProjectChecklistItemId;
 }
 
 // ============================================

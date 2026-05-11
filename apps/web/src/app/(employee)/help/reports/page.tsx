@@ -61,7 +61,7 @@ const internFaqs: FAQItem[] = [
   {
     question: 'What should I include in my daily report?',
     answer:
-      'Include: Tasks Completed (what you accomplished today), Hours Logged (how many hours you worked), Key Learnings (what you learned), and Challenges Faced (any problems or blockers). Tasks and hours are required fields.',
+      'Include Date and Hours Logged, then summarize your Progress & Impact by naming the project or focus, the action you took, and the outcome. Add any Current Blockers and your Next Steps when relevant. Hours Logged and Progress & Impact are the required parts of the report.',
   },
   {
     question: 'Where do I submit my daily report?',
@@ -159,13 +159,14 @@ export default function ReportsHelpPage(): ReactNode {
           <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-4 space-y-2">
             <p className="text-sm font-medium text-foreground">Required fields:</p>
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-              <li><span className="font-medium text-foreground">Tasks Completed</span> — What you accomplished today</li>
+              <li><span className="font-medium text-foreground">Date</span> — The work date this report covers</li>
               <li><span className="font-medium text-foreground">Hours Logged</span> — Number of hours worked</li>
+              <li><span className="font-medium text-foreground">Progress &amp; Impact</span> — State the project or focus, the action you took, and the outcome</li>
             </ul>
             <p className="text-sm font-medium text-foreground mt-3">Optional fields:</p>
             <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-              <li><span className="font-medium text-foreground">Key Learnings</span> — What you learned today</li>
-              <li><span className="font-medium text-foreground">Challenges Faced</span> — Any problems or blockers</li>
+              <li><span className="font-medium text-foreground">Current Blockers</span> — Any issue, dependency, or support need that is still open</li>
+              <li><span className="font-medium text-foreground">Next Steps</span> — What you will continue, follow up on, or prioritize next</li>
             </ul>
           </div>
         </CardContent>

@@ -67,6 +67,8 @@ import {
   Phone,
   User,
 } from 'lucide-react';
+import { useProjects } from '@/hooks/useProjects';
+import { ProgressRing, HealthPill } from '@hr-portal/ui';
 import Link from 'next/link';
 import { type ReactNode, use, useCallback, useState } from 'react';
 
@@ -375,6 +377,7 @@ export default function InternDetailPage({
             )}
           </TabsTrigger>
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -550,6 +553,15 @@ export default function InternDetailPage({
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Projects Tab */}
+        <TabsContent value="projects" className="space-y-4">
+          {intern?.userId ? (
+            <InternProjectsPanel userId={intern.userId} />
+          ) : (
+            <p className="text-sm text-zinc-500">No linked user.</p>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -738,5 +750,62 @@ export default function InternDetailPage({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+
+function InternProjectsPanel({ userId }: { userId: string }): ReactNode {
+  const { data, isLoading } = useProjects({ leadUserId: userId, pageSize: 50 });
+  const projects = data?.data ?? [];
+
+  if (isLoading) {
+    return <p className="text-sm text-zinc-500">Loading projects...</p>;
+  }
+  if (projects.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center text-sm text-zinc-500">
+          This intern has no projects yet.
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {projects.map((p) => (
+        <ProjectRow key={p.id} project={p} />
+      ))}
+    </div>
+  );
+}
+
+function ProjectRow({
+  project,
+}: {
+  project: { id: string; name: string; progress_pct: number; health: 'on_track' | 'at_risk' | 'overdue'; points_total: number };
+}): ReactNode {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <ProgressRing value={project.progress_pct} size={56} strokeWidth={5} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/projects/${project.id}`}
+                className="truncate text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-50"
+              >
+                {project.name}
+              </Link>
+              <HealthPill health={project.health} />
+              <Badge variant="outline">{project.points_total} pts</Badge>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">
+              Interns can complete their own milestones directly from the project board.
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

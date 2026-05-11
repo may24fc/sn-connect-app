@@ -1,4 +1,5 @@
 import { type InternshipFilters, queryKeys } from '@/lib/query-keys';
+import type { DailyLogAttachment, ProjectFocusEntry } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ── Intern self-initialization types ──
@@ -62,8 +63,12 @@ export interface InternshipDailyReportRecord {
   hoursLogged: number;
   learnings: string;
   challenges?: string;
+  projectEntries?: Array<ProjectFocusEntry>;
+  blockers?: Array<string>;
+  nextSteps?: Array<string>;
+  attachments?: Array<DailyLogAttachment>;
   supervisorFeedback?: string;
-  status: 'submitted' | 'reviewed' | 'needs_revision';
+  status: 'draft' | 'submitted' | 'reviewed' | 'needs_revision';
   submittedAt: string;
   reviewedAt?: string;
   createdAt: string;
@@ -133,12 +138,53 @@ interface InternshipLogsResponse {
     tasks_completed: string;
     learnings: string | null;
     challenges: string | null;
+    project_entries?: Array<ProjectFocusEntry>;
+    blockers?: Array<string>;
+    next_steps?: Array<string>;
+    attachments?: Array<DailyLogAttachment>;
     supervisor_notes: string | null;
     is_approved: boolean;
     approved_by: string | null;
     approved_at: string | null;
     created_at: string;
+    updated_at?: string;
+    status?: string;
   }>;
+}
+
+function buildDailyLogFormData(payload: {
+  logDate?: string;
+  hoursWorked?: number;
+  projectEntries?: Array<ProjectFocusEntry>;
+  blockers?: Array<string>;
+  nextSteps?: Array<string>;
+  retainedAttachments?: Array<DailyLogAttachment>;
+  attachments?: Array<File>;
+  logId?: string;
+  status?: 'draft' | 'submitted';
+}): FormData {
+  const formData = new FormData();
+  formData.append(
+    'payload',
+    JSON.stringify({
+      ...(payload.logId ? { logId: payload.logId } : {}),
+      ...(payload.logDate !== undefined ? { logDate: payload.logDate } : {}),
+      ...(payload.hoursWorked !== undefined ? { hoursWorked: payload.hoursWorked } : {}),
+      ...(payload.projectEntries !== undefined ? { projectEntries: payload.projectEntries } : {}),
+      ...(payload.blockers ? { blockers: payload.blockers } : {}),
+      ...(payload.nextSteps ? { nextSteps: payload.nextSteps } : {}),
+      ...(payload.retainedAttachments
+        ? { retainedAttachments: payload.retainedAttachments }
+        : {}),
+      ...(payload.status ? { status: payload.status } : {}),
+    })
+  );
+
+  for (const file of payload.attachments ?? []) {
+    formData.append('files', file);
+  }
+
+  return formData;
 }
 
 interface InternshipActionResponse {
@@ -211,6 +257,23 @@ export function useInternshipLogs(id: string | null, enabled = true) {
   });
 }
 
+async function getDailyLogMutationErrorMessage(
+  response: Response,
+  fallback: string
+): Promise<string> {
+  const payload = await response.json().catch(() => ({ error: fallback }));
+  const rawError = typeof payload?.error === 'string' ? payload.error : fallback;
+
+  if (
+    response.status === 409 &&
+    rawError.toLowerCase().includes('daily log already exists for this date')
+  ) {
+    return 'You already have an EOD report for this date. Edit the existing report or choose a different date.';
+  }
+
+  return rawError;
+}
+
 export function useCreateInternDailyLog() {
   const queryClient = useQueryClient();
 
@@ -219,27 +282,33 @@ export function useCreateInternDailyLog() {
       internshipId: string;
       logDate: string;
       hoursWorked: number;
-      tasksCompleted: string;
-      learnings?: string;
-      challenges?: string;
+      projectEntries: Array<ProjectFocusEntry>;
+      blockers?: Array<string>;
+      nextSteps?: Array<string>;
+      attachments?: Array<File>;
+      retainedAttachments?: Array<DailyLogAttachment>;
       status?: 'draft' | 'submitted';
     }) => {
       const response = await fetch(`/api/internships/${payload.internshipId}/logs`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: buildDailyLogFormData({
           logDate: payload.logDate,
           hoursWorked: payload.hoursWorked,
-          tasksCompleted: payload.tasksCompleted,
-          learnings: payload.learnings,
-          challenges: payload.challenges,
+          projectEntries: payload.projectEntries,
+          ...(payload.blockers ? { blockers: payload.blockers } : {}),
+          ...(payload.nextSteps ? { nextSteps: payload.nextSteps } : {}),
+          ...(payload.attachments ? { attachments: payload.attachments } : {}),
+          ...(payload.retainedAttachments
+            ? { retainedAttachments: payload.retainedAttachments }
+            : {}),
           status: payload.status ?? 'submitted',
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to create daily log' }));
-        throw new Error(error.error || 'Failed to create daily log');
+        throw new Error(
+          await getDailyLogMutationErrorMessage(response, 'Failed to create daily log')
+        );
       }
 
       return response.json();
@@ -266,22 +335,29 @@ export function useUpdateInternDraftLog() {
       logId: string;
       logDate?: string;
       hoursWorked?: number;
-      tasksCompleted?: string;
-      learnings?: string | null;
-      challenges?: string | null;
+      projectEntries?: Array<ProjectFocusEntry>;
+      blockers?: Array<string>;
+      nextSteps?: Array<string>;
+      attachments?: Array<File>;
+      retainedAttachments?: Array<DailyLogAttachment>;
       status?: 'draft' | 'submitted';
     }) => {
       const response = await fetch(`/api/internships/${payload.internshipId}/logs`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: buildDailyLogFormData({
           logId: payload.logId,
-          logDate: payload.logDate,
-          hoursWorked: payload.hoursWorked,
-          tasksCompleted: payload.tasksCompleted,
-          learnings: payload.learnings,
-          challenges: payload.challenges,
-          status: payload.status,
+          ...(payload.logDate !== undefined ? { logDate: payload.logDate } : {}),
+          ...(payload.hoursWorked !== undefined ? { hoursWorked: payload.hoursWorked } : {}),
+          ...(payload.projectEntries !== undefined
+            ? { projectEntries: payload.projectEntries }
+            : {}),
+          ...(payload.blockers ? { blockers: payload.blockers } : {}),
+          ...(payload.nextSteps ? { nextSteps: payload.nextSteps } : {}),
+          ...(payload.attachments ? { attachments: payload.attachments } : {}),
+          ...(payload.retainedAttachments
+            ? { retainedAttachments: payload.retainedAttachments }
+            : {}),
+          ...(payload.status ? { status: payload.status } : {}),
         }),
       });
 

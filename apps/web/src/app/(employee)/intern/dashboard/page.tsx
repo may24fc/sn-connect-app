@@ -87,30 +87,22 @@ export default function InternDashboardPage(): ReactNode {
       return;
     }
 
-    const payload: {
-      internshipId: string;
-      logDate: string;
-      hoursWorked: number;
-      tasksCompleted: string;
-      learnings?: string;
-      challenges?: string;
-    } = {
+    const payload = {
       internshipId: activeInternshipId,
       logDate: data.date,
       hoursWorked: data.hoursLogged,
-      tasksCompleted: data.tasksCompleted,
-      // Map focusTomorrow -> learnings (same DB column)
-      ...(data.focusTomorrow ? { learnings: data.focusTomorrow } : {}),
-      ...(data.challenges ? { challenges: data.challenges } : {}),
+      projectEntries: data.projectEntries,
+      ...(data.blockers ? { blockers: data.blockers } : {}),
+      ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
+      ...(data.attachments ? { attachments: data.attachments } : {}),
+      ...(data.existingAttachments
+        ? { retainedAttachments: data.existingAttachments }
+        : {}),
     };
 
-    try {
-      await createLogMutation.mutateAsync(payload);
-      addToast({ title: 'EOD report submitted', description: `${data.hoursLogged} hours logged`, variant: 'success' });
-      setShowForm(false);
-    } catch {
-      addToast({ title: 'Failed to submit report', variant: 'error' });
-    }
+    await createLogMutation.mutateAsync(payload);
+    addToast({ title: 'EOD report submitted', description: `${data.hoursLogged} hours logged`, variant: 'success' });
+    setShowForm(false);
   };
 
   if (isLoading) {
@@ -375,6 +367,13 @@ export default function InternDashboardPage(): ReactNode {
           <SlidePanelBody className="p-0">
             <EODReportForm
               onSubmit={handleSubmitReport}
+              onSubmitError={(message) =>
+                addToast({
+                  title: 'Unable to submit EOD report',
+                  description: message,
+                  variant: 'error',
+                })
+              }
               isSubmitting={createLogMutation.isPending}
               className="border-0 shadow-none rounded-none"
             />

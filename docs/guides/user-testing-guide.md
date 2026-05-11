@@ -94,7 +94,7 @@ Interns have a simplified experience focused on daily reporting and task trackin
 ### Intern Dashboard (`/intern/dashboard`)
 1. After login you land on the **Intern Dashboard**
 2. Review your hours progress, days remaining, and whether today's EOD report is submitted
-3. If no report yet, click **Submit Now** and fill in tasks completed, hours logged, and learnings
+3. If no report yet, click **Submit Now** and fill in the date, hours logged, your progress and impact update, and any next steps or blockers
 4. Click **Submit**
 
 ### Available Features (same as Employee)

@@ -1,4 +1,9 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import {
+  normalizeAttachmentRecords,
+  normalizeProjectEntries,
+  normalizeStringList,
+} from '@/lib/intern-daily-log';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
@@ -11,11 +16,17 @@ export interface InternDailyLog {
   tasks_completed: string;
   learnings: string | null;
   challenges: string | null;
+  project_entries?: ReturnType<typeof normalizeProjectEntries>;
+  blockers?: string[];
+  next_steps?: string[];
+  attachments?: ReturnType<typeof normalizeAttachmentRecords>;
   supervisor_notes: string | null;
   is_approved: boolean;
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  updated_at?: string;
+  status?: string;
   // Joined data
   internship?: {
     employee: {
@@ -39,12 +50,34 @@ const dailyLogPayloadSchema = z.object({
   tasks_completed: z.string(),
   learnings: z.string().nullable().optional(),
   challenges: z.string().nullable().optional(),
+  project_entries: z.unknown().optional(),
+  attachments: z.unknown().optional(),
   supervisor_notes: z.string().nullable().optional(),
   is_approved: z.boolean(),
   approved_by: z.string().uuid().nullable().optional(),
   approved_at: z.string().nullable().optional(),
   created_at: z.string(),
+  updated_at: z.string().optional(),
+  status: z.string().optional(),
 });
+
+function mapRealtimeLog(log: any): InternDailyLog {
+  return {
+    ...log,
+    project_entries: normalizeProjectEntries(log.project_entries, log.tasks_completed),
+    blockers: normalizeStringList(undefined, log.challenges),
+    next_steps: normalizeStringList(undefined, log.learnings),
+    attachments: normalizeAttachmentRecords(log.attachments),
+    internship: {
+      employee: Array.isArray(log.internships?.employees)
+        ? log.internships.employees[0]
+        : log.internships?.employees,
+      school: log.internships?.school,
+      program: log.internships?.program,
+      department: log.internships?.department,
+    },
+  };
+}
 
 /**
  * Real-time hook for Intern Daily Logs (EOD Reports)
@@ -79,11 +112,15 @@ export function useRealtimeInternDailyLogs() {
           tasks_completed,
           learnings,
           challenges,
+          project_entries,
+          attachments,
           supervisor_notes,
           is_approved,
           approved_by,
           approved_at,
           created_at,
+          updated_at,
+          status,
           internships!inner(
             id,
             school,
@@ -108,17 +145,7 @@ export function useRealtimeInternDailyLogs() {
       }
 
       // Transform data to match our interface
-      const mapped = (data || []).map((log: any) => ({
-        ...log,
-        internship: {
-          employee: Array.isArray(log.internships?.employees)
-            ? log.internships.employees[0]
-            : log.internships?.employees,
-          school: log.internships?.school,
-          program: log.internships?.program,
-          department: log.internships?.department,
-        },
-      }));
+      const mapped = (data || []).map((log: any) => mapRealtimeLog(log));
 
       setDailyLogs(mapped);
       console.log(`[Realtime Daily Logs] Loaded ${mapped.length} daily logs`);
@@ -157,11 +184,15 @@ export function useRealtimeInternDailyLogs() {
               tasks_completed,
               learnings,
               challenges,
+              project_entries,
+              attachments,
               supervisor_notes,
               is_approved,
               approved_by,
               approved_at,
               created_at,
+              updated_at,
+              status,
               internships!inner(
                 id,
                 school,
@@ -180,17 +211,7 @@ export function useRealtimeInternDailyLogs() {
             .single();
 
           if (newLog) {
-            const mapped = {
-              ...newLog,
-              internship: {
-                employee: Array.isArray(newLog.internships?.employees)
-                  ? newLog.internships.employees[0]
-                  : newLog.internships?.employees,
-                school: newLog.internships?.school,
-                program: newLog.internships?.program,
-                department: newLog.internships?.department,
-              },
-            };
+            const mapped = mapRealtimeLog(newLog);
 
             setDailyLogs((prev) => [mapped, ...prev]);
             console.log('[Realtime Daily Logs] Added new daily log to state');
@@ -229,11 +250,15 @@ export function useRealtimeInternDailyLogs() {
               tasks_completed,
               learnings,
               challenges,
+              project_entries,
+              attachments,
               supervisor_notes,
               is_approved,
               approved_by,
               approved_at,
               created_at,
+              updated_at,
+              status,
               internships!inner(
                 id,
                 school,
@@ -252,17 +277,7 @@ export function useRealtimeInternDailyLogs() {
             .single();
 
           if (updatedLog) {
-            const mapped = {
-              ...updatedLog,
-              internship: {
-                employee: Array.isArray(updatedLog.internships?.employees)
-                  ? updatedLog.internships.employees[0]
-                  : updatedLog.internships?.employees,
-                school: updatedLog.internships?.school,
-                program: updatedLog.internships?.program,
-                department: updatedLog.internships?.department,
-              },
-            };
+            const mapped = mapRealtimeLog(updatedLog);
 
             setDailyLogs((prev) => {
               const index = prev.findIndex((log) => log.id === updatedId);

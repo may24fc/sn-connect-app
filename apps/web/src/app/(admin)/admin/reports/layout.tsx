@@ -8,7 +8,7 @@ export default function AdminReportsLayout({
 }: {
   children: ReactNode;
 }): ReactNode {
-  const user = useRequireAuth(['super_admin']);
+  const user = useRequireAuth(['admin', 'super_admin']);
 
   if (!user) {
     return null;

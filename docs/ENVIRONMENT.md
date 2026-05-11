@@ -46,6 +46,18 @@ This document describes all environment variables required by the HR Portal appl
 | `ADMIN_SECRET_KEY` | Secret key for manual Edge Function invocation via `X-Admin-Key` header. Must be at least 32 characters. Generate with `openssl rand -base64 32`. | No |
 | `APP_URL` | Canonical internal app base URL for Edge Functions and other server-side jobs that generate absolute links outside the Next.js runtime. Set to `https://app.sngroup.com.au` in production. | No |
 
+### n8n Workflows
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `SUPABASE_URL` | Base Supabase project URL used by n8n REST calls. For the intern EOD Telegram digest workflow, this should match `NEXT_PUBLIC_SUPABASE_URL` without any path suffix. | For n8n workflows |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key used by n8n to call `get_intern_eod_digest_source` and upsert into `intern_eod_digest_runs`. This is the same secret documented in the Supabase section and must only be stored in server-side tooling such as n8n. | For n8n workflows |
+| `ANTHROPIC_API_KEY` | Anthropic API key used by the `intern-eod-telegram-department-digest` workflow to summarize prior-day logs by department before delivery. | For AI-backed n8n workflows |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token used by n8n to deliver the department digest message. Obtain this from BotFather. | For Telegram workflows |
+| `TELEGRAM_CHAT_ID` | Target Telegram chat or group ID that should receive the department digest. Use the numeric chat ID for the destination boss or group channel. | For Telegram workflows |
+
+The workflow file `n8n/workflows/intern-eod-telegram-department-digest.json` expects all five variables above to be configured in the n8n runtime before import or activation.
+
 ### Wise (TransferWise) Payment Gateway
 
 | Variable | Description | Required | Default |
