@@ -25,6 +25,7 @@ import {
   SectionTooltip,
   HelpLink,
   EmptyState,
+  useToast,
 } from '@hr-portal/ui';
 import {
   CheckCircle2,
@@ -96,6 +97,7 @@ export default function InternReportsPage(): ReactNode {
   const router = useRouter();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const { addToast, updateToast } = useToast();
 
   // ── Data fetching ──
   const listQuery = useInternships({ page: 1, pageSize: 1, status: 'active' });
@@ -132,61 +134,166 @@ export default function InternReportsPage(): ReactNode {
     [editingLogId, logs],
   );
 
+  const runEodToastAction = useCallback(
+    async <T,>(
+      action: () => Promise<T>,
+      options: {
+        loadingTitle: string;
+        loadingDescription?: string;
+        successTitle: string;
+        successDescription?: string;
+        errorTitle: string;
+      },
+      rethrowOnError = false,
+    ): Promise<T | undefined> => {
+      const toastId = addToast({
+        title: options.loadingTitle,
+        ...(options.loadingDescription
+          ? { description: options.loadingDescription }
+          : {}),
+        duration: 0,
+      });
+
+      try {
+        const result = await action();
+        updateToast(toastId, {
+          title: options.successTitle,
+          ...(options.successDescription
+            ? { description: options.successDescription }
+            : {}),
+          variant: 'success',
+          duration: 3000,
+        });
+        return result;
+      } catch (error) {
+        updateToast(toastId, {
+          title: options.errorTitle,
+          ...(error instanceof Error && error.message
+            ? { description: error.message }
+            : {}),
+          variant: 'error',
+          duration: 5000,
+        });
+
+        if (rethrowOnError) {
+          throw error;
+        }
+
+        return undefined;
+      }
+    },
+    [addToast, updateToast],
+  );
+
   // ── Handlers ──
   const handleCreateOrSubmit = useCallback(
     async (data: EODReportFormData & { status: 'draft' | 'submitted' }) => {
       if (!internshipId) return;
-      await createLog.mutateAsync({
-        internshipId,
-        logDate: data.date,
-        hoursWorked: data.hoursLogged,
-        projectEntries: data.projectEntries,
-        ...(data.blockers ? { blockers: data.blockers } : {}),
-        ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
-        ...(data.attachments ? { attachments: data.attachments } : {}),
-        ...(data.existingAttachments
-          ? { retainedAttachments: data.existingAttachments }
-          : {}),
-        status: data.status,
-      });
+      await runEodToastAction(
+        () =>
+          createLog.mutateAsync({
+            internshipId,
+            logDate: data.date,
+            hoursWorked: data.hoursLogged,
+            projectEntries: data.projectEntries,
+            ...(data.blockers ? { blockers: data.blockers } : {}),
+            ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
+            ...(data.attachments ? { attachments: data.attachments } : {}),
+            ...(data.existingAttachments
+              ? { retainedAttachments: data.existingAttachments }
+              : {}),
+            status: data.status,
+          }),
+        {
+          loadingTitle:
+            data.status === 'draft' ? 'Saving EOD draft...' : 'Submitting EOD report...',
+          loadingDescription:
+            data.status === 'draft'
+              ? 'Your work is being saved so you can continue later.'
+              : 'Your end-of-day report is being submitted.',
+          successTitle:
+            data.status === 'draft' ? 'EOD draft saved' : 'EOD report submitted',
+          successDescription:
+            data.status === 'draft'
+              ? 'You can return later to finish or submit it.'
+              : `${data.hoursLogged} hours logged for ${new Date(data.date).toLocaleDateString()}.`,
+          errorTitle:
+            data.status === 'draft'
+              ? 'Unable to save EOD draft'
+              : 'Unable to submit EOD report',
+        },
+        true,
+      );
       setViewMode('list');
     },
-    [internshipId, createLog],
+    [internshipId, createLog, runEodToastAction],
   );
 
   const handleUpdateDraft = useCallback(
     async (data: EODReportFormData & { status: 'draft' | 'submitted' }) => {
       if (!internshipId || !editingLogId) return;
-      await updateDraftLog.mutateAsync({
-        internshipId,
-        logId: editingLogId,
-        logDate: data.date,
-        hoursWorked: data.hoursLogged,
-        projectEntries: data.projectEntries,
-        ...(data.blockers ? { blockers: data.blockers } : {}),
-        ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
-        ...(data.attachments ? { attachments: data.attachments } : {}),
-        ...(data.existingAttachments
-          ? { retainedAttachments: data.existingAttachments }
-          : {}),
-        status: data.status,
-      });
+      await runEodToastAction(
+        () =>
+          updateDraftLog.mutateAsync({
+            internshipId,
+            logId: editingLogId,
+            logDate: data.date,
+            hoursWorked: data.hoursLogged,
+            projectEntries: data.projectEntries,
+            ...(data.blockers ? { blockers: data.blockers } : {}),
+            ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
+            ...(data.attachments ? { attachments: data.attachments } : {}),
+            ...(data.existingAttachments
+              ? { retainedAttachments: data.existingAttachments }
+              : {}),
+            status: data.status,
+          }),
+        {
+          loadingTitle:
+            data.status === 'draft' ? 'Updating EOD draft...' : 'Submitting EOD report...',
+          loadingDescription:
+            data.status === 'draft'
+              ? 'Saving your latest draft changes.'
+              : 'Finalizing and submitting your draft report.',
+          successTitle:
+            data.status === 'draft' ? 'EOD draft updated' : 'Draft submitted as EOD',
+          successDescription:
+            data.status === 'draft'
+              ? 'Your changes were saved.'
+              : `${data.hoursLogged} hours logged for ${new Date(data.date).toLocaleDateString()}.`,
+          errorTitle:
+            data.status === 'draft'
+              ? 'Unable to update EOD draft'
+              : 'Unable to submit EOD draft',
+        },
+        true,
+      );
       setEditingLogId(null);
       setViewMode('list');
     },
-    [internshipId, editingLogId, updateDraftLog],
+    [internshipId, editingLogId, updateDraftLog, runEodToastAction],
   );
 
   const handleQuickSubmitDraft = useCallback(
     async (logId: string) => {
       if (!internshipId) return;
-      await updateDraftLog.mutateAsync({
-        internshipId,
-        logId,
-        status: 'submitted',
-      });
+      await runEodToastAction(
+        () =>
+          updateDraftLog.mutateAsync({
+            internshipId,
+            logId,
+            status: 'submitted',
+          }),
+        {
+          loadingTitle: 'Submitting EOD draft...',
+          loadingDescription: 'Sending your saved draft as an end-of-day report.',
+          successTitle: 'Draft submitted as EOD',
+          successDescription: 'Your report is now marked as submitted.',
+          errorTitle: 'Unable to submit EOD draft',
+        },
+      );
     },
-    [internshipId, updateDraftLog],
+    [internshipId, updateDraftLog, runEodToastAction],
   );
 
   // ── Render ──
@@ -227,6 +334,13 @@ export default function InternReportsPage(): ReactNode {
         <PageHeader />
         <EODReportForm
           onSubmit={handleCreateOrSubmit}
+          onSubmitError={(message) =>
+            addToast({
+              title: 'EOD action needs attention',
+              description: message,
+              variant: 'error',
+            })
+          }
           isSubmitting={
             createLog.isPending && createLog.variables?.status !== 'draft'
           }
@@ -247,6 +361,13 @@ export default function InternReportsPage(): ReactNode {
         <EODReportForm
           editMode
           onSubmit={handleUpdateDraft}
+          onSubmitError={(message) =>
+            addToast({
+              title: 'EOD action needs attention',
+              description: message,
+              variant: 'error',
+            })
+          }
           isSubmitting={
             updateDraftLog.isPending &&
             updateDraftLog.variables?.status === 'submitted'

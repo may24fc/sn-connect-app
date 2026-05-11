@@ -57,7 +57,7 @@ export default function InternDashboardPage(): ReactNode {
   const activeInternshipId = listQuery.data?.data?.[0]?.id || null;
   const detailQuery = useInternship(activeInternshipId, !!activeInternshipId);
   const createLogMutation = useCreateInternDailyLog();
-  const { addToast } = useToast();
+  const { addToast, updateToast } = useToast();
 
   // Attention items — onboarding reminders, pending tasks
   const { items: attentionItems, isLoading: isAttentionLoading } =
@@ -87,6 +87,12 @@ export default function InternDashboardPage(): ReactNode {
       return;
     }
 
+    const toastId = addToast({
+      title: 'Submitting EOD report...',
+      description: 'Your end-of-day report is being sent.',
+      duration: 0,
+    });
+
     const payload = {
       internshipId: activeInternshipId,
       logDate: data.date,
@@ -100,9 +106,26 @@ export default function InternDashboardPage(): ReactNode {
         : {}),
     };
 
-    await createLogMutation.mutateAsync(payload);
-    addToast({ title: 'EOD report submitted', description: `${data.hoursLogged} hours logged`, variant: 'success' });
-    setShowForm(false);
+    try {
+      await createLogMutation.mutateAsync(payload);
+      updateToast(toastId, {
+        title: 'EOD report submitted',
+        description: `${data.hoursLogged} hours logged for ${new Date(data.date).toLocaleDateString()}.`,
+        variant: 'success',
+        duration: 3000,
+      });
+      setShowForm(false);
+    } catch (error) {
+      updateToast(toastId, {
+        title: 'Unable to submit EOD report',
+        ...(error instanceof Error && error.message
+          ? { description: error.message }
+          : {}),
+        variant: 'error',
+        duration: 5000,
+      });
+      throw error;
+    }
   };
 
   if (isLoading) {
@@ -367,13 +390,6 @@ export default function InternDashboardPage(): ReactNode {
           <SlidePanelBody className="p-0">
             <EODReportForm
               onSubmit={handleSubmitReport}
-              onSubmitError={(message) =>
-                addToast({
-                  title: 'Unable to submit EOD report',
-                  description: message,
-                  variant: 'error',
-                })
-              }
               isSubmitting={createLogMutation.isPending}
               className="border-0 shadow-none rounded-none"
             />

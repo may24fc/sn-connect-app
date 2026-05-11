@@ -16,6 +16,7 @@ import {
   Label,
   Separator,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
 import {
   Calendar,
@@ -65,6 +66,7 @@ export function EODReportDetailModal({
   const [supervisorNotes, setSupervisorNotes] = useState('');
   const [isApproving, setIsApproving] = useState(false);
   const updateLog = useUpdateInternDailyLog();
+  const { addToast, updateToast } = useToast();
 
   if (!log) return null;
 
@@ -85,6 +87,12 @@ export function EODReportDetailModal({
 
   const handleApprove = async (): Promise<void> => {
     setIsApproving(true);
+    const toastId = addToast({
+      title: 'Approving EOD report...',
+      description: 'Saving supervisor approval and notes.',
+      duration: 0,
+    });
+
     try {
       await updateLog.mutateAsync({
         internshipId: log.internship_id,
@@ -92,10 +100,23 @@ export function EODReportDetailModal({
         isApproved: true,
         ...(supervisorNotes.trim() ? { supervisorNotes: supervisorNotes.trim() } : {}),
       });
+      updateToast(toastId, {
+        title: 'EOD report approved',
+        description: `${internName}'s report has been marked as approved.`,
+        variant: 'success',
+        duration: 3000,
+      });
       setSupervisorNotes('');
       onOpenChange(false);
-    } catch {
-      // Error is handled by the mutation hook
+    } catch (error) {
+      updateToast(toastId, {
+        title: 'Unable to approve EOD report',
+        ...(error instanceof Error && error.message
+          ? { description: error.message }
+          : {}),
+        variant: 'error',
+        duration: 5000,
+      });
     } finally {
       setIsApproving(false);
     }
