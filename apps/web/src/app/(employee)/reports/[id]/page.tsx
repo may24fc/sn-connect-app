@@ -13,8 +13,12 @@ import {
   formatMetricValue,
   formatMetricValueWithUnit,
   formatUsdAmount,
+  getContentCreationEntries,
+  getContentCreationObservations,
+  getContentCreationResults,
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveLabel,
+  getMarketingReportDisplayName,
   getReportTypeDescription,
   getReportTypeLabel,
   parseNoteSections,
@@ -103,6 +107,8 @@ export default function ReportDetailPage({
   const metrics = report?.report_metrics || [];
   const marketingContext = report?.marketing_context;
   const submittedTimestamp = report ? getSubmittedTimestamp(report) : null;
+  const contentCreationEntries = getContentCreationEntries(marketingContext, metrics);
+  const isContentCreationReport = marketingContext?.marketingReportType === 'Content Creation';
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
     initialColumn: 'metric_name',
@@ -112,6 +118,12 @@ export default function ReportDetailPage({
     metric_name: (m) => m.metric_name,
     metric_value: (m) => m.metric_value,
     metric_unit: (m) => m.metric_unit ?? '',
+  });
+
+  const sortedContentCreationEntries = sortItems(contentCreationEntries, {
+    metric_name: (entry) => entry.platform.toLowerCase(),
+    metric_value: (entry) => entry.posts,
+    metric_unit: () => 'count',
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
@@ -180,8 +192,17 @@ export default function ReportDetailPage({
     );
   }
 
-  // Build KPI cards from metrics
-  const kpiCards = metrics.slice(0, 4).map((metric, index) => ({
+  const contentCreationKpiCards = contentCreationEntries.slice(0, 4).map((entry, index) => ({
+    label: entry.platform,
+    value: formatMetricValueWithUnit(entry.posts, 'count'),
+    change: {
+      absolute: '—',
+      trend: 'stable' as const,
+    },
+    color: KPI_COLORS[index % KPI_COLORS.length] as 'blue' | 'green' | 'orange' | 'red',
+  }));
+
+  const metricKpiCards = metrics.slice(0, 4).map((metric, index) => ({
     label: metric.metric_name,
     value: formatMetricValueWithUnit(metric.metric_value, metric.metric_unit),
     change: {
@@ -191,8 +212,13 @@ export default function ReportDetailPage({
     color: KPI_COLORS[index % KPI_COLORS.length] as 'blue' | 'green' | 'orange' | 'red',
   }));
 
+  // Build KPI cards from metrics or structured content creation entries
+  const kpiCards = isContentCreationReport ? contentCreationKpiCards : metricKpiCards;
+
   // Parse accomplishments, challenges, next-week plans from notes
   const noteSections = parseNoteSections(report.notes || '');
+  const contentCreationObservations = getContentCreationObservations(marketingContext, noteSections);
+  const contentCreationResults = getContentCreationResults(marketingContext, noteSections);
 
   const keyFindings: Array<KeyFinding> = noteSections.accomplishments.map((item, index) => ({
     metric: `Accomplishment ${index + 1}`,
@@ -200,7 +226,9 @@ export default function ReportDetailPage({
     highlight: index === 0,
   }));
 
-  const draftLabel = marketingContext?.campaignName || `${getReportTypeLabel(report.report_type)} report`;
+  const draftLabel = marketingContext
+    ? getMarketingReportDisplayName(marketingContext)
+    : `${getReportTypeLabel(report.report_type)} report`;
 
   const handleDeleteDraft = () => {
     deleteReport.mutate(report.id, {
@@ -233,13 +261,15 @@ export default function ReportDetailPage({
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              {marketingContext?.campaignName || `${getReportTypeLabel(report.report_type)} Report`}
+              {marketingContext
+                ? getMarketingReportDisplayName(marketingContext)
+                : `${getReportTypeLabel(report.report_type)} Report`}
             </h1>
             <p className="text-muted-foreground">
               {getReportTypeDescription(report.report_type) && (
                 <span className="block text-xs mb-0.5">{getReportTypeDescription(report.report_type)}</span>
               )}
-              {marketingContext && (
+              {marketingContext?.primaryChannel && marketingContext.objective && (
                 <span className="block text-xs mb-0.5">
                   {getMarketingObjectiveLabel(marketingContext.objective)} objective via {marketingContext.primaryChannel}
                 </span>
@@ -360,11 +390,23 @@ export default function ReportDetailPage({
             {submittedTimestamp ? formatDateTime(submittedTimestamp) : '—'}
           </p>
           <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
-            <p className="text-muted-foreground">Campaign Summary</p>
+            <p className="text-muted-foreground">
+              {isContentCreationReport ? 'Brief Notes / Observations' : 'Campaign Summary'}
+            </p>
             <p className="whitespace-pre-wrap text-foreground">
-              {noteSections.summary || 'No campaign summary was provided for this report.'}
+              {(isContentCreationReport ? contentCreationObservations : noteSections.summary) || (isContentCreationReport
+                ? 'No observations were provided for this report.'
+                : 'No campaign summary was provided for this report.')}
             </p>
           </div>
+          {isContentCreationReport ? (
+            <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+              <p className="text-muted-foreground">Results</p>
+              <p className="whitespace-pre-wrap text-foreground">
+                {contentCreationResults || 'No results were provided for this report.'}
+              </p>
+            </div>
+          ) : null}
           {report.review_notes && (
             <p>
               <span className="text-muted-foreground">Review Notes:</span> {report.review_notes}
@@ -376,29 +418,37 @@ export default function ReportDetailPage({
       {marketingContext && (
         <Card>
           <CardHeader>
-            <CardTitle>Campaign Context</CardTitle>
+            <CardTitle>{isContentCreationReport ? 'Report Context' : 'Campaign Context'}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-            <p>
-              <span className="text-muted-foreground">Campaign Type:</span>{' '}
-              {getMarketingCampaignTypeLabel(marketingContext.campaignType)}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Objective:</span>{' '}
-              {getMarketingObjectiveLabel(marketingContext.objective)}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Primary Channel:</span>{' '}
-              {marketingContext.primaryChannel}
-            </p>
+            {marketingContext.campaignType ? (
+              <p>
+                <span className="text-muted-foreground">Campaign Type:</span>{' '}
+                {getMarketingCampaignTypeLabel(marketingContext.campaignType)}
+              </p>
+            ) : null}
+            {marketingContext.objective ? (
+              <p>
+                <span className="text-muted-foreground">Objective:</span>{' '}
+                {getMarketingObjectiveLabel(marketingContext.objective)}
+              </p>
+            ) : null}
             <p>
               <span className="text-muted-foreground">Total Spend:</span>{' '}
               {formatUsdAmount(marketingContext.totalSpend ?? 0)}
             </p>
-            <p>
-              <span className="text-muted-foreground">Target Audience:</span>{' '}
-              {marketingContext.targetAudience}
-            </p>
+            {marketingContext.primaryChannel ? (
+              <p>
+                <span className="text-muted-foreground">Primary Channel:</span>{' '}
+                {marketingContext.primaryChannel}
+              </p>
+            ) : null}
+            {marketingContext.targetAudience ? (
+              <p>
+                <span className="text-muted-foreground">Target Audience:</span>{' '}
+                {marketingContext.targetAudience}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       )}
@@ -424,8 +474,8 @@ export default function ReportDetailPage({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Metrics</CardTitle>
-            {metrics.length > 0 && (
+            <CardTitle>{isContentCreationReport ? 'Contents Published' : 'Metrics'}</CardTitle>
+            {(isContentCreationReport ? contentCreationEntries.length : metrics.length) > 0 && (
               <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
                 <button
                   type="button"
@@ -455,20 +505,24 @@ export default function ReportDetailPage({
             )}
           </div>
         </CardHeader>
-        {metricsView === 'chart' && metrics.length > 0 ? (
+        {metricsView === 'chart' && (isContentCreationReport ? contentCreationEntries.length : metrics.length) > 0 ? (
           <CardContent>
             <div className="grid gap-6 md:grid-cols-2">
               <ReportMetricsChart
-                data={metrics.map((m) => ({ name: m.metric_name, value: m.metric_value, unit: m.metric_unit }))}
+                data={isContentCreationReport
+                  ? contentCreationEntries.map((entry) => ({ name: entry.platform, value: entry.posts, unit: 'count' }))
+                  : metrics.map((m) => ({ name: m.metric_name, value: m.metric_value, unit: m.metric_unit }))}
                 chartType="bar"
                 title="Bar Chart"
-                description="Metric values comparison"
+                description={isContentCreationReport ? 'Published post count by platform' : 'Metric values comparison'}
               />
               <ReportMetricsChart
-                data={metrics.map((m) => ({ name: m.metric_name, value: m.metric_value, unit: m.metric_unit }))}
+                data={isContentCreationReport
+                  ? contentCreationEntries.map((entry) => ({ name: entry.platform, value: entry.posts, unit: 'count' }))
+                  : metrics.map((m) => ({ name: m.metric_name, value: m.metric_value, unit: m.metric_unit }))}
                 chartType="pie"
                 title="Distribution"
-                description="Metric value distribution"
+                description={isContentCreationReport ? 'Publishing mix by platform' : 'Metric value distribution'}
               />
             </div>
           </CardContent>
@@ -477,19 +531,31 @@ export default function ReportDetailPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <SortableTableHead column="metric_name" {...sortHeadProps}>Metric</SortableTableHead>
-                  <SortableTableHead column="metric_value" {...sortHeadProps}>Value</SortableTableHead>
-                  <SortableTableHead column="metric_unit" {...sortHeadProps}>Unit</SortableTableHead>
+                  <SortableTableHead column="metric_name" {...sortHeadProps}>
+                    {isContentCreationReport ? 'Platform / App' : 'Metric'}
+                  </SortableTableHead>
+                  <SortableTableHead column="metric_value" {...sortHeadProps}>
+                    {isContentCreationReport ? 'Posts' : 'Value'}
+                  </SortableTableHead>
+                  {isContentCreationReport ? null : <SortableTableHead column="metric_unit" {...sortHeadProps}>Unit</SortableTableHead>}
                   <TableHead>Notes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {metrics.length === 0 ? (
+                {(isContentCreationReport ? contentCreationEntries.length : metrics.length) === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
-                      No metrics attached.
+                    <TableCell colSpan={isContentCreationReport ? 3 : 4} className="text-center text-muted-foreground">
+                      {isContentCreationReport ? 'No publishing entries were attached.' : 'No metrics attached.'}
                     </TableCell>
                   </TableRow>
+                ) : isContentCreationReport ? (
+                  sortedContentCreationEntries.map((entry) => (
+                    <TableRow key={entry.platform}>
+                      <TableCell className="font-medium">{entry.platform}</TableCell>
+                      <TableCell className="font-mono">{formatMetricValue(entry.posts, 'count')}</TableCell>
+                      <TableCell>—</TableCell>
+                    </TableRow>
+                  ))
                 ) : (
                   sortedMetrics.map((metric) => (
                     <TableRow key={metric.id}>
@@ -497,7 +563,7 @@ export default function ReportDetailPage({
                       <TableCell className="font-mono">
                         {formatMetricValue(metric.metric_value, metric.metric_unit)}
                       </TableCell>
-                      <TableCell>{metric.metric_unit || '—'}</TableCell>
+                      {isContentCreationReport ? null : <TableCell>{metric.metric_unit || '—'}</TableCell>}
                       <TableCell>{metric.notes || '—'}</TableCell>
                     </TableRow>
                   ))

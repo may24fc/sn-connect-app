@@ -10,7 +10,12 @@ import { useRestoreReport } from '@/hooks/useRestoreReport';
 import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
-import { getMarketingCampaignTypeLabel, getMarketingObjectiveLabel, getReportTypeLabel } from '@/lib/report-utils';
+import {
+  getMarketingCampaignTypeLabel,
+  getMarketingObjectiveLabel,
+  getMarketingReportDisplayName,
+  getReportTypeLabel,
+} from '@/lib/report-utils';
 import {
   Badge,
   Button,
@@ -164,7 +169,9 @@ export default function ReportsPage() {
   }, [reports]);
 
   const pendingReportLabel =
-    reportPendingDelete?.marketing_context?.campaignName ||
+    (reportPendingDelete?.marketing_context
+      ? getMarketingReportDisplayName(reportPendingDelete.marketing_context)
+      : '') ||
     (reportPendingDelete ? getReportTypeLabel(reportPendingDelete.report_type) : 'this report');
 
   const handleDeleteReport = () => {

@@ -1,12 +1,15 @@
 'use client';
 
 import { useReportsRealtime } from '@/hooks/useReportsRealtime';
+import { getMarketingCampaignTypeAvailability } from '@/lib/marketing-report-config';
 import {
-  getMarketingObjectivesForCampaignType,
-  MARKETING_CAMPAIGN_TYPE_OPTIONS,
+  getMarketingCampaignTypeOptionsForReportType,
+  getMarketingObjectiveOptionsForReportType,
   MARKETING_OBJECTIVE_INFO,
+  MARKETING_REPORT_TYPE_OPTIONS,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
+  type MarketingReportTypeFilterValue,
 } from '@/lib/report-utils';
 import {
   Select,
@@ -59,24 +62,44 @@ export default function AdminReportsPage() {
   const timeRange: 'weekly' | 'monthly' | 'custom' = 'weekly';
   const customStartDate = '';
   const customEndDate = '';
+  const [reportType, setReportType] = useState<MarketingReportTypeFilterValue>('all');
   const [campaignType, setCampaignType] = useState<MarketingCampaignFilterValue>('all');
   const [objective, setObjective] = useState<MarketingObjectiveFilterValue>('all');
+  const planningFiltersEnabled =
+    reportType === 'all' || getMarketingCampaignTypeAvailability(reportType) === 'enabled';
+  const availableCampaignTypes = useMemo(
+    () => getMarketingCampaignTypeOptionsForReportType(reportType === 'all' ? undefined : reportType),
+    [reportType]
+  );
 
   const availableObjectives = useMemo(
     () =>
-      campaignType === 'all'
-        ? (Object.keys(MARKETING_OBJECTIVE_INFO) as MarketingObjectiveFilterValue[]).filter(
-            (value) => value !== 'all'
-          )
-        : getMarketingObjectivesForCampaignType(campaignType),
-    [campaignType]
+      !planningFiltersEnabled
+        ? []
+        : (getMarketingObjectiveOptionsForReportType(
+            reportType === 'all' ? undefined : reportType,
+            campaignType === 'all' ? undefined : campaignType
+          ) as MarketingObjectiveFilterValue[]).filter((value) => value !== 'all'),
+    [campaignType, planningFiltersEnabled, reportType]
   );
 
   useEffect(() => {
+    if (!planningFiltersEnabled) {
+      if (campaignType !== 'all') {
+        setCampaignType('all');
+      }
+
+      if (objective !== 'all') {
+        setObjective('all');
+      }
+
+      return;
+    }
+
     if (objective !== 'all' && !availableObjectives.includes(objective)) {
       setObjective('all');
     }
-  }, [availableObjectives, objective]);
+  }, [availableObjectives, campaignType, objective, planningFiltersEnabled]);
 
   return (
     <div className="space-y-6 p-3">
@@ -89,13 +112,27 @@ export default function AdminReportsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={campaignType} onValueChange={(value) => setCampaignType(value as MarketingCampaignFilterValue)}>
+          <Select value={reportType} onValueChange={(value) => setReportType(value as MarketingReportTypeFilterValue)}>
             <SelectTrigger className="w-[190px]">
-              <SelectValue placeholder="Campaign Type" />
+              <SelectValue placeholder="Report Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Report Types</SelectItem>
+              {MARKETING_REPORT_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={campaignType} onValueChange={(value) => setCampaignType(value as MarketingCampaignFilterValue)}>
+            <SelectTrigger className="w-[190px]" disabled={!planningFiltersEnabled}>
+              <SelectValue placeholder={planningFiltersEnabled ? 'Campaign Type' : 'Campaign Type not used'} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Any Campaign Type</SelectItem>
-              {MARKETING_CAMPAIGN_TYPE_OPTIONS.map((option) => (
+              {availableCampaignTypes.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
@@ -104,8 +141,8 @@ export default function AdminReportsPage() {
           </Select>
 
           <Select value={objective} onValueChange={(value) => setObjective(value as MarketingObjectiveFilterValue)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Goal" />
+            <SelectTrigger className="w-[180px]" disabled={!planningFiltersEnabled}>
+              <SelectValue placeholder={planningFiltersEnabled ? 'Goal' : 'Objective not used'} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Any Goal</SelectItem>
@@ -146,6 +183,7 @@ export default function AdminReportsPage() {
         <TabsContent value="submissions">
           <ReportsSubmissionsTab
             department={MARKETING_DEPARTMENT}
+            reportType={reportType}
             campaignType={campaignType}
             objective={objective}
             timeRange={timeRange}
@@ -157,6 +195,7 @@ export default function AdminReportsPage() {
         <TabsContent value="analytics">
           <ReportsAnalyticsTab
             department={MARKETING_DEPARTMENT}
+            reportType={reportType}
             campaignType={campaignType}
             objective={objective}
             timeRange={timeRange}
@@ -168,6 +207,7 @@ export default function AdminReportsPage() {
         <TabsContent value="compare">
           <ReportsCompareTab
             department={MARKETING_DEPARTMENT}
+            reportType={reportType}
             campaignType={campaignType}
             objective={objective}
             timeRange={timeRange}

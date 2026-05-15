@@ -3,17 +3,29 @@
  */
 
 import {
+  getMarketingCampaignTypeAvailability,
+  getMarketingObjectiveAvailability,
+  usesMarketingPresetMetrics,
+} from '@/lib/marketing-report-config';
+import {
+  contentCreationDetailsSchema,
   marketingPrimaryChannelValues,
   marketingContextSchema,
+  marketingReportTypeValues,
+  type ContentCreationEntry,
   type MarketingCampaignType,
   type MarketingContext,
   type MarketingObjective,
   type MarketingPrimaryChannel,
+  type MarketingReportType,
 } from '@/lib/schemas/report.schema';
 
 export type MarketingCampaignFilterValue = 'all' | MarketingCampaignType;
 export type MarketingObjectiveFilterValue = 'all' | MarketingObjective;
+export type MarketingReportTypeFilterValue = 'all' | MarketingReportType;
 export type MarketingMetricAnalyticsCategory = 'spend' | 'outcome' | 'supporting';
+export const REPORT_CURRENCY_CODE = 'AUD' as const;
+export const REPORT_CURRENCY_SYMBOL = 'AU$';
 
 export const REPORT_TYPE_INFO: Record<string, { label: string; description: string; icon: string }> = {
   weekly: {
@@ -53,7 +65,96 @@ export const MARKETING_CAMPAIGN_TYPE_OPTIONS: Array<{
     label: 'Conversion',
     description: 'Bottom-funnel campaigns optimized for purchases, conversions, and store visits.',
   },
+  {
+    value: 'search',
+    label: 'Search',
+    description: 'Keyword-targeted Google Ads campaigns focused on search intent and direct response.',
+  },
+  {
+    value: 'display',
+    label: 'Display',
+    description: 'Google display inventory campaigns for reach, awareness, and remarketing.',
+  },
+  {
+    value: 'performance_max',
+    label: 'Performance Max',
+    description: 'Multi-channel Google automation campaigns spanning Search, Display, YouTube, Discover, Gmail, and Maps.',
+  },
+  {
+    value: 'shopping',
+    label: 'Shopping',
+    description: 'Product-led Google campaigns optimized for ecommerce transactions and product visibility.',
+  },
+  {
+    value: 'video',
+    label: 'Video',
+    description: 'YouTube and video-first Google campaigns built for views, engagement, and lead generation.',
+  },
+  {
+    value: 'demand_gen',
+    label: 'Demand Gen',
+    description: 'Google demand generation campaigns focused on prospecting and engagement across visual surfaces.',
+  },
+  {
+    value: 'app_campaign',
+    label: 'App Campaign',
+    description: 'Google app promotion campaigns optimized for installs and in-app actions.',
+  },
+  {
+    value: 'local_campaign',
+    label: 'Local Campaign',
+    description: 'Local action campaigns optimized for store visits, calls, and on-the-ground conversions.',
+  },
+  {
+    value: 'discovery_demand_gen',
+    label: 'Discovery / Demand Gen',
+    description: 'Discovery and Demand Gen campaigns aimed at traffic growth and assisted conversions.',
+  },
+  {
+    value: 'remarketing',
+    label: 'Remarketing',
+    description: 'Re-engagement campaigns targeted at returning users and prior site visitors.',
+  },
+  {
+    value: 'brand_campaign',
+    label: 'Brand Campaign',
+    description: 'Brand protection campaigns built to defend branded search intent and capture high-intent clicks.',
+  },
+  {
+    value: 'competitor_campaign',
+    label: 'Competitor Campaign',
+    description: 'Search campaigns aimed at capturing demand from competitor-branded queries.',
+  },
+  {
+    value: 'dynamic_search_ads',
+    label: 'Dynamic Search Ads',
+    description: 'Automatically generated search campaigns built to expand query coverage beyond exact keyword lists.',
+  },
+  {
+    value: 'call_only_campaign',
+    label: 'Call-Only Campaign',
+    description: 'Call-driven campaigns designed to generate direct phone inquiries from ad clicks.',
+  },
 ];
+
+const MARKETING_REPORT_TYPE_DESCRIPTIONS: Record<MarketingReportType, string> = {
+  'Facebook Ads': 'Paid campaigns running across Facebook and Instagram placements.',
+  'Google Ads': 'Search, Display, YouTube, and Performance Max campaign reporting.',
+  'Email Marketing': 'Lifecycle, nurture, newsletter, and promotional email performance.',
+  'Content Creation': 'Creative production and content output performance reporting.',
+};
+
+const MARKETING_REPORT_TYPE_SET = new Set<MarketingReportType>(marketingReportTypeValues);
+
+export const MARKETING_REPORT_TYPE_OPTIONS: Array<{
+  value: MarketingReportType;
+  label: MarketingReportType;
+  description: string;
+}> = marketingReportTypeValues.map((reportType) => ({
+  value: reportType,
+  label: reportType,
+  description: MARKETING_REPORT_TYPE_DESCRIPTIONS[reportType],
+}));
 
 export const MARKETING_PRIMARY_CHANNEL_OPTIONS: Array<{
   value: MarketingPrimaryChannel;
@@ -116,15 +217,116 @@ export const MARKETING_OBJECTIVE_INFO: Record<
     label: 'Store Traffic',
     description: 'Track visits and in-location engagement for physical destinations.',
   },
+  website_traffic: {
+    label: 'Website Traffic',
+    description: 'Drive qualified visits, sessions, and landing page activity from Google Ads campaigns.',
+  },
+  phone_calls: {
+    label: 'Phone Calls',
+    description: 'Generate direct calls and measure call-driven conversion performance.',
+  },
+  remarketing: {
+    label: 'Remarketing',
+    description: 'Re-engage previous visitors and move returning audiences closer to conversion.',
+  },
+  multi_channel_conversions: {
+    label: 'Multi-Channel Conversions',
+    description: 'Drive conversions across Google surfaces using a blended multi-channel delivery strategy.',
+  },
+  ecommerce_sales: {
+    label: 'Ecommerce Sales',
+    description: 'Optimize for purchases, order value, and product-led revenue growth.',
+  },
+  video_engagement: {
+    label: 'Video Engagement',
+    description: 'Increase views, watch time, and interaction on video creative.',
+  },
+  prospecting_engagement: {
+    label: 'Prospecting & Engagement',
+    description: 'Expand audience reach while improving click-through and engagement quality.',
+  },
+  app_promotion: {
+    label: 'App Promotion',
+    description: 'Drive installs and valuable in-app actions for mobile app growth.',
+  },
+  traffic_conversions: {
+    label: 'Traffic & Conversions',
+    description: 'Balance session growth with conversion capture across discovery-style inventory.',
+  },
+  re_engagement: {
+    label: 'Re-Engagement',
+    description: 'Bring previous users back and convert them more efficiently over time.',
+  },
+  brand_protection: {
+    label: 'Brand Protection',
+    description: 'Defend branded search demand and preserve impression share on core brand queries.',
+  },
+  market_capture: {
+    label: 'Market Capture',
+    description: 'Win competitive search demand and capture incremental qualified traffic.',
+  },
+  search_expansion: {
+    label: 'Search Expansion',
+    description: 'Broaden search query coverage while maintaining conversion quality.',
+  },
+  direct_calls: {
+    label: 'Direct Calls',
+    description: 'Generate phone inquiries directly from ad placements and call-forwarding assets.',
+  },
 };
 
-const MARKETING_OBJECTIVES_BY_CAMPAIGN_TYPE: Record<
-  MarketingCampaignType,
+const FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE: Record<
+  Extract<MarketingCampaignType, 'awareness' | 'consideration' | 'conversion'>,
   Array<MarketingObjective>
 > = {
   awareness: ['brand_awareness', 'reach'],
   consideration: ['traffic', 'engagement', 'app_installs', 'video_views', 'lead_generation', 'messages'],
   conversion: ['conversions', 'catalog_sales', 'store_traffic'],
+};
+
+const GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE: Record<
+  Exclude<
+    MarketingCampaignType,
+    'awareness' | 'consideration' | 'conversion'
+  >,
+  Array<MarketingObjective>
+> = {
+  search: ['lead_generation', 'website_traffic', 'phone_calls'],
+  display: ['brand_awareness', 'remarketing'],
+  performance_max: ['multi_channel_conversions'],
+  shopping: ['ecommerce_sales'],
+  video: ['video_engagement', 'lead_generation'],
+  demand_gen: ['prospecting_engagement'],
+  app_campaign: ['app_promotion'],
+  local_campaign: ['store_traffic'],
+  discovery_demand_gen: ['traffic_conversions'],
+  remarketing: ['re_engagement'],
+  brand_campaign: ['brand_protection'],
+  competitor_campaign: ['market_capture'],
+  dynamic_search_ads: ['search_expansion'],
+  call_only_campaign: ['direct_calls'],
+};
+
+const MARKETING_CAMPAIGN_TYPES_BY_REPORT_TYPE: Record<MarketingReportType, Array<MarketingCampaignType>> = {
+  'Facebook Ads': ['awareness', 'consideration', 'conversion'],
+  'Google Ads': [
+    'search',
+    'display',
+    'performance_max',
+    'shopping',
+    'video',
+    'demand_gen',
+    'app_campaign',
+    'local_campaign',
+    'discovery_demand_gen',
+    'remarketing',
+    'brand_campaign',
+    'competitor_campaign',
+    'dynamic_search_ads',
+    'call_only_campaign',
+  ],
+  'Email Marketing': [],
+  'Content Creation': [],
 };
 
 export interface MarketingMetricTemplate {
@@ -133,12 +335,52 @@ export interface MarketingMetricTemplate {
   unit: string;
   locked: boolean;
   analyticsCategory: MarketingMetricAnalyticsCategory;
+  displayName?: string;
+  groupLabel?: string;
 }
 
 interface MarketingMetricLike {
   metric_name: string;
   metric_value: number;
   metric_unit?: string | null;
+}
+
+function normalizeContentCreationEntries(
+  entries: Array<ContentCreationEntry> | null | undefined
+): Array<ContentCreationEntry> {
+  return (entries ?? []).filter((entry) => entry.platform.trim().length > 0);
+}
+
+export function getContentCreationEntries(
+  marketingContext: MarketingContext | null | undefined,
+  metrics: Array<MarketingMetricLike> | null | undefined
+): Array<ContentCreationEntry> {
+  const structuredEntries = normalizeContentCreationEntries(marketingContext?.contentCreation?.entries);
+
+  if (structuredEntries.length > 0) {
+    return structuredEntries;
+  }
+
+  return (metrics ?? [])
+    .filter((metric) => metric.metric_name.trim().length > 0)
+    .map((metric) => ({
+      platform: metric.metric_name.trim(),
+      posts: Math.max(0, Math.round(metric.metric_value ?? 0)),
+    }));
+}
+
+export function getContentCreationResults(
+  marketingContext: MarketingContext | null | undefined,
+  parsedNotes: { results: string }
+): string {
+  return marketingContext?.contentCreation?.results?.trim() || parsedNotes.results.trim();
+}
+
+export function getContentCreationObservations(
+  marketingContext: MarketingContext | null | undefined,
+  parsedNotes: { summary: string }
+): string {
+  return marketingContext?.contentCreation?.observations?.trim() || parsedNotes.summary.trim();
 }
 
 function normalizeMetricUnit(unit: string | null | undefined): string {
@@ -167,13 +409,18 @@ export function formatMetricValueWithUnit(value: number, unit?: string | null): 
     return formattedValue;
   }
 
-  if (normalizedUnit === 'php' || normalizedUnit === 'usd') {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+  if (normalizedUnit === 'php') {
+    return `Php${value.toLocaleString('en-US', {
       minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    })}`;
+  }
+
+  if (normalizedUnit === 'usd' || normalizedUnit === 'aud') {
+    return `${REPORT_CURRENCY_SYMBOL}${value.toLocaleString('en-US', {
+      minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      maximumFractionDigits: 2,
+    })}`;
   }
 
   if (normalizedUnit === '%') {
@@ -188,43 +435,54 @@ export function formatMetricValueWithUnit(value: number, unit?: string | null): 
 }
 
 export function formatUsdAmount(value: number): string {
-  return formatMetricValueWithUnit(value, 'USD');
+  return formatMetricValueWithUnit(value, REPORT_CURRENCY_CODE);
 }
 
 function createLockedMetric(
   name: string,
   unit: string,
-  analyticsCategory: MarketingMetricAnalyticsCategory
+  analyticsCategory: MarketingMetricAnalyticsCategory,
+  options?: Pick<MarketingMetricTemplate, 'displayName' | 'groupLabel'>
 ): MarketingMetricTemplate {
-  return {
+  const metric: MarketingMetricTemplate = {
     name,
     value: '0',
     unit,
     locked: true,
     analyticsCategory,
   };
+
+  if (typeof options?.displayName === 'string') {
+    metric.displayName = options.displayName;
+  }
+
+  if (typeof options?.groupLabel === 'string') {
+    metric.groupLabel = options.groupLabel;
+  }
+
+  return metric;
 }
 
-const MARKETING_METRIC_PRESETS: Record<MarketingObjective, Array<MarketingMetricTemplate>> = {
+const FACEBOOK_MARKETING_METRIC_PRESETS: Partial<Record<MarketingObjective, Array<MarketingMetricTemplate>>> = {
   brand_awareness: [
     createLockedMetric('Ad Recall Lift', '%', 'supporting'),
     createLockedMetric('Reach', 'count', 'outcome'),
     createLockedMetric('Impressions', 'count', 'supporting'),
     createLockedMetric('Frequency', 'x', 'supporting'),
-    createLockedMetric('CPM', 'USD', 'spend'),
+    createLockedMetric('CPM', REPORT_CURRENCY_CODE, 'spend'),
   ],
   reach: [
     createLockedMetric('Impressions', 'count', 'supporting'),
     createLockedMetric('Reach', 'count', 'outcome'),
     createLockedMetric('Frequency', 'x', 'supporting'),
-    createLockedMetric('CPM', 'USD', 'spend'),
+    createLockedMetric('CPM', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('Unique Reach', 'count', 'supporting'),
   ],
   traffic: [
     createLockedMetric('Link Clicks', 'count', 'outcome'),
     createLockedMetric('Landing Page Views', 'count', 'outcome'),
     createLockedMetric('CTR', '%', 'supporting'),
-    createLockedMetric('CPC', 'USD', 'spend'),
+    createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('Sessions', 'count', 'supporting'),
     createLockedMetric('Bounce Rate', '%', 'supporting'),
   ],
@@ -235,61 +493,289 @@ const MARKETING_METRIC_PRESETS: Record<MarketingObjective, Array<MarketingMetric
     createLockedMetric('Page Likes', 'count', 'supporting'),
     createLockedMetric('Event Responses', 'count', 'supporting'),
     createLockedMetric('Engagement Rate', '%', 'supporting'),
-    createLockedMetric('Cost per Engagement', 'USD', 'spend'),
+    createLockedMetric('Cost per Engagement', REPORT_CURRENCY_CODE, 'spend'),
   ],
   app_installs: [
     createLockedMetric('Installs', 'count', 'outcome'),
-    createLockedMetric('CPI', 'USD', 'spend'),
+    createLockedMetric('CPI', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('Retention Rate', '%', 'supporting'),
     createLockedMetric('In-App Events', 'count', 'supporting'),
   ],
   video_views: [
     createLockedMetric('Video Plays (2s/3s/10s)', 'count', 'outcome'),
     createLockedMetric('ThruPlay', 'count', 'outcome'),
-    createLockedMetric('Cost per View', 'USD', 'spend'),
+    createLockedMetric('Cost per View', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('Avg Watch Time', 'seconds', 'supporting'),
     createLockedMetric('Audience Retention', '%', 'supporting'),
   ],
   lead_generation: [
     createLockedMetric('Leads Submitted', 'count', 'outcome'),
-    createLockedMetric('CPL', 'USD', 'spend'),
+    createLockedMetric('CPL', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('Form Completion Rate', '%', 'supporting'),
     createLockedMetric('Click-to-Lead Conversion Rate', '%', 'supporting'),
   ],
   messages: [
     createLockedMetric('Conversations Started', 'count', 'outcome'),
     createLockedMetric('Response Rate', '%', 'supporting'),
-    createLockedMetric('Cost per Conversation', 'USD', 'spend'),
+    createLockedMetric('Cost per Conversation', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('Message Open/Click Rate', '%', 'supporting'),
   ],
   conversions: [
     createLockedMetric('Conversions', 'count', 'outcome'),
-    createLockedMetric('Cost per Conversion', 'USD', 'spend'),
+    createLockedMetric('Cost per Conversion', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('ROAS', 'x', 'supporting'),
     createLockedMetric('Conversion Rate', '%', 'supporting'),
     createLockedMetric('Add to Cart/Purchase Events', 'count', 'supporting'),
   ],
   catalog_sales: [
     createLockedMetric('Purchases', 'count', 'outcome'),
-    createLockedMetric('Cost per Purchase', 'USD', 'spend'),
+    createLockedMetric('Cost per Purchase', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('ROAS', 'x', 'supporting'),
     createLockedMetric('CTR', '%', 'supporting'),
     createLockedMetric('Product Engagement', 'count', 'supporting'),
   ],
   store_traffic: [
     createLockedMetric('Store Visits', 'count', 'outcome'),
-    createLockedMetric('Cost per Store Visit', 'USD', 'spend'),
+    createLockedMetric('Cost per Store Visit', REPORT_CURRENCY_CODE, 'spend'),
     createLockedMetric('Check-ins', 'count', 'supporting'),
     createLockedMetric('Reach within Location', 'count', 'supporting'),
   ],
 };
 
+const GOOGLE_MARKETING_METRIC_PRESETS: Record<
+  Exclude<MarketingCampaignType, 'awareness' | 'consideration' | 'conversion'>,
+  Partial<Record<MarketingObjective, Array<MarketingMetricTemplate>>>
+> = {
+  search: {
+    lead_generation: [
+      createLockedMetric('Conversions', 'count', 'outcome'),
+      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Impression Share', '%', 'supporting'),
+      createLockedMetric('Search Top IS', '%', 'supporting'),
+      createLockedMetric('Conversion Rate', '%', 'supporting'),
+    ],
+    website_traffic: [
+      createLockedMetric('Clicks', 'count', 'outcome'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Sessions', 'count', 'supporting'),
+      createLockedMetric('Bounce Rate', '%', 'supporting'),
+      createLockedMetric('Avg Session Duration', 'seconds', 'supporting'),
+    ],
+    phone_calls: [
+      createLockedMetric('Call Clicks', 'count', 'outcome'),
+      createLockedMetric('Phone Calls', 'count', 'outcome'),
+      createLockedMetric('Call Conversion Rate', '%', 'supporting'),
+      createLockedMetric('Cost Per Call', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('CTR', '%', 'supporting'),
+    ],
+  },
+  display: {
+    brand_awareness: [
+      createLockedMetric('Reach', 'count', 'outcome'),
+      createLockedMetric('Impressions', 'count', 'supporting'),
+      createLockedMetric('CPM', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Viewable Impressions', 'count', 'supporting'),
+      createLockedMetric('Frequency', 'x', 'supporting'),
+    ],
+    remarketing: [
+      createLockedMetric('Returning Visitors', 'count', 'outcome'),
+      createLockedMetric('Conversions', 'count', 'outcome'),
+      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('Assisted Conversions', 'count', 'supporting'),
+    ],
+  },
+  performance_max: {
+    multi_channel_conversions: [
+      createLockedMetric('Conversions', 'count', 'outcome'),
+      createLockedMetric('Conversion Value', REPORT_CURRENCY_CODE, 'outcome'),
+      createLockedMetric('ROAS', 'x', 'supporting'),
+      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Audience Signals Performance', '%', 'supporting'),
+    ],
+  },
+  shopping: {
+    ecommerce_sales: [
+      createLockedMetric('Purchases', 'count', 'outcome'),
+      createLockedMetric('ROAS', 'x', 'supporting'),
+      createLockedMetric('Conversion Value', REPORT_CURRENCY_CODE, 'outcome'),
+      createLockedMetric('Avg Order Value', REPORT_CURRENCY_CODE, 'supporting'),
+      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
+    ],
+  },
+  video: {
+    video_engagement: [
+      createLockedMetric('Views', 'count', 'outcome'),
+      createLockedMetric('View Rate', '%', 'supporting'),
+      createLockedMetric('Watch Time', 'seconds', 'supporting'),
+      createLockedMetric('CPV', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Engagement Rate', '%', 'supporting'),
+    ],
+    lead_generation: [
+      createLockedMetric('Leads', 'count', 'outcome'),
+      createLockedMetric('CPL', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Video Views', 'count', 'supporting'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('Conversion Rate', '%', 'supporting'),
+    ],
+  },
+  demand_gen: {
+    prospecting_engagement: [
+      createLockedMetric('Clicks', 'count', 'outcome'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('Conversions', 'count', 'outcome'),
+      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Engagement Rate', '%', 'supporting'),
+    ],
+  },
+  app_campaign: {
+    app_promotion: [
+      createLockedMetric('Installs', 'count', 'outcome'),
+      createLockedMetric('CPI', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('In-App Actions', 'count', 'supporting'),
+      createLockedMetric('Retention Rate', '%', 'supporting'),
+      createLockedMetric('Conversion Value', REPORT_CURRENCY_CODE, 'outcome'),
+    ],
+  },
+  local_campaign: {
+    store_traffic: [
+      createLockedMetric('Store Visits', 'count', 'outcome'),
+      createLockedMetric('Directions', 'count', 'supporting'),
+      createLockedMetric('Calls', 'count', 'supporting'),
+      createLockedMetric('Local Actions', 'count', 'supporting'),
+      createLockedMetric('Cost Per Visit', REPORT_CURRENCY_CODE, 'spend'),
+    ],
+  },
+  discovery_demand_gen: {
+    traffic_conversions: [
+      createLockedMetric('Clicks', 'count', 'outcome'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Conversions', 'count', 'outcome'),
+      createLockedMetric('Assisted Conversions', 'count', 'supporting'),
+    ],
+  },
+  remarketing: {
+    re_engagement: [
+      createLockedMetric('Returning Users', 'count', 'outcome'),
+      createLockedMetric('Conversions', 'count', 'outcome'),
+      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('ROAS', 'x', 'supporting'),
+      createLockedMetric('Frequency', 'x', 'supporting'),
+    ],
+  },
+  brand_campaign: {
+    brand_protection: [
+      createLockedMetric('Impression Share', '%', 'supporting'),
+      createLockedMetric('Top of Page Rate', '%', 'supporting'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Conversion Rate', '%', 'supporting'),
+    ],
+  },
+  competitor_campaign: {
+    market_capture: [
+      createLockedMetric('Clicks', 'count', 'outcome'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Search Impression Share', '%', 'supporting'),
+      createLockedMetric('Conversion Rate', '%', 'supporting'),
+    ],
+  },
+  dynamic_search_ads: {
+    search_expansion: [
+      createLockedMetric('Search Terms Coverage', '%', 'supporting'),
+      createLockedMetric('CTR', '%', 'supporting'),
+      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Conversions', 'count', 'outcome'),
+      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
+    ],
+  },
+  call_only_campaign: {
+    direct_calls: [
+      createLockedMetric('Phone Calls', 'count', 'outcome'),
+      createLockedMetric('Call Duration', 'seconds', 'supporting'),
+      createLockedMetric('Cost Per Call', REPORT_CURRENCY_CODE, 'spend'),
+      createLockedMetric('Call Conversion Rate', '%', 'supporting'),
+    ],
+  },
+};
+
+const EMAIL_MARKETING_METRIC_PRESET: Array<MarketingMetricTemplate> = [
+  createLockedMetric('Email Delivery - Delivery Rate', '%', 'supporting', {
+    displayName: 'Delivery Rate',
+    groupLabel: 'Email Delivery',
+  }),
+  createLockedMetric('Email Delivery - Bounce Rate', '%', 'supporting', {
+    displayName: 'Bounce Rate',
+    groupLabel: 'Email Delivery',
+  }),
+  createLockedMetric('Email Delivery - Unsubscribe Rate', '%', 'supporting', {
+    displayName: 'Unsubscribe Rate',
+    groupLabel: 'Email Delivery',
+  }),
+  createLockedMetric('Email Delivery - Spam Complaint Rate', '%', 'supporting', {
+    displayName: 'Spam Complaint Rate',
+    groupLabel: 'Email Delivery',
+  }),
+  createLockedMetric('Engagement - Open Rate', '%', 'supporting', {
+    displayName: 'Open Rate',
+    groupLabel: 'Engagement',
+  }),
+  createLockedMetric('Engagement - Click-Through Rate', '%', 'supporting', {
+    displayName: 'Click-Through Rate',
+    groupLabel: 'Engagement',
+  }),
+  createLockedMetric('Engagement - Click-to-open Rate', '%', 'supporting', {
+    displayName: 'Click-to-open Rate',
+    groupLabel: 'Engagement',
+  }),
+];
+
 function normalizeMetricName(metricName: string): string {
   return metricName.trim().toLowerCase();
 }
 
+function inferMarketingReportType(
+  marketingReportType: unknown,
+  campaignName: unknown,
+  primaryChannel: unknown
+): MarketingReportType | undefined {
+  const normalizedReportType =
+    typeof marketingReportType === 'string' ? marketingReportType.trim() : '';
+
+  if (MARKETING_REPORT_TYPE_SET.has(normalizedReportType as MarketingReportType)) {
+    return normalizedReportType as MarketingReportType;
+  }
+
+  const normalizedCampaignName = typeof campaignName === 'string' ? campaignName.trim() : '';
+
+  if (MARKETING_REPORT_TYPE_SET.has(normalizedCampaignName as MarketingReportType)) {
+    return normalizedCampaignName as MarketingReportType;
+  }
+
+  const normalizedPrimaryChannel = typeof primaryChannel === 'string' ? primaryChannel.trim() : '';
+
+  if (normalizedPrimaryChannel === 'Meta Ads') {
+    return 'Facebook Ads';
+  }
+
+  if (normalizedPrimaryChannel === 'Google Ads') {
+    return 'Google Ads';
+  }
+
+  return undefined;
+}
+
 const MARKETING_METRIC_ANALYTICS_LOOKUP = new Map<string, MarketingMetricAnalyticsCategory>(
-  Object.values(MARKETING_METRIC_PRESETS)
+  [
+    ...Object.values(FACEBOOK_MARKETING_METRIC_PRESETS),
+    ...Object.values(GOOGLE_MARKETING_METRIC_PRESETS).flatMap((objectiveMap) => Object.values(objectiveMap)),
+    EMAIL_MARKETING_METRIC_PRESET,
+  ]
     .flat()
     .map((metric) => [normalizeMetricName(metric.name), metric.analyticsCategory])
 );
@@ -448,21 +934,132 @@ export function getMarketingCampaignTypeLabel(campaignType: MarketingCampaignTyp
     ?? campaignType.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+export function getMarketingReportTypeLabel(reportType: MarketingReportType): MarketingReportType {
+  return reportType;
+}
+
+export function resolveMarketingReportType(
+  marketingContext:
+    | {
+        marketingReportType?: string | null | undefined;
+        campaignName?: string | null | undefined;
+        primaryChannel?: string | null | undefined;
+      }
+    | null
+    | undefined
+): MarketingReportType | undefined {
+  return inferMarketingReportType(
+    marketingContext?.marketingReportType,
+    marketingContext?.campaignName,
+    marketingContext?.primaryChannel
+  );
+}
+
 export function getMarketingObjectiveLabel(objective: MarketingObjective): string {
   return MARKETING_OBJECTIVE_INFO[objective]?.label
     ?? objective.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+export function getMarketingCampaignTypeOptionsForReportType(
+  reportType: MarketingReportType | null | undefined
+): Array<{ value: MarketingCampaignType; label: string; description: string }> {
+  if (!reportType) {
+    return MARKETING_CAMPAIGN_TYPE_OPTIONS;
+  }
+
+  const supportedCampaignTypes = MARKETING_CAMPAIGN_TYPES_BY_REPORT_TYPE[reportType] ?? [];
+  return MARKETING_CAMPAIGN_TYPE_OPTIONS.filter((option) => supportedCampaignTypes.includes(option.value));
+}
+
 export function getMarketingObjectivesForCampaignType(
   campaignType: MarketingCampaignType
 ): Array<MarketingObjective> {
-  return MARKETING_OBJECTIVES_BY_CAMPAIGN_TYPE[campaignType] ?? ['brand_awareness'];
+  return [
+    ...(FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE[campaignType as keyof typeof FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE] ?? []),
+    ...(GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE[campaignType as keyof typeof GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE] ?? []),
+  ];
+}
+
+export function getMarketingObjectivesForReportType(
+  reportType: MarketingReportType | null | undefined,
+  campaignType: MarketingCampaignType | null | undefined
+): Array<MarketingObjective> {
+  if (!usesMarketingPresetMetrics(reportType) || !campaignType) {
+    return [];
+  }
+
+  if (reportType === 'Facebook Ads') {
+    return FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE[
+      campaignType as keyof typeof FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE
+    ] ?? [];
+  }
+
+  if (reportType === 'Google Ads') {
+    return GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE[
+      campaignType as keyof typeof GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE
+    ] ?? [];
+  }
+
+  return [];
+}
+
+export function getMarketingObjectiveOptionsForReportType(
+  reportType: MarketingReportType | null | undefined,
+  campaignType?: MarketingCampaignType | null | undefined
+): Array<MarketingObjective> {
+  if (!reportType) {
+    return Object.keys(MARKETING_OBJECTIVE_INFO) as Array<MarketingObjective>;
+  }
+
+  if (campaignType) {
+    return getMarketingObjectivesForReportType(reportType, campaignType);
+  }
+
+  const campaignTypes = MARKETING_CAMPAIGN_TYPES_BY_REPORT_TYPE[reportType] ?? [];
+  return Array.from(
+    new Set(
+      campaignTypes.flatMap((currentCampaignType) =>
+        getMarketingObjectivesForReportType(reportType, currentCampaignType)
+      )
+    )
+  );
 }
 
 export function createMarketingMetricPreset(
-  objective: MarketingObjective
+  reportType: MarketingReportType,
+  campaignType?: MarketingCampaignType | null,
+  objective?: MarketingObjective | null
 ): Array<MarketingMetricTemplate> {
-  return (MARKETING_METRIC_PRESETS[objective] ?? MARKETING_METRIC_PRESETS.brand_awareness).map((metric) => ({ ...metric }));
+  if (reportType === 'Email Marketing') {
+    return EMAIL_MARKETING_METRIC_PRESET.map((metric) => ({ ...metric }));
+  }
+
+  if (reportType === 'Facebook Ads') {
+    if (!objective) {
+      return [];
+    }
+
+    return (FACEBOOK_MARKETING_METRIC_PRESETS[objective] ?? FACEBOOK_MARKETING_METRIC_PRESETS.brand_awareness ?? []).map((metric) => ({ ...metric }));
+  }
+
+  if (reportType === 'Google Ads') {
+    if (!campaignType || !objective) {
+      return [];
+    }
+
+    const campaignTypePresets = GOOGLE_MARKETING_METRIC_PRESETS[
+      campaignType as keyof typeof GOOGLE_MARKETING_METRIC_PRESETS
+    ];
+    const fallbackCampaignTypePresets = GOOGLE_MARKETING_METRIC_PRESETS.search;
+
+    return (
+      campaignTypePresets?.[objective]
+      ?? fallbackCampaignTypePresets[objective]
+      ?? []
+    ).map((metric) => ({ ...metric }));
+  }
+
+  return [];
 }
 
 export function getMarketingMetricAnalyticsCategory(
@@ -486,12 +1083,20 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
   }
 
   const candidate = payload as Record<string, unknown>;
+  const normalizedReportType = inferMarketingReportType(
+    candidate.marketingReportType,
+    candidate.campaignName,
+    candidate.primaryChannel
+  );
   const rawCampaignType =
     typeof candidate.campaignType === 'string' ? candidate.campaignType.trim().toLowerCase() : '';
   const rawObjective =
     typeof candidate.objective === 'string' ? candidate.objective.trim().toLowerCase() : '';
 
-  const normalizedObjective = (LEGACY_OBJECTIVE_MAP[rawObjective] ?? rawObjective) as MarketingObjective;
+  const nextObjective = LEGACY_OBJECTIVE_MAP[rawObjective] ?? rawObjective;
+  const normalizedObjective = Object.hasOwn(MARKETING_OBJECTIVE_INFO, nextObjective)
+    ? (nextObjective as MarketingObjective)
+    : null;
 
   let normalizedCampaignType = rawCampaignType as MarketingCampaignType;
 
@@ -500,19 +1105,36 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
   }
 
   if (!MARKETING_CAMPAIGN_TYPE_OPTIONS.some((option) => option.value === normalizedCampaignType)) {
-    if (AWARENESS_OBJECTIVES.has(normalizedObjective)) {
+    if (normalizedObjective && AWARENESS_OBJECTIVES.has(normalizedObjective)) {
       normalizedCampaignType = 'awareness';
-    } else if (CONSIDERATION_OBJECTIVES.has(normalizedObjective)) {
+    } else if (normalizedObjective && CONSIDERATION_OBJECTIVES.has(normalizedObjective)) {
       normalizedCampaignType = 'consideration';
-    } else if (CONVERSION_OBJECTIVES.has(normalizedObjective)) {
+    } else if (normalizedObjective && CONVERSION_OBJECTIVES.has(normalizedObjective)) {
       normalizedCampaignType = 'conversion';
     }
   }
 
+  const resolvedCampaignType = MARKETING_CAMPAIGN_TYPE_OPTIONS.some(
+    (option) => option.value === normalizedCampaignType
+  )
+    ? normalizedCampaignType
+    : null;
+
   const normalized = marketingContextSchema.safeParse({
     ...candidate,
-    campaignType: normalizedCampaignType,
-    objective: normalizedObjective,
+    marketingReportType: normalizedReportType,
+    campaignType:
+      getMarketingCampaignTypeAvailability(normalizedReportType) === 'hidden'
+        ? null
+        : resolvedCampaignType,
+    objective:
+      getMarketingObjectiveAvailability(normalizedReportType) === 'hidden'
+        ? null
+        : normalizedObjective,
+    contentCreation:
+      normalizedReportType === 'Content Creation'
+        ? contentCreationDetailsSchema.safeParse(candidate.contentCreation).data ?? null
+        : null,
   });
 
   return normalized.success ? normalized.data : null;
@@ -520,11 +1142,13 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
 
 export function buildNarrativeReportNotes({
   summary,
+  results,
   accomplishments,
   challenges,
   nextWeekPlans,
 }: {
   summary?: string;
+  results?: string;
   accomplishments?: Array<string>;
   challenges?: Array<string>;
   nextWeekPlans?: Array<string>;
@@ -533,6 +1157,10 @@ export function buildNarrativeReportNotes({
 
   if (summary?.trim()) {
     parts.push(summary.trim());
+  }
+
+  if (results?.trim()) {
+    parts.push(`Results:\n${results.trim()}`);
   }
 
   const accomplishmentItems = (accomplishments ?? []).filter((item) => item.trim());
@@ -632,7 +1260,12 @@ export function normalizeReportRecord<
 export function getMarketingReportDisplayName(
   marketingContext: MarketingContext | null | undefined
 ): string {
-  return marketingContext?.campaignName?.trim() || 'Untitled Campaign';
+  return (
+    resolveMarketingReportType(marketingContext)?.trim() ||
+    marketingContext?.campaignName?.trim() ||
+    inferMarketingReportType(undefined, undefined, marketingContext?.primaryChannel) ||
+    'Untitled Marketing Report'
+  );
 }
 
 export function getMarketingReportContextSummary(
@@ -642,7 +1275,23 @@ export function getMarketingReportContextSummary(
     return 'Campaign details unavailable';
   }
 
-  return `${getMarketingObjectiveLabel(marketingContext.objective)} via ${marketingContext.primaryChannel}`;
+  const inferredReportType = inferMarketingReportType(
+    marketingContext.marketingReportType,
+    marketingContext.campaignName,
+    marketingContext.primaryChannel
+  );
+
+  if (!marketingContext.objective) {
+    return inferredReportType ?? getMarketingReportDisplayName(marketingContext);
+  }
+
+  const objectiveLabel = getMarketingObjectiveLabel(marketingContext.objective);
+
+  if (marketingContext.primaryChannel?.trim()) {
+    return `${objectiveLabel} via ${marketingContext.primaryChannel}`;
+  }
+
+  return objectiveLabel;
 }
 
 export function matchesMarketingReportFilters(
@@ -656,14 +1305,24 @@ export function matchesMarketingReportFilters(
     };
   },
   filters: {
+    reportType?: MarketingReportTypeFilterValue;
     campaignType?: MarketingCampaignFilterValue;
     objective?: MarketingObjectiveFilterValue;
     search?: string;
   }
 ): boolean {
-  const { campaignType = 'all', objective = 'all', search = '' } = filters;
+  const { reportType = 'all', campaignType = 'all', objective = 'all', search = '' } = filters;
   const marketingContext = report.marketing_context;
   const normalizedSearch = search.trim().toLowerCase();
+  const inferredReportType = inferMarketingReportType(
+    marketingContext?.marketingReportType,
+    marketingContext?.campaignName,
+    marketingContext?.primaryChannel
+  );
+
+  if (reportType !== 'all' && inferredReportType !== reportType) {
+    return false;
+  }
 
   if (campaignType !== 'all' && marketingContext?.campaignType !== campaignType) {
     return false;
@@ -681,7 +1340,8 @@ export function matchesMarketingReportFilters(
     report.employees ? `${report.employees.first_name} ${report.employees.last_name}` : '',
     report.employees?.department || '',
     report.notes || '',
-    marketingContext?.campaignName || '',
+    getMarketingReportDisplayName(marketingContext),
+    inferredReportType || '',
     marketingContext?.totalSpend?.toString() || '',
     marketingContext?.primaryChannel || '',
     marketingContext?.targetAudience || '',
@@ -704,12 +1364,14 @@ export function matchesMarketingReportFilters(
  */
 export function parseNoteSections(notes: string): {
   summary: string;
+  results: string;
   accomplishments: Array<string>;
   challenges: Array<string>;
   nextWeekPlans: Array<string>;
 } {
   const result = {
     summary: '',
+    results: '',
     accomplishments: [] as Array<string>,
     challenges: [] as Array<string>,
     nextWeekPlans: [] as Array<string>,
@@ -721,11 +1383,13 @@ export function parseNoteSections(notes: string): {
 
   if (!cleanNotes) return result;
 
-  const sections = cleanNotes.split(/\n(?=(?:accomplishments|challenges|next\s*(?:steps|week\s*plans)):\s*)/i);
+  const sections = cleanNotes.split(/\n(?=(?:results|accomplishments|challenges|next\s*(?:steps|week\s*plans)):\s*)/i);
 
   for (const section of sections) {
     const trimmed = section.trim();
-    if (/^accomplishments:/i.test(trimmed)) {
+    if (/^results:/i.test(trimmed)) {
+      result.results = trimmed.replace(/^results:\s*/i, '').trim();
+    } else if (/^accomplishments:/i.test(trimmed)) {
       result.accomplishments = parseListItems(trimmed.replace(/^accomplishments:\s*/i, ''));
     } else if (/^challenges:/i.test(trimmed)) {
       result.challenges = parseListItems(trimmed.replace(/^challenges:\s*/i, ''));

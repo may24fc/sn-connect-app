@@ -2,13 +2,18 @@
 
 import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { exportToCsv } from '@/lib/csv';
+  import { supportsMarketingPlanningFilters } from '@/lib/marketing-report-config';
 import {
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveLabel,
+  getMarketingReportDisplayName,
+  getMarketingReportTypeLabel,
   matchesMarketingReportFilters,
   parseNoteSections,
+  resolveMarketingReportType,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
+  type MarketingReportTypeFilterValue,
 } from '@/lib/report-utils';
 import {
   Button,
@@ -35,6 +40,7 @@ import {
 
 interface ReportsCompareTabProps {
   department: string;
+  reportType: MarketingReportTypeFilterValue;
   campaignType: MarketingCampaignFilterValue;
   objective: MarketingObjectiveFilterValue;
   timeRange: 'weekly' | 'monthly' | 'custom';
@@ -164,14 +170,14 @@ function aggregateReportMetrics(
     'Unique Campaigns',
     new Set(
       reports
-        .map((report) => report.marketing_context?.campaignName)
-        .filter((campaignName): campaignName is string => Boolean(campaignName))
+        .map((report) => getMarketingReportDisplayName(report.marketing_context))
+        .filter((reportLabel) => reportLabel !== 'Untitled Marketing Report')
     ).size
   );
   setMetric(
     'Total Spend',
     reports.reduce((sum, report) => sum + (report.marketing_context?.totalSpend ?? 0), 0),
-    'USD'
+    'AUD'
   );
 
   for (const report of reports) {
@@ -266,10 +272,10 @@ function normalizeCampaignKeyPart(value: string | null | undefined): string {
 
 function buildCampaignSummaryKey(marketingContext: NonNullable<ReportRecord['marketing_context']>): string {
   return [
-    normalizeCampaignKeyPart(marketingContext.campaignName),
+    normalizeCampaignKeyPart(getMarketingReportDisplayName(marketingContext)),
+    normalizeCampaignKeyPart(resolveMarketingReportType(marketingContext)),
     normalizeCampaignKeyPart(marketingContext.campaignType),
     normalizeCampaignKeyPart(marketingContext.objective),
-    normalizeCampaignKeyPart(marketingContext.primaryChannel),
   ].join('__');
 }
 
@@ -304,13 +310,14 @@ function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSumm
 
   for (const report of reports) {
     const marketingContext = report.marketing_context;
-    const campaignName = marketingContext?.campaignName?.trim();
+    const campaignName = marketingContext ? getMarketingReportDisplayName(marketingContext).trim() : '';
 
-    if (!marketingContext || !campaignName) {
+    if (!marketingContext || !campaignName || campaignName === 'Untitled Marketing Report') {
       continue;
     }
 
     const key = buildCampaignSummaryKey(marketingContext);
+    const resolvedReportType = resolveMarketingReportType(marketingContext);
     const totalSpend = marketingContext.totalSpend ?? 0;
     const timestamp = getReportSortTimestamp(report);
     const summary = parseNoteSections(report.notes || '').summary.trim();
@@ -321,10 +328,15 @@ function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSumm
       groupedCampaigns.set(key, {
         key,
         campaignName,
-        campaignTypeLabel: getMarketingCampaignTypeLabel(marketingContext.campaignType),
-        objectiveLabel: getMarketingObjectiveLabel(marketingContext.objective),
-        primaryChannel: marketingContext.primaryChannel,
-        targetAudience: marketingContext.targetAudience,
+        reportTypeLabel: resolvedReportType
+          ? getMarketingReportTypeLabel(resolvedReportType)
+          : 'Marketing Report',
+        campaignTypeLabel: marketingContext.campaignType
+          ? getMarketingCampaignTypeLabel(marketingContext.campaignType)
+          : null,
+        objectiveLabel: marketingContext.objective
+          ? getMarketingObjectiveLabel(marketingContext.objective)
+          : null,
         totalSpend,
         summary: hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY,
         reportCount: 1,
@@ -342,10 +354,15 @@ function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSumm
 
     if (shouldPromoteCampaignPrimary(existing, timestamp, totalSpend, hasRealSummary)) {
       existing.campaignName = campaignName;
-      existing.campaignTypeLabel = getMarketingCampaignTypeLabel(marketingContext.campaignType);
-      existing.objectiveLabel = getMarketingObjectiveLabel(marketingContext.objective);
-      existing.primaryChannel = marketingContext.primaryChannel;
-      existing.targetAudience = marketingContext.targetAudience;
+      existing.reportTypeLabel = resolvedReportType
+        ? getMarketingReportTypeLabel(resolvedReportType)
+        : 'Marketing Report';
+      existing.campaignTypeLabel = marketingContext.campaignType
+        ? getMarketingCampaignTypeLabel(marketingContext.campaignType)
+        : null;
+      existing.objectiveLabel = marketingContext.objective
+        ? getMarketingObjectiveLabel(marketingContext.objective)
+        : null;
       existing.summary = hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY;
       existing.primaryTimestamp = timestamp;
       existing.primarySpend = totalSpend;
@@ -436,12 +453,15 @@ function renderWeekValue(week: WeekPeriod | null): string {
 
 export function ReportsCompareTab({
   department,
+  reportType,
   campaignType,
   objective,
   timeRange,
   customStartDate,
   customEndDate,
 }: ReportsCompareTabProps) {
+  const planningFiltersRelevant = reportType === 'all' || supportsMarketingPlanningFilters(reportType);
+  const reportTypeSummaryLabel = reportType === 'all' ? 'All report types' : getMarketingReportTypeLabel(reportType);
   const periods = useMemo(
     () => getComparisonPeriods(timeRange, customStartDate, customEndDate),
     [timeRange, customStartDate, customEndDate]
@@ -462,9 +482,9 @@ export function ReportsCompareTab({
       dedupeReportsByWindow((allReportsData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
-          matchesMarketingReportFilters(report, { campaignType, objective })
+          matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       )),
-    [allReportsData?.data, campaignType, objective]
+    [allReportsData?.data, campaignType, objective, reportType]
   );
 
   const availableWeeks = useMemo(() => {
@@ -570,18 +590,18 @@ export function ReportsCompareTab({
       dedupeReportsByWindow((currentData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
-          matchesMarketingReportFilters(report, { campaignType, objective })
+          matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       )),
-    [campaignType, currentData?.data, objective]
+    [campaignType, currentData?.data, objective, reportType]
   );
   const previousReports = useMemo(
     () =>
       dedupeReportsByWindow((previousData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
-          matchesMarketingReportFilters(report, { campaignType, objective })
+          matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       )),
-    [campaignType, objective, previousData?.data]
+    [campaignType, objective, previousData?.data, reportType]
   );
 
   const campaignSummaries = useMemo<CompareCampaignSummaries>(() => {
@@ -805,8 +825,9 @@ export function ReportsCompareTab({
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Comparing marketing reporting windows for the <span className="font-medium text-foreground">Marketing team</span>
-          {campaignType !== 'all' ? ` | ${getMarketingCampaignTypeLabel(campaignType)}` : ''}
-          {objective !== 'all' ? ` | ${getMarketingObjectiveLabel(objective)}` : ''}
+          {` | ${reportTypeSummaryLabel}`}
+          {planningFiltersRelevant && campaignType !== 'all' ? ` | ${getMarketingCampaignTypeLabel(campaignType)}` : ''}
+          {planningFiltersRelevant && objective !== 'all' ? ` | ${getMarketingObjectiveLabel(objective)}` : ''}
         </p>
         <Button
           variant="outline"

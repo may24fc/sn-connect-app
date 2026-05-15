@@ -7,10 +7,9 @@ import * as React from 'react';
 export interface CompareCampaignSummaryItem {
   key: string;
   campaignName: string;
-  campaignTypeLabel: string;
-  objectiveLabel: string;
-  primaryChannel: string;
-  targetAudience: string;
+  reportTypeLabel: string;
+  campaignTypeLabel: string | null;
+  objectiveLabel: string | null;
   totalSpend: number;
   summary: string;
   reportCount: number;
@@ -55,7 +54,7 @@ function getFallbackMetric(
         : name === 'Link Clicks'
           ? 'count'
           : name === 'Total Spend'
-            ? 'USD'
+            ? 'AUD'
             : null,
     currentValue: 0,
     previousValue: 0,
@@ -73,14 +72,14 @@ function formatMetricValue(value: number, unit?: string | null): string {
   }
 
   if (normalizedUnit === 'php') {
-    return `$${value.toLocaleString('en-US', {
+    return `Php${value.toLocaleString('en-US', {
       minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
       maximumFractionDigits: 2,
     })}`;
   }
 
-  if (normalizedUnit === 'usd') {
-    return `$${value.toLocaleString('en-US', {
+  if (normalizedUnit === 'usd' || normalizedUnit === 'aud') {
+    return `AU$${value.toLocaleString('en-US', {
       minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
       maximumFractionDigits: 2,
     })}`;
@@ -372,30 +371,31 @@ function CampaignSummaryCard({
             <p className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
               {campaign.campaignName}
             </p>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              Audience: {campaign.targetAudience}
-            </p>
           </div>
           <div className="text-left lg:text-right">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
               Spend
             </p>
             <p className="mt-1 text-xl font-semibold tracking-tight text-zinc-900 dark:text-white">
-              {formatMetricValue(campaign.totalSpend, 'USD')}
+              {formatMetricValue(campaign.totalSpend, 'AUD')}
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
           <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
+            {campaign.reportTypeLabel}
+          </span>
+          {campaign.campaignTypeLabel ? (
+          <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
             {campaign.campaignTypeLabel}
           </span>
-          <span className="rounded-full bg-[#EEF4FF] px-2.5 py-1 text-[#5D7399] dark:bg-[#1B2940] dark:text-[#AFC2E5]">
-            {campaign.objectiveLabel}
-          </span>
-          <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-            {campaign.primaryChannel}
-          </span>
+          ) : null}
+          {campaign.objectiveLabel ? (
+            <span className="rounded-full bg-[#EEF4FF] px-2.5 py-1 text-[#5D7399] dark:bg-[#1B2940] dark:text-[#AFC2E5]">
+              {campaign.objectiveLabel}
+            </span>
+          ) : null}
           <span className={cn('rounded-full px-2.5 py-1 ring-1 ring-inset', comparisonToneClasses)}>
             {campaign.comparisonLabel}
           </span>

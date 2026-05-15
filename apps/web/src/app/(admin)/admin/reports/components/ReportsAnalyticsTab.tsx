@@ -2,14 +2,19 @@
 
 import { useReports } from '@/hooks/useReports';
 import { exportToCsv } from '@/lib/csv';
+import { supportsMarketingPlanningFilters } from '@/lib/marketing-report-config';
 import {
   formatUsdAmount,
   getMarketingCampaignTypeLabel,
   getMarketingMetricAnalyticsCategory,
   getMarketingObjectiveLabel,
+  getMarketingReportDisplayName,
+  getMarketingReportTypeLabel,
   matchesMarketingReportFilters,
+  resolveMarketingReportType,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
+  type MarketingReportTypeFilterValue,
 } from '@/lib/report-utils';
 import {
   Badge,
@@ -48,6 +53,7 @@ import {
 
 interface ReportsAnalyticsTabProps {
   department: string;
+  reportType: MarketingReportTypeFilterValue;
   campaignType: MarketingCampaignFilterValue;
   objective: MarketingObjectiveFilterValue;
   timeRange: 'weekly' | 'monthly' | 'custom';
@@ -55,17 +61,7 @@ interface ReportsAnalyticsTabProps {
   customEndDate?: string;
 }
 
-type PlanningChannel = 'blended' | 'Google Ads' | 'Meta Ads';
 type PlanningHorizon = 'current_window' | 'next_month' | 'next_quarter';
-
-interface ChannelSignal {
-  name: 'Google Ads' | 'Meta Ads';
-  spend: number;
-  outcomes: number;
-  reportCount: number;
-  roasTotal: number;
-  roasCount: number;
-}
 
 interface ForecastScenario {
   key: 'conservative' | 'expected' | 'aggressive';
@@ -90,11 +86,7 @@ interface ForecastSummary {
   averageRoas: number | null;
   roasCoverage: number;
   topOutcomeMetric: string | null;
-  topChannel: 'Google Ads' | 'Meta Ads' | null;
-  topAudience: string;
-  channelSignals: ChannelSignal[];
   observedSignals: Array<{ label: string; spend: number; outcomes: number }>;
-  defaultChannel: PlanningChannel;
   confidenceScore: number;
   confidenceLabel: 'High' | 'Moderate' | 'Low';
   confidenceNote: string;
@@ -105,12 +97,12 @@ interface AnalyticsReportLike {
   deleted_at: string | null;
   period_start: string;
   marketing_context: {
-    campaignName?: string;
-    primaryChannel?: string;
-    targetAudience?: string;
-    campaignType?: string;
-    objective?: string;
-    totalSpend?: number;
+    marketingReportType?: string | null | undefined;
+    campaignName?: string | null | undefined;
+    campaignType?: string | null | undefined;
+    objective?: string | null | undefined;
+    primaryChannel?: string | null | undefined;
+    totalSpend?: number | null | undefined;
   } | null;
   report_metrics?: Array<{
     metric_name: string;
@@ -152,40 +144,46 @@ const HORIZON_CONFIG: Record<
 
 function ForecastRequirementsCard({
   showRevenue,
+  reportType,
 }: {
   showRevenue: boolean;
+  reportType: MarketingReportTypeFilterValue;
 }) {
+  const planningFieldsRelevant = reportType === 'all' || supportsMarketingPlanningFilters(reportType);
+  const selectedReportTypeLabel = reportType === 'all' ? 'All report types' : getMarketingReportTypeLabel(reportType);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>What Employees Must Fill In</CardTitle>
         <CardDescription>
-          Forecasting activates only when submitted marketing reports include the planning fields and at least one measurable result.
+          Forecasting activates only when submitted marketing reports include the required report context and at least one measurable result.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4">
           <p className="font-medium text-foreground">Required campaign setup fields</p>
           <ul className="space-y-2 text-muted-foreground">
+            {planningFieldsRelevant ? (
+              <>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+                  Campaign Type and Objective are required for Facebook Ads and Google Ads reports
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+                  Email Marketing and Content Creation rely on Report Type, spend, and measurable outcome metrics instead
+                </li>
+              </>
+            ) : (
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
+                {selectedReportTypeLabel} does not use Campaign Type or Objective in this release
+              </li>
+            )}
             <li className="flex items-start gap-2">
               <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-              Campaign Type
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-              Objective
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-              Primary Channel
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-              Target Audience
-            </li>
-            <li className="flex items-start gap-2">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-              Total Spend greater than $0
+              Total Spend greater than AU$0
             </li>
           </ul>
         </div>
@@ -252,17 +250,15 @@ function normalizeMetricName(metricName: string | null | undefined): string {
 }
 
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  return `AU$${value.toLocaleString('en-US', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(value);
+  })}`;
 }
 
 function formatCompactCurrency(value: number): string {
   if (value >= 1000) {
-    return `$${(value / 1000).toFixed(0)}k`;
+    return `AU$${(value / 1000).toFixed(0)}k`;
   }
 
   return formatCurrency(value);
@@ -393,8 +389,6 @@ function formatPeriodLabel(
 function buildForecastSummary(reports: ReturnType<typeof useReports>['data'] extends infer _ ? Array<any> : never): ForecastSummary {
   const uniqueCampaigns = new Set<string>();
   const objectiveOutcomeMap = new Map<string, { total: number; count: number }>();
-  const audienceMap = new Map<string, number>();
-  const channelMap = new Map<'Google Ads' | 'Meta Ads', ChannelSignal>();
   const pacingMap = new Map<string, { spend: number; outcomes: number }>();
 
   let totalSpend = 0;
@@ -427,15 +421,10 @@ function buildForecastSummary(reports: ReturnType<typeof useReports>['data'] ext
       roasCount += 1;
     }
 
-    if (marketingContext?.campaignName) {
-      uniqueCampaigns.add(marketingContext.campaignName);
-    }
+    const reportLabel = getMarketingReportDisplayName(marketingContext);
 
-    if (marketingContext?.targetAudience) {
-      const nextAudience = marketingContext.targetAudience.trim();
-      if (nextAudience) {
-        audienceMap.set(nextAudience, (audienceMap.get(nextAudience) || 0) + 1);
-      }
+    if (reportLabel !== 'Untitled Marketing Report') {
+      uniqueCampaigns.add(reportLabel);
     }
 
     for (const metric of outcomeMetrics) {
@@ -443,26 +432,6 @@ function buildForecastSummary(reports: ReturnType<typeof useReports>['data'] ext
       entry.total += metric.metric_value || 0;
       entry.count += 1;
       objectiveOutcomeMap.set(metric.metric_name, entry);
-    }
-
-    if (marketingContext?.primaryChannel) {
-      const channelName = marketingContext.primaryChannel as 'Google Ads' | 'Meta Ads';
-      const channelSignal = channelMap.get(channelName) || {
-        name: channelName,
-        spend: 0,
-        outcomes: 0,
-        reportCount: 0,
-        roasTotal: 0,
-        roasCount: 0,
-      };
-      channelSignal.spend += reportSpend;
-      channelSignal.outcomes += reportOutcomes;
-      channelSignal.reportCount += 1;
-      if (roasMetric) {
-        channelSignal.roasTotal += roasMetric.metric_value;
-        channelSignal.roasCount += 1;
-      }
-      channelMap.set(channelName, channelSignal);
     }
 
     const paceKey = extractDateString(report.period_start);
@@ -479,14 +448,6 @@ function buildForecastSummary(reports: ReturnType<typeof useReports>['data'] ext
       }
       return right[1].count - left[1].count;
     })[0]?.[0] ?? null;
-
-  const channelSignals = Array.from(channelMap.values()).sort((left, right) => right.spend - left.spend);
-  const topChannel = channelSignals[0]?.name ?? null;
-  const topAudience = Array.from(audienceMap.entries())
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 2)
-    .map(([audience]) => audience)
-    .join(' / ');
 
   const observedSignals = Array.from(pacingMap.entries())
     .sort((left, right) => new Date(left[0]).getTime() - new Date(right[0]).getTime())
@@ -510,11 +471,7 @@ function buildForecastSummary(reports: ReturnType<typeof useReports>['data'] ext
     averageRoas: roasCount > 0 ? roasTotal / roasCount : null,
     roasCoverage: roasCount,
     topOutcomeMetric,
-    topChannel,
-    topAudience,
-    channelSignals,
     observedSignals,
-    defaultChannel: topChannel ?? 'blended',
     ...confidence,
   };
 }
@@ -535,12 +492,15 @@ function getRoasValue(report: AnalyticsReportLike): number | null {
 
 function hasPlanningFields(report: AnalyticsReportLike): boolean {
   const marketingContext = report.marketing_context;
+  const resolvedReportType = resolveMarketingReportType(marketingContext);
+
+  if (!supportsMarketingPlanningFilters(resolvedReportType)) {
+    return true;
+  }
 
   return Boolean(
     marketingContext?.campaignType?.trim() &&
-      marketingContext?.objective?.trim() &&
-      marketingContext?.primaryChannel?.trim() &&
-      marketingContext?.targetAudience?.trim()
+      marketingContext?.objective?.trim()
   );
 }
 
@@ -568,7 +528,7 @@ function buildForecastDiagnostics(
   if (activeReports.length > reportsWithPlanningFields) {
     const missingPlanningCount = activeReports.length - reportsWithPlanningFields;
     blockers.push(
-      `${missingPlanningCount} active report${missingPlanningCount === 1 ? ' is' : 's are'} missing campaign setup fields.`
+      `${missingPlanningCount} active report${missingPlanningCount === 1 ? ' is' : 's are'} missing the required campaign type or objective.`
     );
   }
 
@@ -623,7 +583,7 @@ function ForecastDiagnosticsCard({ diagnostics }: { diagnostics: ForecastDiagnos
 
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-lg border border-border/70 bg-background/60 p-4 text-sm text-muted-foreground">
-            Planning fields ready: <span className="font-medium text-foreground">{diagnostics.reportsWithPlanningFields}</span>
+            Required context ready: <span className="font-medium text-foreground">{diagnostics.reportsWithPlanningFields}</span>
           </div>
           <div className="rounded-lg border border-border/70 bg-background/60 p-4 text-sm text-muted-foreground">
             Archived in window: <span className="font-medium text-foreground">{diagnostics.archivedReports}</span>
@@ -766,6 +726,7 @@ function getPeriodDates(
 
 export function ReportsAnalyticsTab({
   department,
+  reportType,
   campaignType,
   objective,
   timeRange,
@@ -793,9 +754,9 @@ export function ReportsAnalyticsTab({
       (data?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
-          matchesMarketingReportFilters(report, { campaignType, objective })
+          matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       ),
-    [campaignType, data?.data, objective]
+    [campaignType, data?.data, objective, reportType]
   );
   const reports = useMemo(
     () => matchedReports.filter((report) => !report.deleted_at),
@@ -808,50 +769,23 @@ export function ReportsAnalyticsTab({
     [matchedReports, reports]
   );
   const [planningHorizon, setPlanningHorizon] = useState<PlanningHorizon>('current_window');
-  const [planningChannel, setPlanningChannel] = useState<PlanningChannel>('blended');
-  const [audienceFocus, setAudienceFocus] = useState('');
   const [budgetInput, setBudgetInput] = useState('0');
-
-  const activeChannelSignal = useMemo(() => {
-    if (planningChannel === 'blended') {
-      return null;
-    }
-
-    return (
-      forecastSummary.channelSignals.find((signal) => signal.name === planningChannel) || null
-    );
-  }, [forecastSummary.channelSignals, planningChannel]);
+  const planningFiltersRelevant = reportType === 'all' || supportsMarketingPlanningFilters(reportType);
+  const reportTypeSummaryLabel = reportType === 'all' ? 'All report types' : getMarketingReportTypeLabel(reportType);
 
   const baselineSignal = useMemo(() => {
-    const usingFallback = planningChannel !== 'blended' && !activeChannelSignal;
-    const spend = activeChannelSignal?.spend ?? forecastSummary.totalSpend;
-    const outcomes = activeChannelSignal?.outcomes ?? forecastSummary.totalOutcomes;
-    const roas = activeChannelSignal
-      ? activeChannelSignal.roasCount > 0
-        ? activeChannelSignal.roasTotal / activeChannelSignal.roasCount
-        : null
-      : forecastSummary.averageRoas;
-
     return {
-      spend,
-      outcomes,
-      roas,
-      usingFallback,
+      spend: forecastSummary.totalSpend,
+      outcomes: forecastSummary.totalOutcomes,
+      roas: forecastSummary.averageRoas,
+      usingFallback: false,
     };
-  }, [activeChannelSignal, forecastSummary.averageRoas, forecastSummary.totalOutcomes, forecastSummary.totalSpend, planningChannel]);
+  }, [forecastSummary.averageRoas, forecastSummary.totalOutcomes, forecastSummary.totalSpend]);
 
   const recommendedBudget = useMemo(
     () => baselineSignal.spend * HORIZON_CONFIG[planningHorizon].multiplier,
     [baselineSignal.spend, planningHorizon]
   );
-
-  useEffect(() => {
-    setPlanningChannel(forecastSummary.defaultChannel);
-  }, [forecastSummary.defaultChannel]);
-
-  useEffect(() => {
-    setAudienceFocus(forecastSummary.topAudience);
-  }, [forecastSummary.topAudience]);
 
   useEffect(() => {
     setBudgetInput(recommendedBudget > 0 ? recommendedBudget.toFixed(0) : '0');
@@ -925,14 +859,10 @@ export function ReportsAnalyticsTab({
         highlight: forecastSummary.totalSpend > 0 && forecastSummary.totalOutcomes > 0,
       },
       {
-        metric: 'Channel bias',
-        insight: forecastSummary.topChannel
-          ? `${forecastSummary.topChannel} is carrying the heaviest spend signal in this forecast.`
-          : 'No single channel dominates the current signal set.',
-      },
-      {
-        metric: 'Audience snapshot',
-        insight: audienceFocus || 'No target audience summary was captured in the selected reports.',
+        metric: 'Result metric',
+        insight: forecastSummary.topOutcomeMetric
+          ? `${forecastSummary.topOutcomeMetric} is the strongest repeated outcome signal in this forecast window.`
+          : 'No single outcome metric dominates the current signal set.',
       },
       {
         metric: 'Confidence',
@@ -943,23 +873,21 @@ export function ReportsAnalyticsTab({
 
     const recommendations = [
       'Use the expected scenario as the planning baseline and treat conservative and aggressive as budget guardrails.',
-      planningChannel !== 'blended' && baselineSignal.usingFallback
-        ? `There is not enough ${planningChannel} history in the selected window, so the planner is falling back to blended Meta and Google Ads performance.`
-        : `The planner is reading ${planningChannel === 'blended' ? 'blended Meta and Google Ads history' : `${planningChannel} history`} from the current filter set.`,
+      'The planner is reading the blended performance signal from the current filter set.',
       showRevenue
         ? `Projected sales value is using the observed ROAS signal from ${forecastSummary.roasCoverage} report${forecastSummary.roasCoverage === 1 ? '' : 's'}.`
         : 'Revenue is hidden because the selected reports do not carry enough ROAS data. Use projected results and cost efficiency instead.',
       forecastSummary.confidenceLabel === 'Low'
         ? 'Broaden the date range or tighten the filters to a cleaner objective cluster before using this for committed spend changes.'
-        : 'Keep the same employee-side report structure intact so future forecasts continue to compare campaign type, objective, channel, audience, and spend cleanly.',
+        : 'Keep the same employee-side report structure intact so future forecasts continue to compare campaign type, objective, and spend cleanly.',
     ];
 
     return {
-      summary: `This planner follows the same campaign structure employees submit on marketing reports and translates recent Meta Ads and Google Ads performance into concurrent sales forecast scenarios for ${resultLabel.toLowerCase()}.`,
+      summary: `This planner follows the same campaign structure employees submit on marketing reports and translates recent submitted performance into concurrent sales forecast scenarios for ${resultLabel.toLowerCase()}.`,
       keyFindings,
       recommendations,
     };
-  }, [audienceFocus, baselineSignal.usingFallback, forecastSummary.confidenceLabel, forecastSummary.confidenceNote, forecastSummary.confidenceScore, forecastSummary.roasCoverage, forecastSummary.topChannel, forecastSummary.totalOutcomes, forecastSummary.totalReports, forecastSummary.totalSpend, forecastSummary.uniqueCampaigns, periodEnd, periodStart, planningChannel, resultLabel, showRevenue, timeRange]);
+  }, [forecastSummary.confidenceLabel, forecastSummary.confidenceNote, forecastSummary.confidenceScore, forecastSummary.roasCoverage, forecastSummary.topOutcomeMetric, forecastSummary.totalOutcomes, forecastSummary.totalReports, forecastSummary.totalSpend, forecastSummary.uniqueCampaigns, periodEnd, periodStart, resultLabel, showRevenue, timeRange]);
 
   const handleExport = () => {
     if (scenarioCards.length === 0) return;
@@ -969,20 +897,16 @@ export function ReportsAnalyticsTab({
       headers: [
         'Scenario',
         'Planning Horizon',
-        'Planning Channel',
-        'Audience Focus',
         'Projected Result Label',
-        'Planned Spend (USD)',
+        'Planned Spend (AUD)',
         'Projected Results',
-        'Projected Revenue (USD)',
+        'Projected Revenue (AUD)',
         'Projected ROAS',
-        'Projected Cost Per Result (USD)',
+        'Projected Cost Per Result (AUD)',
       ],
       rowMapper: (scenario) => [
         scenario.label,
         HORIZON_CONFIG[planningHorizon].label,
-        planningChannel,
-        audienceFocus,
         resultLabel,
         scenario.spend.toFixed(2),
         scenario.projectedResults.toFixed(2),
@@ -1031,13 +955,13 @@ export function ReportsAnalyticsTab({
             <EmptyState
               icon={AlertCircle}
               title="Forecasting is waiting for submitted marketing reports"
-              description={forecastDiagnostics.blockers[0] ?? 'To activate this forecast, employees need to submit marketing reports for the selected period with campaign setup details, spend, and at least one real result metric.'}
+              description={forecastDiagnostics.blockers[0] ?? 'To activate this forecast, employees need to submit marketing reports for the selected period with report type, tracked spend, and at least one real result metric.'}
               size="sm"
             />
           </CardContent>
         </Card>
         <ForecastDiagnosticsCard diagnostics={forecastDiagnostics} />
-        <ForecastRequirementsCard showRevenue={showRevenue} />
+        <ForecastRequirementsCard showRevenue={showRevenue} reportType={reportType} />
       </div>
     );
   }
@@ -1056,7 +980,7 @@ export function ReportsAnalyticsTab({
           </CardContent>
         </Card>
         <ForecastDiagnosticsCard diagnostics={forecastDiagnostics} />
-        <ForecastRequirementsCard showRevenue={showRevenue} />
+        <ForecastRequirementsCard showRevenue={showRevenue} reportType={reportType} />
       </div>
     );
   }
@@ -1066,8 +990,9 @@ export function ReportsAnalyticsTab({
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Showing sales forecast scenarios for the <span className="font-medium text-foreground">Marketing team</span>{' '}
-          {campaignType !== 'all' ? `| ${getMarketingCampaignTypeLabel(campaignType)} ` : ''}
-          {objective !== 'all' ? `| ${getMarketingObjectiveLabel(objective)} ` : ''}
+          | {reportTypeSummaryLabel}{' '}
+          {planningFiltersRelevant && campaignType !== 'all' ? `| ${getMarketingCampaignTypeLabel(campaignType)} ` : ''}
+          {planningFiltersRelevant && objective !== 'all' ? `| ${getMarketingObjectiveLabel(objective)} ` : ''}
           ({timeRange}
           {timeRange === 'custom' && customStartDate && customEndDate
             ? `: ${customStartDate} to ${customEndDate}`
@@ -1126,35 +1051,34 @@ export function ReportsAnalyticsTab({
         <CardHeader>
           <CardTitle>Sales Forecast Setup</CardTitle>
           <CardDescription>
-            This planner mirrors the employee marketing report structure: campaign type, objective, primary channel, target audience, and spend. The result is a Google-style budget planner with Meta-style estimated-results assumptions.
+            This planner mirrors the employee marketing report structure for the selected report type and builds a blended forecast from submitted performance.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4">
+              <Label className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Report Type</Label>
+              <p className="text-sm font-medium text-foreground">{reportTypeSummaryLabel}</p>
+            </div>
+            <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4">
               <Label className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Campaign Type</Label>
               <p className="text-sm font-medium text-foreground">
-                {campaignType === 'all' ? 'All submitted campaign types' : getMarketingCampaignTypeLabel(campaignType)}
+                {planningFiltersRelevant
+                  ? campaignType === 'all'
+                    ? 'All submitted campaign types'
+                    : getMarketingCampaignTypeLabel(campaignType)
+                  : 'Not used for this report type'}
               </p>
             </div>
             <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4">
               <Label className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Objective</Label>
               <p className="text-sm font-medium text-foreground">
-                {objective === 'all' ? 'All submitted objectives' : getMarketingObjectiveLabel(objective)}
+                {planningFiltersRelevant
+                  ? objective === 'all'
+                    ? 'All submitted objectives'
+                    : getMarketingObjectiveLabel(objective)
+                  : 'Not used for this report type'}
               </p>
-            </div>
-            <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4">
-              <Label htmlFor="planningChannel" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Primary Channel</Label>
-              <Select value={planningChannel} onValueChange={(value) => setPlanningChannel(value as PlanningChannel)}>
-                <SelectTrigger id="planningChannel">
-                  <SelectValue placeholder="Select a planning channel" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="blended">Blended Meta + Google</SelectItem>
-                  <SelectItem value="Google Ads">Google Ads</SelectItem>
-                  <SelectItem value="Meta Ads">Meta Ads</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4">
               <Label htmlFor="planningHorizon" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Planning Horizon</Label>
@@ -1170,15 +1094,6 @@ export function ReportsAnalyticsTab({
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4 md:col-span-2">
-              <Label htmlFor="audienceFocus" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Target Audience</Label>
-              <Input
-                id="audienceFocus"
-                value={audienceFocus}
-                onChange={(event) => setAudienceFocus(event.target.value)}
-                placeholder="Audience summary from employee-side marketing reports"
-              />
             </div>
             <div className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-4 md:col-span-2">
               <Label htmlFor="budgetInput" className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Planned Spend</Label>
@@ -1204,12 +1119,6 @@ export function ReportsAnalyticsTab({
             </div>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Channel signal</span>
-                <span className="font-medium text-foreground">
-                  {planningChannel === 'blended' || !baselineSignal.usingFallback ? planningChannel : 'Blended Meta + Google'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
                 <span className="text-muted-foreground">Observed spend</span>
                 <span className="font-medium text-foreground">{formatUsdAmount(baselineSignal.spend)}</span>
               </div>
@@ -1228,11 +1137,6 @@ export function ReportsAnalyticsTab({
                 <span className="font-medium text-foreground">{forecastSummary.confidenceLabel}</span>
               </div>
             </div>
-            {baselineSignal.usingFallback && (
-              <p className="text-xs text-muted-foreground">
-                The selected channel does not have enough history in this filter set, so the planner is falling back to blended performance.
-              </p>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -1336,14 +1240,6 @@ export function ReportsAnalyticsTab({
           <CardContent className="space-y-5">
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Top channel</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{forecastSummary.topChannel ?? 'No dominant channel yet'}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Audience snapshot</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{forecastSummary.topAudience || 'No audience summary yet'}</p>
-              </div>
-              <div>
                 <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Result metric</p>
                 <p className="mt-1 text-sm font-medium text-foreground">{forecastSummary.topOutcomeMetric ?? 'No dominant outcome metric yet'}</p>
               </div>
@@ -1353,34 +1249,6 @@ export function ReportsAnalyticsTab({
                   {forecastSummary.roasCoverage} of {forecastSummary.totalReports} reports
                 </p>
               </div>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Channel spend mix</p>
-              {forecastSummary.channelSignals.length > 0 ? (
-                forecastSummary.channelSignals.map((signal) => {
-                  const share = forecastSummary.totalSpend > 0 ? (signal.spend / forecastSummary.totalSpend) * 100 : 0;
-
-                  return (
-                    <div key={signal.name} className="space-y-1.5">
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="font-medium text-foreground">{signal.name}</span>
-                        <span className="text-muted-foreground">
-                          {formatUsdAmount(signal.spend)} · {share.toFixed(0)}%
-                        </span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                        <div
-                          className="h-full rounded-full bg-indigo-500"
-                          style={{ width: `${Math.max(share, signal.spend > 0 ? 6 : 0)}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-sm text-muted-foreground">No channel split has been recorded yet.</p>
-              )}
             </div>
           </CardContent>
         </Card>

@@ -14,6 +14,7 @@ import {
   matchesMarketingReportFilters,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
+  type MarketingReportTypeFilterValue,
 } from '@/lib/report-utils';
 import {
   Badge,
@@ -66,6 +67,7 @@ const statusVariant: Record<
 
 interface ReportsSubmissionsTabProps {
   department: string;
+  reportType: MarketingReportTypeFilterValue;
   campaignType: MarketingCampaignFilterValue;
   objective: MarketingObjectiveFilterValue;
   timeRange: 'weekly' | 'monthly' | 'custom';
@@ -121,6 +123,7 @@ function getPeriodDates(
 
 export function ReportsSubmissionsTab({
   department,
+  reportType,
   campaignType,
   objective,
   timeRange: _timeRange,
@@ -172,13 +175,14 @@ export function ReportsSubmissionsTab({
 
     all = all.filter((report) =>
       matchesMarketingReportFilters(report, {
+        reportType,
         campaignType,
         objective,
         search,
       })
     );
     return all;
-  }, [archivedView, campaignType, data?.data, objective, search]);
+  }, [archivedView, campaignType, data?.data, objective, reportType, search]);
 
   const reportStatusOrder: Record<string, number> = { submitted: 0, rejected: 1, approved: 2 };
 
