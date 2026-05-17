@@ -264,6 +264,58 @@
     },
     {
       "parameters": {
+        "jsCode": "const grouped = $json;\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst output = [];\n\nfor (const dept of grouped.departments) {\n  for (const intern of dept.interns) {\n    const blockerText = intern.blockers?.length > 0 ? intern.blockers.join('; ') : 'None';\n    const nextText = intern.nextSteps?.length > 0 ? intern.nextSteps.join('; ') : 'TBD';\n\n    const lines = [\n      `<b>SN Connect | EOD Report</b>`,\n      ``,\n      `📅 <b>Date:</b> ${grouped.reportDate}`,\n      `🏢 <b>Department:</b> ${dept.department}`,\n      ``,\n      div,\n      ``,\n      `👤 <b>${intern.name}</b>`,\n      ``,\n      `🚀 <b>Progress &amp; Impact:</b> ${intern.summary || 'No summary provided.'}`,\n      ``,\n      `⚠️ <b>Blockers:</b> ${blockerText}`,\n      ``,\n      `📅 <b>Next Steps:</b> ${nextText}`,\n      ``,\n      div,\n    ];\n\n    output.push({ json: { telegramText: lines.join('\\n') } });\n  }\n}\n\nreturn output;"
+      },
+      "id": "build-individual-messages",
+      "name": "Build Individual Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2260,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "6708968435",
+        "text": "={{ $json.telegramText }}",
+        "resource": "message",
+        "operation": "sendMessage",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "send-individual-telegram",
+      "name": "Send Individual Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2480,
+        280
+      ],
+      "webhookId": "7f3a2c1d-8e9b-4f5a-b6c7-d8e9f0a1b2c3",
+      "credentials": {
+        "telegramApi": {
+          "id": "br7oYixc6HEh3DQc",
+          "name": "SN Connect Notifications"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const grouped = $('Merge Run State').first().json;\nreturn [{ json: grouped }];"
+      },
+      "id": "collect-after-sends",
+      "name": "Collect After Sends",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        280
+      ]
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://api.openai.com/v1/chat/completions",
         "authentication": "predefinedCredentialType",
@@ -286,7 +338,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2260,
+        2920,
         280
       ],
       "credentials": {
@@ -305,7 +357,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2480,
+        3140,
         280
       ]
     },
@@ -324,7 +376,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2700,
+        3360,
         280
       ],
       "webhookId": "414102d0-e5f1-40be-9275-1b4d1ae8b43d",
@@ -375,7 +427,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2920,
+        3580,
         280
       ],
       "credentials": {
@@ -552,6 +604,39 @@
             "index": 0
           }
         ],
+        [
+          {
+            "node": "Build Individual Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Individual Messages": {
+      "main": [
+        [
+          {
+            "node": "Send Individual Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Individual Telegram": {
+      "main": [
+        [
+          {
+            "node": "Collect After Sends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect After Sends": {
+      "main": [
         [
           {
             "node": "Summarize With AI",
