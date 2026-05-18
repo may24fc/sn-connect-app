@@ -20,17 +20,6 @@ function applyArchivedScope<TQuery extends { is: Function; not: Function }>(
   return query.is('deleted_at', null) as TQuery;
 }
 
-function buildDuplicateReportErrorMessage(
-  reportType: string,
-  periodStart: string,
-  periodEnd: string,
-  existingStatus: string
-): string {
-  const title = `${reportType.charAt(0).toUpperCase()}${reportType.slice(1)} report`;
-  const statusLabel = existingStatus === 'draft' ? 'draft' : `${existingStatus} submission`;
-  return `${title} for ${periodStart} to ${periodEnd} already exists as a ${statusLabel}. Use the existing report instead of creating another one for the same period.`;
-}
-
 /**
  * GET /api/reports
  * List reports with filters and pagination.
@@ -270,37 +259,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Cannot create reports for other employees' },
         { status: 403 }
-      );
-    }
-
-    const { data: duplicateReport, error: duplicateReportError } = await supabaseAdmin
-      .from('reports')
-      .select('id, status')
-      .eq('employee_id', employeeId)
-      .eq('report_type', parsed.data.reportType)
-      .eq('period_start', parsed.data.periodStart)
-      .eq('period_end', parsed.data.periodEnd)
-      .is('deleted_at', null)
-      .limit(1)
-      .maybeSingle();
-
-    if (duplicateReportError) {
-      console.error('Error checking for duplicate report period:', duplicateReportError);
-      return NextResponse.json({ error: 'Failed to validate report period' }, { status: 500 });
-    }
-
-    if (duplicateReport) {
-      return NextResponse.json(
-        {
-          error: buildDuplicateReportErrorMessage(
-            parsed.data.reportType,
-            parsed.data.periodStart,
-            parsed.data.periodEnd,
-            duplicateReport.status
-          ),
-          existingReportId: duplicateReport.id,
-        },
-        { status: 409 }
       );
     }
 

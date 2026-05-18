@@ -209,6 +209,10 @@ export const MARKETING_OBJECTIVE_INFO: Record<
     label: 'Conversions',
     description: 'Track actions that directly drive purchases or conversion events.',
   },
+  purchases: {
+    label: 'Purchases',
+    description: 'Track completed purchases and transaction volume generated from Google Ads campaigns.',
+  },
   catalog_sales: {
     label: 'Catalog Sales',
     description: 'Measure product-led commerce outcomes and purchase efficiency.',
@@ -284,6 +288,12 @@ const FACEBOOK_OBJECTIVES_BY_CAMPAIGN_TYPE: Record<
   conversion: ['conversions', 'catalog_sales', 'store_traffic'],
 };
 
+const GOOGLE_SHARED_OBJECTIVES: Array<MarketingObjective> = [
+  'purchases',
+  'phone_calls',
+  'website_traffic',
+];
+
 const GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE: Record<
   Exclude<
     MarketingCampaignType,
@@ -343,6 +353,12 @@ interface MarketingMetricLike {
   metric_name: string;
   metric_value: number;
   metric_unit?: string | null;
+}
+
+function dedupeMarketingObjectives(
+  objectives: Array<MarketingObjective | null | undefined>
+): Array<MarketingObjective> {
+  return Array.from(new Set(objectives.filter((objective): objective is MarketingObjective => Boolean(objective))));
 }
 
 function normalizeContentCreationEntries(
@@ -542,167 +558,14 @@ const FACEBOOK_MARKETING_METRIC_PRESETS: Partial<Record<MarketingObjective, Arra
   ],
 };
 
-const GOOGLE_MARKETING_METRIC_PRESETS: Record<
-  Exclude<MarketingCampaignType, 'awareness' | 'consideration' | 'conversion'>,
-  Partial<Record<MarketingObjective, Array<MarketingMetricTemplate>>>
-> = {
-  search: {
-    lead_generation: [
-      createLockedMetric('Conversions', 'count', 'outcome'),
-      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Impression Share', '%', 'supporting'),
-      createLockedMetric('Search Top IS', '%', 'supporting'),
-      createLockedMetric('Conversion Rate', '%', 'supporting'),
-    ],
-    website_traffic: [
-      createLockedMetric('Clicks', 'count', 'outcome'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Sessions', 'count', 'supporting'),
-      createLockedMetric('Bounce Rate', '%', 'supporting'),
-      createLockedMetric('Avg Session Duration', 'seconds', 'supporting'),
-    ],
-    phone_calls: [
-      createLockedMetric('Call Clicks', 'count', 'outcome'),
-      createLockedMetric('Phone Calls', 'count', 'outcome'),
-      createLockedMetric('Call Conversion Rate', '%', 'supporting'),
-      createLockedMetric('Cost Per Call', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('CTR', '%', 'supporting'),
-    ],
-  },
-  display: {
-    brand_awareness: [
-      createLockedMetric('Reach', 'count', 'outcome'),
-      createLockedMetric('Impressions', 'count', 'supporting'),
-      createLockedMetric('CPM', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Viewable Impressions', 'count', 'supporting'),
-      createLockedMetric('Frequency', 'x', 'supporting'),
-    ],
-    remarketing: [
-      createLockedMetric('Returning Visitors', 'count', 'outcome'),
-      createLockedMetric('Conversions', 'count', 'outcome'),
-      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('Assisted Conversions', 'count', 'supporting'),
-    ],
-  },
-  performance_max: {
-    multi_channel_conversions: [
-      createLockedMetric('Conversions', 'count', 'outcome'),
-      createLockedMetric('Conversion Value', REPORT_CURRENCY_CODE, 'outcome'),
-      createLockedMetric('ROAS', 'x', 'supporting'),
-      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Audience Signals Performance', '%', 'supporting'),
-    ],
-  },
-  shopping: {
-    ecommerce_sales: [
-      createLockedMetric('Purchases', 'count', 'outcome'),
-      createLockedMetric('ROAS', 'x', 'supporting'),
-      createLockedMetric('Conversion Value', REPORT_CURRENCY_CODE, 'outcome'),
-      createLockedMetric('Avg Order Value', REPORT_CURRENCY_CODE, 'supporting'),
-      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
-    ],
-  },
-  video: {
-    video_engagement: [
-      createLockedMetric('Views', 'count', 'outcome'),
-      createLockedMetric('View Rate', '%', 'supporting'),
-      createLockedMetric('Watch Time', 'seconds', 'supporting'),
-      createLockedMetric('CPV', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Engagement Rate', '%', 'supporting'),
-    ],
-    lead_generation: [
-      createLockedMetric('Leads', 'count', 'outcome'),
-      createLockedMetric('CPL', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Video Views', 'count', 'supporting'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('Conversion Rate', '%', 'supporting'),
-    ],
-  },
-  demand_gen: {
-    prospecting_engagement: [
-      createLockedMetric('Clicks', 'count', 'outcome'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('Conversions', 'count', 'outcome'),
-      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Engagement Rate', '%', 'supporting'),
-    ],
-  },
-  app_campaign: {
-    app_promotion: [
-      createLockedMetric('Installs', 'count', 'outcome'),
-      createLockedMetric('CPI', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('In-App Actions', 'count', 'supporting'),
-      createLockedMetric('Retention Rate', '%', 'supporting'),
-      createLockedMetric('Conversion Value', REPORT_CURRENCY_CODE, 'outcome'),
-    ],
-  },
-  local_campaign: {
-    store_traffic: [
-      createLockedMetric('Store Visits', 'count', 'outcome'),
-      createLockedMetric('Directions', 'count', 'supporting'),
-      createLockedMetric('Calls', 'count', 'supporting'),
-      createLockedMetric('Local Actions', 'count', 'supporting'),
-      createLockedMetric('Cost Per Visit', REPORT_CURRENCY_CODE, 'spend'),
-    ],
-  },
-  discovery_demand_gen: {
-    traffic_conversions: [
-      createLockedMetric('Clicks', 'count', 'outcome'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Conversions', 'count', 'outcome'),
-      createLockedMetric('Assisted Conversions', 'count', 'supporting'),
-    ],
-  },
-  remarketing: {
-    re_engagement: [
-      createLockedMetric('Returning Users', 'count', 'outcome'),
-      createLockedMetric('Conversions', 'count', 'outcome'),
-      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('ROAS', 'x', 'supporting'),
-      createLockedMetric('Frequency', 'x', 'supporting'),
-    ],
-  },
-  brand_campaign: {
-    brand_protection: [
-      createLockedMetric('Impression Share', '%', 'supporting'),
-      createLockedMetric('Top of Page Rate', '%', 'supporting'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Conversion Rate', '%', 'supporting'),
-    ],
-  },
-  competitor_campaign: {
-    market_capture: [
-      createLockedMetric('Clicks', 'count', 'outcome'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Search Impression Share', '%', 'supporting'),
-      createLockedMetric('Conversion Rate', '%', 'supporting'),
-    ],
-  },
-  dynamic_search_ads: {
-    search_expansion: [
-      createLockedMetric('Search Terms Coverage', '%', 'supporting'),
-      createLockedMetric('CTR', '%', 'supporting'),
-      createLockedMetric('CPC', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Conversions', 'count', 'outcome'),
-      createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
-    ],
-  },
-  call_only_campaign: {
-    direct_calls: [
-      createLockedMetric('Phone Calls', 'count', 'outcome'),
-      createLockedMetric('Call Duration', 'seconds', 'supporting'),
-      createLockedMetric('Cost Per Call', REPORT_CURRENCY_CODE, 'spend'),
-      createLockedMetric('Call Conversion Rate', '%', 'supporting'),
-    ],
-  },
-};
+const GOOGLE_MARKETING_METRIC_PRESET: Array<MarketingMetricTemplate> = [
+  createLockedMetric('Clicks', 'count', 'outcome'),
+  createLockedMetric('Impressions', 'count', 'supporting'),
+  createLockedMetric('Conversions', 'count', 'outcome'),
+  createLockedMetric('CTR', '%', 'supporting'),
+  createLockedMetric('Average CPC', REPORT_CURRENCY_CODE, 'spend'),
+  createLockedMetric('CPA', REPORT_CURRENCY_CODE, 'spend'),
+];
 
 const EMAIL_MARKETING_METRIC_PRESET: Array<MarketingMetricTemplate> = [
   createLockedMetric('Email Delivery - Delivery Rate', '%', 'supporting', {
@@ -773,7 +636,7 @@ function inferMarketingReportType(
 const MARKETING_METRIC_ANALYTICS_LOOKUP = new Map<string, MarketingMetricAnalyticsCategory>(
   [
     ...Object.values(FACEBOOK_MARKETING_METRIC_PRESETS),
-    ...Object.values(GOOGLE_MARKETING_METRIC_PRESETS).flatMap((objectiveMap) => Object.values(objectiveMap)),
+    GOOGLE_MARKETING_METRIC_PRESET,
     EMAIL_MARKETING_METRIC_PRESET,
   ]
     .flat()
@@ -900,7 +763,7 @@ const CONSIDERATION_OBJECTIVES = new Set<string>([
   'lead_generation',
   'messages',
 ]);
-const CONVERSION_OBJECTIVES = new Set<string>(['conversions', 'catalog_sales', 'store_traffic']);
+const CONVERSION_OBJECTIVES = new Set<string>(['conversions', 'purchases', 'catalog_sales', 'store_traffic']);
 
 const LEGACY_OBJECTIVE_MAP: Record<string, MarketingObjective> = {
   awareness: 'brand_awareness',
@@ -976,9 +839,43 @@ export function resolveMarketingReportType(
   );
 }
 
-export function getMarketingObjectiveLabel(objective: MarketingObjective): string {
+function getSingleMarketingObjectiveLabel(objective: MarketingObjective): string {
   return MARKETING_OBJECTIVE_INFO[objective]?.label
-    ?? objective.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+    ?? objective.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
+}
+
+export function getMarketingObjectiveLabel(
+  objective: MarketingObjective | ReadonlyArray<MarketingObjective>
+): string {
+  if (Array.isArray(objective)) {
+    return objective.map((value) => getSingleMarketingObjectiveLabel(value)).join(', ');
+  }
+
+  const singleObjective = objective as MarketingObjective;
+  return getSingleMarketingObjectiveLabel(singleObjective);
+}
+
+export function getMarketingObjectives(
+  marketingContext:
+    | Pick<MarketingContext, 'objective' | 'objectives'>
+    | null
+    | undefined
+): Array<MarketingObjective> {
+  return dedupeMarketingObjectives([
+    ...(marketingContext?.objectives ?? []),
+    marketingContext?.objective ?? null,
+  ]);
+}
+
+export function getMarketingObjectiveSummaryLabel(
+  marketingContext:
+    | Pick<MarketingContext, 'objective' | 'objectives'>
+    | null
+    | undefined
+): string | null {
+  const objectives = getMarketingObjectives(marketingContext);
+
+  return objectives.length > 0 ? getMarketingObjectiveLabel(objectives) : null;
 }
 
 export function getMarketingCampaignTypeOptionsForReportType(
@@ -1016,9 +913,12 @@ export function getMarketingObjectivesForReportType(
   }
 
   if (reportType === 'Google Ads') {
-    return GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE[
-      campaignType as keyof typeof GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE
-    ] ?? [];
+    return dedupeMarketingObjectives([
+      ...(GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE[
+        campaignType as keyof typeof GOOGLE_OBJECTIVES_BY_CAMPAIGN_TYPE
+      ] ?? []),
+      ...GOOGLE_SHARED_OBJECTIVES,
+    ]);
   }
 
   return [];
@@ -1049,35 +949,30 @@ export function getMarketingObjectiveOptionsForReportType(
 export function createMarketingMetricPreset(
   reportType: MarketingReportType,
   campaignType?: MarketingCampaignType | null,
-  objective?: MarketingObjective | null
+  objective?: MarketingObjective | ReadonlyArray<MarketingObjective> | null
 ): Array<MarketingMetricTemplate> {
+  const resolvedObjective: MarketingObjective | null = Array.isArray(objective)
+    ? objective[0] ?? null
+    : objective ?? null;
+
   if (reportType === 'Email Marketing') {
     return EMAIL_MARKETING_METRIC_PRESET.map((metric) => ({ ...metric }));
   }
 
   if (reportType === 'Facebook Ads') {
-    if (!objective) {
+    if (!resolvedObjective) {
       return [];
     }
 
-    return (FACEBOOK_MARKETING_METRIC_PRESETS[objective] ?? FACEBOOK_MARKETING_METRIC_PRESETS.brand_awareness ?? []).map((metric) => ({ ...metric }));
+    return (FACEBOOK_MARKETING_METRIC_PRESETS[resolvedObjective] ?? FACEBOOK_MARKETING_METRIC_PRESETS.brand_awareness ?? []).map((metric) => ({ ...metric }));
   }
 
   if (reportType === 'Google Ads') {
-    if (!campaignType || !objective) {
+    if (!campaignType) {
       return [];
     }
 
-    const campaignTypePresets = GOOGLE_MARKETING_METRIC_PRESETS[
-      campaignType as keyof typeof GOOGLE_MARKETING_METRIC_PRESETS
-    ];
-    const fallbackCampaignTypePresets = GOOGLE_MARKETING_METRIC_PRESETS.search;
-
-    return (
-      campaignTypePresets?.[objective]
-      ?? fallbackCampaignTypePresets[objective]
-      ?? []
-    ).map((metric) => ({ ...metric }));
+    return GOOGLE_MARKETING_METRIC_PRESET.map((metric) => ({ ...metric }));
   }
 
   return [];
@@ -1111,13 +1006,26 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
   );
   const rawCampaignType =
     typeof candidate.campaignType === 'string' ? candidate.campaignType.trim().toLowerCase() : '';
-  const rawObjective =
-    typeof candidate.objective === 'string' ? candidate.objective.trim().toLowerCase() : '';
+  const normalizeObjectiveValue = (value: unknown): MarketingObjective | null => {
+    const rawObjective = typeof value === 'string' ? value.trim().toLowerCase() : '';
 
-  const nextObjective = LEGACY_OBJECTIVE_MAP[rawObjective] ?? rawObjective;
-  const normalizedObjective = Object.hasOwn(MARKETING_OBJECTIVE_INFO, nextObjective)
-    ? (nextObjective as MarketingObjective)
-    : null;
+    if (!rawObjective) {
+      return null;
+    }
+
+    const nextObjective = LEGACY_OBJECTIVE_MAP[rawObjective] ?? rawObjective;
+    return Object.hasOwn(MARKETING_OBJECTIVE_INFO, nextObjective)
+      ? (nextObjective as MarketingObjective)
+      : null;
+  };
+
+  const normalizedObjectives = dedupeMarketingObjectives([
+    ...(Array.isArray(candidate.objectives)
+      ? candidate.objectives.map((value) => normalizeObjectiveValue(value))
+      : []),
+    normalizeObjectiveValue(candidate.objective),
+  ]);
+  const normalizedObjective = normalizedObjectives[0] ?? null;
 
   let normalizedCampaignType = rawCampaignType as MarketingCampaignType;
 
@@ -1152,6 +1060,12 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
       getMarketingObjectiveAvailability(normalizedReportType) === 'hidden'
         ? null
         : normalizedObjective,
+    objectives:
+      getMarketingObjectiveAvailability(normalizedReportType) === 'hidden'
+        ? null
+        : normalizedReportType === 'Google Ads'
+          ? normalizedObjectives
+          : null,
     contentCreation:
       normalizedReportType === 'Content Creation'
         ? contentCreationDetailsSchema.safeParse(candidate.contentCreation).data ?? null
@@ -1303,11 +1217,11 @@ export function getMarketingReportContextSummary(
     marketingContext.primaryChannel
   );
 
-  if (!marketingContext.objective) {
+  const objectiveLabel = getMarketingObjectiveSummaryLabel(marketingContext);
+
+  if (!objectiveLabel) {
     return inferredReportType ?? getMarketingReportDisplayName(marketingContext);
   }
-
-  const objectiveLabel = getMarketingObjectiveLabel(marketingContext.objective);
 
   if (marketingContext.primaryChannel?.trim()) {
     return `${objectiveLabel} via ${marketingContext.primaryChannel}`;
@@ -1335,6 +1249,7 @@ export function matchesMarketingReportFilters(
 ): boolean {
   const { reportType = 'all', campaignType = 'all', objective = 'all', search = '' } = filters;
   const marketingContext = report.marketing_context;
+  const marketingObjectives = getMarketingObjectives(marketingContext);
   const normalizedSearch = search.trim().toLowerCase();
   const inferredReportType = inferMarketingReportType(
     marketingContext?.marketingReportType,
@@ -1350,7 +1265,7 @@ export function matchesMarketingReportFilters(
     return false;
   }
 
-  if (objective !== 'all' && marketingContext?.objective !== objective) {
+  if (objective !== 'all' && !marketingObjectives.includes(objective)) {
     return false;
   }
 
@@ -1370,9 +1285,7 @@ export function matchesMarketingReportFilters(
     marketingContext?.campaignType
       ? getMarketingCampaignTypeLabel(marketingContext.campaignType)
       : '',
-    marketingContext?.objective
-      ? getMarketingObjectiveLabel(marketingContext.objective)
-      : '',
+    getMarketingObjectiveSummaryLabel(marketingContext) || '',
   ]
     .join(' ')
     .toLowerCase();

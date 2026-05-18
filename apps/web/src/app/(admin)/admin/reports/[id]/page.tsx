@@ -13,7 +13,7 @@ import {
   getContentCreationObservations,
   getContentCreationResults,
   getMarketingCampaignTypeLabel,
-  getMarketingObjectiveLabel,
+  getMarketingObjectiveSummaryLabel,
   getMarketingReportDisplayName,
   getReportTypeDescription,
   getReportTypeLabel,
@@ -206,6 +206,8 @@ export default function AdminReportDetailPage({
   const noteSections = parseNoteSections(report.notes || '');
   const contentCreationObservations = getContentCreationObservations(marketingContext, noteSections);
   const contentCreationResults = getContentCreationResults(marketingContext, noteSections);
+  const objectiveSummaryLabel = getMarketingObjectiveSummaryLabel(marketingContext);
+  const objectiveFieldLabel = (marketingContext?.objectives?.length ?? 0) > 1 ? 'Objectives' : 'Objective';
 
   const keyFindings: Array<KeyFinding> = noteSections.accomplishments.map((item, index) => ({
     metric: `Accomplishment ${index + 1}`,
@@ -299,10 +301,10 @@ export default function AdminReportDetailPage({
                 {getMarketingCampaignTypeLabel(marketingContext.campaignType)}
               </p>
             ) : null}
-            {marketingContext.objective ? (
+            {objectiveSummaryLabel ? (
               <p>
-                <span className="text-muted-foreground">Objective:</span>{' '}
-                {getMarketingObjectiveLabel(marketingContext.objective)}
+                <span className="text-muted-foreground">{objectiveFieldLabel}:</span>{' '}
+                {objectiveSummaryLabel}
               </p>
             ) : null}
             {isContentCreationReport ? null : (

@@ -8,7 +8,7 @@ import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
 import {
   getMarketingCampaignTypeLabel,
-  getMarketingObjectiveLabel,
+  getMarketingObjectiveSummaryLabel,
   getMarketingReportContextSummary,
   getMarketingReportDisplayName,
   matchesMarketingReportFilters,
@@ -196,8 +196,8 @@ export function ReportsSubmissionsTab({
         ? getMarketingCampaignTypeLabel(r.marketing_context.campaignType).toLowerCase()
         : '',
     goal: (r) =>
-      r.marketing_context?.objective
-        ? getMarketingObjectiveLabel(r.marketing_context.objective).toLowerCase()
+      getMarketingObjectiveSummaryLabel(r.marketing_context)
+        ? getMarketingObjectiveSummaryLabel(r.marketing_context)?.toLowerCase() ?? ''
         : '',
     status: (r) => reportStatusOrder[r.status] ?? 99,
     period: (r) => r.period_start ?? '',
@@ -445,8 +445,8 @@ export function ReportsSubmissionsTab({
                           : '—'}
                       </TableCell>
                       <TableCell>
-                        {report.marketing_context?.objective
-                          ? getMarketingObjectiveLabel(report.marketing_context.objective)
+                        {getMarketingObjectiveSummaryLabel(report.marketing_context)
+                          ? getMarketingObjectiveSummaryLabel(report.marketing_context)
                           : '—'}
                       </TableCell>
                       <TableCell>

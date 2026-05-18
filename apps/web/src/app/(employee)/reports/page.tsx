@@ -12,7 +12,7 @@ import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatLabel } from '@/lib/format';
 import {
   getMarketingCampaignTypeLabel,
-  getMarketingObjectiveLabel,
+  getMarketingObjectiveSummaryLabel,
   getMarketingReportDisplayName,
   getReportTypeLabel,
 } from '@/lib/report-utils';
@@ -136,7 +136,7 @@ export default function ReportsPage() {
   const sortedReports = sortItems(reports, {
     report_type_label: (r) => r.marketing_context?.marketingReportType ?? '',
     campaign_type: (r) => r.marketing_context?.campaignType ?? '',
-    objective: (r) => r.marketing_context?.objective ?? '',
+    objective: (r) => getMarketingObjectiveSummaryLabel(r.marketing_context) ?? '',
     period: (r) => r.period_start ?? '',
     status: (r) => statusOrder[r.status] ?? 99,
     submitted_at: (r) => getSubmittedTimestamp(r) ?? '',
@@ -442,8 +442,8 @@ export default function ReportsPage() {
                           : '—'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {report.marketing_context?.objective
-                          ? getMarketingObjectiveLabel(report.marketing_context.objective)
+                        {getMarketingObjectiveSummaryLabel(report.marketing_context)
+                          ? getMarketingObjectiveSummaryLabel(report.marketing_context)
                           : '—'}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
@@ -618,8 +618,8 @@ function GroupedReportRow({
           </span>
         </TableCell>
         <TableCell className="text-sm text-muted-foreground">
-          {report.marketing_context?.objective
-            ? getMarketingObjectiveLabel(report.marketing_context.objective)
+          {getMarketingObjectiveSummaryLabel(report.marketing_context)
+            ? getMarketingObjectiveSummaryLabel(report.marketing_context)
             : '—'}
         </TableCell>
         <TableCell>

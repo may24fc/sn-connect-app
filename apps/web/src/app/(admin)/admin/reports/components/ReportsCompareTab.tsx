@@ -7,6 +7,8 @@ import {
   getContentCreationEntries,
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveLabel,
+  getMarketingObjectives,
+  getMarketingObjectiveSummaryLabel,
   getMarketingReportDisplayName,
   getMarketingReportTypeLabel,
   matchesMarketingReportFilters,
@@ -201,12 +203,12 @@ function aggregateReportMetrics(
       );
     }
 
-    if (report.marketing_context?.objective) {
-      const objectiveLabel = getMarketingObjectiveLabel(report.marketing_context.objective);
-      incrementMetric(
-        `Objective: ${objectiveLabel}`,
-        1
-      );
+    const reportObjectives = getMarketingObjectives(report.marketing_context);
+
+    if (reportObjectives.length > 0) {
+      for (const objective of reportObjectives) {
+        incrementMetric(`Objective: ${getMarketingObjectiveLabel(objective)}`, 1);
+      }
     }
 
     for (const metric of report.report_metrics || []) {
@@ -296,7 +298,7 @@ function buildCampaignSummaryKey(marketingContext: NonNullable<ReportRecord['mar
     normalizeCampaignKeyPart(getMarketingReportDisplayName(marketingContext)),
     normalizeCampaignKeyPart(resolveMarketingReportType(marketingContext)),
     normalizeCampaignKeyPart(marketingContext.campaignType),
-    normalizeCampaignKeyPart(marketingContext.objective),
+    normalizeCampaignKeyPart(getMarketingObjectiveSummaryLabel(marketingContext)),
   ].join('__');
 }
 
@@ -355,8 +357,7 @@ function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSumm
         campaignTypeLabel: marketingContext.campaignType
           ? getMarketingCampaignTypeLabel(marketingContext.campaignType)
           : null,
-        objectiveLabel: marketingContext.objective
-          ? getMarketingObjectiveLabel(marketingContext.objective)
+        objectiveLabel: getMarketingObjectiveSummaryLabel(marketingContext)
           : null,
         totalSpend,
         summary: hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY,
@@ -381,8 +382,7 @@ function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSumm
       existing.campaignTypeLabel = marketingContext.campaignType
         ? getMarketingCampaignTypeLabel(marketingContext.campaignType)
         : null;
-      existing.objectiveLabel = marketingContext.objective
-        ? getMarketingObjectiveLabel(marketingContext.objective)
+      existing.objectiveLabel = getMarketingObjectiveSummaryLabel(marketingContext)
         : null;
       existing.summary = hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY;
       existing.primaryTimestamp = timestamp;

@@ -4,6 +4,7 @@ import { useReports } from '@/hooks/useReports';
 import { useReportsRealtime } from '@/hooks/useReportsRealtime';
 import { getMarketingCampaignTypeAvailability } from '@/lib/marketing-report-config';
 import {
+  getMarketingObjectives,
   MARKETING_OBJECTIVE_INFO,
   MARKETING_REPORT_TYPE_OPTIONS,
   type MarketingCampaignFilterValue,
@@ -141,7 +142,7 @@ export default function AdminReportsPage() {
 
           return true;
         })
-        .map((report) => report.marketing_context?.objective)
+        .flatMap((report) => getMarketingObjectives(report.marketing_context))
         .filter((value): value is Exclude<MarketingObjectiveFilterValue, 'all'> => Boolean(value))
     );
 

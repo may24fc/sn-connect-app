@@ -40,6 +40,7 @@ export const marketingObjectiveSchema = z.enum([
   'lead_generation',
   'messages',
   'conversions',
+  'purchases',
   'catalog_sales',
   'store_traffic',
   'website_traffic',
@@ -91,6 +92,7 @@ export const marketingContextSchema = z.object({
   campaignName: z.string().trim().max(120).optional().nullable(),
   campaignType: marketingCampaignTypeSchema.optional().nullable(),
   objective: marketingObjectiveSchema.optional().nullable(),
+  objectives: z.array(marketingObjectiveSchema).max(10).optional().nullable(),
   totalSpend: z.coerce.number().min(0, 'Total spend cannot be negative').optional().nullable(),
   primaryChannel: marketingPrimaryChannelSchema.optional().nullable(),
   targetAudience: z.string().trim().max(160).optional().nullable(),
@@ -152,13 +154,24 @@ export const reportCreateSchema = reportSchema.extend({
 
   if (
     requiresMarketingObjective(payload.marketingContext.marketingReportType)
-    && !payload.marketingContext.objective
   ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['marketingContext', 'objective'],
-      message: 'Objective is required for this report type',
-    });
+    if (payload.marketingContext.marketingReportType === 'Google Ads') {
+      const selectedObjectives = payload.marketingContext.objectives ?? [];
+
+      if (selectedObjectives.length === 0 && !payload.marketingContext.objective) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['marketingContext', 'objectives'],
+          message: 'At least one objective is required for Google Ads reports',
+        });
+      }
+    } else if (!payload.marketingContext.objective) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['marketingContext', 'objective'],
+        message: 'Objective is required for this report type',
+      });
+    }
   }
 
   if (payload.marketingContext.marketingReportType === 'Content Creation') {

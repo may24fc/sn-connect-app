@@ -40,6 +40,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   CardContent,
   CardDescription,
   CardHeader,
@@ -78,12 +79,22 @@ import {
   useState,
 } from 'react';
 
-type MetricEntry = MarketingMetricTemplate;
+type MetricEntry = MarketingMetricTemplate & {
+  id: string;
+};
 
 const REPORT_TYPE = 'marketing' as const;
+const REPORT_CURRENCY_UNIT = REPORT_CURRENCY_CODE.toLowerCase();
 const INTEGER_ONLY_UNITS = new Set(['count']);
 const TENTH_STEP_UNITS = new Set(['seconds']);
 const HUNDREDTH_STEP_UNITS = new Set(['%', 'php', 'usd', 'aud', 'x']);
+const MARKETING_METRIC_UNIT_OPTIONS = [
+  { value: 'count', label: 'Count' },
+  { value: '%', label: '%' },
+  { value: REPORT_CURRENCY_UNIT, label: `${REPORT_CURRENCY_SYMBOL}` },
+  { value: 'x', label: 'Multiplier (x)' },
+  { value: 'seconds', label: 'Seconds (sec)' },
+] as const;
 const MARKETING_CAMPAIGN_TYPE_SET = new Set(
   MARKETING_CAMPAIGN_TYPE_OPTIONS.map((option) => option.value)
 );
@@ -93,7 +104,11 @@ const MARKETING_REPORT_TYPE_SET = new Set(
 const MARKETING_OBJECTIVE_SET = new Set(
   Object.keys(MARKETING_OBJECTIVE_INFO) as Array<MarketingObjective>
 );
+const MARKETING_METRIC_UNIT_SET = new Set(
+  MARKETING_METRIC_UNIT_OPTIONS.map((option) => option.value)
+);
 const CONTENT_CREATION_APP_OPTIONS = ['Facebook', 'Instagram'] as const;
+let metricEntryIdCounter = 0;
 
 interface MetricValueRule {
   min?: number;
@@ -115,6 +130,34 @@ const NUMERIC_INPUT_PREFIX_PADDING_CLASS = 'pl-14';
 
 function normalizeMetricUnit(unit: string): string {
   return unit.trim().toLowerCase();
+}
+
+function resolveMetricUnit(unit: string | null | undefined): string {
+  const normalizedUnit = normalizeMetricUnit(unit ?? '');
+  return normalizedUnit || 'count';
+}
+
+function getMetricUnitLabel(unit: string): string {
+  const matchedOption = MARKETING_METRIC_UNIT_OPTIONS.find((option) => option.value === unit);
+
+  if (matchedOption) {
+    return matchedOption.label;
+  }
+
+  return unit;
+}
+
+function getMetricUnitOptions(unit: string): Array<{ value: string; label: string }> {
+  const normalizedUnit = resolveMetricUnit(unit);
+
+  if (MARKETING_METRIC_UNIT_SET.has(normalizedUnit)) {
+    return [...MARKETING_METRIC_UNIT_OPTIONS];
+  }
+
+  return [
+    ...MARKETING_METRIC_UNIT_OPTIONS,
+    { value: normalizedUnit, label: `Current unit (${getMetricUnitLabel(normalizedUnit)})` },
+  ];
 }
 
 function normalizeMetricName(name: string): string {
@@ -202,13 +245,31 @@ function parseMetricValue(value: string, metricName: string, unit: string): numb
   return rule.min !== undefined ? Math.max(rule.min, parsedValue) : parsedValue;
 }
 
+function createMetricEntryId(): string {
+  metricEntryIdCounter += 1;
+  return `metric-${metricEntryIdCounter}`;
+}
+
+function toMetricEntry(metric: MarketingMetricTemplate): MetricEntry {
+  return {
+    ...metric,
+    unit: resolveMetricUnit(metric.unit),
+    id: createMetricEntryId(),
+  };
+}
+
+function toMetricEntries(metrics: MarketingMetricTemplate[]): MetricEntry[] {
+  return metrics.map((metric) => toMetricEntry(metric));
+}
+
 function mapCustomMetricsFromDraft(
   metrics: Array<{ metric_name: string; metric_value: number; metric_unit: string | null }> | undefined
 ): Array<MetricEntry> {
   return (metrics ?? []).map((metric) => ({
+    id: createMetricEntryId(),
     name: metric.metric_name,
     value: String(metric.metric_value ?? 0),
-    unit: metric.metric_unit || 'count',
+    unit: resolveMetricUnit(metric.metric_unit),
     locked: false,
     analyticsCategory: 'supporting',
   }));
@@ -217,7 +278,7 @@ function mapCustomMetricsFromDraft(
 function mapMetricsFromDraft(
   reportType: MarketingReportType,
   campaignType: MarketingCampaignType | null | undefined,
-  objective: MarketingObjective | null | undefined,
+  objective: MarketingObjective | ReadonlyArray<MarketingObjective> | null | undefined,
   metrics: Array<{ metric_name: string; metric_value: number; metric_unit: string | null }> | undefined
 ): Array<MetricEntry> {
   const presetMetrics = createMarketingMetricPreset(reportType, campaignType, objective);
@@ -230,21 +291,22 @@ function mapMetricsFromDraft(
 
     if (existingMetric) {
       existingMetrics.delete(normalizeMetricName(presetMetric.name));
-      return {
+      return toMetricEntry({
         ...presetMetric,
         value: String(existingMetric.metric_value ?? 0),
-        unit: existingMetric.metric_unit || presetMetric.unit,
-      };
+        unit: resolveMetricUnit(existingMetric.metric_unit || presetMetric.unit),
+      });
     }
 
-    return presetMetric;
+    return toMetricEntry(presetMetric);
   });
 
   existingMetrics.forEach((metric) => {
     resolvedMetrics.push({
+      id: createMetricEntryId(),
       name: metric.metric_name,
       value: String(metric.metric_value ?? 0),
-      unit: metric.metric_unit || 'count',
+      unit: resolveMetricUnit(metric.metric_unit),
       locked: false,
       analyticsCategory: 'supporting',
     });
@@ -252,7 +314,7 @@ function mapMetricsFromDraft(
 
   return resolvedMetrics.length > 0
     ? resolvedMetrics
-    : createMarketingMetricPreset(reportType, campaignType, objective);
+    : toMetricEntries(createMarketingMetricPreset(reportType, campaignType, objective));
 }
 
 function normalizeMarketingReportType(
@@ -284,14 +346,17 @@ function normalizeMarketingCampaignType(
   return campaignType as MarketingCampaignType;
 }
 
-function normalizeMarketingObjective(
-  objective: string | null | undefined
-): MarketingObjective | '' {
-  if (!objective || !MARKETING_OBJECTIVE_SET.has(objective as MarketingObjective)) {
-    return '';
-  }
-
-  return objective as MarketingObjective;
+function normalizeMarketingObjectives(
+  objectives: ReadonlyArray<string | null | undefined>
+): Array<MarketingObjective> {
+  return Array.from(
+    new Set(
+      objectives.filter(
+        (objective): objective is MarketingObjective =>
+          Boolean(objective) && MARKETING_OBJECTIVE_SET.has(objective as MarketingObjective)
+      )
+    )
+  );
 }
 
 function toDefinedMarketingReportType(
@@ -354,6 +419,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const [marketingReportType, setMarketingReportType] = useState<MarketingReportType | ''>('');
   const [campaignType, setCampaignType] = useState<MarketingCampaignType | ''>('');
   const [objective, setObjective] = useState<MarketingObjective | ''>('');
+  const [selectedObjectives, setSelectedObjectives] = useState<Array<MarketingObjective>>([]);
   const [totalSpend, setTotalSpend] = useState('0');
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
@@ -388,7 +454,8 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     () => getMarketingObjectiveOptionsForReportType(resolvedMarketingReportType, resolvedCampaignType),
     [resolvedCampaignType, resolvedMarketingReportType]
   );
-  const selectedObjectiveInfo = objective ? MARKETING_OBJECTIVE_INFO[objective] : undefined;
+  const isGoogleAdsReport = marketingReportType === 'Google Ads';
+  const selectedObjectiveInfo = !isGoogleAdsReport && objective ? MARKETING_OBJECTIVE_INFO[objective] : undefined;
   const isMutating = createReport.isPending || updateReport.isPending;
   const totalSpendAdornment = getNumericInputAdornment(REPORT_CURRENCY_CODE);
   const isContentCreationReport = marketingReportType === 'Content Creation';
@@ -407,13 +474,29 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         setObjective('');
       }
 
+      if (selectedObjectives.length > 0) {
+        setSelectedObjectives([]);
+      }
+
       return;
     }
 
     if (objective && !availableObjectives.includes(objective)) {
       setObjective('');
     }
-  }, [availableObjectives, campaignType, campaignTypeAvailability, isEditMode, objective]);
+
+    if (selectedObjectives.some((selectedObjective) => !availableObjectives.includes(selectedObjective))) {
+      const nextSelectedObjectives = selectedObjectives.filter((selectedObjective) =>
+        availableObjectives.includes(selectedObjective)
+      );
+
+      setSelectedObjectives(nextSelectedObjectives);
+
+      if (isGoogleAdsReport) {
+        setObjective(nextSelectedObjectives[0] ?? '');
+      }
+    }
+  }, [availableObjectives, campaignType, campaignTypeAvailability, isEditMode, isGoogleAdsReport, objective, selectedObjectives]);
 
   useEffect(() => {
     if (isEditMode) {
@@ -427,10 +510,16 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
     setMetrics(
       resolvedMarketingReportType
-        ? createMarketingMetricPreset(resolvedMarketingReportType, resolvedCampaignType, objective || undefined)
+        ? toMetricEntries(
+            createMarketingMetricPreset(
+              resolvedMarketingReportType,
+              resolvedCampaignType,
+              isGoogleAdsReport ? selectedObjectives : objective || undefined
+            )
+          )
         : []
     );
-  }, [isEditMode, objective, presetMetricsEnabled, resolvedCampaignType, resolvedMarketingReportType]);
+  }, [isEditMode, isGoogleAdsReport, objective, presetMetricsEnabled, resolvedCampaignType, resolvedMarketingReportType, selectedObjectives]);
 
   useEffect(() => {
     if (!isEditMode || !report || hydratedDraftIdRef.current === report.id) {
@@ -446,6 +535,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     const marketingContext = report.marketing_context;
     const noteSections = parseNoteSections(report.notes || '');
     const contentCreationEntries = getContentCreationEntries(marketingContext, report.report_metrics).map((entry) => ({
+      id: createMetricEntryId(),
       name: entry.platform,
       value: String(entry.posts),
       unit: 'count',
@@ -465,13 +555,22 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     const nextAvailableObjectives = nextCampaignType
       ? getMarketingObjectiveOptionsForReportType(resolvedNextReportType, nextCampaignType)
       : [];
+    const nextSelectedObjectives = nextReportType === 'Google Ads'
+      ? normalizeMarketingObjectives([
+          ...(marketingContext?.objectives ?? []),
+          marketingContext?.objective ?? null,
+        ]).filter((value) => nextAvailableObjectives.includes(value))
+      : [];
     const nextObjective = usesMarketingPresetMetrics(nextReportType)
-      ? (marketingContext?.objective ?? nextAvailableObjectives[0] ?? '')
+      ? nextReportType === 'Google Ads'
+        ? (nextSelectedObjectives[0] ?? '')
+        : (marketingContext?.objective ?? nextAvailableObjectives[0] ?? '')
       : '';
 
     setMarketingReportType(nextReportType);
     setCampaignType(nextCampaignType);
     setObjective(nextObjective);
+    setSelectedObjectives(nextSelectedObjectives);
     setTotalSpend(String(marketingContext?.totalSpend ?? 0));
     setPeriodStart(report.period_start ?? '');
     setPeriodEnd(report.period_end ?? '');
@@ -484,7 +583,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         ? mapMetricsFromDraft(
             resolvedNextReportType,
             nextCampaignType || undefined,
-            nextObjective || undefined,
+            nextReportType === 'Google Ads' ? nextSelectedObjectives : nextObjective || undefined,
             report.report_metrics
           )
         : mapCustomMetricsFromDraft(report.report_metrics)
@@ -505,8 +604,14 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       return 'Campaign type is required.';
     }
 
-    if (requiresMarketingObjective(marketingReportType) && !objective.trim()) {
-      return 'Objective is required.';
+    if (requiresMarketingObjective(marketingReportType)) {
+      if (isGoogleAdsReport && selectedObjectives.length === 0) {
+        return 'At least one objective is required.';
+      }
+
+      if (!isGoogleAdsReport && !objective.trim()) {
+        return 'Objective is required.';
+      }
     }
 
     if (!periodStart || !periodEnd) {
@@ -531,19 +636,22 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     }
 
     return null;
-  }, [campaignType, isContentCreationReport, marketingReportType, notes, objective, periodEnd, periodStart, results, totalSpend]);
+  }, [campaignType, isContentCreationReport, isGoogleAdsReport, marketingReportType, notes, objective, periodEnd, periodStart, results, selectedObjectives, totalSpend]);
 
   const buildReportPayload = useCallback(
     (asDraft: boolean): ReportCreateInput => {
       const normalizedCampaignType = normalizeMarketingCampaignType(campaignType);
-      const normalizedObjective = normalizeMarketingObjective(objective);
+      const normalizedObjectives = normalizeMarketingObjectives(
+        isGoogleAdsReport ? selectedObjectives : [objective]
+      );
+      const normalizedObjective = normalizedObjectives[0];
 
       if (requiresMarketingCampaignType(marketingReportType) && !normalizedCampaignType) {
         throw new Error('Campaign type is required.');
       }
 
-      if (requiresMarketingObjective(marketingReportType) && !normalizedObjective) {
-        throw new Error('Objective is required.');
+      if (requiresMarketingObjective(marketingReportType) && normalizedObjectives.length === 0) {
+        throw new Error(isGoogleAdsReport ? 'At least one objective is required.' : 'Objective is required.');
       }
 
       const validMetrics = metrics
@@ -573,6 +681,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         marketingReportType: normalizeMarketingReportType(marketingReportType) || undefined,
         campaignType: normalizedCampaignType || undefined,
         objective: normalizedObjective || undefined,
+        objectives: isGoogleAdsReport ? normalizedObjectives : undefined,
         contentCreation,
       };
 
@@ -595,6 +704,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     },
     [
       campaignType,
+      isGoogleAdsReport,
       marketingReportType,
       metrics,
       notes,
@@ -602,6 +712,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       periodEnd,
       periodStart,
       results,
+      selectedObjectives,
       totalSpend,
     ]
   );
@@ -665,7 +776,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     validateBaseFields,
   ]);
 
-  const handleMetricChange = (index: number, field: keyof MetricEntry, value: string) => {
+  const handleMetricChange = (index: number, field: 'name' | 'value' | 'unit', value: string) => {
     setMetrics((previous) =>
       previous.map((metric, metricIndex) =>
         metricIndex === index
@@ -710,13 +821,25 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
     setCampaignType(value);
 
+    if (resolvedMarketingReportType === 'Google Ads') {
+      const nextObjectives = getMarketingObjectivesForReportType(resolvedMarketingReportType, value);
+      const nextSelectedObjectives = selectedObjectives.filter((selectedObjective) =>
+        nextObjectives.includes(selectedObjective)
+      );
+
+      setSelectedObjectives(nextSelectedObjectives);
+      setObjective(nextSelectedObjectives[0] ?? '');
+      setMetrics(toMetricEntries(createMarketingMetricPreset(resolvedMarketingReportType, value, nextSelectedObjectives)));
+      return;
+    }
+
     if (isEditMode) {
       const nextObjectives = getMarketingObjectivesForReportType(resolvedMarketingReportType, value);
       const nextObjective = nextObjectives[0] ?? '';
       setObjective(nextObjective);
       setMetrics(
         resolvedMarketingReportType && nextObjective
-          ? createMarketingMetricPreset(resolvedMarketingReportType, value, nextObjective)
+          ? toMetricEntries(createMarketingMetricPreset(resolvedMarketingReportType, value, nextObjective))
           : []
       );
       return;
@@ -733,6 +856,10 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     const nextObjectiveAvailability = getMarketingObjectiveAvailability(value);
     const nextPresetMetricsEnabled = usesMarketingPresetMetrics(value);
     const nextAvailableCampaignTypes = getMarketingCampaignTypeOptionsForReportType(value);
+    const nextCampaignType = nextAvailableCampaignTypes.some((option) => option.value === campaignType)
+      ? campaignType
+      : '';
+    const nextIsGoogleAdsReport = value === 'Google Ads';
 
     if (
       campaignType
@@ -740,6 +867,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     ) {
       setCampaignType('');
       setObjective('');
+      setSelectedObjectives([]);
     }
 
     if (nextCampaignTypeAvailability !== 'enabled') {
@@ -748,10 +876,25 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
     if (nextObjectiveAvailability !== 'enabled') {
       setObjective('');
+      setSelectedObjectives([]);
     }
 
-    if (nextCampaignTypeAvailability === 'enabled' && campaignType && objective) {
-      const nextObjectives = getMarketingObjectivesForReportType(value, campaignType);
+    if (nextIsGoogleAdsReport) {
+      const nextObjectives = nextCampaignType
+        ? getMarketingObjectivesForReportType(value, nextCampaignType)
+        : [];
+      const nextSelectedObjectives = selectedObjectives.filter((selectedObjective) =>
+        nextObjectives.includes(selectedObjective)
+      );
+
+      setSelectedObjectives(nextSelectedObjectives);
+      setObjective(nextSelectedObjectives[0] ?? '');
+    } else if (selectedObjectives.length > 0) {
+      setSelectedObjectives([]);
+    }
+
+    if (nextCampaignTypeAvailability === 'enabled' && nextCampaignType && objective && !nextIsGoogleAdsReport) {
+      const nextObjectives = getMarketingObjectivesForReportType(value, nextCampaignType);
 
       if (!nextObjectives.includes(objective)) {
         setObjective('');
@@ -761,7 +904,9 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     if (!nextPresetMetricsEnabled) {
       setMetrics([]);
     } else if (nextCampaignTypeAvailability === 'hidden' && nextObjectiveAvailability === 'hidden') {
-      setMetrics(createMarketingMetricPreset(value));
+      setMetrics(toMetricEntries(createMarketingMetricPreset(value)));
+    } else if (nextIsGoogleAdsReport && nextCampaignType) {
+      setMetrics(toMetricEntries(createMarketingMetricPreset(value, nextCampaignType, selectedObjectives)));
     } else if (!objective) {
       setMetrics([]);
     }
@@ -775,14 +920,30 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     setObjective(value);
 
     if (presetMetricsEnabled && resolvedMarketingReportType && resolvedCampaignType) {
-      setMetrics(createMarketingMetricPreset(resolvedMarketingReportType, resolvedCampaignType, value));
+      setMetrics(toMetricEntries(createMarketingMetricPreset(resolvedMarketingReportType, resolvedCampaignType, value)));
     }
+  };
+
+  const handleGoogleObjectiveToggle = (value: MarketingObjective, checked: boolean) => {
+    if (!isGoogleAdsReport || objectiveAvailability !== 'enabled') {
+      return;
+    }
+
+    setSelectedObjectives((previous) => {
+      const nextSelectedObjectives = checked
+        ? normalizeMarketingObjectives([...previous, value])
+        : previous.filter((selectedObjective) => selectedObjective !== value);
+
+      setObjective(nextSelectedObjectives[0] ?? '');
+      return nextSelectedObjectives;
+    });
   };
 
   const handleAddMetric = () => {
     setMetrics((previous) => [
       ...previous,
       {
+        id: createMetricEntryId(),
         name: '',
         value: '0',
         unit: 'count',
@@ -801,10 +962,12 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const handleResetMetrics = () => {
     setMetrics(
       presetMetricsEnabled && resolvedMarketingReportType
-        ? createMarketingMetricPreset(
-            resolvedMarketingReportType,
-            resolvedCampaignType,
-            objective || undefined
+        ? toMetricEntries(
+            createMarketingMetricPreset(
+              resolvedMarketingReportType,
+              resolvedCampaignType,
+              isGoogleAdsReport ? selectedObjectives : objective || undefined
+            )
           )
         : []
     );
@@ -1028,34 +1191,79 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                 ) : null}
                 {showObjective ? (
                   <FormGroup
-                  label="Objective"
+                  label={isGoogleAdsReport ? 'Objectives' : 'Objective'}
                   htmlFor="objective"
                   required
                   showOptional={false}
                   description={
                     objectiveAvailability === 'disabled'
                       ? 'Objectives are not available for this report type.'
-                      : selectedObjectiveInfo?.description ?? 'Pick an objective after choosing a campaign type.'
+                      : isGoogleAdsReport
+                        ? selectedObjectives.length > 0
+                          ? `${selectedObjectives.length} objective${selectedObjectives.length === 1 ? '' : 's'} selected for this Google Ads report.`
+                          : 'Select one or more objectives after choosing a campaign type.'
+                        : selectedObjectiveInfo?.description ?? 'Pick an objective after choosing a campaign type.'
                   }
                 >
-                  <Select
-                    value={objective}
-                    onValueChange={(value) => handleObjectiveChange(value as MarketingObjective)}
-                    disabled={objectiveSelectDisabled || (objectiveAvailability === 'enabled' && !campaignType)}
-                  >
-                    <SelectTrigger id="objective" className="h-10">
-                      <SelectValue placeholder={objectiveSelectDisabled ? 'Objective not available' : 'Select an objective'} />
-                    </SelectTrigger>
-                    {objectiveSelectDisabled ? null : (
-                      <SelectContent>
-                        {availableObjectives.map((objectiveValue) => (
-                          <SelectItem key={objectiveValue} value={objectiveValue}>
-                            {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    )}
-                  </Select>
+                  {isGoogleAdsReport ? (
+                    <div className="space-y-3">
+                      <div className="grid gap-3 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
+                        {objectiveSelectDisabled || (objectiveAvailability === 'enabled' && !campaignType) ? (
+                          <p className="text-sm text-muted-foreground sm:col-span-2">
+                            Select a campaign type first to choose one or more objectives.
+                          </p>
+                        ) : (
+                          availableObjectives.map((objectiveValue) => (
+                            <label
+                              key={objectiveValue}
+                              className="flex items-start gap-3 rounded-md border border-border/60 p-3 transition-colors hover:bg-muted/40"
+                            >
+                              <Checkbox
+                                checked={selectedObjectives.includes(objectiveValue)}
+                                onCheckedChange={(checked) => handleGoogleObjectiveToggle(objectiveValue, checked === true)}
+                              />
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-foreground">
+                                  {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {MARKETING_OBJECTIVE_INFO[objectiveValue].description}
+                                </p>
+                              </div>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                      {selectedObjectives.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedObjectives.map((selectedObjective) => (
+                            <Badge key={selectedObjective} variant="secondary" className="rounded-full px-2 py-1 text-[11px] font-medium">
+                              {MARKETING_OBJECTIVE_INFO[selectedObjective].label}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <Select
+                      value={objective}
+                      onValueChange={(value) => handleObjectiveChange(value as MarketingObjective)}
+                      disabled={objectiveSelectDisabled || (objectiveAvailability === 'enabled' && !campaignType)}
+                    >
+                      <SelectTrigger id="objective" className="h-10">
+                        <SelectValue placeholder={objectiveSelectDisabled ? 'Objective not available' : 'Select an objective'} />
+                      </SelectTrigger>
+                      {objectiveSelectDisabled ? null : (
+                        <SelectContent>
+                          {availableObjectives.map((objectiveValue) => (
+                            <SelectItem key={objectiveValue} value={objectiveValue}>
+                              {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      )}
+                    </Select>
+                  )}
                 </FormGroup>
                 ) : null}
                 <FormGroup
@@ -1151,8 +1359,8 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                 ? 'List each platform or app used for posting during this reporting window, together with how many posts were published there.'
                 : presetMetricsEnabled
                 ? showObjective
-                  ? 'Recommended metrics are aligned to the selected objective. Preset names and units stay locked by default, but you can still remove preset rows or add custom metrics.'
-                  : 'Recommended metrics are aligned to the standard report template for this report type. Preset names and units stay locked by default, but you can still remove preset rows or add custom metrics.'
+                  ? 'Recommended metrics are aligned to the selected objective. Preset names stay locked by default, while units can be adjusted from the dropdown when needed.'
+                  : 'Recommended metrics are aligned to the standard report template for this report type. Preset names stay locked by default, while units can be adjusted from the dropdown when needed.'
                 : 'This report type does not use preset metrics right now. Add custom metrics manually if needed.'}
             </CardDescription>
           </CardHeader>
@@ -1165,12 +1373,13 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
             {metrics.map((metric, index) => {
               const metricValueRule = getMetricValueRule(metric.name, metric.unit);
+              const metricUnitOptions = getMetricUnitOptions(metric.unit);
               const showGroupHeading =
                 metric.groupLabel
                 && metrics[index - 1]?.groupLabel !== metric.groupLabel;
 
               return (
-                <div key={`${metric.name}-${index}`} className="space-y-2">
+                <div key={metric.id} className="space-y-2">
                   {showGroupHeading ? (
                     <div className="pt-2">
                       <p className="text-sm font-semibold text-foreground">{metric.groupLabel}</p>
@@ -1233,14 +1442,23 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                     {isContentCreationReport ? null : (
                       <div className="space-y-1">
                         {index === 0 && <Label className="text-xs text-muted-foreground">Unit</Label>}
-                        <Input
-                          placeholder="count"
+                        <Select
                           value={metric.unit}
-                          readOnly={metric.locked}
-                          onChange={(event) => handleMetricChange(index, 'unit', event.target.value)}
-                          onBlur={() => handleMetricBlur(index)}
-                          className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
-                        />
+                          onValueChange={(value) => handleMetricChange(index, 'unit', value)}
+                        >
+                          <SelectTrigger
+                            className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                          >
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {metricUnitOptions.map((unitOption) => (
+                              <SelectItem key={unitOption.value} value={unitOption.value}>
+                                {unitOption.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                     <div className="flex items-end md:justify-center">

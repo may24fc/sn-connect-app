@@ -5,17 +5,6 @@ import { reportMetricSchema, reportSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
-function buildDuplicateReportErrorMessage(
-  reportType: string,
-  periodStart: string,
-  periodEnd: string,
-  existingStatus: string
-): string {
-  const title = `${reportType.charAt(0).toUpperCase()}${reportType.slice(1)} report`;
-  const statusLabel = existingStatus === 'draft' ? 'draft' : `${existingStatus} submission`;
-  return `${title} for ${periodStart} to ${periodEnd} already exists as a ${statusLabel}. Update the existing report instead of keeping two entries for the same period.`;
-}
-
 /**
  * GET /api/reports/[id]
  * Get single report details.
@@ -185,47 +174,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           : existingNoteData.cleanNotes;
 
         updates.notes = serializeReportNotes(nextNotes, nextMarketingContext);
-      }
-
-      if (
-        parsedReport.data.reportType !== undefined ||
-        parsedReport.data.periodStart !== undefined ||
-        parsedReport.data.periodEnd !== undefined
-      ) {
-        const nextPeriodStart = parsedReport.data.periodStart ?? existingReport.period_start;
-        const nextPeriodEnd = parsedReport.data.periodEnd ?? existingReport.period_end;
-
-        const { data: duplicateReport, error: duplicateReportError } = await supabaseAdmin
-          .from('reports')
-          .select('id, status')
-          .eq('employee_id', existingReport.employee_id)
-          .eq('report_type', nextReportType)
-          .eq('period_start', nextPeriodStart)
-          .eq('period_end', nextPeriodEnd)
-          .neq('id', id)
-          .is('deleted_at', null)
-          .limit(1)
-          .maybeSingle();
-
-        if (duplicateReportError) {
-          console.error('Error checking for duplicate report period during update:', duplicateReportError);
-          return NextResponse.json({ error: 'Failed to validate report period' }, { status: 500 });
-        }
-
-        if (duplicateReport) {
-          return NextResponse.json(
-            {
-              error: buildDuplicateReportErrorMessage(
-                nextReportType,
-                nextPeriodStart,
-                nextPeriodEnd,
-                duplicateReport.status
-              ),
-              existingReportId: duplicateReport.id,
-            },
-            { status: 409 }
-          );
-        }
       }
 
       const { error: updateError } = await supabaseAdmin

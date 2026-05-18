@@ -17,7 +17,7 @@ import {
   getContentCreationObservations,
   getContentCreationResults,
   getMarketingCampaignTypeLabel,
-  getMarketingObjectiveLabel,
+  getMarketingObjectiveSummaryLabel,
   getMarketingReportDisplayName,
   getReportTypeDescription,
   getReportTypeLabel,
@@ -219,6 +219,8 @@ export default function ReportDetailPage({
   const noteSections = parseNoteSections(report.notes || '');
   const contentCreationObservations = getContentCreationObservations(marketingContext, noteSections);
   const contentCreationResults = getContentCreationResults(marketingContext, noteSections);
+  const objectiveSummaryLabel = getMarketingObjectiveSummaryLabel(marketingContext);
+  const objectiveFieldLabel = (marketingContext?.objectives?.length ?? 0) > 1 ? 'Objectives' : 'Objective';
 
   const keyFindings: Array<KeyFinding> = noteSections.accomplishments.map((item, index) => ({
     metric: `Accomplishment ${index + 1}`,
@@ -269,9 +271,9 @@ export default function ReportDetailPage({
               {getReportTypeDescription(report.report_type) && (
                 <span className="block text-xs mb-0.5">{getReportTypeDescription(report.report_type)}</span>
               )}
-              {marketingContext?.primaryChannel && marketingContext.objective && (
+              {marketingContext?.primaryChannel && objectiveSummaryLabel && (
                 <span className="block text-xs mb-0.5">
-                  {getMarketingObjectiveLabel(marketingContext.objective)} objective via {marketingContext.primaryChannel}
+                  {objectiveSummaryLabel} via {marketingContext.primaryChannel}
                 </span>
               )}
               {formatDate(report.period_start)} – {formatDate(report.period_end)}
@@ -427,10 +429,10 @@ export default function ReportDetailPage({
                 {getMarketingCampaignTypeLabel(marketingContext.campaignType)}
               </p>
             ) : null}
-            {marketingContext.objective ? (
+            {objectiveSummaryLabel ? (
               <p>
-                <span className="text-muted-foreground">Objective:</span>{' '}
-                {getMarketingObjectiveLabel(marketingContext.objective)}
+                <span className="text-muted-foreground">{objectiveFieldLabel}:</span>{' '}
+                {objectiveSummaryLabel}
               </p>
             ) : null}
             {isContentCreationReport ? null : (

@@ -15,12 +15,12 @@ export async function notifySuperAdminsAboutSubmittedReport({
   reportType,
   submittedBy,
 }: NotifySubmittedReportOptions): Promise<void> {
-  const [submitterName, superAdminIds] = await Promise.all([
+  const [submitterName, adminIds] = await Promise.all([
     getUserDisplayName(submittedBy),
-    getUserIdsByRoles(['super_admin']),
+    getUserIdsByRoles(['super_admin', 'admin']),
   ]);
 
-  const recipients = superAdminIds.filter((userId) => userId !== submittedBy);
+  const recipients = adminIds.filter((userId) => userId !== submittedBy);
   if (recipients.length === 0) {
     return;
   }
