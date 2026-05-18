@@ -27,7 +27,7 @@ export interface StoredNotificationPreferences extends NotificationPreferencesUp
 export const NOTIFICATION_PREFERENCES_ROLE_TYPE = 'notification_preferences';
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
-  telegram: true,
+  telegram: false,
   gmail: false,
   telegramUsername: null,
   telegramLinkedAt: null,

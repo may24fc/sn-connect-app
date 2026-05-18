@@ -75,6 +75,22 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       submittedBy: user.id,
     });
 
+    if (data.report_type === 'marketing' && data.employee_id) {
+      const webhookUrl = process.env.N8N_MARKETING_REPORT_WEBHOOK_URL;
+      if (webhookUrl) {
+        fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employee_id: data.employee_id,
+            submitted_at: data.submitted_at ?? new Date().toISOString(),
+          }),
+        }).catch((err) => {
+          console.error('[n8n] Failed to fire marketing report webhook:', err);
+        });
+      }
+    }
+
     await logActivity(supabase, {
       userId: user.id,
       action: 'submit_report',

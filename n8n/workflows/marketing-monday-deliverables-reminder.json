@@ -1,0 +1,280 @@
+{
+    "id":  "i80qDdf5cfNnkOV5",
+    "name":  "[SN Connect] [Prod] Marketing Monday Deliverables Reminder",
+    "active":  false,
+    "_comment":  "PRODUCTION workflow. Fires every Monday 08:30 PHT (02:30 UTC). Queries prod Supabase for Marketing employees and sends a Telegram reminder to the marketing group chat.",
+    "nodes":  [
+                  {
+                      "id":  "schedule-trigger",
+                      "name":  "Monday Trigger (08:30 PHT)",
+                      "type":  "n8n-nodes-base.scheduleTrigger",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       240,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "rule":  {
+                                                      "interval":  [
+                                                                       {
+                                                                           "field":  "cronExpression",
+                                                                           "expression":  "0 30 2 * * 1"
+                                                                       }
+                                                                   ]
+                                                  }
+                                     }
+                  },
+                  {
+                      "id":  "set-context",
+                      "name":  "Set Week Context",
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       464,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "a1",
+                                                                                     "name":  "weekStart",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $now.setZone(\u0027Asia/Manila\u0027).startOf(\u0027week\u0027).toFormat(\u0027yyyy-MM-dd\u0027) }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "a2",
+                                                                                     "name":  "weekLabel",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $now.setZone(\u0027Asia/Manila\u0027).startOf(\u0027week\u0027).toFormat(\u0027MMM d\u0027) + \u0027 – \u0027 + $now.setZone(\u0027Asia/Manila\u0027).endOf(\u0027week\u0027).toFormat(\u0027MMM d, yyyy\u0027) }}"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "fetch-marketing-employees",
+                      "name":  "Fetch Marketing Employees",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       688,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "https://tccdupkjmwwxcvpqnpeb.supabase.co/rest/v1/employees?select=id,first_name,last_name,department,employment_type,users!inner(status)\u0026department=eq.Marketing\u0026deleted_at=is.null\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026order=last_name.asc",
+                                         "authentication":  "none",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+                                                         "response":  {
+                                                                          "response":  {
+                                                                                           "responseFormat":  "json",
+                                                                                           "fullResponse":  true
+                                                                                       }
+                                                                      }
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "parse-employees",
+                      "name":  "Parse Employees",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       912,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "jsCode":  "const body = $json.body;\nconst all = Array.isArray(body) ? body : (typeof body === \u0027string\u0027 ? JSON.parse(body) : []);\nconst ctx = $(\u0027Set Week Context\u0027).first().json;\n\nconst employees = all.filter(e =\u003e e.employment_type !== \u0027intern\u0027).sort((a, b) =\u003e a.last_name.localeCompare(b.last_name));\nconst interns = all.filter(e =\u003e e.employment_type === \u0027intern\u0027).sort((a, b) =\u003e a.last_name.localeCompare(b.last_name));\nconst combined = [...employees, ...interns];\n\nreturn [{ json: { employees, interns, combined, employeeCount: combined.length, weekStart: ctx.weekStart, weekLabel: ctx.weekLabel } }];"
+                                     }
+                  },
+                  {
+                      "id":  "has-employees",
+                      "name":  "Has Marketing Employees?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       1120,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "combinator":  "and",
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "cond-count",
+                                                                                   "leftValue":  "={{ $json.employeeCount }}",
+                                                                                   "operator":  {
+                                                                                                    "name":  "filter.operator.gt",
+                                                                                                    "operation":  "gt",
+                                                                                                    "rightType":  "any",
+                                                                                                    "type":  "number"
+                                                                                                },
+                                                                                   "rightValue":  0
+                                                                               }
+                                                                           ],
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        }
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "build-reminder-message",
+                      "name":  "Build Reminder Message",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       1344,
+                                       192
+                                   ],
+                      "parameters":  {
+                                         "jsCode":  "const { employees, interns, weekLabel } = $json;\n\nconst empLines = employees.map(e =\u003e `• ${e.first_name} ${e.last_name}`).join(\u0027\\n\u0027);\nconst internLines = interns.map(e =\u003e `• ${e.first_name} ${e.last_name}`).join(\u0027\\n\u0027);\n\nlet teamSection;\nif (employees.length \u003e 0 \u0026\u0026 interns.length \u003e 0) {\n  teamSection = `\u003cb\u003eEmployees:\u003c/b\u003e\\n${empLines}\\n\\n\u003cb\u003eInterns:\u003c/b\u003e\\n${internLines}`;\n} else if (employees.length \u003e 0) {\n  teamSection = empLines;\n} else {\n  teamSection = internLines;\n}\n\nconst text = [\n  \u0027?? \u003cb\u003eWeekly Deliverables Reminder\u003c/b\u003e\u0027,\n  `?? \u003cb\u003eWeek:\u003c/b\u003e ${weekLabel}`,\n  \u0027\u0027,\n  \u0027Hi Marketing Team! ??\u0027,\n  \u0027\u0027,\n  \u0027This is your weekly reminder to complete and submit your deliverables by \u003cb\u003etoday EOD\u003c/b\u003e.\u0027,\n  \u0027\u0027,\n  \u0027\u003cb\u003eMarketing Team:\u003c/b\u003e\u0027,\n  teamSection,\n  \u0027\u0027,\n  \u0027Please ensure the following are submitted:\u0027,\n  \u0027? Weekly Marketing Report\u0027,\n  \u0027? Campaign Progress Update\u0027,\n  \u0027? Marketing Metrics Summary\u0027,\n  \u0027\u0027,\n  \u0027?? \u003ca href=\"https://app.sngroup.com.au\"\u003eOpen HR Portal\u003c/a\u003e\u0027\n].join(\u0027\\n\u0027);\nreturn [{ json: { telegramText: text } }];"
+                                     }
+                  },
+                  {
+                      "id":  "send-reminder-telegram",
+                      "name":  "Send Reminder",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       1568,
+                                       192
+                                   ],
+                      "parameters":  {
+                                         "chatId":  "-5277920652",
+                                         "text":  "={{ $json.telegramText }}",
+                                         "additionalFields":  {
+                                                                  "appendAttribution":  false,
+                                                                  "parse_mode":  "HTML"
+                                                              }
+                                     },
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "br7oYixc6HEh3DQc",
+                                                              "name":  "SN Connect Notifications"
+                                                          }
+                                      }
+                  },
+                  {
+                      "id":  "no-employees-noop",
+                      "name":  "No Marketing Employees",
+                      "type":  "n8n-nodes-base.noOp",
+                      "typeVersion":  1,
+                      "position":  [
+                                       1344,
+                                       432
+                                   ],
+                      "parameters":  {
+
+                                     }
+                  }
+              ],
+    "connections":  {
+                        "Monday Trigger (08:30 PHT)":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Set Week Context",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Set Week Context":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Fetch Marketing Employees",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Fetch Marketing Employees":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Parse Employees",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Parse Employees":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "Has Marketing Employees?",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "Has Marketing Employees?":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Build Reminder Message",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ],
+                                                                      [
+                                                                          {
+                                                                              "node":  "No Marketing Employees",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Build Reminder Message":  {
+                                                       "main":  [
+                                                                    [
+                                                                        {
+                                                                            "node":  "Send Reminder",
+                                                                            "type":  "main",
+                                                                            "index":  0
+                                                                        }
+                                                                    ]
+                                                                ]
+                                                   }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "timezone":  "Asia/Manila"
+                 }
+}

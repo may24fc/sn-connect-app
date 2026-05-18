@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import {
+  useCreateTelegramLink,
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '@/hooks/useNotificationPreferences';
@@ -20,7 +21,7 @@ import {
   Switch,
   useToast,
 } from '@hr-portal/ui';
-import { BellRing, Loader2, Mail, MessageCircleMore, ShieldCheck } from 'lucide-react';
+import { BellRing, Link2, Loader2, Mail, MessageCircleMore, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -35,8 +36,8 @@ const notificationPreferences: NotificationPreferenceOption[] = [
   {
     channel: 'telegram',
     title: 'Telegram notifications',
-    description: 'Telegram notifications are still in development and are temporarily unavailable.',
-    hint: 'This channel will be enabled once the Telegram delivery flow is finished.',
+    description: 'Receive direct messages in Telegram for task updates, approvals, and reminders.',
+    hint: 'Disabled by default. Turn this on only after your Telegram account is linked.',
   },
   {
     channel: 'gmail',
@@ -51,6 +52,7 @@ export default function SettingsPage(): ReactNode {
   const { addToast } = useToast();
   const preferencesQuery = useNotificationPreferences(user?.id);
   const updatePreferences = useUpdateNotificationPreferences(user?.id);
+  const createTelegramLink = useCreateTelegramLink(user?.id);
   const [preferences, setPreferences] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
   const [savedPreferences, setSavedPreferences] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
 
@@ -66,12 +68,10 @@ export default function SettingsPage(): ReactNode {
   const hasChanges =
     preferences.telegram !== savedPreferences.telegram || preferences.gmail !== savedPreferences.gmail;
   const isInitialLoading = preferencesQuery.isLoading && !preferencesQuery.data;
+  const isTelegramLinked = preferences.telegramLinkState === 'linked';
+  const isTelegramPending = preferences.telegramLinkState === 'pending';
 
   const handleToggle = (channel: NotificationChannel, checked: boolean): void => {
-    if (channel === 'telegram') {
-      return;
-    }
-
     setPreferences((current) => ({
       ...current,
       [channel]: checked,
@@ -92,6 +92,34 @@ export default function SettingsPage(): ReactNode {
       });
     }
   };
+
+  const handleConnectTelegram = async (): Promise<void> => {
+    try {
+      const result = await createTelegramLink.mutateAsync();
+      setSavedPreferences(result.preferences);
+      setPreferences(result.preferences);
+      window.open(result.connectUrl, '_blank', 'noopener,noreferrer');
+      addToast({
+        title: isTelegramLinked ? 'Telegram relink started' : 'Telegram link ready',
+        description: 'Complete the /start step in Telegram to finish linking your account.',
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Failed to create Telegram link',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    }
+  };
+
+  const telegramStatusLabel = isTelegramLinked
+    ? preferences.telegramUsername
+      ? `Linked as @${preferences.telegramUsername}`
+      : 'Linked'
+    : isTelegramPending
+      ? 'Awaiting /start confirmation'
+      : 'Not linked';
 
   return (
     <div className="h-full space-y-6">
@@ -133,9 +161,8 @@ export default function SettingsPage(): ReactNode {
           </CardHeader>
           <CardContent className="space-y-4">
             {notificationPreferences.map((preference) => {
-              const isTelegram = preference.channel === 'telegram';
-              const checked = isTelegram ? false : preferences[preference.channel];
-              const Icon = isTelegram ? MessageCircleMore : Mail;
+              const checked = preferences[preference.channel];
+              const Icon = preference.channel === 'telegram' ? MessageCircleMore : Mail;
 
               return (
                 <div
@@ -151,17 +178,63 @@ export default function SettingsPage(): ReactNode {
                         <h3 className="text-sm font-medium text-zinc-950 dark:text-zinc-50">
                           {preference.title}
                         </h3>
-                        <Badge
-                          variant={isTelegram ? 'secondary' : checked ? 'default' : 'secondary'}
-                          className="text-[11px]"
-                        >
-                          {isTelegram ? 'In development' : checked ? 'Enabled' : 'Disabled'}
+                        <Badge variant={checked ? 'default' : 'secondary'} className="text-[11px]">
+                          {checked ? 'Enabled' : 'Disabled'}
                         </Badge>
+                        {preference.channel === 'telegram' ? (
+                          <Badge
+                            variant={isTelegramLinked ? 'default' : 'secondary'}
+                            className="text-[11px]"
+                          >
+                            {telegramStatusLabel}
+                          </Badge>
+                        ) : null}
                       </div>
                       <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
                         {preference.description}
                       </p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-500">{preference.hint}</p>
+                      {preference.channel === 'telegram' ? (
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              !user?.id ||
+                              isInitialLoading ||
+                              createTelegramLink.isPending ||
+                              updatePreferences.isPending ||
+                              hasChanges
+                            }
+                            onClick={() => void handleConnectTelegram()}
+                          >
+                            {createTelegramLink.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Preparing link...
+                              </>
+                            ) : isTelegramLinked ? (
+                              <>
+                                <RefreshCw className="h-4 w-4" />
+                                Reconnect Telegram
+                              </>
+                            ) : (
+                              <>
+                                <Link2 className="h-4 w-4" />
+                                Connect Telegram
+                              </>
+                            )}
+                          </Button>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                            {hasChanges
+                              ? 'Save your notification changes before starting the Telegram link flow.'
+                              : isTelegramPending
+                                ? 'A fresh link is ready. Finish the /start step in Telegram, then this page will refresh automatically.'
+                                : 'This opens your SN Connect bot with a one-time /start link.'}
+                          </p>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 sm:pl-4">
@@ -172,7 +245,7 @@ export default function SettingsPage(): ReactNode {
                       checked={checked}
                       onCheckedChange={(nextChecked) => handleToggle(preference.channel, nextChecked)}
                       aria-label={`Toggle ${preference.title}`}
-                      disabled={isTelegram || isInitialLoading || updatePreferences.isPending}
+                      disabled={isInitialLoading || updatePreferences.isPending}
                     />
                   </div>
                 </div>
@@ -198,8 +271,7 @@ export default function SettingsPage(): ReactNode {
             </CardHeader>
             <CardContent className="space-y-3">
               {notificationPreferences.map((preference) => {
-                const isTelegram = preference.channel === 'telegram';
-                const checked = isTelegram ? false : preferences[preference.channel];
+                const checked = preferences[preference.channel];
 
                 return (
                   <div
@@ -207,13 +279,10 @@ export default function SettingsPage(): ReactNode {
                     className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50/60 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-900/30"
                   >
                     <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                      {isTelegram ? 'Telegram notifications' : preference.title}
+                      {preference.channel === 'telegram' ? telegramStatusLabel : preference.title}
                     </span>
-                    <Badge
-                      variant={isTelegram ? 'secondary' : checked ? 'default' : 'secondary'}
-                      className="text-[11px]"
-                    >
-                      {isTelegram ? 'In development' : checked ? 'On' : 'Off'}
+                    <Badge variant={checked ? 'default' : 'secondary'} className="text-[11px]">
+                      {checked ? 'On' : 'Off'}
                     </Badge>
                   </div>
                 );
@@ -225,7 +294,7 @@ export default function SettingsPage(): ReactNode {
             <CardHeader>
               <CardTitle className="text-base">Integration status</CardTitle>
               <CardDescription>
-                Gmail delivery is active now. Telegram delivery is still in development.
+                Gmail delivery is active now. Telegram delivery starts after you complete the bot linking flow.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -235,7 +304,7 @@ export default function SettingsPage(): ReactNode {
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Channel readiness</p>
                     <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                      Gmail notifications use your SN Connect account email immediately. Telegram will stay disabled in the UI until its delivery flow is finished.
+                      Gmail notifications use your SN Connect account email immediately. Telegram direct messages require a one-time bot link per user and remain off until each user enables them.
                     </p>
                   </div>
                 </div>
@@ -245,6 +314,8 @@ export default function SettingsPage(): ReactNode {
                   ? 'Saved preferences could not be loaded. You can retry by changing a value and saving again.'
                   : hasChanges
                     ? 'You have unsaved notification preference changes.'
+                    : isTelegramPending
+                      ? 'Telegram is waiting for your /start confirmation. This page refreshes automatically while the link is pending.'
                     : 'Your notification preferences are saved to your account profile.'}
               </p>
             </CardContent>

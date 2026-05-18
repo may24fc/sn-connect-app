@@ -1,0 +1,145 @@
+{
+    "id":  "P6mER0zzLedoLaA6",
+    "name":  "[SN Connect] [Prod] Marketing Report Submission Notif",
+    "active":  false,
+    "_comment":  "PRODUCTION workflow. Webhook-triggered. Fires immediately when a marketing employee submits a report. App POSTs { employee_id, submitted_at } to the webhook URL. Queries prod Supabase.",
+    "nodes":  [
+                  {
+                      "id":  "webhook-trigger",
+                      "name":  "Report Submitted Webhook",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       240,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "marketing-report-submitted-prod",
+                                         "responseMode":  "onReceived",
+                                         "options":  {
+
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "fetch-employee",
+                      "name":  "Fetch Employee",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       464,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "method":  "GET",
+                                         "url":  "=https://tccdupkjmwwxcvpqnpeb.supabase.co/rest/v1/employees?select=first_name,last_name\u0026id=eq.{{ $json.body.employee_id }}\u0026deleted_at=is.null\u0026limit=1",
+                                         "authentication":  "none",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "apikey",
+                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Authorization",
+                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "options":  {
+                                                         "response":  {
+                                                                          "response":  {
+                                                                                           "responseFormat":  "json",
+                                                                                           "fullResponse":  true
+                                                                                       }
+                                                                      }
+                                                     }
+                                     }
+                  },
+                  {
+                      "id":  "build-notification",
+                      "name":  "Build Notification",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       688,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "jsCode":  "const body = $json.body;\nconst employees = Array.isArray(body) ? body : (typeof body === \u0027string\u0027 ? JSON.parse(body) : []);\nconst employee = employees[0];\nif (!employee) return [];\n\nconst todayLabel = new Date().toLocaleDateString(\u0027en-PH\u0027, { timeZone: \u0027Asia/Manila\u0027, year: \u0027numeric\u0027, month: \u0027long\u0027, day: \u0027numeric\u0027 });\n\nconst employeeName = `${employee.first_name} ${employee.last_name}`;\n\nconst text = [\n  \u0027?? \u003cb\u003eMarketing Report Submitted\u003c/b\u003e\u0027,\n  \u0027\u0027,\n  `?? \u003cb\u003eDate:\u003c/b\u003e ${todayLabel}`,\n  `?? \u003cb\u003eEmployee:\u003c/b\u003e ${employeeName}`,\n  \u0027\u0027,\n  \u0027This employee has submitted their weekly marketing report.\u0027,\n  \u0027\u0027,\n  \u0027?? \u003ca href=\"https://app.sngroup.com.au\"\u003eView in HR Portal\u003c/a\u003e\u0027\n].join(\u0027\\n\u0027);\n\nreturn [{ json: { telegramText: text } }];"
+                                     }
+                  },
+                  {
+                      "id":  "notify-boss",
+                      "name":  "Notify Boss",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       912,
+                                       304
+                                   ],
+                      "parameters":  {
+                                         "chatId":  "6708968435",
+                                         "text":  "={{ $json.telegramText }}",
+                                         "resource":  "message",
+                                         "operation":  "sendMessage",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "HTML"
+                                                              }
+                                     },
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "br7oYixc6HEh3DQc",
+                                                              "name":  "SN Connect Notifications"
+                                                          }
+                                      }
+                  }
+              ],
+    "connections":  {
+                        "Report Submitted Webhook":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Fetch Employee",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Fetch Employee":  {
+                                               "main":  [
+                                                            [
+                                                                {
+                                                                    "node":  "Build Notification",
+                                                                    "type":  "main",
+                                                                    "index":  0
+                                                                }
+                                                            ]
+                                                        ]
+                                           },
+                        "Build Notification":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Notify Boss",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               }
+                    },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "saveDataErrorExecution":  "all",
+                     "saveDataSuccessExecution":  "all",
+                     "timezone":  "Asia/Manila"
+                 }
+}
