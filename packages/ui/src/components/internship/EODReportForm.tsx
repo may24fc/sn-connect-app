@@ -282,7 +282,7 @@ function trimEntry(entry: ProjectFocusEntry): ProjectFocusEntry {
   return {
     id: entry.id,
     projectFocus: entry.projectFocus.trim(),
-    ...(entry.challenge?.trim() ? { challenge: entry.challenge.trim() } : {}),
+    challenge: entry.challenge.trim(),
     actionTaken: entry.actionTaken.trim(),
     outcome: entry.outcome.trim(),
   };

@@ -1,5 +1,6 @@
 'use client';
 
+import { ApplicationUpdateHeaderAction } from '@/components/ApplicationUpdateProvider';
 import { TourProvider, useTour } from '@/components/TourProvider';
 import {
   type UserRoleType,
@@ -69,6 +70,15 @@ export function SelfServiceLayoutShell({ children, allowedRoles }: SelfServiceLa
     router.push('/profile');
   };
 
+  const handleSettingsClick = (): void => {
+    if (user.role === 'intern') {
+      router.push('/intern/settings');
+      return;
+    }
+
+    router.push('/settings');
+  };
+
   return (
     <ToastProvider>
       <TourProvider>
@@ -82,6 +92,7 @@ export function SelfServiceLayoutShell({ children, allowedRoles }: SelfServiceLa
           onNavigate={handleNavigate}
           onLogout={logout}
           onProfileClick={handleProfileClick}
+          onSettingsClick={handleSettingsClick}
         >
           {children}
         </SelfServiceLayoutInner>
@@ -100,6 +111,7 @@ function SelfServiceLayoutInner({
   onNavigate,
   onLogout,
   onProfileClick,
+  onSettingsClick,
   children,
 }: {
   user: NonNullable<ReturnType<typeof useRequireAuth>>;
@@ -111,6 +123,7 @@ function SelfServiceLayoutInner({
   onNavigate: (href: string) => void;
   onLogout: () => void;
   onProfileClick: () => void;
+  onSettingsClick: () => void;
   children: ReactNode;
 }): ReactNode {
   const { startTour, currentGroup } = useTour();
@@ -160,9 +173,15 @@ function SelfServiceLayoutInner({
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
           onLogout={onLogout}
           onProfileClick={onProfileClick}
+          onSettingsClick={onSettingsClick}
           onHelpClick={currentGroup ? startTour : undefined}
           notificationSlot={<SelfServiceNotificationBell />}
-          aiChatSlot={<SelfServiceAIChatbot />}
+          aiChatSlot={
+            <div className="flex items-center gap-2">
+              <ApplicationUpdateHeaderAction />
+              <SelfServiceAIChatbot />
+            </div>
+          }
           theme={theme ?? 'light'}
           onThemeChange={setTheme}
         />

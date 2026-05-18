@@ -8,6 +8,7 @@ import {
   getEmployeeContactByEmployeeId,
   getUserContactByUserId,
 } from '@/lib/notifications/recipients';
+import { isGmailNotificationEnabledForUser } from '@/lib/settings/notification-preferences.server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -215,9 +216,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
               offboardingTaskId: data.id,
               employeeId: offboardingRecord.employee_id,
             },
+            sendEmail: false,
           });
 
-          if (initiatorContact.email) {
+          if (
+            initiatorContact.email &&
+            (await isGmailNotificationEnabledForUser(initiatorContact.userId))
+          ) {
             const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
             await sendPortalNotificationEmail({
               to: initiatorContact.email,
@@ -311,9 +316,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           message: `${actorName} assigned you an offboarding task: "${data.title}".`,
           link: destination,
           metadata: { offboardingId: id, offboardingTaskId: data.id },
+          sendEmail: false,
         });
 
-        if (assigneeContact.email) {
+        if (
+          assigneeContact.email &&
+          (await isGmailNotificationEnabledForUser(assigneeContact.userId))
+        ) {
           const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
           await sendPortalNotificationEmail({
             to: assigneeContact.email,

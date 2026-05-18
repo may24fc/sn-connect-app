@@ -76,6 +76,9 @@ The workflow file `n8n/workflows/intern-eod-telegram-department-digest.json` exp
 | `NEXT_PUBLIC_APP_URL` | Canonical internal app URL used by the public website for login and access CTAs. Set to `https://app.sngroup.com.au` in production. | No | `http://localhost:3001` |
 | `NEXT_PUBLIC_WWW_URL` | Canonical public website URL for cross-app links that should stay on the marketing site. Set to `https://www.sngroup.com.au` in production. | No | `http://localhost:3000` |
 | `NEXT_PUBLIC_ROLE_MAPPING_MODE` | Role mapping strategy for UI roles. Options: `option-a`, `option-b`, or `option-c`. See [ADR-001-role-mapping.md](adr/ADR-001-role-mapping.md) for details. | No | `option-a` |
+| `TELEGRAM_BOT_TOKEN` | Bot token used by the app-level Telegram notification sender and Telegram webhook handler. Create this in BotFather. | No | — |
+| `TELEGRAM_BOT_USERNAME` | Public bot username used to generate the one-time `https://t.me/<bot>?start=<token>` account-link URL from Settings. | No | — |
+| `TELEGRAM_WEBHOOK_SECRET` | Secret token expected in the `X-Telegram-Bot-Api-Secret-Token` header when Telegram calls the app webhook. Recommended for production. | No | — |
 
 ## Local Development with Mock Auth
 

@@ -1,3 +1,4 @@
+import { NOTIFICATION_PREFERENCES_ROLE_TYPE } from '@/lib/settings/notification-preferences';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -58,7 +59,12 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    return NextResponse.json({ data: data ?? [] });
+    return NextResponse.json({
+      data: (data ?? []).filter(
+        (record: { role_type: string | null }) =>
+          record.role_type !== NOTIFICATION_PREFERENCES_ROLE_TYPE
+      ),
+    });
   } catch (err) {
     console.error('Error fetching user role metadata:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

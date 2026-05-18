@@ -34,6 +34,7 @@ export async function GET() {
     .from('employee_directory')
     .select('user_id, full_name, department_name, role')
     .eq('role', 'intern')
+    .neq('status', 'terminated')
     .not('user_id', 'is', null);
   if (internsErr) {
     return NextResponse.json({ error: internsErr.message }, { status: 500 });

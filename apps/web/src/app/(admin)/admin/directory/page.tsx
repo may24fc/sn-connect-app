@@ -45,6 +45,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Tabs,
+  TabsList,
+  TabsTrigger,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -58,10 +61,11 @@ import {
   Eye,
   MoreHorizontal,
   Pencil,
+  RotateCcw,
   Save,
   Search,
   Target,
-  Trash2,
+  UserMinus,
   Users,
   UserCheck,
   UserPlus,
@@ -130,11 +134,18 @@ export default function AdminDirectoryPage(): ReactNode {
   const pageSize = 20;
   const [inviteLeadershipOpen, setInviteLeadershipOpen] = useState(false);
 
-  // Delete employee state
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState<DirectoryEntry | null>(null);
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'active' | 'former'>('active');
+
+  // Terminate employee state
+  const [terminateDialogOpen, setTerminateDialogOpen] = useState(false);
+  const [employeeToTerminate, setEmployeeToTerminate] = useState<DirectoryEntry | null>(null);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [employeeToDeactivate, setEmployeeToDeactivate] = useState<DirectoryEntry | null>(null);
+
+  // Restore employee state
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
+  const [employeeToRestore, setEmployeeToRestore] = useState<DirectoryEntry | null>(null);
 
   // Edit employee state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -165,26 +176,51 @@ export default function AdminDirectoryPage(): ReactNode {
   const createDepartmentMutation = useCreateDepartment();
   const createDivisionMutation = useCreateDivision();
 
-  const deleteEmployeeMutation = useMutation({
+  const terminateEmployeeMutation = useMutation({
     mutationFn: async (entry: DirectoryEntry) => {
       const response = await fetch(`/api/users/${entry.user_id}`, {
         method: 'DELETE',
       });
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to remove account' }));
-        throw new Error(error.error || 'Failed to remove account');
+        const error = await response.json().catch(() => ({ error: 'Failed to terminate account' }));
+        throw new Error(error.error || 'Failed to terminate account');
       }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['directory'] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      setDeleteDialogOpen(false);
-      setEmployeeToDelete(null);
-      addToast({ title: 'Account removed', variant: 'success' });
+      setTerminateDialogOpen(false);
+      setEmployeeToTerminate(null);
+      addToast({ title: 'Employee terminated', variant: 'success' });
     },
     onError: () => {
-      addToast({ title: 'Failed to remove account', variant: 'error' });
+      addToast({ title: 'Failed to terminate account', variant: 'error' });
+    },
+  });
+
+  const restoreEmployeeMutation = useMutation({
+    mutationFn: async (entry: DirectoryEntry) => {
+      const response = await fetch(`/api/users/${entry.user_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'active' }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to restore account' }));
+        throw new Error(error.error || 'Failed to restore account');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['directory'] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setRestoreDialogOpen(false);
+      setEmployeeToRestore(null);
+      addToast({ title: 'Employee restored to active', variant: 'success' });
+    },
+    onError: () => {
+      addToast({ title: 'Failed to restore account', variant: 'error' });
     },
   });
 
@@ -251,9 +287,14 @@ export default function AdminDirectoryPage(): ReactNode {
     },
   });
 
-  const handleDeleteClick = (entry: DirectoryEntry) => {
-    setEmployeeToDelete(entry);
-    setDeleteDialogOpen(true);
+  const handleTerminateClick = (entry: DirectoryEntry) => {
+    setEmployeeToTerminate(entry);
+    setTerminateDialogOpen(true);
+  };
+
+  const handleRestoreClick = (entry: DirectoryEntry) => {
+    setEmployeeToRestore(entry);
+    setRestoreDialogOpen(true);
   };
 
   const handleDeactivateClick = (entry: DirectoryEntry) => {
@@ -369,12 +410,18 @@ export default function AdminDirectoryPage(): ReactNode {
     sortOrder,
     page,
     pageSize,
-    ...(search && { search }),
-    ...(roleFilters.length > 0 && { roles: roleFilters }),
-    ...(departmentFilters.length > 0 && { departments: departmentFilters }),
-    ...(divisionFilters.length > 0 && { divisions: divisionFilters }),
-    ...(statusFilter && { status: statusFilter }),
-    ...(employmentTypeFilter && { employmentType: employmentTypeFilter }),
+    ...(activeTab === 'former'
+      ? { status: 'terminated' }
+      : {
+          excludeTerminated: true,
+          ...(search && { search }),
+          ...(roleFilters.length > 0 && { roles: roleFilters }),
+          ...(departmentFilters.length > 0 && { departments: departmentFilters }),
+          ...(divisionFilters.length > 0 && { divisions: divisionFilters }),
+          ...(statusFilter && { status: statusFilter }),
+          ...(employmentTypeFilter && { employmentType: employmentTypeFilter }),
+        }),
+    ...(activeTab === 'former' && search && { search }),
   };
 
   const { data, isLoading, isError } = useDirectory(filters);
@@ -440,7 +487,7 @@ export default function AdminDirectoryPage(): ReactNode {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            Employee Directory
+            Company Directory
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
             Master directory of all employees and interns
@@ -466,7 +513,7 @@ export default function AdminDirectoryPage(): ReactNode {
 
       {/* Summary Stats */}
       {metadata && (
-        <StatCardGrid columns={5}>
+        <StatCardGrid columns={6}>
           <StatCard
             label="Total"
             value={metadata.total}
@@ -492,11 +539,23 @@ export default function AdminDirectoryPage(): ReactNode {
             value={metadata.probation}
             icon={<AlertCircle className="h-4 w-4" strokeWidth={1.5} />}
           />
+          <StatCard
+            label="Former"
+            value={metadata.terminated}
+            icon={<UserMinus className="h-4 w-4" strokeWidth={1.5} />}
+          />
         </StatCardGrid>
       )}
 
-      {/* Filters */}
-      
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'active' | 'former'); setPage(1); }}>
+        <TabsList>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="former">Former</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      {/* Filters — only shown on active tab */}
+      {activeTab === 'active' && (
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px]">
               <Search
@@ -578,14 +637,14 @@ export default function AdminDirectoryPage(): ReactNode {
               </SelectContent>
             </Select>
           </div>
-        
+        )}
 
       {/* Table */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
-              Directory
+              {activeTab === 'former' ? 'Former Employees' : 'Directory'}
               {pagination && (
                 <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
                   ({pagination.total} total)
@@ -642,9 +701,13 @@ export default function AdminDirectoryPage(): ReactNode {
             />
           ) : entries.length === 0 ? (
             <EmptyState
-              icon={Users}
-              title="No employees found"
-              description="No employees matched your current directory filters."
+              icon={activeTab === 'former' ? UserMinus : Users}
+              title={activeTab === 'former' ? 'No former employees' : 'No employees found'}
+              description={
+                activeTab === 'former'
+                  ? 'No terminated employees on record. Terminated employees will appear here.'
+                  : 'No employees matched your current directory filters.'
+              }
               size="sm"
             />
           ) : (
@@ -657,9 +720,18 @@ export default function AdminDirectoryPage(): ReactNode {
                     <SortableTableHead column="department_name" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Department</SortableTableHead>
                     <SortableTableHead column="division_name" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Division</SortableTableHead>
                     <TableHead>Position</TableHead>
-                    <SortableTableHead column="status" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Status</SortableTableHead>
-                    <SortableTableHead column="start_date" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Start Date</SortableTableHead>
-                    <TableHead>Contact</TableHead>
+                    {activeTab === 'former' ? (
+                      <>
+                        <SortableTableHead column="start_date" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Start Date</SortableTableHead>
+                        <TableHead>Terminated</TableHead>
+                      </>
+                    ) : (
+                      <>
+                        <SortableTableHead column="status" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Status</SortableTableHead>
+                        <SortableTableHead column="start_date" sortColumn={sortBy} sortDirection={sortOrder} onSort={handleSort}>Start Date</SortableTableHead>
+                        <TableHead>Contact</TableHead>
+                      </>
+                    )}
                     <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -715,20 +787,33 @@ export default function AdminDirectoryPage(): ReactNode {
                       <TableCell className="text-sm text-zinc-600 dark:text-zinc-300">
                         {entry.position || '—'}
                       </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={getStatusBadgeVariant(entry.status)}
-                          className="text-xs capitalize"
-                        >
-                          {entry.status?.replace('_', ' ') || '—'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-zinc-600 dark:text-zinc-300 tabular-nums">
-                        {formatDate(entry.start_date)}
-                      </TableCell>
-                      <TableCell className="text-sm text-zinc-600 dark:text-zinc-300">
-                        {entry.contact_number || '—'}
-                      </TableCell>
+                      {activeTab === 'former' ? (
+                        <>
+                          <TableCell className="text-sm text-zinc-600 dark:text-zinc-300 tabular-nums">
+                            {formatDate(entry.start_date)}
+                          </TableCell>
+                          <TableCell className="text-sm text-zinc-600 dark:text-zinc-300 tabular-nums">
+                            {formatDate(entry.date_terminated)}
+                          </TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>
+                            <Badge
+                              variant={getStatusBadgeVariant(entry.status)}
+                              className="text-xs capitalize"
+                            >
+                              {entry.status?.replace('_', ' ') || '—'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-zinc-600 dark:text-zinc-300 tabular-nums">
+                            {formatDate(entry.start_date)}
+                          </TableCell>
+                          <TableCell className="text-sm text-zinc-600 dark:text-zinc-300">
+                            {entry.contact_number || '—'}
+                          </TableCell>
+                        </>
+                      )}
                       <TableCell>
                         <div
                           className="flex items-center justify-end"
@@ -759,36 +844,50 @@ export default function AdminDirectoryPage(): ReactNode {
                                   View Performance
                                 </DropdownMenuItem>
                               )}
-                              {isAdminOrSuperAdmin && entry.employee_id && (
+                              {activeTab === 'former' ? (
+                                isAdminOrSuperAdmin && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleRestoreClick(entry)}>
+                                      <RotateCcw className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                      Restore to Active
+                                    </DropdownMenuItem>
+                                  </>
+                                )
+                              ) : (
                                 <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => handleEditClick(entry)}
-                                  >
-                                    <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                                    Edit Employee Details
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && entry.status !== 'inactive' && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleDeactivateClick(entry)}>
-                                    <UserX className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                                    Deactivate
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
-                                    onClick={() => handleDeleteClick(entry)}
-                                  >
-                                    <Trash2 className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
-                                    Remove
-                                  </DropdownMenuItem>
+                                  {isAdminOrSuperAdmin && entry.employee_id && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={() => handleEditClick(entry)}
+                                      >
+                                        <Pencil className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                        Edit Employee Details
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && entry.status !== 'inactive' && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleDeactivateClick(entry)}>
+                                        <UserX className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                        Deactivate
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {isAdminOrSuperAdmin && isManageableDirectoryEntry(entry) && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        className="text-amber-600 focus:text-amber-600 dark:text-amber-400 dark:focus:text-amber-400"
+                                        onClick={() => handleTerminateClick(entry)}
+                                      >
+                                        <UserMinus className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                                        Terminate
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
                                 </>
                               )}
                             </DropdownMenuContent>
@@ -803,43 +902,84 @@ export default function AdminDirectoryPage(): ReactNode {
           )}
         </CardContent>
       </Card>
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      {/* Terminate Confirmation Dialog */}
+      <Dialog open={terminateDialogOpen} onOpenChange={setTerminateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-              <Trash2 className="h-5 w-5" />
-              Remove Employee/Intern
+            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <UserMinus className="h-5 w-5" />
+              Terminate Employee / Intern
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove{' '}
+              Are you sure you want to terminate{' '}
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                {employeeToDelete?.full_name}
+                {employeeToTerminate?.full_name}
               </span>
-              ? This action will soft-delete their account and linked employee record. This can be reversed by a database administrator.
+              ? Their record will be preserved in the <strong>Former Employees</strong> tab with a termination date. This can be reversed using the Restore action.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => {
-                setDeleteDialogOpen(false);
-                setEmployeeToDelete(null);
+                setTerminateDialogOpen(false);
+                setEmployeeToTerminate(null);
               }}
-              disabled={deleteEmployeeMutation.isPending}
+              disabled={terminateEmployeeMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={() => {
-                if (employeeToDelete) {
-                  deleteEmployeeMutation.mutate(employeeToDelete);
+                if (employeeToTerminate) {
+                  terminateEmployeeMutation.mutate(employeeToTerminate);
                 }
               }}
-              disabled={deleteEmployeeMutation.isPending}
+              disabled={terminateEmployeeMutation.isPending}
             >
-              {deleteEmployeeMutation.isPending ? 'Removing...' : 'Remove Account'}
+              {terminateEmployeeMutation.isPending ? 'Terminating...' : 'Terminate'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore Confirmation Dialog */}
+      <Dialog open={restoreDialogOpen} onOpenChange={setRestoreDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" />
+              Restore Employee / Intern
+            </DialogTitle>
+            <DialogDescription>
+              This will restore{' '}
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                {employeeToRestore?.full_name}
+              </span>{' '}
+              to <strong>active</strong> status and clear their termination date. They will reappear in the Active Employees tab.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRestoreDialogOpen(false);
+                setEmployeeToRestore(null);
+              }}
+              disabled={restoreEmployeeMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (employeeToRestore) {
+                  restoreEmployeeMutation.mutate(employeeToRestore);
+                }
+              }}
+              disabled={restoreEmployeeMutation.isPending}
+            >
+              {restoreEmployeeMutation.isPending ? 'Restoring...' : 'Restore'}
             </Button>
           </DialogFooter>
         </DialogContent>

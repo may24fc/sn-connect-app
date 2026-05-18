@@ -1,5 +1,6 @@
 'use client';
 
+import { ApplicationUpdateHeaderAction } from '@/components/ApplicationUpdateProvider';
 import { TourProvider, useTour } from '@/components/TourProvider';
 import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
 import { useAIChat } from '@/hooks/useAIChat';
@@ -64,6 +65,10 @@ export default function AdminLayout({
     router.push('/admin/profile');
   };
 
+  const handleSettingsClick = (): void => {
+    router.push(user.role === 'super_admin' ? '/super-admin/settings' : '/admin/settings');
+  };
+
   return (
     <ToastProvider>
       <TourProvider>
@@ -77,6 +82,7 @@ export default function AdminLayout({
           onNavigate={handleNavigate}
           onLogout={handleLogout}
           onProfileClick={handleProfileClick}
+          onSettingsClick={handleSettingsClick}
         >
           {children}
         </AdminLayoutInner>
@@ -95,6 +101,7 @@ function AdminLayoutInner({
   onNavigate,
   onLogout,
   onProfileClick,
+  onSettingsClick,
   children,
 }: {
   user: NonNullable<ReturnType<typeof useRequireAuth>>;
@@ -106,6 +113,7 @@ function AdminLayoutInner({
   onNavigate: (href: string) => void;
   onLogout: () => void;
   onProfileClick: () => void;
+  onSettingsClick: () => void;
   children: ReactNode;
 }): ReactNode {
   const { startTour, currentGroup } = useTour();
@@ -141,9 +149,15 @@ function AdminLayoutInner({
           onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
           onLogout={onLogout}
           onProfileClick={onProfileClick}
+          onSettingsClick={onSettingsClick}
           onHelpClick={currentGroup ? startTour : undefined}
           notificationSlot={<AdminNotificationBell />}
-          aiChatSlot={<AdminAIChatbot />}
+          aiChatSlot={
+            <div className="flex items-center gap-2">
+              <ApplicationUpdateHeaderAction />
+              <AdminAIChatbot />
+            </div>
+          }
           theme={theme ?? 'light'}
           onThemeChange={setTheme}
         />

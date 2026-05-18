@@ -865,22 +865,28 @@ export function hydrateMarketingContextWithDerivedSpend(
   marketingContext: MarketingContext | null | undefined,
   metrics: Array<MarketingMetricLike> | null | undefined
 ): MarketingContext | null {
-  if (!marketingContext) {
+  const sanitizedMarketingContext = sanitizeMarketingContext(marketingContext);
+
+  if (!sanitizedMarketingContext) {
     return null;
   }
 
-  if (marketingContext.totalSpend > 0) {
-    return marketingContext;
+  if (resolveMarketingReportType(sanitizedMarketingContext) === 'Content Creation') {
+    return sanitizedMarketingContext;
+  }
+
+  if ((sanitizedMarketingContext.totalSpend ?? 0) > 0) {
+    return sanitizedMarketingContext;
   }
 
   const derivedSpend = deriveMarketingSpendFromMetrics(metrics);
 
   if (!derivedSpend || derivedSpend <= 0) {
-    return marketingContext;
+    return sanitizedMarketingContext;
   }
 
   return {
-    ...marketingContext,
+    ...sanitizedMarketingContext,
     totalSpend: derivedSpend,
   };
 }
@@ -918,6 +924,21 @@ const LEGACY_CAMPAIGN_TYPE_MAP: Record<string, MarketingCampaignType> = {
 
 const MARKETING_CONTEXT_START = '[marketing_context]';
 const MARKETING_CONTEXT_END = '[/marketing_context]';
+
+function sanitizeMarketingContext(
+  marketingContext: MarketingContext | null | undefined
+): MarketingContext | null {
+  if (!marketingContext) {
+    return null;
+  }
+
+  if (resolveMarketingReportType(marketingContext) !== 'Content Creation') {
+    return marketingContext;
+  }
+
+  const { totalSpend: _totalSpend, ...contentCreationContext } = marketingContext;
+  return contentCreationContext;
+}
 
 /** Get a human-readable label for a report type, falling back to title case */
 export function getReportTypeLabel(reportType: string): string {
@@ -1075,7 +1096,7 @@ export function getMarketingMetricAnalyticsCategory(
 function normalizeMarketingContextPayload(payload: unknown): MarketingContext | null {
   const directMatch = marketingContextSchema.safeParse(payload);
   if (directMatch.success) {
-    return directMatch.data;
+    return sanitizeMarketingContext(directMatch.data);
   }
 
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
@@ -1137,7 +1158,7 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
         : null,
   });
 
-  return normalized.success ? normalized.data : null;
+  return normalized.success ? sanitizeMarketingContext(normalized.data) : null;
 }
 
 export function buildNarrativeReportNotes({
@@ -1186,12 +1207,13 @@ export function serializeReportNotes(
   marketingContext?: MarketingContext | null
 ): string | null {
   const cleanNotes = notes?.trim() ?? '';
+  const nextMarketingContext = sanitizeMarketingContext(marketingContext);
 
-  if (!marketingContext) {
+  if (!nextMarketingContext) {
     return cleanNotes || null;
   }
 
-  const contextBlock = `${MARKETING_CONTEXT_START}\n${JSON.stringify(marketingContext)}\n${MARKETING_CONTEXT_END}`;
+  const contextBlock = `${MARKETING_CONTEXT_START}\n${JSON.stringify(nextMarketingContext)}\n${MARKETING_CONTEXT_END}`;
 
   return cleanNotes ? `${contextBlock}\n\n${cleanNotes}` : contextBlock;
 }

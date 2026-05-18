@@ -4,6 +4,7 @@ import { type ReportRecord, useReports } from '@/hooks/useReports';
 import { exportToCsv } from '@/lib/csv';
   import { supportsMarketingPlanningFilters } from '@/lib/marketing-report-config';
 import {
+  getContentCreationEntries,
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveLabel,
   getMarketingReportDisplayName,
@@ -154,6 +155,8 @@ function aggregateReportMetrics(
   reports: ReportRecord[]
 ): Map<string, { value: number; unit: string | null }> {
   const metricsMap = new Map<string, { value: number; unit: string | null }>();
+  const uniqueCampaignLabels = new Set<string>();
+  const uniqueContentApps = new Set<string>();
   const setMetric = (name: string, value: number, unit: string | null = null) => {
     metricsMap.set(name, { value, unit });
   };
@@ -167,20 +170,29 @@ function aggregateReportMetrics(
 
   setMetric('Total Reports', reports.length);
   setMetric(
-    'Unique Campaigns',
-    new Set(
-      reports
-        .map((report) => getMarketingReportDisplayName(report.marketing_context))
-        .filter((reportLabel) => reportLabel !== 'Untitled Marketing Report')
-    ).size
-  );
-  setMetric(
     'Total Spend',
     reports.reduce((sum, report) => sum + (report.marketing_context?.totalSpend ?? 0), 0),
     'AUD'
   );
 
   for (const report of reports) {
+    const reportType = resolveMarketingReportType(report.marketing_context);
+    const reportLabel = getMarketingReportDisplayName(report.marketing_context);
+
+    if (reportType === 'Content Creation') {
+      const contentEntries = getContentCreationEntries(
+        report.marketing_context,
+        report.report_metrics
+      );
+
+      for (const entry of contentEntries) {
+        uniqueContentApps.add(entry.platform);
+        incrementMetric(`App: ${entry.platform}`, entry.posts, 'count');
+      }
+    } else if (reportLabel !== 'Untitled Marketing Report') {
+      uniqueCampaignLabels.add(reportLabel);
+    }
+
     if (report.marketing_context?.campaignType) {
       const campaignTypeLabel = getMarketingCampaignTypeLabel(report.marketing_context.campaignType);
       incrementMetric(
@@ -202,6 +214,15 @@ function aggregateReportMetrics(
       incrementMetric(name, metric.metric_value || 0, metric.metric_unit || null);
     }
   }
+
+  if (uniqueCampaignLabels.size > 0) {
+    setMetric('Unique Campaigns', uniqueCampaignLabels.size);
+  }
+
+  if (uniqueContentApps.size > 0) {
+    setMetric('Unique Apps', uniqueContentApps.size);
+  }
+
   return metricsMap;
 }
 

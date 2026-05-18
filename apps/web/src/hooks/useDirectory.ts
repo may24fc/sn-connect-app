@@ -15,6 +15,7 @@ export interface DirectoryFilters {
   sortOrder?: 'asc' | 'desc';
   page?: number;
   pageSize?: number;
+  excludeTerminated?: boolean;
 }
 
 export interface DirectoryEntry {
@@ -64,6 +65,7 @@ export interface DirectoryEntry {
   school: string | null;
   program: string | null;
   pending_changes_count: number | null;
+  date_terminated: string | null;
 }
 
 export interface DirectoryResponse {
@@ -74,6 +76,7 @@ export interface DirectoryResponse {
     interns: number;
     onLeave: number;
     probation: number;
+    terminated: number;
     availableRoles: string[];
   };
   pagination: {
@@ -102,6 +105,7 @@ export function useDirectory(filters: DirectoryFilters = {}) {
       if (filters.sortOrder) params.append('sort_order', filters.sortOrder);
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('page_size', String(filters.pageSize));
+      if (filters.excludeTerminated) params.append('exclude_terminated', 'true');
 
       const query = params.toString();
       const response = await fetch(`/api/directory${query ? `?${query}` : ''}`);

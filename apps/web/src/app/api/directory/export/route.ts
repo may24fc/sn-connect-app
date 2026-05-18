@@ -67,13 +67,15 @@ export async function GET(request: NextRequest) {
       .filter(Boolean);
     const status = searchParams.get('status') || '';
 
-    // Fetch all directory data for export
+    // Fetch all directory data for export (exclude terminated unless explicitly filtered)
     let query = supabase
       .from('employee_directory')
       .select(
         'full_name, role, department_name, division_name, position, status, employment_type, start_date, email, contact_number'
       )
       .order('full_name', { ascending: true });
+
+    if (!status) query = query.neq('status', 'terminated');
 
     if (roleFilter) query = query.eq('role', roleFilter);
     if (roleFilters.length > 0) query = query.in('role', roleFilters);

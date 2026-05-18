@@ -26,9 +26,11 @@ const envSchema = z.object({
     .min(32, 'ADMIN_SECRET_KEY must be at least 32 characters')
     .optional(),
 
-  // Telegram (future — uncomment when workspace is set up)
-  // TELEGRAM_BOT_TOKEN: z.string().optional(),
-  // TELEGRAM_CHAT_ID: z.string().optional(),
+  // Telegram notifications (optional until Telegram delivery is enabled)
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  TELEGRAM_BOT_USERNAME: z.string().optional(),
+  TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
+  TELEGRAM_CHAT_ID: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -61,9 +61,10 @@ export async function validateTaskAssignee(
 ): Promise<{ ok: true; role: TaskAssignableRole } | { ok: false; status: number; error: string }> {
   const { data: assignee, error } = await supabase
     .from('users')
-    .select('id, role')
+    .select('id, role, status')
     .eq('id', assigneeId)
     .is('deleted_at', null)
+    .neq('status', 'terminated')
     .maybeSingle();
 
   if (error) {

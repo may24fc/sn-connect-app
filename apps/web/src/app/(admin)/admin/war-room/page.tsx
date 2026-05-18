@@ -35,7 +35,7 @@ export default function WarRoomPage() {
     <div className="space-y-6 p-6">
       <header>
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          War Room
+          Intern Projects
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
           Cross-intern project health, momentum, and points at a glance.

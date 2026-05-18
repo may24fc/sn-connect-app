@@ -8,6 +8,7 @@ import {
   getAdminNotificationContacts,
   getEmployeeContactByEmployeeId,
 } from '@/lib/notifications/recipients';
+import { getGmailNotificationEnabledUserIds } from '@/lib/settings/notification-preferences.server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -177,13 +178,15 @@ export async function POST(request: NextRequest) {
           requestedBy: user.id,
           changeCount,
         },
+        sendEmail: false,
       });
     }
 
     const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
+    const gmailEnabledUserIds = await getGmailNotificationEnabledUserIds(adminIds);
     await Promise.allSettled(
       adminContacts
-        .filter((contact) => contact.email)
+        .filter((contact) => contact.email && gmailEnabledUserIds.has(contact.userId))
         .map((contact) =>
           sendPortalNotificationEmail({
             to: contact.email as string,

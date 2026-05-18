@@ -62,6 +62,7 @@ export {
   TableCaption,
 } from './primitives/table';
 export { Checkbox } from './primitives/checkbox';
+export { Switch } from './primitives/switch';
 export {
   DropdownMenu,
   DropdownMenuTrigger,

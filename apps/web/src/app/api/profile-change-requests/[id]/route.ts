@@ -8,6 +8,7 @@ import {
   getEmployeeContactByEmployeeId,
   getProfilePathForRole,
 } from '@/lib/notifications/recipients';
+import { isGmailNotificationEnabledForUser } from '@/lib/settings/notification-preferences.server';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -155,10 +156,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           reviewedBy: user.id,
           action,
         },
+        sendEmail: false,
       });
     }
 
-    if (requesterContact?.email) {
+    if (
+      requesterContact?.email &&
+      (await isGmailNotificationEnabledForUser(requesterContact.userId))
+    ) {
       const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
       await sendPortalNotificationEmail({
         to: requesterContact.email,

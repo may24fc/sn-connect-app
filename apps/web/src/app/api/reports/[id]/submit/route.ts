@@ -47,7 +47,7 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
         existingReport.report_metrics ?? []
       );
 
-      if (hydratedMarketingContext && hydratedMarketingContext.totalSpend > 0) {
+      if (hydratedMarketingContext && (hydratedMarketingContext.totalSpend ?? 0) > 0) {
         nextNotes = serializeReportNotes(cleanNotes, hydratedMarketingContext);
       }
     }

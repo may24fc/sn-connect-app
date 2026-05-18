@@ -6,8 +6,8 @@ import { z } from 'zod';
 const ADMIN_ROLES = ['admin', 'super_admin'] as const;
 const MANAGEABLE_DIRECTORY_ROLES = ['employee', 'intern'] as const;
 
-const deactivateUserSchema = z.object({
-  status: z.literal('inactive'),
+const patchUserSchema = z.object({
+  status: z.enum(['inactive', 'active']),
 });
 
 function isManageableDirectoryRole(role: string): boolean {
@@ -51,7 +51,8 @@ async function getManagedTargetUser(
 
 /**
  * PATCH /api/users/[id]
- * Deactivate an employee or intern account by setting users.status = 'inactive'
+ * Deactivate (status=inactive) or restore (status=active) an employee/intern account.
+ * Restoring also clears the date_terminated field on the linked employee record.
  * Permissions: Admin and Super Admin only
  */
 export async function PATCH(
@@ -72,16 +73,18 @@ export async function PATCH(
     }
 
     if (id === user.id) {
-      return NextResponse.json({ error: 'Cannot deactivate your own account' }, { status: 400 });
+      return NextResponse.json({ error: 'Cannot modify your own account' }, { status: 400 });
     }
 
-    const parsedBody = deactivateUserSchema.safeParse(await request.json());
+    const parsedBody = patchUserSchema.safeParse(await request.json());
     if (!parsedBody.success) {
       return NextResponse.json(
         { error: 'Validation failed', details: parsedBody.error.flatten() },
         { status: 400 }
       );
     }
+
+    const { status: newStatus } = parsedBody.data;
 
     const requesterRole = await getRequesterRole(user.id, supabase);
     if (!requesterRole) {
@@ -101,34 +104,45 @@ export async function PATCH(
 
     if (!isManageableDirectoryRole(targetUser.role)) {
       return NextResponse.json(
-        { error: 'Only employee and intern accounts can be deactivated here' },
+        { error: 'Only employee and intern accounts can be modified here' },
         { status: 403 }
       );
     }
 
-    if (targetUser.status === 'inactive') {
+    // Idempotency: already in the target state
+    if (targetUser.status === newStatus) {
       return NextResponse.json({ success: true, data: targetUser });
     }
 
     const { data: updatedUser, error: updateError } = await adminClient
       .from('users')
-      .update({ status: 'inactive' })
+      .update({ status: newStatus })
       .eq('id', id)
       .is('deleted_at', null)
       .select('id, role, status')
       .single();
 
     if (updateError || !updatedUser) {
-      console.error('Error deactivating user:', updateError);
-      return NextResponse.json({ error: 'Failed to deactivate user' }, { status: 500 });
+      console.error('Error updating user status:', updateError);
+      return NextResponse.json({ error: 'Failed to update user status' }, { status: 500 });
     }
 
+    // When restoring a terminated employee, clear the termination date
+    if (newStatus === 'active') {
+      await adminClient
+        .from('employees')
+        .update({ date_terminated: null })
+        .eq('user_id', id)
+        .is('deleted_at', null);
+    }
+
+    const auditAction = newStatus === 'active' ? 'restore_user' : 'deactivate_user';
     logActivity(supabase, {
       userId: user.id,
-      action: 'deactivate_user',
+      action: auditAction,
       tableName: 'users',
       recordId: id,
-      metadata: { status: 'inactive' },
+      metadata: { status: newStatus },
     });
 
     return NextResponse.json({ success: true, data: updatedUser });
@@ -140,7 +154,9 @@ export async function PATCH(
 
 /**
  * DELETE /api/users/[id]
- * Soft-delete an employee or intern account and any linked employee record
+ * Terminate an employee or intern account.
+ * Sets users.status = 'terminated' and records employees.date_terminated.
+ * Records are preserved in the directory (visible in the Former Employees tab).
  * Permissions: Admin and Super Admin only
  */
 export async function DELETE(
@@ -170,7 +186,7 @@ export async function DELETE(
     }
 
     if (id === user.id) {
-      return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+      return NextResponse.json({ error: 'Cannot terminate your own account' }, { status: 400 });
     }
 
     const adminClient = createSupabaseAdminClient();
@@ -182,35 +198,41 @@ export async function DELETE(
 
     if (!isManageableDirectoryRole(targetUser.role)) {
       return NextResponse.json(
-        { error: 'Only employee and intern accounts can be removed here' },
+        { error: 'Only employee and intern accounts can be terminated here' },
         { status: 403 }
       );
     }
 
-    const deletedAt = new Date().toISOString();
+    // Idempotency: already terminated
+    if (targetUser.status === 'terminated') {
+      return NextResponse.json({ success: true });
+    }
 
-    const { error: deleteError } = await adminClient
+    const terminatedAt = new Date().toISOString();
+
+    const { error: terminateError } = await adminClient
       .from('users')
-      .update({ deleted_at: deletedAt })
+      .update({ status: 'terminated' })
       .eq('id', id)
       .is('deleted_at', null);
 
-    if (deleteError) {
-      console.error('Error soft-deleting user:', deleteError);
-      return NextResponse.json({ error: 'Failed to remove user' }, { status: 500 });
+    if (terminateError) {
+      console.error('Error terminating user:', terminateError);
+      return NextResponse.json({ error: 'Failed to terminate user' }, { status: 500 });
     }
 
     await adminClient
       .from('employees')
-      .update({ deleted_at: deletedAt })
+      .update({ date_terminated: terminatedAt })
       .eq('user_id', id)
       .is('deleted_at', null);
 
     logActivity(supabase, {
       userId: user.id,
-      action: 'delete_user',
+      action: 'terminate_user',
       tableName: 'users',
       recordId: id,
+      metadata: { date_terminated: terminatedAt },
     });
 
     return NextResponse.json({ success: true });

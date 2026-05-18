@@ -428,6 +428,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           date_hired: string;
+          date_terminated: string | null;
           deleted_at: string | null;
           department: string;
           division: string | null;
@@ -473,6 +474,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           date_hired: string;
+          date_terminated?: string | null;
           deleted_at?: string | null;
           department: string;
           division?: string | null;
@@ -518,6 +520,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           date_hired?: string;
+          date_terminated?: string | null;
           deleted_at?: string | null;
           department?: string;
           division?: string | null;

@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
       .filter(Boolean);
     const status = searchParams.get('status') || '';
     const employmentType = searchParams.get('employment_type') || '';
+    const excludeTerminated = searchParams.get('exclude_terminated') === 'true';
     const sortBy = searchParams.get('sort_by') || 'full_name';
     const sortOrder = searchParams.get('sort_order') === 'desc' ? false : true;
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
@@ -148,6 +149,11 @@ export async function GET(request: NextRequest) {
     // Employment type filter
     if (employmentType) {
       query = query.eq('employment_type', employmentType);
+    }
+
+    // Exclude terminated employees (used by the Active tab to hide former employees)
+    if (excludeTerminated) {
+      query = query.neq('status', 'terminated');
     }
 
     // Sorting
@@ -218,6 +224,7 @@ export async function GET(request: NextRequest) {
       interns: allData?.filter((e: { role: string | null }) => e.role === 'intern').length || 0,
       onLeave: allData?.filter((e: { status: string | null }) => e.status === 'on_leave').length || 0,
       probation: allData?.filter((e: { employment_type: string | null }) => e.employment_type === 'probationary').length || 0,
+      terminated: allData?.filter((e: { status: string | null }) => e.status === 'terminated').length || 0,
       availableRoles,
     };
 

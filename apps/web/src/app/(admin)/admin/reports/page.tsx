@@ -1,15 +1,17 @@
 'use client';
 
+import { useReports } from '@/hooks/useReports';
 import { useReportsRealtime } from '@/hooks/useReportsRealtime';
 import { getMarketingCampaignTypeAvailability } from '@/lib/marketing-report-config';
 import {
-  getMarketingCampaignTypeOptionsForReportType,
-  getMarketingObjectiveOptionsForReportType,
   MARKETING_OBJECTIVE_INFO,
   MARKETING_REPORT_TYPE_OPTIONS,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
   type MarketingReportTypeFilterValue,
+  getMarketingCampaignTypeOptionsForReportType,
+  getMarketingObjectiveOptionsForReportType,
+  resolveMarketingReportType,
 } from '@/lib/report-utils';
 import {
   Select,
@@ -28,6 +30,11 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 const MARKETING_DEPARTMENT = 'marketing';
+const FILTER_INCLUDED_STATUSES = ['submitted', 'approved'] as const;
+
+function isFilterEligibleStatus(status: string): boolean {
+  return FILTER_INCLUDED_STATUSES.includes(status as (typeof FILTER_INCLUDED_STATUSES)[number]);
+}
 
 // Lazy-load the analytics tab (contains recharts / D3)
 const ReportsAnalyticsTab = dynamic(
@@ -59,6 +66,12 @@ export default function AdminReportsPage() {
   // The subscription is active for as long as this page is mounted.
   useReportsRealtime();
 
+  const { data: filterReportsData } = useReports({
+    department: MARKETING_DEPARTMENT,
+    reportType: 'marketing',
+    pageSize: 500,
+  });
+
   const timeRange: 'weekly' | 'monthly' | 'custom' = 'weekly';
   const customStartDate = '';
   const customEndDate = '';
@@ -67,21 +80,73 @@ export default function AdminReportsPage() {
   const [objective, setObjective] = useState<MarketingObjectiveFilterValue>('all');
   const planningFiltersEnabled =
     reportType === 'all' || getMarketingCampaignTypeAvailability(reportType) === 'enabled';
-  const availableCampaignTypes = useMemo(
-    () => getMarketingCampaignTypeOptionsForReportType(reportType === 'all' ? undefined : reportType),
-    [reportType]
-  );
-
-  const availableObjectives = useMemo(
+  const liveFilterReports = useMemo(
     () =>
-      !planningFiltersEnabled
-        ? []
-        : (getMarketingObjectiveOptionsForReportType(
-            reportType === 'all' ? undefined : reportType,
-            campaignType === 'all' ? undefined : campaignType
-          ) as MarketingObjectiveFilterValue[]).filter((value) => value !== 'all'),
-    [campaignType, planningFiltersEnabled, reportType]
+      (filterReportsData?.data || []).filter(
+        (report) => isFilterEligibleStatus(report.status) && !report.deleted_at
+      ),
+    [filterReportsData?.data]
   );
+  const availableCampaignTypes = useMemo(() => {
+    const configuredOptions = getMarketingCampaignTypeOptionsForReportType(
+      reportType === 'all' ? undefined : reportType
+    );
+
+    if (!liveFilterReports.length) {
+      return configuredOptions;
+    }
+
+    const submittedCampaignTypes = new Set(
+      liveFilterReports
+        .filter((report) => {
+          const resolvedReportType = resolveMarketingReportType(report.marketing_context);
+
+          return reportType === 'all' || resolvedReportType === reportType;
+        })
+        .map((report) => report.marketing_context?.campaignType)
+        .filter((value): value is Exclude<MarketingCampaignFilterValue, 'all'> => Boolean(value))
+    );
+
+    return configuredOptions.filter((option) => submittedCampaignTypes.has(option.value));
+  }, [liveFilterReports, reportType]);
+
+  const availableObjectives = useMemo(() => {
+    if (!planningFiltersEnabled) {
+      return [];
+    }
+
+    const configuredObjectives = (
+      getMarketingObjectiveOptionsForReportType(
+        reportType === 'all' ? undefined : reportType,
+        campaignType === 'all' ? undefined : campaignType
+      ) as Array<MarketingObjectiveFilterValue>
+    ).filter((value) => value !== 'all');
+
+    if (!liveFilterReports.length) {
+      return configuredObjectives;
+    }
+
+    const submittedObjectives = new Set(
+      liveFilterReports
+        .filter((report) => {
+          const resolvedReportType = resolveMarketingReportType(report.marketing_context);
+
+          if (reportType !== 'all' && resolvedReportType !== reportType) {
+            return false;
+          }
+
+          if (campaignType !== 'all' && report.marketing_context?.campaignType !== campaignType) {
+            return false;
+          }
+
+          return true;
+        })
+        .map((report) => report.marketing_context?.objective)
+        .filter((value): value is Exclude<MarketingObjectiveFilterValue, 'all'> => Boolean(value))
+    );
+
+    return configuredObjectives.filter((value) => submittedObjectives.has(value));
+  }, [campaignType, liveFilterReports, planningFiltersEnabled, reportType]);
 
   useEffect(() => {
     if (!planningFiltersEnabled) {
@@ -96,10 +161,24 @@ export default function AdminReportsPage() {
       return;
     }
 
+    if (
+      campaignType !== 'all' &&
+      !availableCampaignTypes.some((option) => option.value === campaignType)
+    ) {
+      setCampaignType('all');
+      return;
+    }
+
     if (objective !== 'all' && !availableObjectives.includes(objective)) {
       setObjective('all');
     }
-  }, [availableObjectives, campaignType, objective, planningFiltersEnabled]);
+  }, [
+    availableCampaignTypes,
+    availableObjectives,
+    campaignType,
+    objective,
+    planningFiltersEnabled,
+  ]);
 
   return (
     <div className="space-y-6 p-3">
@@ -108,11 +187,15 @@ export default function AdminReportsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Marketing Reports</h1>
           <p className="text-muted-foreground">
-            Review campaign submissions, model concurrent sales forecast scenarios, and compare reporting windows from one admin workspace.
+            Review campaign submissions, model concurrent sales forecast scenarios, and compare
+            reporting windows from one admin workspace.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Select value={reportType} onValueChange={(value) => setReportType(value as MarketingReportTypeFilterValue)}>
+          <Select
+            value={reportType}
+            onValueChange={(value) => setReportType(value as MarketingReportTypeFilterValue)}
+          >
             <SelectTrigger className="w-[190px]">
               <SelectValue placeholder="Report Type" />
             </SelectTrigger>
@@ -126,9 +209,14 @@ export default function AdminReportsPage() {
             </SelectContent>
           </Select>
 
-          <Select value={campaignType} onValueChange={(value) => setCampaignType(value as MarketingCampaignFilterValue)}>
+          <Select
+            value={campaignType}
+            onValueChange={(value) => setCampaignType(value as MarketingCampaignFilterValue)}
+          >
             <SelectTrigger className="w-[190px]" disabled={!planningFiltersEnabled}>
-              <SelectValue placeholder={planningFiltersEnabled ? 'Campaign Type' : 'Campaign Type not used'} />
+              <SelectValue
+                placeholder={planningFiltersEnabled ? 'Campaign Type' : 'Campaign Type not used'}
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Any Campaign Type</SelectItem>
@@ -140,7 +228,10 @@ export default function AdminReportsPage() {
             </SelectContent>
           </Select>
 
-          <Select value={objective} onValueChange={(value) => setObjective(value as MarketingObjectiveFilterValue)}>
+          <Select
+            value={objective}
+            onValueChange={(value) => setObjective(value as MarketingObjectiveFilterValue)}
+          >
             <SelectTrigger className="w-[180px]" disabled={!planningFiltersEnabled}>
               <SelectValue placeholder={planningFiltersEnabled ? 'Goal' : 'Objective not used'} />
             </SelectTrigger>
@@ -168,7 +259,6 @@ export default function AdminReportsPage() {
               <SelectItem value="custom">Custom Range</SelectItem>
             </SelectContent>
           </Select> */}
-
         </div>
       </div>
 

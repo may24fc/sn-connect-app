@@ -1,9 +1,31 @@
 import { z } from 'zod';
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+const monthKeySchema = z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-MM');
 
 export const reviewCycleStatusSchema = z.enum(['draft', 'active', 'completed', 'archived']);
 export const reviewStatusSchema = z.enum(['pending', 'self_review', 'manager_review', 'completed']);
+export const monthlySelfEvaluationResponseSchema = z.enum(['yes', 'sometimes', 'no']);
+
+export const monthlySelfEvaluationDepartmentRoleOptions = [
+  'Meta & Google Ads Specialists',
+  'Graphic Designers',
+  'Video Editors',
+  'Social Media Creators',
+  'Executive Assistants',
+  'Personal Assistants',
+  'Sales/Marketing Team',
+  'HR',
+  'HR Interns',
+  'Admin Assistants',
+  'AI Interns',
+  'Accounting Interns',
+  'Other',
+] as const;
+
+export const monthlySelfEvaluationDepartmentRoleSchema = z.enum(
+  monthlySelfEvaluationDepartmentRoleOptions
+);
 
 export const keyResultSchema = z.object({
   id: z.string().optional(),
@@ -242,6 +264,41 @@ export const probationSetStatusSchema = z.object({
   status: z.enum(['on-track', 'at-risk']),
 });
 
+export const submitMonthlySelfEvaluationSchema = z.object({
+  monthKey: monthKeySchema,
+  fullName: z.string().trim().min(1).max(200),
+  departmentRole: monthlySelfEvaluationDepartmentRoleSchema,
+  topThreeThingsWorkedOn: z.string().trim().min(1).max(4000),
+  biggestImpact: z.string().trim().min(1).max(2000),
+  impactReason: z.string().trim().min(1).max(2000),
+  significantAchievement: z.string().trim().min(1).max(2000),
+  challengeResolved: z.string().trim().min(1).max(2000),
+  monthlyImprovement: z.string().trim().min(1).max(2000),
+  workSlowdown: z.string().trim().min(1).max(2000),
+  unseenWorkflowIssue: z.string().trim().min(1).max(2000),
+  requestedSupport: z.string().trim().min(1).max(2000),
+  productivityScore: z.number().int().min(1).max(10),
+  productivityReason: z.string().trim().min(1).max(2000),
+  ownershipOutsideRole: z.string().trim().min(1).max(2000),
+  professionalImprovementArea: z.string().trim().min(1).max(2000),
+  nextSkillToLearn: z.string().trim().min(1).max(2000),
+  leadershipDidWell: z.string().trim().min(1).max(2000),
+  leadershipCanImprove: z.string().trim().min(1).max(2000),
+  contributionsVisible: monthlySelfEvaluationResponseSchema,
+  comfortableRaisingConcerns: monthlySelfEvaluationResponseSchema,
+  hiddenProductivityIssue: z.string().trim().min(1).max(2000),
+  immediateImprovement: z.string().trim().min(1).max(2000),
+  additionalComments: z.string().trim().max(2000).optional().default(''),
+  nextMonthGoal: z.string().trim().min(1).max(2000),
+});
+
+export const monthlySelfEvaluationFiltersSchema = z.object({
+  monthKey: monthKeySchema.optional(),
+  departmentRole: monthlySelfEvaluationDepartmentRoleSchema.optional(),
+  employeeId: z.string().uuid().optional(),
+  search: z.string().trim().max(200).optional(),
+});
+
 export const probationActionSchema = z.discriminatedUnion('action', [
   probationExtendSchema,
   probationCompleteSchema,
@@ -258,5 +315,7 @@ export type CreateOKRTargetInput = z.infer<typeof createOKRTargetSchema>;
 export type UpdateOKRTargetInput = z.infer<typeof updateOKRTargetSchema>;
 export type CreateKPIInput = z.infer<typeof createKPISchema>;
 export type UpdateKPIInput = z.infer<typeof updateKPISchema>;
+export type SubmitMonthlySelfEvaluationInput = z.infer<typeof submitMonthlySelfEvaluationSchema>;
+export type MonthlySelfEvaluationFiltersInput = z.infer<typeof monthlySelfEvaluationFiltersSchema>;
 export type CreateOKRTargetEvidenceInput = z.infer<typeof createOKRTargetEvidenceSchema>;
 export type ProbationActionInput = z.infer<typeof probationActionSchema>;

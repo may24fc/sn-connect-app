@@ -91,7 +91,7 @@ export const marketingContextSchema = z.object({
   campaignName: z.string().trim().max(120).optional().nullable(),
   campaignType: marketingCampaignTypeSchema.optional().nullable(),
   objective: marketingObjectiveSchema.optional().nullable(),
-  totalSpend: z.coerce.number().min(0, 'Total spend cannot be negative').default(0),
+  totalSpend: z.coerce.number().min(0, 'Total spend cannot be negative').optional().nullable(),
   primaryChannel: marketingPrimaryChannelSchema.optional().nullable(),
   targetAudience: z.string().trim().max(160).optional().nullable(),
   contentCreation: contentCreationDetailsSchema.optional().nullable(),

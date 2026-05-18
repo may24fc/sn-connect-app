@@ -32,7 +32,8 @@ export async function GET(request: Request) {
     let usersQuery = supabaseAdmin
       .from('employee_directory')
       .select('user_id, full_name, avatar_url, department_name, role')
-      .not('user_id', 'is', null);
+      .not('user_id', 'is', null)
+      .neq('status', 'terminated');
 
     if (scope === 'interns') {
       usersQuery = usersQuery.eq('role', 'intern');

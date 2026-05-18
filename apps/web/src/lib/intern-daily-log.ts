@@ -29,14 +29,14 @@ export function normalizeProjectEntries(
         const actionTaken = toNonEmptyString(entry.actionTaken);
         const outcome = toNonEmptyString(entry.outcome);
 
-        if (!(projectFocus && actionTaken && outcome)) {
+        if (!(projectFocus && challenge && actionTaken && outcome)) {
           return null;
         }
 
         return {
           id: toNonEmptyString(entry.id) ?? crypto.randomUUID(),
           projectFocus,
-          ...(challenge ? { challenge } : {}),
+          challenge,
           actionTaken,
           outcome,
         } satisfies ProjectFocusEntry;
@@ -57,6 +57,7 @@ export function normalizeProjectEntries(
     {
       id: crypto.randomUUID(),
       projectFocus: 'General Update',
+      challenge: 'No challenge provided',
       actionTaken: fallback,
       outcome: 'Completed for the day',
     },

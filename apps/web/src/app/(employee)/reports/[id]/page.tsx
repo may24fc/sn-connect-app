@@ -10,9 +10,9 @@ import { useSubmitReport } from '@/hooks/useSubmitReport';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateTime, formatLabel } from '@/lib/format';
 import {
+  formatUsdAmount,
   formatMetricValue,
   formatMetricValueWithUnit,
-  formatUsdAmount,
   getContentCreationEntries,
   getContentCreationObservations,
   getContentCreationResults,
@@ -433,10 +433,12 @@ export default function ReportDetailPage({
                 {getMarketingObjectiveLabel(marketingContext.objective)}
               </p>
             ) : null}
-            <p>
-              <span className="text-muted-foreground">Total Spend:</span>{' '}
-              {formatUsdAmount(marketingContext.totalSpend ?? 0)}
-            </p>
+            {isContentCreationReport ? null : (
+              <p>
+                <span className="text-muted-foreground">Total Spend:</span>{' '}
+                {formatUsdAmount(marketingContext.totalSpend ?? 0)}
+              </p>
+            )}
             {marketingContext.primaryChannel ? (
               <p>
                 <span className="text-muted-foreground">Primary Channel:</span>{' '}

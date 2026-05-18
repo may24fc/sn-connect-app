@@ -54,11 +54,12 @@ export async function GET(): Promise<NextResponse> {
       roleDistResult,
       recentLogsResult,
     ] = await Promise.all([
-      // Total users (non-deleted)
+      // Total users (non-deleted, non-terminated)
       supabase
         .from('users')
         .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null),
+        .is('deleted_at', null)
+        .neq('status', 'terminated'),
 
       // Active users (status = 'active')
       supabase
@@ -73,11 +74,12 @@ export async function GET(): Promise<NextResponse> {
         .select('id', { count: 'exact', head: true })
         .gte('created_at', startOfMonth),
 
-      // User role distribution
+      // User role distribution (exclude terminated)
       supabase
         .from('users')
         .select('role')
-        .is('deleted_at', null),
+        .is('deleted_at', null)
+        .neq('status', 'terminated'),
 
       // Recent audit logs (last 10)
       supabase

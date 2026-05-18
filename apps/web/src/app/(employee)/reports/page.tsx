@@ -134,6 +134,7 @@ export default function ReportsPage() {
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'submitted_at', initialDirection: 'desc' });
 
   const sortedReports = sortItems(reports, {
+    report_type_label: (r) => r.marketing_context?.marketingReportType ?? '',
     campaign_type: (r) => r.marketing_context?.campaignType ?? '',
     objective: (r) => r.marketing_context?.objective ?? '',
     period: (r) => r.period_start ?? '',
@@ -374,6 +375,7 @@ export default function ReportsPage() {
               <TableHeader>
                 <TableRow>
                   {viewMode === 'grouped' && <TableHead className="w-10" />}
+                  <SortableTableHead column="report_type_label" {...sortHeadProps}>Report Type</SortableTableHead>
                   <SortableTableHead column="campaign_type" {...sortHeadProps}>Campaign Type</SortableTableHead>
                   <SortableTableHead column="objective" {...sortHeadProps}>Objective</SortableTableHead>
                   {viewMode === 'grouped' && <TableHead>Group / Path</TableHead>}
@@ -387,7 +389,7 @@ export default function ReportsPage() {
                 {reports.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={viewMode === 'grouped' ? 8 : 6}
+                      colSpan={viewMode === 'grouped' ? 9 : 7}
                       className="text-center py-12"
                     >
                       <EmptyState
@@ -431,6 +433,9 @@ export default function ReportsPage() {
                         }
                       }}
                     >
+                      <TableCell className="font-medium text-sm text-foreground">
+                        {report.marketing_context?.marketingReportType || '—'}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {report.marketing_context?.campaignType
                           ? getMarketingCampaignTypeLabel(report.marketing_context.campaignType)
@@ -599,6 +604,9 @@ function GroupedReportRow({
             <span style={{ marginLeft: `${depth * 16 + 24}px` }} />
           )}
         </TableCell>
+        <TableCell className="font-medium text-sm text-foreground">
+          {report.marketing_context?.marketingReportType || '—'}
+        </TableCell>
         <TableCell className="font-medium">
           <span style={{ paddingLeft: `${depth * 16}px` }}>
             {report.marketing_context?.campaignType
@@ -652,7 +660,7 @@ function GroupedReportRow({
       </TableRow>
       {isExpanded && childrenLoading && (
         <TableRow>
-          <TableCell colSpan={8} className="py-6">
+          <TableCell colSpan={9} className="py-6">
             <EmptyState
               icon={<Loader2 className="h-5 w-5 animate-spin" />}
               title="Loading child reports"

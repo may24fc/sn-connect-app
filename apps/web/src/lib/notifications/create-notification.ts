@@ -7,12 +7,17 @@
  */
 
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { getSiteUrl } from '@/lib/auth/redirect-config';
 import {
   buildAddToCalendarUrl,
   buildCompanyCalendarPageLink,
   formatCompanyCalendarNotificationLabel,
   type CompanyCalendarEvent,
 } from '@/lib/company-calendar';
+import { sendPortalNotificationEmail } from '@/lib/email';
+import { getGmailNotificationEnabledUserIds } from '@/lib/settings/notification-preferences.server';
+import { getTelegramNotificationTargets } from '@/lib/settings/notification-preferences.server';
+import { sendTelegramMessage } from '@/lib/telegram';
 import { getNotificationUserIdentity, getNotificationUserIdentities } from '@/lib/notifications/user-identity';
 
 // ---- Types ----------------------------------------------------------------
@@ -46,6 +51,8 @@ export interface CreateNotificationPayload {
   metadata?: Record<string, unknown>;
   dedupeKey?: string;
   dedupeWindowHours?: number;
+  sendEmail?: boolean;
+  sendTelegram?: boolean;
 }
 
 const DEFAULT_DEDUPE_WINDOW_HOURS = 24;
@@ -62,6 +69,96 @@ function buildNotificationMetadata(
     ...(metadata ?? {}),
     _dedupeKey: dedupeKey,
   };
+}
+
+function buildNotificationActionUrl(link: string | undefined): string | undefined {
+  if (!link) {
+    return undefined;
+  }
+
+  if (/^https?:\/\//i.test(link)) {
+    return link;
+  }
+
+  return `${getSiteUrl()}${link.startsWith('/') ? link : `/${link}`}`;
+}
+
+async function sendNotificationEmails(
+  userIds: string[],
+  notification: Omit<CreateNotificationPayload, 'userId'>
+): Promise<void> {
+  if (notification.sendEmail === false || userIds.length === 0) {
+    return;
+  }
+
+  try {
+    const [identities, gmailEnabledUserIds] = await Promise.all([
+      getNotificationUserIdentities(userIds),
+      getGmailNotificationEnabledUserIds(userIds),
+    ]);
+
+    const actionUrl = buildNotificationActionUrl(notification.link);
+    const emailJobs = identities
+      .filter((identity) => identity.email && gmailEnabledUserIds.has(identity.userId))
+      .map((identity) =>
+        sendPortalNotificationEmail({
+          to: identity.email as string,
+          subject: `SN Connect: ${notification.title}`,
+          heading: notification.title,
+          paragraphs: [
+            notification.message ?? 'You have a new notification in SN Connect.',
+            actionUrl
+              ? 'Open SN Connect to view the full update and take any required action.'
+              : 'Open SN Connect to view the latest update.',
+          ],
+          actionLabel: actionUrl ? 'Open SN Connect' : undefined,
+          actionUrl,
+        })
+      );
+
+    if (emailJobs.length > 0) {
+      await Promise.allSettled(emailJobs);
+    }
+  } catch (err) {
+    console.error('[notifications] Unexpected error sending notification emails:', err);
+  }
+}
+
+async function sendTelegramNotifications(
+  userIds: string[],
+  notification: Omit<CreateNotificationPayload, 'userId'>
+): Promise<void> {
+  if (notification.sendTelegram === false || userIds.length === 0) {
+    return;
+  }
+
+  try {
+    const telegramTargets = await getTelegramNotificationTargets(userIds);
+    const actionUrl = buildNotificationActionUrl(notification.link);
+
+    if (telegramTargets.length === 0) {
+      return;
+    }
+
+    const text = [
+      notification.title,
+      notification.message ?? 'You have a new notification in SN Connect.',
+      actionUrl ? `Open SN Connect: ${actionUrl}` : null,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    await Promise.allSettled(
+      telegramTargets.map((target) =>
+        sendTelegramMessage({
+          chatId: target.chatId,
+          text,
+        })
+      )
+    );
+  } catch (err) {
+    console.error('[notifications] Unexpected error sending Telegram notifications:', err);
+  }
 }
 
 // ---- Helpers ---------------------------------------------------------------
@@ -103,7 +200,13 @@ export async function createNotification(payload: CreateNotificationPayload): Pr
 
     if (error) {
       console.error('[notifications] Failed to create notification:', error);
+      return;
     }
+
+    await Promise.all([
+      sendNotificationEmails([payload.userId], payload),
+      sendTelegramNotifications([payload.userId], payload),
+    ]);
   } catch (err) {
     console.error('[notifications] Unexpected error creating notification:', err);
   }
@@ -160,7 +263,13 @@ export async function createNotificationsForUsers(
 
     if (error) {
       console.error('[notifications] Failed to create bulk notifications:', error);
+      return;
     }
+
+    await Promise.all([
+      sendNotificationEmails(filteredUserIds, notification),
+      sendTelegramNotifications(filteredUserIds, notification),
+    ]);
   } catch (err) {
     console.error('[notifications] Unexpected error creating bulk notifications:', err);
   }

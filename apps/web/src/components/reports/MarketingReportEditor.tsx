@@ -93,6 +93,7 @@ const MARKETING_REPORT_TYPE_SET = new Set(
 const MARKETING_OBJECTIVE_SET = new Set(
   Object.keys(MARKETING_OBJECTIVE_INFO) as Array<MarketingObjective>
 );
+const CONTENT_CREATION_APP_OPTIONS = ['Facebook', 'Instagram'] as const;
 
 interface MetricValueRule {
   min?: number;
@@ -512,9 +513,11 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       return 'Select the reporting period start and end dates.';
     }
 
-    const parsedSpend = Number(totalSpend);
-    if (!Number.isFinite(parsedSpend) || parsedSpend < 0) {
-      return 'Total spend must be a valid non-negative amount.';
+    if (!isContentCreationReport) {
+      const parsedSpend = Number(totalSpend);
+      if (!Number.isFinite(parsedSpend) || parsedSpend < 0) {
+        return 'Total spend must be a valid non-negative amount.';
+      }
     }
 
     if (!notes.trim()) {
@@ -566,6 +569,17 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
           }
         : undefined;
 
+      const marketingContext: ReportCreateInput['marketingContext'] = {
+        marketingReportType: normalizeMarketingReportType(marketingReportType) || undefined,
+        campaignType: normalizedCampaignType || undefined,
+        objective: normalizedObjective || undefined,
+        contentCreation,
+      };
+
+      if (!isContentCreationReport) {
+        marketingContext.totalSpend = Number(totalSpend);
+      }
+
       return {
         reportType: REPORT_TYPE,
         periodStart,
@@ -575,13 +589,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
           summary: notes,
           results,
         }),
-        marketingContext: {
-          marketingReportType: normalizeMarketingReportType(marketingReportType) || undefined,
-          campaignType: normalizedCampaignType || undefined,
-          objective: normalizedObjective || undefined,
-          totalSpend: Number(totalSpend),
-          contentCreation,
-        },
+        marketingContext,
         metrics: isContentCreationReport ? [] : validMetrics,
       };
     },
@@ -1088,41 +1096,43 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Spend</CardTitle>
-            <CardDescription>
-              Log the full amount spent for this reporting window. Keep efficiency metrics like CPM or CPC inside the metrics section below.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FormGroup
-              htmlFor="totalSpend"
-              required
-              showOptional={false}
-              description="Use the actual spend for the campaign during this period, in Australian dollars."
-            >
-              <div className="relative">
-                {totalSpendAdornment.prefix ? (
-                  <span className="pointer-events-none absolute inset-y-0 left-3 flex w-10 items-center text-sm text-muted-foreground">
-                    {totalSpendAdornment.prefix}
-                  </span>
-                ) : null}
-                <Input
-                  id="totalSpend"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={totalSpend}
-                  onChange={(event) => setTotalSpend(event.target.value)}
-                  placeholder="0.00"
-                  className={cn('h-10', totalSpendAdornment.prefix ? NUMERIC_INPUT_PREFIX_PADDING_CLASS : undefined)}
-                  required
-                />
-              </div>
-            </FormGroup>
-          </CardContent>
-        </Card>
+        {isContentCreationReport ? null : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Spend</CardTitle>
+              <CardDescription>
+                Log the full amount spent for this reporting window. Keep efficiency metrics like CPM or CPC inside the metrics section below.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FormGroup
+                htmlFor="totalSpend"
+                required
+                showOptional={false}
+                description="Use the actual spend for the campaign during this period, in Australian dollars."
+              >
+                <div className="relative">
+                  {totalSpendAdornment.prefix ? (
+                    <span className="pointer-events-none absolute inset-y-0 left-3 flex w-10 items-center text-sm text-muted-foreground">
+                      {totalSpendAdornment.prefix}
+                    </span>
+                  ) : null}
+                  <Input
+                    id="totalSpend"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={totalSpend}
+                    onChange={(event) => setTotalSpend(event.target.value)}
+                    placeholder="0.00"
+                    className={cn('h-10', totalSpendAdornment.prefix ? NUMERIC_INPUT_PREFIX_PADDING_CLASS : undefined)}
+                    required
+                  />
+                </div>
+              </FormGroup>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
@@ -1155,7 +1165,6 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
             {metrics.map((metric, index) => {
               const metricValueRule = getMetricValueRule(metric.name, metric.unit);
-              const metricValueAdornment = getNumericInputAdornment(metric.unit);
               const showGroupHeading =
                 metric.groupLabel
                 && metrics[index - 1]?.groupLabel !== metric.groupLabel;
@@ -1181,13 +1190,31 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                           {isContentCreationReport ? 'Platform / App' : 'Name'}
                         </Label>
                       ) : null}
-                      <Input
-                        placeholder={isContentCreationReport ? 'e.g. Facebook, Instagram, TikTok' : 'Metric name'}
-                        value={metric.locked && metric.displayName ? metric.displayName : metric.name}
-                        readOnly={metric.locked}
-                        onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
-                        className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
-                      />
+                      {isContentCreationReport ? (
+                        <Select
+                          value={metric.name}
+                          onValueChange={(value) => handleMetricChange(index, 'name', value)}
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Select an app" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CONTENT_CREATION_APP_OPTIONS.map((app) => (
+                              <SelectItem key={app} value={app}>
+                                {app}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          placeholder="Metric name"
+                          value={metric.locked && metric.displayName ? metric.displayName : metric.name}
+                          readOnly={metric.locked}
+                          onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
+                          className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                        />
+                      )}
                     </div>
                     <div className="space-y-1">
                       {index === 0 && (
@@ -1195,33 +1222,13 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                           {isContentCreationReport ? 'Posts' : 'Value'}
                         </Label>
                       )}
-                      <div className="relative">
-                        {metricValueAdornment.prefix ? (
-                          <span className="pointer-events-none absolute inset-y-0 left-3 flex w-10 items-center text-sm text-muted-foreground">
-                            {metricValueAdornment.prefix}
-                          </span>
-                        ) : null}
-                        <Input
-                          type="text"
-                          inputMode={metricValueRule.allowDecimal ? 'decimal' : 'numeric'}
-                          value={metric.value}
-                          onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
-                          onBlur={() => handleMetricBlur(index)}
-                          className={cn(
-                            metricValueAdornment.prefix ? NUMERIC_INPUT_PREFIX_PADDING_CLASS : undefined,
-                            metricValueAdornment.suffix === 'sec'
-                              ? 'pr-12'
-                              : metricValueAdornment.suffix
-                                ? 'pr-8'
-                                : undefined
-                          )}
-                        />
-                        {metricValueAdornment.suffix ? (
-                          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
-                            {metricValueAdornment.suffix}
-                          </span>
-                        ) : null}
-                      </div>
+                      <Input
+                        type="text"
+                        inputMode={metricValueRule.allowDecimal ? 'decimal' : 'numeric'}
+                        value={metric.value}
+                        onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
+                        onBlur={() => handleMetricBlur(index)}
+                      />
                     </div>
                     {isContentCreationReport ? null : (
                       <div className="space-y-1">

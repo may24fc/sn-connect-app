@@ -11,6 +11,7 @@ import {
   getPerformancePathForRole,
   getUserContactByUserId,
 } from '@/lib/notifications/recipients';
+import { getGmailNotificationEnabledUserIds } from '@/lib/settings/notification-preferences.server';
 import {
   createPerformanceReviewSchema,
   updatePerformanceReviewSchema,
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
         message: `${actorName} created an OKRs & KPIs review for you.`,
         link: getPerformancePathForRole(employeeContact.role),
         metadata: { reviewId: data.id, cycleId: data.cycle_id, status: data.status },
+        sendEmail: false,
       });
     }
 
@@ -154,12 +156,16 @@ export async function POST(request: NextRequest) {
         message: `${actorName} assigned you to review ${reviewSubjectName}.`,
         link: getPerformancePathForRole(reviewerContact.role),
         metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
+        sendEmail: false,
       });
     }
 
     const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
+    const gmailEnabledUserIds = await getGmailNotificationEnabledUserIds(
+      [employeeContact?.userId, reviewerContact?.userId].filter((value): value is string => Boolean(value))
+    );
     await Promise.allSettled([
-      ...(employeeContact?.email && employeeContact.userId !== user.id
+      ...(employeeContact?.email && employeeContact.userId !== user.id && gmailEnabledUserIds.has(employeeContact.userId)
         ? [
             sendPortalNotificationEmail({
               to: employeeContact.email,
@@ -176,7 +182,8 @@ export async function POST(request: NextRequest) {
         : []),
       ...(reviewerContact?.email &&
       reviewerContact.userId !== user.id &&
-      reviewerContact.userId !== employeeContact?.userId
+      reviewerContact.userId !== employeeContact?.userId &&
+      gmailEnabledUserIds.has(reviewerContact.userId)
         ? [
             sendPortalNotificationEmail({
               to: reviewerContact.email,
@@ -272,6 +279,9 @@ export async function PATCH(request: NextRequest) {
     const reviewerChanged = parsed.data.reviewerId !== undefined && parsed.data.reviewerId !== existingReview.reviewer_id;
     const appBaseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.APP_URL || '';
     const pendingEmails: Array<Promise<{ sent: boolean; error?: string }>> = [];
+    const gmailEnabledUserIds = await getGmailNotificationEnabledUserIds(
+      [employeeContact?.userId, reviewerContact?.userId].filter((value): value is string => Boolean(value))
+    );
 
     if (
       reviewerChanged &&
@@ -286,9 +296,10 @@ export async function PATCH(request: NextRequest) {
         message: `${actorName} assigned you to review ${reviewSubjectName}.`,
         link: getPerformancePathForRole(reviewerContact.role),
         metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
+        sendEmail: false,
       });
 
-      if (reviewerContact.email) {
+      if (reviewerContact.email && gmailEnabledUserIds.has(reviewerContact.userId)) {
         pendingEmails.push(
           sendPortalNotificationEmail({
             to: reviewerContact.email,
@@ -314,9 +325,10 @@ export async function PATCH(request: NextRequest) {
           message: `${actorName} moved your review to self-review.`,
           link: getPerformancePathForRole(employeeContact.role),
           metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
+          sendEmail: false,
         });
 
-        if (employeeContact.email) {
+        if (employeeContact.email && gmailEnabledUserIds.has(employeeContact.userId)) {
           pendingEmails.push(
             sendPortalNotificationEmail({
               to: employeeContact.email,
@@ -346,9 +358,10 @@ export async function PATCH(request: NextRequest) {
           message: `${reviewSubjectName} submitted a self-review and is ready for your review.`,
           link: getPerformancePathForRole(reviewerContact.role),
           metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
+          sendEmail: false,
         });
 
-        if (reviewerContact.email) {
+        if (reviewerContact.email && gmailEnabledUserIds.has(reviewerContact.userId)) {
           pendingEmails.push(
             sendPortalNotificationEmail({
               to: reviewerContact.email,
@@ -374,9 +387,10 @@ export async function PATCH(request: NextRequest) {
             message: `${actorName} completed your review.`,
             link: getPerformancePathForRole(employeeContact.role),
             metadata: { reviewId: data.id, employeeId: data.employee_id, cycleId: data.cycle_id, status: data.status },
+            sendEmail: false,
           });
 
-          if (employeeContact.email) {
+          if (employeeContact.email && gmailEnabledUserIds.has(employeeContact.userId)) {
             pendingEmails.push(
               sendPortalNotificationEmail({
                 to: employeeContact.email,
