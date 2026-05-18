@@ -21,7 +21,7 @@ import {
   Switch,
   useToast,
 } from '@hr-portal/ui';
-import { BellRing, Link2, Loader2, Mail, MessageCircleMore, RefreshCw, ShieldCheck } from 'lucide-react';
+import { BellRing, Link2, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -32,12 +32,17 @@ interface NotificationPreferenceOption {
   hint: string;
 }
 
+interface TelegramWebLinkIntent {
+  webUrl: string;
+  startCommand: string | null;
+}
+
 const notificationPreferences: NotificationPreferenceOption[] = [
   {
     channel: 'telegram',
     title: 'Telegram notifications',
     description: 'Receive direct messages in Telegram for task updates, approvals, and reminders.',
-    hint: 'Disabled by default. Turn this on only after your Telegram account is linked.',
+    hint: 'Disabled by default. Turn this on only after your Telegram account is linked in Telegram Web.',
   },
   {
     channel: 'gmail',
@@ -46,6 +51,61 @@ const notificationPreferences: NotificationPreferenceOption[] = [
     hint: 'Best for longer updates you may want to archive or forward.',
   },
 ];
+
+function TelegramLogo(): ReactNode {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <circle cx="12" cy="12" r="10" fill="#229ED9" />
+      <path
+        fill="#FFFFFF"
+        d="M17.37 7.78 15.7 16.02c-.12.58-.46.72-.94.45l-2.6-1.92-1.25 1.2c-.14.14-.25.25-.52.25l.18-2.66 4.85-4.38c.21-.19-.05-.3-.32-.12l-6 3.78-2.59-.81c-.57-.18-.58-.57.12-.84l10.11-3.9c.47-.17.88.11.73.81Z"
+      />
+    </svg>
+  );
+}
+
+function GmailLogo(): ReactNode {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+      <path fill="#EA4335" d="M2 6.75 12 14.25 22 6.75V6a2 2 0 0 0-2-2h-.46L12 9.78 4.46 4H4a2 2 0 0 0-2 2v.75Z" />
+      <path fill="#FFFFFF" d="M22 6.75 15.82 11.4 22 16.12V6.75Z" />
+      <path fill="#FFFFFF" d="M15.82 11.4 12 14.25 8.18 11.4 2 16.12V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1.88l-6.18-4.72Z" />
+      <path fill="#FFFFFF" d="M2 6.75V16.12L8.18 11.4 2 6.75Z" />
+    </svg>
+  );
+}
+
+function createTelegramWebLinkIntent(connectUrl: string): TelegramWebLinkIntent | null {
+  try {
+    const parsedUrl = new URL(connectUrl);
+    const botUsername = parsedUrl.pathname.replace(/^\/+/, '').trim();
+    const startToken = parsedUrl.searchParams.get('start')?.trim() || null;
+
+    if (!botUsername) {
+      return null;
+    }
+
+    return {
+      webUrl: `https://web.telegram.org/k/#@${botUsername}`,
+      startCommand: startToken ? `/start ${startToken}` : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function copyTextToClipboard(value: string): Promise<boolean> {
+  if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+    return false;
+  }
+
+  try {
+    await navigator.clipboard.writeText(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export default function SettingsPage(): ReactNode {
   const { user } = useAuth();
@@ -98,10 +158,21 @@ export default function SettingsPage(): ReactNode {
       const result = await createTelegramLink.mutateAsync();
       setSavedPreferences(result.preferences);
       setPreferences(result.preferences);
-      window.open(result.connectUrl, '_blank', 'noopener,noreferrer');
+
+      const telegramWebIntent = createTelegramWebLinkIntent(result.connectUrl);
+      const copiedStartCommand = telegramWebIntent?.startCommand
+        ? await copyTextToClipboard(telegramWebIntent.startCommand)
+        : false;
+
+      window.open(telegramWebIntent?.webUrl ?? result.connectUrl, '_blank', 'noopener,noreferrer');
+
       addToast({
         title: isTelegramLinked ? 'Telegram relink started' : 'Telegram link ready',
-        description: 'Complete the /start step in Telegram to finish linking your account.',
+        description: telegramWebIntent?.startCommand
+          ? copiedStartCommand
+            ? 'Telegram Web opened and the one-time /start command was copied. Paste it into the bot chat to finish linking.'
+            : `Telegram Web opened. Paste "${telegramWebIntent.startCommand}" into the bot chat to finish linking.`
+          : 'Telegram Web opened. Complete the /start step in Telegram to finish linking your account.',
         variant: 'success',
       });
     } catch (error) {
@@ -162,7 +233,7 @@ export default function SettingsPage(): ReactNode {
           <CardContent className="space-y-4">
             {notificationPreferences.map((preference) => {
               const checked = preferences[preference.channel];
-              const Icon = preference.channel === 'telegram' ? MessageCircleMore : Mail;
+              const Icon = preference.channel === 'telegram' ? TelegramLogo : GmailLogo;
 
               return (
                 <div
@@ -171,7 +242,7 @@ export default function SettingsPage(): ReactNode {
                 >
                   <div className="flex gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
-                      <Icon className="h-5 w-5" strokeWidth={1.8} />
+                      <Icon />
                     </div>
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -230,8 +301,8 @@ export default function SettingsPage(): ReactNode {
                             {hasChanges
                               ? 'Save your notification changes before starting the Telegram link flow.'
                               : isTelegramPending
-                                ? 'A fresh link is ready. Finish the /start step in Telegram, then this page will refresh automatically.'
-                                : 'This opens your SN Connect bot with a one-time /start link.'}
+                                ? 'Telegram Web is waiting for your one-time /start command. This page will refresh automatically after the bot confirms the link.'
+                                : 'This opens Telegram Web for your SN Connect bot and copies a one-time /start command.'}
                           </p>
                         </div>
                       ) : null}

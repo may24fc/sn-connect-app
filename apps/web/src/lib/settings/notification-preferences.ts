@@ -84,6 +84,14 @@ function normalizeIsoString(value: unknown): string | null {
   return new Date(timestamp).toISOString();
 }
 
+function normalizeTelegramLinkState(value: unknown): TelegramLinkState | null {
+  if (value === 'unlinked' || value === 'pending' || value === 'linked') {
+    return value;
+  }
+
+  return null;
+}
+
 export function normalizeStoredNotificationPreferences(value: unknown): StoredNotificationPreferences {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return DEFAULT_STORED_NOTIFICATION_PREFERENCES;
@@ -127,6 +135,31 @@ export function toClientNotificationPreferences(value: unknown): NotificationPre
 }
 
 export function normalizeNotificationPreferences(value: unknown): NotificationPreferences {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const candidate = value as Record<string, unknown>;
+    const telegramLinkState = normalizeTelegramLinkState(candidate.telegramLinkState);
+
+    if (telegramLinkState) {
+      return {
+        telegram:
+          typeof candidate.telegram === 'boolean'
+            ? candidate.telegram
+            : DEFAULT_NOTIFICATION_PREFERENCES.telegram,
+        gmail:
+          typeof candidate.gmail === 'boolean'
+            ? candidate.gmail
+            : DEFAULT_NOTIFICATION_PREFERENCES.gmail,
+        telegramUsername: normalizeString(candidate.telegramUsername),
+        telegramLinkedAt: normalizeIsoString(candidate.telegramLinkedAt),
+        telegramLinkPendingUntil:
+          telegramLinkState === 'pending'
+            ? normalizeFutureIsoString(candidate.telegramLinkPendingUntil)
+            : null,
+        telegramLinkState,
+      };
+    }
+  }
+
   return toClientNotificationPreferences(value);
 }
 
