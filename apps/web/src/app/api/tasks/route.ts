@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabaseAdmin } = auth.context;
+    const { supabaseAdmin, user, role } = auth.context;
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -70,6 +70,15 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact' })
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
+
+    // The admin client bypasses RLS, so visibility must be enforced here.
+    // Super-admin task management only shows tasks assigned by the current super-admin.
+    // Everyone else only sees tasks assigned to them.
+    if (role === TASK_ASSIGNER_ROLE) {
+      query = query.eq('assigned_by', user.id);
+    } else {
+      query = query.eq('assigned_to', user.id);
+    }
 
     if (search) {
       query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);

@@ -252,9 +252,35 @@ export async function DELETE(
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    const { supabase } = auth.context;
+    const { supabaseAdmin, user, role } = auth.context;
 
-    const { error } = await supabase
+    const { data: existingTask, error: existingTaskError } = await supabaseAdmin
+      .from('tasks')
+      .select('id, assigned_by')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingTaskError) {
+      console.error('Error loading task for deletion:', existingTaskError);
+      return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
+    }
+
+    if (!existingTask) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+
+    const canDelete =
+      existingTask.assigned_by === user.id || role === 'admin' || role === TASK_ASSIGNER_ROLE;
+
+    if (!canDelete) {
+      return NextResponse.json(
+        { error: 'Only task assigners or admins can delete tasks' },
+        { status: 403 }
+      );
+    }
+
+    const { error } = await supabaseAdmin
       .from('tasks')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', id)
@@ -262,11 +288,11 @@ export async function DELETE(
 
     if (error) {
       console.error('Error deleting task:', error);
-      return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
+      return NextResponse.json({ error: getTaskWriteErrorMessage(error) }, { status: 500 });
     }
 
-    logActivity(supabase, {
-      userId: auth.context.user.id,
+    logActivity(supabaseAdmin, {
+      userId: user.id,
       action: 'delete_task',
       tableName: 'tasks',
       recordId: id,
