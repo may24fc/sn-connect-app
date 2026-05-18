@@ -27,7 +27,7 @@ export function DataTableColumnHeader({
     return (
       <span
         className={cn(
-          'text-xs font-medium text-zinc-500 dark:text-zinc-400',
+          'text-[0.75rem] font-medium leading-4 text-zinc-500 dark:text-zinc-400 lg:text-[0.8125rem]',
           className
         )}
       >
@@ -43,7 +43,7 @@ export function DataTableColumnHeader({
       type="button"
       onClick={() => column.toggleSorting(sorted === 'asc')}
       className={cn(
-        'flex items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400',
+        'flex items-center gap-1.5 text-[0.75rem] font-medium leading-4 text-zinc-500 dark:text-zinc-400 lg:text-[0.8125rem]',
         'hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors',
         '-ml-2 px-2 py-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800',
         className

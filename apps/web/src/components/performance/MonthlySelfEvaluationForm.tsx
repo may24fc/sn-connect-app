@@ -6,6 +6,11 @@ import {
   submitMonthlySelfEvaluationSchema,
   type SubmitMonthlySelfEvaluationInput,
 } from '@/lib/schemas/performance.schema';
+import {
+  monthlySelfEvaluationDetailSections,
+  type MonthlySelfEvaluationDetailField,
+  type MonthlySelfEvaluationRecord,
+} from './monthlySelfEvaluationDetailConfig';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Badge,
@@ -29,36 +34,6 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 
-type MonthlySelfEvaluationRecord = {
-  id: string;
-  month_key: string;
-  full_name: string;
-  department_role: string;
-  top_three_things_worked_on: string;
-  biggest_impact: string;
-  impact_reason: string;
-  significant_achievement: string;
-  challenge_resolved: string;
-  monthly_improvement: string;
-  work_slowdown: string;
-  unseen_workflow_issue: string;
-  requested_support: string;
-  productivity_score: number;
-  productivity_reason: string;
-  ownership_outside_role: string;
-  professional_improvement_area: string;
-  next_skill_to_learn: string;
-  leadership_did_well: string;
-  leadership_can_improve: string;
-  contributions_visible: 'yes' | 'sometimes' | 'no';
-  comfortable_raising_concerns: 'yes' | 'sometimes' | 'no';
-  hidden_productivity_issue: string;
-  immediate_improvement: string;
-  additional_comments: string | null;
-  next_month_goal: string;
-  submitted_at: string;
-};
-
 type CurrentEvaluationResponse = {
   data: {
     monthKey: string;
@@ -68,101 +43,28 @@ type CurrentEvaluationResponse = {
   error?: string;
 };
 
+type TextareaFieldName = Exclude<
+  keyof SubmitMonthlySelfEvaluationInput,
+  | 'monthKey'
+  | 'fullName'
+  | 'departmentRole'
+  | 'productivityScore'
+  | 'contributionsVisible'
+  | 'comfortableRaisingConcerns'
+>;
+
 const responseOptions = monthlySelfEvaluationResponseSchema.options;
 
-const questionSections = [
-  {
-    title: 'Accomplishments',
-    description: 'Capture the work, impact, and improvement highlights from the month.',
-    fields: [
-      {
-        name: 'topThreeThingsWorkedOn',
-        label: 'What were the top 3 things you worked on this month?',
-      },
-      {
-        name: 'biggestImpact',
-        label: 'Which task, contribution, campaign, project, or initiative created the biggest impact this month?',
-      },
-      {
-        name: 'impactReason',
-        label: 'Why do you think this work mattered?',
-      },
-      {
-        name: 'significantAchievement',
-        label: 'Did you complete, improve, launch, automate, organize, or solve anything significant this month?',
-      },
-      {
-        name: 'challengeResolved',
-        label: 'What challenge, issue, or blocker did you help resolve?',
-      },
-      {
-        name: 'monthlyImprovement',
-        label: 'What is one thing you improved this month compared to last month?',
-      },
-    ],
-  },
-  {
-    title: 'Blockers & Support',
-    description: 'Surface what made work harder and what support would make the next month stronger.',
-    fields: [
-      {
-        name: 'workSlowdown',
-        label: 'What slowed you down or made your work more difficult this month?',
-      },
-      {
-        name: 'unseenWorkflowIssue',
-        label: 'Is there any workflow, communication issue, inefficiency, or recurring problem leadership may not be fully seeing?',
-      },
-      {
-        name: 'requestedSupport',
-        label: 'What support, tool, resource, or improvement would help you perform better?',
-      },
-      {
-        name: 'hiddenProductivityIssue',
-        label: 'Is there anything leadership may not realize is negatively affecting productivity, morale, communication, or operations?',
-      },
-      {
-        name: 'immediateImprovement',
-        label: 'If you could improve one thing immediately within the company, workflow, systems, or operations, what would it be?',
-      },
-    ],
-  },
-  {
-    title: 'Growth & Leadership Feedback',
-    description: 'Summarize ownership, growth goals, and direct leadership feedback.',
-    fields: [
-      {
-        name: 'ownershipOutsideRole',
-        label: 'Did you proactively take ownership of anything outside your direct responsibilities?',
-      },
-      {
-        name: 'professionalImprovementArea',
-        label: 'What is one area you believe you still need to improve professionally?',
-      },
-      {
-        name: 'nextSkillToLearn',
-        label: 'What skill, system, or knowledge would you like to improve or learn next?',
-      },
-      {
-        name: 'leadershipDidWell',
-        label: 'What is one thing leadership or management did well this month?',
-      },
-      {
-        name: 'leadershipCanImprove',
-        label: 'What is one thing leadership or management can improve?',
-      },
-      {
-        name: 'nextMonthGoal',
-        label: 'What is one thing you want to accomplish or improve next month?',
-      },
-      {
-        name: 'additionalComments',
-        label: 'Any additional comments, concerns, suggestions, or reflections?',
-        optional: true,
-      },
-    ],
-  },
-] as const;
+const impactReasonExamples = [
+  'Revenue impact',
+  'Improved workflow',
+  'Faster operations',
+  'Better branding',
+  'Team support',
+  'Better communication',
+  'Time savings',
+  'Better client/guest/customer experience',
+].join(' • ');
 
 function getCurrentMonthKey(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -341,9 +243,45 @@ export function MonthlySelfEvaluationForm() {
     }
   });
 
+  const renderTextareaField = (
+    name: TextareaFieldName,
+    label: string,
+    helperText?: string
+  ) => {
+    const fieldError = errors[name];
+
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={name}>{label}</Label>
+        {helperText ? <p className="text-xs text-muted-foreground">{helperText}</p> : null}
+        <Textarea id={name} rows={4} {...register(name)} />
+        {fieldError ? <p className="text-sm text-destructive">{fieldError.message}</p> : null}
+      </div>
+    );
+  };
+
+  const renderSubmittedField = (
+    field: MonthlySelfEvaluationDetailField,
+    record: MonthlySelfEvaluationRecord
+  ) => {
+    const value = field.value(record);
+    const valueClassName = field.emphasizeValue
+      ? 'mt-2 text-3xl font-semibold tracking-tight text-foreground'
+      : field.preserveWhitespace
+        ? 'mt-1 whitespace-pre-wrap text-sm text-muted-foreground'
+        : 'mt-1 text-sm text-muted-foreground';
+
+    return (
+      <div key={field.label} className={field.fullWidth ? 'md:col-span-2' : undefined}>
+        <p className="text-sm font-medium text-foreground">{field.label}</p>
+        <p className={valueClassName}>{value}</p>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-3xl space-y-6">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-80 w-full" />
       </div>
@@ -352,7 +290,7 @@ export function MonthlySelfEvaluationForm() {
 
   if (submittedRecord) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-3xl space-y-6">
         <Card className="border-emerald-200 bg-emerald-50/60">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -372,41 +310,25 @@ export function MonthlySelfEvaluationForm() {
               <Badge variant="success">Locked for this month</Badge>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-foreground">Department / Role</p>
-              <p className="mt-1 text-sm text-muted-foreground">{submittedRecord.department_role}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Self-rated productivity</p>
-              <p className="mt-1 text-sm text-muted-foreground">{submittedRecord.productivity_score} / 10</p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-sm font-medium text-foreground">Top 3 things you worked on</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                {submittedRecord.top_three_things_worked_on}
-              </p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-sm font-medium text-foreground">Biggest impact</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                {submittedRecord.biggest_impact}
-              </p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-sm font-medium text-foreground">What you want to improve next month</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                {submittedRecord.next_month_goal}
-              </p>
-            </div>
-          </CardContent>
         </Card>
+
+        {monthlySelfEvaluationDetailSections.map((section) => (
+          <Card key={section.title}>
+            <CardHeader>
+              <CardTitle>{section.title}</CardTitle>
+              <CardDescription>{section.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {section.fields.map((field) => renderSubmittedField(field, submittedRecord))}
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle>Monthly Self-Evaluation</CardTitle>
@@ -434,18 +356,21 @@ export function MonthlySelfEvaluationForm() {
       <form className="space-y-6" onSubmit={onSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>About You</CardTitle>
-            <CardDescription>Enter your name and choose the department or role that best matches this month of work.</CardDescription>
+            <CardTitle>SECTION 1: ROLE &amp; WORK SUMMARY</CardTitle>
+            <CardDescription>
+              Complete each answer field in order so leadership can review your role, work summary, blockers, and needed support clearly.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-5 md:grid-cols-2">
+          <CardContent className="space-y-5">
+            <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">1. Full Name</Label>
               <Input id="fullName" {...register('fullName')} />
               {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label>Department / Role</Label>
+              <Label>2. Department / Role</Label>
               <Controller
                 control={control}
                 name="departmentRole"
@@ -468,38 +393,59 @@ export function MonthlySelfEvaluationForm() {
                 <p className="text-sm text-destructive">{errors.departmentRole.message}</p>
               )}
             </div>
+            </div>
+
+            {renderTextareaField(
+              'topThreeThingsWorkedOn',
+              '3. What were the top 3 things you worked on this month?'
+            )}
+            {renderTextareaField(
+              'biggestImpact',
+              '4. Which task, contribution, campaign, project, or initiative created the biggest impact this month?'
+            )}
+            {renderTextareaField(
+              'impactReason',
+              '5. Why do you think this work mattered?',
+              `Examples: ${impactReasonExamples}`
+            )}
+            {renderTextareaField(
+              'significantAchievement',
+              '6. Did you complete, improve, launch, automate, organize, or solve anything significant this month?'
+            )}
+            {renderTextareaField(
+              'challengeResolved',
+              '7. What challenge, issue, or blocker did you help resolve?'
+            )}
+            {renderTextareaField(
+              'monthlyImprovement',
+              '8. What is one thing you improved this month compared to last month?'
+            )}
+            {renderTextareaField(
+              'workSlowdown',
+              '9. What slowed you down or made your work more difficult this month?'
+            )}
+            {renderTextareaField(
+              'unseenWorkflowIssue',
+              '10. Is there any workflow, communication issue, inefficiency, or recurring problem leadership may not be fully seeing?'
+            )}
+            {renderTextareaField(
+              'requestedSupport',
+              '11. What support, tool, resource, or improvement would help you perform better?'
+            )}
           </CardContent>
         </Card>
 
-        {questionSections.map((section) => (
-          <Card key={section.title}>
-            <CardHeader>
-              <CardTitle>{section.title}</CardTitle>
-              <CardDescription>{section.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {section.fields.map((field) => (
-                <div key={field.name} className="space-y-2">
-                  <Label htmlFor={field.name}>{field.label}</Label>
-                  <Textarea id={field.name} rows={4} {...register(field.name)} />
-                  {errors[field.name] && (
-                    <p className="text-sm text-destructive">{errors[field.name]?.message}</p>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-
         <Card>
           <CardHeader>
-            <CardTitle>Productivity Reflection</CardTitle>
-            <CardDescription>Rate your month, then explain the score and visibility of your work.</CardDescription>
+            <CardTitle>SECTION 2: OWNERSHIP &amp; PRODUCTIVITY</CardTitle>
+            <CardDescription>
+              Use this section to score your productivity, explain that score, and reflect on your professional growth.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="space-y-2">
               <div className="space-y-2">
-                <Label htmlFor="productivityScore">On a scale of 1-10, how productive do you believe you were this month?</Label>
+                <Label htmlFor="productivityScore">12. On a scale of 1-10, how productive do you believe you were this month?</Label>
                 <Input
                   id="productivityScore"
                   type="number"
@@ -511,9 +457,47 @@ export function MonthlySelfEvaluationForm() {
                   <p className="text-sm text-destructive">{errors.productivityScore.message}</p>
                 )}
               </div>
+            </div>
 
+            {renderTextareaField(
+              'productivityReason',
+              '13. What made you give yourself that score?'
+            )}
+            {renderTextareaField(
+              'ownershipOutsideRole',
+              '14. Did you proactively take ownership of anything outside your direct responsibilities?'
+            )}
+            {renderTextareaField(
+              'professionalImprovementArea',
+              '15. What is one area you believe you still need to improve professionally?'
+            )}
+            {renderTextareaField(
+              'nextSkillToLearn',
+              '16. What skill, system, or knowledge would you like to improve or learn next?'
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>SECTION 3: LEADERSHIP &amp; OPERATIONS FEEDBACK</CardTitle>
+            <CardDescription>
+              Share feedback on leadership, visibility, communication, and any operational issues affecting work.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {renderTextareaField(
+              'leadershipDidWell',
+              '17. What is one thing leadership or management did well this month?'
+            )}
+            {renderTextareaField(
+              'leadershipCanImprove',
+              '18. What is one thing leadership or management can improve?'
+            )}
+
+            <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Do you feel your work and contributions are visible and understood?</Label>
+                <Label>19. Do you feel your work and contributions are visible and understood?</Label>
                 <Controller
                   control={control}
                   name="contributionsVisible"
@@ -538,7 +522,7 @@ export function MonthlySelfEvaluationForm() {
               </div>
 
               <div className="space-y-2">
-                <Label>Do you feel comfortable raising concerns, blockers, or ideas?</Label>
+                <Label>20. Do you feel comfortable raising concerns, blockers, or ideas?</Label>
                 <Controller
                   control={control}
                   name="comfortableRaisingConcerns"
@@ -563,13 +547,33 @@ export function MonthlySelfEvaluationForm() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="productivityReason">What made you give yourself that score?</Label>
-              <Textarea id="productivityReason" rows={4} {...register('productivityReason')} />
-              {errors.productivityReason && (
-                <p className="text-sm text-destructive">{errors.productivityReason.message}</p>
-              )}
-            </div>
+            {renderTextareaField(
+              'hiddenProductivityIssue',
+              '21. Is there anything leadership may not realize is negatively affecting productivity, morale, communication, or operations?'
+            )}
+            {renderTextareaField(
+              'immediateImprovement',
+              '22. If you could improve one thing immediately within the company, workflow, systems, or operations, what would it be?'
+            )}
+            {renderTextareaField(
+              'additionalComments',
+              '23. Any additional comments, concerns, suggestions, or reflections?'
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>FINAL REFLECTION</CardTitle>
+            <CardDescription>
+              Close the form with one clear goal for what you want to accomplish or improve next month.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {renderTextareaField(
+              'nextMonthGoal',
+              '24. What is one thing you want to accomplish or improve next month?'
+            )}
           </CardContent>
         </Card>
 

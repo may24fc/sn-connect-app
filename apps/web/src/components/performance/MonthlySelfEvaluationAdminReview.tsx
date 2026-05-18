@@ -1,6 +1,13 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
+import {
+  monthlySelfEvaluationDetailSections,
+  type MonthlySelfEvaluationDetailSection,
+  type MonthlySelfEvaluationDetailField,
+  type MonthlySelfEvaluationRecord,
+} from './monthlySelfEvaluationDetailConfig';
 import {
   Badge,
   Card,
@@ -22,44 +29,45 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   useToast,
 } from '@hr-portal/ui';
-import { useEffect, useMemo, useState } from 'react';
-
-type MonthlySelfEvaluationRecord = {
-  id: string;
-  month_key: string;
-  full_name: string;
-  department_role: string;
-  top_three_things_worked_on: string;
-  biggest_impact: string;
-  impact_reason: string;
-  significant_achievement: string;
-  challenge_resolved: string;
-  monthly_improvement: string;
-  work_slowdown: string;
-  unseen_workflow_issue: string;
-  requested_support: string;
-  productivity_score: number;
-  productivity_reason: string;
-  ownership_outside_role: string;
-  professional_improvement_area: string;
-  next_skill_to_learn: string;
-  leadership_did_well: string;
-  leadership_can_improve: string;
-  contributions_visible: 'yes' | 'sometimes' | 'no';
-  comfortable_raising_concerns: 'yes' | 'sometimes' | 'no';
-  hidden_productivity_issue: string;
-  immediate_improvement: string;
-  additional_comments: string | null;
-  next_month_goal: string;
-  submitted_at: string;
-};
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 
 type AdminListResponse = {
   data?: MonthlySelfEvaluationRecord[];
   error?: string;
 };
+
+type DetailTabValue =
+  | 'work-summary'
+  | 'ownership-productivity'
+  | 'leadership-operations-feedback';
+
+const detailViewTabs: Array<{
+  value: DetailTabValue;
+  label: string;
+  sectionTitles: string[];
+}> = [
+  {
+    value: 'work-summary',
+    label: 'Work Summary',
+    sectionTitles: ['SECTION 1: ROLE & WORK SUMMARY', 'FINAL REFLECTION'],
+  },
+  {
+    value: 'ownership-productivity',
+    label: 'Ownership & Productivity',
+    sectionTitles: ['SECTION 2: OWNERSHIP & PRODUCTIVITY'],
+  },
+  {
+    value: 'leadership-operations-feedback',
+    label: 'Leadership & Operations Feedback',
+    sectionTitles: ['SECTION 3: LEADERSHIP & OPERATIONS FEEDBACK'],
+  },
+];
 
 function getCurrentMonthKey(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -75,6 +83,160 @@ function formatMonthKey(monthKey: string): string {
   });
 }
 
+function getSectionsForTab(tab: DetailTabValue): MonthlySelfEvaluationDetailSection[] {
+  const sectionTitles =
+    detailViewTabs.find((detailTab) => detailTab.value === tab)?.sectionTitles ?? [];
+
+  return monthlySelfEvaluationDetailSections.filter((section) => sectionTitles.includes(section.title));
+}
+
+function formatSectionTitle(title: string): string {
+  return title.replace(/^SECTION\s+\d+:\s*/i, '');
+}
+
+function isLowSignalAnswer(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return true;
+  }
+
+  const normalized = trimmed.toLowerCase().replace(/[.!?,]+$/g, '');
+  const placeholderValues = new Set([
+    'no',
+    'none',
+    'none provided',
+    'n/a',
+    'na',
+    'nothing',
+    'not applicable',
+  ]);
+
+  if (placeholderValues.has(normalized)) {
+    return true;
+  }
+
+  const words = normalized.split(/\s+/).filter(Boolean);
+  return (
+    words.length <= 3 &&
+    (normalized.startsWith('no ') ||
+      normalized.startsWith('none') ||
+      normalized.startsWith('nothing') ||
+      normalized.startsWith('n/a') ||
+      normalized.startsWith('na '))
+  );
+}
+
+function getProductivityTone(score: number): {
+  stroke: string;
+  track: string;
+  surface: string;
+  text: string;
+  badge: string;
+  label: string;
+} {
+  if (score <= 4) {
+    return {
+      stroke: 'stroke-rose-500',
+      track: 'stroke-rose-100 dark:stroke-rose-950/70',
+      surface: 'border-rose-200/80 bg-rose-50/80 dark:border-rose-900/60 dark:bg-rose-950/20',
+      text: 'text-rose-700 dark:text-rose-300',
+      badge: 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300',
+      label: 'Needs attention',
+    };
+  }
+
+  if (score <= 7) {
+    return {
+      stroke: 'stroke-amber-500',
+      track: 'stroke-amber-100 dark:stroke-amber-950/70',
+      surface: 'border-amber-200/80 bg-amber-50/80 dark:border-amber-900/60 dark:bg-amber-950/20',
+      text: 'text-amber-700 dark:text-amber-300',
+      badge: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
+      label: 'Solid with room to improve',
+    };
+  }
+
+  return {
+    stroke: 'stroke-emerald-500',
+    track: 'stroke-emerald-100 dark:stroke-emerald-950/70',
+    surface: 'border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20',
+    text: 'text-emerald-700 dark:text-emerald-300',
+    badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+    label: 'Strong momentum',
+  };
+}
+
+function renderProductivityMetric(score: number) {
+  const clampedScore = Math.max(0, Math.min(score, 10));
+  const tone = getProductivityTone(clampedScore);
+  const radius = 26;
+  const circumference = 2 * Math.PI * radius;
+  const dashOffset = circumference - (clampedScore / 10) * circumference;
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-4 rounded-2xl border px-4 py-3 shadow-sm shadow-black/5 w-2/3',
+        tone.surface
+      )}
+    >
+      <div className="relative h-20 w-20 shrink-0">
+        <svg viewBox="0 0 64 64" className="h-20 w-20 -rotate-90">
+          <circle cx="32" cy="32" r={radius} className={cn('fill-none stroke-[5]', tone.track)} />
+          <circle
+            cx="32"
+            cy="32"
+            r={radius}
+            className={cn('fill-none stroke-[5] transition-all duration-300', tone.stroke)}
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span className="text-2xl font-semibold tracking-tight text-foreground">{clampedScore}</span>
+          <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            / 10
+          </span>
+        </div>
+      </div>
+      <div className="min-w-0 space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          Productivity Score
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className={cn('text-sm font-semibold', tone.text)}>{tone.label}</p>
+          
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Employee self-rating for the month. Use this as a quick triage signal before reviewing the written responses.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function renderDetailField(
+  field: MonthlySelfEvaluationDetailField,
+  record: MonthlySelfEvaluationRecord
+) {
+  const value = field.value(record);
+  const valueClassName = cn(
+    'text-sm leading-6 text-foreground/90',
+    field.preserveWhitespace && 'whitespace-pre-wrap',
+    isLowSignalAnswer(value) && 'text-foreground/55'
+  );
+
+  return (
+    <div key={field.label} className="border-b border-border/70 py-4 last:border-b-0 first:pt-0 last:pb-0">
+      <p className="text-sm font-medium leading-5 text-muted-foreground">
+        {field.label}
+      </p>
+      <p className={cn('mt-2', valueClassName)}>{value}</p>
+    </div>
+  );
+}
+
 export function MonthlySelfEvaluationAdminReview() {
   const { addToast } = useToast();
   const [monthKey, setMonthKey] = useState(getCurrentMonthKey());
@@ -82,20 +244,41 @@ export function MonthlySelfEvaluationAdminReview() {
   const [search, setSearch] = useState('');
   const [records, setRecords] = useState<MonthlySelfEvaluationRecord[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<DetailTabValue>('work-summary');
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const deferredSearch = useDeferredValue(search);
+  const hasLoadedOnceRef = useRef(false);
+  const monthInputRef = useRef<HTMLInputElement | null>(null);
+  const detailScrollRef = useRef<HTMLDivElement | null>(null);
+
+  function openMonthPicker(): void {
+    const input = monthInputRef.current;
+    if (!input) {
+      return;
+    }
+
+    input.focus();
+    input.showPicker?.();
+  }
 
   useEffect(() => {
     let active = true;
 
     async function loadRecords() {
-      setLoading(true);
+      if (hasLoadedOnceRef.current) {
+        setIsRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
       try {
         const params = new URLSearchParams({ scope: 'admin', monthKey });
         if (departmentRole !== 'all') {
           params.set('departmentRole', departmentRole);
         }
-        if (search.trim()) {
-          params.set('search', search.trim());
+        if (deferredSearch.trim()) {
+          params.set('search', deferredSearch.trim());
         }
 
         const response = await fetch(`/api/performance/monthly-self-evaluations?${params.toString()}`, {
@@ -126,6 +309,8 @@ export function MonthlySelfEvaluationAdminReview() {
       } finally {
         if (active) {
           setLoading(false);
+          setIsRefreshing(false);
+          hasLoadedOnceRef.current = true;
         }
       }
     }
@@ -135,12 +320,20 @@ export function MonthlySelfEvaluationAdminReview() {
     return () => {
       active = false;
     };
-  }, [addToast, departmentRole, monthKey, search]);
+  }, [addToast, deferredSearch, departmentRole, monthKey]);
 
   const selectedRecord = useMemo(
     () => records.find((record) => record.id === selectedId) ?? null,
     [records, selectedId]
   );
+
+  useEffect(() => {
+    if (!selectedRecord) {
+      return;
+    }
+
+    detailScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [activeTab, selectedRecord]);
 
   if (loading) {
     return (
@@ -157,15 +350,23 @@ export function MonthlySelfEvaluationAdminReview() {
         <CardHeader>
           <CardTitle>Monthly Self-Evaluation Review</CardTitle>
           <CardDescription>
-            Review responses by month, person, and department or role. The detail panel groups answers into accomplishment, impact, blocker, suggestion, leadership, and productivity sections.
+            Review responses by month, person, and department or role. The detail panel follows the same section order and question wording as the employee self-evaluation form.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
+        <CardContent className="grid gap-4 md:grid-cols-[14rem_22rem_20rem] md:justify-start">
+          <div className="space-y-2 md:w-56">
             <Label htmlFor="review-month">Month</Label>
-            <Input id="review-month" type="month" value={monthKey} onChange={(event) => setMonthKey(event.target.value)} />
+            <Input
+              ref={monthInputRef}
+              id="review-month"
+              type="month"
+              value={monthKey}
+              onChange={(event) => setMonthKey(event.target.value)}
+              onClick={openMonthPicker}
+              className="cursor-pointer"
+            />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 md:w-[22rem]">
             <Label>Department / Role</Label>
             <Select value={departmentRole} onValueChange={setDepartmentRole}>
               <SelectTrigger>
@@ -181,7 +382,7 @@ export function MonthlySelfEvaluationAdminReview() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 md:w-80">
             <Label htmlFor="review-search">Search</Label>
             <Input
               id="review-search"
@@ -196,10 +397,19 @@ export function MonthlySelfEvaluationAdminReview() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
-            <CardTitle>Responses</CardTitle>
-            <CardDescription>
-              {records.length} submission{records.length === 1 ? '' : 's'} for {formatMonthKey(monthKey)}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle>Responses</CardTitle>
+                <CardDescription>
+                  {records.length} submission{records.length === 1 ? '' : 's'} for {formatMonthKey(monthKey)}
+                </CardDescription>
+              </div>
+              {isRefreshing ? (
+                <Badge variant="secondary" className="px-2.5 py-1 text-xs font-medium">
+                  Updating
+                </Badge>
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent>
             {records.length === 0 ? (
@@ -221,7 +431,10 @@ export function MonthlySelfEvaluationAdminReview() {
                     {records.map((record) => (
                       <TableRow
                         key={record.id}
-                        className={record.id === selectedId ? 'bg-muted/50' : undefined}
+                        className={cn(
+                          'cursor-pointer transition-colors hover:bg-muted/30',
+                          record.id === selectedId && 'bg-muted/50 hover:bg-muted/50'
+                        )}
                         onClick={() => setSelectedId(record.id)}
                       >
                         <TableCell className="font-medium">{record.full_name}</TableCell>
@@ -243,137 +456,77 @@ export function MonthlySelfEvaluationAdminReview() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+        <Card className="overflow-hidden">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as DetailTabValue)}
+            className="flex h-full flex-col"
+          >
+          <CardHeader className="border-b border-border/80 bg-card/80 pb-4 backdrop-blur-sm">
+            <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className='flex flex-col gap-2'>
                 <CardTitle>{selectedRecord?.full_name || 'Select a response'}</CardTitle>
                 <CardDescription>
                   {selectedRecord
-                    ? `${selectedRecord.department_role} • ${formatMonthKey(selectedRecord.month_key)}`
-                    : 'Choose a submission from the list to review grouped answers.'}
+                    ? `${selectedRecord.department_role}`
+                    : 'Choose a submission from the list to review responses in form order.'}
                 </CardDescription>
               </div>
-              {selectedRecord && <Badge variant="secondary">{selectedRecord.productivity_score} / 10</Badge>}
+              {selectedRecord ? renderProductivityMetric(selectedRecord.productivity_score) : null}
             </div>
+            {selectedRecord ? (
+              <TabsList className="mt-3 h-auto w-full justify-start gap-5 rounded-none bg-transparent p-0 text-muted-foreground">
+                {detailViewTabs.map((tab) => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="rounded-none border-b-2 border-transparent px-0 pb-3 pt-0 text-sm font-medium text-muted-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            ) : null}
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="p-0">
+            <div ref={detailScrollRef} className="max-h-[72vh] overflow-y-auto px-6 py-5">
             {!selectedRecord ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                 No response selected.
               </div>
             ) : (
-              <>
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Accomplishments</h3>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Top 3 things worked on</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.top_three_things_worked_on}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Significant achievement</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.significant_achievement}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Monthly improvement</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.monthly_improvement}</p>
-                  </div>
-                </section>
+              detailViewTabs.map((tab) => (
+                <TabsContent key={tab.value} value={tab.value} className="mt-0 space-y-6">
+                  {getSectionsForTab(tab.value).map((section) => {
+                    const visibleFields = section.fields.filter((field) => !field.emphasizeValue);
 
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Impact</h3>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Biggest impact</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.biggest_impact}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Why it mattered</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.impact_reason}</p>
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Blockers & Suggestions</h3>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Resolved challenge</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.challenge_resolved}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">What slowed work down</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.work_slowdown}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Unseen workflow issue</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.unseen_workflow_issue}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Support requested</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.requested_support}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Immediate improvement</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.immediate_improvement}</p>
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Leadership Feedback</h3>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Leadership did well</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.leadership_did_well}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Leadership can improve</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.leadership_can_improve}</p>
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Productivity Reflections</h3>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Visibility of work</p>
-                      <p className="mt-1 text-sm capitalize text-muted-foreground">{selectedRecord.contributions_visible}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Comfort raising concerns</p>
-                      <p className="mt-1 text-sm capitalize text-muted-foreground">{selectedRecord.comfortable_raising_concerns}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Why they chose the score</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.productivity_reason}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Ownership outside role</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.ownership_outside_role}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Professional improvement area</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.professional_improvement_area}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Next skill or system to learn</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.next_skill_to_learn}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Hidden productivity issue</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.hidden_productivity_issue}</p>
-                  </div>
-                  {selectedRecord.additional_comments ? (
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Additional comments</p>
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.additional_comments}</p>
-                    </div>
-                  ) : null}
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Next month goal</p>
-                    <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{selectedRecord.next_month_goal}</p>
-                  </div>
-                </section>
-              </>
+                    return (
+                      <section key={section.title} className="space-y-3">
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground/80">
+                              {formatSectionTitle(section.title)}
+                            </h3>
+                            {section.title === 'FINAL REFLECTION' ? (
+                              <Badge variant="secondary" className="px-2.5 py-1">
+                                Forward look
+                              </Badge>
+                            ) : null}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{section.description}</p>
+                        </div>
+                        <div className="rounded-2xl border border-border/80 bg-background/60 px-4 shadow-sm shadow-black/5 py-2">
+                          {visibleFields.map((field) => renderDetailField(field, selectedRecord))}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </TabsContent>
+              ))
             )}
+            </div>
           </CardContent>
+          </Tabs>
         </Card>
       </div>
     </div>

@@ -92,14 +92,14 @@ const config: Config = {
       },
 
       fontSize: {
-        xs: ['0.75rem', { lineHeight: '1rem' }],
-        sm: ['0.8125rem', { lineHeight: '1.25rem' }], // 13px
-        base: ['0.875rem', { lineHeight: '1.5rem' }], // 14px (Dense)
-        lg: ['1rem', { lineHeight: '1.5rem' }], // 16px
-        xl: ['1.125rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.25rem', { lineHeight: '1.75rem' }],
-        '3xl': ['1.5rem', { lineHeight: '2rem' }],
-        '4xl': ['1.875rem', { lineHeight: '2.25rem' }],
+        xs: ['var(--font-size-xs)', { lineHeight: 'var(--line-height-xs)' }],
+        sm: ['var(--font-size-sm)', { lineHeight: 'var(--line-height-sm)' }],
+        base: ['var(--font-size-base)', { lineHeight: 'var(--line-height-base)' }],
+        lg: ['var(--font-size-lg)', { lineHeight: 'var(--line-height-lg)' }],
+        xl: ['var(--font-size-xl)', { lineHeight: 'var(--line-height-xl)' }],
+        '2xl': ['var(--font-size-2xl)', { lineHeight: 'var(--line-height-2xl)' }],
+        '3xl': ['var(--font-size-3xl)', { lineHeight: 'var(--line-height-3xl)' }],
+        '4xl': ['var(--font-size-4xl)', { lineHeight: 'var(--line-height-4xl)' }],
       },
 
       letterSpacing: {

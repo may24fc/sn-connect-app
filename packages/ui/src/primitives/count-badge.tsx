@@ -26,8 +26,8 @@ const countBadgeVariants = cva(
           'border border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300',
       },
       size: {
-        sm: 'h-4 min-w-4 px-1.5 text-[10px]',
-        md: 'h-5 min-w-5 px-2 text-xs',
+        sm: 'h-4 min-w-4 px-1.5 text-[10px] lg:text-[11px]',
+        md: 'h-5 min-w-5 px-2 text-[0.75rem] leading-4 lg:text-[0.8125rem]',
       },
     },
     defaultVariants: {

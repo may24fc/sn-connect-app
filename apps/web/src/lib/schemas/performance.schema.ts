@@ -8,18 +8,18 @@ export const reviewStatusSchema = z.enum(['pending', 'self_review', 'manager_rev
 export const monthlySelfEvaluationResponseSchema = z.enum(['yes', 'sometimes', 'no']);
 
 export const monthlySelfEvaluationDepartmentRoleOptions = [
-  'Meta & Google Ads Specialists',
-  'Graphic Designers',
-  'Video Editors',
-  'Social Media Creators',
-  'Executive Assistants',
-  'Personal Assistants',
-  'Sales/Marketing Team',
+  'Ads Specialist',
+  'Graphic Designer',
+  'Video Editor',
+  'Social Media Creator',
+  'Executive Assistant',
+  'Personal Assistant',
+  'Sales',
   'HR',
-  'HR Interns',
-  'Admin Assistants',
-  'AI Interns',
-  'Accounting Interns',
+  'HR Intern',
+  'Admin Assistant',
+  'AI Intern',
+  'Accounting Intern',
   'Other',
 ] as const;
 

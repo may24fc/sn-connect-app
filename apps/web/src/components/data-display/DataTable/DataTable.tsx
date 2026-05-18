@@ -169,7 +169,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="h-10 px-4 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400"
+                    className="h-10 px-4 text-left text-[0.75rem] font-medium leading-4 text-zinc-500 dark:text-zinc-400 lg:text-[0.8125rem]"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder
