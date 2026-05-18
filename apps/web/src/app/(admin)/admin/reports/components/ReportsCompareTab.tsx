@@ -357,8 +357,7 @@ function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSumm
         campaignTypeLabel: marketingContext.campaignType
           ? getMarketingCampaignTypeLabel(marketingContext.campaignType)
           : null,
-        objectiveLabel: getMarketingObjectiveSummaryLabel(marketingContext)
-          : null,
+        objectiveLabel: getMarketingObjectiveSummaryLabel(marketingContext),
         totalSpend,
         summary: hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY,
         reportCount: 1,
@@ -382,8 +381,7 @@ function buildCampaignSummaryItems(reports: ReportRecord[]): CompareCampaignSumm
       existing.campaignTypeLabel = marketingContext.campaignType
         ? getMarketingCampaignTypeLabel(marketingContext.campaignType)
         : null;
-      existing.objectiveLabel = getMarketingObjectiveSummaryLabel(marketingContext)
-        : null;
+      existing.objectiveLabel = getMarketingObjectiveSummaryLabel(marketingContext);
       existing.summary = hasRealSummary ? summary : EMPTY_CAMPAIGN_SUMMARY;
       existing.primaryTimestamp = timestamp;
       existing.primarySpend = totalSpend;

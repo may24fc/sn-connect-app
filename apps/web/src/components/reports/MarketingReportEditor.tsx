@@ -1222,12 +1222,9 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
                                 checked={selectedObjectives.includes(objectiveValue)}
                                 onCheckedChange={(checked) => handleGoogleObjectiveToggle(objectiveValue, checked === true)}
                               />
-                              <div className="space-y-1">
+                              <div>
                                 <p className="text-sm font-medium text-foreground">
                                   {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {MARKETING_OBJECTIVE_INFO[objectiveValue].description}
                                 </p>
                               </div>
                             </label>
