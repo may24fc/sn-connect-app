@@ -45,6 +45,7 @@ export default function LeaderboardPage() {
             onChange={setScope as (v: string) => void}
             options={[
               { value: 'interns', label: 'Interns' },
+              { value: 'employees', label: 'Employees' },
               { value: 'all', label: 'All' },
             ]}
           />

@@ -1,12 +1,30 @@
 'use client';
 
-import { useTaskProofs } from '@/hooks/useTaskProofs';
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { useBackNavigation } from '@/hooks/useBackNavigation';
+import { useTaskProofs } from '@/hooks/useTaskProofs';
 import { formatDate } from '@/lib/format';
-import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Skeleton, TaskDetailView } from '@hr-portal/ui';
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  Skeleton,
+  TaskDetailView,
+  useToast,
+} from '@hr-portal/ui';
 import type { Task, TaskStatus } from '@hr-portal/ui';
-import { useToast } from '@hr-portal/ui';
-import { ArrowLeft, CheckCircle2, ExternalLink, FileText, Link2, Loader2, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Link2,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { use, useEffect, useState } from 'react';
@@ -75,6 +93,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { addToast } = useToast();
   const { data: proofsData, isLoading: proofsLoading } = useTaskProofs(id);
 
@@ -138,10 +157,6 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
   };
 
   const handleDelete = async (): Promise<void> => {
-    if (!confirm('Are you sure you want to delete this task?')) {
-      return;
-    }
-
     setIsDeleting(true);
 
     try {
@@ -154,6 +169,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
         throw new Error(error.error || 'Failed to delete task');
       }
 
+      setDeleteDialogOpen(false);
       addToast({ title: 'Task deleted', variant: 'success' });
       router.push('/super-admin/tasks');
     } catch (error) {
@@ -205,12 +221,28 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
           Back to Tasks
         </Button>
         <div className="flex gap-2">
-          <Button variant="destructive" onClick={() => void handleDelete()} disabled={isDeleting}>
+          <Button
+            variant="destructive"
+            onClick={() => setDeleteDialogOpen(true)}
+            disabled={isDeleting}
+          >
             <Trash2 className="mr-2 h-4 w-4" />
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
         </div>
       </div>
+
+      <ConfirmActionDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete task"
+        description={`Are you sure you want to delete "${task.title}"? This action removes it from active task management.`}
+        confirmLabel="Delete task"
+        isPending={isDeleting}
+        onConfirm={() => {
+          void handleDelete();
+        }}
+      />
 
       {/* Task Details */}
       <TaskDetailView
@@ -264,9 +296,7 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
                     )}
                   </div>
                   <div className="min-w-0">
-                    {proof.label && (
-                      <p className="text-sm font-medium truncate">{proof.label}</p>
-                    )}
+                    {proof.label && <p className="text-sm font-medium truncate">{proof.label}</p>}
                     {proof.proof_type === 'link' ? (
                       <a
                         href={proof.content}
@@ -278,7 +308,9 @@ export default function TaskDetailPage({ params }: TaskDetailPageProps): ReactNo
                         <ExternalLink className="h-3 w-3 flex-shrink-0" />
                       </a>
                     ) : (
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{proof.content}</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {proof.content}
+                      </p>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">
                       by {proof.submitted_by_name} &middot; {formatDate(proof.created_at)}

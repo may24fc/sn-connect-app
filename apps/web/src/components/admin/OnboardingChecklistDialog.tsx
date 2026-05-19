@@ -1,5 +1,6 @@
 'use client';
 
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import type { OnboardingProfileListItem } from '@/hooks/useOnboardingProfiles';
 import { getOnboardingStepLabel } from '@/lib/onboarding-step';
 import { queryKeys } from '@/lib/query-keys';
@@ -147,7 +148,7 @@ function buildWizardSummary(profile: OnboardingProfileListItem | undefined): {
 
   return {
     description: `The onboarding wizard is still in progress. Current step: ${getOnboardingStepLabel(profile.current_step)}.`,
-        statusLabel: getOnboardingStepLabel(profile.current_step),
+    statusLabel: getOnboardingStepLabel(profile.current_step),
     isComplete: false,
   };
 }
@@ -228,6 +229,7 @@ export function OnboardingChecklistManager({
   const [selectedProfileId, setSelectedProfileId] = useState('');
   const [taskDraft, setTaskDraft] = useState<TaskDraft>(DEFAULT_TASK_DRAFT);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   const sortedProfiles = useMemo(
     () => [...profiles].sort((left, right) => left.full_name.localeCompare(right.full_name)),
@@ -259,7 +261,9 @@ export function OnboardingChecklistManager({
 
   const selectedProfile = sortedProfiles.find((profile) => profile.id === selectedProfileId);
   const managingTemplate =
-    selectedProfileId === TEMPLATE_PROFILE_ID || sortedProfiles.length === 0 || !selectedProfile?.employee_id;
+    selectedProfileId === TEMPLATE_PROFILE_ID ||
+    sortedProfiles.length === 0 ||
+    !selectedProfile?.employee_id;
   const wizardSummary = buildWizardSummary(selectedProfile);
 
   const templateQuery = useQuery({
@@ -315,7 +319,7 @@ export function OnboardingChecklistManager({
         submission_description: task.submissionDescription,
         reference_url: task.referenceUrl,
       }))
-    : checklist?.onboarding_tasks ?? [];
+    : (checklist?.onboarding_tasks ?? []);
 
   const invalidateChecklist = async (employeeId: string): Promise<void> => {
     await queryClient.invalidateQueries({
@@ -618,9 +622,8 @@ export function OnboardingChecklistManager({
   });
 
   const isSavingTask =
-    createTaskMutation.isPending ||
-    updateTaskMutation.isPending ||
-    saveTemplateMutation.isPending;
+    createTaskMutation.isPending || updateTaskMutation.isPending || saveTemplateMutation.isPending;
+  const isClearingChecklist = clearChecklistMutation.isPending || saveTemplateMutation.isPending;
 
   const persistTemplateTasks = async (
     tasks: Array<OnboardingTemplateTaskRecord>,
@@ -628,6 +631,20 @@ export function OnboardingChecklistManager({
   ): Promise<void> => {
     await saveTemplateMutation.mutateAsync({ tasks });
     addToast({ title: successTitle, variant: 'success' });
+  };
+
+  const handleConfirmClearChecklist = async (): Promise<void> => {
+    try {
+      if (managingTemplate) {
+        await persistTemplateTasks([], 'Default checklist cleared');
+      } else {
+        await clearChecklistMutation.mutateAsync();
+      }
+
+      setClearDialogOpen(false);
+    } catch {
+      // Errors are surfaced by the mutation handlers.
+    }
   };
 
   return (
@@ -667,7 +684,7 @@ export function OnboardingChecklistManager({
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                 {managingTemplate
                   ? `Default ${roleLabel} checklist template`
-                  : selectedProfile?.full_name ?? 'No onboarding profile selected'}
+                  : (selectedProfile?.full_name ?? 'No onboarding profile selected')}
               </p>
               <p className="text-sm text-muted-foreground">
                 {managingTemplate
@@ -699,28 +716,28 @@ export function OnboardingChecklistManager({
           <div className="space-y-4">
             {!managingTemplate ? (
               <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={wizardSummary.isComplete ? 'success' : 'secondary'}>
-                      Item 1
-                    </Badge>
-                    <Badge variant="outline">Wizard form</Badge>
-                    <Badge variant={wizardSummary.isComplete ? 'success' : 'warning'}>
-                      {wizardSummary.statusLabel}
-                    </Badge>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={wizardSummary.isComplete ? 'success' : 'secondary'}>
+                        Item 1
+                      </Badge>
+                      <Badge variant="outline">Wizard form</Badge>
+                      <Badge variant={wizardSummary.isComplete ? 'success' : 'warning'}>
+                        {wizardSummary.statusLabel}
+                      </Badge>
+                    </div>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                      Complete onboarding wizard form
+                    </p>
+                    <p className="text-sm text-muted-foreground">{wizardSummary.description}</p>
                   </div>
-                  <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                    Complete onboarding wizard form
-                  </p>
-                  <p className="text-sm text-muted-foreground">{wizardSummary.description}</p>
+                  {wizardSummary.isComplete ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  ) : (
+                    <ClipboardList className="h-5 w-5 text-zinc-400" />
+                  )}
                 </div>
-                {wizardSummary.isComplete ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                ) : (
-                  <ClipboardList className="h-5 w-5 text-zinc-400" />
-                )}
-              </div>
               </div>
             ) : null}
 
@@ -750,26 +767,8 @@ export function OnboardingChecklistManager({
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={displayedTasks.length === 0 || clearChecklistMutation.isPending || saveTemplateMutation.isPending}
-                    onClick={() => {
-                      if (displayedTasks.length === 0) {
-                        return;
-                      }
-                      if (
-                        !confirm(
-                          managingTemplate
-                            ? `Delete the default ${roleLabel} checklist template?`
-                            : `Delete all custom checklist items for ${selectedProfile?.full_name ?? 'this profile'}?`
-                        )
-                      ) {
-                        return;
-                      }
-                      if (managingTemplate) {
-                        void persistTemplateTasks([], 'Default checklist cleared');
-                        return;
-                      }
-                      clearChecklistMutation.mutate();
-                    }}
+                    disabled={displayedTasks.length === 0 || isClearingChecklist}
+                    onClick={() => setClearDialogOpen(true)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     {managingTemplate ? 'Clear Template' : 'Delete Checklist'}
@@ -777,7 +776,9 @@ export function OnboardingChecklistManager({
                 </div>
               </div>
 
-              {managingTemplate ? templateQuery.isLoading : checklistQuery.isLoading ? (
+              {managingTemplate ? (
+                templateQuery.isLoading
+              ) : checklistQuery.isLoading ? (
                 <div className="rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
                   <EmptyState
                     icon={<Loader2 className="h-5 w-5 animate-spin" />}
@@ -819,21 +820,27 @@ export function OnboardingChecklistManager({
                       <div className="flex items-start justify-between gap-4">
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
-                            <CountBadge variant="info" size="md">Item {index + 2}</CountBadge>
+                            <CountBadge variant="info" size="md">
+                              Item {index + 2}
+                            </CountBadge>
                             <Badge variant="outline">{task.category}</Badge>
                             <Badge variant={task.is_completed ? 'success' : 'warning'}>
                               {task.is_completed ? 'Completed' : 'Pending'}
                             </Badge>
                             {task.is_required ? <Badge variant="secondary">Required</Badge> : null}
                           </div>
-                          <p className="font-medium text-zinc-900 dark:text-zinc-100">{task.title}</p>
+                          <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                            {task.title}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {task.description?.trim() || 'No description provided.'}
                           </p>
                           {task.requires_submission ? (
                             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                               <Badge variant="outline">
-                                {formatSubmissionTypeLabel(task.submission_type ?? 'link_or_document')}
+                                {formatSubmissionTypeLabel(
+                                  task.submission_type ?? 'link_or_document'
+                                )}
                               </Badge>
                               {task.submission_label ? (
                                 <span className="font-medium text-zinc-700 dark:text-zinc-300">
@@ -854,7 +861,9 @@ export function OnboardingChecklistManager({
                             </div>
                           ) : null}
                           {task.submission_description?.trim() ? (
-                            <p className="text-xs text-muted-foreground">{task.submission_description}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {task.submission_description}
+                            </p>
                           ) : null}
                           <p className="text-xs text-muted-foreground">
                             Due {task.due_days_from_start} day
@@ -888,11 +897,15 @@ export function OnboardingChecklistManager({
                           <Button
                             variant="ghost"
                             size="sm"
-                            disabled={deleteTaskMutation.isPending || saveTemplateMutation.isPending}
+                            disabled={
+                              deleteTaskMutation.isPending || saveTemplateMutation.isPending
+                            }
                             onClick={() => {
                               if (managingTemplate) {
                                 void persistTemplateTasks(
-                                  templateTasks.filter((templateTask) => templateTask.id !== task.id),
+                                  templateTasks.filter(
+                                    (templateTask) => templateTask.id !== task.id
+                                  ),
                                   'Default checklist updated'
                                 );
                                 return;
@@ -919,6 +932,22 @@ export function OnboardingChecklistManager({
                   />
                 </div>
               )}
+
+              <ConfirmActionDialog
+                open={clearDialogOpen}
+                onOpenChange={setClearDialogOpen}
+                title={managingTemplate ? 'Clear default checklist template' : 'Delete checklist'}
+                description={
+                  managingTemplate
+                    ? `Are you sure you want to clear the default ${roleLabel} checklist template? Any future onboarding checklists will start without these admin-defined tasks.`
+                    : `Are you sure you want to delete all custom checklist items for ${selectedProfile?.full_name ?? 'this profile'}? The onboarding wizard step will remain, but every admin-defined checklist task will be removed.`
+                }
+                confirmLabel={managingTemplate ? 'Clear template' : 'Delete checklist'}
+                isPending={isClearingChecklist}
+                onConfirm={() => {
+                  void handleConfirmClearChecklist();
+                }}
+              />
             </div>
           </div>
 
@@ -1002,15 +1031,15 @@ export function OnboardingChecklistManager({
                   />
                 </div>
                 <div className="flex items-end">
-                  <label className="flex items-center gap-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <div className="flex items-center gap-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     <Checkbox
                       checked={taskDraft.isRequired}
                       onCheckedChange={(checked) =>
                         setTaskDraft((current) => ({ ...current, isRequired: checked === true }))
                       }
                     />
-                    Mark this item as required
-                  </label>
+                    <span>Mark this item as required</span>
+                  </div>
                 </div>
               </div>
 
@@ -1029,7 +1058,7 @@ export function OnboardingChecklistManager({
                     </p>
                   </div>
 
-                  <label className="flex items-center gap-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <div className="flex items-center gap-3 text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     <Checkbox
                       checked={taskDraft.requiresSubmission}
                       onCheckedChange={(checked) =>
@@ -1045,8 +1074,8 @@ export function OnboardingChecklistManager({
                         }))
                       }
                     />
-                    Requires proof
-                  </label>
+                    <span>Requires proof</span>
+                  </div>
                 </div>
 
                 {taskDraft.requiresSubmission ? (
@@ -1132,8 +1161,8 @@ export function OnboardingChecklistManager({
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Add a policy, template, folder, or destination link if the assignee
-                        should start from a specific resource.
+                        Add a policy, template, folder, or destination link if the assignee should
+                        start from a specific resource.
                       </p>
                     </div>
 
@@ -1148,10 +1177,16 @@ export function OnboardingChecklistManager({
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  disabled={isSavingTask || (!managingTemplate && (!selectedProfile || !selectedProfile.employee_id))}
+                  disabled={
+                    isSavingTask ||
+                    (!managingTemplate && (!selectedProfile || !selectedProfile.employee_id))
+                  }
                   onClick={() => {
                     if (managingTemplate) {
-                      const nextTask = buildTemplateTaskFromDraft(taskDraft, editingTaskId ?? undefined);
+                      const nextTask = buildTemplateTaskFromDraft(
+                        taskDraft,
+                        editingTaskId ?? undefined
+                      );
                       const nextTasks = editingTaskId
                         ? templateTasks.map((task) => (task.id === editingTaskId ? nextTask : task))
                         : [...templateTasks, nextTask];
@@ -1197,7 +1232,8 @@ export function OnboardingChecklistManager({
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.35fr_0.95fr]">
           <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-muted-foreground dark:border-zinc-700">
-            No onboarding profiles exist yet. You can still define the default {roleLabel} checklist template now.
+            No onboarding profiles exist yet. You can still define the default {roleLabel} checklist
+            template now.
           </div>
 
           <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
@@ -1227,7 +1263,10 @@ export function OnboardingChecklistManager({
               <Button
                 disabled={isSavingTask}
                 onClick={() => {
-                  const nextTask = buildTemplateTaskFromDraft(taskDraft, editingTaskId ?? undefined);
+                  const nextTask = buildTemplateTaskFromDraft(
+                    taskDraft,
+                    editingTaskId ?? undefined
+                  );
                   const nextTasks = editingTaskId
                     ? templateTasks.map((task) => (task.id === editingTaskId ? nextTask : task))
                     : [...templateTasks, nextTask];
@@ -1238,7 +1277,11 @@ export function OnboardingChecklistManager({
                   );
                 }}
               >
-                {isSavingTask ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                {isSavingTask ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
                 Save default template
               </Button>
             </div>

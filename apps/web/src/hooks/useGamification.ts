@@ -60,7 +60,7 @@ export function useWarRoomOverview() {
   });
 }
 
-export type LeaderboardScope = 'interns' | 'all';
+export type LeaderboardScope = 'interns' | 'employees' | 'all';
 export type LeaderboardPeriod = 'all' | 'month';
 
 export interface LeaderboardRow {

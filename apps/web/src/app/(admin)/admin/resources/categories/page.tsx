@@ -1,5 +1,6 @@
 'use client';
 
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import {
   type ResourceCategoryRecord,
   type ResourceCategoryTreeNode,
@@ -267,13 +268,23 @@ function CategoryFormModal({
               Cancel
             </Button>
             <Button type="submit" disabled={isSaving || !name || !slug}>
-              {isSaving
-                ? mode === 'create'
-                  ? 'Creating...'
-                  : 'Saving...'
-                : mode === 'create'
-                  ? <><Plus className="mr-1.5 h-3.5 w-3.5" />Create</>
-                  : <><Check className="mr-1.5 h-3.5 w-3.5" />Save</>}
+              {isSaving ? (
+                mode === 'create' ? (
+                  'Creating...'
+                ) : (
+                  'Saving...'
+                )
+              ) : mode === 'create' ? (
+                <>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Create
+                </>
+              ) : (
+                <>
+                  <Check className="mr-1.5 h-3.5 w-3.5" />
+                  Save
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -294,7 +305,7 @@ function CategoryTreeRow({
   node: ResourceCategoryTreeNode;
   depth: number;
   onEdit: (category: ResourceCategoryRecord) => void;
-  onDelete: (id: string) => void;
+  onDelete: (category: ResourceCategoryRecord) => void;
   isDeletingId: string | null;
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -352,7 +363,7 @@ function CategoryTreeRow({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onDelete(node.id)}
+              onClick={() => onDelete(node)}
               disabled={isDeletingId === node.id}
               className="text-red-600 hover:text-red-700 dark:text-red-400"
             >
@@ -389,6 +400,9 @@ export default function ResourceCategoriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ResourceCategoryRecord | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDeleteCategory, setPendingDeleteCategory] = useState<ResourceCategoryRecord | null>(
+    null
+  );
 
   const tree = useMemo(() => {
     if (!categories) return [];
@@ -456,23 +470,25 @@ export default function ResourceCategoriesPage() {
     [editingCategory, updateCategory, addToast]
   );
 
-  const handleDelete = useCallback(
-    (id: string) => {
-      if (!confirm('Are you sure you want to delete this category?')) return;
-      setDeletingId(id);
-      deleteCategory.mutate(id, {
-        onSuccess: () => {
-          addToast({ title: 'Category deleted', variant: 'success' });
-          setDeletingId(null);
-        },
-        onError: (err) => {
-          addToast({ title: 'Error', description: err.message, variant: 'error' });
-          setDeletingId(null);
-        },
+  const handleDelete = useCallback(async () => {
+    if (!pendingDeleteCategory) return;
+
+    const { id } = pendingDeleteCategory;
+    setDeletingId(id);
+    try {
+      await deleteCategory.mutateAsync(id);
+      addToast({ title: 'Category deleted', variant: 'success' });
+      setPendingDeleteCategory(null);
+    } catch (err) {
+      addToast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to delete category',
+        variant: 'error',
       });
-    },
-    [deleteCategory, addToast]
-  );
+    } finally {
+      setDeletingId(null);
+    }
+  }, [deleteCategory, pendingDeleteCategory, addToast]);
 
   return (
     <div className="space-y-6">
@@ -595,7 +611,7 @@ export default function ResourceCategoriesPage() {
                         node={node}
                         depth={0}
                         onEdit={setEditingCategory}
-                        onDelete={handleDelete}
+                        onDelete={setPendingDeleteCategory}
                         isDeletingId={deletingId}
                       />
                     ))
@@ -637,6 +653,26 @@ export default function ResourceCategoriesPage() {
           isSaving={updateCategory.isPending}
         />
       )}
+
+      <ConfirmActionDialog
+        open={Boolean(pendingDeleteCategory)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDeleteCategory(null);
+          }
+        }}
+        title="Delete category"
+        description={
+          pendingDeleteCategory
+            ? `Are you sure you want to delete "${pendingDeleteCategory.name}"? This removes the category from the resource taxonomy.`
+            : 'Are you sure you want to delete this category?'
+        }
+        confirmLabel="Delete category"
+        isPending={deleteCategory.isPending}
+        onConfirm={() => {
+          void handleDelete();
+        }}
+      />
     </div>
   );
 }
