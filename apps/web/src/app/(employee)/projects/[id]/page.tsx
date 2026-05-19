@@ -1,5 +1,6 @@
 'use client';
 
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   type ChecklistItemRecord,
@@ -7,11 +8,15 @@ import {
   useCreateChecklistItem,
   useCreateMilestone,
   useDeleteChecklistItem,
+  useDeleteMilestone,
+  useDeleteProject,
   useMilestoneChecklist,
   useProject,
   useProjectMilestones,
   useSubmitMilestone,
   useUpdateChecklistItem,
+  useUpdateMilestone,
+  useUpdateProject,
 } from '@/hooks/useProjects';
 import {
   Badge,
@@ -30,20 +35,102 @@ import {
   Input,
   Label,
   MilestoneStatusBadge,
+  Progress,
   ProgressRing,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
+  Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+
+function parseIsoDate(date: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) {
+    return null;
+  }
+
+  const year = Number.parseInt(match[1] ?? '', 10);
+  const month = Number.parseInt(match[2] ?? '', 10);
+  const day = Number.parseInt(match[3] ?? '', 10);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function formatIsoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function calculateInclusivePeriodEnd(
+  startDate: string,
+  durationUnit: 'week' | 'month',
+  durationCount: number
+): string {
+  const start = parseIsoDate(startDate);
+  if (!start || durationCount < 1) {
+    return '';
+  }
+
+  const end = new Date(start);
+  if (durationUnit === 'week') {
+    end.setUTCDate(end.getUTCDate() + durationCount * 7 - 1);
+  } else {
+    end.setUTCMonth(end.getUTCMonth() + durationCount);
+    end.setUTCDate(end.getUTCDate() - 1);
+  }
+
+  return formatIsoDate(end);
+}
+
+function isIsoAfter(left: string, right: string): boolean {
+  return left > right;
+}
+
+function getProjectDateRangeError(startDate: string, targetEndDate: string): string | null {
+  if (isIsoAfter(startDate, targetEndDate)) {
+    return 'Target end date must be on or after the start date';
+  }
+
+  return null;
+}
+
+function getMilestoneDateWindowError(
+  periodStart: string,
+  periodEnd: string,
+  dueDate: string
+): string | null {
+  if (isIsoAfter(periodStart, periodEnd)) {
+    return 'End date must be on or after the start date';
+  }
+
+  if (isIsoAfter(dueDate, periodEnd)) {
+    return 'Due date cannot be beyond the end date';
+  }
+
+  return null;
+}
 
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const projectId = params?.id ?? '';
   const { user } = useAuth();
   const { addToast } = useToast();
+  const deleteProject = useDeleteProject();
 
   const { data: projectResp, isLoading: loadingProject } = useProject(projectId);
   const { data: milestonesResp, isLoading: loadingMilestones } = useProjectMilestones(projectId);
@@ -70,6 +157,22 @@ export default function ProjectDetailPage() {
   // Dialog state
   const [createOpen, setCreateOpen] = useState(false);
   const [createParent, setCreateParent] = useState<MilestoneRecord | null>(null);
+  const [editProjectOpen, setEditProjectOpen] = useState(false);
+  const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
+
+  async function handleDeleteProject() {
+    try {
+      await deleteProject.mutateAsync({ projectId });
+      addToast({ title: 'Project deleted', variant: 'success' });
+      router.push('/projects');
+    } catch (error) {
+      addToast({
+        title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
 
   if (loadingProject) {
     return (
@@ -127,15 +230,25 @@ export default function ProjectDetailPage() {
             </div>
           </div>
           {canEditProject ? (
-            <Button
-              onClick={() => {
-                setCreateParent(null);
-                setCreateOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Month
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="outline" onClick={() => setDeleteProjectOpen(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Project
+              </Button>
+              <Button variant="outline" onClick={() => setEditProjectOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Project
+              </Button>
+              <Button
+                onClick={() => {
+                  setCreateParent(null);
+                  setCreateOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Milestone
+              </Button>
+            </div>
           ) : null}
         </div>
       </header>
@@ -158,7 +271,7 @@ export default function ProjectDetailPage() {
                     setCreateOpen(true);
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" /> Add first month
+                  <Plus className="mr-2 h-4 w-4" /> Add first milestone
                 </Button>
               ) : null}
             </div>
@@ -192,6 +305,22 @@ export default function ProjectDetailPage() {
           addToast({ title: 'Milestone created', variant: 'success' });
         }}
       />
+      <EditProjectDialog
+        open={editProjectOpen}
+        onOpenChange={setEditProjectOpen}
+        project={project}
+      />
+      <ConfirmActionDialog
+        open={deleteProjectOpen}
+        onOpenChange={setDeleteProjectOpen}
+        title="Delete project?"
+        description="This removes the project from active views. Existing milestones and history stay in the database for audit purposes."
+        confirmLabel="Delete project"
+        isPending={deleteProject.isPending}
+        onConfirm={() => {
+          void handleDeleteProject();
+        }}
+      />
     </div>
   );
 }
@@ -213,6 +342,9 @@ function MonthColumn({
 }: MonthColumnProps) {
   const { addToast } = useToast();
   const submitMutation = useSubmitMilestone();
+  const deleteMilestone = useDeleteMilestone();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   async function handleSubmit() {
     try {
@@ -227,59 +359,118 @@ function MonthColumn({
     }
   }
 
+  async function handleDelete() {
+    try {
+      await deleteMilestone.mutateAsync({ milestoneId: month.id, projectId });
+      setDeleteOpen(false);
+      addToast({ title: 'Milestone deleted', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
   const canSubmit = canEdit && month.status !== 'approved' && month.progress_pct >= 100;
+  const canManage = canEdit && month.status !== 'approved';
 
   return (
-    <div className="flex w-80 shrink-0 flex-col rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50">
-      <div className="border-b border-zinc-200 p-3 dark:border-zinc-800">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
+    <>
+      <div className="flex w-80 shrink-0 flex-col rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50">
+        <div className="group relative border-b border-zinc-200 p-3 dark:border-zinc-800">
+          {canManage ? (
+            <div className="absolute right-3 top-3 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                onClick={() => setEditOpen(true)}
+                aria-label="Edit milestone"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-zinc-500 hover:text-red-600"
+                onClick={() => setDeleteOpen(true)}
+                aria-label="Delete milestone"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : null}
+          <div className="pr-16">
             <h3 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               {month.title}
             </h3>
             <p className="text-xs text-zinc-500">
               Due {new Date(month.due_date).toLocaleDateString()}
             </p>
+            <div className="mt-2 flex items-center gap-2">
+              <Progress value={month.progress_pct} className="h-1.5 flex-1" />
+              <span className="text-xs tabular-nums text-zinc-500">
+                {Math.round(month.progress_pct)}%
+              </span>
+            </div>
           </div>
-          <ProgressRing value={month.progress_pct} size={40} strokeWidth={4} />
+          <div className="mt-2 flex items-center gap-2">
+            <MilestoneStatusBadge status={month.status} />
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {canSubmit ? (
+              <Button size="sm" onClick={handleSubmit} disabled={submitMutation.isPending}>
+                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                Complete
+              </Button>
+            ) : null}
+            {canEdit && month.status !== 'approved' ? (
+              <Button size="sm" variant="outline" onClick={onAddWeek}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Week
+              </Button>
+            ) : null}
+          </div>
         </div>
-        <div className="mt-2 flex items-center gap-2">
-          <MilestoneStatusBadge status={month.status} />
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {canSubmit ? (
-            <Button size="sm" onClick={handleSubmit} disabled={submitMutation.isPending}>
-              <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-              Complete
-            </Button>
-          ) : null}
-          {canEdit && month.status !== 'approved' ? (
-            <Button size="sm" variant="outline" onClick={onAddWeek}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Week
-            </Button>
-          ) : null}
-        </div>
-      </div>
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
-        {weeks.length === 0 ? (
-          <ChecklistSection
-            milestone={month}
-            projectId={projectId}
-            canEdit={canEdit && month.status !== 'approved'}
-          />
-        ) : (
-          weeks.map((week) => (
-            <WeekCard
-              key={week.id}
-              week={week}
+        <div className="flex-1 space-y-2 overflow-y-auto p-3">
+          {weeks.length === 0 ? (
+            <ChecklistSection
+              milestone={month}
               projectId={projectId}
-              canEdit={canEdit && month.status !== 'approved'}
+              canEdit={canManage}
             />
-          ))
-        )}
+          ) : (
+            weeks.map((week) => (
+              <WeekCard
+                key={week.id}
+                week={week}
+                projectId={projectId}
+                canEdit={canManage}
+              />
+            ))
+          )}
+        </div>
       </div>
-    </div>
+      <EditMilestoneDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        projectId={projectId}
+        milestone={month}
+      />
+      <ConfirmActionDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete milestone?"
+        description="Deleting a monthly milestone also removes any nested weeks and checklist items beneath it."
+        confirmLabel="Delete milestone"
+        isPending={deleteMilestone.isPending}
+        onConfirm={() => {
+          void handleDelete();
+        }}
+      />
+    </>
   );
 }
 
@@ -293,36 +484,104 @@ function WeekCard({
   canEdit: boolean;
 }) {
   const [open, setOpen] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteMilestone = useDeleteMilestone();
+  const { addToast } = useToast();
+
+  async function handleDelete() {
+    try {
+      await deleteMilestone.mutateAsync({ milestoneId: week.id, projectId });
+      setDeleteOpen(false);
+      addToast({ title: 'Milestone deleted', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  const canManage = canEdit && week.status !== 'approved';
 
   return (
-    <Card className="border-zinc-200 dark:border-zinc-800">
-      <CardContent className="p-3">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center justify-between gap-2"
-        >
-          <div className="flex min-w-0 items-center gap-2">
-            {open ? (
-              <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5 text-zinc-500" />
-            )}
-            <span className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">
-              {week.title}
-            </span>
+    <>
+      <Card className="border-zinc-200 dark:border-zinc-800">
+        <CardContent className="p-3">
+          <div className="group relative">
+            {canManage ? (
+              <div className="absolute right-0 top-0 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0"
+                  onClick={() => setEditOpen(true)}
+                  aria-label="Edit week milestone"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 text-zinc-500 hover:text-red-600"
+                  onClick={() => setDeleteOpen(true)}
+                  aria-label="Delete week milestone"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              className="flex w-full flex-col gap-2 text-left"
+            >
+              <div className="flex items-start justify-between gap-2 pr-14">
+                <div className="flex min-w-0 items-center gap-2">
+                  {open ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-zinc-500" />
+                  )}
+                  <span className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                    {week.title}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pl-5">
+                <Progress value={week.progress_pct} className="h-1.5 flex-1" />
+                <span className="mt-2 text-xs tabular-nums text-zinc-500">
+                  {Math.round(week.progress_pct)}%
+                </span>
+              </div>
+            </button>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="text-xs tabular-nums text-zinc-500">{Math.round(week.progress_pct)}%</span>
-          </div>
-        </button>
-        {open ? (
-          <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
-            <ChecklistSection milestone={week} projectId={projectId} canEdit={canEdit} />
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+          {open ? (
+            <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+              <ChecklistSection milestone={week} projectId={projectId} canEdit={canEdit} />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+      <EditMilestoneDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        projectId={projectId}
+        milestone={week}
+      />
+      <ConfirmActionDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete milestone?"
+        description="Deleting this milestone also removes its checklist items."
+        confirmLabel="Delete milestone"
+        isPending={deleteMilestone.isPending}
+        onConfirm={() => {
+          void handleDelete();
+        }}
+      />
+    </>
   );
 }
 
@@ -337,10 +596,13 @@ function ChecklistSection({
 }) {
   const { data, isLoading } = useMilestoneChecklist(milestone.id);
   const items = data?.data ?? [];
+  const { addToast } = useToast();
   const updateItem = useUpdateChecklistItem();
   const deleteItem = useDeleteChecklistItem();
   const createItem = useCreateChecklistItem();
   const [newTitle, setNewTitle] = useState('');
+  const [editingItem, setEditingItem] = useState<ChecklistItemRecord | null>(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<ChecklistItemRecord | null>(null);
 
   function handleToggle(item: ChecklistItemRecord, next: 'todo' | 'done') {
     void updateItem.mutateAsync({
@@ -351,8 +613,40 @@ function ChecklistSection({
     });
   }
 
+  function handleEdit(itemId: string) {
+    const item = items.find((entry) => entry.id === itemId);
+    if (item) {
+      setEditingItem(item);
+    }
+  }
+
   function handleDelete(itemId: string) {
-    void deleteItem.mutateAsync({ itemId, milestoneId: milestone.id, projectId });
+    const item = items.find((entry) => entry.id === itemId);
+    if (item) {
+      setDeleteCandidate(item);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteCandidate) {
+      return;
+    }
+
+    try {
+      await deleteItem.mutateAsync({
+        itemId: deleteCandidate.id,
+        milestoneId: milestone.id,
+        projectId,
+      });
+      setDeleteCandidate(null);
+      addToast({ title: 'Checklist item deleted', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
   }
 
   async function handleAdd(e: FormEvent) {
@@ -381,7 +675,7 @@ function ChecklistSection({
               title={it.title}
               status={it.status}
               onToggle={(_id, next) => handleToggle(it, next)}
-              {...(canEdit ? { onDelete: handleDelete } : {})}
+              {...(canEdit ? { onEdit: handleEdit, onDelete: handleDelete } : {})}
               disabled={!canEdit}
             />
           ))}
@@ -400,7 +694,403 @@ function ChecklistSection({
           </Button>
         </form>
       ) : null}
+      <EditChecklistItemDialog
+        open={!!editingItem}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setEditingItem(null);
+          }
+        }}
+        item={editingItem}
+        milestoneId={milestone.id}
+        projectId={projectId}
+      />
+      <ConfirmActionDialog
+        open={!!deleteCandidate}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setDeleteCandidate(null);
+          }
+        }}
+        title="Delete checklist item?"
+        description={
+          deleteCandidate ? `"${deleteCandidate.title}" will be permanently removed.` : ''
+        }
+        confirmLabel="Delete item"
+        isPending={deleteItem.isPending}
+        onConfirm={() => {
+          void confirmDelete();
+        }}
+      />
     </div>
+  );
+}
+
+function EditProjectDialog({
+  open,
+  onOpenChange,
+  project,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  project: NonNullable<ReturnType<typeof useProject>['data']>['data'];
+}) {
+  const updateProject = useUpdateProject();
+  const { addToast } = useToast();
+  const [name, setName] = useState(project.name);
+  const [description, setDescription] = useState(project.description ?? '');
+  const [startDate, setStartDate] = useState(project.start_date);
+  const [targetEndDate, setTargetEndDate] = useState(project.target_end_date);
+  const [status, setStatus] = useState(project.status);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setName(project.name);
+    setDescription(project.description ?? '');
+    setStartDate(project.start_date);
+    setTargetEndDate(project.target_end_date);
+    setStatus(project.status);
+  }, [open, project]);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+
+    if (!name.trim() || !startDate || !targetEndDate) {
+      addToast({ title: 'Fill all fields', variant: 'warning' });
+      return;
+    }
+
+    const rangeError = getProjectDateRangeError(startDate, targetEndDate);
+    if (rangeError) {
+      addToast({ title: 'Invalid date range', description: rangeError, variant: 'warning' });
+      return;
+    }
+
+    try {
+      await updateProject.mutateAsync({
+        projectId: project.id,
+        name: name.trim(),
+        description: description.trim() || null,
+        startDate,
+        targetEndDate,
+        status,
+      });
+      addToast({ title: 'Project updated', variant: 'success' });
+      onOpenChange(false);
+    } catch (error) {
+      addToast({
+        title: 'Update failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[640px]">
+        <DialogHeader>
+          <DialogTitle>Edit Project</DialogTitle>
+          <DialogDescription>Update the project details and target window.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="project-edit-name">Project name</Label>
+            <Input
+              id="project-edit-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="project-edit-description">Description</Label>
+            <Textarea
+              id="project-edit-description"
+              rows={4}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="project-edit-status">Status</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as typeof status)}>
+                <SelectTrigger id="project-edit-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planning">Planning</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="on_hold">On Hold</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-edit-start">Start date</Label>
+              <Input
+                id="project-edit-start"
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+                max={targetEndDate || undefined}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-edit-end">Target end date</Label>
+              <Input
+                id="project-edit-end"
+                type="date"
+                value={targetEndDate}
+                onChange={(event) => setTargetEndDate(event.target.value)}
+                min={startDate || undefined}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateProject.isPending}>
+              {updateProject.isPending ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditMilestoneDialog({
+  open,
+  onOpenChange,
+  projectId,
+  milestone,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projectId: string;
+  milestone: MilestoneRecord;
+}) {
+  const updateMilestone = useUpdateMilestone();
+  const { addToast } = useToast();
+  const [title, setTitle] = useState(milestone.title);
+  const [periodStart, setPeriodStart] = useState(milestone.period_start);
+  const [periodEnd, setPeriodEnd] = useState(milestone.period_end);
+  const [dueDate, setDueDate] = useState(milestone.due_date);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setTitle(milestone.title);
+    setPeriodStart(milestone.period_start);
+    setPeriodEnd(milestone.period_end);
+    setDueDate(milestone.due_date);
+  }, [open, milestone]);
+
+  useEffect(() => {
+    if (periodEnd && dueDate && isIsoAfter(dueDate, periodEnd)) {
+      setDueDate(periodEnd);
+    }
+  }, [dueDate, periodEnd]);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+
+    if (!title.trim() || !periodStart || !periodEnd || !dueDate) {
+      addToast({ title: 'Fill all fields', variant: 'warning' });
+      return;
+    }
+
+    const dateError = getMilestoneDateWindowError(periodStart, periodEnd, dueDate);
+    if (dateError) {
+      addToast({ title: 'Invalid milestone dates', description: dateError, variant: 'warning' });
+      return;
+    }
+
+    try {
+      await updateMilestone.mutateAsync({
+        milestoneId: milestone.id,
+        projectId,
+        title: title.trim(),
+        periodStart,
+        periodEnd,
+        dueDate,
+      });
+      addToast({ title: 'Milestone updated', variant: 'success' });
+      onOpenChange(false);
+    } catch (error) {
+      addToast({
+        title: 'Update failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {milestone.period_type === 'month' ? 'Edit Monthly Milestone' : 'Edit Weekly Milestone'}
+          </DialogTitle>
+          <DialogDescription>Update the title and schedule for this milestone.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor={`milestone-edit-title-${milestone.id}`}>Title</Label>
+            <Input
+              id={`milestone-edit-title-${milestone.id}`}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+            />
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor={`milestone-edit-start-${milestone.id}`}>Start</Label>
+              <Input
+                id={`milestone-edit-start-${milestone.id}`}
+                type="date"
+                value={periodStart}
+                onChange={(event) => setPeriodStart(event.target.value)}
+                max={periodEnd || undefined}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`milestone-edit-end-${milestone.id}`}>End</Label>
+              <Input
+                id={`milestone-edit-end-${milestone.id}`}
+                type="date"
+                value={periodEnd}
+                onChange={(event) => setPeriodEnd(event.target.value)}
+                min={periodStart || undefined}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`milestone-edit-due-${milestone.id}`}>Due</Label>
+              <Input
+                id={`milestone-edit-due-${milestone.id}`}
+                type="date"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                min={periodStart || undefined}
+                max={periodEnd || undefined}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateMilestone.isPending}>
+              {updateMilestone.isPending ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditChecklistItemDialog({
+  open,
+  onOpenChange,
+  item,
+  milestoneId,
+  projectId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  item: ChecklistItemRecord | null;
+  milestoneId: string;
+  projectId: string;
+}) {
+  const updateItem = useUpdateChecklistItem();
+  const { addToast } = useToast();
+  const [title, setTitle] = useState(item?.title ?? '');
+
+  useEffect(() => {
+    if (!open || !item) {
+      return;
+    }
+
+    setTitle(item.title);
+  }, [item, open]);
+
+  if (!item) {
+    return null;
+  }
+
+  const currentItem = item;
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+
+    if (!title.trim()) {
+      addToast({ title: 'Title is required', variant: 'warning' });
+      return;
+    }
+
+    try {
+      await updateItem.mutateAsync({
+        itemId: currentItem.id,
+        milestoneId,
+        projectId,
+        title: title.trim(),
+      });
+      addToast({ title: 'Checklist item updated', variant: 'success' });
+      onOpenChange(false);
+    } catch (error) {
+      addToast({
+        title: 'Update failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Checklist Item</DialogTitle>
+          <DialogDescription>Update the title for this checklist item.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor={`checklist-edit-${item.id}`}>Title</Label>
+            <Input
+              id={`checklist-edit-${currentItem.id}`}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              required
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={updateItem.isPending}>
+              {updateItem.isPending ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -425,13 +1115,67 @@ function CreateMilestoneDialog({
   const [periodStart, setPeriodStart] = useState(today);
   const [periodEnd, setPeriodEnd] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [durationUnit, setDurationUnit] = useState<'week' | 'month'>('month');
+  const [durationCount, setDurationCount] = useState('1');
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setTitle('');
+    setPeriodStart(today);
+    setPeriodEnd(parent ? '' : calculateInclusivePeriodEnd(today, 'month', 1));
+    setDueDate('');
+    setDurationUnit('month');
+    setDurationCount('1');
+  }, [open, parent, today]);
+
+  useEffect(() => {
+    if (parent) {
+      return;
+    }
+
+    const count = Number.parseInt(durationCount, 10);
+    if (!periodStart || !Number.isFinite(count) || count < 1) {
+      setPeriodEnd('');
+      return;
+    }
+
+    setPeriodEnd(calculateInclusivePeriodEnd(periodStart, durationUnit, count));
+  }, [durationCount, durationUnit, parent, periodStart]);
+
+  useEffect(() => {
+    if (periodEnd && dueDate && isIsoAfter(dueDate, periodEnd)) {
+      setDueDate(periodEnd);
+    }
+  }, [dueDate, periodEnd]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!parent) {
+      const count = Number.parseInt(durationCount, 10);
+      if (!Number.isFinite(count) || count < 1) {
+        addToast({
+          title: 'Invalid duration',
+          description: 'Enter how many weeks or months this milestone should span.',
+          variant: 'warning',
+        });
+        return;
+      }
+    }
+
     if (!title.trim() || !periodStart || !periodEnd || !dueDate) {
       addToast({ title: 'Fill all fields', variant: 'warning' });
       return;
     }
+
+    const dateError = getMilestoneDateWindowError(periodStart, periodEnd, dueDate);
+    if (dateError) {
+      addToast({ title: 'Invalid milestone dates', description: dateError, variant: 'warning' });
+      return;
+    }
+
     try {
       await create.mutateAsync({
         projectId,
@@ -476,6 +1220,40 @@ function CreateMilestoneDialog({
               required
             />
           </div>
+          {!parent ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="ms-duration-unit">Duration Unit</Label>
+                <Select
+                  value={durationUnit}
+                  onValueChange={(value) => setDurationUnit(value as 'week' | 'month')}
+                >
+                  <SelectTrigger id="ms-duration-unit">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="week">Weeks</SelectItem>
+                    <SelectItem value="month">Months</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ms-duration-count">
+                  {durationUnit === 'week' ? 'How many weeks' : 'How many months'}
+                </Label>
+                <Input
+                  id="ms-duration-count"
+                  type="number"
+                  min="1"
+                  step="1"
+                  inputMode="numeric"
+                  value={durationCount}
+                  onChange={(e) => setDurationCount(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+          ) : null}
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="ms-start">Start</Label>
@@ -484,16 +1262,20 @@ function CreateMilestoneDialog({
                 type="date"
                 value={periodStart}
                 onChange={(e) => setPeriodStart(e.target.value)}
+                max={periodEnd || undefined}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ms-end">End</Label>
+              <Label htmlFor="ms-end">{parent ? 'End' : 'End (auto-calculated)'}</Label>
               <Input
                 id="ms-end"
                 type="date"
                 value={periodEnd}
                 onChange={(e) => setPeriodEnd(e.target.value)}
+                min={periodStart || undefined}
+                readOnly={!parent}
+                className={!parent ? 'bg-zinc-50 dark:bg-zinc-900/60' : undefined}
                 required
               />
             </div>
@@ -504,6 +1286,8 @@ function CreateMilestoneDialog({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                min={periodStart || undefined}
+                max={periodEnd || undefined}
                 required
               />
             </div>

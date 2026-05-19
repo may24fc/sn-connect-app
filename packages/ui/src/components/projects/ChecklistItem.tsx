@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Circle, Trash2 } from 'lucide-react';
+import { Check, Circle, Pencil, Trash2 } from 'lucide-react';
 import type * as React from 'react';
 import { cn } from '../../utils/cn';
 
@@ -9,6 +9,7 @@ export interface ChecklistItemProps {
   title: string;
   status: 'todo' | 'done';
   onToggle: (id: string, next: 'todo' | 'done') => void;
+  onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   disabled?: boolean;
   className?: string;
@@ -19,6 +20,7 @@ export function ChecklistItem({
   title,
   status,
   onToggle,
+  onEdit,
   onDelete,
   disabled = false,
   className,
@@ -57,15 +59,27 @@ export function ChecklistItem({
       >
         {title}
       </span>
-      {onDelete && !disabled ? (
-        <button
-          type="button"
-          onClick={() => onDelete(id)}
-          aria-label="Delete checklist item"
-          className="opacity-0 transition-opacity group-hover:opacity-100"
-        >
-          <Trash2 className="h-3.5 w-3.5 text-zinc-400 hover:text-red-500" />
-        </button>
+      {onEdit || onDelete ? (
+        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          {onEdit && !disabled ? (
+            <button
+              type="button"
+              onClick={() => onEdit(id)}
+              aria-label="Edit checklist item"
+            >
+              <Pencil className="h-3.5 w-3.5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200" />
+            </button>
+          ) : null}
+          {onDelete && !disabled ? (
+            <button
+              type="button"
+              onClick={() => onDelete(id)}
+              aria-label="Delete checklist item"
+            >
+              <Trash2 className="h-3.5 w-3.5 text-zinc-400 hover:text-red-500" />
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

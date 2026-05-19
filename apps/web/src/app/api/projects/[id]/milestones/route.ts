@@ -9,6 +9,18 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+function validateMilestoneWindow(periodStart: string, periodEnd: string, dueDate: string): string | null {
+  if (periodEnd < periodStart) {
+    return 'End date must be on or after the start date';
+  }
+
+  if (dueDate > periodEnd) {
+    return 'Due date cannot be beyond the end date';
+  }
+
+  return null;
+}
+
 /**
  * GET /api/projects/{id}/milestones
  * Returns all milestones for a project (months + nested weeks).
@@ -65,6 +77,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
   const input = parsed.data;
+
+  const windowError = validateMilestoneWindow(input.periodStart, input.periodEnd, input.dueDate);
+  if (windowError) {
+    return NextResponse.json({ error: windowError }, { status: 400 });
+  }
 
   const { data: created, error } = await supabaseAdmin
     .from('project_milestones')

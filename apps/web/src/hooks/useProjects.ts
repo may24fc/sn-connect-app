@@ -173,6 +173,45 @@ export function useCreateProject() {
   });
 }
 
+export interface UpdateProjectInput {
+  projectId: string;
+  name?: string;
+  description?: string | null;
+  leadUserId?: string;
+  supervisorId?: string | null;
+  startDate?: string;
+  targetEndDate?: string;
+  status?: ProjectStatus;
+}
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, ...input }: UpdateProjectInput) =>
+      jsonFetch<{ data: ProjectDetail }>(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
+
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { projectId: string }) =>
+      jsonFetch<{ ok: true }>(`/api/projects/${input.projectId}`, { method: 'DELETE' }),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
+
 export interface CreateMilestoneInput {
   projectId: string;
   parentMilestoneId?: string | null;
@@ -199,6 +238,53 @@ export function useCreateMilestone() {
         queryKey: queryKeys.projects.milestones(vars.projectId),
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+    },
+  });
+}
+
+export interface UpdateMilestoneInput {
+  milestoneId: string;
+  projectId: string;
+  title?: string;
+  description?: string | null;
+  periodStart?: string;
+  periodEnd?: string;
+  dueDate?: string;
+  position?: number;
+}
+
+export function useUpdateMilestone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ milestoneId, ...input }: UpdateMilestoneInput) =>
+      jsonFetch<{ data: MilestoneRecord }>(`/api/projects/milestones/${milestoneId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      }),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.milestones(vars.projectId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
+
+export function useDeleteMilestone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { milestoneId: string; projectId: string }) =>
+      jsonFetch<{ ok: true }>(`/api/projects/milestones/${input.milestoneId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.milestones(vars.projectId),
+      });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
     },
   });
 }
