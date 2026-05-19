@@ -39,6 +39,7 @@ export async function GET() {
       .select('id, role')
       .in('role', TASK_ASSIGNABLE_ROLES)
       .is('deleted_at', null)
+      .neq('status', 'terminated')
       .order('created_at', { ascending: true });
 
     if (usersError) {

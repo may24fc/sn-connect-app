@@ -89,6 +89,7 @@ const internAssignmentSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   requiredHours: z.coerce.number().min(1, 'Required hours must be at least 1'),
+  weeklyRequiredHours: z.coerce.number().min(1, 'Weekly hours must be at least 1').default(20),
   school: z.string().optional(),
   program: z.string().optional(),
 });
@@ -116,6 +117,7 @@ interface AssignmentData {
   startDate?: string | null;
   endDate?: string | null;
   requiredHours?: number | null;
+  weeklyRequiredHours?: number | null;
   school?: string | null;
   program?: string | null;
 }
@@ -441,6 +443,7 @@ export function AssignEmployeeModal({
       departmentId: assignmentData.departmentId ?? '',
       divisionId: assignmentData.divisionId ?? '',
       requiredHours: assignmentData.requiredHours ?? 480,
+      weeklyRequiredHours: assignmentData.weeklyRequiredHours ?? 20,
       startDate: assignmentData.startDate ?? new Date().toISOString().split('T')[0] ?? '',
       endDate: assignmentData.endDate ?? getDateAfterDays(90),
       school: assignmentData.school ?? '',
@@ -706,6 +709,7 @@ export function AssignEmployeeModal({
           startDate: data.startDate,
           endDate: data.endDate,
           requiredHours: data.requiredHours,
+          weeklyRequiredHours: data.weeklyRequiredHours,
           school: data.school,
           program: data.program,
         }),
@@ -1144,7 +1148,7 @@ export function AssignEmployeeModal({
               <div className="space-y-2">
                 <Label htmlFor="requiredHours">
                   <Clock className="mr-1 inline h-4 w-4" />
-                  Required Hours *
+                  Total Required Hours *
                 </Label>
                 <Input
                   id="requiredHours"
@@ -1156,6 +1160,24 @@ export function AssignEmployeeModal({
                 />
                 {internErrors.requiredHours && (
                   <p className="text-sm text-red-600">{internErrors.requiredHours.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="weeklyRequiredHours">
+                  <Clock className="mr-1 inline h-4 w-4" />
+                  Weekly Required Hours *
+                </Label>
+                <Input
+                  id="weeklyRequiredHours"
+                  type="number"
+                  min="1"
+                  autoComplete="off"
+                  {...registerIntern('weeklyRequiredHours')}
+                  disabled={isSubmitting}
+                />
+                {internErrors.weeklyRequiredHours && (
+                  <p className="text-sm text-red-600">{internErrors.weeklyRequiredHours.message}</p>
                 )}
               </div>
 

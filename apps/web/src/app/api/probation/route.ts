@@ -53,7 +53,7 @@ export async function GET() {
     }
 
     const employeeSelectBase =
-      'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head, users!employees_user_id_fkey(avatar_url)';
+      'id, user_id, first_name, last_name, company_email, department, position, date_hired, probation_end_date, immediate_head, users!employees_user_id_fkey(avatar_url, status)';
 
     let employees: Array<any> | null = null;
     let employeesError: any = null;
@@ -87,7 +87,7 @@ export async function GET() {
     }
 
     const activeEmployees = (employees || []).filter(
-      (employee: any) => employee.probation_end_date
+      (employee: any) => employee.probation_end_date && employee.users?.status !== 'terminated'
     );
 
     if (activeEmployees.length === 0) {

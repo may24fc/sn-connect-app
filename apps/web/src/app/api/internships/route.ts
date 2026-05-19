@@ -9,6 +9,7 @@ interface InternshipListRow {
   end_date: string;
   required_hours: number;
   completed_hours: number;
+  weekly_required_hours: number;
   status: 'active' | 'completed' | 'terminated' | 'converted';
   supervisor_id: string | null;
   department: string;
@@ -187,10 +188,16 @@ export async function GET(request: NextRequest) {
         const logs = logsByInternship.get(row.id) || [];
         const pendingReports = logs.filter((log) => !log.is_approved).length;
         const lastReportDate = logs.at(0)?.log_date || null;
-        const reportsThisWeek = logs.filter((log) => new Date(log.log_date) >= startOfWeek).length;
+        const thisWeekLogs = logs.filter((log) => new Date(log.log_date) >= startOfWeek);
+        const reportsThisWeek = thisWeekLogs.length;
+        const weeklyCompletedHours = thisWeekLogs.reduce(
+          (sum, log) => sum + Number(log.hours_worked || 0),
+          0
+        );
 
         const requiredHours = Number(row.required_hours || 0);
         const completedHours = Number(row.completed_hours || 0);
+        const weeklyRequiredHours = Number(row.weekly_required_hours || 20);
         const progressPercentage =
           requiredHours > 0 ? Math.min(Math.round((completedHours / requiredHours) * 100), 100) : 0;
 
@@ -216,6 +223,8 @@ export async function GET(request: NextRequest) {
           requiredHours,
           completedHours,
           progressPercentage,
+          weeklyRequiredHours,
+          weeklyCompletedHours,
           status: row.status,
           pendingReports,
           lastReportDate,

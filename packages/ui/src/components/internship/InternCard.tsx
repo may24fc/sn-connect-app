@@ -30,6 +30,7 @@ import { InternshipStatusBadge } from './InternStatusBadge';
 
 interface InternCardProps {
   intern: InternSummary;
+  hoursMode?: 'weekly' | 'entire';
   onView?: (intern: InternSummary) => void;
   onViewReports?: (intern: InternSummary) => void;
   onContact?: (intern: InternSummary) => void;
@@ -48,6 +49,7 @@ function getInitials(name: string): string {
 
 export function InternCard({
   intern,
+  hoursMode = 'weekly',
   onView,
   onViewReports,
   onContact,
@@ -134,8 +136,8 @@ export function InternCard({
 
         {/* Progress */}
         <HoursProgressMini
-          completedHours={intern.completedHours}
-          requiredHours={intern.requiredHours}
+          completedHours={hoursMode === 'weekly' ? intern.weeklyCompletedHours : intern.completedHours}
+          requiredHours={hoursMode === 'weekly' ? intern.weeklyRequiredHours : intern.requiredHours}
           startDate={intern.startDate}
           endDate={intern.endDate}
         />
@@ -163,6 +165,7 @@ export function InternCard({
 
 interface InternListProps {
   interns: Array<InternSummary>;
+  hoursMode?: 'weekly' | 'entire';
   onView?: (intern: InternSummary) => void;
   onViewReports?: (intern: InternSummary) => void;
   onContact?: (intern: InternSummary) => void;
@@ -174,6 +177,7 @@ interface InternListProps {
 
 export function InternList({
   interns,
+  hoursMode = 'weekly',
   onView,
   onViewReports,
   onContact,
@@ -204,6 +208,7 @@ export function InternList({
         <InternCard
           key={intern.id}
           intern={intern}
+          hoursMode={hoursMode}
           {...(onView && { onView })}
           {...(onViewReports && { onViewReports })}
           {...(onContact && { onContact })}
@@ -216,12 +221,13 @@ export function InternList({
 
 interface InternRowProps {
   intern: InternSummary;
+  hoursMode?: 'weekly' | 'entire';
   onView?: (intern: InternSummary) => void;
   onDelete?: (intern: InternSummary) => void;
   className?: string;
 }
 
-export function InternRow({ intern, onView, onDelete, className }: InternRowProps): React.ReactNode {
+export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, className }: InternRowProps): React.ReactNode {
   const daysRemaining = getDaysRemaining(intern.endDate);
 
   return (
@@ -250,8 +256,8 @@ export function InternRow({ intern, onView, onDelete, className }: InternRowProp
       <div className="flex items-center gap-6">
         <div className="hidden md:block w-32">
           <HoursProgressMini
-            completedHours={intern.completedHours}
-            requiredHours={intern.requiredHours}
+            completedHours={hoursMode === 'weekly' ? intern.weeklyCompletedHours : intern.completedHours}
+            requiredHours={hoursMode === 'weekly' ? intern.weeklyRequiredHours : intern.requiredHours}
             startDate={intern.startDate}
             endDate={intern.endDate}
           />

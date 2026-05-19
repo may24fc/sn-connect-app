@@ -46,6 +46,8 @@ export interface InternshipSummaryRecord {
   requiredHours: number;
   completedHours: number;
   progressPercentage: number;
+  weeklyRequiredHours: number;
+  weeklyCompletedHours: number;
   status: 'active' | 'completed' | 'terminated' | 'converted';
   pendingReports: number;
   lastReportDate: string | null;

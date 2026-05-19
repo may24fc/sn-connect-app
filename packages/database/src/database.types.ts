@@ -686,6 +686,7 @@ export type Database = {
           status: Database['public']['Enums']['internship_status'];
           supervisor_id: string | null;
           updated_at: string;
+          weekly_required_hours: number;
         };
         Insert: {
           completed_hours?: number;
@@ -704,6 +705,7 @@ export type Database = {
           status?: Database['public']['Enums']['internship_status'];
           supervisor_id?: string | null;
           updated_at?: string;
+          weekly_required_hours?: number;
         };
         Update: {
           completed_hours?: number;
@@ -722,6 +724,7 @@ export type Database = {
           status?: Database['public']['Enums']['internship_status'];
           supervisor_id?: string | null;
           updated_at?: string;
+          weekly_required_hours?: number;
         };
         Relationships: [
           {

@@ -10,6 +10,7 @@ const assignInternSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid start date format'),
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid end date format'),
   requiredHours: z.number().min(1, 'Required hours must be at least 1'),
+  weeklyRequiredHours: z.number().min(1, 'Weekly required hours must be at least 1').default(20),
   school: z.string().optional(),
   program: z.string().optional(),
 });
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, departmentId, divisionId, startDate, endDate, requiredHours, school, program } = parsed.data;
+    const { userId, departmentId, divisionId, startDate, endDate, requiredHours, weeklyRequiredHours, school, program } = parsed.data;
 
     // Validate date range
     if (new Date(endDate) <= new Date(startDate)) {
@@ -139,12 +140,7 @@ export async function POST(request: NextRequest) {
           start_date: startDate,
           end_date: endDate,
           required_hours: requiredHours,
-          department: resolvedDepartment.name,
-          division: resolvedDivision.name,
-          school: school || null,
-          program: program || null,
-          status: 'active',
-          updated_at: new Date().toISOString(),
+          weekly_required_hours: weeklyRequiredHours,
         })
         .eq('id', existingInternship.id);
 
@@ -200,6 +196,7 @@ export async function POST(request: NextRequest) {
         start_date: startDate,
         end_date: endDate,
         required_hours: requiredHours,
+        weekly_required_hours: weeklyRequiredHours,
         completed_hours: 0,
         status: 'active',
         department: resolvedDepartment.name,

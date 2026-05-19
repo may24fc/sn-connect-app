@@ -46,11 +46,12 @@ export async function GET(): Promise<NextResponse> {
 
     // Run all queries in parallel
     const [employeesResult, internsResult, reviewsResult, recentHiresResult] = await Promise.all([
-      // Total employees (non-deleted)
+      // Total employees (non-deleted, non-terminated)
       supabase
-        .from('employees')
+        .from('employee_directory')
         .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null),
+        .neq('status', 'terminated')
+        .not('role', 'eq', 'intern'),
 
       // Active interns
       supabase
@@ -65,11 +66,12 @@ export async function GET(): Promise<NextResponse> {
         .in('status', ['pending', 'in_progress'])
         .is('deleted_at', null),
 
-      // Recent hires (last 30 days)
+      // Recent hires (last 30 days, non-terminated)
       supabase
-        .from('employees')
+        .from('employee_directory')
         .select('id', { count: 'exact', head: true })
-        .is('deleted_at', null)
+        .neq('status', 'terminated')
+        .not('role', 'eq', 'intern')
         .gte('created_at', new Date(Date.now() - 30 * 86_400_000).toISOString()),
     ]);
 

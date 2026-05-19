@@ -109,10 +109,11 @@ export default function AdminInternsPage(): ReactNode {
   const queryClient = useQueryClient();
   const isSuperAdmin = user?.role === 'super_admin';
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('active');
   const [schoolFilter, setSchoolFilter] = useState<string>('all');
   const [supervisorFilter, setSupervisorFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [hoursMode, setHoursMode] = useState<'weekly' | 'entire'>('weekly');
 
   // Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -256,6 +257,8 @@ export default function AdminInternsPage(): ReactNode {
         requiredHours: internship.requiredHours,
         completedHours: internship.completedHours,
         progressPercentage: internship.progressPercentage,
+        weeklyRequiredHours: internship.weeklyRequiredHours,
+        weeklyCompletedHours: internship.weeklyCompletedHours,
         status: internship.status === 'converted' ? 'completed' : internship.status,
         ...(internship.lastReportDate ? { lastReportDate: internship.lastReportDate } : {}),
         pendingReports: internship.pendingReports,
@@ -416,6 +419,7 @@ export default function AdminInternsPage(): ReactNode {
       startDate: relatedInternship?.startDate || null,
       endDate: relatedInternship?.endDate || null,
       requiredHours: relatedInternship?.requiredHours ?? null,
+      weeklyRequiredHours: relatedInternship?.weeklyRequiredHours ?? 20,
       school: relatedInternship?.school || null,
       program: relatedInternship?.program || null,
     });
@@ -620,12 +624,37 @@ export default function AdminInternsPage(): ReactNode {
           {/* Interns Header */}
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Interns ({filteredInterns.length})</h2>
+            <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setHoursMode('weekly')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  hoursMode === 'weekly'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                Weekly Hours
+              </button>
+              <button
+                type="button"
+                onClick={() => setHoursMode('entire')}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  hoursMode === 'entire'
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                Entire Hours
+              </button>
+            </div>
           </div>
 
           {/* Interns Display */}
           {viewMode === 'grid' ? (
             <InternList
               interns={filteredInterns}
+              hoursMode={hoursMode}
               onView={handleViewIntern}
               {...(isSuperAdmin && { onDelete: handleDeleteIntern })}
               layout="grid"
@@ -643,7 +672,7 @@ export default function AdminInternsPage(): ReactNode {
               <CardContent className="p-4 space-y-2">
                 {filteredInterns.length > 0 ? (
                   filteredInterns.map((intern) => (
-                    <InternRow key={intern.id} intern={intern} onView={handleViewIntern} {...(isSuperAdmin && { onDelete: handleDeleteIntern })} />
+                    <InternRow key={intern.id} intern={intern} hoursMode={hoursMode} onView={handleViewIntern} {...(isSuperAdmin && { onDelete: handleDeleteIntern })} />
                   ))
                 ) : (
                   <EmptyState
@@ -1243,7 +1272,7 @@ export default function AdminInternsPage(): ReactNode {
         onSuccess={() => {
           // Invalidate queries to refresh the UI
           queryClient.invalidateQueries({ queryKey: ['internships'] });
-          queryClient.invalidateQueries({ queryKey: ['onboarding_profiles'] });
+          queryClient.invalidateQueries({ queryKey: ['onboarding'] });
           queryClient.invalidateQueries({ queryKey: ['probation'] });
           queryClient.invalidateQueries({ queryKey: ['employees'] });
           queryClient.invalidateQueries({ queryKey: ['directory'] });

@@ -73,6 +73,9 @@ export async function GET(request: NextRequest) {
 
     if (status) {
       query = query.eq('users.status', status);
+    } else {
+      // Always exclude terminated employees from general list views
+      query = query.neq('users.status', 'terminated');
     }
 
     // Apply pagination

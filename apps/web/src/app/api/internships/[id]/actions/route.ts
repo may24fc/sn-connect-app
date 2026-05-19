@@ -72,20 +72,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     if (parsedBody.data.action === 'end_internship') {
-      const { data: updatedInternship, error: endError } = await adminClient
-        .from('internships')
-        .update({
-          status: 'completed',
-          updated_at: nowIso(),
-        })
-        .eq('id', id)
+      // Fetch employee to get user_id so we can revoke their active status
+      const { data: employeeForEnd, error: employeeForEndError } = await adminClient
+        .from('employees')
+        .select('id, user_id')
+        .eq('id', internship.employee_id)
         .is('deleted_at', null)
-        .select('id, status')
-        .single();
+        .maybeSingle();
+
+      if (employeeForEndError || !employeeForEnd) {
+        console.error('Failed to resolve employee for internship end:', employeeForEndError);
+        return NextResponse.json({ error: 'Employee record not found' }, { status: 404 });
+      }
+
+      const [{ data: updatedInternship, error: endError }, { error: userStatusError }] =
+        await Promise.all([
+          adminClient
+            .from('internships')
+            .update({ status: 'completed', updated_at: nowIso() })
+            .eq('id', id)
+            .is('deleted_at', null)
+            .select('id, status')
+            .single(),
+          adminClient
+            .from('users')
+            .update({ status: 'terminated', updated_at: nowIso() })
+            .eq('id', (employeeForEnd as { id: string; user_id: string }).user_id)
+            .is('deleted_at', null),
+        ]);
 
       if (endError || !updatedInternship) {
         console.error('Failed to end internship:', endError);
         return NextResponse.json({ error: 'Failed to end internship' }, { status: 500 });
+      }
+
+      if (userStatusError) {
+        console.error('Failed to revoke user status on internship end:', userStatusError);
+        return NextResponse.json({ error: 'Failed to revoke user access' }, { status: 500 });
       }
 
       await adminClient.from('audit_logs').insert({
@@ -94,10 +117,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         operation: 'UPDATE',
         action: 'end_internship',
         old_values: { status: internship.status },
-        new_values: { status: 'completed' },
+        new_values: { status: 'completed', user_status: 'terminated' },
         metadata: {
           internshipId: id,
           employeeId: internship.employee_id,
+          userId: (employeeForEnd as { id: string; user_id: string }).user_id,
           previousStatus: internship.status,
           newStatus: 'completed',
         },
