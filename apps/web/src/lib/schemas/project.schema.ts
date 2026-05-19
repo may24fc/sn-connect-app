@@ -33,6 +33,7 @@ export const projectCreateSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate must be YYYY-MM-DD'),
   targetEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'targetEndDate must be YYYY-MM-DD'),
   status: projectStatusSchema.default('planning'),
+  pointsTotal: z.number().int().nonnegative().optional(),
 });
 
 export const projectUpdateSchema = projectCreateSchema.partial();

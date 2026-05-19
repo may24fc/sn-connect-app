@@ -552,6 +552,8 @@ export const queryKeys = {
       [...queryKeys.projects.all, 'milestones', projectId] as const,
     checklist: (milestoneId: string) =>
       [...queryKeys.projects.all, 'checklist', milestoneId] as const,
+    pool: () => [...queryKeys.projects.all, 'pool'] as const,
+    poolCount: () => [...queryKeys.projects.all, 'pool', 'count'] as const,
   },
 
   warRoom: {

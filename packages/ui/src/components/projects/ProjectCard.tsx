@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, Trophy } from 'lucide-react';
+import { Calendar, Pencil, Trash2, Trophy } from 'lucide-react';
 import type * as React from 'react';
 import { Card, CardContent } from '../../primitives/card';
 import { cn } from '../../utils/cn';
@@ -20,6 +20,8 @@ export interface ProjectCardProps {
   targetEndDate: string;
   contributors?: ContributorAvatar[];
   onClick?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   className?: string;
 }
 
@@ -44,16 +46,50 @@ export function ProjectCard({
   targetEndDate,
   contributors = [],
   onClick,
+  onEdit,
+  onDelete,
   className,
 }: ProjectCardProps): React.ReactElement {
   return (
     <Card
       className={cn(
-        'group cursor-pointer transition-all hover:border-indigo-500 hover:shadow-md',
+        'group relative cursor-pointer transition-all hover:border-indigo-500 hover:shadow-md',
         className
       )}
       onClick={onClick}
     >
+      {onEdit || onDelete ? (
+        <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+          {onEdit ? (
+            <button
+              type="button"
+              aria-label="Edit project"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onEdit();
+              }}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {onDelete ? (
+            <button
+              type="button"
+              aria-label="Delete project"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <CardContent className="flex items-start gap-4 p-4">
         <ProgressRing value={progressPct} size={72} strokeWidth={6} />
         <div className="min-w-0 flex-1 space-y-2">

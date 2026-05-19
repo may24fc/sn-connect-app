@@ -111,7 +111,8 @@ function getProjectDateRangeError(startDate: string, targetEndDate: string): str
 function getMilestoneDateWindowError(
   periodStart: string,
   periodEnd: string,
-  dueDate: string
+  dueDate: string,
+  projectEndDate?: string
 ): string | null {
   if (isIsoAfter(periodStart, periodEnd)) {
     return 'End date must be on or after the start date';
@@ -119,6 +120,10 @@ function getMilestoneDateWindowError(
 
   if (isIsoAfter(dueDate, periodEnd)) {
     return 'Due date cannot be beyond the end date';
+  }
+
+  if (projectEndDate && isIsoAfter(dueDate, projectEndDate)) {
+    return `Due date cannot be beyond the project end date (${projectEndDate})`;
   }
 
   return null;
@@ -285,6 +290,7 @@ export default function ProjectDetailPage() {
                 weeks={weeks}
                 projectId={projectId}
                 canEdit={canEditProject}
+                projectEndDate={project.target_end_date}
                 onAddWeek={() => {
                   setCreateParent(month);
                   setCreateOpen(true);
@@ -300,6 +306,7 @@ export default function ProjectDetailPage() {
         onOpenChange={setCreateOpen}
         projectId={projectId}
         parent={createParent}
+        projectEndDate={project.target_end_date}
         onCreated={() => {
           setCreateOpen(false);
           addToast({ title: 'Milestone created', variant: 'success' });
@@ -330,6 +337,7 @@ interface MonthColumnProps {
   weeks: MilestoneRecord[];
   projectId: string;
   canEdit: boolean;
+  projectEndDate: string;
   onAddWeek: () => void;
 }
 
@@ -338,6 +346,7 @@ function MonthColumn({
   weeks,
   projectId,
   canEdit,
+  projectEndDate,
   onAddWeek,
 }: MonthColumnProps) {
   const { addToast } = useToast();
@@ -375,6 +384,14 @@ function MonthColumn({
 
   const canSubmit = canEdit && month.status !== 'approved' && month.progress_pct >= 100;
   const canManage = canEdit && month.status !== 'approved';
+
+  const maxWeeks = useMemo(() => {
+    const start = new Date(month.period_start);
+    const end = new Date(month.period_end);
+    const totalDays =
+      Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(1, Math.floor(totalDays / 7));
+  }, [month.period_start, month.period_end]);
 
   return (
     <>
@@ -427,10 +444,21 @@ function MonthColumn({
               </Button>
             ) : null}
             {canEdit && month.status !== 'approved' ? (
-              <Button size="sm" variant="outline" onClick={onAddWeek}>
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Week
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Button size="sm" variant="outline" onClick={onAddWeek}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Week
+                </Button>
+                <span
+                  className={
+                    weeks.length >= maxWeeks
+                      ? 'text-xs tabular-nums text-amber-500 dark:text-amber-400'
+                      : 'text-xs tabular-nums text-zinc-400 dark:text-zinc-500'
+                  }
+                >
+                  {weeks.length}&thinsp;/&thinsp;{maxWeeks}
+                </span>
+              </div>
             ) : null}
           </div>
         </div>
@@ -448,6 +476,7 @@ function MonthColumn({
                 week={week}
                 projectId={projectId}
                 canEdit={canManage}
+                projectEndDate={projectEndDate}
               />
             ))
           )}
@@ -458,6 +487,7 @@ function MonthColumn({
         onOpenChange={setEditOpen}
         projectId={projectId}
         milestone={month}
+        projectEndDate={projectEndDate}
       />
       <ConfirmActionDialog
         open={deleteOpen}
@@ -478,10 +508,12 @@ function WeekCard({
   week,
   projectId,
   canEdit,
+  projectEndDate,
 }: {
   week: MilestoneRecord;
   projectId: string;
   canEdit: boolean;
+  projectEndDate: string;
 }) {
   const [open, setOpen] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
@@ -569,6 +601,7 @@ function WeekCard({
         onOpenChange={setEditOpen}
         projectId={projectId}
         milestone={week}
+        projectEndDate={projectEndDate}
       />
       <ConfirmActionDialog
         open={deleteOpen}
@@ -873,11 +906,13 @@ function EditMilestoneDialog({
   onOpenChange,
   projectId,
   milestone,
+  projectEndDate,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
   milestone: MilestoneRecord;
+  projectEndDate?: string;
 }) {
   const updateMilestone = useUpdateMilestone();
   const { addToast } = useToast();
@@ -898,10 +933,14 @@ function EditMilestoneDialog({
   }, [open, milestone]);
 
   useEffect(() => {
-    if (periodEnd && dueDate && isIsoAfter(dueDate, periodEnd)) {
-      setDueDate(periodEnd);
+    if (!periodEnd && !projectEndDate) return;
+    const effectiveMax = periodEnd && projectEndDate
+      ? (periodEnd < projectEndDate ? periodEnd : projectEndDate)
+      : periodEnd || projectEndDate;
+    if (dueDate && effectiveMax && isIsoAfter(dueDate, effectiveMax)) {
+      setDueDate(effectiveMax);
     }
-  }, [dueDate, periodEnd]);
+  }, [dueDate, periodEnd, projectEndDate]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -911,7 +950,7 @@ function EditMilestoneDialog({
       return;
     }
 
-    const dateError = getMilestoneDateWindowError(periodStart, periodEnd, dueDate);
+    const dateError = getMilestoneDateWindowError(periodStart, periodEnd, dueDate, projectEndDate);
     if (dateError) {
       addToast({ title: 'Invalid milestone dates', description: dateError, variant: 'warning' });
       return;
@@ -987,7 +1026,11 @@ function EditMilestoneDialog({
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
                 min={periodStart || undefined}
-                max={periodEnd || undefined}
+                max={
+                  periodEnd && projectEndDate
+                    ? (periodEnd < projectEndDate ? periodEnd : projectEndDate)
+                    : periodEnd || projectEndDate || undefined
+                }
                 required
               />
             </div>
@@ -1099,12 +1142,14 @@ function CreateMilestoneDialog({
   onOpenChange,
   projectId,
   parent,
+  projectEndDate,
   onCreated,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   projectId: string;
   parent: MilestoneRecord | null;
+  projectEndDate?: string;
   onCreated: () => void;
 }) {
   const create = useCreateMilestone();
@@ -1146,10 +1191,14 @@ function CreateMilestoneDialog({
   }, [durationCount, durationUnit, parent, periodStart]);
 
   useEffect(() => {
-    if (periodEnd && dueDate && isIsoAfter(dueDate, periodEnd)) {
-      setDueDate(periodEnd);
+    if (!periodEnd && !projectEndDate) return;
+    const effectiveMax = periodEnd && projectEndDate
+      ? (periodEnd < projectEndDate ? periodEnd : projectEndDate)
+      : periodEnd || projectEndDate;
+    if (dueDate && effectiveMax && isIsoAfter(dueDate, effectiveMax)) {
+      setDueDate(effectiveMax);
     }
-  }, [dueDate, periodEnd]);
+  }, [dueDate, periodEnd, projectEndDate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -1170,7 +1219,7 @@ function CreateMilestoneDialog({
       return;
     }
 
-    const dateError = getMilestoneDateWindowError(periodStart, periodEnd, dueDate);
+    const dateError = getMilestoneDateWindowError(periodStart, periodEnd, dueDate, projectEndDate);
     if (dateError) {
       addToast({ title: 'Invalid milestone dates', description: dateError, variant: 'warning' });
       return;
@@ -1203,11 +1252,11 @@ function CreateMilestoneDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{parent ? `Add Week to "${parent.title}"` : 'Add Monthly Milestone'}</DialogTitle>
+          <DialogTitle>{parent ? `Add Week to "${parent.title}"` : 'Add Milestone'}</DialogTitle>
           <DialogDescription>
             {parent
-              ? 'Weekly sub-milestones break a month down into smaller, trackable units.'
-              : 'Each monthly milestone can be submitted to your supervisor for approval.'}
+              ? 'Weekly sub-milestones can be broken down into smaller, trackable units.'
+              : 'Each milestone can be submitted to your supervisor for approval.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -1287,7 +1336,11 @@ function CreateMilestoneDialog({
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 min={periodStart || undefined}
-                max={periodEnd || undefined}
+                max={
+                  periodEnd && projectEndDate
+                    ? (periodEnd < projectEndDate ? periodEnd : projectEndDate)
+                    : periodEnd || projectEndDate || undefined
+                }
                 required
               />
             </div>

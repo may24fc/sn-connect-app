@@ -156,6 +156,7 @@ export interface CreateProjectInput {
   startDate: string;
   targetEndDate: string;
   status?: ProjectStatus;
+  pointsTotal?: number;
 }
 
 export function useCreateProject() {
@@ -182,6 +183,7 @@ export interface UpdateProjectInput {
   startDate?: string;
   targetEndDate?: string;
   status?: ProjectStatus;
+  pointsTotal?: number;
 }
 
 export function useUpdateProject() {

@@ -32,6 +32,8 @@ export type NotificationType =
   | 'reminder'
   | 'onboarding_step'
   | 'probation_update'
+  | 'project_claimable'
+  | 'project_assigned'
   | 'system';
 
 export const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
@@ -52,6 +54,8 @@ export const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   reminder: Bell,
   onboarding_step: BookOpen,
   probation_update: UserCheck,
+  project_claimable: FolderOpen,
+  project_assigned: FolderOpen,
   system: Info,
 };
 
@@ -73,6 +77,8 @@ export const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   reminder: 'text-amber-500',
   onboarding_step: 'text-cyan-500',
   probation_update: 'text-orange-500',
+  project_claimable: 'text-indigo-500',
+  project_assigned: 'text-indigo-500',
   system: 'text-zinc-500 dark:text-zinc-400',
 };
 
@@ -94,5 +100,7 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   reminder: 'Reminder',
   onboarding_step: 'Onboarding',
   probation_update: 'Probation',
+  project_claimable: 'Project Pool',
+  project_assigned: 'Project Assigned',
   system: 'System',
 };

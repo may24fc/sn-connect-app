@@ -40,6 +40,8 @@ export type NotificationType =
   | 'reminder'
   | 'onboarding_step'
   | 'probation_update'
+  | 'project_claimable'
+  | 'project_assigned'
   | 'system';
 
 export interface CreateNotificationPayload {

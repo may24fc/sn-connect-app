@@ -38,3 +38,11 @@ export {
   type ChunkTextOptions,
   type TextChunk,
 } from './drive-chunking';
+
+export {
+  extractProjectIntake,
+  transcribeVoice,
+  type IntakeExtractionResult,
+  type IntakeExtractionConfig,
+  type VoiceTranscriptionConfig,
+} from './intake';

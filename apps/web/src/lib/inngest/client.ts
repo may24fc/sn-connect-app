@@ -29,6 +29,22 @@ type Events = {
       applicationId: string;
     };
   };
+  'project-intake/received': {
+    data: {
+      /** Telegram chat ID the message originated from (string-encoded). */
+      sourceChatId: string;
+      /** Telegram message ID (string-encoded). */
+      sourceMessageId: string;
+      /** Auth user ID of the CEO whose Telegram chat the message came from. */
+      senderUserId: string;
+      /** Raw text body (already trimmed). Empty string when only voice. */
+      text: string;
+      /** Telegram file_id for the voice note, if any. */
+      voiceFileId?: string;
+      /** Mime type for the voice file, if any. */
+      voiceMimeType?: string;
+    };
+  };
 };
 
 export const inngest = new Inngest({

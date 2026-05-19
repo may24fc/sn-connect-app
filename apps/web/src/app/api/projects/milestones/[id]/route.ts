@@ -29,10 +29,11 @@ async function getMilestoneRecord(
   periodStart: string;
   periodEnd: string;
   dueDate: string;
+  projectTargetEndDate: string | null;
 } | null> {
   const { data } = await supabaseAdmin
     .from('project_milestones')
-    .select('project_id, period_start, period_end, due_date')
+    .select('project_id, period_start, period_end, due_date, projects!inner(target_end_date)')
     .eq('id', milestoneId)
     .maybeSingle();
 
@@ -41,6 +42,7 @@ async function getMilestoneRecord(
     period_start?: string;
     period_end?: string;
     due_date?: string;
+    projects?: { target_end_date?: string };
   } | null;
 
   if (!row?.project_id || !row.period_start || !row.period_end || !row.due_date) {
@@ -52,6 +54,7 @@ async function getMilestoneRecord(
     periodStart: row.period_start,
     periodEnd: row.period_end,
     dueDate: row.due_date,
+    projectTargetEndDate: row.projects?.target_end_date ?? null,
   };
 }
 
@@ -101,6 +104,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const windowError = validateMilestoneWindow(nextPeriodStart, nextPeriodEnd, nextDueDate);
   if (windowError) {
     return NextResponse.json({ error: windowError }, { status: 400 });
+  }
+
+  if (milestone.projectTargetEndDate && nextDueDate > milestone.projectTargetEndDate) {
+    return NextResponse.json(
+      { error: `Due date cannot be beyond the project end date (${milestone.projectTargetEndDate})` },
+      { status: 400 }
+    );
   }
 
   const { data, error } = await supabaseAdmin

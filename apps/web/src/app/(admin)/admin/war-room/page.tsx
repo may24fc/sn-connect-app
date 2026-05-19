@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useWarRoomOverview } from '@/hooks/useGamification';
+import { useProjectPoolCount } from '@/hooks/useProjectPool';
 import {
   Badge,
   Button,
@@ -11,12 +12,13 @@ import {
   StreakChip,
   TierBadge,
 } from '@hr-portal/ui';
-import { Activity, AlertTriangle, FolderKanban, Target, Trophy } from 'lucide-react';
+import { Activity, AlertTriangle, FolderKanban, Inbox, Target, Trophy } from 'lucide-react';
 import Link from 'next/link';
 
 export default function WarRoomPage() {
   const { user } = useAuth();
   const { data, isLoading } = useWarRoomOverview();
+  const { data: poolCountData } = useProjectPoolCount();
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   if (!isAdmin) {
@@ -30,16 +32,30 @@ export default function WarRoomPage() {
   const totals = data?.totals;
   const interns = data?.interns ?? [];
   const departments = data?.departments ?? [];
+  const poolCount = poolCountData?.count ?? 0;
 
   return (
     <div className="space-y-6 p-6">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Intern Projects
-        </h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Cross-intern project health, momentum, and points at a glance.
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Intern Projects
+          </h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Cross-intern project health, momentum, and points at a glance.
+          </p>
+        </div>
+        <Link href="/admin/war-room/pool">
+          <Button variant="outline">
+            <Inbox className="mr-2 h-4 w-4" />
+            Project Pool
+            {poolCount > 0 ? (
+              <Badge variant="secondary" className="ml-2">
+                {poolCount}
+              </Badge>
+            ) : null}
+          </Button>
+        </Link>
       </header>
 
       {/* Top stats */}

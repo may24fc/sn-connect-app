@@ -83,6 +83,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: windowError }, { status: 400 });
   }
 
+  const { data: projectRow } = await supabaseAdmin
+    .from('projects')
+    .select('target_end_date')
+    .eq('id', projectId)
+    .maybeSingle();
+
+  const targetEndDate = (projectRow as { target_end_date?: string } | null)?.target_end_date;
+  if (targetEndDate && input.dueDate > targetEndDate) {
+    return NextResponse.json(
+      { error: `Due date cannot be beyond the project end date (${targetEndDate})` },
+      { status: 400 }
+    );
+  }
+
   const { data: created, error } = await supabaseAdmin
     .from('project_milestones')
     .insert({

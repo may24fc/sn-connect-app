@@ -1,15 +1,22 @@
 import { sendTelegramMessage } from '@/lib/telegram';
 import { NOTIFICATION_PREFERENCES_ROLE_TYPE, normalizeStoredNotificationPreferences } from '@/lib/settings/notification-preferences';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { inngest } from '@/lib/inngest/client';
 import { NextResponse } from 'next/server';
 
 interface TelegramUpdate {
   message?: {
+    message_id?: number;
     text?: string;
+    caption?: string;
+    voice?: { file_id?: string; mime_type?: string };
     chat?: { id?: number | string };
     from?: { username?: string };
   };
 }
+
+/** Roles allowed to dispatch project intake from Telegram. */
+const INTAKE_ALLOWED_ROLES = new Set(['ceo', 'super_admin', 'admin']);
 
 function isAuthorizedWebhook(secretHeader: string | null): boolean {
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
@@ -28,19 +35,24 @@ export async function POST(request: Request) {
     }
 
     const update = (await request.json()) as TelegramUpdate;
-    const text = update.message?.text?.trim();
-    const chatId = update.message?.chat?.id;
+    const message = update.message;
+    const text = (message?.text ?? message?.caption ?? '').trim();
+    const chatId = message?.chat?.id;
+    const messageId = message?.message_id;
+    const voiceFileId = message?.voice?.file_id;
 
-    if (!text || chatId === undefined || chatId === null) {
+    if (chatId === undefined || chatId === null) {
       return NextResponse.json({ ok: true });
     }
 
-    const [command, rawToken] = text.split(/\s+/, 2);
-    if (command !== '/start' || !rawToken) {
-      return NextResponse.json({ ok: true });
-    }
+    // ----- /start <token> account-linking flow (existing behaviour) -----
+    if (text.startsWith('/start')) {
+      const [, rawToken] = text.split(/\s+/, 2);
+      if (!rawToken) {
+        return NextResponse.json({ ok: true });
+      }
 
-    const admin = createSupabaseAdminClient();
+      const admin = createSupabaseAdminClient();
     const { data, error } = await admin
       .from('user_role_metadata')
       .select('user_id, metadata')
@@ -87,6 +99,58 @@ export async function POST(request: Request) {
     await sendTelegramMessage({
       chatId: String(chatId),
       text: 'Your Telegram account is now linked to SN Connect. You can return to Settings to enable Telegram notifications.',
+    });
+
+    return NextResponse.json({ ok: true });
+    }
+
+    // ----- Project intake from CEO / super_admin / admin -----
+    if (!text && !voiceFileId) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const admin = createSupabaseAdminClient();
+
+    const { data: linkRow, error: linkErr } = await admin
+      .from('user_role_metadata')
+      .select('user_id')
+      .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
+      .contains('metadata', { telegramChatId: String(chatId) })
+      .maybeSingle();
+
+    if (linkErr || !linkRow) {
+      // Unknown chat — silently ignore. Avoid leaking that the chat is unlinked.
+      return NextResponse.json({ ok: true });
+    }
+
+    const senderUserId = (linkRow as { user_id: string }).user_id;
+
+    const { data: userRow, error: userErr } = await admin
+      .from('users')
+      .select('role')
+      .eq('id', senderUserId)
+      .maybeSingle();
+
+    if (userErr || !userRow || !INTAKE_ALLOWED_ROLES.has((userRow as { role: string }).role)) {
+      // Linked user, but not authorised for project intake.
+      return NextResponse.json({ ok: true });
+    }
+
+    await inngest.send({
+      name: 'project-intake/received',
+      data: {
+        sourceChatId: String(chatId),
+        sourceMessageId: String(messageId ?? Date.now()),
+        senderUserId,
+        text,
+        ...(voiceFileId ? { voiceFileId } : {}),
+        ...(message?.voice?.mime_type ? { voiceMimeType: message.voice.mime_type } : {}),
+      },
+    });
+
+    await sendTelegramMessage({
+      chatId: String(chatId),
+      text: 'Got it — processing your project request. You will get a confirmation in a moment.',
     });
 
     return NextResponse.json({ ok: true });

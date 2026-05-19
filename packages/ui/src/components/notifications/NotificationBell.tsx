@@ -49,6 +49,8 @@ export type NotificationType =
   | 'reminder'
   | 'onboarding_step'
   | 'probation_update'
+  | 'project_claimable'
+  | 'project_assigned'
   | 'system';
 
 export interface NotificationItem {
@@ -93,6 +95,8 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   reminder: Bell,
   onboarding_step: BookOpen,
   probation_update: UserCheck,
+  project_claimable: FolderOpen,
+  project_assigned: FolderOpen,
   system: Info,
 };
 
@@ -114,6 +118,8 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   reminder: 'text-amber-500',
   onboarding_step: 'text-cyan-500',
   probation_update: 'text-orange-500',
+  project_claimable: 'text-indigo-500',
+  project_assigned: 'text-indigo-500',
   system: 'text-zinc-500 dark:text-zinc-400',
 };
 

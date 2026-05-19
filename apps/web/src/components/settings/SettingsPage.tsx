@@ -18,10 +18,16 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Switch,
   useToast,
 } from '@hr-portal/ui';
-import { BellRing, Link2, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { BellRing, Copy, ExternalLink, Link2, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -34,6 +40,12 @@ interface NotificationPreferenceOption {
 
 interface TelegramWebLinkIntent {
   webUrl: string;
+  startCommand: string | null;
+}
+
+interface TelegramLinkDialogState {
+  open: boolean;
+  webUrl: string | null;
   startCommand: string | null;
 }
 
@@ -115,6 +127,11 @@ export default function SettingsPage(): ReactNode {
   const createTelegramLink = useCreateTelegramLink(user?.id);
   const [preferences, setPreferences] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
   const [savedPreferences, setSavedPreferences] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
+  const [telegramLinkDialog, setTelegramLinkDialog] = useState<TelegramLinkDialogState>({
+    open: false,
+    webUrl: null,
+    startCommand: null,
+  });
 
   useEffect(() => {
     if (!preferencesQuery.data) {
@@ -160,19 +177,15 @@ export default function SettingsPage(): ReactNode {
       setPreferences(result.preferences);
 
       const telegramWebIntent = createTelegramWebLinkIntent(result.connectUrl);
-      const copiedStartCommand = telegramWebIntent?.startCommand
-        ? await copyTextToClipboard(telegramWebIntent.startCommand)
-        : false;
-
-      window.open(telegramWebIntent?.webUrl ?? result.connectUrl, '_blank', 'noopener,noreferrer');
+      setTelegramLinkDialog({
+        open: true,
+        webUrl: telegramWebIntent?.webUrl ?? result.connectUrl,
+        startCommand: telegramWebIntent?.startCommand ?? null,
+      });
 
       addToast({
         title: isTelegramLinked ? 'Telegram relink started' : 'Telegram link ready',
-        description: telegramWebIntent?.startCommand
-          ? copiedStartCommand
-            ? 'Telegram Web opened and the one-time /start command was copied. Paste it into the bot chat to finish linking.'
-            : `Telegram Web opened. Paste "${telegramWebIntent.startCommand}" into the bot chat to finish linking.`
-          : 'Telegram Web opened. Complete the /start step in Telegram to finish linking your account.',
+        description: 'Follow the steps in the dialog to finish linking your Telegram account.',
         variant: 'success',
       });
     } catch (error) {
@@ -182,6 +195,29 @@ export default function SettingsPage(): ReactNode {
         variant: 'error',
       });
     }
+  };
+
+  const handleCopyTelegramStartCommand = async (): Promise<void> => {
+    if (!telegramLinkDialog.startCommand) {
+      return;
+    }
+
+    const copied = await copyTextToClipboard(telegramLinkDialog.startCommand);
+    addToast({
+      title: copied ? 'Telegram command copied' : 'Copy failed',
+      description: copied
+        ? 'Paste the one-time /start command into the Telegram bot chat.'
+        : 'Copy the command manually from the dialog and paste it into Telegram.',
+      variant: copied ? 'success' : 'error',
+    });
+  };
+
+  const handleOpenTelegramWeb = (): void => {
+    if (!telegramLinkDialog.webUrl) {
+      return;
+    }
+
+    window.open(telegramLinkDialog.webUrl, '_blank', 'noopener,noreferrer');
   };
 
   const telegramStatusLabel = isTelegramLinked
@@ -302,7 +338,7 @@ export default function SettingsPage(): ReactNode {
                               ? 'Save your notification changes before starting the Telegram link flow.'
                               : isTelegramPending
                                 ? 'Telegram Web is waiting for your one-time /start command. This page will refresh automatically after the bot confirms the link.'
-                                : 'This opens Telegram Web for your SN Connect bot and copies a one-time /start command.'}
+                                : 'This opens a step-by-step modal with the Telegram Web link and one-time /start command.'}
                           </p>
                         </div>
                       ) : null}
@@ -393,6 +429,57 @@ export default function SettingsPage(): ReactNode {
           </Card>
         </div>
       </div>
+
+      <Dialog
+        open={telegramLinkDialog.open}
+        onOpenChange={(open) => setTelegramLinkDialog((current) => ({ ...current, open }))}
+      >
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Link Telegram notifications</DialogTitle>
+            <DialogDescription>
+              Use Telegram Web to open your SN Connect bot, then send the one-time command below to finish linking this account.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/60">
+              <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">Steps</p>
+              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
+                <li>Copy the one-time <code className="rounded bg-zinc-200/70 px-1.5 py-0.5 text-[13px] dark:bg-zinc-800">/start</code> command below.</li>
+                <li>Open Telegram Web for the SN Connect bot.</li>
+                <li>Paste the command into the chat and send it once.</li>
+                <li>Return here and wait for the badge to switch to linked.</li>
+              </ol>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+                One-time Telegram command
+              </p>
+              <div className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                <p className="break-all font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                  {telegramLinkDialog.startCommand ?? 'Unable to generate the one-time /start command.'}
+                </p>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                This command is temporary and should only be sent to your SN Connect bot.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleOpenTelegramWeb} disabled={!telegramLinkDialog.webUrl}>
+              <ExternalLink className="h-4 w-4" />
+              Open Telegram Web
+            </Button>
+            <Button type="button" onClick={() => void handleCopyTelegramStartCommand()} disabled={!telegramLinkDialog.startCommand}>
+              <Copy className="h-4 w-4" />
+              Copy /start command
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
