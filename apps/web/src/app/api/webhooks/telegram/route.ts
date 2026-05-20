@@ -1,5 +1,6 @@
 import { sendTelegramMessage } from '@/lib/telegram';
 import { NOTIFICATION_PREFERENCES_ROLE_TYPE, normalizeStoredNotificationPreferences } from '@/lib/settings/notification-preferences';
+import { processProjectIntakeMessage } from '@/lib/intake/process-project-intake-message';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { inngest } from '@/lib/inngest/client';
 import { NextResponse } from 'next/server';
@@ -16,7 +17,7 @@ interface TelegramUpdate {
 }
 
 /** Roles allowed to dispatch project intake from Telegram. */
-const INTAKE_ALLOWED_ROLES = new Set(['ceo', 'super_admin', 'admin']);
+const INTAKE_ALLOWED_ROLES = new Set(['admin', 'super_admin', 'hr', 'cos', 'ceo']);
 
 function isAuthorizedWebhook(secretHeader: string | null): boolean {
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
@@ -131,27 +132,57 @@ export async function POST(request: Request) {
       .eq('id', senderUserId)
       .maybeSingle();
 
-    if (userErr || !userRow || !INTAKE_ALLOWED_ROLES.has((userRow as { role: string }).role)) {
-      // Linked user, but not authorised for project intake.
+    if (userErr || !userRow) {
       return NextResponse.json({ ok: true });
     }
 
-    await inngest.send({
-      name: 'project-intake/received',
-      data: {
-        sourceChatId: String(chatId),
-        sourceMessageId: String(messageId ?? Date.now()),
-        senderUserId,
-        text,
-        ...(voiceFileId ? { voiceFileId } : {}),
-        ...(message?.voice?.mime_type ? { voiceMimeType: message.voice.mime_type } : {}),
-      },
-    });
+    const senderRole = (userRow as { role: string }).role;
+    if (!INTAKE_ALLOWED_ROLES.has(senderRole)) {
+      await sendTelegramMessage({
+        chatId: String(chatId),
+        text: 'Your account is linked, but project intake is only enabled for leadership and admin roles.',
+      });
+      return NextResponse.json({ ok: true });
+    }
 
     await sendTelegramMessage({
       chatId: String(chatId),
       text: 'Got it — processing your project request. You will get a confirmation in a moment.',
     });
+
+    const intakePayload = {
+      sourceChatId: String(chatId),
+      sourceMessageId: String(messageId ?? Date.now()),
+      senderUserId,
+      text,
+      ...(voiceFileId ? { voiceFileId } : {}),
+      ...(message?.voice?.mime_type ? { voiceMimeType: message.voice.mime_type } : {}),
+    };
+
+    try {
+      await inngest.send({
+        name: 'project-intake/received',
+        data: intakePayload,
+      });
+    } catch (queueError) {
+      console.error('[Telegram] Failed to queue project intake in Inngest, falling back to direct processing:', queueError);
+
+      try {
+        await processProjectIntakeMessage({
+          sourceChatId: intakePayload.sourceChatId,
+          sourceMessageId: intakePayload.sourceMessageId,
+          senderUserId: intakePayload.senderUserId,
+          text: intakePayload.text,
+          ...(intakePayload.voiceFileId ? { voiceFileId: intakePayload.voiceFileId } : {}),
+        });
+      } catch (fallbackError) {
+        console.error('[Telegram] Direct project intake fallback failed:', fallbackError);
+        await sendTelegramMessage({
+          chatId: String(chatId),
+          text: 'We could not process your project request right now. Please try again shortly.',
+        });
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
