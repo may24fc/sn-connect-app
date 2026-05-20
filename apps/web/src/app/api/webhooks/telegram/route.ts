@@ -16,6 +16,12 @@ interface TelegramUpdate {
   };
 }
 
+interface NotificationPreferenceRow {
+  user_id: string;
+  metadata: unknown;
+  updated_at?: string | null;
+}
+
 /** Roles allowed to dispatch project intake from Telegram. */
 const INTAKE_ALLOWED_ROLES = new Set(['admin', 'super_admin', 'hr', 'cos', 'ceo']);
 
@@ -54,55 +60,79 @@ export async function POST(request: Request) {
       }
 
       const admin = createSupabaseAdminClient();
-    const { data, error } = await admin
+      const { data, error } = await admin
       .from('user_role_metadata')
       .select('user_id, metadata')
       .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
       .contains('metadata', { telegramLinkToken: rawToken })
       .maybeSingle();
 
-    if (error || !data) {
+      if (error || !data) {
+        await sendTelegramMessage({
+          chatId: String(chatId),
+          text: 'This Telegram linking link is invalid or has already been used. Please return to SN Connect Settings and generate a new one.',
+        });
+        return NextResponse.json({ ok: true });
+      }
+
+      const preferences = normalizeStoredNotificationPreferences(data.metadata);
+      if (preferences.telegramLinkToken !== rawToken || !preferences.telegramLinkTokenExpiresAt) {
+        await sendTelegramMessage({
+          chatId: String(chatId),
+          text: 'This Telegram linking link is invalid or has expired. Please request a new link from SN Connect Settings.',
+        });
+        return NextResponse.json({ ok: true });
+      }
+
+      const { error: clearExistingChatError } = await admin
+        .from('user_role_metadata')
+        .update({
+          metadata: {
+            telegram: preferences.telegram,
+            gmail: preferences.gmail,
+            telegramChatId: null,
+            telegramUsername: null,
+            telegramLinkedAt: null,
+            telegramLinkToken: null,
+            telegramLinkTokenExpiresAt: null,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
+        .contains('metadata', { telegramChatId: String(chatId) })
+        .neq('user_id', data.user_id);
+
+      if (clearExistingChatError) {
+        console.error('[Telegram] Failed to clear existing chat link:', clearExistingChatError);
+      }
+
+      const { error: updateError } = await admin
+        .from('user_role_metadata')
+        .update({
+          metadata: {
+            ...preferences,
+            telegramChatId: String(chatId),
+            telegramUsername: update.message?.from?.username?.trim() || null,
+            telegramLinkedAt: new Date().toISOString(),
+            telegramLinkToken: null,
+            telegramLinkTokenExpiresAt: null,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', data.user_id)
+        .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE);
+
+      if (updateError) {
+        console.error('[Telegram] Failed to persist linked Telegram chat:', updateError);
+        return NextResponse.json({ error: 'Failed to link Telegram account' }, { status: 500 });
+      }
+
       await sendTelegramMessage({
         chatId: String(chatId),
-        text: 'This Telegram linking link is invalid or has already been used. Please return to SN Connect Settings and generate a new one.',
+        text: 'Your Telegram account is now linked to SN Connect. You can return to Settings to enable Telegram notifications.',
       });
+
       return NextResponse.json({ ok: true });
-    }
-
-    const preferences = normalizeStoredNotificationPreferences(data.metadata);
-    if (preferences.telegramLinkToken !== rawToken || !preferences.telegramLinkTokenExpiresAt) {
-      await sendTelegramMessage({
-        chatId: String(chatId),
-        text: 'This Telegram linking link is invalid or has expired. Please request a new link from SN Connect Settings.',
-      });
-      return NextResponse.json({ ok: true });
-    }
-
-    const { error: updateError } = await admin.from('user_role_metadata').update({
-      metadata: {
-        ...preferences,
-        telegramChatId: String(chatId),
-        telegramUsername: update.message?.from?.username?.trim() || null,
-        telegramLinkedAt: new Date().toISOString(),
-        telegramLinkToken: null,
-        telegramLinkTokenExpiresAt: null,
-      },
-      updated_at: new Date().toISOString(),
-    })
-    .eq('user_id', data.user_id)
-    .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE);
-
-    if (updateError) {
-      console.error('[Telegram] Failed to persist linked Telegram chat:', updateError);
-      return NextResponse.json({ error: 'Failed to link Telegram account' }, { status: 500 });
-    }
-
-    await sendTelegramMessage({
-      chatId: String(chatId),
-      text: 'Your Telegram account is now linked to SN Connect. You can return to Settings to enable Telegram notifications.',
-    });
-
-    return NextResponse.json({ ok: true });
     }
 
     // ----- Project intake from CEO / super_admin / admin -----
@@ -112,19 +142,29 @@ export async function POST(request: Request) {
 
     const admin = createSupabaseAdminClient();
 
-    const { data: linkRow, error: linkErr } = await admin
+    const { data: linkRows, error: linkErr } = await admin
       .from('user_role_metadata')
-      .select('user_id')
+      .select('user_id, metadata, updated_at')
       .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
       .contains('metadata', { telegramChatId: String(chatId) })
-      .maybeSingle();
+      .order('updated_at', { ascending: false })
+      .limit(5);
 
-    if (linkErr || !linkRow) {
+    if (linkErr || !linkRows || linkRows.length === 0) {
       // Unknown chat — silently ignore. Avoid leaking that the chat is unlinked.
       return NextResponse.json({ ok: true });
     }
 
-    const senderUserId = (linkRow as { user_id: string }).user_id;
+    const matchedLinkRow = (linkRows as NotificationPreferenceRow[]).find((row) => {
+      const preferences = normalizeStoredNotificationPreferences(row.metadata);
+      return preferences.telegramChatId === String(chatId);
+    });
+
+    if (!matchedLinkRow) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const senderUserId = matchedLinkRow.user_id;
 
     const { data: userRow, error: userErr } = await admin
       .from('users')
