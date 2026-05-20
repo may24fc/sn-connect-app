@@ -82,6 +82,9 @@ export async function GET(request: NextRequest) {
 
     if (filters.status) {
       query = query.eq('status', filters.status);
+    } else {
+      // Never surface terminated internships unless explicitly requested via status=terminated
+      query = query.neq('status', 'terminated');
     }
     if (filters.school) {
       query = query.ilike('school', `%${filters.school}%`);

@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Mail,
   MoreVertical,
+  Pencil,
   Trash2,
   User,
 } from 'lucide-react';
@@ -32,6 +33,7 @@ interface InternCardProps {
   intern: InternSummary;
   hoursMode?: 'weekly' | 'entire';
   onView?: (intern: InternSummary) => void;
+  onEditDetails?: (intern: InternSummary) => void;
   onViewReports?: (intern: InternSummary) => void;
   onContact?: (intern: InternSummary) => void;
   onDelete?: (intern: InternSummary) => void;
@@ -51,6 +53,7 @@ export function InternCard({
   intern,
   hoursMode = 'weekly',
   onView,
+  onEditDetails,
   onViewReports,
   onContact,
   onDelete,
@@ -85,6 +88,12 @@ export function InternCard({
                   <DropdownMenuItem onClick={() => onView(intern)}>
                     <Eye className="mr-2 h-4 w-4" />
                     View Details
+                  </DropdownMenuItem>
+                )}
+                {onEditDetails && (
+                  <DropdownMenuItem onClick={() => onEditDetails(intern)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Details
                   </DropdownMenuItem>
                 )}
                 {onViewReports && (
@@ -167,6 +176,7 @@ interface InternListProps {
   interns: Array<InternSummary>;
   hoursMode?: 'weekly' | 'entire';
   onView?: (intern: InternSummary) => void;
+  onEditDetails?: (intern: InternSummary) => void;
   onViewReports?: (intern: InternSummary) => void;
   onContact?: (intern: InternSummary) => void;
   onDelete?: (intern: InternSummary) => void;
@@ -179,6 +189,7 @@ export function InternList({
   interns,
   hoursMode = 'weekly',
   onView,
+  onEditDetails,
   onViewReports,
   onContact,
   onDelete,
@@ -210,6 +221,7 @@ export function InternList({
           intern={intern}
           hoursMode={hoursMode}
           {...(onView && { onView })}
+          {...(onEditDetails && { onEditDetails })}
           {...(onViewReports && { onViewReports })}
           {...(onContact && { onContact })}
           {...(onDelete && { onDelete })}
@@ -229,6 +241,16 @@ interface InternRowProps {
 
 export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, className }: InternRowProps): React.ReactNode {
   const daysRemaining = getDaysRemaining(intern.endDate);
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (!onView) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onView(intern);
+    }
+  };
 
   return (
     <div
@@ -238,6 +260,7 @@ export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, clas
         className
       )}
       onClick={() => onView?.(intern)}
+      onKeyDown={handleKeyDown}
       role={onView ? 'button' : undefined}
       tabIndex={onView ? 0 : undefined}
     >

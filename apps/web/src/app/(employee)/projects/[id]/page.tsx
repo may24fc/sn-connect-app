@@ -59,43 +59,6 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
-function parseIsoDate(date: string): Date | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-  if (!match) {
-    return null;
-  }
-
-  const year = Number.parseInt(match[1] ?? '', 10);
-  const month = Number.parseInt(match[2] ?? '', 10);
-  const day = Number.parseInt(match[3] ?? '', 10);
-  return new Date(Date.UTC(year, month - 1, day));
-}
-
-function formatIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
-
-function calculateInclusivePeriodEnd(
-  startDate: string,
-  durationUnit: 'week' | 'month',
-  durationCount: number
-): string {
-  const start = parseIsoDate(startDate);
-  if (!start || durationCount < 1) {
-    return '';
-  }
-
-  const end = new Date(start);
-  if (durationUnit === 'week') {
-    end.setUTCDate(end.getUTCDate() + durationCount * 7 - 1);
-  } else {
-    end.setUTCMonth(end.getUTCMonth() + durationCount);
-    end.setUTCDate(end.getUTCDate() - 1);
-  }
-
-  return formatIsoDate(end);
-}
-
 function isIsoAfter(left: string, right: string): boolean {
   return left > right;
 }
@@ -775,6 +738,7 @@ function EditProjectDialog({
   const [startDate, setStartDate] = useState(project.start_date);
   const [targetEndDate, setTargetEndDate] = useState(project.target_end_date);
   const [status, setStatus] = useState(project.status);
+  const [pointsTotal, setPointsTotal] = useState(String(project.points_total ?? 0));
 
   useEffect(() => {
     if (!open) {
@@ -786,6 +750,7 @@ function EditProjectDialog({
     setStartDate(project.start_date);
     setTargetEndDate(project.target_end_date);
     setStatus(project.status);
+    setPointsTotal(String(project.points_total ?? 0));
   }, [open, project]);
 
   async function handleSubmit(event: FormEvent) {
@@ -810,6 +775,7 @@ function EditProjectDialog({
         startDate,
         targetEndDate,
         status,
+        pointsTotal: Math.max(0, Number.parseInt(pointsTotal, 10) || 0),
       });
       addToast({ title: 'Project updated', variant: 'success' });
       onOpenChange(false);
@@ -886,6 +852,19 @@ function EditProjectDialog({
                 required
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="project-edit-points">Points budget</Label>
+            <Input
+              id="project-edit-points"
+              type="number"
+              min="0"
+              step="1"
+              inputMode="numeric"
+              value={pointsTotal}
+              onChange={(event) => setPointsTotal(event.target.value)}
+              placeholder="0"
+            />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -1160,8 +1139,6 @@ function CreateMilestoneDialog({
   const [periodStart, setPeriodStart] = useState(today);
   const [periodEnd, setPeriodEnd] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [durationUnit, setDurationUnit] = useState<'week' | 'month'>('month');
-  const [durationCount, setDurationCount] = useState('1');
 
   useEffect(() => {
     if (!open) {
@@ -1170,26 +1147,11 @@ function CreateMilestoneDialog({
 
     setTitle('');
     setPeriodStart(today);
-    setPeriodEnd(parent ? '' : calculateInclusivePeriodEnd(today, 'month', 1));
+    setPeriodEnd('');
     setDueDate('');
-    setDurationUnit('month');
-    setDurationCount('1');
-  }, [open, parent, today]);
+  }, [open, today]);
 
-  useEffect(() => {
-    if (parent) {
-      return;
-    }
-
-    const count = Number.parseInt(durationCount, 10);
-    if (!periodStart || !Number.isFinite(count) || count < 1) {
-      setPeriodEnd('');
-      return;
-    }
-
-    setPeriodEnd(calculateInclusivePeriodEnd(periodStart, durationUnit, count));
-  }, [durationCount, durationUnit, parent, periodStart]);
-
+  // Clamp dueDate to not exceed periodEnd or projectEndDate
   useEffect(() => {
     if (!periodEnd && !projectEndDate) return;
     const effectiveMax = periodEnd && projectEndDate
@@ -1202,17 +1164,6 @@ function CreateMilestoneDialog({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!parent) {
-      const count = Number.parseInt(durationCount, 10);
-      if (!Number.isFinite(count) || count < 1) {
-        addToast({
-          title: 'Invalid duration',
-          description: 'Enter how many weeks or months this milestone should span.',
-          variant: 'warning',
-        });
-        return;
-      }
-    }
 
     if (!title.trim() || !periodStart || !periodEnd || !dueDate) {
       addToast({ title: 'Fill all fields', variant: 'warning' });
@@ -1269,40 +1220,6 @@ function CreateMilestoneDialog({
               required
             />
           </div>
-          {!parent ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="ms-duration-unit">Duration Unit</Label>
-                <Select
-                  value={durationUnit}
-                  onValueChange={(value) => setDurationUnit(value as 'week' | 'month')}
-                >
-                  <SelectTrigger id="ms-duration-unit">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="week">Weeks</SelectItem>
-                    <SelectItem value="month">Months</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ms-duration-count">
-                  {durationUnit === 'week' ? 'How many weeks' : 'How many months'}
-                </Label>
-                <Input
-                  id="ms-duration-count"
-                  type="number"
-                  min="1"
-                  step="1"
-                  inputMode="numeric"
-                  value={durationCount}
-                  onChange={(e) => setDurationCount(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-          ) : null}
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="ms-start">Start</Label>
@@ -1311,20 +1228,19 @@ function CreateMilestoneDialog({
                 type="date"
                 value={periodStart}
                 onChange={(e) => setPeriodStart(e.target.value)}
-                max={periodEnd || undefined}
+                max={periodEnd || projectEndDate || undefined}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ms-end">{parent ? 'End' : 'End (auto-calculated)'}</Label>
+              <Label htmlFor="ms-end">End</Label>
               <Input
                 id="ms-end"
                 type="date"
                 value={periodEnd}
                 onChange={(e) => setPeriodEnd(e.target.value)}
                 min={periodStart || undefined}
-                readOnly={!parent}
-                className={!parent ? 'bg-zinc-50 dark:bg-zinc-900/60' : undefined}
+                max={projectEndDate || undefined}
                 required
               />
             </div>

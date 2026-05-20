@@ -276,8 +276,8 @@ function OrganizationSelectField({
         </SelectContent>
       </Select>
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 text-xs text-zinc-500 dark:text-zinc-400">
           {loading
             ? `Loading ${labelLower}s...`
             : hasError
@@ -747,7 +747,7 @@ export function AssignEmployeeModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5 text-slate-700" />
@@ -758,8 +758,8 @@ export function AssignEmployeeModal({
 
         <div className="space-y-6">
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <h3 className="font-semibold">{assignmentData.fullName}</h3>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">{assignmentData.email}</p>
                 <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -1015,7 +1015,7 @@ export function AssignEmployeeModal({
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+              <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-4 sm:flex-row sm:items-center sm:justify-end dark:border-zinc-700">
                 <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                   Cancel
                 </Button>
@@ -1109,7 +1109,7 @@ export function AssignEmployeeModal({
                 isCreating={createDivisionMutation.isPending}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">
                     <Calendar className="mr-1 inline h-4 w-4" />
@@ -1181,7 +1181,7 @@ export function AssignEmployeeModal({
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="school">School (Optional)</Label>
                   <Input
@@ -1211,7 +1211,7 @@ export function AssignEmployeeModal({
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+              <div className="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-4 sm:flex-row sm:items-center sm:justify-end dark:border-zinc-700">
                 <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
                   Cancel
                 </Button>

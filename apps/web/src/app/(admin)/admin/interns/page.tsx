@@ -425,6 +425,40 @@ export default function AdminInternsPage(): ReactNode {
     });
   };
 
+  const openInternAssignmentFromIntern = (intern: InternSummary): void => {
+    const internshipRecord = (internshipsQuery.data?.data || []).find(
+      (record) => record.id === intern.id
+    );
+
+    if (!internshipRecord) {
+      addToast({
+        title: 'Unable to open assignment',
+        description: 'The selected internship record could not be loaded.',
+        variant: 'error',
+      });
+      return;
+    }
+
+    const employeeRecord = employeeRecordByUserId.get(internshipRecord.userId) ||
+      employeeRecordByEmail.get(String(internshipRecord.email).toLowerCase());
+
+    openAssignmentModal({
+      userId: internshipRecord.userId,
+      fullName: internshipRecord.name,
+      email: internshipRecord.email,
+      role: 'intern',
+      position: employeeRecord?.position || null,
+      departmentName: internshipRecord.department || employeeRecord?.department || null,
+      divisionName: employeeRecord?.division || null,
+      startDate: internshipRecord.startDate,
+      endDate: internshipRecord.endDate,
+      requiredHours: internshipRecord.requiredHours,
+      weeklyRequiredHours: internshipRecord.weeklyRequiredHours,
+      school: internshipRecord.school || null,
+      program: internshipRecord.program || null,
+    });
+  };
+
   return (
     <div className="space-y-6 p-3">
       {/* Header */}
@@ -656,6 +690,7 @@ export default function AdminInternsPage(): ReactNode {
               interns={filteredInterns}
               hoursMode={hoursMode}
               onView={handleViewIntern}
+              onEditDetails={openInternAssignmentFromIntern}
               {...(isSuperAdmin && { onDelete: handleDeleteIntern })}
               layout="grid"
               emptyMessage={
