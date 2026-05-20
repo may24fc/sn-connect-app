@@ -18,6 +18,12 @@ function deriveReviewState(row: {
     return 'approved';
   }
 
+  // Terminated users are no longer active employees; their onboarding
+  // record should never surface as a pending approval.
+  if (userInfo?.status === 'terminated') {
+    return 'approved';
+  }
+
   if (row.review_state === 'rejected') {
     return 'rejected';
   }
@@ -61,6 +67,7 @@ export async function GET(request: NextRequest) {
       .from('onboarding_profiles')
       .select('*, users!inner(id, role, status, avatar_url), departments(id, name)', { count: 'exact' })
       .is('deleted_at', null)
+      .neq('users.status', 'terminated')
       .order('created_at', { ascending: false });
 
     if (filters.search) {

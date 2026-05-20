@@ -221,11 +221,25 @@ export async function DELETE(
       return NextResponse.json({ error: 'Failed to terminate user' }, { status: 500 });
     }
 
-    await adminClient
+    // Update employee termination date and get the employee id to cascade to internships
+    const { data: employeeData } = await adminClient
       .from('employees')
       .update({ date_terminated: terminatedAt })
       .eq('user_id', id)
-      .is('deleted_at', null);
+      .is('deleted_at', null)
+      .select('id')
+      .maybeSingle();
+
+    // If this user had an active internship, terminate it too.
+    // The internship table has no direct user_id; the chain is:
+    //   users.id → employees.user_id → employees.id → internships.employee_id
+    if (employeeData?.id) {
+      await adminClient
+        .from('internships')
+        .update({ status: 'terminated', updated_at: terminatedAt })
+        .eq('employee_id', employeeData.id)
+        .eq('status', 'active');
+    }
 
     logActivity(supabase, {
       userId: user.id,
