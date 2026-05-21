@@ -95,8 +95,8 @@ export async function notifyProjectIntakeAudience({
     message: extraction.problem_statement,
     link: '/projects/pool',
     metadata: { backlogId: persisted.backlogId, source: 'telegram-intake' },
-    sendEmail: false,
-    sendTelegram: false,
+    sendEmail: true,
+    sendTelegram: true,
   });
 }
 

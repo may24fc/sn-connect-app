@@ -61,8 +61,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
             },
             {
               "name": "Content-Type",
@@ -100,8 +100,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "oiiTiTwKwkzLjGEc",
-          "name": "[Dev] SN Connect Supabase REST"
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] SN Connect Supabase Service Role"
         }
       }
     },
@@ -175,8 +175,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
             }
           ]
         },
@@ -199,8 +199,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "oiiTiTwKwkzLjGEc",
-          "name": "[Dev] SN Connect Supabase REST"
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] SN Connect Supabase Service Role"
         }
       }
     },
@@ -397,8 +397,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
             },
             {
               "name": "Content-Type",
@@ -432,8 +432,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "oiiTiTwKwkzLjGEc",
-          "name": "[Dev] SN Connect Supabase REST"
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] SN Connect Supabase Service Role"
         }
       }
     },
@@ -447,8 +447,8 @@
         "headerParameters": {
           "parameters": [
             {
-              "name": "Authorization",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppaGR0eHB2dWdkcGhpZXVqaHprIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTA2MDIyMiwiZXhwIjoyMDg0NjM2MjIyfQ.RIIu_RQO3OpRDLxMvHLGiYvHEIoPKXEjCa8tqu5IbBM"
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
             },
             {
               "name": "Content-Type",
@@ -482,8 +482,8 @@
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "oiiTiTwKwkzLjGEc",
-          "name": "[Dev] SN Connect Supabase REST"
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] SN Connect Supabase Service Role"
         }
       }
     },

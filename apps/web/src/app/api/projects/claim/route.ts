@@ -114,8 +114,8 @@ export async function POST(request: Request) {
     message: (backlog as { objective: string }).objective,
     link: `/projects/${(project as { id: string }).id}`,
     metadata: { backlogId: parsed.data.backlogId, source: 'self-claim' },
-    sendEmail: false,
-    sendTelegram: false,
+    sendEmail: true,
+    sendTelegram: true,
   });
 
   return NextResponse.json({

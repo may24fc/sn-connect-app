@@ -66,7 +66,7 @@ export default function ProjectPoolPage() {
               Project Pool
             </h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              Unclaimed projects from the CEO. Pick one to make it yours.
+              Unclaimed projects from leadership. Pick to make it yours.
             </p>
           </div>
         </div>

@@ -39,6 +39,8 @@ export interface InternshipSummaryRecord {
   school: string;
   program: string;
   department: string;
+  division: string | null;
+  divisionId: string | null;
   supervisor: string;
   supervisorId: string | null;
   startDate: string;

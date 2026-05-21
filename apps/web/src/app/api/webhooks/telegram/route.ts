@@ -22,6 +22,11 @@ interface NotificationPreferenceRow {
   updated_at?: string | null;
 }
 
+interface LinkedTelegramUserRow {
+  id: string;
+  role: string;
+}
+
 /** Roles allowed to dispatch project intake from Telegram. */
 const INTAKE_ALLOWED_ROLES = new Set(['admin', 'super_admin', 'hr', 'cos', 'ceo']);
 
@@ -84,28 +89,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true });
       }
 
-      const { error: clearExistingChatError } = await admin
-        .from('user_role_metadata')
-        .update({
-          metadata: {
-            telegram: preferences.telegram,
-            gmail: preferences.gmail,
-            telegramChatId: null,
-            telegramUsername: null,
-            telegramLinkedAt: null,
-            telegramLinkToken: null,
-            telegramLinkTokenExpiresAt: null,
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('role_type', NOTIFICATION_PREFERENCES_ROLE_TYPE)
-        .contains('metadata', { telegramChatId: String(chatId) })
-        .neq('user_id', data.user_id);
-
-      if (clearExistingChatError) {
-        console.error('[Telegram] Failed to clear existing chat link:', clearExistingChatError);
-      }
-
       const { error: updateError } = await admin
         .from('user_role_metadata')
         .update({
@@ -129,7 +112,7 @@ export async function POST(request: Request) {
 
       await sendTelegramMessage({
         chatId: String(chatId),
-        text: 'Your Telegram account is now linked to SN Connect. You can return to Settings to enable Telegram notifications.',
+        text: 'Your Telegram account is now linked to this SN Connect account. You can return to Settings to enable Telegram notifications.',
       });
 
       return NextResponse.json({ ok: true });
@@ -164,20 +147,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    const senderUserId = matchedLinkRow.user_id;
-
-    const { data: userRow, error: userErr } = await admin
+    const linkedUserIds = (linkRows as NotificationPreferenceRow[]).map((row) => row.user_id);
+    const { data: linkedUsers, error: userErr } = await admin
       .from('users')
-      .select('role')
-      .eq('id', senderUserId)
-      .maybeSingle();
+      .select('id, role')
+      .in('id', linkedUserIds);
 
-    if (userErr || !userRow) {
+    if (userErr || !linkedUsers) {
       return NextResponse.json({ ok: true });
     }
 
-    const senderRole = (userRow as { role: string }).role;
-    if (!INTAKE_ALLOWED_ROLES.has(senderRole)) {
+    const roleByUserId = new Map(
+      (linkedUsers as LinkedTelegramUserRow[]).map((row) => [row.id, row.role])
+    );
+
+    const senderUserId = (linkRows as NotificationPreferenceRow[]).find((row) =>
+      INTAKE_ALLOWED_ROLES.has(roleByUserId.get(row.user_id) ?? '')
+    )?.user_id;
+
+    if (!senderUserId) {
+      await sendTelegramMessage({
+        chatId: String(chatId),
+        text: 'Your Telegram chat is linked, but project intake is only enabled for leadership and admin roles.',
+      });
+      return NextResponse.json({ ok: true });
+    }
+
+    const senderRole = roleByUserId.get(senderUserId);
+    if (!senderRole || !INTAKE_ALLOWED_ROLES.has(senderRole)) {
       await sendTelegramMessage({
         chatId: String(chatId),
         text: 'Your account is linked, but project intake is only enabled for leadership and admin roles.',

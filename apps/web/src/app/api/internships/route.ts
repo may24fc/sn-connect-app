@@ -13,6 +13,7 @@ interface InternshipListRow {
   status: 'active' | 'completed' | 'terminated' | 'converted';
   supervisor_id: string | null;
   department: string;
+  division: string | null;
   school: string | null;
   program: string | null;
   created_at: string;
@@ -35,6 +36,7 @@ interface EmployeeRow {
   department: string;
   users: {
     avatar_url: string | null;
+    division_id: string | null;
   } | null;
 }
 
@@ -142,7 +144,7 @@ export async function GET(request: NextRequest) {
         supabase
           .from('employees')
           .select(
-            'id, user_id, first_name, last_name, company_email, department, users!employees_user_id_fkey(avatar_url)'
+            'id, user_id, first_name, last_name, company_email, department, users!employees_user_id_fkey(avatar_url, division_id)'
           )
           .in('id', employeeIds)
           .is('deleted_at', null),
@@ -217,6 +219,8 @@ export async function GET(request: NextRequest) {
           school: row.school || 'N/A',
           program: row.program || 'N/A',
           department: row.department || employee.department,
+          division: row.division || null,
+          divisionId: employee.users?.division_id ?? null,
           supervisor: row.supervisor_id
             ? supervisorMap.get(row.supervisor_id) || 'Unassigned'
             : 'Unassigned',

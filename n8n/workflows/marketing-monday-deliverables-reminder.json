@@ -46,7 +46,7 @@
                                                                                      "id":  "a2",
                                                                                      "name":  "weekLabel",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $now.setZone(\u0027Asia/Manila\u0027).startOf(\u0027week\u0027).toFormat(\u0027MMM d\u0027) + \u0027 – \u0027 + $now.setZone(\u0027Asia/Manila\u0027).endOf(\u0027week\u0027).toFormat(\u0027MMM d, yyyy\u0027) }}"
+                                                                                     "value":  "={{ $now.setZone(\u0027Asia/Manila\u0027).startOf(\u0027week\u0027).toFormat(\u0027MMM d\u0027) + \u0027 ï¿½ \u0027 + $now.setZone(\u0027Asia/Manila\u0027).endOf(\u0027week\u0027).toFormat(\u0027MMM d, yyyy\u0027) }}"
                                                                                  }
                                                                              ]
                                                          },
@@ -67,17 +67,14 @@
                       "parameters":  {
                                          "method":  "GET",
                                          "url":  "https://tccdupkjmwwxcvpqnpeb.supabase.co/rest/v1/employees?select=id,first_name,last_name,department,employment_type,users!inner(status)\u0026department=eq.Marketing\u0026deleted_at=is.null\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026users.status=not.in.(terminated,inactive)\u0026order=last_name.asc",
-                                         "authentication":  "none",
+                                         "authentication":  "genericCredentialType",
+                                         "genericAuthType":  "httpHeaderAuth",
                                          "sendHeaders":  true,
                                          "headerParameters":  {
                                                                   "parameters":  [
                                                                                      {
                                                                                          "name":  "apikey",
-                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
-                                                                                     },
-                                                                                     {
-                                                                                         "name":  "Authorization",
-                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
+                                                                                         "value":  "sb_publishable_fUepYGIPOBdKoODK4_LHHg_OpffHNG9"
                                                                                      },
                                                                                      {
                                                                                          "name":  "Content-Type",
@@ -85,6 +82,12 @@
                                                                                      }
                                                                                  ]
                                                               },
+                                         "credentials":  {
+                                                              "httpHeaderAuth":  {
+                                                                                     "id":  "Qtoo65GeBSupj5X6",
+                                                                                     "name":  "[Prod] SN Connect Supabase Service Role"
+                                                                                 }
+                                                          },
                                          "options":  {
                                                          "response":  {
                                                                           "response":  {
@@ -155,7 +158,7 @@
                                        192
                                    ],
                       "parameters":  {
-                                         "jsCode":  "const { employees, interns, weekLabel } = $json;\n\nconst empLines = employees.map(e =\u003e `• ${e.first_name} ${e.last_name}`).join(\u0027\\n\u0027);\nconst internLines = interns.map(e =\u003e `• ${e.first_name} ${e.last_name}`).join(\u0027\\n\u0027);\n\nlet teamSection;\nif (employees.length \u003e 0 \u0026\u0026 interns.length \u003e 0) {\n  teamSection = `\u003cb\u003eEmployees:\u003c/b\u003e\\n${empLines}\\n\\n\u003cb\u003eInterns:\u003c/b\u003e\\n${internLines}`;\n} else if (employees.length \u003e 0) {\n  teamSection = empLines;\n} else {\n  teamSection = internLines;\n}\n\nconst text = [\n  \u0027?? \u003cb\u003eWeekly Deliverables Reminder\u003c/b\u003e\u0027,\n  `?? \u003cb\u003eWeek:\u003c/b\u003e ${weekLabel}`,\n  \u0027\u0027,\n  \u0027Hi Marketing Team! ??\u0027,\n  \u0027\u0027,\n  \u0027This is your weekly reminder to complete and submit your deliverables by \u003cb\u003etoday EOD\u003c/b\u003e.\u0027,\n  \u0027\u0027,\n  \u0027\u003cb\u003eMarketing Team:\u003c/b\u003e\u0027,\n  teamSection,\n  \u0027\u0027,\n  \u0027Please ensure the following are submitted:\u0027,\n  \u0027? Weekly Marketing Report\u0027,\n  \u0027? Campaign Progress Update\u0027,\n  \u0027? Marketing Metrics Summary\u0027,\n  \u0027\u0027,\n  \u0027?? \u003ca href=\"https://app.sngroup.com.au\"\u003eOpen HR Portal\u003c/a\u003e\u0027\n].join(\u0027\\n\u0027);\nreturn [{ json: { telegramText: text } }];"
+                                         "jsCode":  "const { employees, interns, weekLabel } = $json;\n\nconst empLines = employees.map(e =\u003e `ï¿½ ${e.first_name} ${e.last_name}`).join(\u0027\\n\u0027);\nconst internLines = interns.map(e =\u003e `ï¿½ ${e.first_name} ${e.last_name}`).join(\u0027\\n\u0027);\n\nlet teamSection;\nif (employees.length \u003e 0 \u0026\u0026 interns.length \u003e 0) {\n  teamSection = `\u003cb\u003eEmployees:\u003c/b\u003e\\n${empLines}\\n\\n\u003cb\u003eInterns:\u003c/b\u003e\\n${internLines}`;\n} else if (employees.length \u003e 0) {\n  teamSection = empLines;\n} else {\n  teamSection = internLines;\n}\n\nconst text = [\n  \u0027?? \u003cb\u003eWeekly Deliverables Reminder\u003c/b\u003e\u0027,\n  `?? \u003cb\u003eWeek:\u003c/b\u003e ${weekLabel}`,\n  \u0027\u0027,\n  \u0027Hi Marketing Team! ??\u0027,\n  \u0027\u0027,\n  \u0027This is your weekly reminder to complete and submit your deliverables by \u003cb\u003etoday EOD\u003c/b\u003e.\u0027,\n  \u0027\u0027,\n  \u0027\u003cb\u003eMarketing Team:\u003c/b\u003e\u0027,\n  teamSection,\n  \u0027\u0027,\n  \u0027Please ensure the following are submitted:\u0027,\n  \u0027? Weekly Marketing Report\u0027,\n  \u0027? Campaign Progress Update\u0027,\n  \u0027? Marketing Metrics Summary\u0027,\n  \u0027\u0027,\n  \u0027?? \u003ca href=\"https://app.sngroup.com.au\"\u003eOpen HR Portal\u003c/a\u003e\u0027\n].join(\u0027\\n\u0027);\nreturn [{ json: { telegramText: text } }];"
                                      }
                   },
                   {

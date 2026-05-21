@@ -1,5 +1,6 @@
 'use client';
 
+import { generatedApplicationUpdateSummary } from '@/lib/generated/application-update-summary.generated';
 import {
   Button,
   Dialog,
@@ -26,12 +27,8 @@ interface ApplicationUpdateProviderProps {
 }
 
 const DEFAULT_POLL_INTERVAL_MS = 5 * 60 * 1000;
-const DEFAULT_SUMMARY_TITLE = "What's new in SN Connect";
-const DEFAULT_SUMMARY_ITEMS = [
-  'Improved portal performance across dashboards and shared layouts.',
-  'Refined deployment update handling so new builds are easier to review before refresh.',
-  'Applied stability fixes for report and navigation flows.',
-];
+const DEFAULT_SUMMARY_TITLE = generatedApplicationUpdateSummary.title || "What's new in SN Connect";
+const DEFAULT_SUMMARY_ITEMS = generatedApplicationUpdateSummary.items;
 const FORCE_UPDATE_STORAGE_KEY = 'sn:force-update-available';
 const FORCE_UPDATE_SUMMARY_STORAGE_KEY = 'sn:force-update-summary';
 
@@ -233,14 +230,16 @@ export function ApplicationUpdateHeaderAction(): ReactNode {
               ) : null}
             </div>
 
-            <ul className="space-y-2 text-sm text-foreground">
-              {summaryItems.map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+            {summaryItems.length > 0 ? (
+              <ul className="space-y-2 text-sm text-foreground">
+                {summaryItems.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
 
           <DialogFooter className="gap-2 sm:justify-end">

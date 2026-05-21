@@ -34,17 +34,14 @@
                       "parameters":  {
                                          "method":  "GET",
                                          "url":  "=https://tccdupkjmwwxcvpqnpeb.supabase.co/rest/v1/employees?select=first_name,last_name\u0026id=eq.{{ $json.body.employee_id }}\u0026deleted_at=is.null\u0026limit=1",
-                                         "authentication":  "none",
+                                         "authentication":  "genericCredentialType",
+                                         "genericAuthType":  "httpHeaderAuth",
                                          "sendHeaders":  true,
                                          "headerParameters":  {
                                                                   "parameters":  [
                                                                                      {
                                                                                          "name":  "apikey",
-                                                                                         "value":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
-                                                                                     },
-                                                                                     {
-                                                                                         "name":  "Authorization",
-                                                                                         "value":  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjY2R1cGtqbXd3eGN2cHFucGViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTEyMjAyMywiZXhwIjoyMDkwNjk4MDIzfQ.xHazDcTKzSqsPSKNJPME__mWUCK_7UDFwjUuTE_DL_E"
+                                                                                         "value":  "sb_publishable_fUepYGIPOBdKoODK4_LHHg_OpffHNG9"
                                                                                      },
                                                                                      {
                                                                                          "name":  "Content-Type",
@@ -52,6 +49,12 @@
                                                                                      }
                                                                                  ]
                                                               },
+                                         "credentials":  {
+                                                              "httpHeaderAuth":  {
+                                                                                     "id":  "Qtoo65GeBSupj5X6",
+                                                                                     "name":  "[Prod] SN Connect Supabase Service Role"
+                                                                                 }
+                                                          },
                                          "options":  {
                                                          "response":  {
                                                                           "response":  {

@@ -3,6 +3,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
+// All roles that represent employed staff (non-interns). When the directory is
+// filtered by "employee", admins and leadership roles are included so HR sees
+// everyone regardless of their system role.
+const EMPLOYEE_EQUIVALENT_ROLES = ['employee', 'admin', 'super_admin', 'hr', 'cos', 'ceo'];
+
 interface DirectoryRow {
   full_name: string | null;
   email: string | null;
@@ -102,12 +107,21 @@ export async function GET(request: NextRequest) {
     // Build query on the employee_directory view
     let query = supabase.from('employee_directory').select('*', { count: 'exact' });
 
-    // Role filter
+    // Role filter — "employee" expands to all non-intern roles so admins/leadership
+    // appear in the directory when HR filters by Employee.
+    function expandEmployeeRole(roles: string[]): string[] {
+      const expanded = roles.flatMap((r) =>
+        r === 'employee' ? EMPLOYEE_EQUIVALENT_ROLES : [r]
+      );
+      return [...new Set(expanded)];
+    }
+
     if (roleFilter) {
-      query = query.eq('role', roleFilter);
+      const expanded = expandEmployeeRole([roleFilter]);
+      query = query.in('role', expanded);
     }
     if (roleFilters.length > 0) {
-      query = query.in('role', roleFilters);
+      query = query.in('role', expandEmployeeRole(roleFilters));
     }
 
     // Department filter
@@ -215,6 +229,9 @@ export async function GET(request: NextRequest) {
         (allData || [])
           .map((entry: { role: string | null }) => entry.role)
           .filter((value: string | null): value is string => Boolean(value))
+          // Collapse all non-intern staff roles into "employee" so the filter
+          // dropdown shows only "Employee" and "Intern".
+          .map((r) => (EMPLOYEE_EQUIVALENT_ROLES.includes(r) ? 'employee' : r))
       )
     ).sort();
 
