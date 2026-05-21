@@ -231,7 +231,9 @@ export async function GET(request: NextRequest) {
           .filter((value: string | null): value is string => Boolean(value))
           // Collapse all non-intern staff roles into "employee" so the filter
           // dropdown shows only "Employee" and "Intern".
-          .map((r) => (EMPLOYEE_EQUIVALENT_ROLES.includes(r) ? 'employee' : r))
+          .map((role: string) =>
+            EMPLOYEE_EQUIVALENT_ROLES.includes(role) ? 'employee' : role
+          )
       )
     ).sort();
 

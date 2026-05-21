@@ -4,7 +4,7 @@
 // Purpose: Fetch latest FX rates from Open Exchange Rates API and cache in database
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.0';
-import { validateAdminAuth } from '../_shared/auth.ts';
+import { validateAdminAuthFlexible } from '../_shared/auth.ts';
 
 const OPEN_EXCHANGE_RATES_URL = 'https://openexchangerates.org/api/latest.json';
 
@@ -27,7 +27,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Validate admin authentication (service role key or admin secret)
-    const auth = validateAdminAuth(req);
+    const auth = await validateAdminAuthFlexible(req);
     if (!auth.ok) {
       return new Response(JSON.stringify({ error: auth.error }), {
         status: 401,

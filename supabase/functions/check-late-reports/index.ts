@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { writeAuditLog } from '../_shared/audit.ts';
-import { validateAdminAuth } from '../_shared/auth.ts';
+import { validateAdminAuthFlexible } from '../_shared/auth.ts';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createBulkInAppNotifications, createInAppNotification } from '../_shared/in-app-notify.ts';
 import { getSupabaseAdmin } from '../_shared/supabase-admin.ts';
@@ -50,9 +50,9 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     // Validate admin auth (service key or admin JWT)
-    const authResult = await validateAdminAuth(req);
-    if (!authResult.authorized) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    const authResult = await validateAdminAuthFlexible(req);
+    if (!authResult.ok) {
+      return new Response(JSON.stringify({ error: authResult.error ?? 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from '@supabase/supabase-js';
-import { validateAdminAuth } from '../_shared/auth.ts';
+import { validateAdminAuthFlexible } from '../_shared/auth.ts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -241,7 +241,7 @@ serve(async (req: Request) => {
 
   try {
     // Validate admin authentication (service role key or admin secret)
-    const auth = validateAdminAuth(req);
+    const auth = await validateAdminAuthFlexible(req);
     if (!auth.ok) {
       return new Response(JSON.stringify({ error: auth.error }), {
         status: 401,

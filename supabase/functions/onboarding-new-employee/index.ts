@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { z } from 'zod';
 import { writeAuditLog } from '../_shared/audit.ts';
-import { validateAdminAuth } from '../_shared/auth.ts';
+import { validateAdminAuthFlexible } from '../_shared/auth.ts';
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createInAppNotification } from '../_shared/in-app-notify.ts';
 import { sendEmail } from '../_shared/resend.ts';
@@ -143,7 +143,7 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     // 1. Validate auth
-    const auth = validateAdminAuth(req);
+    const auth = await validateAdminAuthFlexible(req);
     if (!auth.ok) {
       return new Response(JSON.stringify({ success: false, error: auth.error }), {
         status: 401,

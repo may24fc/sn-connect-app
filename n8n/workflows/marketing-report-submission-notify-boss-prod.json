@@ -2,7 +2,7 @@
     "id":  "P6mER0zzLedoLaA6",
     "name":  "[SN Connect] [Prod] Marketing Report Submission Notif",
     "active":  false,
-    "_comment":  "PRODUCTION workflow. Webhook-triggered. Fires immediately when a marketing employee submits a report. App POSTs { employee_id, submitted_at } to the webhook URL. Queries prod Supabase.",
+    "_comment":  "PRODUCTION workflow. Webhook-triggered. Fires immediately when a marketing employee submits a report. App POSTs { employee_id, submitted_at } to the webhook URL. Queries prod Supabase via header-auth credential plus publishable apikey.",
     "nodes":  [
                   {
                       "id":  "webhook-trigger",

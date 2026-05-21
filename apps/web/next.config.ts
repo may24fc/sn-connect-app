@@ -9,6 +9,7 @@ process.on('warning', (warning) => {
 });
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NODE_ENV === 'production' ? '.next-build' : '.next',
   transpilePackages: ['@hr-portal/ui', '@hr-portal/database', '@hr-portal/auth', '@hr-portal/ai'],
   serverExternalPackages: ['googleapis'],
   outputFileTracingRoot: path.join(__dirname, '../../'),

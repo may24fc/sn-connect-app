@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "clean": "rimraf .next dist .turbo"
+    "clean": "rimraf .next .next-build dist .turbo"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.4.2",
