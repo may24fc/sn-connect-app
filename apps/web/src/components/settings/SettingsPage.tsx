@@ -447,7 +447,7 @@ export default function SettingsPage(): ReactNode {
               <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">Steps</p>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
                 <li>Copy the one-time <code className="rounded bg-zinc-200/70 px-1.5 py-0.5 text-[13px] dark:bg-zinc-800">/start</code> command below.</li>
-                <li>Open Telegram Web for the SN Connect bot.</li>
+                <li>Open Telegram Web for the SN Connect bot via the button below.</li>
                 <li>Paste the command into the chat and send it once.</li>
                 <li>Return here and wait for the badge to switch to linked.</li>
               </ol>

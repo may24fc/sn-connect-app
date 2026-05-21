@@ -131,6 +131,11 @@ export { Header } from './layout/Header';
 // Shared Components
 export { SectionTooltip } from './components/SectionTooltip';
 export { HelpLink } from './components/HelpLink';
+export {
+  HoverActionButtons,
+  type HoverActionButtonsProps,
+  type HoverActionItem,
+} from './components/HoverActionButtons';
 export { EmptyState, type EmptyStateProps } from './components/empty-state';
 export {
   MultiSelectFilter,

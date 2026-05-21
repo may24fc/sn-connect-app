@@ -2,6 +2,7 @@
 
 import { Calendar, Pencil, Trash2, Trophy } from 'lucide-react';
 import type * as React from 'react';
+import { HoverActionButtons } from '../HoverActionButtons';
 import { Card, CardContent } from '../../primitives/card';
 import { cn } from '../../utils/cn';
 import {
@@ -50,6 +51,28 @@ export function ProjectCard({
   onDelete,
   className,
 }: ProjectCardProps): React.ReactElement {
+  const hoverActions = [
+    ...(onEdit
+      ? [
+          {
+            label: 'Edit project',
+            icon: <Pencil className="h-3.5 w-3.5" />,
+            onClick: onEdit,
+          },
+        ]
+      : []),
+    ...(onDelete
+      ? [
+          {
+            label: 'Delete project',
+            icon: <Trash2 className="h-3.5 w-3.5" />,
+            onClick: onDelete,
+            tone: 'danger' as const,
+          },
+        ]
+      : []),
+  ];
+
   return (
     <Card
       className={cn(
@@ -58,38 +81,7 @@ export function ProjectCard({
       )}
       onClick={onClick}
     >
-      {onEdit || onDelete ? (
-        <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-          {onEdit ? (
-            <button
-              type="button"
-              aria-label="Edit project"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onEdit();
-              }}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
-          {onDelete ? (
-            <button
-              type="button"
-              aria-label="Delete project"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                onDelete();
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <HoverActionButtons actions={hoverActions} placement="top-right" className="gap-0.5" />
       <CardContent className="flex items-start gap-4 p-4">
         <ProgressRing value={progressPct} size={72} strokeWidth={6} />
         <div className="min-w-0 flex-1 space-y-2">

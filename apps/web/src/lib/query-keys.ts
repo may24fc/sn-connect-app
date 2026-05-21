@@ -55,6 +55,8 @@ export interface ProjectFilters {
   pageSize?: number;
 }
 
+export type ProjectPoolStatus = 'claimable' | 'archived';
+
 export interface ReportFilters {
   search?: string;
   status?: 'draft' | 'submitted' | 'approved' | 'rejected';
@@ -552,8 +554,11 @@ export const queryKeys = {
       [...queryKeys.projects.all, 'milestones', projectId] as const,
     checklist: (milestoneId: string) =>
       [...queryKeys.projects.all, 'checklist', milestoneId] as const,
-    pool: () => [...queryKeys.projects.all, 'pool'] as const,
-    poolCount: () => [...queryKeys.projects.all, 'pool', 'count'] as const,
+    pools: () => [...queryKeys.projects.all, 'pool'] as const,
+    pool: (status: ProjectPoolStatus = 'claimable') =>
+      [...queryKeys.projects.pools(), status] as const,
+    poolCount: (status: ProjectPoolStatus = 'claimable') =>
+      [...queryKeys.projects.pools(), 'count', status] as const,
   },
 
   warRoom: {

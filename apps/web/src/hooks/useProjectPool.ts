@@ -5,6 +5,7 @@ import { STALE_TIMES } from '@/lib/query-client';
 import { queryKeys } from '@/lib/query-keys';
 
 export type BacklogPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
+export type ProjectBacklogStatus = 'claimable' | 'archived';
 
 export interface ProjectBacklogItem {
   id: string;
@@ -16,6 +17,25 @@ export interface ProjectBacklogItem {
   priority: BacklogPriority;
   status: 'claimable' | 'accepted' | 'archived';
   created_at: string;
+}
+
+export interface UpdateProjectBacklogInput {
+  backlogId: string;
+  title: string;
+  problemStatement: string;
+  objective: string;
+  technicalScope: string[];
+  targetDepartments: string[];
+  priority: BacklogPriority;
+}
+
+interface ProjectPoolQueryOptions {
+  status?: ProjectBacklogStatus;
+  enabled?: boolean;
+}
+
+function invalidateProjectPoolQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: queryKeys.projects.pools() });
 }
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
@@ -33,19 +53,28 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function useProjectPool() {
+export function useProjectPool({
+  status = 'claimable',
+  enabled = true,
+}: ProjectPoolQueryOptions = {}) {
   return useQuery({
-    queryKey: queryKeys.projects.pool(),
-    queryFn: () => jsonFetch<{ items: ProjectBacklogItem[] }>(`/api/projects/backlog`),
+    queryKey: queryKeys.projects.pool(status),
+    queryFn: () =>
+      jsonFetch<{ items: ProjectBacklogItem[] }>(`/api/projects/backlog?status=${status}`),
     staleTime: STALE_TIMES.dynamic,
+    enabled,
   });
 }
 
-export function useProjectPoolCount() {
+export function useProjectPoolCount({
+  status = 'claimable',
+  enabled = true,
+}: ProjectPoolQueryOptions = {}) {
   return useQuery({
-    queryKey: queryKeys.projects.poolCount(),
-    queryFn: () => jsonFetch<{ count: number }>(`/api/projects/backlog?count=1`),
+    queryKey: queryKeys.projects.poolCount(status),
+    queryFn: () => jsonFetch<{ count: number }>(`/api/projects/backlog?count=1&status=${status}`),
     staleTime: STALE_TIMES.dynamic,
+    enabled,
   });
 }
 
@@ -60,9 +89,54 @@ export function useClaimProject() {
         body: JSON.stringify({ backlogId }),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.pool() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.poolCount() });
+      invalidateProjectPoolQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
+
+export function useUpdateProjectPoolItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ backlogId, ...payload }: UpdateProjectBacklogInput) =>
+      jsonFetch<{ data: ProjectBacklogItem }>(`/api/projects/backlog/${backlogId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      invalidateProjectPoolQueries(queryClient);
+    },
+  });
+}
+
+export function useRemoveProjectPoolItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (backlogId: string) =>
+      jsonFetch<{ ok: true }>(`/api/projects/backlog/${backlogId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      invalidateProjectPoolQueries(queryClient);
+    },
+  });
+}
+
+export function useRestoreProjectPoolItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (backlogId: string) =>
+      jsonFetch<{ data: ProjectBacklogItem }>(`/api/projects/backlog/${backlogId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'claimable' }),
+      }),
+    onSuccess: () => {
+      invalidateProjectPoolQueries(queryClient);
     },
   });
 }
