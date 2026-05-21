@@ -16,6 +16,10 @@ const OUTPUT_PATH = path.join(
 );
 const DEFAULT_SUMMARY_TITLE = "What's new in SN Connect";
 const MAX_SUMMARY_ITEMS = 5;
+const FALLBACK_SUMMARY = {
+  title: DEFAULT_SUMMARY_TITLE,
+  items: ['This release includes stability, quality, and workflow improvements across SN Connect.'],
+};
 
 const SUMMARY_RULES = [
   {
@@ -247,9 +251,28 @@ function createModuleContent(summary) {
   return `export interface GeneratedApplicationUpdateSummary {\n  title: string;\n  items: string[];\n}\n\nexport const generatedApplicationUpdateSummary: GeneratedApplicationUpdateSummary = ${JSON.stringify(summary, null, 2)};\n`;
 }
 
+async function loadSummary() {
+  try {
+    const changelog = await readFile(CHANGELOG_PATH, 'utf8');
+    const summary = parseChangelogSummary(changelog);
+
+    if (summary.items.length === 0) {
+      return FALLBACK_SUMMARY;
+    }
+
+    return summary;
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      console.warn(`CHANGELOG.md not found at ${CHANGELOG_PATH}; using fallback application update summary.`);
+      return FALLBACK_SUMMARY;
+    }
+
+    throw error;
+  }
+}
+
 async function main() {
-  const changelog = await readFile(CHANGELOG_PATH, 'utf8');
-  const summary = parseChangelogSummary(changelog);
+  const summary = await loadSummary();
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, createModuleContent(summary), 'utf8');
