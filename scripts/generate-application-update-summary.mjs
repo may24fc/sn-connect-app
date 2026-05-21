@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -247,31 +247,9 @@ function createModuleContent(summary) {
   return `export interface GeneratedApplicationUpdateSummary {\n  title: string;\n  items: string[];\n}\n\nexport const generatedApplicationUpdateSummary: GeneratedApplicationUpdateSummary = ${JSON.stringify(summary, null, 2)};\n`;
 }
 
-async function pathExists(targetPath) {
-  try {
-    await access(targetPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function main() {
-  let summary;
-
-  if (await pathExists(CHANGELOG_PATH)) {
-    const changelog = await readFile(CHANGELOG_PATH, 'utf8');
-    summary = parseChangelogSummary(changelog);
-  } else if (await pathExists(OUTPUT_PATH)) {
-    // Vercel can omit workspace-root docs from the uploaded build context.
-    // Preserve the committed generated summary instead of failing prebuild.
-    return;
-  } else {
-    summary = {
-      title: DEFAULT_SUMMARY_TITLE,
-      items: [],
-    };
-  }
+  const changelog = await readFile(CHANGELOG_PATH, 'utf8');
+  const summary = parseChangelogSummary(changelog);
 
   await mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, createModuleContent(summary), 'utf8');

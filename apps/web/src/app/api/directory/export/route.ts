@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
-const EMPLOYEE_EQUIVALENT_ROLES = ['employee', 'admin', 'super_admin', 'hr', 'cos', 'ceo'];
+const EMPLOYEE_EQUIVALENT_ROLES = ['employee', 'admin', 'super_admin'];
 
 function expandEmployeeRole(roles: string[]): string[] {
   const expanded = roles.flatMap((r) =>

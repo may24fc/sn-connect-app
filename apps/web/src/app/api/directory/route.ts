@@ -4,9 +4,9 @@ import { type NextRequest, NextResponse } from 'next/server';
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
 // All roles that represent employed staff (non-interns). When the directory is
-// filtered by "employee", admins and leadership roles are included so HR sees
-// everyone regardless of their system role.
-const EMPLOYEE_EQUIVALENT_ROLES = ['employee', 'admin', 'super_admin', 'hr', 'cos', 'ceo'];
+// filtered by "employee", admins are included so HR sees everyone regardless
+// of their system role. Must match the user_role enum exactly.
+const EMPLOYEE_EQUIVALENT_ROLES = ['employee', 'admin', 'super_admin'];
 
 interface DirectoryRow {
   full_name: string | null;
@@ -231,9 +231,7 @@ export async function GET(request: NextRequest) {
           .filter((value: string | null): value is string => Boolean(value))
           // Collapse all non-intern staff roles into "employee" so the filter
           // dropdown shows only "Employee" and "Intern".
-          .map((role: string) =>
-            EMPLOYEE_EQUIVALENT_ROLES.includes(role) ? 'employee' : role
-          )
+          .map((r: string) => (EMPLOYEE_EQUIVALENT_ROLES.includes(r) ? 'employee' : r))
       )
     ).sort();
 
