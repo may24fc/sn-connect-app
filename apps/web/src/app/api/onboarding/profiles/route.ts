@@ -81,7 +81,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (filters.role) {
-      query = query.eq('users.role', filters.role);
+      // "employee" expands to include admin/super_admin so HR sees all staff
+      // onboarding submissions, not just those with the employee role.
+      if (filters.role === 'employee') {
+        query = query.in('users.role', ['employee', 'admin', 'super_admin']);
+      } else {
+        query = query.eq('users.role', filters.role);
+      }
     }
 
     if (filters.departmentId) {

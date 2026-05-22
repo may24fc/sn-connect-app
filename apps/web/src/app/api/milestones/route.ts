@@ -21,13 +21,14 @@ export async function GET(request: NextRequest) {
     const endDate = new Date(today);
     endDate.setDate(endDate.getDate() + days);
 
-    // Fetch employees with birthday and date_hired
+    // Fetch employees with birthday and date_hired — exclude terminated/deleted records
     const { data: employees, error } = await supabase
       .from('employees')
       .select(
-        'id, user_id, first_name, last_name, birthday, date_hired, position, department'
+        'id, user_id, first_name, last_name, birthday, date_hired, position, department, date_terminated'
       )
-      .is('deleted_at', null);
+      .is('deleted_at', null)
+      .is('date_terminated', null);
 
     if (error) {
       return NextResponse.json(
@@ -38,17 +39,17 @@ export async function GET(request: NextRequest) {
 
     // Get user avatars
     const userIds = (employees || []).map((e: { user_id: string | null }) => e.user_id).filter(Boolean);
-    let users: Array<{ id: string; avatar_url: string | null; role: string }> | null = null;
+    let users: Array<{ id: string; avatar_url: string | null; role: string | null; status: string | null }> | null = null;
     if (userIds.length > 0) {
       const { data } = await supabase
         .from('users')
-        .select('id, avatar_url, role')
+        .select('id, avatar_url, role, status')
         .in('id', userIds);
       users = data;
     }
 
     const userMap = new Map(
-      (users || []).map((u) => [u.id, { avatar_url: u.avatar_url, role: u.role }])
+      (users || []).map((u) => [u.id, { avatar_url: u.avatar_url, role: u.role, status: u.status }])
     );
 
     // Department is stored as text directly on the employees table
@@ -71,6 +72,11 @@ export async function GET(request: NextRequest) {
 
     for (const emp of employees || []) {
       const userData = emp.user_id ? userMap.get(emp.user_id) : null;
+
+      // Skip terminated employees — date_terminated filter handles most cases;
+      // this is a secondary guard for accounts where only users.status was updated.
+      if (userData?.status === 'terminated') continue;
+
       const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
 
       // Check birthdays
@@ -127,6 +133,8 @@ export async function GET(request: NextRequest) {
 
         if (daysUntil >= 0 && daysUntil <= days) {
           const yearsCount = upcomingAnniversary.getFullYear() - hireDate.getFullYear();
+          // Skip 0-year anniversaries — hired this year, no full year completed yet
+          if (yearsCount < 1) continue;
           milestones.push({
             employeeId: emp.id,
             userId: emp.user_id,

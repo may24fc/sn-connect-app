@@ -17,6 +17,7 @@ interface EmployeeRow {
   work_email: string | null;
   birthday: string | null;
   date_hired: string | null;
+  date_terminated: string | null;
   position: string | null;
   department: string | null;
 }
@@ -110,11 +111,12 @@ serve(async (req: Request): Promise<Response> => {
     const todayMonth = now.getUTCMonth(); // 0-indexed
     const todayDay = now.getUTCDate();
 
-    // 3. Fetch all active employees
+    // 3. Fetch active, non-terminated employees
     const { data: employees, error: empError } = await supabase
       .from('employees')
-      .select('id, user_id, first_name, last_name, work_email, birthday, date_hired, position, department')
-      .is('deleted_at', null);
+      .select('id, user_id, first_name, last_name, work_email, birthday, date_hired, date_terminated, position, department')
+      .is('deleted_at', null)
+      .is('date_terminated', null);
 
     if (empError) {
       throw new Error(`Failed to query employees: ${empError.message}`);
