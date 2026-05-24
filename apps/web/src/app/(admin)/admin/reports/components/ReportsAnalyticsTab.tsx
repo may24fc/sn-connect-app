@@ -13,6 +13,7 @@ import {
   getMarketingObjectiveLabel,
   getMarketingReportDisplayName,
   getMarketingReportTypeLabel,
+  isMarketingWeeklyPlan,
   matchesMarketingReportFilters,
   resolveMarketingReportType,
 } from '@/lib/report-utils';
@@ -1006,6 +1007,7 @@ export function ReportsAnalyticsTab({
       (data?.data || []).filter(
         (report) =>
           isIncludedForecastStatus(report.status) &&
+          !isMarketingWeeklyPlan(report.marketing_context) &&
           matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       ),
     [campaignType, data?.data, objective, reportType]

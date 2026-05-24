@@ -15,6 +15,8 @@ import {
   getMarketingCampaignTypeLabel,
   getMarketingObjectiveSummaryLabel,
   getMarketingReportDisplayName,
+  getWeeklyPlanItems,
+  isMarketingWeeklyPlan,
   getReportTypeDescription,
   getReportTypeLabel,
   parseNoteSections,
@@ -87,6 +89,8 @@ export default function AdminReportDetailPage({
   const report = data?.data;
   const metrics = report?.report_metrics || [];
   const marketingContext = report?.marketing_context;
+  const isWeeklyPlanReport = isMarketingWeeklyPlan(marketingContext);
+  const weeklyPlanItems = getWeeklyPlanItems(marketingContext, report?.notes);
   const submittedTimestamp = report ? getSubmittedTimestamp(report) : null;
   const contentCreationEntries = getContentCreationEntries(marketingContext, metrics);
   const isContentCreationReport = marketingContext?.marketingReportType === 'Content Creation';
@@ -200,7 +204,7 @@ export default function AdminReportDetailPage({
   }));
 
   // Build KPI cards from metrics or structured content creation entries
-  const kpiCards = isContentCreationReport ? contentCreationKpiCards : metricKpiCards;
+  const kpiCards = isWeeklyPlanReport ? [] : isContentCreationReport ? contentCreationKpiCards : metricKpiCards;
 
   // Parse accomplishments, challenges, next-week plans from notes
   const noteSections = parseNoteSections(report.notes || '');
@@ -270,12 +274,14 @@ export default function AdminReportDetailPage({
           </p>
           <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
             <p className="text-muted-foreground">
-              {isContentCreationReport ? 'Brief Notes / Observations' : 'Campaign Summary'}
+              {isWeeklyPlanReport ? 'Weekly Plan Summary' : isContentCreationReport ? 'Brief Notes / Observations' : 'Campaign Summary'}
             </p>
             <p className="whitespace-pre-wrap text-foreground">
-              {(isContentCreationReport ? contentCreationObservations : noteSections.summary) || (isContentCreationReport
-                ? 'No observations were provided for this report.'
-                : 'No campaign summary was provided for this report.')}
+              {isWeeklyPlanReport
+                ? (weeklyPlanItems[0] ?? 'No weekly plan details were provided for this report.')
+                : (isContentCreationReport ? contentCreationObservations : noteSections.summary) || (isContentCreationReport
+                  ? 'No observations were provided for this report.'
+                  : 'No campaign summary was provided for this report.')}
             </p>
           </div>
           {isContentCreationReport ? (
@@ -289,7 +295,7 @@ export default function AdminReportDetailPage({
         </CardContent>
       </Card>
 
-      {marketingContext && (
+      {marketingContext && !isWeeklyPlanReport && (
         <Card>
           <CardHeader>
             <CardTitle>{isContentCreationReport ? 'Report Context' : 'Campaign Context'}</CardTitle>
@@ -318,7 +324,7 @@ export default function AdminReportDetailPage({
       )}
 
       {/* Insights Section */}
-      {(keyFindings.length > 0 || noteSections.nextWeekPlans.length > 0) && (
+      {!isWeeklyPlanReport && (keyFindings.length > 0 || noteSections.nextWeekPlans.length > 0) && (
         <InsightsSummary
           title="Report Insights"
           summary={
@@ -335,6 +341,7 @@ export default function AdminReportDetailPage({
       )}
 
       {/* Metrics Table */}
+      {!isWeeklyPlanReport && (
       <Card>
         <CardHeader>
           <CardTitle>{isContentCreationReport ? 'Contents Published' : 'Metrics'}</CardTitle>
@@ -384,19 +391,20 @@ export default function AdminReportDetailPage({
           </Table>
         </CardContent>
       </Card>
+      )}
 
       {/* Next Steps */}
-      {noteSections.nextWeekPlans.length > 0 && (
+      {weeklyPlanItems.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ListChecks className="h-5 w-5" />
-              Next Steps
+              {isWeeklyPlanReport ? 'Weekly Plan' : 'Next Steps'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
-              {noteSections.nextWeekPlans.map((plan, index) => (
+              {weeklyPlanItems.map((plan, index) => (
                 <li key={index} className="flex items-start gap-2 text-sm">
                   <span className="text-slate-700 font-bold mt-0.5 flex-shrink-0">
                     {index + 1}.

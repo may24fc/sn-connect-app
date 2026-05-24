@@ -28,6 +28,7 @@ export interface ReportRecord {
     first_name: string;
     last_name: string;
     department: string;
+    position: string | null;
   };
   report_metrics?: Array<{
     id: string;

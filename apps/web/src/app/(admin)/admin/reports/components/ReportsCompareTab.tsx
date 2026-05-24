@@ -11,6 +11,7 @@ import {
   getMarketingObjectiveSummaryLabel,
   getMarketingReportDisplayName,
   getMarketingReportTypeLabel,
+  isMarketingWeeklyPlan,
   matchesMarketingReportFilters,
   parseNoteSections,
   resolveMarketingReportType,
@@ -501,6 +502,7 @@ export function ReportsCompareTab({
       dedupeReportsByWindow((allReportsData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
+          !isMarketingWeeklyPlan(report.marketing_context) &&
           matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       )),
     [allReportsData?.data, campaignType, objective, reportType]
@@ -609,6 +611,7 @@ export function ReportsCompareTab({
       dedupeReportsByWindow((currentData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
+          !isMarketingWeeklyPlan(report.marketing_context) &&
           matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       )),
     [campaignType, currentData?.data, objective, reportType]
@@ -618,6 +621,7 @@ export function ReportsCompareTab({
       dedupeReportsByWindow((previousData?.data || []).filter(
         (report) =>
           report.status !== 'draft' &&
+          !isMarketingWeeklyPlan(report.marketing_context) &&
           matchesMarketingReportFilters(report, { reportType, campaignType, objective })
       )),
     [campaignType, objective, previousData?.data, reportType]

@@ -76,6 +76,10 @@ export const marketingPrimaryChannelSchema = z.enum(marketingPrimaryChannelValue
   errorMap: () => ({ message: 'Select either Google Ads or Meta Ads' }),
 });
 
+export const marketingSubmissionKindValues = ['weekly_summary', 'weekly_plan'] as const;
+
+export const marketingSubmissionKindSchema = z.enum(marketingSubmissionKindValues);
+
 export const contentCreationEntrySchema = z.object({
   platform: z.string().trim().min(1, 'Platform or app is required').max(80),
   posts: z.coerce.number().int().min(0, 'Posts cannot be negative'),
@@ -87,7 +91,14 @@ export const contentCreationDetailsSchema = z.object({
   observations: z.string().trim().max(4000).optional().nullable(),
 });
 
+export const weeklyPlanItemSchema = z.string().trim().min(1, 'Plan item is required').max(300);
+
+export const weeklyPlanDetailsSchema = z.object({
+  items: z.array(weeklyPlanItemSchema).max(50).default([]),
+});
+
 export const marketingContextSchema = z.object({
+  submissionKind: marketingSubmissionKindSchema.optional().nullable(),
   marketingReportType: marketingReportTypeSchema.optional().nullable(),
   campaignName: z.string().trim().max(120).optional().nullable(),
   campaignType: marketingCampaignTypeSchema.optional().nullable(),
@@ -97,6 +108,7 @@ export const marketingContextSchema = z.object({
   primaryChannel: marketingPrimaryChannelSchema.optional().nullable(),
   targetAudience: z.string().trim().max(160).optional().nullable(),
   contentCreation: contentCreationDetailsSchema.optional().nullable(),
+  weeklyPlan: weeklyPlanDetailsSchema.optional().nullable(),
 });
 
 export const reportMetricSchema = z.object({
@@ -128,6 +140,20 @@ export const reportCreateSchema = reportSchema.extend({
       path: ['marketingContext'],
       message: 'Marketing context is required for marketing reports',
     });
+    return;
+  }
+
+  const submissionKind = payload.marketingContext.submissionKind ?? 'weekly_summary';
+
+  if (submissionKind === 'weekly_plan') {
+    if ((payload.marketingContext.weeklyPlan?.items ?? []).length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['marketingContext', 'weeklyPlan', 'items'],
+        message: 'Add at least one weekly plan item',
+      });
+    }
+
     return;
   }
 
@@ -210,6 +236,8 @@ export type MarketingCampaignType = z.infer<typeof marketingCampaignTypeSchema>;
 export type MarketingObjective = z.infer<typeof marketingObjectiveSchema>;
 export type MarketingReportType = z.infer<typeof marketingReportTypeSchema>;
 export type MarketingPrimaryChannel = z.infer<typeof marketingPrimaryChannelSchema>;
+export type MarketingSubmissionKind = z.infer<typeof marketingSubmissionKindSchema>;
 export type ContentCreationEntry = z.infer<typeof contentCreationEntrySchema>;
 export type ContentCreationDetails = z.infer<typeof contentCreationDetailsSchema>;
+export type WeeklyPlanDetails = z.infer<typeof weeklyPlanDetailsSchema>;
 export type MarketingContext = z.infer<typeof marketingContextSchema>;

@@ -22,6 +22,8 @@ import {
   getMarketingCampaignTypeOptionsForReportType,
   getMarketingObjectiveOptionsForReportType,
   getMarketingObjectivesForReportType,
+  getMarketingSubmissionKind,
+  getWeeklyPlanItems,
   MARKETING_CAMPAIGN_TYPE_OPTIONS,
   MARKETING_OBJECTIVE_INFO,
   MARKETING_REPORT_TYPE_OPTIONS,
@@ -34,6 +36,7 @@ import type {
   MarketingCampaignType,
   MarketingObjective,
   MarketingReportType,
+  MarketingSubmissionKind,
   ReportCreateInput,
 } from '@/lib/schemas/report.schema';
 import {
@@ -56,6 +59,10 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
   useToast,
 } from '@hr-portal/ui';
@@ -416,6 +423,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
 
   const [activeReportId, setActiveReportId] = useState<string | null>(reportId ?? null);
   const [isFormReady, setIsFormReady] = useState(!isEditMode);
+  const [submissionKind, setSubmissionKind] = useState<MarketingSubmissionKind>('weekly_summary');
   const [marketingReportType, setMarketingReportType] = useState<MarketingReportType | ''>('');
   const [campaignType, setCampaignType] = useState<MarketingCampaignType | ''>('');
   const [objective, setObjective] = useState<MarketingObjective | ''>('');
@@ -423,6 +431,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const [totalSpend, setTotalSpend] = useState('0');
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
+  const [weeklyPlanItems, setWeeklyPlanItems] = useState<Array<string>>(['']);
   const [notes, setNotes] = useState('');
   const [results, setResults] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -445,6 +454,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   );
   const campaignTypeAvailability = getMarketingCampaignTypeAvailability(marketingReportType);
   const objectiveAvailability = getMarketingObjectiveAvailability(marketingReportType);
+  const isWeeklyPlanMode = submissionKind === 'weekly_plan';
   const showCampaignType = campaignTypeAvailability !== 'hidden';
   const showObjective = objectiveAvailability !== 'hidden';
   const campaignTypeSelectDisabled = campaignTypeAvailability !== 'enabled';
@@ -459,6 +469,10 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   const isMutating = createReport.isPending || updateReport.isPending;
   const totalSpendAdornment = getNumericInputAdornment(REPORT_CURRENCY_CODE);
   const isContentCreationReport = marketingReportType === 'Content Creation';
+  const normalizedWeeklyPlanItems = useMemo(
+    () => weeklyPlanItems.map((item) => item.trim()).filter(Boolean),
+    [weeklyPlanItems]
+  );
 
   useEffect(() => {
     if (isEditMode) {
@@ -546,6 +560,8 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       marketingContext?.marketingReportType,
       marketingContext?.primaryChannel
     );
+    const nextSubmissionKind = getMarketingSubmissionKind(marketingContext);
+    const nextWeeklyPlanItems = getWeeklyPlanItems(marketingContext, report.notes);
     const resolvedNextReportType = toDefinedMarketingReportType(nextReportType);
     const nextAvailableCampaignTypes = getMarketingCampaignTypeOptionsForReportType(resolvedNextReportType);
     const nextCampaignTypeAvailability = getMarketingCampaignTypeAvailability(nextReportType);
@@ -567,6 +583,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         : (marketingContext?.objective ?? nextAvailableObjectives[0] ?? '')
       : '';
 
+  setSubmissionKind(nextSubmissionKind);
     setMarketingReportType(nextReportType);
     setCampaignType(nextCampaignType);
     setObjective(nextObjective);
@@ -574,6 +591,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     setTotalSpend(String(marketingContext?.totalSpend ?? 0));
     setPeriodStart(report.period_start ?? '');
     setPeriodEnd(report.period_end ?? '');
+  setWeeklyPlanItems(nextWeeklyPlanItems.length > 0 ? nextWeeklyPlanItems : ['']);
     setNotes(getContentCreationObservations(marketingContext, noteSections));
     setResults(getContentCreationResults(marketingContext, noteSections));
     setMetrics(
@@ -596,6 +614,18 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
   }, [isEditMode, report]);
 
   const validateBaseFields = useCallback((): string | null => {
+    if (isWeeklyPlanMode) {
+      if (!periodStart || !periodEnd) {
+        return 'Reporting period is required.';
+      }
+
+      if (normalizedWeeklyPlanItems.length === 0) {
+        return 'Add at least one weekly plan item.';
+      }
+
+      return null;
+    }
+
     if (!marketingReportType.trim()) {
       return 'Report type is required.';
     }
@@ -618,6 +648,14 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
       return 'Select the reporting period start and end dates.';
     }
 
+    if (isWeeklyPlanMode) {
+      if (normalizedWeeklyPlanItems.length === 0) {
+        return 'Add at least one weekly plan item.';
+      }
+
+      return null;
+    }
+
     if (!isContentCreationReport) {
       const parsedSpend = Number(totalSpend);
       if (!Number.isFinite(parsedSpend) || parsedSpend < 0) {
@@ -636,10 +674,33 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     }
 
     return null;
-  }, [campaignType, isContentCreationReport, isGoogleAdsReport, marketingReportType, notes, objective, periodEnd, periodStart, results, selectedObjectives, totalSpend]);
+  }, [campaignType, isContentCreationReport, isGoogleAdsReport, isWeeklyPlanMode, marketingReportType, normalizedWeeklyPlanItems.length, notes, objective, periodEnd, periodStart, results, selectedObjectives, totalSpend]);
 
   const buildReportPayload = useCallback(
     (asDraft: boolean): ReportCreateInput => {
+      if (isWeeklyPlanMode) {
+        if (normalizedWeeklyPlanItems.length === 0) {
+          throw new Error('Add at least one weekly plan item.');
+        }
+
+        return {
+          reportType: REPORT_TYPE,
+          periodStart,
+          periodEnd,
+          status: asDraft ? ('draft' as const) : ('submitted' as const),
+          notes: buildNarrativeReportNotes({
+            nextWeekPlans: normalizedWeeklyPlanItems,
+          }),
+          marketingContext: {
+            submissionKind: 'weekly_plan',
+            weeklyPlan: {
+              items: normalizedWeeklyPlanItems,
+            },
+          },
+          metrics: [],
+        };
+      }
+
       const normalizedCampaignType = normalizeMarketingCampaignType(campaignType);
       const normalizedObjectives = normalizeMarketingObjectives(
         isGoogleAdsReport ? selectedObjectives : [objective]
@@ -678,6 +739,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
         : undefined;
 
       const marketingContext: ReportCreateInput['marketingContext'] = {
+        submissionKind: 'weekly_summary',
         marketingReportType: normalizeMarketingReportType(marketingReportType) || undefined,
         campaignType: normalizedCampaignType || undefined,
         objective: normalizedObjective || undefined,
@@ -705,9 +767,11 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     [
       campaignType,
       isGoogleAdsReport,
+      isWeeklyPlanMode,
       marketingReportType,
       metrics,
       notes,
+      normalizedWeeklyPlanItems,
       objective,
       periodEnd,
       periodStart,
@@ -772,7 +836,9 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     periodEnd,
     periodStart,
     results,
+    submissionKind,
     totalSpend,
+    weeklyPlanItems,
     validateBaseFields,
   ]);
 
@@ -973,7 +1039,25 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     );
   };
 
+  const handlePlanItemChange = (index: number, value: string) => {
+    setWeeklyPlanItems((previous) => previous.map((item, itemIndex) => (itemIndex === index ? value : item)));
+  };
+
+  const handleAddPlanItem = () => {
+    setWeeklyPlanItems((previous) => [...previous, '']);
+  };
+
+  const handleRemovePlanItem = (index: number) => {
+    setWeeklyPlanItems((previous) =>
+      previous.length > 1 ? previous.filter((_, itemIndex) => itemIndex !== index) : previous
+    );
+  };
+
   const validateRequiredSections = (): string | null => {
+    if (isWeeklyPlanMode) {
+      return null;
+    }
+
     const filledMetrics = metrics.filter((metric) => metric.name.trim());
     if (filledMetrics.length === 0) {
       return isContentCreationReport
@@ -1129,421 +1213,532 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
           void handleSubmit(false);
         }}
       >
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-slate-700" />
-              Campaign Context
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-5">
-              <div className="grid gap-5 sm:grid-cols-2">
-                <FormGroup
-                  className="sm:col-span-2"
-                  label="Report Type"
-                  htmlFor="reportType"
-                  required
-                  showOptional={false}
-                  description={selectedMarketingReportType?.description ?? 'Choose the marketing workstream this report covers.'}
-                  icon={<FileText className="h-3.5 w-3.5" />}
-                >
-                  <Select value={marketingReportType} onValueChange={(value) => handleReportTypeChange(value as MarketingReportType)}>
-                    <SelectTrigger id="reportType" className="h-10">
-                      <SelectValue placeholder="Select a report type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MARKETING_REPORT_TYPE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormGroup>
-                {showCampaignType ? (
-                  <FormGroup
-                  label="Campaign Type"
-                  htmlFor="campaignType"
-                  required
-                  showOptional={false}
-                  description={
-                    campaignTypeAvailability === 'disabled'
-                      ? 'Campaign type is not available for this report type.'
-                      : selectedCampaignType?.description ?? 'Choose the campaign stage to load the matching objectives.'
-                  }
-                >
-                  <Select value={campaignType} onValueChange={(value) => handleCampaignTypeChange(value as MarketingCampaignType)}>
-                    <SelectTrigger id="campaignType" className="h-10" disabled={campaignTypeSelectDisabled}>
-                      <SelectValue placeholder={campaignTypeSelectDisabled ? 'Campaign type not available' : 'Select a campaign type'} />
-                    </SelectTrigger>
-                    {campaignTypeSelectDisabled ? null : (
-                      <SelectContent>
-                        {availableCampaignTypes.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    )}
-                  </Select>
-                </FormGroup>
-                ) : null}
-                {showObjective ? (
-                  <FormGroup
-                  label={isGoogleAdsReport ? 'Objectives' : 'Objective'}
-                  htmlFor="objective"
-                  required
-                  showOptional={false}
-                  description={
-                    objectiveAvailability === 'disabled'
-                      ? 'Objectives are not available for this report type.'
-                      : isGoogleAdsReport
-                        ? selectedObjectives.length > 0
-                          ? `${selectedObjectives.length} objective${selectedObjectives.length === 1 ? '' : 's'} selected for this Google Ads report.`
-                          : 'Select one or more objectives after choosing a campaign type.'
-                        : selectedObjectiveInfo?.description ?? 'Pick an objective after choosing a campaign type.'
-                  }
-                >
-                  {isGoogleAdsReport ? (
-                    <div className="space-y-3">
-                      <div className="grid gap-3 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
-                        {objectiveSelectDisabled || (objectiveAvailability === 'enabled' && !campaignType) ? (
-                          <p className="text-sm text-muted-foreground sm:col-span-2">
-                            Select a campaign type first to choose one or more objectives.
-                          </p>
-                        ) : (
-                          availableObjectives.map((objectiveValue) => (
-                            <label
-                              key={objectiveValue}
-                              className="flex items-start gap-3 rounded-md border border-border/60 p-3 transition-colors hover:bg-muted/40"
-                            >
-                              <Checkbox
-                                checked={selectedObjectives.includes(objectiveValue)}
-                                onCheckedChange={(checked) => handleGoogleObjectiveToggle(objectiveValue, checked === true)}
-                              />
-                              <div>
-                                <p className="text-sm font-medium text-foreground">
-                                  {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
-                                </p>
-                              </div>
-                            </label>
-                          ))
-                        )}
-                      </div>
-                      {selectedObjectives.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {selectedObjectives.map((selectedObjective) => (
-                            <Badge key={selectedObjective} variant="secondary" className="rounded-full px-2 py-1 text-[11px] font-medium">
-                              {MARKETING_OBJECTIVE_INFO[selectedObjective].label}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <Select
-                      value={objective}
-                      onValueChange={(value) => handleObjectiveChange(value as MarketingObjective)}
-                      disabled={objectiveSelectDisabled || (objectiveAvailability === 'enabled' && !campaignType)}
+        <Tabs
+          value={submissionKind}
+          onValueChange={(value) => setSubmissionKind(value as MarketingSubmissionKind)}
+          className="space-y-6"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="weekly_summary">Weekly Summary</TabsTrigger>
+            <TabsTrigger value="weekly_plan">Weekly Plan</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="weekly_summary" className="mt-0 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-slate-700" />
+                  Weekly Spend and Performance Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-5">
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <FormGroup
+                      className="sm:col-span-2"
+                      label="Report Type"
+                      htmlFor="reportType"
+                      required
+                      showOptional={false}
+                      description={selectedMarketingReportType?.description ?? 'Choose the marketing workstream this report covers.'}
+                      icon={<FileText className="h-3.5 w-3.5" />}
                     >
-                      <SelectTrigger id="objective" className="h-10">
-                        <SelectValue placeholder={objectiveSelectDisabled ? 'Objective not available' : 'Select an objective'} />
-                      </SelectTrigger>
-                      {objectiveSelectDisabled ? null : (
+                      <Select value={marketingReportType} onValueChange={(value) => handleReportTypeChange(value as MarketingReportType)}>
+                        <SelectTrigger id="reportType" className="h-10">
+                          <SelectValue placeholder="Select a report type" />
+                        </SelectTrigger>
                         <SelectContent>
-                          {availableObjectives.map((objectiveValue) => (
-                            <SelectItem key={objectiveValue} value={objectiveValue}>
-                              {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
+                          {MARKETING_REPORT_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
-                      )}
-                    </Select>
-                  )}
-                </FormGroup>
-                ) : null}
-                <FormGroup
-                  label="Period Start"
-                  htmlFor="periodStart"
-                  required
-                  showOptional={false}
-                  icon={<Calendar className="h-3.5 w-3.5" />}
-                >
-                  <Input
-                    id="periodStart"
-                    type="date"
-                    value={periodStart}
-                    onChange={(event) => setPeriodStart(event.target.value)}
-                    required
-                    className="h-10"
-                  />
-                </FormGroup>
-                <FormGroup
-                  label="Period End"
-                  htmlFor="periodEnd"
-                  required
-                  showOptional={false}
-                  icon={<Calendar className="h-3.5 w-3.5" />}
-                >
-                  <Input
-                    id="periodEnd"
-                    type="date"
-                    value={periodEnd}
-                    onChange={(event) => setPeriodEnd(event.target.value)}
-                    required
-                    className="h-10"
-                  />
-                </FormGroup>
-              </div>
-
-            </div>
-          </CardContent>
-        </Card>
-
-        {isContentCreationReport ? null : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Spend</CardTitle>
-              <CardDescription>
-                Log the full amount spent for this reporting window. Keep efficiency metrics like CPM or CPC inside the metrics section below.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormGroup
-                htmlFor="totalSpend"
-                required
-                showOptional={false}
-                description="Use the actual spend for the campaign during this period, in Australian dollars."
-              >
-                <div className="relative">
-                  {totalSpendAdornment.prefix ? (
-                    <span className="pointer-events-none absolute inset-y-0 left-3 flex w-10 items-center text-sm text-muted-foreground">
-                      {totalSpendAdornment.prefix}
-                    </span>
-                  ) : null}
-                  <Input
-                    id="totalSpend"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={totalSpend}
-                    onChange={(event) => setTotalSpend(event.target.value)}
-                    placeholder="0.00"
-                    className={cn('h-10', totalSpendAdornment.prefix ? NUMERIC_INPUT_PREFIX_PADDING_CLASS : undefined)}
-                    required
-                  />
-                </div>
-              </FormGroup>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span>
-                {isContentCreationReport ? 'Contents Published' : 'Metrics'} <span className="text-rose-500">*</span>
-              </span>
-              {presetMetricsEnabled ? (
-                <Badge variant="secondary" className="h-5 rounded-full px-2 text-[11px] font-medium">
-                  Preset
-                </Badge>
-              ) : null}
-            </CardTitle>
-            <CardDescription>
-              {isContentCreationReport
-                ? 'List each platform or app used for posting during this reporting window, together with how many posts were published there.'
-                : presetMetricsEnabled
-                ? showObjective
-                  ? 'Recommended metrics are aligned to the selected objective. Preset names stay locked by default, while units can be adjusted from the dropdown when needed.'
-                  : 'Recommended metrics are aligned to the standard report template for this report type. Preset names stay locked by default, while units can be adjusted from the dropdown when needed.'
-                : 'This report type does not use preset metrics right now. Add custom metrics manually if needed.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {presetMetricsEnabled && showObjective && !objective ? (
-              <p className="text-sm text-muted-foreground">
-                Select an objective to load the recommended preset metrics for this report.
-              </p>
-            ) : null}
-
-            {metrics.map((metric, index) => {
-              const metricValueRule = getMetricValueRule(metric.name, metric.unit);
-              const metricUnitOptions = getMetricUnitOptions(metric.unit);
-              const showGroupHeading =
-                metric.groupLabel
-                && metrics[index - 1]?.groupLabel !== metric.groupLabel;
-
-              return (
-                <div key={metric.id} className="space-y-2">
-                  {showGroupHeading ? (
-                    <div className="pt-2">
-                      <p className="text-sm font-semibold text-foreground">{metric.groupLabel}</p>
-                    </div>
-                  ) : null}
-                  <div
-                    className={cn(
-                      'grid gap-2 md:items-end',
-                      isContentCreationReport
-                        ? 'md:grid-cols-[minmax(0,1fr)_140px_40px]'
-                        : 'md:grid-cols-[minmax(0,1fr)_140px_104px_40px]'
-                    )}
-                  >
-                    <div className="space-y-1">
-                      {index === 0 ? (
-                        <Label className="text-xs text-muted-foreground">
-                          {isContentCreationReport ? 'Platform / App' : 'Name'}
-                        </Label>
-                      ) : null}
-                      {isContentCreationReport ? (
-                        <Select
-                          value={metric.name}
-                          onValueChange={(value) => handleMetricChange(index, 'name', value)}
-                        >
-                          <SelectTrigger className="h-10">
-                            <SelectValue placeholder="Select an app" />
+                      </Select>
+                    </FormGroup>
+                    {showCampaignType ? (
+                      <FormGroup
+                        label="Campaign Type"
+                        htmlFor="campaignType"
+                        required
+                        showOptional={false}
+                        description={
+                          campaignTypeAvailability === 'disabled'
+                            ? 'Campaign type is not available for this report type.'
+                            : selectedCampaignType?.description ?? 'Choose the campaign stage to load the matching objectives.'
+                        }
+                      >
+                        <Select value={campaignType} onValueChange={(value) => handleCampaignTypeChange(value as MarketingCampaignType)}>
+                          <SelectTrigger id="campaignType" className="h-10" disabled={campaignTypeSelectDisabled}>
+                            <SelectValue placeholder={campaignTypeSelectDisabled ? 'Campaign type not available' : 'Select a campaign type'} />
                           </SelectTrigger>
-                          <SelectContent>
-                            {CONTENT_CREATION_APP_OPTIONS.map((app) => (
-                              <SelectItem key={app} value={app}>
-                                {app}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
+                          {campaignTypeSelectDisabled ? null : (
+                            <SelectContent>
+                              {availableCampaignTypes.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          )}
                         </Select>
-                      ) : (
-                        <Input
-                          placeholder="Metric name"
-                          value={metric.locked && metric.displayName ? metric.displayName : metric.name}
-                          readOnly={metric.locked}
-                          onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
-                          className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
-                        />
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      {index === 0 && (
-                        <Label className="text-xs text-muted-foreground">
-                          {isContentCreationReport ? 'Posts' : 'Value'}
-                        </Label>
-                      )}
+                      </FormGroup>
+                    ) : null}
+                    {showObjective ? (
+                      <FormGroup
+                        label={isGoogleAdsReport ? 'Objectives' : 'Objective'}
+                        htmlFor="objective"
+                        required
+                        showOptional={false}
+                        description={
+                          objectiveAvailability === 'disabled'
+                            ? 'Objectives are not available for this report type.'
+                            : isGoogleAdsReport
+                              ? selectedObjectives.length > 0
+                                ? `${selectedObjectives.length} objective${selectedObjectives.length === 1 ? '' : 's'} selected for this Google Ads report.`
+                                : 'Select one or more objectives after choosing a campaign type.'
+                              : selectedObjectiveInfo?.description ?? 'Pick an objective after choosing a campaign type.'
+                        }
+                      >
+                        {isGoogleAdsReport ? (
+                          <div className="space-y-3">
+                            <div className="grid gap-3 rounded-lg border border-border/60 p-3 sm:grid-cols-2">
+                              {objectiveSelectDisabled || (objectiveAvailability === 'enabled' && !campaignType) ? (
+                                <p className="text-sm text-muted-foreground sm:col-span-2">
+                                  Select a campaign type first to choose one or more objectives.
+                                </p>
+                              ) : (
+                                availableObjectives.map((objectiveValue) => (
+                                  <label
+                                    key={objectiveValue}
+                                    className="flex items-start gap-3 rounded-md border border-border/60 p-3 transition-colors hover:bg-muted/40"
+                                  >
+                                    <Checkbox
+                                      checked={selectedObjectives.includes(objectiveValue)}
+                                      onCheckedChange={(checked) => handleGoogleObjectiveToggle(objectiveValue, checked === true)}
+                                    />
+                                    <div>
+                                      <p className="text-sm font-medium text-foreground">
+                                        {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
+                                      </p>
+                                    </div>
+                                  </label>
+                                ))
+                              )}
+                            </div>
+                            {selectedObjectives.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {selectedObjectives.map((selectedObjective) => (
+                                  <Badge key={selectedObjective} variant="secondary" className="rounded-full px-2 py-1 text-[11px] font-medium">
+                                    {MARKETING_OBJECTIVE_INFO[selectedObjective].label}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <Select
+                            value={objective}
+                            onValueChange={(value) => handleObjectiveChange(value as MarketingObjective)}
+                            disabled={objectiveSelectDisabled || (objectiveAvailability === 'enabled' && !campaignType)}
+                          >
+                            <SelectTrigger id="objective" className="h-10">
+                              <SelectValue placeholder={objectiveSelectDisabled ? 'Objective not available' : 'Select an objective'} />
+                            </SelectTrigger>
+                            {objectiveSelectDisabled ? null : (
+                              <SelectContent>
+                                {availableObjectives.map((objectiveValue) => (
+                                  <SelectItem key={objectiveValue} value={objectiveValue}>
+                                    {MARKETING_OBJECTIVE_INFO[objectiveValue].label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            )}
+                          </Select>
+                        )}
+                      </FormGroup>
+                    ) : null}
+                    <FormGroup
+                      label="Period Start"
+                      htmlFor="periodStart"
+                      required
+                      showOptional={false}
+                      icon={<Calendar className="h-3.5 w-3.5" />}
+                    >
                       <Input
-                        type="text"
-                        inputMode={metricValueRule.allowDecimal ? 'decimal' : 'numeric'}
-                        value={metric.value}
-                        onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
-                        onBlur={() => handleMetricBlur(index)}
+                        id="periodStart"
+                        type="date"
+                        value={periodStart}
+                        onChange={(event) => setPeriodStart(event.target.value)}
+                        required
+                        className="h-10"
+                      />
+                    </FormGroup>
+                    <FormGroup
+                      label="Period End"
+                      htmlFor="periodEnd"
+                      required
+                      showOptional={false}
+                      icon={<Calendar className="h-3.5 w-3.5" />}
+                    >
+                      <Input
+                        id="periodEnd"
+                        type="date"
+                        value={periodEnd}
+                        onChange={(event) => setPeriodEnd(event.target.value)}
+                        required
+                        className="h-10"
+                      />
+                    </FormGroup>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {isContentCreationReport ? null : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Total Spend</CardTitle>
+                  <CardDescription>
+                    Log the full amount spent for this reporting window. Keep efficiency metrics like CPM or CPC inside the metrics section below.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormGroup
+                    htmlFor="totalSpend"
+                    required
+                    showOptional={false}
+                    description="Use the actual spend for the campaign during this period, in Australian dollars."
+                  >
+                    <div className="relative">
+                      {totalSpendAdornment.prefix ? (
+                        <span className="pointer-events-none absolute inset-y-0 left-3 flex w-10 items-center text-sm text-muted-foreground">
+                          {totalSpendAdornment.prefix}
+                        </span>
+                      ) : null}
+                      <Input
+                        id="totalSpend"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={totalSpend}
+                        onChange={(event) => setTotalSpend(event.target.value)}
+                        placeholder="0.00"
+                        className={cn('h-10', totalSpendAdornment.prefix ? NUMERIC_INPUT_PREFIX_PADDING_CLASS : undefined)}
+                        required
                       />
                     </div>
-                    {isContentCreationReport ? null : (
-                      <div className="space-y-1">
-                        {index === 0 && <Label className="text-xs text-muted-foreground">Unit</Label>}
-                        <Select
-                          value={metric.unit}
-                          onValueChange={(value) => handleMetricChange(index, 'unit', value)}
-                        >
-                          <SelectTrigger
-                            className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
-                          >
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {metricUnitOptions.map((unitOption) => (
-                              <SelectItem key={unitOption.value} value={unitOption.value}>
-                                {unitOption.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                  </FormGroup>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span>
+                    {isContentCreationReport ? 'Contents Published' : 'Metrics'} <span className="text-rose-500">*</span>
+                  </span>
+                  {presetMetricsEnabled ? (
+                    <Badge variant="secondary" className="h-5 rounded-full px-2 text-[11px] font-medium">
+                      Preset
+                    </Badge>
+                  ) : null}
+                </CardTitle>
+                <CardDescription>
+                  {isContentCreationReport
+                    ? 'List each platform or app used for posting during this reporting window, together with how many posts were published there.'
+                    : presetMetricsEnabled
+                      ? showObjective
+                        ? 'Recommended metrics are aligned to the selected objective. Preset names stay locked by default, while units can be adjusted from the dropdown when needed.'
+                        : 'Recommended metrics are aligned to the standard report template for this report type. Preset names stay locked by default, while units can be adjusted from the dropdown when needed.'
+                      : 'This report type does not use preset metrics right now. Add custom metrics manually if needed.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {presetMetricsEnabled && showObjective && !objective ? (
+                  <p className="text-sm text-muted-foreground">
+                    Select an objective to load the recommended preset metrics for this report.
+                  </p>
+                ) : null}
+
+                {metrics.map((metric, index) => {
+                  const metricValueRule = getMetricValueRule(metric.name, metric.unit);
+                  const metricUnitOptions = getMetricUnitOptions(metric.unit);
+                  const showGroupHeading =
+                    metric.groupLabel
+                    && metrics[index - 1]?.groupLabel !== metric.groupLabel;
+
+                  return (
+                    <div key={metric.id} className="space-y-2">
+                      {showGroupHeading ? (
+                        <div className="pt-2">
+                          <p className="text-sm font-semibold text-foreground">{metric.groupLabel}</p>
+                        </div>
+                      ) : null}
+                      <div
+                        className={cn(
+                          'grid gap-2 md:items-end',
+                          isContentCreationReport
+                            ? 'md:grid-cols-[minmax(0,1fr)_140px_40px]'
+                            : 'md:grid-cols-[minmax(0,1fr)_140px_104px_40px]'
+                        )}
+                      >
+                        <div className="space-y-1">
+                          {index === 0 ? (
+                            <Label className="text-xs text-muted-foreground">
+                              {isContentCreationReport ? 'Platform / App' : 'Name'}
+                            </Label>
+                          ) : null}
+                          {isContentCreationReport ? (
+                            <Select
+                              value={metric.name}
+                              onValueChange={(value) => handleMetricChange(index, 'name', value)}
+                            >
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select an app" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CONTENT_CREATION_APP_OPTIONS.map((app) => (
+                                  <SelectItem key={app} value={app}>
+                                    {app}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              placeholder="Metric name"
+                              value={metric.locked && metric.displayName ? metric.displayName : metric.name}
+                              readOnly={metric.locked}
+                              onChange={(event) => handleMetricChange(index, 'name', event.target.value)}
+                              className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                            />
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          {index === 0 && (
+                            <Label className="text-xs text-muted-foreground">
+                              {isContentCreationReport ? 'Posts' : 'Value'}
+                            </Label>
+                          )}
+                          <Input
+                            type="text"
+                            inputMode={metricValueRule.allowDecimal ? 'decimal' : 'numeric'}
+                            value={metric.value}
+                            onChange={(event) => handleMetricChange(index, 'value', event.target.value)}
+                            onBlur={() => handleMetricBlur(index)}
+                          />
+                        </div>
+                        {isContentCreationReport ? null : (
+                          <div className="space-y-1">
+                            {index === 0 && <Label className="text-xs text-muted-foreground">Unit</Label>}
+                            <Select
+                              value={metric.unit}
+                              onValueChange={(value) => handleMetricChange(index, 'unit', value)}
+                            >
+                              <SelectTrigger
+                                className={metric.locked ? 'bg-muted/40 text-muted-foreground' : undefined}
+                              >
+                                <SelectValue placeholder="Select unit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {metricUnitOptions.map((unitOption) => (
+                                  <SelectItem key={unitOption.value} value={unitOption.value}>
+                                    {unitOption.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        <div className="flex items-end md:justify-center">
+                          {metrics.length > 1 ? (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Remove metric"
+                              onClick={() => handleRemoveMetric(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                        </div>
                       </div>
-                    )}
+                    </div>
+                  );
+                })}
+
+                <Separator />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {presetMetricsEnabled ? (
+                    <Button type="button" variant="outline" size="sm" onClick={handleResetMetrics}>
+                      <RotateCcw className="mr-1 h-4 w-4" />
+                      {showObjective ? 'Reset to Objective Preset' : 'Reset to Preset'}
+                    </Button>
+                  ) : null}
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddMetric}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    {isContentCreationReport ? 'Add App' : 'Add Metric'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {isContentCreationReport ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    <span>
+                      Results <span className="text-rose-500">*</span>
+                    </span>
+                  </CardTitle>
+                  <CardDescription>
+                    Describe what the published content achieved during this reporting window.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    id="results"
+                    value={results}
+                    onChange={(event) => setResults(event.target.value)}
+                    rows={4}
+                    placeholder="Summarize the outcome of the published content, such as reach, engagement, campaign support, or rollout progress..."
+                    className="resize-none"
+                    required
+                  />
+                </CardContent>
+              </Card>
+            ) : null}
+
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <span>
+                    {isContentCreationReport ? 'Brief Notes / Observations' : 'Observations'} <span className="text-rose-500">*</span>
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  {isContentCreationReport
+                    ? 'Capture the context behind the published content, including timing, theme, execution notes, or anything reviewers should know.'
+                    : 'Summarize the important changes during this reporting window.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  rows={5}
+                  placeholder="Summarize what happened in this campaign period, what changed, and the key context reviewers should know..."
+                  className="resize-none"
+                  required
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="weekly_plan" className="mt-0 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-slate-700" />
+                  Weekly Plan Details
+                </CardTitle>
+                <CardDescription>
+                  Weekly plans use the same reporting dates, then capture each planned step as a separate line item.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <FormGroup
+                    label="Period Start"
+                    htmlFor="planPeriodStart"
+                    required
+                    showOptional={false}
+                    icon={<Calendar className="h-3.5 w-3.5" />}
+                  >
+                    <Input
+                      id="planPeriodStart"
+                      type="date"
+                      value={periodStart}
+                      onChange={(event) => setPeriodStart(event.target.value)}
+                      required
+                      className="h-10"
+                    />
+                  </FormGroup>
+                  <FormGroup
+                    label="Period End"
+                    htmlFor="planPeriodEnd"
+                    required
+                    showOptional={false}
+                    icon={<Calendar className="h-3.5 w-3.5" />}
+                  >
+                    <Input
+                      id="planPeriodEnd"
+                      type="date"
+                      value={periodEnd}
+                      onChange={(event) => setPeriodEnd(event.target.value)}
+                      required
+                      className="h-10"
+                    />
+                  </FormGroup>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <span>
+                    Weekly Plan <span className="text-rose-500">*</span>
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Add one step per line. Use the add field action when you need another planned task for the week.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {weeklyPlanItems.map((item, index) => (
+                  <div key={`weekly-plan-${index}`} className="grid gap-2 md:grid-cols-[minmax(0,1fr)_40px] md:items-end">
+                    <div className="space-y-1">
+                      {index === 0 ? <Label className="text-xs text-muted-foreground">Plan Item</Label> : null}
+                      <Input
+                        value={item}
+                        onChange={(event) => handlePlanItemChange(index, event.target.value)}
+                        placeholder={`Plan item ${index + 1}`}
+                      />
+                    </div>
                     <div className="flex items-end md:justify-center">
-                      {metrics.length > 1 ? (
+                      {weeklyPlanItems.length > 1 ? (
                         <Button
                           type="button"
                           variant="ghost"
                           size="icon"
-                          aria-label="Remove metric"
-                          onClick={() => handleRemoveMetric(index)}
+                          aria-label="Remove plan item"
+                          onClick={() => handleRemovePlanItem(index)}
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       ) : null}
                     </div>
                   </div>
+                ))}
+
+                <Separator />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddPlanItem}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    Add Field
+                  </Button>
                 </div>
-              );
-            })}
-
-            <Separator />
-
-            <div className="flex flex-wrap items-center gap-2">
-              {presetMetricsEnabled ? (
-                <Button type="button" variant="outline" size="sm" onClick={handleResetMetrics}>
-                  <RotateCcw className="mr-1 h-4 w-4" />
-                  {showObjective ? 'Reset to Objective Preset' : 'Reset to Preset'}
-                </Button>
-              ) : null}
-              <Button type="button" variant="outline" size="sm" onClick={handleAddMetric}>
-                <Plus className="mr-1 h-4 w-4" />
-                {isContentCreationReport ? 'Add App' : 'Add Metric'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {isContentCreationReport ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <span>
-                  Results <span className="text-rose-500">*</span>
-                </span>
-              </CardTitle>
-              <CardDescription>
-                Describe what the published content achieved during this reporting window.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                id="results"
-                value={results}
-                onChange={(event) => setResults(event.target.value)}
-                rows={4}
-                placeholder="Summarize the outcome of the published content, such as reach, engagement, campaign support, or rollout progress..."
-                className="resize-none"
-                required
-              />
-            </CardContent>
-          </Card>
-        ) : null}
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <span>
-                {isContentCreationReport ? 'Brief Notes / Observations' : 'Observations'} <span className="text-rose-500">*</span>
-              </span>
-            </CardTitle>
-            <CardDescription>
-              {isContentCreationReport
-                ? 'Capture the context behind the published content, including timing, theme, execution notes, or anything reviewers should know.'
-                : 'Summarize the important changes during this reporting window.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              rows={5}
-              placeholder="Summarize what happened in this campaign period, what changed, and the key context reviewers should know..."
-              className="resize-none"
-              required
-            />
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {errorMessage && (
           <div className="animate-in slide-in-from-top-2 fade-in flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50 p-3.5 text-sm text-rose-600 duration-200 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-400">

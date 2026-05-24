@@ -7,6 +7,7 @@ import {
   getMarketingObjectives,
   MARKETING_OBJECTIVE_INFO,
   MARKETING_REPORT_TYPE_OPTIONS,
+  isMarketingWeeklyPlan,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
   type MarketingReportTypeFilterValue,
@@ -29,6 +30,7 @@ import {
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { ReportsPlansTab } from '@/app/(admin)/admin/reports/components/ReportsPlansTab';
 
 const MARKETING_DEPARTMENT = 'marketing';
 const FILTER_INCLUDED_STATUSES = ['submitted', 'approved'] as const;
@@ -84,7 +86,7 @@ export default function AdminReportsPage() {
   const liveFilterReports = useMemo(
     () =>
       (filterReportsData?.data || []).filter(
-        (report) => isFilterEligibleStatus(report.status) && !report.deleted_at
+        (report) => isFilterEligibleStatus(report.status) && !report.deleted_at && !isMarketingWeeklyPlan(report.marketing_context)
       ),
     [filterReportsData?.data]
   );
@@ -267,6 +269,7 @@ export default function AdminReportsPage() {
       <Tabs defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="submissions">Submissions</TabsTrigger>
+          <TabsTrigger value="plans">Plans</TabsTrigger>
           <TabsTrigger value="analytics">Sales Forecast</TabsTrigger>
           <TabsTrigger value="compare">Compare</TabsTrigger>
         </TabsList>
@@ -281,6 +284,10 @@ export default function AdminReportsPage() {
             customStartDate={customStartDate}
             customEndDate={customEndDate}
           />
+        </TabsContent>
+
+        <TabsContent value="plans">
+          <ReportsPlansTab department={MARKETING_DEPARTMENT} />
         </TabsContent>
 
         <TabsContent value="analytics">

@@ -11,6 +11,7 @@ import {
   getMarketingObjectiveSummaryLabel,
   getMarketingReportContextSummary,
   getMarketingReportDisplayName,
+  isMarketingWeeklyPlan,
   matchesMarketingReportFilters,
   type MarketingCampaignFilterValue,
   type MarketingObjectiveFilterValue,
@@ -174,6 +175,7 @@ export function ReportsSubmissionsTab({
     }
 
     all = all.filter((report) =>
+      !isMarketingWeeklyPlan(report.marketing_context) &&
       matchesMarketingReportFilters(report, {
         reportType,
         campaignType,

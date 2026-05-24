@@ -1,6 +1,15 @@
 import { logActivity } from '@/lib/audit';
-import { notifySuperAdminsAboutSubmittedReport } from '@/app/api/reports/_notifications';
-import { extractMarketingContext, normalizeReportRecord, serializeReportNotes } from '@/lib/report-utils';
+import {
+  notifyMarketingSubmissionWebhook,
+  notifySuperAdminsAboutSubmittedReport,
+} from '@/app/api/reports/_notifications';
+import {
+  extractMarketingContext,
+  getMarketingReportDisplayName,
+  isMarketingWeeklyPlan,
+  normalizeReportRecord,
+  serializeReportNotes,
+} from '@/lib/report-utils';
 import { reportMetricSchema, reportSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -35,7 +44,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     const { data, error } = await supabaseAdmin
       .from('reports')
       .select(
-        '*, employees(id, user_id, first_name, last_name, department), report_metrics(*)'
+        '*, employees(id, user_id, first_name, last_name, department, position), report_metrics(*)'
       )
       .eq('id', id)
       .is('deleted_at', null)
@@ -163,6 +172,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
       if (parsedReport.data.status !== undefined) {
         updates.status = parsedReport.data.status;
+
+        if (parsedReport.data.status === 'submitted' && existingReport.status !== 'submitted') {
+          updates.submitted_at = new Date().toISOString();
+        }
       }
       if (
         parsedReport.data.notes !== undefined ||
@@ -253,11 +266,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     });
 
     if (existingReport.status !== 'submitted' && data.status === 'submitted') {
+      const submittedMarketingContext = data.report_type === 'marketing'
+        ? extractMarketingContext(data.notes).marketingContext
+        : null;
+
       await notifySuperAdminsAboutSubmittedReport({
         reportId: id,
         reportType: data.report_type,
         submittedBy: user.id,
       });
+
+      if (data.report_type === 'marketing') {
+        await notifyMarketingSubmissionWebhook({
+          employeeId: data.employee_id,
+          submittedAt: data.submitted_at,
+          reportDisplayName: getMarketingReportDisplayName(submittedMarketingContext),
+          isWeeklyPlan: isMarketingWeeklyPlan(submittedMarketingContext),
+        });
+      }
     }
 
     return NextResponse.json({ data: normalizeReportRecord(data) });

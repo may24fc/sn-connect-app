@@ -1,8 +1,13 @@
 import { logActivity } from '@/lib/audit';
-import { notifySuperAdminsAboutSubmittedReport } from '@/app/api/reports/_notifications';
+import {
+  notifyMarketingSubmissionWebhook,
+  notifySuperAdminsAboutSubmittedReport,
+} from '@/app/api/reports/_notifications';
 import {
   extractMarketingContext,
+  getMarketingReportDisplayName,
   hydrateMarketingContextWithDerivedSpend,
+  isMarketingWeeklyPlan,
   serializeReportNotes,
 } from '@/lib/report-utils';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -75,20 +80,15 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       submittedBy: user.id,
     });
 
-    if (data.report_type === 'marketing' && data.employee_id) {
-      const webhookUrl = process.env.N8N_MARKETING_REPORT_WEBHOOK_URL;
-      if (webhookUrl) {
-        fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            employee_id: data.employee_id,
-            submitted_at: data.submitted_at ?? new Date().toISOString(),
-          }),
-        }).catch((err) => {
-          console.error('[n8n] Failed to fire marketing report webhook:', err);
-        });
-      }
+    if (data.report_type === 'marketing') {
+      const submittedMarketingContext = extractMarketingContext(data.notes).marketingContext;
+
+      await notifyMarketingSubmissionWebhook({
+        employeeId: data.employee_id,
+        submittedAt: data.submitted_at,
+        reportDisplayName: getMarketingReportDisplayName(submittedMarketingContext),
+        isWeeklyPlan: isMarketingWeeklyPlan(submittedMarketingContext),
+      });
     }
 
     await logActivity(supabase, {

@@ -134,7 +134,7 @@ export default function ReportsPage() {
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'submitted_at', initialDirection: 'desc' });
 
   const sortedReports = sortItems(reports, {
-    report_type_label: (r) => r.marketing_context?.marketingReportType ?? '',
+    report_type_label: (r) => r.marketing_context ? getMarketingReportDisplayName(r.marketing_context) : '',
     campaign_type: (r) => r.marketing_context?.campaignType ?? '',
     objective: (r) => getMarketingObjectiveSummaryLabel(r.marketing_context) ?? '',
     period: (r) => r.period_start ?? '',
@@ -434,7 +434,7 @@ export default function ReportsPage() {
                       }}
                     >
                       <TableCell className="font-medium text-sm text-foreground">
-                        {report.marketing_context?.marketingReportType || '—'}
+                        {report.marketing_context ? getMarketingReportDisplayName(report.marketing_context) : '—'}
                       </TableCell>
                       <TableCell className="font-medium">
                         {report.marketing_context?.campaignType
@@ -605,7 +605,7 @@ function GroupedReportRow({
           )}
         </TableCell>
         <TableCell className="font-medium text-sm text-foreground">
-          {report.marketing_context?.marketingReportType || '—'}
+          {report.marketing_context ? getMarketingReportDisplayName(report.marketing_context) : '—'}
         </TableCell>
         <TableCell className="font-medium">
           <span style={{ paddingLeft: `${depth * 16}px` }}>

@@ -18,6 +18,7 @@ import {
   type MarketingObjective,
   type MarketingPrimaryChannel,
   type MarketingReportType,
+  type MarketingSubmissionKind,
 } from '@/lib/schemas/report.schema';
 
 export type MarketingCampaignFilterValue = 'all' | MarketingCampaignType;
@@ -26,6 +27,8 @@ export type MarketingReportTypeFilterValue = 'all' | MarketingReportType;
 export type MarketingMetricAnalyticsCategory = 'spend' | 'outcome' | 'supporting';
 export const REPORT_CURRENCY_CODE = 'AUD' as const;
 export const REPORT_CURRENCY_SYMBOL = 'AU$';
+
+const DEFAULT_MARKETING_SUBMISSION_KIND: MarketingSubmissionKind = 'weekly_summary';
 
 export const REPORT_TYPE_INFO: Record<string, { label: string; description: string; icon: string }> = {
   weekly: {
@@ -878,6 +881,35 @@ export function getMarketingObjectiveSummaryLabel(
   return objectives.length > 0 ? getMarketingObjectiveLabel(objectives) : null;
 }
 
+export function getMarketingSubmissionKind(
+  marketingContext: Pick<MarketingContext, 'submissionKind'> | null | undefined
+): MarketingSubmissionKind {
+  return marketingContext?.submissionKind === 'weekly_plan'
+    ? 'weekly_plan'
+    : DEFAULT_MARKETING_SUBMISSION_KIND;
+}
+
+export function isMarketingWeeklyPlan(
+  marketingContext: Pick<MarketingContext, 'submissionKind'> | null | undefined
+): boolean {
+  return getMarketingSubmissionKind(marketingContext) === 'weekly_plan';
+}
+
+export function getWeeklyPlanItems(
+  marketingContext: Pick<MarketingContext, 'weeklyPlan'> | null | undefined,
+  notes?: string | null | undefined
+): Array<string> {
+  const structuredItems = marketingContext?.weeklyPlan?.items
+    ?.map((item) => item.trim())
+    .filter(Boolean) ?? [];
+
+  if (structuredItems.length > 0) {
+    return structuredItems;
+  }
+
+  return notes ? parseNoteSections(notes).nextWeekPlans : [];
+}
+
 export function getMarketingCampaignTypeOptionsForReportType(
   reportType: MarketingReportType | null | undefined
 ): Array<{ value: MarketingCampaignType; label: string; description: string }> {
@@ -999,6 +1031,9 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
   }
 
   const candidate = payload as Record<string, unknown>;
+  const normalizedSubmissionKind = candidate.submissionKind === 'weekly_plan'
+    ? 'weekly_plan'
+    : DEFAULT_MARKETING_SUBMISSION_KIND;
   const normalizedReportType = inferMarketingReportType(
     candidate.marketingReportType,
     candidate.campaignName,
@@ -1051,23 +1086,39 @@ function normalizeMarketingContextPayload(payload: unknown): MarketingContext | 
 
   const normalized = marketingContextSchema.safeParse({
     ...candidate,
+    submissionKind: normalizedSubmissionKind,
     marketingReportType: normalizedReportType,
     campaignType:
-      getMarketingCampaignTypeAvailability(normalizedReportType) === 'hidden'
+      normalizedSubmissionKind === 'weekly_plan' || getMarketingCampaignTypeAvailability(normalizedReportType) === 'hidden'
         ? null
         : resolvedCampaignType,
     objective:
-      getMarketingObjectiveAvailability(normalizedReportType) === 'hidden'
+      normalizedSubmissionKind === 'weekly_plan' || getMarketingObjectiveAvailability(normalizedReportType) === 'hidden'
         ? null
         : normalizedObjective,
     objectives:
-      getMarketingObjectiveAvailability(normalizedReportType) === 'hidden'
+      normalizedSubmissionKind === 'weekly_plan' || getMarketingObjectiveAvailability(normalizedReportType) === 'hidden'
         ? null
         : normalizedReportType === 'Google Ads'
           ? normalizedObjectives
           : null,
+    weeklyPlan: normalizedSubmissionKind === 'weekly_plan'
+      ? {
+          items: Array.isArray((candidate.weeklyPlan as { items?: unknown } | null | undefined)?.items)
+            ? (candidate.weeklyPlan as { items: Array<unknown> }).items
+                .map((item) => (typeof item === 'string' ? item.trim() : ''))
+                .filter(Boolean)
+            : Array.isArray(candidate.weeklyPlan)
+              ? candidate.weeklyPlan
+                  .map((item) => (typeof item === 'string' ? item.trim() : ''))
+                  .filter(Boolean)
+              : [],
+        }
+      : null,
     contentCreation:
-      normalizedReportType === 'Content Creation'
+      normalizedSubmissionKind === 'weekly_plan'
+        ? null
+        : normalizedReportType === 'Content Creation'
         ? contentCreationDetailsSchema.safeParse(candidate.contentCreation).data ?? null
         : null,
   });
@@ -1196,6 +1247,10 @@ export function normalizeReportRecord<
 export function getMarketingReportDisplayName(
   marketingContext: MarketingContext | null | undefined
 ): string {
+  if (isMarketingWeeklyPlan(marketingContext)) {
+    return 'Weekly Plan';
+  }
+
   return (
     resolveMarketingReportType(marketingContext)?.trim() ||
     marketingContext?.campaignName?.trim() ||
@@ -1209,6 +1264,10 @@ export function getMarketingReportContextSummary(
 ): string {
   if (!marketingContext) {
     return 'Campaign details unavailable';
+  }
+
+  if (isMarketingWeeklyPlan(marketingContext)) {
+    return 'Weekly Plan';
   }
 
   const inferredReportType = inferMarketingReportType(

@@ -1,6 +1,14 @@
 import { logActivity } from '@/lib/audit';
-import { notifySuperAdminsAboutSubmittedReport } from '@/app/api/reports/_notifications';
-import { normalizeReportRecord, serializeReportNotes } from '@/lib/report-utils';
+import {
+  notifyMarketingSubmissionWebhook,
+  notifySuperAdminsAboutSubmittedReport,
+} from '@/app/api/reports/_notifications';
+import {
+  getMarketingReportDisplayName,
+  isMarketingWeeklyPlan,
+  normalizeReportRecord,
+  serializeReportNotes,
+} from '@/lib/report-utils';
 import { reportCreateSchema } from '@/lib/schemas/report.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -59,7 +67,7 @@ export async function GET(request: NextRequest) {
     // Use admin client to avoid nested RLS failures on cross-table subqueries
     let query = supabaseAdmin
       .from('reports')
-      .select('*, employees(id, user_id, first_name, last_name, department), report_metrics(*)', {
+      .select('*, employees(id, user_id, first_name, last_name, department, position), report_metrics(*)', {
         count: 'exact',
       })
       .order('created_at', { ascending: false });
@@ -270,6 +278,7 @@ export async function POST(request: NextRequest) {
         period_start: parsed.data.periodStart,
         period_end: parsed.data.periodEnd,
         status: parsed.data.status,
+        submitted_at: parsed.data.status === 'submitted' ? new Date().toISOString() : null,
         notes: serializeReportNotes(
           parsed.data.notes,
           parsed.data.reportType === 'marketing' ? parsed.data.marketingContext ?? null : null
@@ -330,6 +339,15 @@ export async function POST(request: NextRequest) {
         reportType: parsed.data.reportType,
         submittedBy: user.id,
       });
+
+      if (parsed.data.reportType === 'marketing') {
+        await notifyMarketingSubmissionWebhook({
+          employeeId: report.employee_id,
+          submittedAt: report.submitted_at,
+          reportDisplayName: getMarketingReportDisplayName(parsed.data.marketingContext ?? null),
+          isWeeklyPlan: isMarketingWeeklyPlan(parsed.data.marketingContext ?? null),
+        });
+      }
     }
 
     return NextResponse.json({ data: normalizeReportRecord(fullReport) }, { status: 201 });
