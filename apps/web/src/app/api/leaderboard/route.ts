@@ -4,7 +4,7 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/leaderboard?scope=all|interns&period=all|month&limit=50
+ * GET /api/leaderboard?scope=all|interns|employees&period=all|month&limit=50
  * Returns ranked users by points_total (and recent points if period=month).
  */
 export async function GET(request: Request) {
@@ -20,7 +20,10 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(request.url);
-    const scope = (url.searchParams.get('scope') ?? 'interns') as 'interns' | 'all';
+    const scope = (url.searchParams.get('scope') ?? 'interns') as
+      | 'interns'
+      | 'employees'
+      | 'all';
     const period = (url.searchParams.get('period') ?? 'all') as 'all' | 'month';
     const limit = Math.min(
       100,
@@ -37,6 +40,8 @@ export async function GET(request: Request) {
 
     if (scope === 'interns') {
       usersQuery = usersQuery.eq('role', 'intern');
+    } else if (scope === 'employees') {
+      usersQuery = usersQuery.neq('role', 'intern');
     }
 
     const { data: users, error: usersErr } = await usersQuery;

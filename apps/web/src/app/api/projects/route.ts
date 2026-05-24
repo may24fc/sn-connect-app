@@ -61,8 +61,38 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
   }
 
+  const projects = data ?? [];
+  const projectIds = projects.map((project: { id: string }) => project.id);
+
+  const earnedPointsByProject = new Map<string, number>();
+  if (projectIds.length > 0) {
+    const { data: pointEvents, error: pointsError } = await supabaseAdmin
+      .from('points_events')
+      .select('source_project_id, points')
+      .in('source_project_id', projectIds);
+
+    if (pointsError) {
+      console.error('GET /api/projects points lookup failed:', pointsError);
+      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
+    }
+
+    for (const event of pointEvents ?? []) {
+      if (!event.source_project_id) {
+        continue;
+      }
+
+      earnedPointsByProject.set(
+        event.source_project_id,
+        (earnedPointsByProject.get(event.source_project_id) ?? 0) + (event.points ?? 0)
+      );
+    }
+  }
+
   return NextResponse.json({
-    data: data ?? [],
+    data: projects.map((project) => ({
+      ...project,
+      earned_points: earnedPointsByProject.get(project.id) ?? 0,
+    })),
     pagination: { page, pageSize, total: count ?? 0 },
   });
 }

@@ -33,7 +33,27 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     .select('user_id, role, joined_at')
     .eq('project_id', id);
 
-  return NextResponse.json({ data: { ...project, contributors: contributors ?? [] } });
+  const { data: pointEvents, error: pointsError } = await supabaseAdmin
+    .from('points_events')
+    .select('points')
+    .eq('source_project_id', id);
+
+  if (pointsError) {
+    return NextResponse.json({ error: pointsError.message }, { status: 500 });
+  }
+
+  const earnedPoints = (pointEvents ?? []).reduce(
+    (total: number, event: { points: number | null }) => total + (event.points ?? 0),
+    0
+  );
+
+  return NextResponse.json({
+    data: {
+      ...project,
+      earned_points: earnedPoints,
+      contributors: contributors ?? [],
+    },
+  });
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {

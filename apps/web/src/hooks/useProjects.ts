@@ -25,6 +25,7 @@ export interface ProjectRecord {
   health: ProjectHealth;
   progress_pct: number;
   points_total: number;
+  earned_points?: number;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -291,7 +292,7 @@ export function useDeleteMilestone() {
   });
 }
 
-export function useSubmitMilestone() {
+export function useCompleteMilestone() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { milestoneId: string; projectId: string }) =>
@@ -305,26 +306,8 @@ export function useSubmitMilestone() {
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.warRoom.overview() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.leaderboard.all });
-    },
-  });
-}
-
-export function useApproveMilestone() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { milestoneId: string; projectId: string }) =>
-      jsonFetch<{ data: MilestoneRecord }>(
-        `/api/projects/milestones/${input.milestoneId}/approve`,
-        { method: 'POST' }
-      ),
-    onSuccess: (_data, vars) => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.projects.milestones(vars.projectId),
-      });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
     },
   });
 }

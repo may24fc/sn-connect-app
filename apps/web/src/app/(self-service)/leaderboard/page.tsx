@@ -3,10 +3,10 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useLeaderboard, type LeaderboardPeriod, type LeaderboardScope } from '@/hooks/useGamification';
 import {
-  Button,
   LeaderboardPodium,
   LeaderboardTable,
   Skeleton,
+  ToggleGroup,
   type PodiumEntry,
 } from '@hr-portal/ui';
 import { Trophy } from 'lucide-react';
@@ -52,6 +52,7 @@ export default function LeaderboardPage() {
           <ToggleGroup
             value={period}
             onChange={setPeriod as (v: string) => void}
+            buttonClassName="h-7"
             options={[
               { value: 'all', label: 'All time' },
               { value: 'month', label: 'This month' },
@@ -79,28 +80,3 @@ export default function LeaderboardPage() {
   );
 }
 
-function ToggleGroup({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: Array<{ value: string; label: string }>;
-}) {
-  return (
-    <div className="inline-flex rounded-md border border-zinc-200 bg-white p-0.5 dark:border-zinc-800 dark:bg-zinc-950">
-      {options.map((o) => (
-        <Button
-          key={o.value}
-          variant={value === o.value ? 'default' : 'ghost'}
-          size="sm"
-          className="h-7"
-          onClick={() => onChange(o.value)}
-        >
-          {o.label}
-        </Button>
-      ))}
-    </div>
-  );
-}

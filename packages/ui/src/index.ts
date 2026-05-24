@@ -143,6 +143,11 @@ export {
   type FilterOption,
   type MultiSelectFilterProps,
 } from './components/MultiSelectFilter';
+export {
+  ToggleGroup,
+  type ToggleGroupOption,
+  type ToggleGroupProps,
+} from './components/ToggleGroup';
 // Document Components
 export { FullScreenPreview, type FullScreenPreviewProps } from './components/documents';
 // Components

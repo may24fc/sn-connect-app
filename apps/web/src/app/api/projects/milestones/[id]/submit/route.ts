@@ -34,7 +34,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
   }
 
   if (milestone.status === 'approved') {
-    return NextResponse.json({ error: 'Already approved' }, { status: 409 });
+    return NextResponse.json({ error: 'Already completed' }, { status: 409 });
   }
 
   if ((milestone.progress_pct ?? 0) < 100) {

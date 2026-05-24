@@ -10,10 +10,10 @@ import {
   useDeleteChecklistItem,
   useDeleteMilestone,
   useDeleteProject,
+  useCompleteMilestone,
   useMilestoneChecklist,
   useProject,
   useProjectMilestones,
-  useSubmitMilestone,
   useUpdateChecklistItem,
   useUpdateMilestone,
   useUpdateProject,
@@ -189,7 +189,12 @@ export default function ProjectDetailPage() {
                 {new Date(project.start_date).toLocaleDateString()} →{' '}
                 {new Date(project.target_end_date).toLocaleDateString()}
               </span>
-              <span className="font-medium text-amber-600">{project.points_total} points</span>
+              <span className="font-medium text-amber-600">
+                {project.earned_points ?? 0} earned points
+              </span>
+              {project.points_total > 0 ? (
+                <span>{project.points_total} point budget</span>
+              ) : null}
               {project.contributors.length > 0 ? (
                 <ContributorAvatarStack
                   contributors={project.contributors.map((c) => ({ userId: c.user_id }))}
@@ -313,14 +318,17 @@ function MonthColumn({
   onAddWeek,
 }: MonthColumnProps) {
   const { addToast } = useToast();
-  const submitMutation = useSubmitMilestone();
+  const completeMutation = useCompleteMilestone();
   const deleteMilestone = useDeleteMilestone();
+  const { data: monthChecklistResp, isLoading: loadingMonthChecklist } = useMilestoneChecklist(
+    month.id
+  );
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  async function handleSubmit() {
+  async function handleComplete() {
     try {
-      await submitMutation.mutateAsync({ milestoneId: month.id, projectId });
+      await completeMutation.mutateAsync({ milestoneId: month.id, projectId });
       addToast({ title: 'Milestone completed', variant: 'success' });
     } catch (e) {
       addToast({
@@ -345,20 +353,28 @@ function MonthColumn({
     }
   }
 
-  const canSubmit = canEdit && month.status !== 'approved' && month.progress_pct >= 100;
+  const canComplete = canEdit && month.status !== 'approved' && month.progress_pct >= 100;
   const canManage = canEdit && month.status !== 'approved';
+  const [showMonthTasks, setShowMonthTasks] = useState(weeks.length === 0 || !canManage);
+  const monthChecklistItems = monthChecklistResp?.data ?? [];
 
   const maxWeeks = useMemo(() => {
     const start = new Date(month.period_start);
     const end = new Date(month.period_end);
     const totalDays =
       Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    return Math.max(1, Math.floor(totalDays / 7));
+    return Math.floor(totalDays / 7);
   }, [month.period_start, month.period_end]);
+
+  useEffect(() => {
+    if (weeks.length === 0 || !canManage) {
+      setShowMonthTasks(true);
+    }
+  }, [canManage, weeks.length]);
 
   return (
     <>
-      <div className="flex w-80 shrink-0 flex-col rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="flex w-80 shrink-0 flex-col rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
         <div className="group relative border-b border-zinc-200 p-3 dark:border-zinc-800">
           {canManage ? (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
@@ -400,13 +416,13 @@ function MonthColumn({
             <MilestoneStatusBadge status={month.status} />
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
-            {canSubmit ? (
-              <Button size="sm" onClick={handleSubmit} disabled={submitMutation.isPending}>
+            {canComplete ? (
+              <Button size="sm" onClick={handleComplete} disabled={completeMutation.isPending}>
                 <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
                 Complete
               </Button>
             ) : null}
-            {canEdit && month.status !== 'approved' ? (
+            {canEdit && month.status !== 'approved' && maxWeeks >= 1 ? (
               <div className="flex items-center gap-1.5">
                 <Button size="sm" variant="outline" onClick={onAddWeek}>
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -433,15 +449,43 @@ function MonthColumn({
               canEdit={canManage}
             />
           ) : (
-            weeks.map((week) => (
-              <WeekCard
-                key={week.id}
-                week={week}
-                projectId={projectId}
-                canEdit={canManage}
-                projectEndDate={projectEndDate}
-              />
-            ))
+            <>
+              {weeks.map((week) => (
+                <WeekCard
+                  key={week.id}
+                  week={week}
+                  projectId={projectId}
+                  canEdit={canManage}
+                  projectEndDate={projectEndDate}
+                />
+              ))}
+              {canManage ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowMonthTasks((value) => !value)}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Task
+                </Button>
+              ) : null}
+              {showMonthTasks && (canManage || loadingMonthChecklist || monthChecklistItems.length > 0) ? (
+                <Card className="border-dashed border-zinc-200 dark:border-zinc-800">
+                  <CardContent className="p-3">
+                    <p className="mb-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      Tasks for {month.title}
+                    </p>
+                    <ChecklistSection
+                      milestone={month}
+                      projectId={projectId}
+                      canEdit={canManage}
+                      showEmptyState={false}
+                    />
+                  </CardContent>
+                </Card>
+              ) : null}
+            </>
           )}
         </div>
       </div>
@@ -585,10 +629,12 @@ function ChecklistSection({
   milestone,
   projectId,
   canEdit,
+  showEmptyState = true,
 }: {
   milestone: MilestoneRecord;
   projectId: string;
   canEdit: boolean;
+  showEmptyState?: boolean;
 }) {
   const { data, isLoading } = useMilestoneChecklist(milestone.id);
   const items = data?.data ?? [];
@@ -660,7 +706,7 @@ function ChecklistSection({
     <div>
       {isLoading ? (
         <Skeleton className="h-6" />
-      ) : items.length === 0 && !canEdit ? (
+      ) : items.length === 0 && !canEdit && showEmptyState ? (
         <p className="px-1 text-xs text-zinc-400">No checklist items.</p>
       ) : (
         <div className="space-y-0.5">
@@ -1207,7 +1253,7 @@ function CreateMilestoneDialog({
           <DialogDescription>
             {parent
               ? 'Weekly sub-milestones can be broken down into smaller, trackable units.'
-              : 'Each milestone can be submitted to your supervisor for approval.'}
+              : 'Each milestone can be completed once all of its checklist items are done.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">

@@ -355,7 +355,7 @@ export default function AdminProjectPoolPage() {
     <div className="space-y-6 p-6">
       <header className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/admin/war-room')}>
+          <Button variant="ghost" size="sm" onClick={() => router.push('/admin/projects')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>

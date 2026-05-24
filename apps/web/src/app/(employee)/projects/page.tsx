@@ -173,7 +173,7 @@ export default function ProjectsListPage() {
                     description={p.description}
                     progressPct={p.progress_pct}
                     health={p.health}
-                    pointsTotal={p.points_total}
+                    pointsTotal={p.earned_points ?? 0}
                     targetEndDate={p.target_end_date}
                     {...(canEdit
                       ? {

@@ -2,7 +2,7 @@ import { STALE_TIMES } from '@/lib/query-client';
 import { queryKeys } from '@/lib/query-keys';
 import { useQuery } from '@tanstack/react-query';
 
-export interface WarRoomInternRow {
+export interface AdminProjectsInternRow {
   user_id: string;
   full_name: string | null;
   department: string | null;
@@ -16,7 +16,7 @@ export interface WarRoomInternRow {
   current_streak: number;
 }
 
-export interface WarRoomDeptRow {
+export interface AdminProjectsDeptRow {
   department: string;
   on_track: number;
   at_risk: number;
@@ -24,7 +24,7 @@ export interface WarRoomDeptRow {
   intern_count: number;
 }
 
-export interface WarRoomTotals {
+export interface AdminProjectsTotals {
   projects: number;
   on_track: number;
   at_risk: number;
@@ -32,10 +32,10 @@ export interface WarRoomTotals {
   points: number;
 }
 
-export interface WarRoomOverview {
-  interns: WarRoomInternRow[];
-  departments: WarRoomDeptRow[];
-  totals: WarRoomTotals;
+export interface AdminProjectsOverview {
+  interns: AdminProjectsInternRow[];
+  departments: AdminProjectsDeptRow[];
+  totals: AdminProjectsTotals;
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -51,10 +51,11 @@ async function fetchJson<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export function useWarRoomOverview() {
+export function useAdminProjectsOverview() {
   return useQuery({
-    queryKey: queryKeys.warRoom.overview(),
-    queryFn: () => fetchJson<{ data: WarRoomOverview }>('/api/admin/war-room/overview'),
+    queryKey: queryKeys.adminProjects.overview(),
+    queryFn: () =>
+      fetchJson<{ data: AdminProjectsOverview }>('/api/admin/projects/overview'),
     staleTime: STALE_TIMES.dynamic,
     select: (r) => r.data,
   });

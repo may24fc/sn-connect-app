@@ -561,9 +561,9 @@ export const queryKeys = {
       [...queryKeys.projects.pools(), 'count', status] as const,
   },
 
-  warRoom: {
-    all: ['warRoom'] as const,
-    overview: () => [...queryKeys.warRoom.all, 'overview'] as const,
+  adminProjects: {
+    all: ['admin-projects'] as const,
+    overview: () => [...queryKeys.adminProjects.all, 'overview'] as const,
   },
 
   leaderboard: {

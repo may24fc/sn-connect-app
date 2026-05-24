@@ -1,213 +1,300 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useWarRoomOverview } from '@/hooks/useGamification';
+import { useAdminProjectsOverview } from '@/hooks/useGamification';
 import { useProjectPoolCount } from '@/hooks/useProjectPool';
+import { useProjects } from '@/hooks/useProjects';
 import {
   Badge,
   Button,
+  EmptyState,
   HealthPill,
+  ProjectCard,
   ProgressRing,
   Skeleton,
   StreakChip,
+  ToggleGroup,
   TierBadge,
 } from '@hr-portal/ui';
 import { Activity, AlertTriangle, FolderKanban, Inbox, Target, Trophy } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 
-export default function WarRoomPage() {
+export default function AdminProjectsPage() {
   const { user } = useAuth();
-  const { data, isLoading } = useWarRoomOverview();
+  const { data, isLoading } = useAdminProjectsOverview();
   const { data: poolCountData } = useProjectPoolCount();
+  const [view, setView] = useState<'mine' | 'all'>('all');
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   if (!isAdmin) {
     return (
       <div className="p-8 text-center text-sm text-zinc-500">
-        You need admin access to view the War Room.
+        You need admin access to view Projects.
       </div>
     );
   }
+
+  const myProjectFilters = useMemo(() => ({ pageSize: 50, mineOnly: true as const }), []);
+  const { data: myProjectsData, isLoading: loadingMyProjects } = useProjects(myProjectFilters);
 
   const totals = data?.totals;
   const interns = data?.interns ?? [];
   const departments = data?.departments ?? [];
   const poolCount = poolCountData?.count ?? 0;
+  const myProjects = myProjectsData?.data ?? [];
 
   return (
     <div className="space-y-6 p-6">
       <header className="flex items-start justify-between gap-4">
-        <div>
+        <div className="space-y-3">
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Intern Projects
+            Projects
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Cross-intern project health, momentum, and points at a glance.
-          </p>
+          <ToggleGroup
+            value={view}
+            onChange={(next) => setView(next as 'mine' | 'all')}
+            options={[
+              { value: 'mine', label: 'My Projects' },
+              { value: 'all', label: 'All Projects' },
+            ]}
+          />
         </div>
-        <Link href="/admin/war-room/pool">
-          <Button variant="outline">
-            <Inbox className="mr-2 h-4 w-4" />
-            Project Pool
-            {poolCount > 0 ? (
-              <Badge variant="secondary" className="ml-2">
-                {poolCount}
-              </Badge>
-            ) : null}
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {view === 'all' ? (
+            <Link href="/admin/projects/pool">
+              <Button variant="outline">
+                <Inbox className="mr-2 h-4 w-4" />
+                Project Pool
+                {poolCount > 0 ? (
+                  <Badge variant="secondary" className="ml-2">
+                    {poolCount}
+                  </Badge>
+                ) : null}
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/projects/pool">
+                <Button variant="outline">
+                  <Inbox className="mr-2 h-4 w-4" />
+                  Project Pool
+                  {poolCount > 0 ? (
+                    <Badge variant="secondary" className="ml-2">
+                      {poolCount}
+                    </Badge>
+                  ) : null}
+                </Button>
+              </Link>
+              <Link href="/projects/new">
+                <Button>
+                  <FolderKanban className="mr-2 h-4 w-4" />
+                  New Project
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
       </header>
 
-      {/* Top stats */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <StatTile
-          icon={<FolderKanban className="h-4 w-4" />}
-          label="Total projects"
-          value={totals?.projects ?? 0}
-          isLoading={isLoading}
-        />
-        <StatTile
-          icon={<Activity className="h-4 w-4 text-emerald-600" />}
-          label="On track"
-          value={totals?.on_track ?? 0}
-          isLoading={isLoading}
-        />
-        <StatTile
-          icon={<Target className="h-4 w-4 text-amber-600" />}
-          label="At risk"
-          value={totals?.at_risk ?? 0}
-          isLoading={isLoading}
-        />
-        <StatTile
-          icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
-          label="Overdue"
-          value={totals?.overdue ?? 0}
-          isLoading={isLoading}
-        />
-        <StatTile
-          icon={<Trophy className="h-4 w-4 text-yellow-500" />}
-          label="Total points"
-          value={totals?.points ?? 0}
-          isLoading={isLoading}
-        />
-      </div>
+      {view === 'mine' ? (
+        <section className="space-y-4">
+          <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              Your projects work the same way as employee projects. Projects you create, lead, supervise,
+              or contribute to count toward your earned points and leaderboard standing.
+            </p>
+          </div>
 
-      {/* Departmental heatmap */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-          By department
-        </h2>
-        <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-          <table className="w-full text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
-              <tr>
-                <th className="px-4 py-2">Department</th>
-                <th className="px-4 py-2 text-center">Interns</th>
-                <th className="px-4 py-2 text-center">On track</th>
-                <th className="px-4 py-2 text-center">At risk</th>
-                <th className="px-4 py-2 text-center">Overdue</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6">
-                    <Skeleton className="h-6" />
-                  </td>
-                </tr>
-              ) : departments.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
-                    No departments to display.
-                  </td>
-                </tr>
-              ) : (
-                departments.map((d) => (
-                  <tr key={d.department}>
-                    <td className="px-4 py-2 font-medium">{d.department}</td>
-                    <td className="px-4 py-2 text-center">{d.intern_count}</td>
-                    <td className="px-4 py-2 text-center">
-                      <Cell value={d.on_track} variant="emerald" />
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <Cell value={d.at_risk} variant="amber" />
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <Cell value={d.overdue} variant="red" />
-                    </td>
+          {loadingMyProjects ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+          ) : myProjects.length === 0 ? (
+            <EmptyState
+              icon={<FolderKanban className="h-10 w-10" />}
+              title="No personal projects yet"
+              description="Create your own projects here and they will count toward your leaderboard activity."
+              action={{
+                label: 'New Project',
+                href: '/projects/new',
+                icon: <FolderKanban className="h-4 w-4" />,
+              }}
+            />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {myProjects.map((project) => (
+                <Link key={project.id} href={`/projects/${project.id}`}>
+                  <ProjectCard
+                    name={project.name}
+                    description={project.description}
+                    progressPct={project.progress_pct}
+                    health={project.health}
+                    pointsTotal={project.earned_points ?? 0}
+                    targetEndDate={project.target_end_date}
+                  />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : (
+        <>
+
+          {/* Top stats */}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <StatTile
+              icon={<FolderKanban className="h-4 w-4" />}
+              label="Total projects"
+              value={totals?.projects ?? 0}
+              isLoading={isLoading}
+            />
+            <StatTile
+              icon={<Activity className="h-4 w-4 text-emerald-600" />}
+              label="On track"
+              value={totals?.on_track ?? 0}
+              isLoading={isLoading}
+            />
+            <StatTile
+              icon={<Target className="h-4 w-4 text-amber-600" />}
+              label="At risk"
+              value={totals?.at_risk ?? 0}
+              isLoading={isLoading}
+            />
+            <StatTile
+              icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
+              label="Overdue"
+              value={totals?.overdue ?? 0}
+              isLoading={isLoading}
+            />
+            <StatTile
+              icon={<Trophy className="h-4 w-4 text-yellow-500" />}
+              label="Total points"
+              value={totals?.points ?? 0}
+              isLoading={isLoading}
+            />
+          </div>
+
+          {/* Departmental heatmap */}
+          <section>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              By department
+            </h2>
+            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+              <table className="w-full text-sm">
+                <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+                  <tr>
+                    <th className="px-4 py-2">Department</th>
+                    <th className="px-4 py-2 text-center">Interns</th>
+                    <th className="px-4 py-2 text-center">On track</th>
+                    <th className="px-4 py-2 text-center">At risk</th>
+                    <th className="px-4 py-2 text-center">Overdue</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-6">
+                        <Skeleton className="h-6" />
+                      </td>
+                    </tr>
+                  ) : departments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
+                        No departments to display.
+                      </td>
+                    </tr>
+                  ) : (
+                    departments.map((d) => (
+                      <tr key={d.department}>
+                        <td className="px-4 py-2 font-medium">{d.department}</td>
+                        <td className="px-4 py-2 text-center">{d.intern_count}</td>
+                        <td className="px-4 py-2 text-center">
+                          <Cell value={d.on_track} variant="emerald" />
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <Cell value={d.at_risk} variant="amber" />
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <Cell value={d.overdue} variant="red" />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-      {/* Bento grid of intern cards */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-            Interns
-          </h2>
-          <Link href="/leaderboard">
-            <Button variant="outline" size="sm">
-              <Trophy className="mr-2 h-4 w-4" />
-              Leaderboard
-            </Button>
-          </Link>
-        </div>
-        {isLoading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-40" />
-            ))}
-          </div>
-        ) : interns.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-            No interns with active projects yet.
-          </p>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {interns.map((i) => (
-              <Link
-                key={i.user_id}
-                href={`/admin/interns/${i.user_id}`}
-                className="group rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
-                      {i.full_name ?? 'Unnamed intern'}
-                    </p>
-                    {i.department ? (
-                      <p className="truncate text-xs text-zinc-500">{i.department}</p>
-                    ) : null}
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <TierBadge tier={i.current_tier} />
-                      <StreakChip weeks={i.current_streak} />
-                      <Badge variant="outline" className="text-xs">
-                        <Trophy className="mr-1 h-3 w-3" />
-                        {i.total_points} pts
-                      </Badge>
-                    </div>
-                  </div>
-                  <ProgressRing value={i.avg_progress} size={64} strokeWidth={6} />
-                </div>
-                <div className="mt-3 flex items-center justify-between text-xs">
-                  <span className="text-zinc-500">
-                    {i.project_count} project{i.project_count === 1 ? '' : 's'}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {i.on_track > 0 ? <HealthPill health="on_track" /> : null}
-                    {i.at_risk > 0 ? <HealthPill health="at_risk" /> : null}
-                    {i.overdue > 0 ? <HealthPill health="overdue" /> : null}
-                  </div>
-                </div>
+          {/* Bento grid of intern cards */}
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                Interns
+              </h2>
+              <Link href="/leaderboard">
+                <Button variant="outline" size="sm">
+                  <Trophy className="mr-2 h-4 w-4" />
+                  Leaderboard
+                </Button>
               </Link>
-            ))}
-          </div>
-        )}
-      </section>
+            </div>
+            {isLoading ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Skeleton key={i} className="h-40" />
+                ))}
+              </div>
+            ) : interns.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
+                No interns with active projects yet.
+              </p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {interns.map((i) => (
+                  <Link
+                    key={i.user_id}
+                    href={`/admin/interns/${i.user_id}`}
+                    className="group rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
+                          {i.full_name ?? 'Unnamed intern'}
+                        </p>
+                        {i.department ? (
+                          <p className="truncate text-xs text-zinc-500">{i.department}</p>
+                        ) : null}
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <TierBadge tier={i.current_tier} />
+                          <StreakChip weeks={i.current_streak} />
+                          <Badge variant="outline" className="text-xs">
+                            <Trophy className="mr-1 h-3 w-3" />
+                            {i.total_points} pts
+                          </Badge>
+                        </div>
+                      </div>
+                      <ProgressRing value={i.avg_progress} size={64} strokeWidth={6} />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs">
+                      <span className="text-zinc-500">
+                        {i.project_count} project{i.project_count === 1 ? '' : 's'}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {i.on_track > 0 ? <HealthPill health="on_track" /> : null}
+                        {i.at_risk > 0 ? <HealthPill health="at_risk" /> : null}
+                        {i.overdue > 0 ? <HealthPill health="overdue" /> : null}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }

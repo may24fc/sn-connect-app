@@ -269,9 +269,9 @@ export default function AdminReportsPage() {
       <Tabs defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="submissions">Submissions</TabsTrigger>
-          <TabsTrigger value="plans">Plans</TabsTrigger>
           <TabsTrigger value="analytics">Sales Forecast</TabsTrigger>
           <TabsTrigger value="compare">Compare</TabsTrigger>
+          <TabsTrigger value="plans">Plans</TabsTrigger>
         </TabsList>
 
         <TabsContent value="submissions">
