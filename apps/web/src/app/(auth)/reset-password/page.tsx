@@ -10,7 +10,7 @@ import {
   FormGroup,
   Input,
 } from '@hr-portal/ui';
-import { AlertCircle, CheckCircle2, Lock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -22,11 +22,45 @@ export default function ResetPasswordPage(): ReactNode {
   const [isComplete, setIsComplete] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
 
   useEffect(() => {
     const checkSession = async (): Promise<void> => {
+      if (!supabase) {
+        setError('Authentication is not configured. Please contact support.');
+        setIsReady(true);
+        return;
+      }
+
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const recoveryError = hashParams.get('error_description') ?? hashParams.get('error');
+
+      if (recoveryError) {
+        setError(recoveryError);
+        setIsReady(true);
+        return;
+      }
+
+      if (accessToken && refreshToken) {
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (setSessionError) {
+          setError('This reset link is invalid or expired. Please request a new one.');
+          setIsReady(true);
+          return;
+        }
+
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      }
+
       // SECURITY NOTE: Using getSession() is acceptable here because we're only checking
       // if a reset token session exists after following a magic link. This is not
       // role-based logic. The actual password update uses updateUser() which is secure.
@@ -139,17 +173,28 @@ export default function ResetPasswordPage(): ReactNode {
               description="Must be at least 8 characters"
               icon={<Lock className="h-3.5 w-3.5" />}
             >
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter new password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-                className="h-10"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter new password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className="h-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </FormGroup>
             <FormGroup
               label="Confirm Password"
@@ -158,17 +203,32 @@ export default function ResetPasswordPage(): ReactNode {
               showOptional={false}
               icon={<Lock className="h-3.5 w-3.5" />}
             >
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Re-enter your password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-                className="h-10"
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Re-enter your password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  className="h-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none"
+                  aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'}
+                  aria-pressed={showConfirmPassword}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </FormGroup>
             <Button
               type="submit"
