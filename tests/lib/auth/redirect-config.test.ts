@@ -112,6 +112,16 @@ describe('redirect-config', () => {
       const { getSiteUrl } = await loadModule();
       expect(getSiteUrl()).toBe('https://app.sngroup.com.au');
     });
+
+    it('ignores localhost NEXT_PUBLIC_SITE_URL outside local runtime', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.NEXT_PUBLIC_SITE_URL = 'http://localhost:3001';
+      delete process.env.NEXT_PUBLIC_VERCEL_URL;
+      delete process.env.VERCEL_URL;
+      delete process.env.VERCEL_ENV;
+      const { getSiteUrl } = await loadModule();
+      expect(getSiteUrl()).toBe('https://app.sngroup.com.au');
+    });
   });
 
   describe('getAuthCallbackUrl', () => {
@@ -206,6 +216,16 @@ describe('redirect-config', () => {
       process.env.NEXT_PUBLIC_SITE_URL = 'https://my-app.example.com';
       const { getPasswordResetRedirectUrl } = await loadModule();
       expect(getPasswordResetRedirectUrl()).toBe('https://my-app.example.com/reset-password');
+    });
+
+    it('does not build localhost reset links in production', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.NEXT_PUBLIC_SITE_URL = 'http://localhost:3001';
+      delete process.env.NEXT_PUBLIC_VERCEL_URL;
+      delete process.env.VERCEL_URL;
+      delete process.env.VERCEL_ENV;
+      const { getPasswordResetRedirectUrl } = await loadModule();
+      expect(getPasswordResetRedirectUrl()).toBe('https://app.sngroup.com.au/reset-password');
     });
   });
 

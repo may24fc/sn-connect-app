@@ -24,6 +24,20 @@ function normaliseUrl(url: string): string {
   return url.replace(/\/$/, '');
 }
 
+function isLoopbackUrl(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '0.0.0.0' ||
+      hostname === '[::1]'
+    );
+  } catch {
+    return false;
+  }
+}
+
 function isLocalRuntime(): boolean {
   return process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
 }
@@ -90,7 +104,13 @@ export function isAllowedOrigin(origin: string): boolean {
 export function getSiteUrl(): string {
   // 1. Explicit override via NEXT_PUBLIC_SITE_URL
   if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return normaliseUrl(process.env.NEXT_PUBLIC_SITE_URL);
+    const siteUrl = normaliseUrl(process.env.NEXT_PUBLIC_SITE_URL);
+
+    // Ignore loopback URLs in non-local runtimes so a leaked local build-time env
+    // cannot send production auth emails back to localhost.
+    if (isLocalRuntime() || !isLoopbackUrl(siteUrl)) {
+      return siteUrl;
+    }
   }
 
   // 2. Vercel preview URLs when an explicit site URL is not configured.
