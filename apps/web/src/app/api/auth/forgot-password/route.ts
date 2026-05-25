@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { z } from 'zod';
 
+import { normaliseRecoveryActionLink } from '@/lib/auth/recovery-link';
 import { getPasswordResetRedirectUrl } from '@/lib/auth/redirect-config';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
@@ -10,21 +11,6 @@ const MAX_ATTEMPTS_PER_HOUR = 3;
 const bodySchema = z.object({
   email: z.string().email('Invalid email address'),
 });
-
-export function normaliseRecoveryActionLink(actionLink: string, redirectTo: string): string {
-  try {
-    const actionUrl = new URL(actionLink);
-    const currentRedirectTarget = actionUrl.searchParams.get('redirect_to');
-
-    if (currentRedirectTarget !== redirectTo) {
-      actionUrl.searchParams.set('redirect_to', redirectTo);
-    }
-
-    return actionUrl.toString();
-  } catch {
-    return actionLink;
-  }
-}
 
 function buildResetEmailHtml(resetUrl: string): string {
   return `<!DOCTYPE html>

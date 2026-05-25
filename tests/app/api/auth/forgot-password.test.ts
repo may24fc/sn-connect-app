@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normaliseRecoveryActionLink } from '../../../../apps/web/src/app/api/auth/forgot-password/route';
+import { normaliseRecoveryActionLink } from '../../../../apps/web/src/lib/auth/recovery-link';
 
 describe('forgot-password route helpers', () => {
   it('rewrites Supabase recovery links to the expected redirect target', () => {
