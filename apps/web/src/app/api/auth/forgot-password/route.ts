@@ -11,6 +11,21 @@ const bodySchema = z.object({
   email: z.string().email('Invalid email address'),
 });
 
+export function normaliseRecoveryActionLink(actionLink: string, redirectTo: string): string {
+  try {
+    const actionUrl = new URL(actionLink);
+    const currentRedirectTarget = actionUrl.searchParams.get('redirect_to');
+
+    if (currentRedirectTarget !== redirectTo) {
+      actionUrl.searchParams.set('redirect_to', redirectTo);
+    }
+
+    return actionUrl.toString();
+  } catch {
+    return actionLink;
+  }
+}
+
 function buildResetEmailHtml(resetUrl: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -142,12 +157,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     options: { redirectTo },
   });
 
+  const recoveryActionLink = linkData?.properties?.action_link
+    ? normaliseRecoveryActionLink(linkData.properties.action_link, redirectTo)
+    : null;
+
   let emailSent = false;
   let emailError: string | null = null;
 
   // Only attempt to send if the user exists (linkData will be null for unknown emails).
   // We still return success either way — no email enumeration.
-  if (!linkError && linkData?.properties?.action_link) {
+  if (!linkError && recoveryActionLink) {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       try {
@@ -156,7 +175,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           from: 'Account Security <no-reply@sngroup.com.au>',
           to: email,
           subject: 'Reset your SN Connect password',
-          html: buildResetEmailHtml(linkData.properties.action_link),
+          html: buildResetEmailHtml(recoveryActionLink),
         });
         if (sendError) {
           emailError = sendError.message;
@@ -185,6 +204,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     new_values: {
       email,
       redirect_to: redirectTo,
+      generated_action_link: linkData?.properties?.action_link ?? null,
+      email_action_link: recoveryActionLink,
       email_sent: emailSent,
       error: emailError,
     },
