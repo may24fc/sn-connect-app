@@ -14,6 +14,8 @@ import {
   X,
 } from 'lucide-react';
 import * as React from 'react';
+import { FormErrorMessage } from '../forms/FormErrorMessage';
+import { FormGroup } from '../forms/FormGroup';
 import { Button } from '../../primitives/button';
 import {
   Card,
@@ -75,16 +77,15 @@ function StringListField({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <Label className="flex items-center gap-2 text-sm font-medium">
-          {icon}
-          {title}
-          {required && <span className="text-error">*</span>}
-        </Label>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-
+    <FormGroup
+      label={title}
+      required={required}
+      showOptional={false}
+      description={description || undefined}
+      error={errorMessage}
+      icon={icon}
+      className="space-y-3"
+    >
       <div className="space-y-2">
         {normalizedEntries.map((entry, index) => (
           <div key={`${title}-${index}`} className="flex items-start gap-2">
@@ -92,7 +93,9 @@ function StringListField({
               value={entry}
               onChange={(event) => updateEntry(index, event.target.value)}
               placeholder={placeholder}
-              className={cn('h-9 text-sm', invalid ? 'border-error' : '')}
+              error={invalid}
+              aria-invalid={invalid || undefined}
+              className="h-9 text-sm"
             />
             <button
               type="button"
@@ -115,8 +118,7 @@ function StringListField({
         {addLabel}
       </button>
 
-      {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
-    </div>
+    </FormGroup>
   );
 }
 
@@ -179,6 +181,8 @@ function ProjectEntryField({
             value={entry.projectFocus}
             onChange={(event) => updateField('projectFocus', event.target.value)}
             placeholder="Example: Employee onboarding guide"
+            error={invalid}
+            aria-invalid={invalid || undefined}
             className="h-9"
           />
         </div>
@@ -192,6 +196,8 @@ function ProjectEntryField({
             onChange={(event) => updateField('challenge', event.target.value)}
             placeholder="Describe the challenge, blocker, or constraint for this focus area"
             rows={3}
+            error={invalid}
+            aria-invalid={invalid || undefined}
           />
         </div>
 
@@ -204,6 +210,8 @@ function ProjectEntryField({
             onChange={(event) => updateField('actionTaken', event.target.value)}
             placeholder="Describe the work you completed for this focus area"
             rows={3}
+            error={invalid}
+            aria-invalid={invalid || undefined}
           />
         </div>
 
@@ -216,6 +224,8 @@ function ProjectEntryField({
             onChange={(event) => updateField('outcome', event.target.value)}
             placeholder="State the result, impact, or what moved forward"
             rows={3}
+            error={invalid}
+            aria-invalid={invalid || undefined}
           />
         </div>
       </div>
@@ -316,7 +326,7 @@ export function EODReportForm({
   isSubmitting = false,
   isSavingDraft = false,
   defaultDate,
-  maxHoursPerDay = 12,
+  maxHoursPerDay = 40,
   className,
   defaultValues,
   editMode = false,
@@ -357,6 +367,10 @@ export function EODReportForm({
   );
   const [errors, setErrors] = React.useState<FormErrors>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const todayIso = React.useMemo(
+    () => new Date().toISOString().split('T')[0] ?? '',
+    []
+  );
 
   const getSubmissionErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {
@@ -402,6 +416,8 @@ export function EODReportForm({
 
     if (!date) {
       nextErrors.date = 'Date is required';
+    } else if (date > todayIso) {
+      nextErrors.date = 'Date cannot be in the future';
     }
 
     if (hoursLogged <= 0) {
@@ -550,12 +566,14 @@ export function EODReportForm({
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="date" className="flex items-center gap-2 text-sm font-medium">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                Date
-                <span className="text-error">*</span>
-              </Label>
+            <FormGroup
+              label="Date"
+              htmlFor="date"
+              required
+              showOptional={false}
+              error={errors.date}
+              icon={<Calendar className="h-4 w-4" />}
+            >
               <Input
                 id="date"
                 type="date"
@@ -566,24 +584,26 @@ export function EODReportForm({
                     setErrors((currentErrors) => ({ ...currentErrors, date: undefined }));
                   }
                 }}
-                max={new Date().toISOString().split('T')[0]}
-                className={cn('h-9', errors.date ? 'border-error' : '')}
+                error={Boolean(errors.date)}
+                aria-invalid={Boolean(errors.date) || undefined}
+                className="h-9"
               />
-              {errors.date && <p className="text-xs text-error">{errors.date}</p>}
-            </div>
+            </FormGroup>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="hours" className="flex items-center gap-2 text-sm font-medium">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                Hours Logged
-                <span className="text-error">*</span>
-              </Label>
+            <FormGroup
+              label="Hours Logged"
+              htmlFor="hours"
+              required
+              showOptional={false}
+              error={errors.hoursLogged}
+              description={`Enter up to ${maxHoursPerDay} hours for the day.`}
+              icon={<Clock className="h-4 w-4" />}
+            >
               <Input
                 id="hours"
                 type="number"
-                min="0.5"
-                max={maxHoursPerDay}
                 step="0.5"
+                inputMode="decimal"
                 value={hoursLogged}
                 onChange={(event) => {
                   setHoursLogged(Number.parseFloat(event.target.value) || 0);
@@ -591,10 +611,11 @@ export function EODReportForm({
                     setErrors((currentErrors) => ({ ...currentErrors, hoursLogged: undefined }));
                   }
                 }}
-                className={cn('h-9', errors.hoursLogged ? 'border-error' : '')}
+                error={Boolean(errors.hoursLogged)}
+                aria-invalid={Boolean(errors.hoursLogged) || undefined}
+                className="h-9"
               />
-              {errors.hoursLogged && <p className="text-xs text-error">{errors.hoursLogged}</p>}
-            </div>
+            </FormGroup>
           </div>
 
           <div className="space-y-4">
@@ -629,9 +650,7 @@ export function EODReportForm({
               Add another project / focus
             </button>
 
-            {errors.projectEntries && (
-              <p className="text-xs text-error">{errors.projectEntries}</p>
-            )}
+            <FormErrorMessage message={errors.projectEntries} />
           </div>
 
           <StringListField

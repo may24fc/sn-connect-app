@@ -185,6 +185,30 @@ function buildDailyLogInsertValues(
   };
 }
 
+function getDailyLogPersistenceErrorResponse(
+  error: { code?: string | null; message?: string | null } | null | undefined,
+  fallbackMessage: string
+) {
+  if (error?.code === '23505') {
+    return NextResponse.json(
+      { error: 'A daily log already exists for this date' },
+      { status: 409 }
+    );
+  }
+
+  if (
+    error?.code === '23514' &&
+    error.message?.includes('chk_intern_daily_logs_hours_valid')
+  ) {
+    return NextResponse.json(
+      { error: 'Hours worked must be between 0.25 and 40.' },
+      { status: 400 }
+    );
+  }
+
+  return NextResponse.json({ error: fallbackMessage }, { status: 500 });
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -300,14 +324,8 @@ export async function POST(
 
     if (insertError || !data) {
       await removeDailyLogAttachments(adminClient, uploadedAttachments);
-      if (insertError?.code === '23505') {
-        return NextResponse.json(
-          { error: 'A daily log already exists for this date' },
-          { status: 409 }
-        );
-      }
       console.error('Error creating intern daily log:', insertError);
-      return NextResponse.json({ error: 'Failed to create daily log' }, { status: 500 });
+      return getDailyLogPersistenceErrorResponse(insertError, 'Failed to create daily log');
     }
 
     if ((payload.status ?? 'submitted') === 'submitted') {
@@ -479,7 +497,7 @@ export async function PATCH(
       if (updateError || !data) {
         await removeDailyLogAttachments(adminClient, uploadedAttachments);
         console.error('Error updating draft log:', updateError);
-        return NextResponse.json({ error: 'Failed to update daily log' }, { status: 500 });
+        return getDailyLogPersistenceErrorResponse(updateError, 'Failed to update daily log');
       }
 
       await removeDailyLogAttachments(adminClient, removedAttachments);
