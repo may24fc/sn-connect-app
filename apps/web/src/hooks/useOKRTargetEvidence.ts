@@ -34,19 +34,31 @@ export function useCreateOKRTargetEvidence(okrTargetId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { file: File; label?: string | null }): Promise<{
+    mutationFn: async (
+      payload:
+        | { file: File; label?: string | null }
+        | { evidenceType: 'link' | 'note'; content: string; label?: string | null }
+    ): Promise<{
       data: OKRTargetEvidenceRow;
     }> => {
-      const formData = new FormData();
-      formData.set('file', payload.file);
-      if (payload.label) {
-        formData.set('label', payload.label);
+      const requestInit: RequestInit = { method: 'POST' };
+
+      if ('file' in payload) {
+        const formData = new FormData();
+        formData.set('file', payload.file);
+        if (payload.label) {
+          formData.set('label', payload.label);
+        }
+        requestInit.body = formData;
+      } else {
+        requestInit.headers = { 'Content-Type': 'application/json' };
+        requestInit.body = JSON.stringify(payload);
       }
 
-      const response = await fetch(`/api/performance/okr-targets/${okrTargetId}/evidence`, {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        `/api/performance/okr-targets/${okrTargetId}/evidence`,
+        requestInit
+      );
 
       if (!response.ok) {
         const error = await response.json();

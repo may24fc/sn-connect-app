@@ -4,17 +4,17 @@ import {
   Briefcase,
   Calendar,
   CheckSquare,
-  ClipboardList,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   FileCheck,
   FileText,
   FolderKanban,
   FolderOpen,
   GraduationCap,
   Home,
-  LifeBuoy,
   Library,
+  LifeBuoy,
   type LucideIcon,
   Megaphone,
   Receipt,
@@ -103,10 +103,14 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
-  { label: 'Self-Evaluations', href: '/admin/performance/monthly-self-evaluations', icon: FileText },
+  {
+    label: 'Self-Evaluations',
+    href: '/admin/performance/monthly-self-evaluations',
+    icon: FileText,
+  },
   { label: 'Recruitment', href: '/admin/recruitment', icon: Briefcase },
   { label: 'Jobs', href: '/admin/jobs', icon: Briefcase },
-  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles},
+  { label: 'AI Knowledge', href: '/admin/ai-knowledge', icon: Sparkles },
   { label: 'Calendar', href: '/admin/calendar', icon: Calendar },
   { label: 'Checklists', href: '/admin/checklists', icon: ClipboardList },
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
@@ -125,7 +129,11 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
   { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
-  { label: 'Self-Evaluations', href: '/super-admin/performance/monthly-self-evaluations', icon: FileText },
+  {
+    label: 'Self-Evaluations',
+    href: '/admin/performance/monthly-self-evaluations',
+    icon: FileText,
+  },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
   { label: 'AI Knowledge', href: '/super-admin/ai-knowledge', icon: Sparkles },
   { label: 'Calendar', href: '/super-admin/calendar', icon: Calendar },
@@ -133,6 +141,37 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
 ];
+
+const exactOnlyNavHrefs = new Set([
+  '/dashboard',
+  '/intern/dashboard',
+  '/admin/dashboard',
+  '/super-admin/dashboard',
+  '/',
+]);
+
+function normalizePath(path: string): string {
+  if (path.length > 1 && path.endsWith('/')) {
+    return path.slice(0, -1);
+  }
+
+  return path;
+}
+
+function getNavMatchLength(currentPath: string, href: string): number {
+  const normalizedCurrentPath = normalizePath(currentPath);
+  const normalizedHref = normalizePath(href);
+
+  if (normalizedCurrentPath === normalizedHref) {
+    return normalizedHref.length;
+  }
+
+  if (exactOnlyNavHrefs.has(normalizedHref)) {
+    return -1;
+  }
+
+  return normalizedCurrentPath.startsWith(`${normalizedHref}/`) ? normalizedHref.length : -1;
+}
 
 export function Sidebar({
   variant,
@@ -154,7 +193,11 @@ export function Sidebar({
           : adminNavItems;
 
   const filteredNavItems = baseNavItems.filter((item) => {
-    if ((variant === 'employee' || variant === 'intern') && !showMarketingReports && item.href === '/reports') {
+    if (
+      (variant === 'employee' || variant === 'intern') &&
+      !showMarketingReports &&
+      item.href === '/reports'
+    ) {
       return false;
     }
 
@@ -165,6 +208,23 @@ export function Sidebar({
     (variant === 'employee' || variant === 'intern') && showAtsAccess
       ? [...filteredNavItems, ...employeeAtsNavItems]
       : filteredNavItems;
+
+  const activeHref = navItems.reduce<{ href: string; matchLength: number } | null>(
+    (bestMatch, item) => {
+      const matchLength = getNavMatchLength(currentPath, item.href);
+
+      if (matchLength === -1) {
+        return bestMatch;
+      }
+
+      if (bestMatch === null || matchLength > bestMatch.matchLength) {
+        return { href: item.href, matchLength };
+      }
+
+      return bestMatch;
+    },
+    null
+  )?.href;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -199,15 +259,7 @@ export function Sidebar({
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
             {navItems.map((item) => {
-              // Check if current path matches or is a child of the nav item
-              const isActive =
-                currentPath === item.href ||
-                (item.href !== '/dashboard' &&
-                  item.href !== '/intern/dashboard' &&
-                  item.href !== '/admin/dashboard' &&
-                  item.href !== '/super-admin/dashboard' &&
-                  item.href !== '/' &&
-                  currentPath.startsWith(item.href));
+              const isActive = activeHref === item.href;
               const Icon = item.icon;
 
               const navButton = (

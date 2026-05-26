@@ -357,7 +357,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Self-Assessment
+                  Review Due
                 </p>
                 <p className="text-sm font-medium text-foreground mt-1">
                   {displayCycle.selfAssessmentDeadline

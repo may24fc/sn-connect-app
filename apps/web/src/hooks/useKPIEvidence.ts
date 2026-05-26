@@ -15,6 +15,7 @@ export interface KPIEvidenceRow {
   created_at: string;
   updated_at: string;
   submitted_by_name: string;
+  download_url?: string | null;
 }
 
 export function useKPIEvidence(kpiId: string | null | undefined) {

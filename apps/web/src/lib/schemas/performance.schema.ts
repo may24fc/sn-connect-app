@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const monthKeySchema = z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-MM');
+const quarterKeySchema = z.string().regex(/^\d{4}-Q[1-4]$/, 'Use YYYY-Q#');
 
 export const reviewCycleStatusSchema = z.enum(['draft', 'active', 'completed', 'archived']);
 export const reviewStatusSchema = z.enum(['pending', 'self_review', 'manager_review', 'completed']);
@@ -26,6 +27,7 @@ export const monthlySelfEvaluationDepartmentRoleOptions = [
 export const monthlySelfEvaluationDepartmentRoleSchema = z.enum(
   monthlySelfEvaluationDepartmentRoleOptions
 );
+const assignmentSnapshotSchema = z.string().trim().min(1).max(200);
 
 export const keyResultSchema = z.object({
   id: z.string().optional(),
@@ -111,7 +113,6 @@ export const createOKRSchema = z.object({
   objective: z.string().min(1),
   description: z.string().optional().nullable(),
   keyResults: z.array(keyResultSchema).default([]),
-  progress: z.number().min(0).max(100).default(0),
   status: z.string().default('in_progress'),
   weight: z.number().min(0).default(1),
 });
@@ -121,7 +122,6 @@ export const updateOKRSchema = z.object({
   objective: z.string().min(1).optional(),
   description: z.string().optional().nullable(),
   keyResults: z.array(keyResultSchema).optional(),
-  progress: z.number().min(0).max(100).optional(),
   status: z.string().optional(),
   weight: z.number().min(0).optional(),
   adminRating: z
@@ -267,7 +267,7 @@ export const probationSetStatusSchema = z.object({
 export const submitMonthlySelfEvaluationSchema = z.object({
   monthKey: monthKeySchema,
   fullName: z.string().trim().min(1).max(200),
-  departmentRole: monthlySelfEvaluationDepartmentRoleSchema,
+  departmentRole: assignmentSnapshotSchema,
   topThreeThingsWorkedOn: z.string().trim().min(1).max(4000),
   biggestImpact: z.string().trim().min(1).max(2000),
   impactReason: z.string().trim().min(1).max(2000),
@@ -294,7 +294,28 @@ export const submitMonthlySelfEvaluationSchema = z.object({
 
 export const monthlySelfEvaluationFiltersSchema = z.object({
   monthKey: monthKeySchema.optional(),
-  departmentRole: monthlySelfEvaluationDepartmentRoleSchema.optional(),
+  departmentRole: assignmentSnapshotSchema.optional(),
+  employeeId: z.string().uuid().optional(),
+  search: z.string().trim().max(200).optional(),
+});
+
+export const submitQuarterlyTemperatureCheckSchema = z.object({
+  quarterKey: quarterKeySchema,
+  fullName: z.string().trim().min(1).max(200),
+  departmentRole: assignmentSnapshotSchema,
+  energyWorkloadScore: z.number().int().min(1).max(10),
+  energyWorkloadReason: z.string().trim().min(1).max(2000),
+  claritySupport: z.string().trim().min(1).max(2000),
+  improvementChange: z.string().trim().min(1).max(2000),
+  achievementRecognition: z.string().trim().min(1).max(2000),
+  feedbackSuggestions: z.string().trim().min(1).max(2000),
+  overallExperienceScore: z.number().int().min(1).max(5),
+  overallExperienceReason: z.string().trim().min(1).max(2000),
+});
+
+export const quarterlyTemperatureCheckFiltersSchema = z.object({
+  quarterKey: quarterKeySchema.optional(),
+  departmentRole: assignmentSnapshotSchema.optional(),
   employeeId: z.string().uuid().optional(),
   search: z.string().trim().max(200).optional(),
 });
@@ -317,5 +338,7 @@ export type CreateKPIInput = z.infer<typeof createKPISchema>;
 export type UpdateKPIInput = z.infer<typeof updateKPISchema>;
 export type SubmitMonthlySelfEvaluationInput = z.infer<typeof submitMonthlySelfEvaluationSchema>;
 export type MonthlySelfEvaluationFiltersInput = z.infer<typeof monthlySelfEvaluationFiltersSchema>;
+export type SubmitQuarterlyTemperatureCheckInput = z.infer<typeof submitQuarterlyTemperatureCheckSchema>;
+export type QuarterlyTemperatureCheckFiltersInput = z.infer<typeof quarterlyTemperatureCheckFiltersSchema>;
 export type CreateOKRTargetEvidenceInput = z.infer<typeof createOKRTargetEvidenceSchema>;
 export type ProbationActionInput = z.infer<typeof probationActionSchema>;

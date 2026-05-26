@@ -2,6 +2,8 @@ import { createKPIEvidenceSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, resolveEmployeeIdForUser } from '../../../_lib';
 
+const KPI_EVIDENCE_BUCKET = 'kpi-evidence';
+
 /**
  * GET /api/performance/kpis/[id]/evidence
  * List evidence items for a KPI
@@ -53,10 +55,25 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
     }
 
-    const enriched = (evidence || []).map((item) => ({
-      ...item,
-      submitted_by_name: namesMap.get(item.submitted_by) || 'Unknown',
-    }));
+    const enriched = await Promise.all(
+      (evidence || []).map(async (item) => {
+        let downloadUrl: string | null = null;
+
+        if (item.evidence_type === 'file' && item.content) {
+          const { data: signedUrlData } = await supabaseAdmin.storage
+            .from(KPI_EVIDENCE_BUCKET)
+            .createSignedUrl(item.content, 60 * 10);
+
+          downloadUrl = signedUrlData?.signedUrl ?? null;
+        }
+
+        return {
+          ...item,
+          submitted_by_name: namesMap.get(item.submitted_by) || 'Unknown',
+          download_url: downloadUrl,
+        };
+      })
+    );
 
     return NextResponse.json({ data: enriched });
   } catch (err) {

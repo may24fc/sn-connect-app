@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { supabaseAdmin, user, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -158,6 +158,29 @@ export async function PATCH(request: NextRequest) {
         { error: 'Invalid request body', details: parsed.error.flatten() },
         { status: 400 }
       );
+    }
+
+    if (parsed.data.currentValue !== undefined && !isPerformanceAdmin(role)) {
+      const { count: evidenceCount, error: evidenceError } = await supabaseAdmin
+        .from('okr_target_evidence')
+        .select('id', { count: 'exact', head: true })
+        .eq('okr_target_id', parsed.data.id)
+        .is('deleted_at', null);
+
+      if (evidenceError) {
+        console.error('PATCH /api/performance/okr-targets evidence check error:', evidenceError);
+        return NextResponse.json(
+          { error: 'Failed to verify supporting attachment requirement' },
+          { status: 500 }
+        );
+      }
+
+      if (!evidenceCount) {
+        return NextResponse.json(
+          { error: 'A supporting attachment or link is required before updating progress.' },
+          { status: 400 }
+        );
+      }
     }
 
     const payload: Record<string, unknown> = {};

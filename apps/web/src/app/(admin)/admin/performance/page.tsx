@@ -17,6 +17,9 @@ import {
   EmptyState,
   Input,
   MultiSelectFilter,
+  type OKR,
+  type PerformanceRating,
+  RATING_CONFIG,
   Select,
   SelectContent,
   SelectItem,
@@ -27,6 +30,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
   LayoutGrid,
   List,
   Search,
@@ -78,10 +82,84 @@ interface EmployeePerformanceSummary {
   employeeId: string;
   okrCount: number;
   weightedMean: number;
+  evaluationState: 'pending_hr' | 'pending_calibration' | 'finalized' | 'no_objectives';
+  evaluationLabel: string;
+  evaluationAudit: string;
+  evaluationOutstandingCount: number;
 }
 
 type ViewMode = 'cards' | 'list';
 type CardSortMode = 'weighted_desc' | 'weighted_asc' | 'name_asc';
+type SummaryMode = 'progress' | 'evaluation';
+type EvaluationAwareOkr = Pick<OKR, 'adminRating' | 'evaluatedBy' | 'evaluatorRole'>;
+type OkrEvaluationStage = Exclude<EmployeePerformanceSummary['evaluationState'], 'no_objectives'>;
+
+const RATING_SCORES: Record<PerformanceRating, number> = {
+  unsatisfactory: 1,
+  needs_improvement: 2,
+  meets: 3,
+  exceeds: 4,
+  exceptional: 5,
+};
+
+function getRatingFromAverage(score: number): PerformanceRating {
+  const rounded = Math.max(1, Math.min(5, Math.round(score)));
+
+  switch (rounded) {
+    case 5:
+      return 'exceptional';
+    case 4:
+      return 'exceeds';
+    case 3:
+      return 'meets';
+    case 2:
+      return 'needs_improvement';
+    default:
+      return 'unsatisfactory';
+  }
+}
+
+function getOkrEvaluationStage(
+  okr: EvaluationAwareOkr
+): OkrEvaluationStage {
+  if (!okr.adminRating || !okr.evaluatedBy) {
+    return 'pending_hr';
+  }
+
+  if (okr.evaluatorRole === 'super_admin') {
+    return 'finalized';
+  }
+
+  return 'pending_calibration';
+}
+
+function getEvaluationBadgeVariant(
+  state: EmployeePerformanceSummary['evaluationState']
+): 'default' | 'secondary' | 'success' | 'warning' {
+  switch (state) {
+    case 'pending_hr':
+      return 'warning';
+    case 'pending_calibration':
+      return 'default';
+    case 'finalized':
+      return 'success';
+    default:
+      return 'secondary';
+  }
+}
+
+function getEvaluationBadgeLabel(state: EmployeePerformanceSummary['evaluationState']): string {
+  switch (state) {
+    case 'pending_hr':
+      return 'Pending HR';
+    case 'pending_calibration':
+      return 'Pending Calibration';
+    case 'finalized':
+      return 'Finalized';
+    default:
+      return 'No Objectives';
+  }
+}
 
 export default function AdminPerformancePage(): ReactNode {
   usePerformanceRealtime();
@@ -93,6 +171,7 @@ export default function AdminPerformancePage(): ReactNode {
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('accessible');
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [summaryMode, setSummaryMode] = useState<SummaryMode>('progress');
   const [cardSortMode, setCardSortMode] = useState<CardSortMode>('weighted_desc');
   const [page, setPage] = useState(1);
   const pageSize = 20;
@@ -167,10 +246,76 @@ export default function AdminPerformancePage(): ReactNode {
       );
       const weightedMean = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
 
+      const stageCounts = empOkrs.reduce(
+        (counts, okr) => {
+          const stage = getOkrEvaluationStage(okr);
+          counts[stage] += 1;
+          return counts;
+        },
+        {
+          pending_hr: 0,
+          pending_calibration: 0,
+          finalized: 0,
+        } as Record<'pending_hr' | 'pending_calibration' | 'finalized', number>
+      );
+
+      let evaluationState: EmployeePerformanceSummary['evaluationState'];
+      if (empOkrs.length === 0) {
+        evaluationState = 'no_objectives';
+      } else if (stageCounts.finalized === empOkrs.length) {
+        evaluationState = 'finalized';
+      } else if (stageCounts.pending_hr > 0) {
+        evaluationState = 'pending_hr';
+      } else {
+        evaluationState = 'pending_calibration';
+      }
+
+      const ratedOkrs = empOkrs.filter((okr) => Boolean(okr.adminRating));
+      const ratedWeight = ratedOkrs.reduce((sum, okr) => sum + (okr.weight || 1), 0);
+      const ratingAverage =
+        ratedWeight > 0
+          ? ratedOkrs.reduce(
+              (sum, okr) =>
+                sum +
+                RATING_SCORES[(okr.adminRating || 'meets') as PerformanceRating] *
+                  (okr.weight || 1),
+              0
+            ) / ratedWeight
+          : 0;
+      const aggregateRating =
+        ratedOkrs.length > 0 ? RATING_CONFIG[getRatingFromAverage(ratingAverage)].label : null;
+
+      const evaluationLabel =
+        evaluationState === 'no_objectives'
+          ? 'No Objectives'
+          : evaluationState === 'pending_hr'
+            ? 'Pending HR Review'
+            : aggregateRating || 'Pending Calibration';
+
+      const outstandingCount =
+        evaluationState === 'finalized'
+          ? 0
+          : evaluationState === 'pending_calibration'
+            ? stageCounts.pending_calibration
+            : stageCounts.pending_hr;
+
+      const evaluationAudit =
+        evaluationState === 'no_objectives'
+          ? 'No active objectives in this cycle.'
+          : evaluationState === 'finalized'
+            ? 'Calibrated by Supervisor. Ready to sync.'
+            : evaluationState === 'pending_calibration'
+              ? `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} pending supervisor calibration.`
+              : `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} awaiting HR baseline.`;
+
       map.set(empId, {
         employeeId: empId,
         okrCount: empOkrs.length,
         weightedMean,
+        evaluationState,
+        evaluationLabel,
+        evaluationAudit,
+        evaluationOutstandingCount: outstandingCount,
       });
     }
 
@@ -190,6 +335,26 @@ export default function AdminPerformancePage(): ReactNode {
     };
 
     return [...entries].sort((a, b) => {
+      if (summaryMode === 'evaluation') {
+        const stagePriority: Record<EmployeePerformanceSummary['evaluationState'], number> = {
+          pending_hr: 0,
+          pending_calibration: 1,
+          finalized: 2,
+          no_objectives: 3,
+        };
+        const aSummary = a.employee_id ? performanceSummaries.get(a.employee_id) : undefined;
+        const bSummary = b.employee_id ? performanceSummaries.get(b.employee_id) : undefined;
+        const stageDelta =
+          stagePriority[aSummary?.evaluationState || 'no_objectives'] -
+          stagePriority[bSummary?.evaluationState || 'no_objectives'];
+
+        if (stageDelta !== 0) {
+          return stageDelta;
+        }
+
+        return (a.full_name || '').localeCompare(b.full_name || '');
+      }
+
       if (cardSortMode === 'name_asc') {
         return (a.full_name || '').localeCompare(b.full_name || '');
       }
@@ -203,7 +368,7 @@ export default function AdminPerformancePage(): ReactNode {
 
       return bScore - aScore;
     });
-  }, [cardSortMode, entries, performanceSummaries]);
+  }, [cardSortMode, entries, performanceSummaries, summaryMode]);
 
   return (
     <div className="space-y-6 p-3">
@@ -364,6 +529,31 @@ export default function AdminPerformancePage(): ReactNode {
             List
           </button>
         </div>
+        <div className="inline-flex items-center rounded-lg border border-primary/20 bg-primary/5 p-0.5">
+          <button
+            type="button"
+            onClick={() => setSummaryMode('progress')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              summaryMode === 'progress'
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            Progress Mode
+          </button>
+          <button
+            type="button"
+            onClick={() => setSummaryMode('evaluation')}
+            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+              summaryMode === 'evaluation'
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Evaluation Mode
+          </button>
+        </div>
         {viewMode === 'cards' && (
           <Select
             value={cardSortMode}
@@ -484,38 +674,83 @@ export default function AdminPerformancePage(): ReactNode {
                         </div>
 
                         <div className="mt-4 rounded-lg border border-border/70 bg-muted/20 p-3">
-                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            Overall Weighted Average
-                          </p>
-                          <p
-                            className={`mt-1 text-2xl font-bold tabular-nums ${getProgressColor(perf?.weightedMean || 0)}`}
-                          >
-                            {perf ? `${perf.weightedMean}%` : '—'}
-                          </p>
+                          {summaryMode === 'progress' ? (
+                            <>
+                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                Overall Weighted Average
+                              </p>
+                              <p
+                                className={`mt-1 text-2xl font-bold tabular-nums ${getProgressColor(perf?.weightedMean || 0)}`}
+                              >
+                                {perf ? `${perf.weightedMean}%` : '—'}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                Final Performance Rating
+                              </p>
+                              <p className="mt-1 text-lg font-semibold leading-tight text-foreground">
+                                {perf?.evaluationLabel || 'No Objectives'}
+                              </p>
+                              <div className="mt-3">
+                                <Badge
+                                  variant={getEvaluationBadgeVariant(
+                                    perf?.evaluationState || 'no_objectives'
+                                  )}
+                                  className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                                >
+                                  {getEvaluationBadgeLabel(
+                                    perf?.evaluationState || 'no_objectives'
+                                  )}
+                                </Badge>
+                              </div>
+                              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                                {perf?.evaluationAudit || 'No active objectives in this cycle.'}
+                              </p>
+                            </>
+                          )}
                         </div>
 
                         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                           <span>{entry.department_name || 'No department'}</span>
                           <span>
-                            {perf
-                              ? `${perf.okrCount} objective${perf.okrCount === 1 ? '' : 's'}`
-                              : 'No objectives'}
+                            {summaryMode === 'progress'
+                              ? perf
+                                ? `${perf.okrCount} objective${perf.okrCount === 1 ? '' : 's'}`
+                                : 'No objectives'
+                              : perf?.evaluationState === 'finalized'
+                                ? 'Ready to sync'
+                                : perf?.evaluationOutstandingCount
+                                  ? `${perf.evaluationOutstandingCount} remaining`
+                                  : 'No objectives'}
                           </span>
                         </div>
 
                         <div className="mt-2">
-                          <Badge
-                            variant={
-                              entry.status === 'active'
-                                ? 'success'
-                                : entry.status === 'probation'
-                                  ? 'warning'
-                                  : 'secondary'
-                            }
-                            className="text-xs capitalize"
-                          >
-                            {entry.status?.replace('_', ' ') || '—'}
-                          </Badge>
+                          {summaryMode === 'progress' ? (
+                            <Badge
+                              variant={
+                                entry.status === 'active'
+                                  ? 'success'
+                                  : entry.status === 'probation'
+                                    ? 'warning'
+                                    : 'secondary'
+                              }
+                              className="text-xs capitalize"
+                            >
+                              {entry.status?.replace('_', ' ') || '—'}
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant={getEvaluationBadgeVariant(
+                                perf?.evaluationState || 'no_objectives'
+                              )}
+                              className="text-xs"
+                            >
+                              {getEvaluationBadgeLabel(perf?.evaluationState || 'no_objectives')}
+                            </Badge>
+                          )}
                         </div>
                       </button>
                     );
@@ -528,8 +763,10 @@ export default function AdminPerformancePage(): ReactNode {
                     <span>Employee</span>
                     <span>Department</span>
                     <span>Role</span>
-                    <span>Status</span>
-                    <span className="text-right">Overall Weighted Average</span>
+                    <span>{summaryMode === 'progress' ? 'Status' : 'Evaluation State'}</span>
+                    <span className="text-right">
+                      {summaryMode === 'progress' ? 'Overall Weighted Average' : 'Final Rating'}
+                    </span>
                   </div>
 
                   {/* Table rows */}
@@ -584,53 +821,87 @@ export default function AdminPerformancePage(): ReactNode {
 
                             {/* Status */}
                             <div className="hidden md:block">
-                              <Badge
-                                variant={
-                                  entry.status === 'active'
-                                    ? 'success'
-                                    : entry.status === 'probation'
-                                      ? 'warning'
-                                      : 'secondary'
-                                }
-                                className="text-xs capitalize"
-                              >
-                                {entry.status?.replace('_', ' ') || '—'}
-                              </Badge>
+                              {summaryMode === 'progress' ? (
+                                <Badge
+                                  variant={
+                                    entry.status === 'active'
+                                      ? 'success'
+                                      : entry.status === 'probation'
+                                        ? 'warning'
+                                        : 'secondary'
+                                  }
+                                  className="text-xs capitalize"
+                                >
+                                  {entry.status?.replace('_', ' ') || '—'}
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant={getEvaluationBadgeVariant(
+                                    perf?.evaluationState || 'no_objectives'
+                                  )}
+                                  className="text-xs"
+                                >
+                                  {getEvaluationBadgeLabel(
+                                    perf?.evaluationState || 'no_objectives'
+                                  )}
+                                </Badge>
+                              )}
                             </div>
 
                             {/* Score */}
                             <div className="hidden md:flex justify-end">
-                              {perf ? (
-                                <span
-                                  className={`text-sm font-semibold tabular-nums ${getProgressColor(perf.weightedMean)}`}
-                                >
-                                  {perf.weightedMean}%
-                                </span>
+                              {summaryMode === 'progress' ? (
+                                perf ? (
+                                  <span
+                                    className={`text-sm font-semibold tabular-nums ${getProgressColor(perf.weightedMean)}`}
+                                  >
+                                    {perf.weightedMean}%
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )
                               ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
+                                <span className="text-right text-sm font-medium text-foreground">
+                                  {perf?.evaluationLabel || 'No Objectives'}
+                                </span>
                               )}
                             </div>
 
                             {/* Mobile meta */}
                             <div className="flex items-center gap-2 md:hidden">
                               <Badge
-                                variant={getRoleBadgeVariant(entry.role)}
+                                variant={
+                                  summaryMode === 'progress'
+                                    ? getRoleBadgeVariant(entry.role)
+                                    : getEvaluationBadgeVariant(
+                                        perf?.evaluationState || 'no_objectives'
+                                      )
+                                }
                                 className="text-xs capitalize"
                               >
-                                {entry.role?.replace('_', ' ') || '—'}
+                                {summaryMode === 'progress'
+                                  ? entry.role?.replace('_', ' ') || '—'
+                                  : getEvaluationBadgeLabel(
+                                      perf?.evaluationState || 'no_objectives'
+                                    )}
                               </Badge>
                               {entry.department_name && (
                                 <span className="text-xs text-muted-foreground">
                                   {entry.department_name}
                                 </span>
                               )}
-                              {perf && (
-                                <span
-                                  className={`ml-auto text-xs font-semibold ${getProgressColor(perf.weightedMean)}`}
-                                >
-                                  {perf.weightedMean}%
-                                </span>
-                              )}
+                              {perf &&
+                                (summaryMode === 'progress' ? (
+                                  <span
+                                    className={`ml-auto text-xs font-semibold ${getProgressColor(perf.weightedMean)}`}
+                                  >
+                                    {perf.weightedMean}%
+                                  </span>
+                                ) : (
+                                  <span className="ml-auto text-xs font-medium text-foreground">
+                                    {perf.evaluationLabel}
+                                  </span>
+                                ))}
                             </div>
                           </div>
                         </button>

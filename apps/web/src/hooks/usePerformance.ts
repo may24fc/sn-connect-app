@@ -10,6 +10,7 @@ import type {
   OKRTarget,
   OKRTargetId,
   PerformanceCycle,
+  PerformanceRating,
   ReviewStatus,
   TargetMetricType,
 } from '@hr-portal/ui';
@@ -47,6 +48,11 @@ interface OkrRow {
   progress: number | null;
   status: string | null;
   weight: number | null;
+  admin_rating: PerformanceRating | null;
+  admin_comments: string | null;
+  evaluated_by: string | null;
+  evaluated_at: string | null;
+  evaluator_role: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -155,6 +161,11 @@ function toUiOKR(row: OkrRow): OKR {
     status: (row.status || 'in_progress') as OKR['status'],
     weight: Number(row.weight ?? 1),
     progressPercentage: Number(row.progress ?? 0),
+    ...(row.admin_rating ? { adminRating: row.admin_rating } : {}),
+    ...(row.admin_comments ? { adminComments: row.admin_comments } : {}),
+    ...(row.evaluated_by ? { evaluatedBy: row.evaluated_by } : {}),
+    ...(row.evaluated_at ? { evaluatedAt: row.evaluated_at } : {}),
+    ...(row.evaluator_role !== undefined ? { evaluatorRole: row.evaluator_role } : {}),
     targets: [], // Populated separately via useOKRTargets
     keyResults: mappedKeyResults,
     createdAt: row.created_at,
@@ -165,7 +176,6 @@ function toUiOKR(row: OkrRow): OKR {
 function calculateTargetProgress(target: OkrTargetRow): number {
   const current = Number(target.current_value ?? 0);
   const targetVal = Number(target.target_value);
-  const start = Number(target.start_value ?? 0);
 
   switch (target.metric_type) {
     case 'boolean':
@@ -174,10 +184,7 @@ function calculateTargetProgress(target: OkrTargetRow): number {
       return target.self_rating ? Math.round((target.self_rating / 4) * 100) : 0;
     case 'number':
     case 'currency':
-      if (targetVal > start) {
-        return Math.min(Math.round(((current - start) / (targetVal - start)) * 100), 100);
-      }
-      return current >= targetVal ? 100 : 0;
+      return targetVal > 0 ? Math.min(Math.round((current / targetVal) * 100), 100) : 0;
     case 'tasks':
       return targetVal > 0 ? Math.min(Math.round((current / targetVal) * 100), 100) : 0;
     default:
@@ -634,6 +641,8 @@ export function useUpdateOKRTarget() {
       sortOrder?: number;
       adminRating?: string;
       adminComments?: string;
+      evaluatedBy?: string;
+      evaluatedAt?: string;
       rubric1?: string;
       rubric2?: string;
       rubric3?: string;

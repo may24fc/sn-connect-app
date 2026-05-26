@@ -48,6 +48,79 @@ export async function resolveEmployeeIdForUser(
   return data?.id ?? null;
 }
 
+type PerformanceIdentityUser = {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+};
+
+export type PerformanceIdentitySnapshot = {
+  fullName: string;
+  departmentRole: string;
+};
+
+function formatRoleLabel(role: string | null): string {
+  if (!role) {
+    return 'Unassigned';
+  }
+
+  return role
+    .split('_')
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
+function resolveMetadataFullName(user: PerformanceIdentityUser): string {
+  const metadata = user.user_metadata ?? {};
+  if (typeof metadata.full_name === 'string' && metadata.full_name.trim()) {
+    return metadata.full_name.trim();
+  }
+
+  const firstName = typeof metadata.first_name === 'string' ? metadata.first_name.trim() : '';
+  const lastName = typeof metadata.last_name === 'string' ? metadata.last_name.trim() : '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  if (typeof user.email === 'string' && user.email.includes('@')) {
+    return user.email.split('@')[0] ?? 'Unknown user';
+  }
+
+  return 'Unknown user';
+}
+
+export async function resolvePerformanceIdentitySnapshot(
+  supabase: any,
+  user: PerformanceIdentityUser,
+  role: string | null
+): Promise<PerformanceIdentitySnapshot> {
+  const { data } = await supabase
+    .from('employee_directory')
+    .select('full_name, department_name, position')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  const fullName =
+    typeof data?.full_name === 'string' && data.full_name.trim()
+      ? data.full_name.trim()
+      : resolveMetadataFullName(user);
+
+  const departmentRole =
+    typeof data?.department_name === 'string' && data.department_name.trim()
+      ? data.department_name.trim()
+      : typeof data?.position === 'string' && data.position.trim()
+        ? data.position.trim()
+        : formatRoleLabel(role);
+
+  return {
+    fullName,
+    departmentRole,
+  };
+}
+
 export async function getAuthedPerformanceContext() {
   const supabase = await createSupabaseServerClient();
   const supabaseAdmin = createSupabaseAdminClient();

@@ -255,7 +255,7 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Self-Assessment</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Review Due</p>
                 <p className="mt-1 text-sm font-medium text-foreground">
                   {displayCycle.selfAssessmentDeadline ? formatDate(displayCycle.selfAssessmentDeadline) : 'Not set'}
                 </p>

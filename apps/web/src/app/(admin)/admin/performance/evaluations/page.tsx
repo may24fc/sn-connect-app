@@ -141,6 +141,18 @@ function getStatusLabel(status: string): string {
   }
 }
 
+function getProgressAwareStatus(status: string, progressPercentage: number): string {
+  if (progressPercentage >= 100) {
+    return 'completed';
+  }
+
+  if (status === 'completed') {
+    return 'in_progress';
+  }
+
+  return status;
+}
+
 const METRIC_ICONS: Record<string, typeof Hash> = {
   number: Hash,
   boolean: ToggleLeft,
@@ -192,42 +204,48 @@ function OKREvaluationTable({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {okrs.map((okr) => (
-            <div
-              key={okr.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-border"
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 shrink-0">
-                  <Target className="h-4 w-4 text-success" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{okr.objective}</p>
-                  <div className="flex items-center gap-3 mt-0.5">
-                    <span className="text-xs text-muted-foreground">
-                      Employee: {okr.employeeId.slice(0, 8)}...
-                    </span>
-                    <span className="text-xs text-muted-foreground">Weight: {okr.weight}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDate(okr.createdAt)}
-                    </span>
+          {okrs.map((okr) => {
+            const displayStatus = getProgressAwareStatus(okr.status, okr.progressPercentage);
+
+            return (
+              <div
+                key={okr.id}
+                className="flex items-center justify-between p-3 rounded-lg border border-border"
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 shrink-0">
+                    <Target className="h-4 w-4 text-success" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{okr.objective}</p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-xs text-muted-foreground">
+                        Employee: {okr.employeeId.slice(0, 8)}...
+                      </span>
+                      <span className="text-xs text-muted-foreground">Weight: {okr.weight}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(okr.createdAt)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 ml-4">
-                <div className="hidden sm:flex items-center gap-2">
-                  <Progress value={okr.progressPercentage} className="h-2 w-16" />
-                  <span className="text-xs text-muted-foreground w-8">
-                    {okr.progressPercentage}%
-                  </span>
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Progress value={okr.progressPercentage} className="h-2 w-16" />
+                    <span className="text-xs text-muted-foreground w-8">
+                      {okr.progressPercentage}%
+                    </span>
+                  </div>
+                  <Badge variant={getStatusVariant(displayStatus)}>
+                    {getStatusLabel(displayStatus)}
+                  </Badge>
+                  <Button size="sm" variant="outline" onClick={() => onEvaluate(okr)}>
+                    Evaluate
+                  </Button>
                 </div>
-                <Badge variant={getStatusVariant(okr.status)}>{getStatusLabel(okr.status)}</Badge>
-                <Button size="sm" variant="outline" onClick={() => onEvaluate(okr)}>
-                  Evaluate
-                </Button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
@@ -319,11 +337,16 @@ export default function EvaluationsPage(): ReactNode {
   const { data: selectedTargets = [] } = useOKRTargets(selectedOkrId);
 
   // Group OKRs by status
-  const okrsForApproval = okrs.filter((okr) => okr.status === 'submitted');
-  const okrsForReview = okrs.filter(
-    (okr) => okr.status === 'approved' || okr.status === 'in_progress'
+  const okrsForApproval = okrs.filter(
+    (okr) => getProgressAwareStatus(okr.status, okr.progressPercentage) === 'submitted'
   );
-  const okrsCompleted = okrs.filter((okr) => okr.status === 'completed');
+  const okrsForReview = okrs.filter((okr) => {
+    const displayStatus = getProgressAwareStatus(okr.status, okr.progressPercentage);
+    return displayStatus === 'approved' || displayStatus === 'in_progress';
+  });
+  const okrsCompleted = okrs.filter(
+    (okr) => getProgressAwareStatus(okr.status, okr.progressPercentage) === 'completed'
+  );
 
   const handleEvaluateOKR = (okr: OKR): void => {
     setSelectedOKR(okr);
@@ -359,7 +382,6 @@ export default function EvaluationsPage(): ReactNode {
       // Update objective with overall rating
       await updateOKR.mutateAsync({
         id: selectedOKR.id,
-        status: 'completed',
         ...(evalForm.overallRating ? { adminRating: evalForm.overallRating } : {}),
         ...(evalForm.comments ? { adminComments: evalForm.comments } : {}),
         evaluatedBy: user.id,
@@ -532,9 +554,7 @@ export default function EvaluationsPage(): ReactNode {
               <div className="space-y-3">
                 {/* Objective Info */}
                 <div className="p-3 rounded-lg bg-primary/5 border border-primary/10">
-                  <p className="text-xs text-muted-foreground">
-                    Objective
-                  </p>
+                  <p className="text-xs text-muted-foreground">Objective</p>
                   <p className="text-sm font-medium mt-0.5">{selectedOKR.objective}</p>
                   {selectedOKR.description && (
                     <p className="text-xs text-muted-foreground mt-1">{selectedOKR.description}</p>

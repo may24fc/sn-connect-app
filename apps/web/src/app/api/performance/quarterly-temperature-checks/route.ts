@@ -1,7 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import {
-  monthlySelfEvaluationFiltersSchema,
-  submitMonthlySelfEvaluationSchema,
+  quarterlyTemperatureCheckFiltersSchema,
+  submitQuarterlyTemperatureCheckSchema,
 } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -11,14 +11,14 @@ import {
   resolveEmployeeIdForUser,
 } from '../_lib';
 
-function getCurrentMonthKey(date: Date = new Date()): string {
+function getCurrentQuarterKey(date: Date = new Date()): string {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}`;
+  const quarter = Math.floor(date.getMonth() / 3) + 1;
+  return `${year}-Q${quarter}`;
 }
 
 function mapSubmissionPayload(
-  input: ReturnType<typeof submitMonthlySelfEvaluationSchema.parse>,
+  input: ReturnType<typeof submitQuarterlyTemperatureCheckSchema.parse>,
   userId: string,
   employeeId: string | null,
   profile: { fullName: string; departmentRole: string }
@@ -26,31 +26,17 @@ function mapSubmissionPayload(
   return {
     user_id: userId,
     employee_id: employeeId,
-    month_key: input.monthKey,
+    quarter_key: input.quarterKey,
     full_name: profile.fullName,
     department_role: profile.departmentRole,
-    top_three_things_worked_on: input.topThreeThingsWorkedOn,
-    biggest_impact: input.biggestImpact,
-    impact_reason: input.impactReason,
-    significant_achievement: input.significantAchievement,
-    challenge_resolved: input.challengeResolved,
-    monthly_improvement: input.monthlyImprovement,
-    work_slowdown: input.workSlowdown,
-    unseen_workflow_issue: input.unseenWorkflowIssue,
-    requested_support: input.requestedSupport,
-    productivity_score: input.productivityScore,
-    productivity_reason: input.productivityReason,
-    ownership_outside_role: input.ownershipOutsideRole,
-    professional_improvement_area: input.professionalImprovementArea,
-    next_skill_to_learn: input.nextSkillToLearn,
-    leadership_did_well: input.leadershipDidWell,
-    leadership_can_improve: input.leadershipCanImprove,
-    contributions_visible: input.contributionsVisible,
-    comfortable_raising_concerns: input.comfortableRaisingConcerns,
-    hidden_productivity_issue: input.hiddenProductivityIssue,
-    immediate_improvement: input.immediateImprovement,
-    additional_comments: input.additionalComments || null,
-    next_month_goal: input.nextMonthGoal,
+    energy_workload_score: input.energyWorkloadScore,
+    energy_workload_reason: input.energyWorkloadReason,
+    clarity_support: input.claritySupport,
+    improvement_change: input.improvementChange,
+    achievement_recognition: input.achievementRecognition,
+    feedback_suggestions: input.feedbackSuggestions,
+    overall_experience_score: input.overallExperienceScore,
+    overall_experience_reason: input.overallExperienceReason,
     created_by: userId,
     submitted_at: new Date().toISOString(),
   };
@@ -71,8 +57,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      const parsedFilters = monthlySelfEvaluationFiltersSchema.safeParse({
-        monthKey: searchParams.get('monthKey') || undefined,
+      const parsedFilters = quarterlyTemperatureCheckFiltersSchema.safeParse({
+        quarterKey: searchParams.get('quarterKey') || undefined,
         departmentRole: searchParams.get('departmentRole') || undefined,
         employeeId: searchParams.get('employeeId') || undefined,
         search: searchParams.get('search') || undefined,
@@ -86,13 +72,13 @@ export async function GET(request: NextRequest) {
       }
 
       let query = supabaseAdmin
-        .from('monthly_self_evaluations')
+        .from('quarterly_temperature_checks')
         .select('*')
         .is('deleted_at', null)
         .order('submitted_at', { ascending: false });
 
-      if (parsedFilters.data.monthKey) {
-        query = query.eq('month_key', parsedFilters.data.monthKey);
+      if (parsedFilters.data.quarterKey) {
+        query = query.eq('quarter_key', parsedFilters.data.quarterKey);
       }
       if (parsedFilters.data.departmentRole) {
         query = query.eq('department_role', parsedFilters.data.departmentRole);
@@ -106,8 +92,8 @@ export async function GET(request: NextRequest) {
 
       const { data, error: queryError } = await query;
       if (queryError) {
-        console.error('GET /api/performance/monthly-self-evaluations admin error:', queryError);
-        return NextResponse.json({ error: 'Failed to fetch evaluations' }, { status: 500 });
+        console.error('GET /api/performance/quarterly-temperature-checks admin error:', queryError);
+        return NextResponse.json({ error: 'Failed to fetch temperature checks' }, { status: 500 });
       }
 
       return NextResponse.json({ data: data || [] });
@@ -115,30 +101,30 @@ export async function GET(request: NextRequest) {
 
     const profile = await resolvePerformanceIdentitySnapshot(supabaseAdmin, user, role);
 
-    const monthKey = searchParams.get('monthKey') || getCurrentMonthKey();
+    const quarterKey = searchParams.get('quarterKey') || getCurrentQuarterKey();
     const { data, error: queryError } = await supabase
-      .from('monthly_self_evaluations')
+      .from('quarterly_temperature_checks')
       .select('*')
       .eq('user_id', user.id)
-      .eq('month_key', monthKey)
+      .eq('quarter_key', quarterKey)
       .is('deleted_at', null)
       .maybeSingle();
 
     if (queryError) {
-      console.error('GET /api/performance/monthly-self-evaluations self error:', queryError);
-      return NextResponse.json({ error: 'Failed to fetch evaluation' }, { status: 500 });
+      console.error('GET /api/performance/quarterly-temperature-checks self error:', queryError);
+      return NextResponse.json({ error: 'Failed to fetch temperature check' }, { status: 500 });
     }
 
     return NextResponse.json({
       data: {
-        monthKey,
+        quarterKey,
         profile,
         submission: data,
         isSubmitted: Boolean(data),
       },
     });
   } catch (error) {
-    console.error('GET /api/performance/monthly-self-evaluations error:', error);
+    console.error('GET /api/performance/quarterly-temperature-checks error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -151,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const parsed = submitMonthlySelfEvaluationSchema.safeParse(body);
+    const parsed = submitQuarterlyTemperatureCheckSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -165,7 +151,7 @@ export async function POST(request: NextRequest) {
   const insertPayload = mapSubmissionPayload(parsed.data, user.id, employeeId, profile);
 
     const { data, error: insertError } = await supabaseAdmin
-      .from('monthly_self_evaluations')
+      .from('quarterly_temperature_checks')
       .insert(insertPayload)
       .select('*')
       .single();
@@ -173,29 +159,29 @@ export async function POST(request: NextRequest) {
     if (insertError || !data) {
       if (insertError?.code === '23505') {
         return NextResponse.json(
-          { error: 'You already submitted a self-evaluation for this month.' },
+          { error: 'You already submitted a temperature check for this quarter.' },
           { status: 409 }
         );
       }
 
-      console.error('POST /api/performance/monthly-self-evaluations error:', insertError);
-      return NextResponse.json({ error: 'Failed to submit self-evaluation' }, { status: 500 });
+      console.error('POST /api/performance/quarterly-temperature-checks error:', insertError);
+      return NextResponse.json({ error: 'Failed to submit temperature check' }, { status: 500 });
     }
 
     logActivity(supabaseAdmin, {
       userId: user.id,
-      action: 'submit_monthly_self_evaluation',
-      tableName: 'monthly_self_evaluations',
+      action: 'submit_quarterly_temperature_check',
+      tableName: 'quarterly_temperature_checks',
       recordId: data.id,
       metadata: {
-        monthKey: data.month_key,
+        quarterKey: data.quarter_key,
         departmentRole: data.department_role,
       },
     });
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
-    console.error('POST /api/performance/monthly-self-evaluations error:', error);
+    console.error('POST /api/performance/quarterly-temperature-checks error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

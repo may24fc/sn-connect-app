@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  monthlySelfEvaluationDepartmentRoleOptions,
   monthlySelfEvaluationResponseSchema,
   submitMonthlySelfEvaluationSchema,
   type SubmitMonthlySelfEvaluationInput,
@@ -34,9 +33,15 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
 
+type PerformanceIdentityProfile = {
+  fullName: string;
+  departmentRole: string;
+};
+
 type CurrentEvaluationResponse = {
   data: {
     monthKey: string;
+    profile: PerformanceIdentityProfile;
     submission: MonthlySelfEvaluationRecord | null;
     isSubmitted: boolean;
   };
@@ -110,11 +115,14 @@ function toFormValues(record: MonthlySelfEvaluationRecord): SubmitMonthlySelfEva
   };
 }
 
-function buildDefaultValues(monthKey: string): SubmitMonthlySelfEvaluationInput {
+function buildDefaultValues(
+  monthKey: string,
+  profile: PerformanceIdentityProfile
+): SubmitMonthlySelfEvaluationInput {
   return {
     monthKey,
-    fullName: '',
-    departmentRole: monthlySelfEvaluationDepartmentRoleOptions[0],
+    fullName: profile.fullName,
+    departmentRole: profile.departmentRole,
     topThreeThingsWorkedOn: '',
     biggestImpact: '',
     impactReason: '',
@@ -145,6 +153,10 @@ export function MonthlySelfEvaluationForm() {
   const [monthKey, setMonthKey] = useState<string>(getCurrentMonthKey());
   const [loading, setLoading] = useState(true);
   const [submittedRecord, setSubmittedRecord] = useState<MonthlySelfEvaluationRecord | null>(null);
+  const [currentProfile, setCurrentProfile] = useState<PerformanceIdentityProfile>({
+    fullName: '',
+    departmentRole: '',
+  });
 
   const {
     control,
@@ -154,7 +166,7 @@ export function MonthlySelfEvaluationForm() {
     formState: { errors, isSubmitting },
   } = useForm<SubmitMonthlySelfEvaluationInput>({
     resolver: zodResolver(submitMonthlySelfEvaluationSchema),
-    defaultValues: buildDefaultValues(monthKey),
+    defaultValues: buildDefaultValues(monthKey, currentProfile),
   });
 
   useEffect(() => {
@@ -179,12 +191,13 @@ export function MonthlySelfEvaluationForm() {
         if (!active) return;
 
         setMonthKey(payload.data.monthKey);
+        setCurrentProfile(payload.data.profile);
         if (payload.data.submission) {
           setSubmittedRecord(payload.data.submission);
           reset(toFormValues(payload.data.submission));
         } else {
           setSubmittedRecord(null);
-          reset(buildDefaultValues(payload.data.monthKey));
+          reset(buildDefaultValues(payload.data.monthKey, payload.data.profile));
         }
       } catch (error) {
         if (!active) return;
@@ -337,10 +350,18 @@ export function MonthlySelfEvaluationForm() {
             and what would help you perform better. This form is designed to be finished in roughly 10 to 15 minutes.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
+        <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div>
             <p className="text-sm font-medium text-foreground">Current month</p>
             <p className="mt-1 text-sm text-muted-foreground">{formatMonthKey(monthKey)}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">Current name</p>
+            <p className="mt-1 text-sm text-muted-foreground">{currentProfile.fullName}</p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">Assigned department</p>
+            <p className="mt-1 text-sm text-muted-foreground">{currentProfile.departmentRole}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Submission rule</p>
@@ -363,36 +384,15 @@ export function MonthlySelfEvaluationForm() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">1. Full Name</Label>
-              <Input id="fullName" {...register('fullName')} />
-              {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
-            </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">1. Full Name</p>
+                <p className="mt-1 text-sm text-muted-foreground">{currentProfile.fullName}</p>
+              </div>
 
-            <div className="space-y-2">
-              <Label>2. Department / Role</Label>
-              <Controller
-                control={control}
-                name="departmentRole"
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your department or role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.departmentRole && (
-                <p className="text-sm text-destructive">{errors.departmentRole.message}</p>
-              )}
-            </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">2. Department</p>
+                <p className="mt-1 text-sm text-muted-foreground">{currentProfile.departmentRole}</p>
+              </div>
             </div>
 
             {renderTextareaField(

@@ -3,6 +3,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
 
+interface EvaluatorIdentity {
+  firstName: string | null;
+  position: string | null;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ employeeId: string }> }
@@ -132,6 +137,68 @@ export async function GET(
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true });
 
+    const evaluatorIds = Array.from(
+      new Set(
+        [...(kpis || []), ...(okrs || []), ...(okrTargets || [])]
+          .map((item) => item.evaluated_by)
+          .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      )
+    );
+
+    const evaluatorDirectory = new Map<string, EvaluatorIdentity>();
+
+    if (evaluatorIds.length > 0) {
+      const { data: evaluatorEmployees } = await db
+        .from('employees')
+        .select('user_id, first_name, position')
+        .in('user_id', evaluatorIds)
+        .is('deleted_at', null);
+
+      for (const evaluator of evaluatorEmployees || []) {
+        evaluatorDirectory.set(evaluator.user_id, {
+          firstName: evaluator.first_name ?? null,
+          position: evaluator.position ?? null,
+        });
+      }
+    }
+
+    const okrEvaluatorById = new Map(
+      (okrs || []).map((okr) => [okr.id, evaluatorDirectory.get(okr.evaluated_by ?? '') ?? null])
+    );
+
+    const enrichedKpis = (kpis || []).map((kpi) => {
+      const evaluator = evaluatorDirectory.get(kpi.evaluated_by ?? '') ?? null;
+
+      return {
+        ...kpi,
+        evaluator_first_name: evaluator?.firstName ?? null,
+        evaluator_position: evaluator?.position ?? null,
+      };
+    });
+
+    const enrichedOkrs = (okrs || []).map((okr) => {
+      const evaluator = evaluatorDirectory.get(okr.evaluated_by ?? '') ?? null;
+
+      return {
+        ...okr,
+        evaluator_first_name: evaluator?.firstName ?? null,
+        evaluator_position: evaluator?.position ?? null,
+      };
+    });
+
+    const enrichedOkrTargets = (okrTargets || []).map((target) => {
+      const evaluator =
+        evaluatorDirectory.get(target.evaluated_by ?? '') ??
+        okrEvaluatorById.get(target.okr_id) ??
+        null;
+
+      return {
+        ...target,
+        evaluator_first_name: evaluator?.firstName ?? null,
+        evaluator_position: evaluator?.position ?? null,
+      };
+    });
+
     // Fetch performance reviews
     const { data: reviews } = await db
       .from('performance_reviews')
@@ -213,10 +280,10 @@ export async function GET(
         role: userData?.role ?? null,
         email: userData?.email ?? null,
       },
-      kpis: kpis || [],
+      kpis: enrichedKpis,
       kpiSummary,
-      okrs: okrs || [],
-      okrTargets: okrTargets || [],
+      okrs: enrichedOkrs,
+      okrTargets: enrichedOkrTargets,
       okrSummary,
       reviews: reviews || [],
       latestReview,

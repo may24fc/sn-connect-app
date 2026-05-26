@@ -78,6 +78,11 @@ export interface OKR {
   status: OKRStatus;
   weight: number;
   progressPercentage: number;
+  adminRating?: PerformanceRating;
+  adminComments?: string;
+  evaluatedBy?: string;
+  evaluatedAt?: string;
+  evaluatorRole?: string | null;
   targets: Array<OKRTarget>;
   /** @deprecated Use targets instead */
   keyResults: Array<KeyResult>;
