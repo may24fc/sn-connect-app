@@ -79,6 +79,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'Profile', href: '/intern/profile', icon: User },
   { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
   { label: 'EOD Reports', href: '/intern/reports', icon: FileText },
+  { label: 'Marketing Reports', href: '/reports', icon: FileText },
   { label: 'OKRs & KPIs', href: '/performance', icon: Target },
   { label: 'Projects', href: '/projects', icon: FolderKanban },
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
@@ -153,7 +154,7 @@ export function Sidebar({
           : adminNavItems;
 
   const filteredNavItems = baseNavItems.filter((item) => {
-    if (variant === 'employee' && !showMarketingReports && item.href === '/reports') {
+    if ((variant === 'employee' || variant === 'intern') && !showMarketingReports && item.href === '/reports') {
       return false;
     }
 
@@ -189,7 +190,7 @@ export function Sidebar({
           />
           {!collapsed && (
             <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              SN Connect
+              Control Hub
             </span>
           )}
         </div>

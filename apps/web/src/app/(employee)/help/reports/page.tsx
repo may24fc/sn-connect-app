@@ -28,7 +28,7 @@ const employeeFaqs: FAQItem[] = [
   {
     question: 'What report types are available?',
     answer:
-      'The employee-facing reports workflow is currently focused on Marketing reports. The page is available only to employees assigned to the Marketing department.',
+      'The self-service reports workflow is currently focused on Marketing reports. The page is available to employees and interns assigned to the Marketing department.',
   },
   {
     question: 'What should I include in the Accomplishments section?',

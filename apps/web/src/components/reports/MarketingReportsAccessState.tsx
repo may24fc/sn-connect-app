@@ -18,10 +18,10 @@ export function MarketingReportsAccessState({
       ? {
           title: 'Marketing Reports are not available for this account.',
           description:
-            'This page is reserved for employees assigned to the Marketing department.',
+            'This page is reserved for team members assigned to the Marketing department.',
         }
       : {
-          title: 'Marketing Reports are only available to employees in Marketing.',
+          title: 'Marketing Reports are only available to users in Marketing.',
           description:
             'If you need access, ask an admin to update your department assignment.',
         };
