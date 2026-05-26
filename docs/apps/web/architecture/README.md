@@ -2,7 +2,7 @@
 
 > Audience: Developers, DevOps
 
-SN Connect is an enterprise HR Portal with an AI agent, deployed as a pnpm monorepo with a three-tier architecture.
+Control Hub is an enterprise HR Portal with an AI agent, deployed as a pnpm monorepo with a three-tier architecture.
 
 **Tagline:** "Where Policy Meets Productivity"
 

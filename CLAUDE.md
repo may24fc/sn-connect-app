@@ -1,8 +1,8 @@
-# CLAUDE.md - SN Connect HR Portal Development Guidelines
+# CLAUDE.md - Control Hub HR Portal Development Guidelines
 
 ## Project Overview
 
-**SN Connect** is an enterprise HR Portal with an AI Agent serving as a centralized reference for HR and employees. The system uses a three-tier architecture deployed as a pnpm monorepo.
+**Control Hub** is an enterprise HR Portal with an AI Agent serving as a centralized reference for HR and employees. The system uses a three-tier architecture deployed as a pnpm monorepo.
 
 **Tagline:** "Where Policy Meets Productivity"
 

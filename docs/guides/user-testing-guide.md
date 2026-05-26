@@ -1,8 +1,8 @@
-# SN Connect HR Portal — User Testing Guide
+# Control Hub HR Portal — User Testing Guide
 
 **Date:** March 2026 | **Version:** 2.0 | **Developer:** Ceferino Jumao-as V
 
-Welcome! This guide helps you explore and test the SN Connect HR Portal. No technical knowledge required — just follow the steps below for your role.
+Welcome! This guide helps you explore and test the Control Hub HR Portal. No technical knowledge required — just follow the steps below for your role.
 
 ---
 
@@ -242,4 +242,4 @@ These features exist as UI screens but are **not fully functional yet:**
 | Calendar | Quick action links to `/calendar` — page not built yet |
 | Mobile optimization | Some pages may not display correctly on small screens |
 
-Thank you for helping test SN Connect! Your feedback makes the product better.
+Thank you for helping test Control Hub! Your feedback makes the product better.

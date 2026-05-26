@@ -1,6 +1,6 @@
 # Production Cost Model
 
-This document is a planning sheet for expected production costs and scaling pressure for the SN Connect HR Portal.
+This document is a planning sheet for expected production costs and scaling pressure for the Control Hub HR Portal.
 
 It is not an accounting document. It is an operating estimate to help leadership plan monthly spend and avoid surprises.
 

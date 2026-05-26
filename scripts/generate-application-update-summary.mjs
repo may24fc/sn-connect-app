@@ -14,11 +14,11 @@ const OUTPUT_PATH = path.join(
   'generated',
   'application-update-summary.generated.ts',
 );
-const DEFAULT_SUMMARY_TITLE = "What's new in SN Connect";
+const DEFAULT_SUMMARY_TITLE = "What's new in Control Hub";
 const MAX_SUMMARY_ITEMS = 5;
 const FALLBACK_SUMMARY = {
   title: DEFAULT_SUMMARY_TITLE,
-  items: ['This release includes stability, quality, and workflow improvements across SN Connect.'],
+  items: ['This release includes stability, quality, and workflow improvements across Control Hub.'],
 };
 
 const SUMMARY_RULES = [
@@ -147,7 +147,7 @@ function createGenericSummaryItem(entry) {
     return `${label} has been improved to make day-to-day work smoother.`;
   }
 
-  return `${label} is now available in SN Connect.`;
+  return `${label} is now available in Control Hub.`;
 }
 
 function createUserFacingSummary(entries) {

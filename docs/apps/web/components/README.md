@@ -2,7 +2,7 @@
 
 > Audience: Developers
 
-The SN Connect design system is built on Radix UI primitives styled with Tailwind CSS and class-variance-authority (CVA). Components live in two locations:
+The Control Hub design system is built on Radix UI primitives styled with Tailwind CSS and class-variance-authority (CVA). Components live in two locations:
 
 - **`packages/ui/`** — Shared primitives and composite components (used across apps)
 - **`apps/web/src/components/`** — App-specific components (Next.js pages only)

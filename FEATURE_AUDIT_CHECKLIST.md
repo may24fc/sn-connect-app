@@ -1,4 +1,4 @@
-# SN Connect HR Portal — Comprehensive Feature Audit & Implementation Checklist
+# Control Hub HR Portal — Comprehensive Feature Audit & Implementation Checklist
 
 **Audit Date:** March 8, 2026  
 **Audit Method:** Playwright E2E tests + source code analysis  

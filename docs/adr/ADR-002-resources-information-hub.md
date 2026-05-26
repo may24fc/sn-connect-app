@@ -4,7 +4,7 @@
 Accepted
 
 ## Context
-SN Connect HR Portal needs a centralized Information Hub where HR administrators can publish resources (videos, documents, links, presentations) targeted to specific roles, departments, or employees. Employees need a searchable, browsable interface to discover and consume these resources. Key design decisions involve file storage, versioning, search, content targeting, analytics tracking, RLS policy design, and frontend component architecture.
+Control Hub HR Portal needs a centralized Information Hub where HR administrators can publish resources (videos, documents, links, presentations) targeted to specific roles, departments, or employees. Employees need a searchable, browsable interface to discover and consume these resources. Key design decisions involve file storage, versioning, search, content targeting, analytics tracking, RLS policy design, and frontend component architecture.
 
 ## Decision
 

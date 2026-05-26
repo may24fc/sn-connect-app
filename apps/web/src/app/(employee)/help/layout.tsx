@@ -58,7 +58,7 @@ export default function HelpLayout({ children }: { children: ReactNode }): React
         <div>
           <h1 className="text-2xl font-bold text-foreground">Help Center</h1>
           <p className="text-sm text-muted-foreground">
-            Guides and FAQs to help you use SN Connect
+            Guides and FAQs to help you use Control Hub
           </p>
         </div>
       </div>

@@ -18,7 +18,7 @@ function buildResetEmailHtml(resetUrl: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reset your SN Connect password</title>
+  <title>Reset your Control Hub password</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0;">
@@ -28,7 +28,7 @@ function buildResetEmailHtml(resetUrl: string): string {
           <!-- Header -->
           <tr>
             <td style="background-color:#4F46E5;padding:28px 40px;">
-              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">SN Connect</p>
+              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">Control Hub</p>
               <p style="margin:4px 0 0;font-size:12px;color:#c7d2fe;">HR Portal · Where Policy Meets Productivity</p>
             </td>
           </tr>
@@ -37,7 +37,7 @@ function buildResetEmailHtml(resetUrl: string): string {
             <td style="padding:40px;">
               <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;letter-spacing:-0.01em;">Reset your password</h1>
               <p style="margin:0 0 24px;font-size:14px;color:#71717a;line-height:1.6;">
-                Someone requested a password reset for your SN Connect account. If this was you, click the button below to choose a new password.
+                Someone requested a password reset for your Control Hub account. If this was you, click the button below to choose a new password.
               </p>
               <!-- CTA Button -->
               <table cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
@@ -160,7 +160,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         const { error: sendError } = await resend.emails.send({
           from: 'Account Security <no-reply@sngroup.com.au>',
           to: email,
-          subject: 'Reset your SN Connect password',
+          subject: 'Reset your Control Hub password',
           html: buildResetEmailHtml(recoveryActionLink),
         });
         if (sendError) {

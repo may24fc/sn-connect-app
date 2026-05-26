@@ -1,8 +1,8 @@
-# SN Connect HR Portal — Schema Summary
+# Control Hub HR Portal — Schema Summary
 
 > Audience: Developers, DevOps
 
-Complete database schema for SN Connect HR Portal. 62 migration files across 8 phases, 30+ tables, 3 views, 70+ RLS policies, 20+ functions.
+Complete database schema for Control Hub HR Portal. 62 migration files across 8 phases, 30+ tables, 3 views, 70+ RLS policies, 20+ functions.
 
 ---
 

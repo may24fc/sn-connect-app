@@ -75,7 +75,7 @@ export default function LoginPage(): ReactNode {
               sizes="60px"
             />
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-              SN Connect
+              Control Hub
             </h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
               Where Policy Meets Productivity

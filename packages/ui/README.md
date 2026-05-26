@@ -1,6 +1,6 @@
 # @hr-portal/ui
 
-Shared UI component library for the SN Connect HR Portal. Built on Radix UI, Tailwind CSS, and CVA.
+Shared UI component library for the Control Hub HR Portal. Built on Radix UI, Tailwind CSS, and CVA.
 
 ## Installation
 

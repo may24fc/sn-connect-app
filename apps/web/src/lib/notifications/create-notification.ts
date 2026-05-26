@@ -105,15 +105,15 @@ async function sendNotificationEmails(
       .map((identity) =>
         sendPortalNotificationEmail({
           to: identity.email as string,
-          subject: `SN Connect: ${notification.title}`,
+          subject: `Control Hub: ${notification.title}`,
           heading: notification.title,
           paragraphs: [
-            notification.message ?? 'You have a new notification in SN Connect.',
+            notification.message ?? 'You have a new notification in Control Hub.',
             actionUrl
-              ? 'Open SN Connect to view the full update and take any required action.'
-              : 'Open SN Connect to view the latest update.',
+              ? 'Open Control Hub to view the full update and take any required action.'
+              : 'Open Control Hub to view the latest update.',
           ],
-          actionLabel: actionUrl ? 'Open SN Connect' : undefined,
+          actionLabel: actionUrl ? 'Open Control Hub' : undefined,
           actionUrl,
         })
       );
@@ -144,8 +144,8 @@ async function sendTelegramNotifications(
 
     const text = [
       notification.title,
-      notification.message ?? 'You have a new notification in SN Connect.',
-      actionUrl ? `Open SN Connect: ${actionUrl}` : null,
+      notification.message ?? 'You have a new notification in Control Hub.',
+      actionUrl ? `Open Control Hub: ${actionUrl}` : null,
     ]
       .filter(Boolean)
       .join('\n\n');

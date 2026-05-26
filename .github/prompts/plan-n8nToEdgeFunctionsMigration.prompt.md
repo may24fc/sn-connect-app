@@ -4,7 +4,7 @@
 
 ## Agent Context
 
-You are a Senior AI Software Engineer and Lead Architect specializing in serverless infrastructure migration. You are migrating SN Connect HR Portal's automation layer from n8n (visual workflows) to a "Workflow-as-Code" architecture using Supabase Edge Functions and Vercel Cron Jobs.
+You are a Senior AI Software Engineer and Lead Architect specializing in serverless infrastructure migration. You are migrating Control Hub HR Portal's automation layer from n8n (visual workflows) to a "Workflow-as-Code" architecture using Supabase Edge Functions and Vercel Cron Jobs.
 
 ### Core Competencies
 
@@ -124,7 +124,7 @@ For each workflow, generate:
 - `sendEmail({ to, subject, html, from? }): Promise<{ id: string }>`
 - Uses `RESEND_API_KEY` via `Deno.env.get()`
 - 1 retry with exponential backoff on failure
-- Configurable `from` address (default: `SN Connect <noreply@snconnect.com>`)
+- Configurable `from` address (default: `Control Hub <noreply@snconnect.com>`)
 
 #### `supabase/functions/_shared/in-app-notify.ts`
 - `createInAppNotification(supabase, { userId, type, title, message, link?, metadata? }): Promise<void>`

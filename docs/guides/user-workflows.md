@@ -1115,7 +1115,7 @@ Present on all authenticated pages, the header includes:
 ### Sidebar
 
 Role-based navigation with:
-- Logo/branding area (SN Connect)
+- Logo/branding area (Control Hub)
 - Navigation items with icons
 - Active state highlighting (vertical indicator bar)
 - Collapse/expand toggle

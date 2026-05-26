@@ -1,6 +1,6 @@
 # User Guides
 
-Welcome to the SN Connect HR Portal user documentation. These guides help employees and interns navigate the portal's features.
+Welcome to the Control Hub HR Portal user documentation. These guides help employees and interns navigate the portal's features.
 
 ## Quick Links
 

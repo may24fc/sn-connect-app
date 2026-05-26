@@ -31,7 +31,7 @@ This is a special security code that allows our app to talk to Wise.
 3. Look for a menu on the left side and find **API tokens** (or **API** section)
 4. Click **Create a new token** (or **+ Add API Key**)
 5. In the popup:
-   - **Token name:** Enter `SN Connect Payroll`
+   - **Token name:** Enter `Control Hub Payroll`
    - **Environment:** Choose **Production** (NOT Sandbox)
    - **Permissions:** Make sure these are checked:
      - ☑️ Manage transfers

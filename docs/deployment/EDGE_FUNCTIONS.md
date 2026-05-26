@@ -89,10 +89,10 @@ Set these in GitHub → Repo Settings → Secrets → Actions:
 n8n workflows call Edge Functions via HTTP Request nodes using:
 
 - **Authentication:** Generic Credential Type → Header Auth
-- **Staging credential:** `[Dev] SN Connect Supabase Service Role`
+- **Staging credential:** `[Dev] Control Hub Supabase Service Role`
   - Header Name: `X-Admin-Key`
   - Header Value: `<ADMIN_SECRET_KEY>`
-- **Production credential:** `SN Connect Supabase Service Role`
+- **Production credential:** `Control Hub Supabase Service Role`
   - Header Name: `X-Admin-Key`
   - Header Value: `<ADMIN_SECRET_KEY>`
 

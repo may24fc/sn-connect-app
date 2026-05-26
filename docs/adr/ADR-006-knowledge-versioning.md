@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-The AI Knowledge Base in SN Connect allows admins to manage source documents that are chunked, embedded, and used for RAG-powered chat. As the knowledge base grows, several risks emerged:
+The AI Knowledge Base in Control Hub allows admins to manage source documents that are chunked, embedded, and used for RAG-powered chat. As the knowledge base grows, several risks emerged:
 
 1. **Accidental overwrites** — Admins editing a knowledge source could inadvertently delete or corrupt important content with no way to recover.
 2. **No audit trail** — While `audit_logs` tracks that a change occurred, it doesn't preserve the full previous content in a queryable format.

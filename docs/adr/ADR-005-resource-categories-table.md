@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Resources in the SN Connect HR Portal were originally categorized using a static PostgreSQL enum (`resource_category`). This approach had several limitations:
+Resources in the Control Hub HR Portal were originally categorized using a static PostgreSQL enum (`resource_category`). This approach had several limitations:
 
 1. **Adding/removing categories requires a migration** — Enum changes need `ALTER TYPE`, which is costly and risky in production.
 2. **No metadata** — Enums cannot carry descriptions, icons, display ordering, or parent-child relationships.

@@ -4,7 +4,7 @@ export interface GeneratedApplicationUpdateSummary {
 }
 
 export const generatedApplicationUpdateSummary: GeneratedApplicationUpdateSummary = {
-  "title": "What's new in SN Connect",
+  "title": "What's new in Control Hub",
   "items": [
     "A new ticketing workspace makes it easier to submit, assign, and track requests in one place.",
     "The AI assistant is easier to return to, with saved conversations, smarter prompts, and clearer answer context.",

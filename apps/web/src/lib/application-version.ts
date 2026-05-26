@@ -8,7 +8,7 @@ export interface ApplicationVersionPayload {
 }
 
 const localDeploymentVersion = `local-${process.env.npm_package_version ?? 'development'}`;
-const DEFAULT_SUMMARY_TITLE = "What's new in SN Connect";
+const DEFAULT_SUMMARY_TITLE = "What's new in Control Hub";
 const DEFAULT_SUMMARY_ITEMS = generatedApplicationUpdateSummary.items;
 
 function resolveApplicationVersion(): string {

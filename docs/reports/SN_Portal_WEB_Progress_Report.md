@@ -1,7 +1,7 @@
-# SN Connect — HR Portal Progress Report
+# Control Hub — HR Portal Progress Report
 
 > **Report Date:** March 26, 2026
-> **Project:** SN Connect HR Portal — Internal HR & Employee Management System
+> **Project:** Control Hub HR Portal — Internal HR & Employee Management System
 > **Development Period:** January 31 – March 26, 2026 (~8 weeks)
 > **Tagline:** "Where Policy Meets Productivity"
 > **Developer:** Ceferino, Senior AI Intern
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-SN Connect is the company's internal HR portal — a web-based system where employees, interns, HR staff, and executives can manage day-to-day HR operations in one place. Think of it as the company's digital HR office.
+Control Hub is the company's internal HR portal — a web-based system where employees, interns, HR staff, and executives can manage day-to-day HR operations in one place. Think of it as the company's digital HR office.
 
 Development started on **January 31, 2026** and has reached approximately **95% completion** as of March 26. The portal includes **90 fully built screens**, covers **23 functional areas** (tasks, reports, performance reviews, announcements, etc.), and serves **four types of users** — each seeing only what's relevant to their role.
 

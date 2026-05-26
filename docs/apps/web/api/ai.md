@@ -59,7 +59,7 @@ Claude claude-sonnet-4-5-20250929 with system prompt + context → streaming res
 ### System Prompt
 
 The AI is instructed to:
-- Be a helpful HR assistant for SN Connect
+- Be a helpful HR assistant for Control Hub
 - Reference company policies when answering
 - State clearly when information is not in the knowledge base
 - Provide responses in clear, professional language

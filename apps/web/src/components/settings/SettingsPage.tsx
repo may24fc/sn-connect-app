@@ -236,7 +236,7 @@ export default function SettingsPage(): ReactNode {
             Settings
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Manage how SN Connect sends account notifications to you.
+            Manage how Control Hub sends account notifications to you.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ export default function SettingsPage(): ReactNode {
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Channel readiness</p>
                     <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                      Gmail notifications use your SN Connect account email immediately. Telegram direct messages require a one-time bot link per user and remain off until each user enables them.
+                      Gmail notifications use your Control Hub account email immediately. Telegram direct messages require a one-time bot link per user and remain off until each user enables them.
                     </p>
                   </div>
                 </div>
@@ -438,7 +438,7 @@ export default function SettingsPage(): ReactNode {
           <DialogHeader>
             <DialogTitle>Link Telegram notifications</DialogTitle>
             <DialogDescription>
-              Use Telegram Web to open your SN Connect bot, then send the one-time command below to finish linking this account.
+              Use Telegram Web to open your Control Hub bot, then send the one-time command below to finish linking this account.
             </DialogDescription>
           </DialogHeader>
 
@@ -447,7 +447,7 @@ export default function SettingsPage(): ReactNode {
               <p className="text-sm font-medium text-zinc-950 dark:text-zinc-50">Steps</p>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-zinc-600 dark:text-zinc-400">
                 <li>Copy the one-time <code className="rounded bg-zinc-200/70 px-1.5 py-0.5 text-[13px] dark:bg-zinc-800">/start</code> command below.</li>
-                <li>Open Telegram Web for the SN Connect bot.</li>
+                <li>Open Telegram Web for the Control Hub bot.</li>
                 <li>Paste the command into the chat and send it once.</li>
                 <li>Return here and wait for the badge to switch to linked.</li>
               </ol>
@@ -463,7 +463,7 @@ export default function SettingsPage(): ReactNode {
                 </p>
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-500">
-                This command is temporary and should only be sent to your SN Connect bot.
+                This command is temporary and should only be sent to your Control Hub bot.
               </p>
             </div>
           </div>

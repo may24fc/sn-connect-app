@@ -188,8 +188,8 @@ describe('/api/users/invite route', () => {
     expect(createNotification).toHaveBeenCalledWith({
       userId: invitedUserId,
       type: 'system',
-      title: 'You have been invited to SN Connect',
-      message: 'Alex Admin invited you to SN Connect. Sign in to complete your onboarding steps.',
+      title: 'You have been invited to Control Hub',
+      message: 'Alex Admin invited you to Control Hub. Sign in to complete your onboarding steps.',
       link: '/onboarding',
       metadata: {
         invitedBy: 'actor-1',
@@ -235,7 +235,7 @@ describe('/api/users/invite route', () => {
       userId: invitedUserId,
       type: 'system',
       title: 'Your invite was refreshed',
-      message: 'Alex Admin invited you to SN Connect. Sign in to complete your onboarding steps.',
+      message: 'Alex Admin invited you to Control Hub. Sign in to complete your onboarding steps.',
       link: '/onboarding',
       metadata: {
         invitedBy: 'actor-1',

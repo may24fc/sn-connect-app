@@ -323,10 +323,10 @@ export async function POST(request: NextRequest) {
     createNotification({
       userId: invitedUserId,
       type: 'system',
-      title: isReinvite ? 'Your invite was refreshed' : 'You have been invited to SN Connect',
+      title: isReinvite ? 'Your invite was refreshed' : 'You have been invited to Control Hub',
       message: requiresOnboarding
-        ? `${inviterName} invited you to SN Connect. Sign in to complete your onboarding steps.`
-        : `${inviterName} invited you to SN Connect. Your account is ready to use.`,
+        ? `${inviterName} invited you to Control Hub. Sign in to complete your onboarding steps.`
+        : `${inviterName} invited you to Control Hub. Your account is ready to use.`,
       link: getInviteNotificationLink(role, requiresOnboarding),
       metadata: {
         invitedBy: user.id,

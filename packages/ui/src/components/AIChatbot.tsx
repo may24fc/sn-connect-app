@@ -94,7 +94,7 @@ export interface AIChatbotProps {
   className?: string;
 }
 
-const defaultWelcomeMessage = `Hi! I'm SN Connect AI. I can help you with:
+const defaultWelcomeMessage = `Hi! I'm Control Hub AI. I can help you with:
 
 - Employee policies and procedures
 - Payroll questions
@@ -417,7 +417,7 @@ export function AIChatbot({
           isOpen ? 'translate-x-0' : 'translate-x-full'
         )}
         role="dialog"
-        aria-label="SN Connect AI Assistant"
+        aria-label="Control Hub AI Assistant"
         aria-hidden={!isOpen}
       >
         <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -509,7 +509,7 @@ export function AIChatbot({
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
-                      SN Connect AI
+                      Control Hub AI
                     </h3>
                     <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                       HR Assistant · Powered by AI

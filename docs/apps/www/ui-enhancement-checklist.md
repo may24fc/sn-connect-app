@@ -181,7 +181,7 @@
 #### 8.1 Portal Landing 🟡
 - [ ] **Add feature preview cards** — Show what employees get inside the portal: "View Pay Slips", "Submit Reports", "Track Tasks" with icons
 - [ ] **Add a hero illustration or animation** — Currently just logo + two buttons. Very bare
-- [ ] **Add testimonial from an employee** — "SN Connect made my daily work so much easier" — social proof for the portal itself
+- [ ] **Add testimonial from an employee** — "Control Hub made my daily work so much easier" — social proof for the portal itself
 - [ ] **Add quick-help FAQ accordion** — "Forgot password?", "First time logging in?", "Who can I contact?"
 
 ---

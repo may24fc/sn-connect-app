@@ -1,6 +1,6 @@
 # Production Launch Checklist
 
-This document is the operational runbook for launching the SN Connect HR Portal into production.
+This document is the operational runbook for launching the Control Hub HR Portal into production.
 
 Scope for this checklist:
 - Internal HR portal first

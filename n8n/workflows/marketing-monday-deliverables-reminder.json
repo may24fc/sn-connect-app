@@ -1,6 +1,6 @@
 {
     "id":  "i80qDdf5cfNnkOV5",
-    "name":  "[SN Connect] [Prod] Marketing Monday Deliverables Reminder",
+    "name":  "[Control Hub] [Prod] Marketing Monday Deliverables Reminder",
     "active":  false,
     "_comment":  "PRODUCTION workflow. Fires every Monday 08:30 PHT (02:30 UTC). Queries prod Supabase for Marketing employees and sends a Telegram reminder to the marketing group chat.",
     "nodes":  [
@@ -85,7 +85,7 @@
                                          "credentials":  {
                                                               "httpHeaderAuth":  {
                                                                                      "id":  "Qtoo65GeBSupj5X6",
-                                                                                     "name":  "[Prod] SN Connect Supabase Service Role"
+                                                                                     "name":  "[Prod] Control Hub Supabase Service Role"
                                                                                  }
                                                           },
                                          "options":  {
@@ -181,7 +181,7 @@
                       "credentials":  {
                                           "telegramApi":  {
                                                               "id":  "br7oYixc6HEh3DQc",
-                                                              "name":  "SN Connect Notifications"
+                                                              "name":  "Control Hub Notifications"
                                                           }
                                       }
                   },

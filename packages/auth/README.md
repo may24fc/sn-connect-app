@@ -1,6 +1,6 @@
 # @hr-portal/auth
 
-Authentication utilities for the SN Connect HR Portal.
+Authentication utilities for the Control Hub HR Portal.
 
 ## Status
 

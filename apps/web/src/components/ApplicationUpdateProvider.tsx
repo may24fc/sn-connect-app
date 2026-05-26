@@ -27,7 +27,7 @@ interface ApplicationUpdateProviderProps {
 }
 
 const DEFAULT_POLL_INTERVAL_MS = 5 * 60 * 1000;
-const DEFAULT_SUMMARY_TITLE = generatedApplicationUpdateSummary.title || "What's new in SN Connect";
+const DEFAULT_SUMMARY_TITLE = generatedApplicationUpdateSummary.title || "What's new in Control Hub";
 const DEFAULT_SUMMARY_ITEMS = generatedApplicationUpdateSummary.items;
 const FORCE_UPDATE_STORAGE_KEY = 'sn:force-update-available';
 const FORCE_UPDATE_SUMMARY_STORAGE_KEY = 'sn:force-update-summary';

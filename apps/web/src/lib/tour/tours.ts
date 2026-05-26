@@ -1,7 +1,7 @@
 import type { ModalTourStep } from '@/components/TourModal';
 
 /**
- * Modal-based tour definitions for each major section of SN Connect.
+ * Modal-based tour definitions for each major section of Control Hub.
  * Each step includes title, description, and optional screenshot/video URLs.
  * No DOM targeting - just beautiful modals with screenshots!
  */
@@ -11,7 +11,7 @@ import type { ModalTourStep } from '@/components/TourModal';
 // ──────────────────────────────────────────────────────────────
 export const dashboardTourSteps: ModalTourStep[] = [
   {
-    title: 'Welcome to SN Connect!',
+    title: 'Welcome to Control Hub!',
     description:
       'Welcome to your personalized HR portal! This is your personal dashboard where you can see an overview of your tasks, announcements, and key metrics at a glance. Think of this as your command center for everything HR-related.',
     imageUrl: '/tour/dashboard-welcome.png',

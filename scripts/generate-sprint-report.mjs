@@ -291,14 +291,14 @@ function tcell(text, width, bold = false, bg = WHITE, textColor = ZINC700) {
 
 const coverBlock = [
   spacer(),
-  docTitle("SN Connect — Feature Refinement"),
+  docTitle("Control Hub — Feature Refinement"),
   docTitle("4-Week Sprint Plan"),
   spacer(),
   new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: '"Where Policy Meets Productivity"', italics: true, size: pt(11), color: ZINC500, font: "Calibri" })] }),
   spacer(),
   hr(),
   metaLine("Report Date", "May 5, 2026"),
-  metaLine("Project", "SN Connect — HR Portal Feature Refinements"),
+  metaLine("Project", "Control Hub — HR Portal Feature Refinements"),
   metaLine("Sprint Period", "May 5 – May 30, 2026 (4 Weeks)"),
   metaLine("Developer", "Ceferino, Senior AI Intern"),
   hr(),
@@ -309,7 +309,7 @@ const coverBlock = [
 const execSummary = [
   h2("Executive Summary"),
   body(
-    "This 4-week sprint covers targeted improvements to four features that are already built and working inside SN Connect. " +
+    "This 4-week sprint covers targeted improvements to four features that are already built and working inside Control Hub. " +
     "Rather than starting anything new, the focus is on refinement — making existing features more reliable, more accurate, and easier to use."
   ),
   body("Here is what each week covers:"),
@@ -507,9 +507,9 @@ const sprintSummary = [
 
 // ─── Assemble Document ──────────────────────────────────────────────────────────
 const doc = new Document({
-  creator: "Ceferino, Senior AI Intern — SN Connect",
-  title: "SN Connect Feature Refinement — 4-Week Sprint Plan",
-  description: "Non-technical sprint plan for the four SN Connect feature refinements (May 2026)",
+  creator: "Ceferino, Senior AI Intern — Control Hub",
+  title: "Control Hub Feature Refinement — 4-Week Sprint Plan",
+  description: "Non-technical sprint plan for the four Control Hub feature refinements (May 2026)",
   styles: {
     default: {
       document: {

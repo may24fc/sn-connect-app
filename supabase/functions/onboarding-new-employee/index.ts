@@ -77,7 +77,7 @@ const DEFAULT_TASKS: DefaultTask[] = [
 function buildWelcomeEmailHtml(employeeName: string, checklistId: string): string {
   return `
     <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
-      <h1 style="color: #4F46E5; font-size: 24px;">Welcome to SN Connect! 🎉</h1>
+      <h1 style="color: #4F46E5; font-size: 24px;">Welcome to Control Hub! 🎉</h1>
       <p style="color: #3f3f46; font-size: 14px; line-height: 1.6;">
         Hi ${employeeName},
       </p>
@@ -252,7 +252,7 @@ serve(async (req: Request): Promise<Response> => {
         ? sendEmail({
             to: employeeEmail,
             from: ONBOARDING_FROM,
-            subject: 'Welcome to SN Connect — Your Onboarding Checklist',
+            subject: 'Welcome to Control Hub — Your Onboarding Checklist',
             html: buildWelcomeEmailHtml(employeeName, checklist.id),
           })
         : Promise.resolve(null),

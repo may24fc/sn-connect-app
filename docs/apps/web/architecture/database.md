@@ -2,7 +2,7 @@
 
 > Audience: Developers, DevOps
 
-Supabase PostgreSQL database schema for SN Connect. 57 migration files, 20+ tables, 26+ RLS policies.
+Supabase PostgreSQL database schema for Control Hub. 57 migration files, 20+ tables, 26+ RLS policies.
 
 ---
 

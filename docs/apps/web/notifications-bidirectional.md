@@ -57,7 +57,7 @@ This creates a complete feedback loop where employees/interns get acknowledgment
 **Notification Types:** `onboarding_approved` | `onboarding_rejected`
 
 **Example Messages:**
-- ✅ Approved: "Your account is now active! Welcome to SN Connect."
+- ✅ Approved: "Your account is now active! Welcome to Control Hub."
 - ❌ Rejected: "Your onboarding application was not approved. Reason: Missing documentation"
 
 **Recipients:** User awaiting onboarding approval

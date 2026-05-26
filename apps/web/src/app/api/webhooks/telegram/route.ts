@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       if (error || !data) {
         await sendTelegramMessage({
           chatId: String(chatId),
-          text: 'This Telegram linking link is invalid or has already been used. Please return to SN Connect Settings and generate a new one.',
+          text: 'This Telegram linking link is invalid or has already been used. Please return to Control Hub Settings and generate a new one.',
         });
         return NextResponse.json({ ok: true });
       }
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       if (preferences.telegramLinkToken !== rawToken || !preferences.telegramLinkTokenExpiresAt) {
         await sendTelegramMessage({
           chatId: String(chatId),
-          text: 'This Telegram linking link is invalid or has expired. Please request a new link from SN Connect Settings.',
+          text: 'This Telegram linking link is invalid or has expired. Please request a new link from Control Hub Settings.',
         });
         return NextResponse.json({ ok: true });
       }
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
       await sendTelegramMessage({
         chatId: String(chatId),
-        text: 'Your Telegram account is now linked to this SN Connect account. You can return to Settings to enable Telegram notifications.',
+        text: 'Your Telegram account is now linked to this Control Hub account. You can return to Settings to enable Telegram notifications.',
       });
 
       return NextResponse.json({ ok: true });

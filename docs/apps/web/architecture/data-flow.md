@@ -2,7 +2,7 @@
 
 > Audience: Developers
 
-How data flows through the SN Connect application — from user interaction to database and back.
+How data flows through the Control Hub application — from user interaction to database and back.
 
 ---
 

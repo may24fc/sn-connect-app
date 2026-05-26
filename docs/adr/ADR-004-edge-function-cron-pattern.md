@@ -252,16 +252,16 @@ Schedule Trigger (cron expression, UTC timezone)
 |---|---|---|---|---|---|---|
 | `onboarding-new-employee` | Webhook | `/api/onboarding/initiate` | — | — | — | — |
 | `offboarding-exit-process` | Webhook | `/api/offboarding/initiate` | — | — | — | — |
-| `probation-check` | Cron | `[SN Connect] Cron: Probation Check` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
-| `update-fx-rates` | Cron | `[SN Connect] Cron: Update FX Rates` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
-| `milestone-announcements` | Cron | `[SN Connect] Cron: Milestone Announcements` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
-| `announcements-lifecycle` | Cron | `[SN Connect] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
-| `resources-lifecycle` | Cron | `[SN Connect] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
-| `cleanup-soft-deleted` | Cron | `[SN Connect] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
-| `cleanup-old-notifications` | Cron | `[SN Connect] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
-| `intern-eod-reminder` | Cron | `[SN Connect] Cron: Intern EOD Reminder` | `0 8 * * 1-5` | 4 PM | 9 AM | 6 PM |
-| `intern-weekly-summary` | Cron | `[SN Connect] Cron: Intern Weekly Summary` | `0 9 * * 5` | 5 PM Fri | 10 AM Fri | 7 PM Fri |
-| `payroll-reminder` | Cron | `[SN Connect] Cron: Payroll Reminder` | `0 0 25-31 * *` | 8 AM | 1 AM | 10 AM |
+| `probation-check` | Cron | `[Control Hub] Cron: Probation Check` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
+| `update-fx-rates` | Cron | `[Control Hub] Cron: Update FX Rates` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
+| `milestone-announcements` | Cron | `[Control Hub] Cron: Milestone Announcements` | `0 0 * * *` | 8 AM | 1 AM | 10 AM |
+| `announcements-lifecycle` | Cron | `[Control Hub] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
+| `resources-lifecycle` | Cron | `[Control Hub] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
+| `cleanup-soft-deleted` | Cron | `[Control Hub] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
+| `cleanup-old-notifications` | Cron | `[Control Hub] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
+| `intern-eod-reminder` | Cron | `[Control Hub] Cron: Intern EOD Reminder` | `0 8 * * 1-5` | 4 PM | 9 AM | 6 PM |
+| `intern-weekly-summary` | Cron | `[Control Hub] Cron: Intern Weekly Summary` | `0 9 * * 5` | 5 PM Fri | 10 AM Fri | 7 PM Fri |
+| `payroll-reminder` | Cron | `[Control Hub] Cron: Payroll Reminder` | `0 0 25-31 * *` | 8 AM | 1 AM | 10 AM |
 | `check-late-reports` | Cron | `compliance-late-report-escalation` (n8n) | `30 0 * * *` | 8:30 AM | 1:30 AM | 10:30 AM |
 
 ## Shared Utilities

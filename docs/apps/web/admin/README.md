@@ -1,6 +1,6 @@
 # Admin Guides
 
-Documentation for HR Administrators and Super Administrators managing the SN Connect HR Portal.
+Documentation for HR Administrators and Super Administrators managing the Control Hub HR Portal.
 
 ## Quick Links
 

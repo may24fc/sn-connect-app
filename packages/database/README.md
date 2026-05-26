@@ -1,6 +1,6 @@
 # @hr-portal/database
 
-Shared database types, branded IDs, enum constants, and validation schemas for the SN Connect HR Portal.
+Shared database types, branded IDs, enum constants, and validation schemas for the Control Hub HR Portal.
 
 ## Installation
 

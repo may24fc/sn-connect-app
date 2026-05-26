@@ -1,4 +1,4 @@
-# Agent Guidelines — SN Connect HR Portal
+# Agent Guidelines — Control Hub HR Portal
 
 > These guidelines apply to **every agent** (AI or human) executing tasks on this codebase.  
 > They are non-negotiable defaults. Deviate only with explicit justification documented in an ADR.

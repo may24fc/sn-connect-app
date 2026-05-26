@@ -173,7 +173,7 @@ export async function createTransfer(params: {
       quoteUuid: params.quoteUuid,
       customerTransactionId: params.customerTransactionId,
       details: {
-        reference: params.reference ?? 'SN Connect Payroll',
+        reference: params.reference ?? 'Control Hub Payroll',
       },
     },
   });

@@ -1,6 +1,6 @@
 # @hr-portal/ai
 
-AI utilities for the SN Connect HR Portal — embeddings, RAG chat, and document chunking.
+AI utilities for the Control Hub HR Portal — embeddings, RAG chat, and document chunking.
 
 ## Installation
 

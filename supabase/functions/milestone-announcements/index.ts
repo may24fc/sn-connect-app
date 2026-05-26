@@ -72,7 +72,7 @@ function buildAnniversaryAnnouncementContent(
 
   return {
     title: `${emoji} ${ordinalYears} Work Anniversary — ${fullName}!`,
-    content: `Today marks ${fullName}'s ${ordinalYears} work anniversary with SN Connect${detail ? ` (${detail})` : ''}. Thank you for your ${yearsCount === 1 ? 'first incredible year' : `${yearsCount} years of dedication and outstanding contributions`}! We are grateful to have you on the team. Here's to many more! ${emoji}`,
+    content: `Today marks ${fullName}'s ${ordinalYears} work anniversary with Control Hub${detail ? ` (${detail})` : ''}. Thank you for your ${yearsCount === 1 ? 'first incredible year' : `${yearsCount} years of dedication and outstanding contributions`}! We are grateful to have you on the team. Here's to many more! ${emoji}`,
   };
 }
 

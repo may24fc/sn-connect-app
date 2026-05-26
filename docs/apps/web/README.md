@@ -1,6 +1,6 @@
 # apps/web — Documentation Hub
 
-> **SN Connect HR Portal** — Enterprise HR Portal with AI Agent  
+> **Control Hub HR Portal** — Enterprise HR Portal with AI Agent  
 > Next.js 15 (App Router) · React 19 · Supabase · TanStack Query
 
 This is the documentation index for the `apps/web` workspace — the main HR portal application.

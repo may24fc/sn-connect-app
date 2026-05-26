@@ -1,6 +1,6 @@
-# SN Connect — Documentation Hub
+# Control Hub — Documentation Hub
 
-> **SN Connect** is an enterprise HR Portal with an AI Agent.  
+> **Control Hub** is an enterprise HR Portal with an AI Agent.  
 > "Where Policy Meets Productivity"
 
 This hub maps each application and audience to its documentation entry point.

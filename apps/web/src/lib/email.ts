@@ -209,7 +209,7 @@ export async function sendPortalNotificationEmail({
 <body style="margin:0;padding:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background-color:#f4f4f5;">
   <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e4e4e7;">
     <div style="background:#0F172A;padding:32px 24px;text-align:center;">
-      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">SN Connect HR Portal</h1>
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Control Hub HR Portal</h1>
     </div>
     <div style="padding:32px 24px;">
       <h2 style="margin:0 0 16px;color:#18181b;font-size:18px;font-weight:600;">${escapeHtml(heading)}</h2>
@@ -272,20 +272,20 @@ export async function sendUserInviteEmail({
     const { data, error } = await resend.emails.send({
       from: getFromEmail('onboarding'),
       to,
-      subject: 'Your SN Connect account invitation',
+      subject: 'Your Control Hub account invitation',
       html: `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8" /></head>
 <body style="margin:0;padding:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background-color:#f4f4f5;">
   <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e4e4e7;">
     <div style="background:#0F172A;padding:32px 24px;text-align:center;">
-      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">SN Connect HR Portal</h1>
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Control Hub HR Portal</h1>
     </div>
     <div style="padding:32px 24px;">
       <h2 style="margin:0 0 16px;color:#18181b;font-size:18px;font-weight:600;">You have been invited</h2>
       <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">Hi ${safeName},</p>
       <p style="margin:0 0 16px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Your <strong>${safeRole}</strong> account has been created in SN Connect. Use the credentials below to sign in${requiresOnboarding ? ' and complete onboarding' : ''}.
+        Your <strong>${safeRole}</strong> account has been created in Control Hub. Use the credentials below to sign in${requiresOnboarding ? ' and complete onboarding' : ''}.
       </p>
 
       <div style="background:#fafafa;border:1px solid #e4e4e7;border-radius:10px;padding:16px;margin:0 0 20px;">
@@ -358,8 +358,8 @@ export async function sendOnboardingDecisionEmail({
 
     const subject =
       decision === 'approved'
-        ? 'Your SN Connect onboarding has been approved'
-        : 'Update on your SN Connect onboarding';
+        ? 'Your Control Hub onboarding has been approved'
+        : 'Update on your Control Hub onboarding';
 
     const body =
       decision === 'approved'
@@ -372,7 +372,7 @@ export async function sendOnboardingDecisionEmail({
         You can now sign in here: <a href="${safeLoginUrl}" style="color:#1d4ed8;text-decoration:none;">${safeLoginUrl}</a>
       </p>
       <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Welcome to SN Connect.
+        Welcome to Control Hub.
       </p>`
         : `
       <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">Hi ${safeName},</p>
@@ -398,7 +398,7 @@ export async function sendOnboardingDecisionEmail({
 <body style="margin:0;padding:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background-color:#f4f4f5;">
   <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e4e4e7;">
     <div style="background:#0F172A;padding:32px 24px;text-align:center;">
-      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">SN Connect HR Portal</h1>
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Control Hub HR Portal</h1>
     </div>
     <div style="padding:32px 24px;">
       <h2 style="margin:0 0 16px;color:#18181b;font-size:18px;font-weight:600;">Onboarding ${decision === 'approved' ? 'Approved' : 'Update'}</h2>

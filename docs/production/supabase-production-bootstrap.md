@@ -1,6 +1,6 @@
 # Supabase Production Bootstrap
 
-This runbook defines the recommended way to launch SN Connect on a clean Supabase production project.
+This runbook defines the recommended way to launch Control Hub on a clean Supabase production project.
 
 Recommended approach:
 - create a brand-new Supabase project for live production

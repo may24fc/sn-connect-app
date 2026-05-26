@@ -75,7 +75,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "Qtoo65GeBSupj5X6",
-          "name": "[Prod] SN Connect Supabase Service Role"
+          "name": "[Prod] Control Hub Supabase Service Role"
         }
       }
     },
@@ -166,7 +166,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "Qtoo65GeBSupj5X6",
-          "name": "[Prod] SN Connect Supabase Service Role"
+          "name": "[Prod] Control Hub Supabase Service Role"
         }
       }
     },
@@ -187,7 +187,7 @@
       "typeVersion": 2,
       "position": [2160, 200],
       "parameters": {
-        "jsCode": "const milestoneInterns = $('Compute Milestone Interns').first().json.milestoneInterns;\nconst adminTargets = $json.adminTargets;\n\nif (!adminTargets || adminTargets.length === 0) return [];\nif (!milestoneInterns || milestoneInterns.length === 0) return [];\n\nconst div = '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501';\nconst output = [];\n\nfor (const intern of milestoneInterns) {\n  let urgencyEmoji = '\ud83d\udcc5';\n  if (intern.daysLeft === 1) urgencyEmoji = '\ud83d\udea8';\n  else if (intern.daysLeft <= 7) urgencyEmoji = '\u26a0\ufe0f';\n  else if (intern.daysLeft <= 14) urgencyEmoji = '\ud83d\udd14';\n\n  const lines = [\n    `${urgencyEmoji} <b>Intern End Date Reminder</b>`,\n    '',\n    div,\n    '',\n    `\ud83d\udc64 <b>Intern:</b> ${intern.internName}`,\n    `\ud83c\udfe2 <b>Department:</b> ${intern.department}`,\n  ];\n\n  if (intern.school) lines.push(`\ud83c\udf93 <b>School:</b> ${intern.school}`);\n  if (intern.program) lines.push(`\ud83d\udcda <b>Program:</b> ${intern.program}`);\n\n  lines.push('');\n  lines.push(`\ud83d\udcc5 <b>End Date:</b> ${intern.endDate}`);\n  lines.push(`\u23f3 <b>Days Remaining:</b> <b>${intern.daysLeft} day${intern.daysLeft === 1 ? '' : 's'}</b>`);\n  lines.push(`\ud83c\udfc1 <b>Milestone:</b> ${intern.milestoneLabel} left`);\n  lines.push('');\n  lines.push(div);\n  lines.push('<i>SN Connect HR Portal</i>');\n\n  const message = lines.join('\\n');\n\n  for (const admin of adminTargets) {\n    output.push({\n      json: {\n        chatId: admin.chatId,\n        message,\n        internName: intern.internName,\n        adminName: admin.fullName,\n      }\n    });\n  }\n}\n\nreturn output;"
+        "jsCode": "const milestoneInterns = $('Compute Milestone Interns').first().json.milestoneInterns;\nconst adminTargets = $json.adminTargets;\n\nif (!adminTargets || adminTargets.length === 0) return [];\nif (!milestoneInterns || milestoneInterns.length === 0) return [];\n\nconst div = '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501';\nconst output = [];\n\nfor (const intern of milestoneInterns) {\n  let urgencyEmoji = '\ud83d\udcc5';\n  if (intern.daysLeft === 1) urgencyEmoji = '\ud83d\udea8';\n  else if (intern.daysLeft <= 7) urgencyEmoji = '\u26a0\ufe0f';\n  else if (intern.daysLeft <= 14) urgencyEmoji = '\ud83d\udd14';\n\n  const lines = [\n    `${urgencyEmoji} <b>Intern End Date Reminder</b>`,\n    '',\n    div,\n    '',\n    `\ud83d\udc64 <b>Intern:</b> ${intern.internName}`,\n    `\ud83c\udfe2 <b>Department:</b> ${intern.department}`,\n  ];\n\n  if (intern.school) lines.push(`\ud83c\udf93 <b>School:</b> ${intern.school}`);\n  if (intern.program) lines.push(`\ud83d\udcda <b>Program:</b> ${intern.program}`);\n\n  lines.push('');\n  lines.push(`\ud83d\udcc5 <b>End Date:</b> ${intern.endDate}`);\n  lines.push(`\u23f3 <b>Days Remaining:</b> <b>${intern.daysLeft} day${intern.daysLeft === 1 ? '' : 's'}</b>`);\n  lines.push(`\ud83c\udfc1 <b>Milestone:</b> ${intern.milestoneLabel} left`);\n  lines.push('');\n  lines.push(div);\n  lines.push('<i>Control Hub HR Portal</i>');\n\n  const message = lines.join('\\n');\n\n  for (const admin of adminTargets) {\n    output.push({\n      json: {\n        chatId: admin.chatId,\n        message,\n        internName: intern.internName,\n        adminName: admin.fullName,\n      }\n    });\n  }\n}\n\nreturn output;"
       }
     },
     {
@@ -208,7 +208,7 @@
       "credentials": {
         "telegramApi": {
           "id": "br7oYixc6HEh3DQc",
-          "name": "SN Connect Notifications"
+          "name": "Control Hub Notifications"
         }
       }
     },

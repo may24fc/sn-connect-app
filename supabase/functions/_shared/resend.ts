@@ -16,7 +16,7 @@ interface SendEmailResult {
   id: string;
 }
 
-const DEFAULT_FROM = 'SN Connect <no-reply@sngroup.com.au>';
+const DEFAULT_FROM = 'Control Hub <no-reply@sngroup.com.au>';
 const RESEND_API_URL = 'https://api.resend.com/emails';
 const MAX_RETRIES = 1;
 const BASE_BACKOFF_MS = 1000;

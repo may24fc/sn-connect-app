@@ -1,6 +1,6 @@
 # @hr-portal/config
 
-Shared configuration and environment variable validation for the SN Connect HR Portal.
+Shared configuration and environment variable validation for the Control Hub HR Portal.
 
 ## Installation
 

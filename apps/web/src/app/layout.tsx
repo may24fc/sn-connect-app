@@ -6,7 +6,7 @@ import { getApplicationVersionPayload } from '@/lib/application-version';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'SN Connect',
+  title: 'Control Hub',
   description: 'Where Policy Meets Productivity',
   icons: {
     icon: [{ url: '/sn-logo.png', sizes: '192x192', type: 'image/png' }],

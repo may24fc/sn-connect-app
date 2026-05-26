@@ -1,6 +1,6 @@
 # Deployment Documentation
 
-This directory contains deployment documentation for the SN Connect projects, with the HR Portal in `apps/web` as the primary internal app deployment target.
+This directory contains deployment documentation for the Control Hub projects, with the HR Portal in `apps/web` as the primary internal app deployment target.
 
 ## Deployment Topology
 
