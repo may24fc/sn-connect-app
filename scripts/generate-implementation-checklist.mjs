@@ -264,14 +264,14 @@ function subSection(text) {
 // COVER PAGE
 const coverSection = [
   ...spacer(4),
-  coverTitle("SN CONNECT — FEATURE REFINEMENT"),
+  coverTitle("CONTROL HUB — FEATURE REFINEMENT"),
   coverTitle("IMPLEMENTATION CHECKLIST"),
   ...spacer(1),
   coverSubtitle("4-Week Sprint Plan  ·  Technical Architecture Aligned"),
   ...spacer(2),
   divider(),
   ...spacer(1),
-  coverMeta("Product", "SN Connect HR Portal"),
+  coverMeta("Product", "Control Hub HR Portal"),
   coverMeta("Stack", "Next.js 15  ·  TypeScript  ·  Supabase  ·  n8n  ·  OpenAI"),
   coverMeta("Sprint Start", "Week of May 5, 2026"),
   coverMeta("Prepared By", "AI Project Management & Technical Architecture Office"),
@@ -448,9 +448,9 @@ const week4Section = [
 
 // ─── Assemble Document ────────────────────────────────────────────────────────
 const doc = new Document({
-  creator: "SN Connect Technical Architecture",
-  title: "SN Connect Feature Refinement — Implementation Checklist",
-  description: "4-week sprint implementation checklist for SN Connect HR Portal feature refinements",
+  creator: "Control Hub Technical Architecture",
+  title: "Control Hub Feature Refinement — Implementation Checklist",
+  description: "4-week sprint implementation checklist for Control Hub HR Portal feature refinements",
   styles: {
     default: {
       document: {

@@ -101,7 +101,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "8PiOwCGuX9Imored",
-          "name": "[Dev] SN Connect Supabase Service Role"
+          "name": "[Dev] Control Hub Supabase Service Role"
         }
       }
     },
@@ -200,7 +200,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "8PiOwCGuX9Imored",
-          "name": "[Dev] SN Connect Supabase Service Role"
+          "name": "[Dev] Control Hub Supabase Service Role"
         }
       }
     },
@@ -264,7 +264,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const grouped = $json;\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst output = [];\n\nfor (const dept of grouped.departments) {\n  for (const intern of dept.interns) {\n    const entries = Array.isArray(intern.projectEntries) ? intern.projectEntries : [];\n    const blockerText = intern.blockers?.length > 0 ? intern.blockers.join('; ') : 'None';\n    const nextText = intern.nextSteps?.length > 0 ? intern.nextSteps.join('; ') : 'TBD';\n\n    const lines = [\n      `<b>SN Connect | EOD Report</b>`,\n      ``,\n      `📅 <b>Date:</b> ${grouped.reportDate}`,\n      `🏢 <b>Department:</b> ${dept.department}`,\n      ``,\n      div,\n      ``,\n      `👤 <b>${intern.name}</b>`,\n      `⏱ <b>Hours Worked:</b> ${intern.hoursWorked ?? '—'}`,\n    ];\n\n    if (entries.length > 0) {\n      for (const entry of entries) {\n        lines.push(``);\n        lines.push(`📁 <b>${entry.projectFocus || 'Untitled'}</b>`);\n        lines.push(`🔧 <b>Action Taken:</b> ${entry.actionTaken || '—'}`);\n        lines.push(`✅ <b>Outcome:</b> ${entry.outcome || '—'}`);\n        lines.push(`⚠️ <b>Challenge:</b> ${entry.challenge || '—'}`);\n      }\n    } else {\n      lines.push(``);\n      lines.push(`📋 <b>Update:</b> ${intern.summary || 'No update provided.'}`);\n    }\n\n    lines.push(``);\n    lines.push(div);\n    lines.push(``);\n    lines.push(`🚧 <b>Blockers:</b> ${blockerText}`);\n    lines.push(`📌 <b>Next Steps:</b> ${nextText}`);\n    lines.push(``);\n    lines.push(div);\n\n    output.push({ json: { telegramText: lines.join('\\n') } });\n  }\n}\n\nreturn output;"
+        "jsCode": "const grouped = $json;\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst output = [];\n\nfor (const dept of grouped.departments) {\n  for (const intern of dept.interns) {\n    const entries = Array.isArray(intern.projectEntries) ? intern.projectEntries : [];\n    const blockerText = intern.blockers?.length > 0 ? intern.blockers.join('; ') : 'None';\n    const nextText = intern.nextSteps?.length > 0 ? intern.nextSteps.join('; ') : 'TBD';\n\n    const lines = [\n      `<b>Control Hub | EOD Report</b>`,\n      ``,\n      `📅 <b>Date:</b> ${grouped.reportDate}`,\n      `🏢 <b>Department:</b> ${dept.department}`,\n      ``,\n      div,\n      ``,\n      `👤 <b>${intern.name}</b>`,\n      `⏱ <b>Hours Worked:</b> ${intern.hoursWorked ?? '—'}`,\n    ];\n\n    if (entries.length > 0) {\n      for (const entry of entries) {\n        lines.push(``);\n        lines.push(`📁 <b>${entry.projectFocus || 'Untitled'}</b>`);\n        lines.push(`🔧 <b>Action Taken:</b> ${entry.actionTaken || '—'}`);\n        lines.push(`✅ <b>Outcome:</b> ${entry.outcome || '—'}`);\n        lines.push(`⚠️ <b>Challenge:</b> ${entry.challenge || '—'}`);\n      }\n    } else {\n      lines.push(``);\n      lines.push(`📋 <b>Update:</b> ${intern.summary || 'No update provided.'}`);\n    }\n\n    lines.push(``);\n    lines.push(div);\n    lines.push(``);\n    lines.push(`🚧 <b>Blockers:</b> ${blockerText}`);\n    lines.push(`📌 <b>Next Steps:</b> ${nextText}`);\n    lines.push(``);\n    lines.push(div);\n\n    output.push({ json: { telegramText: lines.join('\\n') } });\n  }\n}\n\nreturn output;"
       },
       "id": "build-individual-messages",
       "name": "Build Individual Messages",
@@ -297,7 +297,7 @@
       "credentials": {
         "telegramApi": {
           "id": "br7oYixc6HEh3DQc",
-          "name": "SN Connect Notifications"
+          "name": "Control Hub Notifications"
         }
       }
     },
@@ -344,7 +344,7 @@
       "credentials": {
         "openAiApi": {
           "id": "iuc44Cp6qiyVISxA",
-          "name": "SN Connect EOD Summarizer"
+          "name": "Control Hub EOD Summarizer"
         }
       }
     },
@@ -383,7 +383,7 @@
       "credentials": {
         "telegramApi": {
           "id": "br7oYixc6HEh3DQc",
-          "name": "SN Connect Notifications"
+          "name": "Control Hub Notifications"
         }
       }
     },
@@ -433,7 +433,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "8PiOwCGuX9Imored",
-          "name": "[Dev] SN Connect Supabase Service Role"
+          "name": "[Dev] Control Hub Supabase Service Role"
         }
       }
     },
@@ -483,7 +483,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "8PiOwCGuX9Imored",
-          "name": "[Dev] SN Connect Supabase Service Role"
+          "name": "[Dev] Control Hub Supabase Service Role"
         }
       }
     },
@@ -698,7 +698,7 @@
   },
   "tags": [
     {
-      "name": "SN Connect"
+      "name": "Control Hub"
     }
   ]
 }

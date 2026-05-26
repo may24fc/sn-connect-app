@@ -1,6 +1,6 @@
 
 
-**SN Connect - Sprint Implementation Checklist**
+**Control Hub - Sprint Implementation Checklist**
 
 **6-Sprint Delivery Plan**
 
@@ -8,7 +8,7 @@
 
 **Report Date:** May 16, 2026
 
-**Project:** SN Connect - HR Portal Feature Refinements
+**Project:** Control Hub - HR Portal Feature Refinements
 
 **Sprint Period:** May 5 - June 13, 2026 (6 Sprints)
 
@@ -16,7 +16,7 @@
 
 ## **Executive Summary**
 
-This document is now the working implementation checklist for the current SN Connect delivery cycle. Instead of a narrative-only sprint plan, each sprint below is organized as a checklist that can be reviewed and marked off sprint by sprint.
+This document is now the working implementation checklist for the current Control Hub delivery cycle. Instead of a narrative-only sprint plan, each sprint below is organized as a checklist that can be reviewed and marked off sprint by sprint.
 
 Current sprint order:
 
@@ -73,7 +73,7 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 - [ ] Add reminder delivery through Telegram and Gmail so interns see follow-ups in both channels.
 - [ ] Separate each intern EOD summary into its own clean message block instead of grouping multiple intern EODs into one cramped block.
 - [ ] Add a weekly intern project summary automation for leadership that highlights intern project progress.
-- [ ] Pull weekly project data from the SN Connect Projects and Leaderboard pages as the source of truth for the summary.
+- [ ] Pull weekly project data from the Control Hub Projects and Leaderboard pages as the source of truth for the summary.
 - [ ] Show weekly progress percentages per intern and per project.
 - [ ] Include project health and project lead health in the weekly summary.
 - [ ] Show overall weekly project movement so leadership can see how much progress each intern made week over week.
@@ -273,7 +273,7 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 
 **Sprint status:** Planned
 
-**Sprint goal:** Build a centralized tech expense tracker inside SN Connect so admin and leadership have full visibility into all technology subscriptions, software licenses, and tool spend — with categorization, renewal alerts, and a cost dashboard.
+**Sprint goal:** Build a centralized tech expense tracker inside Control Hub so admin and leadership have full visibility into all technology subscriptions, software licenses, and tool spend — with categorization, renewal alerts, and a cost dashboard.
 
 **Implementation checklist**
 

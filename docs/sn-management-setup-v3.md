@@ -1,4 +1,4 @@
-# SN CONNECT HR PORTAL — V3 IMPLEMENTATION PLAN
+# CONTROL HUB HR PORTAL — V3 IMPLEMENTATION PLAN
 
 > **Format**: AI-actionable checklist for copilot/CLI execution
 > **Generated**: 2026-03-15
