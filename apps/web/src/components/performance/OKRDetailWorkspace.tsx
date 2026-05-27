@@ -39,6 +39,7 @@ import {
   Input,
   Label,
   Progress,
+  RATING_CONFIG,
   Select,
   SelectContent,
   SelectItem,
@@ -53,6 +54,7 @@ import {
   SlidePanelSection,
   SlidePanelTitle,
   Textarea,
+  type PerformanceRating,
   useToast,
 } from '@hr-portal/ui';
 import {
@@ -108,6 +110,37 @@ function getProgressBarColor(value: number): string {
   if (value >= 80) return 'bg-success';
   if (value >= 50) return 'bg-warning';
   return 'bg-error';
+}
+
+function formatRatingLabel(rating: PerformanceRating | undefined): string | null {
+  if (!rating) {
+    return null;
+  }
+
+  const config = RATING_CONFIG[rating];
+  return `${config.label} (${config.score}/5)`;
+}
+
+function formatEvaluatorSummary(
+  firstName: string | null | undefined,
+  role: string | null | undefined,
+  evaluatedAt: string | undefined
+): string | null {
+  const identity = [firstName?.trim(), role?.trim()].filter(Boolean).join(' · ');
+
+  if (identity && evaluatedAt) {
+    return `${identity} · ${formatDate(evaluatedAt)}`;
+  }
+
+  if (identity) {
+    return identity;
+  }
+
+  if (evaluatedAt) {
+    return formatDate(evaluatedAt);
+  }
+
+  return null;
 }
 
 const METRIC_TYPE_CONFIG: Record<
@@ -286,6 +319,12 @@ export function OKRDetailWorkspace({
     );
   }, [targets]);
   const evidenceItems = evidenceResponse?.data || [];
+  const objectiveRating = formatRatingLabel(okr?.adminRating);
+  const evaluatorSummary = formatEvaluatorSummary(
+    okr?.evaluatorFirstName,
+    okr?.evaluatorRole,
+    okr?.evaluatedAt
+  );
 
   const handleOpenCreate = useCallback((): void => {
     const currentUsed = targets.reduce((sum, target) => sum + target.weight, 0);
@@ -627,6 +666,20 @@ export function OKRDetailWorkspace({
                   Weight: {okr.weight}% &middot; Created {formatDate(okr.createdAt)}
                 </span>
               </div>
+
+              {(objectiveRating || okr.adminComments) && (
+                <div className="mt-4 rounded-lg border border-primary/15 bg-primary/5 p-3">
+                  <p className="text-sm font-medium text-primary">
+                    {objectiveRating ? `Admin feedback: ${objectiveRating}` : 'Admin feedback'}
+                  </p>
+                  {evaluatorSummary && (
+                    <p className="mt-1 text-xs text-muted-foreground">Reviewed by {evaluatorSummary}</p>
+                  )}
+                  {okr.adminComments && (
+                    <p className="mt-2 text-sm text-muted-foreground">{okr.adminComments}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
@@ -1445,11 +1498,13 @@ function TargetCard({ target, onEdit, onDelete, onUpdateProgress }: TargetCardPr
               <span className="ml-auto">Weight: {target.weight}%</span>
             </div>
 
-            {target.adminRating && (
+            {(target.adminRating || target.adminComments) && (
               <div className="mt-2 rounded border border-primary/10 bg-primary/5 p-2">
-                <p className="text-xs font-medium text-primary">
-                  Admin Rating: {target.adminRating}
-                </p>
+                {target.adminRating && (
+                  <p className="text-xs font-medium text-primary">
+                    Admin Rating: {formatRatingLabel(target.adminRating) ?? target.adminRating}
+                  </p>
+                )}
                 {target.adminComments && (
                   <p className="mt-0.5 text-xs text-muted-foreground">{target.adminComments}</p>
                 )}

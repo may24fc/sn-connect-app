@@ -5,9 +5,23 @@ import * as React from 'react';
 import { Button } from '../../primitives/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../primitives/card';
 import { Progress } from '../../primitives/progress';
-import type { KeyResult, OKR } from '../../types/performance.types';
+import {
+  type KeyResult,
+  type OKR,
+  type PerformanceRating,
+  RATING_CONFIG,
+} from '../../types/performance.types';
 import { cn } from '../../utils/cn';
 import { OKRStatusBadge } from './PerformanceStatusBadge';
+
+function formatRatingLabel(rating: PerformanceRating | undefined): string | null {
+  if (!rating) {
+    return null;
+  }
+
+  const config = RATING_CONFIG[rating];
+  return `${config.label} (${config.score}/5)`;
+}
 
 interface KeyResultItemProps {
   keyResult: KeyResult;
@@ -88,6 +102,7 @@ export function OKRCard({
   className,
 }: OKRCardProps): React.ReactNode {
   const [expanded, setExpanded] = React.useState(defaultExpanded);
+  const objectiveRating = formatRatingLabel(okr.adminRating);
 
   const handleUpdateProgress = (keyResultId: string, value: number): void => {
     if (onUpdateKeyResult) {
@@ -142,6 +157,17 @@ export function OKRCard({
             indicatorClassName={overallProgressColor}
           />
         </div>
+
+        {(objectiveRating || okr.adminComments) && (
+          <div className="rounded-lg border border-primary/15 bg-primary/5 p-3">
+            <p className="text-xs font-medium text-primary">
+              {objectiveRating ? `Admin feedback: ${objectiveRating}` : 'Admin feedback'}
+            </p>
+            {okr.adminComments && (
+              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{okr.adminComments}</p>
+            )}
+          </div>
+        )}
 
         {/* Key Results Toggle */}
         <button

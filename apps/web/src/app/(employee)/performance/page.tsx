@@ -1,8 +1,9 @@
 ﻿'use client';
 
+import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useCreateOKR, usePerformanceCycles, usePerformanceOKRs } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
-import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
+import { getDisplayOKRStatus } from '@/lib/performance/okr-status';
 import {
   Badge,
   Button,
@@ -12,11 +13,15 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  HelpLink,
   Input,
   Label,
   OKRStatusBadge,
+  type PerformanceRating,
   Progress,
   ProgressGauge,
+  RATING_CONFIG,
+  SectionTooltip,
   Select,
   SelectContent,
   SelectItem,
@@ -32,8 +37,6 @@ import {
   SlidePanelTitle,
   Textarea,
   useToast,
-  SectionTooltip,
-  HelpLink,
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
@@ -71,6 +74,15 @@ function getProgressColor(value: number): string {
   if (value >= 80) return 'text-success';
   if (value >= 50) return 'text-warning';
   return 'text-error';
+}
+
+function formatRatingLabel(rating: PerformanceRating | undefined): string | null {
+  if (!rating) {
+    return null;
+  }
+
+  const config = RATING_CONFIG[rating];
+  return `${config.label} (${config.score}/5)`;
 }
 
 interface CreateObjectiveFormState {
@@ -133,8 +145,12 @@ export default function PerformancePage(): ReactNode {
 
   const stats = {
     total: okrs.length,
-    inProgress: okrs.filter((o) => o.status === 'in_progress').length,
-    completed: okrs.filter((o) => o.status === 'completed').length,
+    inProgress: okrs.filter(
+      (o) => getDisplayOKRStatus(o.status, o.progressPercentage) === 'in_progress'
+    ).length,
+    completed: okrs.filter(
+      (o) => getDisplayOKRStatus(o.status, o.progressPercentage) === 'completed'
+    ).length,
   };
 
   const handleOpenCreate = (): void => {
@@ -386,7 +402,12 @@ export default function PerformancePage(): ReactNode {
             </CardContent>
           </Card>
         ) : (() => {
-          const filteredOkrs = statusFilter === 'all' ? okrs : okrs.filter((o) => o.status === statusFilter);
+          const filteredOkrs =
+            statusFilter === 'all'
+              ? okrs
+              : okrs.filter(
+                  (o) => getDisplayOKRStatus(o.status, o.progressPercentage) === statusFilter
+                );
           return filteredOkrs.length === 0 ? (
             <Card>
               <CardContent>
@@ -401,6 +422,9 @@ export default function PerformancePage(): ReactNode {
           ) : (
           <div className="space-y-3">
             {filteredOkrs.map((okr) => {
+              const displayStatus = getDisplayOKRStatus(okr.status, okr.progressPercentage);
+              const objectiveRating = formatRatingLabel(okr.adminRating);
+
               return (
                 <Link key={okr.id} href={`/performance/okrs/${okr.id}`} className="block">
                   <Card className="hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
@@ -410,7 +434,7 @@ export default function PerformancePage(): ReactNode {
                         <div className="flex items-start gap-4 flex-1 min-w-0">
                           <div className="shrink-0">
                             <div className="relative h-14 w-14">
-                              <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
+                              <svg aria-hidden="true" className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
                                 <circle
                                   cx="28"
                                   cy="28"
@@ -449,7 +473,7 @@ export default function PerformancePage(): ReactNode {
                             )}
                             <div className="flex items-center gap-3 mt-2">
                               <OKRStatusBadge
-                                status={okr.status as 'draft' | 'submitted' | 'approved' | 'in_progress' | 'completed'}
+                                status={displayStatus}
                                 className="text-xs"
                               />
                               <span className="text-xs text-muted-foreground">
@@ -471,6 +495,19 @@ export default function PerformancePage(): ReactNode {
                           indicatorClassName={getProgressBarColor(okr.progressPercentage)}
                         />
                       </div>
+
+                      {(objectiveRating || okr.adminComments) && (
+                        <div className="mt-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2">
+                          <p className="text-xs font-medium text-primary">
+                            {objectiveRating ? `Admin feedback: ${objectiveRating}` : 'Admin feedback'}
+                          </p>
+                          {okr.adminComments && (
+                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                              {okr.adminComments}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </Link>

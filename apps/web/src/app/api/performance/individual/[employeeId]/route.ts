@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { type OkrStateTargetRow, applyComputedOkrState } from '../../_okr-state';
 
 const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
 
@@ -177,9 +178,12 @@ export async function GET(
       }
     }
 
-    const okrEvaluatorById = new Map(
-      (okrs || []).map((okr) => [okr.id, evaluatorDirectory.get(okr.evaluated_by ?? '') ?? null])
-    );
+    const okrTargetsByOkrId = new Map<string, Array<OkrStateTargetRow>>();
+    for (const target of ((okrTargets || []) as Array<OkrStateTargetRow & Record<string, unknown>>)) {
+      const existing = okrTargetsByOkrId.get(target.okr_id) || [];
+      existing.push(target);
+      okrTargetsByOkrId.set(target.okr_id, existing);
+    }
 
     const enrichedKpis = (kpis || []).map((kpi) => {
       const evaluator = evaluatorDirectory.get(kpi.evaluated_by ?? '') ?? null;
@@ -194,13 +198,20 @@ export async function GET(
     const enrichedOkrs = (okrs || []).map((okr) => {
       const evaluator = evaluatorDirectory.get(okr.evaluated_by ?? '') ?? null;
 
-      return {
-        ...okr,
-        evaluator_first_name: evaluator?.firstName ?? null,
-        evaluator_position: evaluator?.position ?? null,
-        evaluator_role: evaluator?.role ?? null,
-      };
+      return applyComputedOkrState(
+        {
+          ...okr,
+          evaluator_first_name: evaluator?.firstName ?? null,
+          evaluator_position: evaluator?.position ?? null,
+          evaluator_role: evaluator?.role ?? null,
+        },
+        okrTargetsByOkrId.get(okr.id) || []
+      );
     });
+
+    const okrEvaluatorById = new Map(
+      enrichedOkrs.map((okr) => [okr.id, evaluatorDirectory.get(okr.evaluated_by ?? '') ?? null])
+    );
 
     const enrichedOkrTargets = (okrTargets || []).map((target) => {
       const evaluator =
@@ -272,11 +283,11 @@ export async function GET(
     }
 
     const okrSummary = {
-      total: okrs?.length || 0,
-      completed: okrs?.filter((o) => o.status === 'completed').length || 0,
+      total: enrichedOkrs.length,
+      completed: enrichedOkrs.filter((o) => o.status === 'completed').length,
       avgProgress:
-        okrs && okrs.length > 0
-          ? Math.round(okrs.reduce((acc, o) => acc + (o.progress || 0), 0) / okrs.length)
+        enrichedOkrs.length > 0
+          ? Math.round(enrichedOkrs.reduce((acc, o) => acc + (o.progress || 0), 0) / enrichedOkrs.length)
           : 0,
     };
 

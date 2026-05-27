@@ -1,6 +1,7 @@
 import { createOKRTargetSchema, updateOKRTargetSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
+import { syncOkrComputedState } from '../_okr-state';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const explicitEmployeeId = searchParams.get('employeeId') || undefined;
 
     let employeeId: string | null | undefined = explicitEmployeeId;
-    if (!employeeId && !isPerformanceAdmin(role)) {
+    if (!(employeeId || isPerformanceAdmin(role))) {
       employeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
       if (!employeeId) {
         return NextResponse.json({ data: [] });
@@ -136,6 +137,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create target' }, { status: 500 });
     }
 
+    await syncOkrComputedState(supabaseAdmin, data.okr_id);
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (err) {
     console.error('POST /api/performance/okr-targets error:', err);
@@ -215,6 +218,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update target' }, { status: 500 });
     }
 
+    await syncOkrComputedState(supabaseAdmin, data.okr_id);
+
     return NextResponse.json({ data });
   } catch (err) {
     console.error('PATCH /api/performance/okr-targets error:', err);
@@ -234,6 +239,21 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Missing target id' }, { status: 400 });
     }
 
+    const { data: target, error: targetError } = await supabaseAdmin
+      .from('okr_targets')
+      .select('okr_id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (targetError) {
+      console.error('DELETE /api/performance/okr-targets lookup error:', targetError);
+      return NextResponse.json({ error: 'Failed to resolve target' }, { status: 500 });
+    }
+
+    if (!target) {
+      return NextResponse.json({ error: 'Target not found' }, { status: 404 });
+    }
+
     // Soft delete
     const { error: deleteError } = await supabaseAdmin
       .from('okr_targets')
@@ -244,6 +264,8 @@ export async function DELETE(request: NextRequest) {
       console.error('DELETE /api/performance/okr-targets error:', deleteError);
       return NextResponse.json({ error: 'Failed to delete target' }, { status: 500 });
     }
+
+    await syncOkrComputedState(supabaseAdmin, target.okr_id);
 
     return NextResponse.json({ success: true });
   } catch (err) {

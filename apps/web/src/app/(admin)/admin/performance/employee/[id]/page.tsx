@@ -1059,8 +1059,15 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                                       <Star className="h-3 w-3 text-amber-500" strokeWidth={1.5} />
                                       <span className="text-xs text-muted-foreground">
                                         Rating:{' '}
-                                        {RATING_CONFIG[target.admin_rating as PerformanceRating]
-                                          ?.label || target.admin_rating}
+                                        {(() => {
+                                          const ratingConfig = RATING_CONFIG[
+                                            target.admin_rating as PerformanceRating
+                                          ];
+
+                                          return ratingConfig
+                                            ? `${ratingConfig.label} (${ratingConfig.score}/5)`
+                                            : target.admin_rating;
+                                        })()}
                                       </span>
                                     </div>
                                   )}

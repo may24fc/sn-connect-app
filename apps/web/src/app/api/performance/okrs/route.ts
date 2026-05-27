@@ -1,19 +1,7 @@
-import {
-  type UpdateOKRInput,
-  createOKRSchema,
-  updateOKRSchema,
-} from '@/lib/schemas/performance.schema';
+import { type UpdateOKRInput, createOKRSchema, updateOKRSchema } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
-
-interface OkrTargetProgressRow {
-  okr_id: string;
-  metric_type: 'number' | 'boolean' | 'currency' | 'tasks' | 'scale';
-  current_value: number | null;
-  target_value: number;
-  weight: number | null;
-  self_rating: number | null;
-}
+import { applyComputedOkrState, fetchOkrTargetsByOkrIds, syncOkrComputedState } from '../_okr-state';
 
 interface EvaluatorRoleRow {
   id: string;
@@ -23,44 +11,6 @@ interface EvaluatorRoleRow {
 interface EvaluatorEmployeeRow {
   user_id: string;
   first_name: string | null;
-}
-
-function calculateTargetProgress(target: OkrTargetProgressRow): number {
-  const current = Number(target.current_value ?? 0);
-  const targetValue = Number(target.target_value ?? 0);
-
-  switch (target.metric_type) {
-    case 'boolean':
-      return current >= 1 ? 100 : 0;
-    case 'scale':
-      return target.self_rating ? Math.round((target.self_rating / 4) * 100) : 0;
-    case 'number':
-    case 'currency':
-    case 'tasks':
-      return targetValue > 0 ? Math.min(Math.round((current / targetValue) * 100), 100) : 0;
-    default:
-      return 0;
-  }
-}
-
-function calculateOkrProgress(targets: OkrTargetProgressRow[]): number {
-  if (targets.length === 0) {
-    return 0;
-  }
-
-  const totalWeight = targets.reduce((sum, target) => sum + Number(target.weight ?? 0), 0);
-  if (totalWeight <= 0) {
-    return Math.round(
-      targets.reduce((sum, target) => sum + calculateTargetProgress(target), 0) / targets.length
-    );
-  }
-
-  const weightedTotal = targets.reduce(
-    (sum, target) => sum + calculateTargetProgress(target) * Number(target.weight ?? 0),
-    0
-  );
-
-  return Math.round(weightedTotal / totalWeight);
 }
 
 async function resolveRequestedEmployeeId(
@@ -86,7 +36,6 @@ function buildOkrsListQuery(
   filters: {
     employeeId?: string | null | undefined;
     cycleId?: string | undefined;
-    status?: string | undefined;
   }
 ) {
   let query = supabaseAdmin
@@ -100,9 +49,6 @@ function buildOkrsListQuery(
   }
   if (filters.cycleId) {
     query = query.eq('cycle_id', filters.cycleId);
-  }
-  if (filters.status) {
-    query = query.eq('status', filters.status);
   }
 
   return query;
@@ -217,7 +163,6 @@ export async function GET(request: NextRequest) {
     const { data, error: queryError } = await buildOkrsListQuery(supabaseAdmin, {
       employeeId,
       cycleId,
-      status,
     });
 
     if (queryError) {
@@ -238,13 +183,10 @@ export async function GET(request: NextRequest) {
       )
     );
 
-    const { data: okrTargets, error: targetsError } = await supabaseAdmin
-      .from('okr_targets')
-      .select('okr_id, metric_type, current_value, target_value, weight, self_rating')
-      .in('okr_id', okrIds)
-      .is('deleted_at', null);
-
-    if (targetsError) {
+    let targetsByOkrId = new Map();
+    try {
+      targetsByOkrId = await fetchOkrTargetsByOkrIds(supabaseAdmin, okrIds);
+    } catch (targetsError) {
       console.error('GET /api/performance/okrs target progress error:', targetsError);
       return NextResponse.json({ error: 'Failed to fetch OKR targets' }, { status: 500 });
     }
@@ -262,7 +204,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to fetch evaluator roles' }, { status: 500 });
       }
 
-      for (const evaluator of (evaluatorRoles || []) as EvaluatorRoleRow[]) {
+      for (const evaluator of (evaluatorRoles || []) as Array<EvaluatorRoleRow>) {
         evaluatorRolesById.set(evaluator.id, evaluator.role ?? null);
       }
 
@@ -283,26 +225,27 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      for (const evaluator of (evaluatorEmployees || []) as EvaluatorEmployeeRow[]) {
+      for (const evaluator of (evaluatorEmployees || []) as Array<EvaluatorEmployeeRow>) {
         evaluatorFirstNamesById.set(evaluator.user_id, evaluator.first_name ?? null);
       }
     }
 
-    const targetsByOkrId = new Map<string, OkrTargetProgressRow[]>();
-    for (const target of (okrTargets || []) as OkrTargetProgressRow[]) {
-      const existing = targetsByOkrId.get(target.okr_id) || [];
-      existing.push(target);
-      targetsByOkrId.set(target.okr_id, existing);
-    }
-
-    const enrichedOkrs = okrs.map((okr) => ({
-      ...okr,
-      progress: calculateOkrProgress(targetsByOkrId.get(okr.id) || []),
-      evaluator_first_name: okr.evaluated_by
-        ? (evaluatorFirstNamesById.get(okr.evaluated_by) ?? null)
-        : null,
-      evaluator_role: okr.evaluated_by ? (evaluatorRolesById.get(okr.evaluated_by) ?? null) : null,
-    }));
+    const enrichedOkrs = okrs
+      .map((okr) =>
+        applyComputedOkrState(
+          {
+            ...okr,
+            evaluator_first_name: okr.evaluated_by
+              ? (evaluatorFirstNamesById.get(okr.evaluated_by) ?? null)
+              : null,
+            evaluator_role: okr.evaluated_by
+              ? (evaluatorRolesById.get(okr.evaluated_by) ?? null)
+              : null,
+          },
+          targetsByOkrId.get(okr.id) || []
+        )
+      )
+      .filter((okr) => (status ? okr.status === status : true));
 
     return NextResponse.json({ data: enrichedOkrs });
   } catch (error) {
@@ -351,6 +294,7 @@ export async function POST(request: NextRequest) {
         description: parsed.data.description || null,
         key_results: parsed.data.keyResults,
         status: parsed.data.status,
+        progress: 0,
         weight: parsed.data.weight ?? 1,
       })
       .select('*')
@@ -360,7 +304,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create OKR' }, { status: 500 });
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    const normalizedState = await syncOkrComputedState(supabaseAdmin, data.id, data.status);
+
+    return NextResponse.json(
+      {
+        data: normalizedState ? { ...data, ...normalizedState } : data,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('POST /api/performance/okrs error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -402,7 +353,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update OKR' }, { status: 500 });
     }
 
-    return NextResponse.json({ data });
+    const normalizedState = await syncOkrComputedState(supabaseAdmin, data.id, data.status);
+
+    return NextResponse.json({ data: normalizedState ? { ...data, ...normalizedState } : data });
   } catch (error) {
     console.error('PATCH /api/performance/okrs error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

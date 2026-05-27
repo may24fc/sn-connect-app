@@ -2,6 +2,7 @@
 
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
 import { useCreateOKR, useMyPerformanceOKRs, usePerformanceCycles } from '@/hooks/usePerformance';
+import { getDisplayOKRStatus } from '@/lib/performance/okr-status';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
   Badge,
@@ -18,6 +19,7 @@ import {
   OKRStatusBadge,
   Progress,
   ProgressGauge,
+  RATING_CONFIG,
   SectionTooltip,
   Select,
   SelectContent,
@@ -33,6 +35,7 @@ import {
   SlidePanelSection,
   SlidePanelTitle,
   Textarea,
+  type PerformanceRating,
   useToast,
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
@@ -72,6 +75,15 @@ function getProgressColor(value: number): string {
   if (value >= 80) return 'text-success';
   if (value >= 50) return 'text-warning';
   return 'text-error';
+}
+
+function formatRatingLabel(rating: PerformanceRating | undefined): string | null {
+  if (!rating) {
+    return null;
+  }
+
+  const config = RATING_CONFIG[rating];
+  return `${config.label} (${config.score}/5)`;
 }
 
 interface CreateObjectiveFormState {
@@ -132,8 +144,12 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
 
   const stats = {
     total: okrs.length,
-    inProgress: okrs.filter((okr) => okr.status === 'in_progress').length,
-    completed: okrs.filter((okr) => okr.status === 'completed').length,
+    inProgress: okrs.filter(
+      (okr) => getDisplayOKRStatus(okr.status, okr.progressPercentage) === 'in_progress'
+    ).length,
+    completed: okrs.filter(
+      (okr) => getDisplayOKRStatus(okr.status, okr.progressPercentage) === 'completed'
+    ).length,
   };
 
   const handleOpenCreate = (): void => {
@@ -191,7 +207,12 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
     }
   };
 
-  const filteredOkrs = statusFilter === 'all' ? okrs : okrs.filter((okr) => okr.status === statusFilter);
+  const filteredOkrs =
+    statusFilter === 'all'
+      ? okrs
+      : okrs.filter(
+          (okr) => getDisplayOKRStatus(okr.status, okr.progressPercentage) === statusFilter
+        );
 
   return (
     <div className="space-y-6">
@@ -372,7 +393,11 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredOkrs.map((okr) => (
+            {filteredOkrs.map((okr) => {
+              const displayStatus = getDisplayOKRStatus(okr.status, okr.progressPercentage);
+              const objectiveRating = formatRatingLabel(okr.adminRating);
+
+              return (
               <Link key={okr.id} href={`${detailHrefBase}/${okr.id}`} className="block">
                 <Card className="cursor-pointer transition-all hover:border-primary/30 hover:shadow-md">
                   <CardContent className="p-5">
@@ -380,7 +405,7 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
                       <div className="flex min-w-0 flex-1 items-start gap-4">
                         <div className="shrink-0">
                           <div className="relative h-14 w-14">
-                            <svg className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
+                            <svg aria-hidden="true" className="h-14 w-14 -rotate-90" viewBox="0 0 56 56">
                               <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="4" className="text-muted/30" />
                               <circle
                                 cx="28"
@@ -407,7 +432,7 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
                           )}
                           <div className="mt-2 flex items-center gap-3">
                             <OKRStatusBadge
-                              status={okr.status as 'draft' | 'submitted' | 'approved' | 'in_progress' | 'completed'}
+                              status={displayStatus}
                               className="text-xs"
                             />
                             <span className="text-xs text-muted-foreground">Weight: {okr.weight}%</span>
@@ -423,10 +448,24 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
                     <div className="mt-3">
                       <Progress value={okr.progressPercentage} className="h-2" indicatorClassName={getProgressBarColor(okr.progressPercentage)} />
                     </div>
+
+                    {(objectiveRating || okr.adminComments) && (
+                      <div className="mt-3 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2">
+                        <p className="text-xs font-medium text-primary">
+                          {objectiveRating ? `Admin feedback: ${objectiveRating}` : 'Admin feedback'}
+                        </p>
+                        {okr.adminComments && (
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {okr.adminComments}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

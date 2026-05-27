@@ -216,6 +216,8 @@ function toUiOKRTarget(row: OkrTargetRow): OKRTarget {
     ...(row.rubric_2 ? { rubric2: row.rubric_2 } : {}),
     ...(row.rubric_3 ? { rubric3: row.rubric_3 } : {}),
     ...(row.rubric_4 ? { rubric4: row.rubric_4 } : {}),
+    ...(row.admin_rating ? { adminRating: row.admin_rating as PerformanceRating } : {}),
+    ...(row.admin_comments ? { adminComments: row.admin_comments } : {}),
     selfRating: row.self_rating ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

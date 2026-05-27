@@ -10,6 +10,7 @@ import {
 } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import { formatDate } from '@/lib/format';
+import { getDisplayOKRStatus } from '@/lib/performance/okr-status';
 import {
   Badge,
   Button,
@@ -94,15 +95,20 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
   const [subtaskInput, setSubtaskInput] = useState('');
   const handledCreateDeepLinkRef = useRef(false);
 
-  const filteredOKRs = currentOKRs.filter((okr) => {
+  const displayOKRs = currentOKRs.map((okr) => ({
+    ...okr,
+    status: getDisplayOKRStatus(okr.status, okr.progressPercentage),
+  }));
+
+  const filteredOKRs = displayOKRs.filter((okr) => {
     if (statusFilter === 'all') return true;
     return okr.status === statusFilter;
   });
 
   const stats = {
-    total: currentOKRs.length,
-    inProgress: currentOKRs.filter((o) => o.status === 'in_progress').length,
-    completed: currentOKRs.filter((o) => o.status === 'completed').length,
+    total: displayOKRs.length,
+    inProgress: displayOKRs.filter((o) => o.status === 'in_progress').length,
+    completed: displayOKRs.filter((o) => o.status === 'completed').length,
     avgProgress: Math.round(
       currentOKRs.reduce((sum, o) => sum + o.progressPercentage, 0) /
         Math.max(currentOKRs.length, 1)
