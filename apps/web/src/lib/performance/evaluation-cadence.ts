@@ -138,6 +138,23 @@ function formatDueDateLabel(date: Date): string {
   });
 }
 
+function parseIsoDate(value: string | Date | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return toUtcDate(value);
+  }
+
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return toUtcDate(parsed);
+}
+
 function getLastWorkingDayOfMonth(date: Date): Date {
   let cursor = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
   while (isWeekend(cursor)) {
@@ -187,9 +204,12 @@ export function getMonthlyEvaluationWindow(now: Date = new Date()): EvaluationWi
   };
 }
 
-export function getQuarterlyEvaluationWindow(now: Date = new Date()): EvaluationWindowStatus {
+export function getQuarterlyEvaluationWindow(
+  now: Date = new Date(),
+  dueDateOverride?: string | Date | null
+): EvaluationWindowStatus {
   const today = toUtcDate(now);
-  const dueDate = getLastWorkingDayOfQuarter(today);
+  const dueDate = parseIsoDate(dueDateOverride) ?? getLastWorkingDayOfQuarter(today);
   const openDate = addCalendarDays(dueDate, -7);
   const daysUntilDue = countCalendarDaysUntil(dueDate, today);
 
@@ -379,7 +399,7 @@ function buildBanner(
           ? `${quarterly.label} quarterly check is due now`
           : `${quarterly.label} quarterly check is due tomorrow`,
       description:
-        'Leadership is waiting for your quarterly temperature check. Submit it before the quarter closes.',
+        `Leadership is waiting for your quarterly temperature check. Submit it before ${quarterly.dueDateLabel}.`,
       href: '/performance/self-evaluation?tab=quarterly',
       meta: `Due ${quarterly.dueDateLabel}`,
       actionLabel: 'Submit quarterly check',
@@ -394,10 +414,13 @@ export function buildEvaluationCadenceSummary(
     monthlySubmitted: boolean;
     quarterlySubmitted: boolean;
   },
-  now: Date = new Date()
+  now: Date = new Date(),
+  options?: {
+    quarterlyDueDate?: string | Date | null;
+  }
 ): EvaluationCadenceSummary {
   const monthly = getMonthlyEvaluationWindow(now);
-  const quarterly = getQuarterlyEvaluationWindow(now);
+  const quarterly = getQuarterlyEvaluationWindow(now, options?.quarterlyDueDate ?? null);
 
   const prompts = [
     buildPrompt(monthly, params.monthlySubmitted),

@@ -4,7 +4,7 @@ import { getAuthedPerformanceContext } from '../_lib';
 
 export async function GET(_request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedPerformanceContext();
+    const { supabase, supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -16,10 +16,11 @@ export async function GET(_request: NextRequest) {
     }
 
     const now = new Date();
+    const todayIso = now.toISOString().slice(0, 10);
     const monthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
     const quarterKey = `${now.getUTCFullYear()}-Q${Math.floor(now.getUTCMonth() / 3) + 1}`;
 
-    const [monthlyResult, quarterlyResult] = await Promise.all([
+    const [monthlyResult, quarterlyResult, cycleResult] = await Promise.all([
       supabase
         .from('monthly_self_evaluations')
         .select('id')
@@ -31,6 +32,15 @@ export async function GET(_request: NextRequest) {
         .select('id')
         .eq('user_id', user.id)
         .eq('quarter_key', quarterKey)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('review_cycles')
+        .select('self_review_deadline, end_date')
+        .eq('status', 'active')
+        .lte('start_date', todayIso)
+        .gte('end_date', todayIso)
+        .order('start_date', { ascending: false })
+        .limit(1)
         .maybeSingle(),
     ]);
 
@@ -50,11 +60,22 @@ export async function GET(_request: NextRequest) {
       );
     }
 
+    if (cycleResult.error) {
+      console.error('GET /api/performance/evaluation-cadence cycle error:', cycleResult.error);
+      return NextResponse.json(
+        { error: 'Failed to resolve active performance cycle' },
+        { status: 500 }
+      );
+    }
+
+    const quarterlyDueDate =
+      cycleResult.data?.self_review_deadline ?? cycleResult.data?.end_date ?? null;
+
     return NextResponse.json(
       buildEvaluationCadenceSummary({
         monthlySubmitted: Boolean(monthlyResult.data?.id),
         quarterlySubmitted: Boolean(quarterlyResult.data?.id),
-      }, now)
+      }, now, { quarterlyDueDate })
     );
   } catch (error) {
     console.error('GET /api/performance/evaluation-cadence error:', error);

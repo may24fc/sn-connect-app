@@ -105,6 +105,19 @@ function formatDueDateLabel(date: Date): string {
   });
 }
 
+function parseIsoDate(value: string | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return toUtcDate(parsed);
+}
+
 async function resolveActiveEvaluationAudience(supabase: ReturnType<typeof getSupabaseAdmin>) {
   const { data, error } = await supabase
     .from('users')
@@ -181,6 +194,32 @@ async function resolveAnnouncementAuthorId(
   }
 
   return data?.[0]?.id ?? null;
+}
+
+async function resolveQuarterlyCycleDueDate(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  today: Date
+): Promise<Date | null> {
+  const todayIso = today.toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from('review_cycles')
+    .select('self_review_deadline, end_date')
+    .eq('status', 'active')
+    .lte('start_date', todayIso)
+    .gte('end_date', todayIso)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error(
+      '[evaluation-cadence-reminders] Failed to resolve quarterly cycle deadline:',
+      error.message
+    );
+    return null;
+  }
+
+  return parseIsoDate(data?.self_review_deadline ?? data?.end_date ?? null);
 }
 
 async function ensureQuarterlyLaunchAnnouncement(
@@ -284,7 +323,8 @@ serve(async (req: Request): Promise<Response> => {
     const monthlyDueLabel = formatDueDateLabel(monthlyDueDate);
     const monthlyOpenDate = addBusinessDays(monthlyDueDate, -3);
 
-    const quarterlyDueDate = getLastWorkingDayOfQuarter(today);
+    const quarterlyDueDate =
+      (await resolveQuarterlyCycleDueDate(supabase, today)) ?? getLastWorkingDayOfQuarter(today);
     const quarterlyDaysUntilDue = countCalendarDaysUntil(quarterlyDueDate, today);
     const quarterlyKey = formatQuarterKey(today);
     const quarterlyLabel = formatQuarterLabel(today);
