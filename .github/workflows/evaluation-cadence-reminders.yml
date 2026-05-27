@@ -1,0 +1,41 @@
+name: Evaluation Cadence Reminders
+
+# Runs daily at 08:00 UTC to let the Edge Function decide whether today
+# is a launch, reminder, deadline, or no-op cadence day.
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-evaluation-cadence-reminders:
+    name: Trigger Evaluation Cadence Reminders
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Invoke evaluation-cadence-reminders Edge Function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "${SUPABASE_URL}/functions/v1/evaluation-cadence-reminders" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}")
+
+          HTTP_BODY=$(echo "$RESPONSE" | head -n -1)
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $HTTP_BODY"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Edge function returned non-200 status: $HTTP_CODE"
+            echo "::error::Response: $HTTP_BODY"
+            exit 1
+          fi
+
+          echo "### Evaluation Cadence Reminders" >> $GITHUB_STEP_SUMMARY
+          echo "$HTTP_BODY" >> $GITHUB_STEP_SUMMARY
