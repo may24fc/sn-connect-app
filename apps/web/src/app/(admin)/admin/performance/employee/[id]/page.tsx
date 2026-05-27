@@ -246,6 +246,10 @@ function isObjectiveEvaluationSaved(objective: ObjectiveWithTargets): boolean {
   return hasOverallRating && hasTargetRatings;
 }
 
+function isObjectiveEvaluationFinalized(objective: ObjectiveWithTargets): boolean {
+  return isObjectiveEvaluationSaved(objective) && objective.okr.evaluator_role === 'super_admin';
+}
+
 type AssessmentEvidenceItem = KPIEvidenceRow | OKRTargetEvidenceRow;
 
 function formatFileSize(bytes: number | null | undefined): string {
@@ -1145,10 +1149,18 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               {evaluatableObjectives.map((objective) => {
                 const { okr, targets, mean } = objective;
                 const isSaved = isObjectiveEvaluationSaved(objective);
+                const isFinalized = isObjectiveEvaluationFinalized(objective);
                 const displayStatus = getObjectiveDisplayStatus(okr.status, mean);
 
                 return (
-                  <Card key={okr.id} className="overflow-hidden">
+                  <Card
+                    key={okr.id}
+                    className={
+                      isFinalized
+                        ? 'overflow-hidden border-emerald-200 bg-emerald-50/30 dark:border-emerald-900/40 dark:bg-emerald-950/10'
+                        : 'overflow-hidden'
+                    }
+                  >
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -1165,14 +1177,18 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                               >
                                 {displayStatus.replace('_', ' ')}
                               </Badge>
-                              {isSaved && (
+                              {isFinalized ? (
+                                <Badge variant="success" className="text-xs">
+                                  Evaluation Complete
+                                </Badge>
+                              ) : isSaved ? (
                                 <Badge
                                   variant="outline"
                                   className="text-xs text-emerald-700 dark:text-emerald-400"
                                 >
                                   Saved Evaluation
                                 </Badge>
-                              )}
+                              ) : null}
                             </div>
                             {okr.description && (
                               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
@@ -1195,6 +1211,11 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                         <Button
                           size="sm"
                           variant={isSaved ? 'outline' : 'default'}
+                          className={
+                            isFinalized
+                              ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-900/40 dark:text-emerald-400 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-300'
+                              : undefined
+                          }
                           onClick={() => handleOpenEvaluateModal({ okr, targets, mean })}
                         >
                           {isSaved ? (
@@ -1202,7 +1223,11 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                           ) : (
                             <ClipboardCheck className="h-4 w-4 mr-1.5" />
                           )}
-                          {isSaved ? 'Edit Evaluation' : 'Evaluate'}
+                          {isFinalized
+                            ? 'Evaluation Complete'
+                            : isSaved
+                              ? 'Edit Evaluation'
+                              : 'Evaluate'}
                         </Button>
                       </div>
                     </div>

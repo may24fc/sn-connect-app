@@ -84,6 +84,7 @@ interface EmployeePerformanceSummary {
   weightedMean: number;
   evaluationState: 'pending_hr' | 'pending_calibration' | 'finalized' | 'no_objectives';
   evaluationLabel: string;
+  evaluationScoreLabel: string | null;
   evaluationAudit: string;
   evaluationOutstandingCount: number;
 }
@@ -91,8 +92,44 @@ interface EmployeePerformanceSummary {
 type ViewMode = 'cards' | 'list';
 type CardSortMode = 'weighted_desc' | 'weighted_asc' | 'name_asc';
 type SummaryMode = 'progress' | 'evaluation';
-type EvaluationAwareOkr = Pick<OKR, 'adminRating' | 'evaluatedBy' | 'evaluatorRole'>;
+type EvaluationAwareOkr = Pick<
+  OKR,
+  'adminRating' | 'evaluatedBy' | 'evaluatorFirstName' | 'evaluatorRole'
+>;
 type OkrEvaluationStage = Exclude<EmployeePerformanceSummary['evaluationState'], 'no_objectives'>;
+
+function formatNameList(names: Array<string>): string {
+  if (names.length === 1) {
+    return names[0] ?? '';
+  }
+
+  if (names.length === 2) {
+    return `${names[0]} and ${names[1]}`;
+  }
+
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
+}
+
+function getFinalizedEvaluationAudit(okrs: EvaluationAwareOkr[]): string {
+  const calibratorNames = Array.from(
+    new Set(
+      okrs
+        .filter((okr) => okr.evaluatorRole === 'super_admin')
+        .map((okr) => okr.evaluatorFirstName?.trim())
+        .filter((name): name is string => Boolean(name))
+    )
+  );
+
+  if (calibratorNames.length === 0) {
+    return 'Calibrated by Supervisor.';
+  }
+
+  if (calibratorNames.length === 1) {
+    return `Calibrated by ${calibratorNames[0]}.`;
+  }
+
+  return `Calibrated by ${formatNameList(calibratorNames)}.`;
+}
 
 const RATING_SCORES: Record<PerformanceRating, number> = {
   unsatisfactory: 1,
@@ -119,9 +156,7 @@ function getRatingFromAverage(score: number): PerformanceRating {
   }
 }
 
-function getOkrEvaluationStage(
-  okr: EvaluationAwareOkr
-): OkrEvaluationStage {
+function getOkrEvaluationStage(okr: EvaluationAwareOkr): OkrEvaluationStage {
   if (!okr.adminRating || !okr.evaluatedBy) {
     return 'pending_hr';
   }
@@ -284,6 +319,7 @@ export default function AdminPerformancePage(): ReactNode {
           : 0;
       const aggregateRating =
         ratedOkrs.length > 0 ? RATING_CONFIG[getRatingFromAverage(ratingAverage)].label : null;
+      const aggregateScoreLabel = ratedOkrs.length > 0 ? `${ratingAverage.toFixed(1)}/5.0` : null;
 
       const evaluationLabel =
         evaluationState === 'no_objectives'
@@ -303,7 +339,7 @@ export default function AdminPerformancePage(): ReactNode {
         evaluationState === 'no_objectives'
           ? 'No active objectives in this cycle.'
           : evaluationState === 'finalized'
-            ? 'Calibrated by Supervisor. Ready to sync.'
+            ? getFinalizedEvaluationAudit(empOkrs)
             : evaluationState === 'pending_calibration'
               ? `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} pending supervisor calibration.`
               : `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} awaiting HR baseline.`;
@@ -314,6 +350,7 @@ export default function AdminPerformancePage(): ReactNode {
         weightedMean,
         evaluationState,
         evaluationLabel,
+        evaluationScoreLabel: aggregateScoreLabel,
         evaluationAudit,
         evaluationOutstandingCount: outstandingCount,
       });
@@ -660,9 +697,14 @@ export default function AdminPerformancePage(): ReactNode {
                               <p className="text-sm font-semibold text-foreground truncate">
                                 {entry.full_name}
                               </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {entry.position || 'No position'}
-                              </p>
+                              <div className="flex sm:flex-row sm:items-center gap-2">
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {entry.position || 'No position'}
+                                </p>
+                                <span className="text-xs text-muted-foreground truncate">
+                                  · {entry.department_name || 'No department'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <Badge
@@ -690,7 +732,14 @@ export default function AdminPerformancePage(): ReactNode {
                               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                                 Final Performance Rating
                               </p>
-                              <p className="mt-1 text-lg font-semibold leading-tight text-foreground">
+                              {perf?.evaluationScoreLabel && (
+                                <div className="mt-1">
+                                  <p className="text-3xl font-bold leading-none tabular-nums text-foreground">
+                                    {perf.evaluationScoreLabel}
+                                  </p>
+                                </div>
+                              )}
+                              <p className="mt-2 text-sm font-medium leading-tight text-muted-foreground">
                                 {perf?.evaluationLabel || 'No Objectives'}
                               </p>
                               <div className="mt-3">
@@ -713,7 +762,6 @@ export default function AdminPerformancePage(): ReactNode {
                         </div>
 
                         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{entry.department_name || 'No department'}</span>
                           <span>
                             {summaryMode === 'progress'
                               ? perf
@@ -725,32 +773,6 @@ export default function AdminPerformancePage(): ReactNode {
                                   ? `${perf.evaluationOutstandingCount} remaining`
                                   : 'No objectives'}
                           </span>
-                        </div>
-
-                        <div className="mt-2">
-                          {summaryMode === 'progress' ? (
-                            <Badge
-                              variant={
-                                entry.status === 'active'
-                                  ? 'success'
-                                  : entry.status === 'probation'
-                                    ? 'warning'
-                                    : 'secondary'
-                              }
-                              className="text-xs capitalize"
-                            >
-                              {entry.status?.replace('_', ' ') || '—'}
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant={getEvaluationBadgeVariant(
-                                perf?.evaluationState || 'no_objectives'
-                              )}
-                              className="text-xs"
-                            >
-                              {getEvaluationBadgeLabel(perf?.evaluationState || 'no_objectives')}
-                            </Badge>
-                          )}
                         </div>
                       </button>
                     );
@@ -861,9 +883,16 @@ export default function AdminPerformancePage(): ReactNode {
                                   <span className="text-xs text-muted-foreground">—</span>
                                 )
                               ) : (
-                                <span className="text-right text-sm font-medium text-foreground">
-                                  {perf?.evaluationLabel || 'No Objectives'}
-                                </span>
+                                <div className="text-right">
+                                  {perf?.evaluationScoreLabel && (
+                                    <p className="text-lg font-bold leading-none tabular-nums text-foreground">
+                                      {perf.evaluationScoreLabel}
+                                    </p>
+                                  )}
+                                  <p className="mt-1 text-xs font-medium text-muted-foreground">
+                                    {perf?.evaluationLabel || 'No Objectives'}
+                                  </p>
+                                </div>
                               )}
                             </div>
 
@@ -898,9 +927,16 @@ export default function AdminPerformancePage(): ReactNode {
                                     {perf.weightedMean}%
                                   </span>
                                 ) : (
-                                  <span className="ml-auto text-xs font-medium text-foreground">
-                                    {perf.evaluationLabel}
-                                  </span>
+                                  <div className="ml-auto text-right">
+                                    {perf.evaluationScoreLabel && (
+                                      <p className="text-sm font-bold leading-none tabular-nums text-foreground">
+                                        {perf.evaluationScoreLabel}
+                                      </p>
+                                    )}
+                                    <p className="mt-1 text-[11px] font-medium text-muted-foreground">
+                                      {perf.evaluationLabel}
+                                    </p>
+                                  </div>
                                 ))}
                             </div>
                           </div>

@@ -2,12 +2,14 @@
 
 import { useOnboardingProgressSummary } from '@/hooks/useOnboardingProgressSummary';
 import { useTasks } from '@/hooks/useTasks';
+import { useEvaluationCadence } from '@/hooks/useEvaluationCadence';
 import { useAuth } from '@/contexts/AuthContext';
 import type { DashboardAttentionItem } from '@hr-portal/ui';
-import { ClipboardCheck, ClipboardList } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, Target } from 'lucide-react';
 
 export function useEmployeeDashboardAttentionItems() {
   const { user } = useAuth();
+  const isEvaluationAudience = user?.role === 'employee' || user?.role === 'intern';
 
   const {
     profile: onboardingProfile,
@@ -23,6 +25,10 @@ export function useEmployeeDashboardAttentionItems() {
       pageSize: 100,
     },
     { enabled: Boolean(user?.id) }
+  );
+
+  const { data: evaluationCadence, isLoading: isEvaluationLoading } = useEvaluationCadence(
+    isEvaluationAudience
   );
 
   const items: DashboardAttentionItem[] = [];
@@ -62,9 +68,24 @@ export function useEmployeeDashboardAttentionItems() {
     });
   }
 
+  const evaluationPrompts = evaluationCadence?.prompts ?? [];
+  for (const prompt of evaluationPrompts) {
+    items.push({
+      id: prompt.id,
+      title: prompt.title,
+      description: prompt.description,
+      count: prompt.count,
+      href: prompt.href,
+      icon: prompt.kind === 'quarterly' ? Target : ClipboardCheck,
+      severity: prompt.severity,
+      ...(prompt.meta ? { meta: prompt.meta } : {}),
+      actionLabel: prompt.actionLabel,
+    });
+  }
+
   return {
     items,
     totalCount: items.length,
-    isLoading: isOnboardingLoading || isTasksLoading,
+    isLoading: isOnboardingLoading || isTasksLoading || isEvaluationLoading,
   };
 }

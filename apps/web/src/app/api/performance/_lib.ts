@@ -59,7 +59,16 @@ export type PerformanceIdentitySnapshot = {
   departmentRole: string;
 };
 
-function formatRoleLabel(role: string | null): string {
+export type PerformanceAudienceMember = {
+  userId: string;
+  employeeId: string | null;
+  fullName: string;
+  departmentRole: string;
+  avatarUrl: string | null;
+  role: string | null;
+};
+
+export function formatRoleLabel(role: string | null): string {
   if (!role) {
     return 'Unassigned';
   }
@@ -90,6 +99,52 @@ function resolveMetadataFullName(user: PerformanceIdentityUser): string {
   }
 
   return 'Unknown user';
+}
+
+function resolveDirectoryDepartmentRole(directoryEntry: {
+  department_name?: string | null;
+  position?: string | null;
+  role?: string | null;
+}): string {
+  if (typeof directoryEntry.department_name === 'string' && directoryEntry.department_name.trim()) {
+    return directoryEntry.department_name.trim();
+  }
+
+  if (typeof directoryEntry.position === 'string' && directoryEntry.position.trim()) {
+    return directoryEntry.position.trim();
+  }
+
+  return formatRoleLabel(directoryEntry.role ?? null);
+}
+
+export async function listPerformanceAudience(
+  supabaseAdmin: any
+): Promise<PerformanceAudienceMember[]> {
+  const { data, error } = await supabaseAdmin
+    .from('employee_directory')
+    .select('user_id, employee_id, full_name, department_name, position, avatar_url, role')
+    .in('role', ['employee', 'intern'])
+    .not('user_id', 'is', null)
+    .order('full_name', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch performance audience: ${error.message}`);
+  }
+
+  return (data ?? []).map((entry: any) => ({
+    userId: entry.user_id as string,
+    employeeId: (entry.employee_id as string | null) ?? null,
+    fullName:
+      typeof entry.full_name === 'string' && entry.full_name.trim()
+        ? entry.full_name.trim()
+        : 'Unknown user',
+    departmentRole: resolveDirectoryDepartmentRole(entry),
+    avatarUrl:
+      typeof entry.avatar_url === 'string' && entry.avatar_url.trim()
+        ? entry.avatar_url.trim()
+        : null,
+    role: typeof entry.role === 'string' ? entry.role : null,
+  }));
 }
 
 export async function resolvePerformanceIdentitySnapshot(

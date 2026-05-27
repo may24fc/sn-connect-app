@@ -82,6 +82,7 @@ export interface OKR {
   adminComments?: string;
   evaluatedBy?: string;
   evaluatedAt?: string;
+  evaluatorFirstName?: string | null;
   evaluatorRole?: string | null;
   targets: Array<OKRTarget>;
   /** @deprecated Use targets instead */

@@ -6,6 +6,7 @@ const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
 interface EvaluatorIdentity {
   firstName: string | null;
   position: string | null;
+  role: string | null;
 }
 
 export async function GET(
@@ -146,6 +147,19 @@ export async function GET(
     );
 
     const evaluatorDirectory = new Map<string, EvaluatorIdentity>();
+    const evaluatorRoleDirectory = new Map<string, string | null>();
+
+    if (evaluatorIds.length > 0) {
+      const { data: evaluatorUsers } = await db
+        .from('users')
+        .select('id, role')
+        .in('id', evaluatorIds)
+        .is('deleted_at', null);
+
+      for (const evaluator of evaluatorUsers || []) {
+        evaluatorRoleDirectory.set(evaluator.id, evaluator.role ?? null);
+      }
+    }
 
     if (evaluatorIds.length > 0) {
       const { data: evaluatorEmployees } = await db
@@ -158,6 +172,7 @@ export async function GET(
         evaluatorDirectory.set(evaluator.user_id, {
           firstName: evaluator.first_name ?? null,
           position: evaluator.position ?? null,
+          role: evaluatorRoleDirectory.get(evaluator.user_id) ?? null,
         });
       }
     }
@@ -183,6 +198,7 @@ export async function GET(
         ...okr,
         evaluator_first_name: evaluator?.firstName ?? null,
         evaluator_position: evaluator?.position ?? null,
+        evaluator_role: evaluator?.role ?? null,
       };
     });
 

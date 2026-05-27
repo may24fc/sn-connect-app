@@ -332,6 +332,7 @@ export const queryKeys = {
     review: (id: string) => [...queryKeys.performance.reviews(), id] as const,
     cycles: () => [...queryKeys.performance.all, 'cycles'] as const,
     cycle: (id: string) => [...queryKeys.performance.cycles(), id] as const,
+    evaluationCadence: () => [...queryKeys.performance.all, 'evaluation-cadence'] as const,
     kpis: () => [...queryKeys.performance.all, 'kpis'] as const,
     kpiEvidence: (kpiId: string) => [...queryKeys.performance.all, 'kpi-evidence', kpiId] as const,
     okrs: () => [...queryKeys.performance.all, 'okrs'] as const,

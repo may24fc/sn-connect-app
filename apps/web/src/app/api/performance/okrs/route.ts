@@ -20,6 +20,11 @@ interface EvaluatorRoleRow {
   role: string | null;
 }
 
+interface EvaluatorEmployeeRow {
+  user_id: string;
+  first_name: string | null;
+}
+
 function calculateTargetProgress(target: OkrTargetProgressRow): number {
   const current = Number(target.current_value ?? 0);
   const targetValue = Number(target.target_value ?? 0);
@@ -245,6 +250,7 @@ export async function GET(request: NextRequest) {
     }
 
     const evaluatorRolesById = new Map<string, string | null>();
+    const evaluatorFirstNamesById = new Map<string, string | null>();
     if (evaluatorIds.length > 0) {
       const { data: evaluatorRoles, error: evaluatorRolesError } = await supabaseAdmin
         .from('users')
@@ -259,6 +265,27 @@ export async function GET(request: NextRequest) {
       for (const evaluator of (evaluatorRoles || []) as EvaluatorRoleRow[]) {
         evaluatorRolesById.set(evaluator.id, evaluator.role ?? null);
       }
+
+      const { data: evaluatorEmployees, error: evaluatorEmployeesError } = await supabaseAdmin
+        .from('employees')
+        .select('user_id, first_name')
+        .in('user_id', evaluatorIds)
+        .is('deleted_at', null);
+
+      if (evaluatorEmployeesError) {
+        console.error(
+          'GET /api/performance/okrs evaluator identity error:',
+          evaluatorEmployeesError
+        );
+        return NextResponse.json(
+          { error: 'Failed to fetch evaluator identities' },
+          { status: 500 }
+        );
+      }
+
+      for (const evaluator of (evaluatorEmployees || []) as EvaluatorEmployeeRow[]) {
+        evaluatorFirstNamesById.set(evaluator.user_id, evaluator.first_name ?? null);
+      }
     }
 
     const targetsByOkrId = new Map<string, OkrTargetProgressRow[]>();
@@ -271,6 +298,9 @@ export async function GET(request: NextRequest) {
     const enrichedOkrs = okrs.map((okr) => ({
       ...okr,
       progress: calculateOkrProgress(targetsByOkrId.get(okr.id) || []),
+      evaluator_first_name: okr.evaluated_by
+        ? (evaluatorFirstNamesById.get(okr.evaluated_by) ?? null)
+        : null,
       evaluator_role: okr.evaluated_by ? (evaluatorRolesById.get(okr.evaluated_by) ?? null) : null,
     }));
 

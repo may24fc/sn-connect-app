@@ -52,6 +52,7 @@ interface OkrRow {
   admin_comments: string | null;
   evaluated_by: string | null;
   evaluated_at: string | null;
+  evaluator_first_name: string | null;
   evaluator_role: string | null;
   created_at: string;
   updated_at: string;
@@ -165,6 +166,9 @@ function toUiOKR(row: OkrRow): OKR {
     ...(row.admin_comments ? { adminComments: row.admin_comments } : {}),
     ...(row.evaluated_by ? { evaluatedBy: row.evaluated_by } : {}),
     ...(row.evaluated_at ? { evaluatedAt: row.evaluated_at } : {}),
+    ...(row.evaluator_first_name !== undefined
+      ? { evaluatorFirstName: row.evaluator_first_name }
+      : {}),
     ...(row.evaluator_role !== undefined ? { evaluatorRole: row.evaluator_role } : {}),
     targets: [], // Populated separately via useOKRTargets
     keyResults: mappedKeyResults,

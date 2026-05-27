@@ -10,8 +10,10 @@ import {
   StatCardGrid,
 } from '@/components/data-display';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
+import { EvaluationCadenceBanner } from '@/components/performance/EvaluationCadenceBanner';
 import { useCreateInternDailyLog, useInternship, useInternships } from '@/hooks/useInternships';
 import { useEmployeeDashboardAttentionItems } from '@/hooks/useEmployeeDashboardAttentionItems';
+import { useEvaluationCadence } from '@/hooks/useEvaluationCadence';
 import {
   Badge,
   Button,
@@ -58,6 +60,7 @@ export default function InternDashboardPage(): ReactNode {
   const detailQuery = useInternship(activeInternshipId, !!activeInternshipId);
   const createLogMutation = useCreateInternDailyLog();
   const { addToast, updateToast } = useToast();
+  const { data: evaluationCadence } = useEvaluationCadence();
 
   // Attention items — onboarding reminders, pending tasks
   const { items: attentionItems, isLoading: isAttentionLoading } =
@@ -167,6 +170,8 @@ export default function InternDashboardPage(): ReactNode {
           </Button>
         )}
       </div>
+
+      <EvaluationCadenceBanner banner={evaluationCadence?.banner ?? null} />
 
       {/* Needs Action Carousel */}
       <DashboardAttentionCarousel

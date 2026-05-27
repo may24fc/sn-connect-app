@@ -7,6 +7,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import {
   canManagePerformance,
   getAuthedPerformanceContext,
+  listPerformanceAudience,
   resolvePerformanceIdentitySnapshot,
   resolveEmployeeIdForUser,
 } from '../_lib';
@@ -80,23 +81,65 @@ export async function GET(request: NextRequest) {
       if (parsedFilters.data.quarterKey) {
         query = query.eq('quarter_key', parsedFilters.data.quarterKey);
       }
-      if (parsedFilters.data.departmentRole) {
-        query = query.eq('department_role', parsedFilters.data.departmentRole);
-      }
       if (parsedFilters.data.employeeId) {
         query = query.eq('employee_id', parsedFilters.data.employeeId);
       }
-      if (parsedFilters.data.search) {
-        query = query.ilike('full_name', `%${parsedFilters.data.search}%`);
-      }
 
-      const { data, error: queryError } = await query;
+      const [{ data, error: queryError }, audience] = await Promise.all([
+        query,
+        listPerformanceAudience(supabaseAdmin),
+      ]);
       if (queryError) {
         console.error('GET /api/performance/quarterly-temperature-checks admin error:', queryError);
         return NextResponse.json({ error: 'Failed to fetch temperature checks' }, { status: 500 });
       }
 
-      return NextResponse.json({ data: data || [] });
+      const submissionByUserId = new Map(
+        (data || []).map((record) => [record.user_id as string, record])
+      );
+      const normalizedSearch = parsedFilters.data.search?.trim().toLowerCase() ?? '';
+
+      const merged = audience
+        .filter((member) => {
+          if (
+            parsedFilters.data.departmentRole &&
+            member.departmentRole !== parsedFilters.data.departmentRole
+          ) {
+            return false;
+          }
+
+          if (
+            parsedFilters.data.employeeId &&
+            member.employeeId !== parsedFilters.data.employeeId
+          ) {
+            return false;
+          }
+
+          if (normalizedSearch && !member.fullName.toLowerCase().includes(normalizedSearch)) {
+            return false;
+          }
+
+          return true;
+        })
+        .map((member) => {
+          const submission = submissionByUserId.get(member.userId) ?? null;
+
+          return {
+            id: member.userId,
+            user_id: member.userId,
+            employee_id: member.employeeId,
+            full_name: member.fullName,
+            department_role: member.departmentRole,
+            avatar_url: member.avatarUrl,
+            submission_status: submission ? 'submitted' : 'pending',
+            submitted_at: submission?.submitted_at ?? null,
+            energy_workload_score: submission?.energy_workload_score ?? null,
+            overall_experience_score: submission?.overall_experience_score ?? null,
+            submission,
+          };
+        });
+
+      return NextResponse.json({ data: merged });
     }
 
     const profile = await resolvePerformanceIdentitySnapshot(supabaseAdmin, user, role);

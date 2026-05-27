@@ -4,11 +4,15 @@ import { cn } from '@/lib/utils';
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
 import {
   monthlySelfEvaluationDetailSections,
+  type MonthlySelfEvaluationAdminListEntry,
   type MonthlySelfEvaluationDetailSection,
   type MonthlySelfEvaluationDetailField,
   type MonthlySelfEvaluationRecord,
 } from './monthlySelfEvaluationDetailConfig';
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
   Badge,
   Card,
   CardContent,
@@ -38,7 +42,7 @@ import {
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 
 type AdminListResponse = {
-  data?: MonthlySelfEvaluationRecord[];
+  data?: MonthlySelfEvaluationAdminListEntry[];
   error?: string;
 };
 
@@ -92,6 +96,16 @@ function getSectionsForTab(tab: DetailTabValue): MonthlySelfEvaluationDetailSect
 
 function formatSectionTitle(title: string): string {
   return title.replace(/^SECTION\s+\d+:\s*/i, '');
+}
+
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .map((segment) => segment[0] ?? '')
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
 }
 
 function isLowSignalAnswer(value: string): boolean {
@@ -242,7 +256,7 @@ export function MonthlySelfEvaluationAdminReview() {
   const [monthKey, setMonthKey] = useState(getCurrentMonthKey());
   const [departmentRole, setDepartmentRole] = useState('all');
   const [search, setSearch] = useState('');
-  const [records, setRecords] = useState<MonthlySelfEvaluationRecord[]>([]);
+  const [records, setRecords] = useState<MonthlySelfEvaluationAdminListEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<DetailTabValue>('work-summary');
   const [loading, setLoading] = useState(true);
@@ -322,18 +336,23 @@ export function MonthlySelfEvaluationAdminReview() {
     };
   }, [addToast, deferredSearch, departmentRole, monthKey]);
 
-  const selectedRecord = useMemo(
+  const selectedEntry = useMemo(
     () => records.find((record) => record.id === selectedId) ?? null,
     [records, selectedId]
   );
+  const selectedRecord = selectedEntry?.submission ?? null;
+  const submittedCount = useMemo(
+    () => records.filter((record) => record.submission_status === 'submitted').length,
+    [records]
+  );
 
   useEffect(() => {
-    if (!selectedRecord) {
+    if (!selectedEntry) {
       return;
     }
 
     detailScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
-  }, [activeTab, selectedRecord]);
+  }, [activeTab, selectedEntry]);
 
   if (loading) {
     return (
@@ -401,7 +420,7 @@ export function MonthlySelfEvaluationAdminReview() {
               <div>
                 <CardTitle>Responses</CardTitle>
                 <CardDescription>
-                  {records.length} submission{records.length === 1 ? '' : 's'} for {formatMonthKey(monthKey)}
+                  {records.length} teammate{records.length === 1 ? '' : 's'} listed • {submittedCount} submitted for {formatMonthKey(monthKey)}
                 </CardDescription>
               </div>
               {isRefreshing ? (
@@ -423,6 +442,7 @@ export function MonthlySelfEvaluationAdminReview() {
                     <TableRow>
                       <TableHead>Person</TableHead>
                       <TableHead>Department / Role</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Score</TableHead>
                       <TableHead>Submitted</TableHead>
                     </TableRow>
@@ -437,15 +457,32 @@ export function MonthlySelfEvaluationAdminReview() {
                         )}
                         onClick={() => setSelectedId(record.id)}
                       >
-                        <TableCell className="font-medium">{record.full_name}</TableCell>
-                        <TableCell>{record.department_role}</TableCell>
-                        <TableCell>{record.productivity_score} / 10</TableCell>
                         <TableCell>
-                          {new Date(record.submitted_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={record.avatar_url || undefined} alt={record.full_name} />
+                              <AvatarFallback className="text-xs">{initials(record.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{record.full_name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{record.department_role}</TableCell>
+                        <TableCell>
+                          <Badge variant={record.submission_status === 'submitted' ? 'success' : 'secondary'}>
+                            {record.submission_status === 'submitted' ? 'Submitted' : 'Pending'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {record.productivity_score !== null ? `${record.productivity_score} / 10` : '—'}
+                        </TableCell>
+                        <TableCell>
+                          {record.submitted_at
+                            ? new Date(record.submitted_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })
+                            : '—'}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -465,11 +502,11 @@ export function MonthlySelfEvaluationAdminReview() {
           <CardHeader className="border-b border-border/80 bg-card/80 pb-4 backdrop-blur-sm">
             <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <div className='flex flex-col gap-2'>
-                <CardTitle>{selectedRecord?.full_name || 'Select a response'}</CardTitle>
+                <CardTitle>{selectedEntry?.full_name || 'Select a teammate'}</CardTitle>
                 <CardDescription>
-                  {selectedRecord
-                    ? `${selectedRecord.department_role}`
-                    : 'Choose a submission from the list to review responses in form order.'}
+                  {selectedEntry
+                    ? `${selectedEntry.department_role}`
+                    : 'Choose a person from the list to review their monthly self-evaluation status.'}
                 </CardDescription>
               </div>
               {selectedRecord ? renderProductivityMetric(selectedRecord.productivity_score) : null}
@@ -492,7 +529,9 @@ export function MonthlySelfEvaluationAdminReview() {
             <div ref={detailScrollRef} className="max-h-[72vh] overflow-y-auto px-6 py-5">
             {!selectedRecord ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                No response selected.
+                {selectedEntry
+                  ? `${selectedEntry.full_name} has not submitted a monthly self-evaluation for ${formatMonthKey(monthKey)} yet.`
+                  : 'No teammate selected.'}
               </div>
             ) : (
               detailViewTabs.map((tab) => (

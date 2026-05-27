@@ -3,10 +3,19 @@ import { QuarterlyTemperatureCheckForm } from '@/components/performance/Quarterl
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
 
-export default function MonthlySelfEvaluationPage(): ReactNode {
+type SelfEvaluationPageProps = {
+  searchParams?: Promise<{ tab?: string }>;
+};
+
+export default async function MonthlySelfEvaluationPage({
+  searchParams,
+}: SelfEvaluationPageProps): Promise<ReactNode> {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const defaultTab = resolvedSearchParams?.tab === 'quarterly' ? 'quarterly' : 'monthly';
+
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="monthly" className="space-y-6">
+      <Tabs defaultValue={defaultTab} className="space-y-6">
         <div className="mx-auto max-w-3xl space-y-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Self-Evaluation</h1>

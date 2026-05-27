@@ -128,12 +128,12 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
-  { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   {
     label: 'Self-Evaluations',
     href: '/admin/performance/monthly-self-evaluations',
     icon: FileText,
   },
+  { label: 'Task Management', href: '/super-admin/tasks', icon: CheckSquare },
   { label: 'Payroll Approvals', href: '/super-admin/payroll-approvals', icon: FileCheck },
   { label: 'AI Knowledge', href: '/super-admin/ai-knowledge', icon: Sparkles },
   { label: 'Calendar', href: '/super-admin/calendar', icon: Calendar },

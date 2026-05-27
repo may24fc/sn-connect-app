@@ -1,5 +1,6 @@
 export type MonthlySelfEvaluationRecord = {
   id: string;
+  user_id?: string;
   month_key: string;
   full_name: string;
   department_role: string;
@@ -26,6 +27,19 @@ export type MonthlySelfEvaluationRecord = {
   additional_comments: string | null;
   next_month_goal: string;
   submitted_at: string;
+};
+
+export type MonthlySelfEvaluationAdminListEntry = {
+  id: string;
+  user_id: string;
+  employee_id: string | null;
+  full_name: string;
+  department_role: string;
+  avatar_url: string | null;
+  submission_status: 'pending' | 'submitted';
+  submitted_at: string | null;
+  productivity_score: number | null;
+  submission: MonthlySelfEvaluationRecord | null;
 };
 
 export type MonthlySelfEvaluationDetailField = {

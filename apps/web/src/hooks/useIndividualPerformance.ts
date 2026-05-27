@@ -56,6 +56,7 @@ export interface IndividualPerformanceData {
     evaluated_at: string | null;
     evaluator_first_name: string | null;
     evaluator_position: string | null;
+    evaluator_role: string | null;
     admin_comments: string | null;
     admin_rating: string | null;
     created_at: string;

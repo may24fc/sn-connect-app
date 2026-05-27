@@ -12,7 +12,9 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useAnnouncementFeed } from '@/hooks/useAnnouncementFeed';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
+import { EvaluationCadenceBanner } from '@/components/performance/EvaluationCadenceBanner';
 import { useEmployeeDashboardAttentionItems } from '@/hooks/useEmployeeDashboardAttentionItems';
+import { useEvaluationCadence } from '@/hooks/useEvaluationCadence';
 import { useMilestones } from '@/hooks/useMilestones';
 import { useMyProbation } from '@/hooks/useMyProbation';
 import { useOnboardingProgressSummary } from '@/hooks/useOnboardingProgressSummary';
@@ -201,6 +203,7 @@ export default function DashboardPage(): ReactNode {
   // Attention items — nudge for incomplete onboarding, pending tasks, etc.
   const { items: attentionItems, isLoading: isAttentionLoading } =
     useEmployeeDashboardAttentionItems();
+  const { data: evaluationCadence } = useEvaluationCadence(user?.role === 'employee');
 
   // Stat card columns adjust when onboarding is hidden
   const statColumns = isOnboardingCompleted ? 2 : 3;
@@ -218,6 +221,8 @@ export default function DashboardPage(): ReactNode {
           </p>
         </div>
       </div>
+
+      <EvaluationCadenceBanner banner={evaluationCadence?.banner ?? null} />
 
       {/* Milestone Banner — upcoming birthdays & anniversaries */}
       <MilestoneBanner milestones={milestones} isLoading={milestonesLoading} />
