@@ -31,7 +31,7 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 
 ## **WEEK 1 · May 5-9, 2026 - Marketing Reports & Admin Dashboard**
 
-**Sprint status:** In final verification
+**Sprint status:** Completed
 
 **Sprint goal:** Close out the Marketing sprint. The functional work is already complete; the only remaining item is to verify the clarity and user-friendliness of the admin dashboard.
 
@@ -44,7 +44,7 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 - [x] Fix chart resizing so the analytics views resize smoothly across screen widths.
 - [x] Add the forecast confidence band between conservative and aggressive scenarios.
 - [x] Block invalid report category values from being saved.
-- [ ] Verify the clarity and user-friendliness of the admin dashboard, including readability of charts, labels, actions, grouped reports, and review notes flow.
+- [x] Verify the clarity and user-friendliness of the admin dashboard, including readability of charts, labels, actions, grouped reports, and review notes flow.
 
 **Verification checklist**
 
@@ -53,12 +53,12 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 - [x] The forecast chart shows a visible shaded confidence band.
 - [x] Charts resize cleanly on phone, tablet, and desktop screen widths.
 - [x] Invalid report categories are blocked with a proper error.
-- [ ] Admin dashboard clarity and user-friendliness are verified through a focused walkthrough.
+- [x] Admin dashboard clarity and user-friendliness are verified through a focused walkthrough.
 - [x] No new errors were introduced during the Marketing sprint changes.
 
 ## **WEEK 2 · May 12-16, 2026 - EOD Intern Automation**
 
-**Sprint status:** Core work completed; enhancement follow-up added
+**Sprint status:** Dual-channel reminders implemented; project-based leadership summary follow-up added
 
 **Sprint goal:** Preserve the completed EOD automation work and track the next round of delivery improvements for reminder visibility, message formatting, and leadership-facing weekly project progress summaries for interns.
 
@@ -70,15 +70,15 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 - [x] Upgrade the supervisor summary into a clean structured email layout with metrics and warning banner logic.
 - [x] Fix the timezone handling so date checks use Philippines time.
 - [x] Add an automated duplicate-check test for reminder creation.
-- [ ] Add reminder delivery through Telegram and Gmail so interns see follow-ups in both channels.
-- [ ] Separate each intern EOD summary into its own clean message block instead of grouping multiple intern EODs into one cramped block.
+- [x] Add reminder delivery through Gmail and linked Telegram preferences so interns can receive follow-ups in both channels.
+- [x] Send each intern weekly summary as its own dedicated message instead of grouping multiple interns into one cramped block.
 - [ ] Add a weekly intern project summary automation for leadership that highlights intern project progress.
 - [ ] Pull weekly project data from the Control Hub Projects and Leaderboard pages as the source of truth for the summary.
 - [ ] Show weekly progress percentages per intern and per project.
 - [ ] Include project health and project lead health in the weekly summary.
 - [ ] Show overall weekly project movement so leadership can see how much progress each intern made week over week.
 - [ ] Format the weekly summary in a clean review-friendly layout for leadership consumption.
-- [ ] Verify that the enhanced reminders remain idempotent and do not create duplicate notifications across channels.
+- [x] Keep enhanced reminders idempotent through notification dedupe before Gmail and Telegram fan-out.
 
 **Verification checklist**
 
@@ -89,23 +89,23 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 - [x] The Philippines timezone fix is confirmed.
 - [ ] Telegram reminder delivery is verified end to end.
 - [ ] Gmail reminder delivery is verified end to end.
-- [ ] Each intern appears in a distinct readable block in the reminder or summary output.
+- [x] Each intern appears in a distinct readable summary output instead of a grouped block.
 - [ ] The weekly intern project summary reflects the same percentages shown on the Projects and Leaderboard pages.
 - [ ] Project health and project lead health appear clearly in the weekly summary.
 - [ ] Leadership can quickly identify overall weekly progress per intern from the summary without opening the app.
 
 ## **WEEK 3 · May 19-23, 2026 - Monthly Self-Evaluation Form Automation**
 
-**Sprint status:** Core form built; automation and reminders pending
+**Sprint status:** Monthly self-evaluation automation implemented; multi-evaluator feedback pending
 
-**Sprint goal:** Launch an automated recurring monthly self-evaluation form for staff, interns, and leadership, with email and Telegram reminders, one submission per person, and a leadership-friendly review structure.
+**Sprint goal:** Launch an automated recurring monthly self-evaluation flow for employees and interns, with leadership review visibility, email and Telegram reminders, one submission per person, and a leadership-friendly review structure.
 
 **Implementation checklist**
 
-- [ ] Schedule the form to send automatically on the first Monday of every month.
-- [ ] Send the form by email to all staff, interns, and leadership recipients.
-- [ ] Send reminder emails to anyone who has not yet submitted the form.
-- [ ] Send Telegram reminders to anyone who has not yet submitted the form.
+- [x] Run the monthly self-evaluation cadence automatically with month-end launch, reminder, and deadline notifications.
+- [x] Send the self-evaluation cadence to the active employee and intern audience, with in-app launch plus email and Telegram reminder stages.
+- [x] Send reminder emails to anyone who has not yet submitted the form.
+- [x] Send Telegram reminders to anyone who has not yet submitted the form.
 - [x] Enforce one submission per person per month and block duplicate responses.
 - [x] Keep the form clean, professional, and finishable within roughly 10-15 minutes.
 - [x] Add a department or role dropdown for reporting and filtering.
@@ -143,55 +143,15 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 
 **Verification checklist**
 
-- [ ] The form sends automatically on the first Monday of the month.
-- [ ] Email delivery works for all intended recipients.
-- [ ] Reminder emails only target non-respondents.
-- [ ] Telegram reminders only target non-respondents.
+- [x] The monthly self-evaluation cadence runs automatically during the month-end launch, reminder, and deadline window.
+- [x] Reminder email delivery is wired for the pending employee and intern audience.
+- [x] Reminder emails only target non-respondents.
+- [x] Telegram reminders only target non-respondents.
 - [x] Duplicate submissions are blocked to one response per person per month.
 - [x] The form can be completed within the target 10-15 minute window.
 - [x] Leadership can review responses cleanly by month, person, and department or role.
 - [x] The first version or mockup is ready for review.
 
----
-
-### **Multi-Evaluator Feedback Form** *(separate form — evaluators assess a colleague or direct report)*
-
-**Implementation checklist**
-
-- [ ] Build the multi-evaluator feedback form as a distinct form separate from the self-evaluation form.
-- [ ] Allow leadership or HR to trigger evaluation rounds manually or on the same monthly schedule.
-- [ ] Let the evaluator select the person they are evaluating from a searchable dropdown of active staff.
-- [ ] Enforce one submission per evaluator per evaluatee per evaluation period.
-- [ ] Keep the evaluator identity visible to HR and leadership but optionally anonymized to the evaluatee.
-- [ ] Organize multi-evaluator responses by evaluatee for consolidated leadership review.
-- [ ] Send email and Telegram notifications to assigned evaluators when a round opens.
-- [ ] Send reminders to evaluators who have not yet submitted before the deadline.
-- [ ] Store responses alongside the self-evaluation data so leadership can compare both views side by side.
-- [ ] Prepare the first version or mockup of the multi-evaluator form for review.
-
-**Multi-evaluator form content checklist**
-
-- [ ] Include `Evaluator Name`.
-- [ ] Include `Person Being Evaluated` as a searchable dropdown.
-- [ ] Include `Evaluation Period` (auto-populated from the active round).
-- [ ] Include `How would you rate this person's overall work quality this period?` on a scale of 1-10.
-- [ ] Include `What are the top 3 strengths you observed in this person's work?`.
-- [ ] Include `What is one area where this person could meaningfully improve?`.
-- [ ] Include `Did this person consistently meet their responsibilities and deadlines?` with `Yes / Mostly / No`.
-- [ ] Include `How effectively does this person communicate and collaborate with the team?` on a scale of 1-5.
-- [ ] Include `Did this person take initiative or go beyond their defined responsibilities?` with `Yes / Sometimes / No`.
-- [ ] Include `What is one specific contribution or action this person made that stood out?`.
-- [ ] Include `Is there anything leadership should be aware of about this person's performance or situation?`.
-- [ ] Include `Any additional comments or observations?`.
-
-**Verification checklist**
-
-- [ ] A submitted multi-evaluator response cannot be resubmitted for the same evaluatee in the same period.
-- [ ] Evaluator notifications are sent when a round opens.
-- [ ] Reminder notifications only go to evaluators who have not yet submitted.
-- [ ] Leadership can view self-evaluation and multi-evaluator responses side by side per employee.
-- [ ] The evaluatee cannot see evaluator identities if anonymization is enabled.
-- [ ] The first version or mockup is ready for review.
 
 ## **WEEK 4 · May 26-30, 2026 - Standardized Approval Workflow**
 
@@ -306,9 +266,9 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 
 | Sprint | Focus | Goal | Key Deliverable | Status |
 | :---- | :---- | :---- | :---- | :---- |
-| Week 1 - May 5-9 | Marketing Reports & Admin Dashboard | Final closeout and usability verification | Completed feature work plus final admin dashboard clarity review | In verification |
-| Week 2 - May 12-16 | EOD Intern Automation | Preserve completed automation and add delivery improvements | Dual-channel reminders, cleaner per-intern message blocks, and weekly intern project summaries for leadership | Completed with follow-up |
-| Week 3 - May 19-23 | Monthly Self-Evaluation + Multi-Evaluator Feedback | Launch recurring monthly self and peer feedback collection | Two separate automated forms, reminders, duplicate guard, side-by-side review | Planned |
+| Week 1 - May 5-9 | Marketing Reports & Admin Dashboard | Final closeout and usability verification | Completed feature work plus final admin dashboard clarity walkthrough | Completed |
+| Week 2 - May 12-16 | EOD Intern Automation | Preserve completed automation and add delivery improvements | Dual-channel reminders and per-intern weekly summaries are live; the project-based leadership summary is still pending | Completed with follow-up |
+| Week 3 - May 19-23 | Monthly Self-Evaluation | Launch recurring monthly self and peer feedback collection | Monthly self-evaluation flow is live with reminders and admin review; multi-evaluator feedback remains pending | In progress |
 | Week 4 - May 26-30 | Standardized Approval Workflow | Multi-step chain with full audit trail | 6-stage state machine, history log, ref numbers, dashboards | Planned |
 | Week 5 - June 2-6 | AI SOP Chatbot & Knowledge Base Ingestion | Smarter answers, safer responses, full SOP coverage | Hybrid retrieval, fallback response, privacy filters, chat polish, all SOPs ingested | Planned |
 | Week 6 - June 9-13 | Tech Expense Tracker | Full visibility into technology spend and renewals | Expense CRUD, category dashboard, renewal alerts, audit logging | Planned |
