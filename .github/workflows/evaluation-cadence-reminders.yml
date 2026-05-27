@@ -16,12 +16,25 @@ jobs:
     steps:
       - name: Invoke evaluation-cadence-reminders Edge Function
         env:
+          PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
+          TARGET_SUPABASE_URL="${PRODUCTION_SUPABASE_URL:-$SUPABASE_URL}"
+
+          if [ -z "$TARGET_SUPABASE_URL" ]; then
+            echo "::error::Missing GitHub Actions secret: PRODUCTION_SUPABASE_URL or SUPABASE_URL"
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::error::Missing GitHub Actions secret: SUPABASE_SERVICE_ROLE_KEY"
+            exit 1
+          fi
+
           RESPONSE=$(curl -s -w "\n%{http_code}" \
             -X POST \
-            "${SUPABASE_URL}/functions/v1/evaluation-cadence-reminders" \
+            "${TARGET_SUPABASE_URL}/functions/v1/evaluation-cadence-reminders" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}")
 
