@@ -11,13 +11,12 @@ const edgeFunctionEnv = z.object({
   SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
   RESEND_API_KEY: z.string().startsWith('re_', "RESEND_API_KEY must start with 're_'"),
+  APP_URL: z.string().url('APP_URL must be a valid URL').optional(),
   ADMIN_SECRET_KEY: z
     .string()
     .min(32, 'ADMIN_SECRET_KEY must be at least 32 characters')
     .optional(),
-  // Uncomment when Telegram workspace is ready:
-  // TELEGRAM_BOT_TOKEN: z.string().optional(),
-  // TELEGRAM_CHAT_ID: z.string().optional(),
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
 });
 
 export type EdgeFunctionEnv = z.infer<typeof edgeFunctionEnv>;
@@ -27,7 +26,9 @@ function loadEnv(): EdgeFunctionEnv {
     SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
     SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
     RESEND_API_KEY: Deno.env.get('RESEND_API_KEY'),
+    APP_URL: Deno.env.get('APP_URL'),
     ADMIN_SECRET_KEY: Deno.env.get('ADMIN_SECRET_KEY'),
+    TELEGRAM_BOT_TOKEN: Deno.env.get('TELEGRAM_BOT_TOKEN'),
   };
 
   const parsed = edgeFunctionEnv.safeParse(raw);

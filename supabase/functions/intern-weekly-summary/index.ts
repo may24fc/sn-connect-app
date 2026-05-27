@@ -198,6 +198,7 @@ serve(async (req: Request): Promise<Response> => {
           message: `${emp.first_name} logged ${hours.total.toFixed(1)} hours across ${hours.count} day(s) this week.`,
           link: `/admin/interns/${internship.employee_id}`,
           dedupeKey: `intern-weekly-summary-supervisor:${internship.employee_id}:${weekStartStr}:${weekEnd}`,
+          sendEmail: false,
           metadata: {
             internshipId: internship.id,
             weekStart: weekStartStr,

@@ -359,6 +359,7 @@ serve(async (req: Request): Promise<Response> => {
             ? '/dashboard'
             : `/admin/employee-management?employeeId=${emp.id}`,
           dedupeKey: `probation:${emp.id}:${milestone.type}:${daysRemaining}:${isEmployeeRecipient ? 'employee' : 'admin'}`,
+          sendEmail: false,
           metadata: {
             employeeId: emp.id,
             daysRemaining,
