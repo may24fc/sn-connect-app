@@ -34,6 +34,7 @@ export function ToggleGroup({
       {options.map((option) => (
         <Button
           key={option.value}
+          type="button"
           variant={value === option.value ? 'default' : 'ghost'}
           size="sm"
           className={cn('h-8', buttonClassName)}

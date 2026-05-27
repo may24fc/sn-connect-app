@@ -1,14 +1,9 @@
 'use client';
 
 import {
-  submitQuarterlyTemperatureCheckSchema,
   type SubmitQuarterlyTemperatureCheckInput,
+  submitQuarterlyTemperatureCheckSchema,
 } from '@/lib/schemas/performance.schema';
-import {
-  quarterlyTemperatureCheckDetailSections,
-  type QuarterlyTemperatureCheckDetailField,
-  type QuarterlyTemperatureCheckRecord,
-} from './quarterlyTemperatureCheckDetailConfig';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Badge,
@@ -24,8 +19,13 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import {
+  type QuarterlyTemperatureCheckDetailField,
+  type QuarterlyTemperatureCheckRecord,
+  quarterlyTemperatureCheckDetailSections,
+} from './quarterlyTemperatureCheckDetailConfig';
 
 type PerformanceIdentityProfile = {
   fullName: string;
@@ -58,11 +58,14 @@ function formatQuarterKey(quarterKey: string): string {
   return `Q${quarter} ${year}`;
 }
 
-function toFormValues(record: QuarterlyTemperatureCheckRecord): SubmitQuarterlyTemperatureCheckInput {
+function toFormValues(
+  record: QuarterlyTemperatureCheckRecord
+): SubmitQuarterlyTemperatureCheckInput {
   return {
     quarterKey: record.quarter_key,
     fullName: record.full_name,
-    departmentRole: record.department_role as SubmitQuarterlyTemperatureCheckInput['departmentRole'],
+    departmentRole:
+      record.department_role as SubmitQuarterlyTemperatureCheckInput['departmentRole'],
     energyWorkloadScore: record.energy_workload_score,
     energyWorkloadReason: record.energy_workload_reason,
     claritySupport: record.clarity_support,
@@ -93,11 +96,22 @@ function buildDefaultValues(
   };
 }
 
+function renderRequiredLabel(label: string, htmlFor?: string) {
+  return (
+    <Label htmlFor={htmlFor}>
+      {label}
+      <span className="ml-1 text-destructive">*</span>
+    </Label>
+  );
+}
+
 export function QuarterlyTemperatureCheckForm() {
   const { addToast } = useToast();
   const [quarterKey, setQuarterKey] = useState<string>(getCurrentQuarterKey());
   const [loading, setLoading] = useState(true);
-  const [submittedRecord, setSubmittedRecord] = useState<QuarterlyTemperatureCheckRecord | null>(null);
+  const [submittedRecord, setSubmittedRecord] = useState<QuarterlyTemperatureCheckRecord | null>(
+    null
+  );
   const [currentProfile, setCurrentProfile] = useState<PerformanceIdentityProfile>({
     fullName: '',
     departmentRole: '',
@@ -206,7 +220,7 @@ export function QuarterlyTemperatureCheckForm() {
 
     return (
       <div className="space-y-2">
-        <Label htmlFor={name}>{label}</Label>
+        {renderRequiredLabel(label, name)}
         {helperText ? <p className="text-xs text-muted-foreground">{helperText}</p> : null}
         <Textarea id={name} rows={4} {...register(name)} />
         {fieldError ? <p className="text-sm text-destructive">{fieldError.message}</p> : null}
@@ -258,7 +272,8 @@ export function QuarterlyTemperatureCheckForm() {
                     year: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
-                  })}.
+                  })}
+                  .
                 </CardDescription>
               </div>
               <Badge variant="success">Locked for this quarter</Badge>
@@ -298,16 +313,10 @@ export function QuarterlyTemperatureCheckForm() {
             <p className="mt-1 text-sm text-muted-foreground">{formatQuarterKey(quarterKey)}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Current name</p>
-            <p className="mt-1 text-sm text-muted-foreground">{currentProfile.fullName}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Assigned department</p>
-            <p className="mt-1 text-sm text-muted-foreground">{currentProfile.departmentRole}</p>
-          </div>
-          <div>
             <p className="text-sm font-medium text-foreground">Submission rule</p>
-            <p className="mt-1 text-sm text-muted-foreground">One response per person per quarter</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              One response per person per quarter
+            </p>
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Review audience</p>
@@ -321,14 +330,16 @@ export function QuarterlyTemperatureCheckForm() {
           <CardHeader>
             <CardTitle>SECTION 1: ENERGY, CLARITY &amp; SUPPORT</CardTitle>
             <CardDescription>
-              Capture how sustainable the quarter felt and whether expectations and support were clear enough.
+              Capture how sustainable the quarter felt and whether expectations and support were
+              clear enough.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="energyWorkloadScore">
-                1. On a scale of 1-10, how was your overall energy and workload balance this quarter?
-              </Label>
+              {renderRequiredLabel(
+                '1. On a scale of 1-10, how was your overall energy and workload balance this quarter?',
+                'energyWorkloadScore'
+              )}
               <Input
                 id="energyWorkloadScore"
                 type="number"
@@ -341,10 +352,7 @@ export function QuarterlyTemperatureCheckForm() {
               ) : null}
             </div>
 
-            {renderTextareaField(
-              'energyWorkloadReason',
-              'What influenced your rating?'
-            )}
+            {renderTextareaField('energyWorkloadReason', 'What influenced your rating?')}
             {renderTextareaField(
               'claritySupport',
               '2. Did you feel clear on your goals and supported by the team this quarter? What could be improved?'
@@ -356,7 +364,8 @@ export function QuarterlyTemperatureCheckForm() {
           <CardHeader>
             <CardTitle>SECTION 2: IMPROVEMENTS, GROWTH &amp; FEEDBACK</CardTitle>
             <CardDescription>
-              Focus on one operational change, one proud achievement, and any feedback that would improve the team experience.
+              Focus on one operational change, one proud achievement, and any feedback that would
+              improve the team experience.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -384,9 +393,10 @@ export function QuarterlyTemperatureCheckForm() {
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="overallExperienceScore">
-                6. How would you describe your overall experience this quarter?
-              </Label>
+              {renderRequiredLabel(
+                '6. How would you describe your overall experience this quarter?',
+                'overallExperienceScore'
+              )}
               <p className="text-xs text-muted-foreground">
                 Use a 1-5 scale where 1 = Very Poor and 5 = Excellent.
               </p>
@@ -411,7 +421,9 @@ export function QuarterlyTemperatureCheckForm() {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : `Submit ${formatQuarterKey(quarterKey)} temperature check`}
+            {isSubmitting
+              ? 'Submitting...'
+              : `Submit ${formatQuarterKey(quarterKey)} temperature check`}
           </Button>
         </div>
       </form>

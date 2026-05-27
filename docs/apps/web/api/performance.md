@@ -31,6 +31,8 @@ Performance management system covering review cycles, performance reviews, OKRs 
 | `GET` | `/api/performance/kpis` | Any (scoped) | List KPIs |
 | `POST` | `/api/performance/kpis` | Any | Create KPI |
 | `PATCH` | `/api/performance/kpis` | Any | Update KPI |
+| `GET` | `/api/performance/five-percent-reflections` | Any (scoped) | List 5% reflections or admin review feed |
+| `POST` | `/api/performance/five-percent-reflections` | Employee | Submit 5% reflection and trigger delivery webhook |
 | `GET` | `/api/performance/individual/[employeeId]` | Owner or admin | Full performance dashboard |
 
 ---
@@ -252,6 +254,86 @@ Update KPI fields. Supports admin evaluation fields.
   "adminComments": "85% of target achieved"
 }
 ```
+
+---
+
+## 5% Reflections
+
+### GET /api/performance/five-percent-reflections
+
+Returns either the current user submission history or the admin review list, depending on role and query filters.
+
+### POST /api/performance/five-percent-reflections
+
+Creates a new 5% reflection for the current month. On successful insert, the API also fires a non-blocking webhook to `N8N_FIVE_PERCENT_REFLECTION_WEBHOOK_URL` so n8n can generate and deliver a PDF copy.
+
+**Delivery contract:**
+
+- The API never blocks the response on n8n delivery success.
+- The webhook still fires when user delivery channels are disabled so the workflow can keep its hard-coded admin Telegram notification.
+- Gmail delivery should run only when `recipient.channels.gmail` is `true` and `recipient.email` is present.
+- Telegram delivery should run only when `recipient.channels.telegram` is `true` and `recipient.telegram.chat_id` is present.
+
+**Webhook payload:**
+
+```json
+{
+  "event": "five_percent_reflection.submitted",
+  "submitted_at": "2026-05-27T09:15:00.000Z",
+  "reflection": {
+    "id": "uuid",
+    "month_key": "2026-05",
+    "full_name": "Jane Dela Cruz",
+    "department_role": "People Operations",
+    "work": {
+      "feelings": "Focused and optimistic",
+      "headline": "Rebuilt onboarding checklist",
+      "significance": "It removed repeated follow-up work",
+      "rank": 4,
+      "action": "Protect time for rollout"
+    },
+    "family": {
+      "feelings": "Steady",
+      "headline": "More intentional evenings",
+      "significance": "Consistency helped everyone at home",
+      "rank": 4,
+      "action": "Keep weekends device-light"
+    },
+    "personal": {
+      "feelings": "Curious",
+      "headline": "Studied delegation patterns",
+      "significance": "It changed how I prioritize",
+      "rank": 5,
+      "action": "Apply one change next sprint"
+    },
+    "deep_dive_parking_lot": "How to sustain the new cadence during month-end",
+    "exploration_topics": "Delegation, energy management"
+  },
+  "recipient": {
+    "user_id": "uuid",
+    "employee_id": "uuid",
+    "display_name": "Jane Dela Cruz",
+    "first_name": "Jane",
+    "last_name": "Dela Cruz",
+    "email": "jane@example.com",
+    "channels": {
+      "gmail": true,
+      "telegram": true
+    },
+    "telegram": {
+      "chat_id": "6708968435",
+      "username": "janedela"
+    }
+  }
+}
+```
+
+**n8n implementation notes:**
+
+- Generate the PDF before channel branching so both Gmail and Telegram can reuse the same binary.
+- Telegram should use `sendDocument`; n8n MCP validation confirms the node requires a binary file.
+- Gmail should use `send`; n8n MCP validation confirms the node requires `To`, `Subject`, `Email Type`, and `Message`.
+- Keep the separate hard-coded admin Telegram node outside the user preference branches.
 
 ---
 

@@ -1,0 +1,253 @@
+{
+  "name": "[Control Hub] [Dev] Five Percent Reflection Delivery",
+  "active": false,
+  "_comment": "DEVELOPMENT workflow. Webhook-triggered. App POSTs the five_percent_reflection.submitted payload from /api/performance/five-percent-reflections. Generates a one-page PDF in a Code node, always notifies the admin Telegram chat, and sends the PDF to the submitter via Gmail and/or Telegram when those channels are enabled.",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "name": "5% Reflection Submitted Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 320],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "five-percent-reflection-submitted-dev",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "build-reflection-package",
+      "name": "Build Reflection Package",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 320],
+      "parameters": {
+        "jsCode": "const payload = $json.body ?? $json;\nconst reflection = payload.reflection ?? {};\nconst recipient = payload.recipient ?? {};\nconst channels = recipient.channels ?? {};\nconst telegram = recipient.telegram ?? {};\n\nfunction toText(value, fallback = '-') {\n  if (typeof value === 'string') {\n    const trimmed = value.trim();\n    return trimmed || fallback;\n  }\n\n  if (value === null || value === undefined) {\n    return fallback;\n  }\n\n  return String(value);\n}\n\nfunction toRank(value) {\n  const number = Number(value);\n  return Number.isFinite(number) ? String(number) : '-';\n}\n\nfunction escapeHtml(value) {\n  return toText(value, '-')\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;');\n}\n\nfunction escapePdfText(value) {\n  return toText(value, '-')\n    .split('\\\\').join('\\\\\\\\')\n    .split('(').join('\\\\(')\n    .split(')').join('\\\\)');\n}\n\nfunction wrapText(input, maxWidth = 92) {\n  const source = toText(input, '-').replaceAll('\\r', '');\n  const paragraphs = source.split('\\n');\n  const lines = [];\n\n  for (const paragraph of paragraphs) {\n    const words = paragraph.trim().split(/\\s+/).filter(Boolean);\n    if (!words.length) {\n      lines.push('');\n      continue;\n    }\n\n    let current = '';\n    for (const word of words) {\n      const candidate = current ? `${current} ${word}` : word;\n      if (candidate.length <= maxWidth) {\n        current = candidate;\n      } else {\n        if (current) {\n          lines.push(current);\n        }\n        current = word;\n      }\n    }\n\n    if (current) {\n      lines.push(current);\n    }\n  }\n\n  return lines.length ? lines : ['-'];\n}\n\nfunction buildPdfBase64(lines) {\n  const streamLines = ['BT', '/F1 8 Tf', '10 TL', '40 780 Td'];\n\n  lines.slice(0, 65).forEach((line, index, items) => {\n    if (line.length > 0) {\n      streamLines.push(`(${escapePdfText(line)}) Tj`);\n    }\n    if (index < items.length - 1) {\n      streamLines.push('T*');\n    }\n  });\n\n  streamLines.push('ET');\n\n  const stream = streamLines.join('\\n');\n  const objects = [\n    '1 0 obj\\n<< /Type /Catalog /Pages 2 0 R >>\\nendobj',\n    '2 0 obj\\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\\nendobj',\n    '3 0 obj\\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\\nendobj',\n    `4 0 obj\\n<< /Length ${Buffer.byteLength(stream, 'utf8')} >>\\nstream\\n${stream}\\nendstream\\nendobj`,\n    '5 0 obj\\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\\nendobj'\n  ];\n\n  let pdf = '%PDF-1.4\\n';\n  const offsets = [0];\n\n  for (const object of objects) {\n    offsets.push(Buffer.byteLength(pdf, 'utf8'));\n    pdf += object + '\\n';\n  }\n\n  const xrefOffset = Buffer.byteLength(pdf, 'utf8');\n  pdf += `xref\\n0 ${objects.length + 1}\\n`;\n  pdf += '0000000000 65535 f \\n';\n  for (const offset of offsets.slice(1)) {\n    pdf += `${String(offset).padStart(10, '0')} 00000 n \\n`;\n  }\n  pdf += `trailer\\n<< /Size ${objects.length + 1} /Root 1 0 R >>\\nstartxref\\n${xrefOffset}\\n%%EOF`;\n\n  return Buffer.from(pdf, 'utf8').toString('base64');\n}\n\nconst fullName = toText(reflection.full_name || recipient.display_name, 'Unknown Employee');\nconst departmentRole = toText(reflection.department_role);\nconst monthKey = toText(reflection.month_key);\nconst submittedAt = toText(payload.submitted_at);\nconst fileSlug = fullName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'submission';\nconst pdfFileName = `five-percent-reflection-${fileSlug}-${monthKey}.pdf`;\n\nconst pdfLines = [\n  'Control Hub 5% Reflection',\n  '',\n  `Employee: ${fullName}`,\n  `Department/Role: ${departmentRole}`,\n  `Month: ${monthKey}`,\n  `Submitted At: ${submittedAt}`,\n  '',\n  'WORK',\n  ...wrapText(`Feelings: ${reflection.work?.feelings}`),\n  ...wrapText(`Headline: ${reflection.work?.headline}`),\n  ...wrapText(`Why it mattered: ${reflection.work?.significance}`),\n  ...wrapText(`Rank: ${toRank(reflection.work?.rank)}`),\n  ...wrapText(`Next action: ${reflection.work?.action}`),\n  '',\n  'FAMILY',\n  ...wrapText(`Feelings: ${reflection.family?.feelings}`),\n  ...wrapText(`Headline: ${reflection.family?.headline}`),\n  ...wrapText(`Why it mattered: ${reflection.family?.significance}`),\n  ...wrapText(`Rank: ${toRank(reflection.family?.rank)}`),\n  ...wrapText(`Next action: ${reflection.family?.action}`),\n  '',\n  'PERSONAL',\n  ...wrapText(`Feelings: ${reflection.personal?.feelings}`),\n  ...wrapText(`Headline: ${reflection.personal?.headline}`),\n  ...wrapText(`Why it mattered: ${reflection.personal?.significance}`),\n  ...wrapText(`Rank: ${toRank(reflection.personal?.rank)}`),\n  ...wrapText(`Next action: ${reflection.personal?.action}`),\n  '',\n  'DEEP DIVE PARKING LOT',\n  ...wrapText(reflection.deep_dive_parking_lot),\n  '',\n  'EXPLORATION TOPICS',\n  ...wrapText(reflection.exploration_topics)\n].slice(0, 65);\n\nconst emailHtml = [\n  `<p>Hello ${escapeHtml(recipient.first_name || fullName)},</p>`,\n  '<p>Attached is the PDF copy of your submitted 5% Reflection.</p>',\n  '<p><b>Summary</b></p>',\n  `<ul><li><b>Month:</b> ${escapeHtml(monthKey)}</li><li><b>Submitted at:</b> ${escapeHtml(submittedAt)}</li><li><b>Department/Role:</b> ${escapeHtml(departmentRole)}</li></ul>`,\n  '<p>You can also review it in Control Hub.</p>'\n].join('');\n\nconst adminTelegramText = [\n  '<b>5% Reflection Submitted</b>',\n  '',\n  `<b>Employee:</b> ${escapeHtml(fullName)}`,\n  `<b>Month:</b> ${escapeHtml(monthKey)}`,\n  `<b>Department/Role:</b> ${escapeHtml(departmentRole)}`,\n  '',\n  'User delivery workflow prepared.',\n  'https://app.sngroup.com.au/performance/self-evaluation'\n].join('\\n');\n\nconst telegramCaption = [\n  '<b>Your 5% Reflection PDF</b>',\n  `<b>Month:</b> ${escapeHtml(monthKey)}`\n].join('\\n');\n\nreturn [{\n  json: {\n    ...payload,\n    reflection,\n    recipient: {\n      ...recipient,\n      channels: {\n        gmail: Boolean(channels.gmail),\n        telegram: Boolean(channels.telegram)\n      },\n      telegram: {\n        ...telegram,\n        chat_id: telegram.chat_id ? String(telegram.chat_id) : null\n      }\n    },\n    pdfBase64: buildPdfBase64(pdfLines),\n    pdfFileName,\n    emailSubject: `Your 5% Reflection PDF - ${monthKey}`,\n    emailHtml,\n    telegramCaption,\n    adminTelegramText\n  }\n}];"
+      }
+    },
+    {
+      "id": "convert-pdf-file",
+      "name": "Convert PDF Base64 to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [800, 320],
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "pdfBase64",
+        "binaryPropertyName": "reflectionPdf",
+        "options": {
+          "fileName": "={{ $json.pdfFileName }}",
+          "mimeType": "application/pdf"
+        }
+      }
+    },
+    {
+      "id": "notify-admin-telegram",
+      "name": "Notify Admin Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1080, 120],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "6708968435",
+        "text": "={{ $json.adminTelegramText }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "br7oYixc6HEh3DQc",
+          "name": "Control Hub Notifications"
+        }
+      }
+    },
+    {
+      "id": "if-gmail-enabled",
+      "name": "If Gmail Delivery Enabled",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 320],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "gmail-enabled",
+              "leftValue": "={{ Boolean($json.recipient.channels.gmail && $json.recipient.email) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-gmail",
+      "name": "Send Gmail Reflection PDF",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1360, 260],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.recipient.email }}",
+        "subject": "={{ $json.emailSubject }}",
+        "emailType": "html",
+        "message": "={{ $json.emailHtml }}",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "reflectionPdf"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "if-telegram-enabled",
+      "name": "If Telegram Delivery Enabled",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1080, 520],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "telegram-enabled",
+              "leftValue": "={{ Boolean($json.recipient.channels.telegram && $json.recipient.telegram.chat_id) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "send-user-telegram",
+      "name": "Send User Telegram PDF",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1360, 520],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendDocument",
+        "chatId": "={{ $json.recipient.telegram.chat_id }}",
+        "binaryData": true,
+        "binaryPropertyName": "reflectionPdf",
+        "additionalFields": {
+          "caption": "={{ $json.telegramCaption }}",
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "br7oYixc6HEh3DQc",
+          "name": "Control Hub Notifications"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "5% Reflection Submitted Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Reflection Package",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reflection Package": {
+      "main": [
+        [
+          {
+            "node": "Convert PDF Base64 to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert PDF Base64 to File": {
+      "main": [
+        [
+          {
+            "node": "Notify Admin Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Gmail Delivery Enabled",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Telegram Delivery Enabled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Gmail Delivery Enabled": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Reflection PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If Telegram Delivery Enabled": {
+      "main": [
+        [
+          {
+            "node": "Send User Telegram PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "timezone": "Asia/Manila"
+  }
+}

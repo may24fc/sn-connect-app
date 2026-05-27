@@ -320,6 +320,36 @@ export const quarterlyTemperatureCheckFiltersSchema = z.object({
   search: z.string().trim().max(200).optional(),
 });
 
+export const submitFivePercentReflectionSchema = z.object({
+  monthKey: monthKeySchema,
+  fullName: z.string().trim().min(1).max(200),
+  departmentRole: assignmentSnapshotSchema,
+  workFeelings: z.string().trim().min(1).max(250),
+  workHeadline: z.string().trim().min(1).max(500),
+  workSignificance: z.string().trim().min(1).max(2000),
+  workRank: z.number().int().min(1).max(10),
+  workAction: z.string().trim().min(1).max(2000),
+  familyFeelings: z.string().trim().min(1).max(250),
+  familyHeadline: z.string().trim().min(1).max(500),
+  familySignificance: z.string().trim().min(1).max(2000),
+  familyRank: z.number().int().min(1).max(10),
+  familyAction: z.string().trim().min(1).max(2000),
+  personalFeelings: z.string().trim().min(1).max(250),
+  personalHeadline: z.string().trim().min(1).max(500),
+  personalSignificance: z.string().trim().min(1).max(2000),
+  personalRank: z.number().int().min(1).max(10),
+  personalAction: z.string().trim().min(1).max(2000),
+  deepDiveParkingLot: z.string().trim().min(1).max(4000),
+  explorationTopics: z.string().trim().min(1).max(4000),
+});
+
+export const fivePercentReflectionFiltersSchema = z.object({
+  monthKey: monthKeySchema.optional(),
+  departmentRole: assignmentSnapshotSchema.optional(),
+  employeeId: z.string().uuid().optional(),
+  search: z.string().trim().max(200).optional(),
+});
+
 export const probationActionSchema = z.discriminatedUnion('action', [
   probationExtendSchema,
   probationCompleteSchema,
@@ -338,7 +368,13 @@ export type CreateKPIInput = z.infer<typeof createKPISchema>;
 export type UpdateKPIInput = z.infer<typeof updateKPISchema>;
 export type SubmitMonthlySelfEvaluationInput = z.infer<typeof submitMonthlySelfEvaluationSchema>;
 export type MonthlySelfEvaluationFiltersInput = z.infer<typeof monthlySelfEvaluationFiltersSchema>;
-export type SubmitQuarterlyTemperatureCheckInput = z.infer<typeof submitQuarterlyTemperatureCheckSchema>;
-export type QuarterlyTemperatureCheckFiltersInput = z.infer<typeof quarterlyTemperatureCheckFiltersSchema>;
+export type SubmitQuarterlyTemperatureCheckInput = z.infer<
+  typeof submitQuarterlyTemperatureCheckSchema
+>;
+export type QuarterlyTemperatureCheckFiltersInput = z.infer<
+  typeof quarterlyTemperatureCheckFiltersSchema
+>;
+export type SubmitFivePercentReflectionInput = z.infer<typeof submitFivePercentReflectionSchema>;
+export type FivePercentReflectionFiltersInput = z.infer<typeof fivePercentReflectionFiltersSchema>;
 export type CreateOKRTargetEvidenceInput = z.infer<typeof createOKRTargetEvidenceSchema>;
 export type ProbationActionInput = z.infer<typeof probationActionSchema>;

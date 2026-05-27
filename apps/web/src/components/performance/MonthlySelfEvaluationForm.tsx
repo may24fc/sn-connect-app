@@ -1,15 +1,10 @@
 'use client';
 
 import {
+  type SubmitMonthlySelfEvaluationInput,
   monthlySelfEvaluationResponseSchema,
   submitMonthlySelfEvaluationSchema,
-  type SubmitMonthlySelfEvaluationInput,
 } from '@/lib/schemas/performance.schema';
-import {
-  monthlySelfEvaluationDetailSections,
-  type MonthlySelfEvaluationDetailField,
-  type MonthlySelfEvaluationRecord,
-} from './monthlySelfEvaluationDetailConfig';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Badge,
@@ -30,8 +25,13 @@ import {
   Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { Controller, useForm } from 'react-hook-form';
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import {
+  type MonthlySelfEvaluationDetailField,
+  type MonthlySelfEvaluationRecord,
+  monthlySelfEvaluationDetailSections,
+} from './monthlySelfEvaluationDetailConfig';
 
 type PerformanceIdentityProfile = {
   fullName: string;
@@ -79,10 +79,13 @@ function getCurrentMonthKey(date: Date = new Date()): string {
 
 function formatMonthKey(monthKey: string): string {
   const [year, month] = monthKey.split('-').map(Number);
-  return new Date(year || new Date().getFullYear(), (month || 1) - 1, 1).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  return new Date(year || new Date().getFullYear(), (month || 1) - 1, 1).toLocaleDateString(
+    'en-US',
+    {
+      month: 'long',
+      year: 'numeric',
+    }
+  );
 }
 
 function toFormValues(record: MonthlySelfEvaluationRecord): SubmitMonthlySelfEvaluationInput {
@@ -146,6 +149,15 @@ function buildDefaultValues(
     additionalComments: '',
     nextMonthGoal: '',
   };
+}
+
+function renderRequiredLabel(label: string, htmlFor?: string) {
+  return (
+    <Label htmlFor={htmlFor}>
+      {label}
+      <span className="ml-1 text-destructive">*</span>
+    </Label>
+  );
 }
 
 export function MonthlySelfEvaluationForm() {
@@ -256,16 +268,12 @@ export function MonthlySelfEvaluationForm() {
     }
   });
 
-  const renderTextareaField = (
-    name: TextareaFieldName,
-    label: string,
-    helperText?: string
-  ) => {
+  const renderTextareaField = (name: TextareaFieldName, label: string, helperText?: string) => {
     const fieldError = errors[name];
 
     return (
       <div className="space-y-2">
-        <Label htmlFor={name}>{label}</Label>
+        {renderRequiredLabel(label, name)}
         {helperText ? <p className="text-xs text-muted-foreground">{helperText}</p> : null}
         <Textarea id={name} rows={4} {...register(name)} />
         {fieldError ? <p className="text-sm text-destructive">{fieldError.message}</p> : null}
@@ -317,7 +325,8 @@ export function MonthlySelfEvaluationForm() {
                     year: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
-                  })}.
+                  })}
+                  .
                 </CardDescription>
               </div>
               <Badge variant="success">Locked for this month</Badge>
@@ -346,22 +355,15 @@ export function MonthlySelfEvaluationForm() {
         <CardHeader>
           <CardTitle>Monthly Self-Evaluation</CardTitle>
           <CardDescription>
-            Share the work you completed, the impact you created, the blockers leadership may not see,
-            and what would help you perform better. This form is designed to be finished in roughly 10 to 15 minutes.
+            Share the work you completed, the impact you created, the blockers leadership may not
+            see, and what would help you perform better. This form is designed to be finished in
+            roughly 10 to 15 minutes.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div>
             <p className="text-sm font-medium text-foreground">Current month</p>
             <p className="mt-1 text-sm text-muted-foreground">{formatMonthKey(monthKey)}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Current name</p>
-            <p className="mt-1 text-sm text-muted-foreground">{currentProfile.fullName}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Assigned department</p>
-            <p className="mt-1 text-sm text-muted-foreground">{currentProfile.departmentRole}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Submission rule</p>
@@ -379,7 +381,8 @@ export function MonthlySelfEvaluationForm() {
           <CardHeader>
             <CardTitle>SECTION 1: ROLE &amp; WORK SUMMARY</CardTitle>
             <CardDescription>
-              Complete each answer field in order so leadership can review your role, work summary, blockers, and needed support clearly.
+              Complete each answer field in order so leadership can review your role, work summary,
+              blockers, and needed support clearly.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -391,7 +394,9 @@ export function MonthlySelfEvaluationForm() {
 
               <div>
                 <p className="text-sm font-medium text-foreground">2. Department</p>
-                <p className="mt-1 text-sm text-muted-foreground">{currentProfile.departmentRole}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {currentProfile.departmentRole}
+                </p>
               </div>
             </div>
 
@@ -439,13 +444,17 @@ export function MonthlySelfEvaluationForm() {
           <CardHeader>
             <CardTitle>SECTION 2: OWNERSHIP &amp; PRODUCTIVITY</CardTitle>
             <CardDescription>
-              Use this section to score your productivity, explain that score, and reflect on your professional growth.
+              Use this section to score your productivity, explain that score, and reflect on your
+              professional growth.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
               <div className="space-y-2">
-                <Label htmlFor="productivityScore">12. On a scale of 1-10, how productive do you believe you were this month?</Label>
+                {renderRequiredLabel(
+                  '12. On a scale of 1-10, how productive do you believe you were this month?',
+                  'productivityScore'
+                )}
                 <Input
                   id="productivityScore"
                   type="number"
@@ -482,7 +491,8 @@ export function MonthlySelfEvaluationForm() {
           <CardHeader>
             <CardTitle>SECTION 3: LEADERSHIP &amp; OPERATIONS FEEDBACK</CardTitle>
             <CardDescription>
-              Share feedback on leadership, visibility, communication, and any operational issues affecting work.
+              Share feedback on leadership, visibility, communication, and any operational issues
+              affecting work.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -497,7 +507,9 @@ export function MonthlySelfEvaluationForm() {
 
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>19. Do you feel your work and contributions are visible and understood?</Label>
+                {renderRequiredLabel(
+                  '19. Do you feel your work and contributions are visible and understood?'
+                )}
                 <Controller
                   control={control}
                   name="contributionsVisible"
@@ -522,7 +534,9 @@ export function MonthlySelfEvaluationForm() {
               </div>
 
               <div className="space-y-2">
-                <Label>20. Do you feel comfortable raising concerns, blockers, or ideas?</Label>
+                {renderRequiredLabel(
+                  '20. Do you feel comfortable raising concerns, blockers, or ideas?'
+                )}
                 <Controller
                   control={control}
                   name="comfortableRaisingConcerns"
@@ -542,7 +556,9 @@ export function MonthlySelfEvaluationForm() {
                   )}
                 />
                 {errors.comfortableRaisingConcerns && (
-                  <p className="text-sm text-destructive">{errors.comfortableRaisingConcerns.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.comfortableRaisingConcerns.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -566,7 +582,8 @@ export function MonthlySelfEvaluationForm() {
           <CardHeader>
             <CardTitle>FINAL REFLECTION</CardTitle>
             <CardDescription>
-              Close the form with one clear goal for what you want to accomplish or improve next month.
+              Close the form with one clear goal for what you want to accomplish or improve next
+              month.
             </CardDescription>
           </CardHeader>
           <CardContent>
