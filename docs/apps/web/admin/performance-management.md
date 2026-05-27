@@ -217,7 +217,7 @@ This route is distinct from the admin-wide **Evaluations** view (`/admin/perform
 
 ## Submission Deadlines
 
-Each review cycle can now have a **Self-assessment submission deadline** separately from the cycle end date. Employees receive a deadline reminder notification 3 days before the cut-off.
+Each review cycle can now have a **Self-assessment submission deadline** separately from the cycle end date. During the final week before that cut-off, employees and interns who still have incomplete OKR/KPI setup or missing progress updates receive automated reminders, and the self-assessment deadline reminder still goes out before the cut-off.
 
 When creating or editing a cycle, the deadline picker appears below the cycle end date field. Leave it blank to have no enforced deadline.
 

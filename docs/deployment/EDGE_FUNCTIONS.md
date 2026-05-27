@@ -18,7 +18,7 @@ Edge Functions are deployed automatically via GitHub Actions on every push that 
 
 ---
 
-## Deployed Functions (15)
+## Deployed Functions (16)
 
 | Function | Description |
 |----------|-------------|
@@ -32,6 +32,7 @@ Edge Functions are deployed automatically via GitHub Actions on every push that 
 | `cleanup-soft-deleted` | Permanently removes old soft-deleted records |
 | `cleanup-old-notifications` | Removes stale notifications |
 | `check-late-reports` | Flags late report submissions |
+| `evaluation-cadence-reminders` | Sends self-evaluation cadence reminders plus last-week OKR/KPI update reminders |
 | `payroll-reminder` | Sends payroll cutoff reminders |
 | `onboarding-new-employee` | Bootstraps new employee onboarding tasks |
 | `generate-embeddings` | Generates pgvector embeddings for knowledge base |

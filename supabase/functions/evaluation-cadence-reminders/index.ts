@@ -118,6 +118,117 @@ function parseIsoDate(value: string | null | undefined): Date | null {
   return toUtcDate(parsed);
 }
 
+interface EvaluationAudienceUser {
+  id: string;
+  role: string | null;
+}
+
+interface PerformanceParticipant {
+  userId: string;
+  employeeId: string;
+}
+
+interface ActivePerformanceCycle {
+  id: string;
+  name: string | null;
+  selfReviewDeadline: string | null;
+  okrSubmissionDeadline: string | null;
+  kpiSubmissionDeadline: string | null;
+}
+
+interface IncompletePerformanceBreakdown {
+  missingObjectives: number;
+  missingMetrics: number;
+  missingProgress: number;
+}
+
+function parseNumericValue(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function hasUpdatedSinceCreate(
+  createdAt: string | null | undefined,
+  updatedAt: string | null | undefined
+): boolean {
+  if (!createdAt || !updatedAt) {
+    return false;
+  }
+
+  const createdTime = new Date(createdAt).getTime();
+  const updatedTime = new Date(updatedAt).getTime();
+
+  if (Number.isNaN(createdTime) || Number.isNaN(updatedTime)) {
+    return false;
+  }
+
+  return updatedTime - createdTime > 60_000;
+}
+
+function hasTargetProgressActivity(target: {
+  start_value: unknown;
+  current_value: unknown;
+  created_at: string | null;
+  updated_at: string | null;
+}): boolean {
+  const startValue = parseNumericValue(target.start_value) ?? 0;
+  const currentValue = parseNumericValue(target.current_value) ?? startValue;
+
+  return currentValue !== startValue || hasUpdatedSinceCreate(target.created_at, target.updated_at);
+}
+
+function hasKpiProgressActivity(kpi: {
+  current_value: unknown;
+  created_at: string | null;
+  updated_at: string | null;
+}): boolean {
+  const currentValue = parseNumericValue(kpi.current_value) ?? 0;
+
+  return currentValue !== 0 || hasUpdatedSinceCreate(kpi.created_at, kpi.updated_at);
+}
+
+function formatDeadlineHint(value: string | null): string | null {
+  const parsed = parseIsoDate(value);
+  if (!parsed) {
+    return null;
+  }
+
+  return formatDueDateLabel(parsed);
+}
+
+function buildPerformanceReminderMessage(
+  cycle: ActivePerformanceCycle,
+  selfReviewDueLabel: string,
+  stage: 'week' | 'three_day' | 'final'
+): string {
+  const cycleLabel = cycle.name?.trim() || 'the active review cycle';
+  const okrDueLabel = formatDeadlineHint(cycle.okrSubmissionDeadline);
+  const kpiDueLabel = formatDeadlineHint(cycle.kpiSubmissionDeadline);
+  const deadlineHints = [
+    okrDueLabel ? `OKRs due ${okrDueLabel}` : null,
+    kpiDueLabel ? `KPIs due ${kpiDueLabel}` : null,
+  ].filter(Boolean);
+  const deadlineSuffix = deadlineHints.length > 0 ? ` (${deadlineHints.join(' | ')})` : '';
+
+  if (stage === 'week') {
+    return `Your ${cycleLabel} self-assessment deadline is ${selfReviewDueLabel}. Update your OKRs, KPI targets, and supporting evidence this week so your review reflects the latest progress${deadlineSuffix}.`;
+  }
+
+  if (stage === 'three_day') {
+    return `Your ${cycleLabel} self-assessment is due in 3 days. Review your OKRs and KPIs now and capture any missing progress updates before ${selfReviewDueLabel}${deadlineSuffix}.`;
+  }
+
+  return `Final reminder: your ${cycleLabel} self-assessment is due tomorrow. Update any incomplete OKRs or KPI progress before ${selfReviewDueLabel}${deadlineSuffix}.`;
+}
+
 async function resolveActiveEvaluationAudience(supabase: ReturnType<typeof getSupabaseAdmin>) {
   const { data, error } = await supabase
     .from('users')
@@ -130,6 +241,174 @@ async function resolveActiveEvaluationAudience(supabase: ReturnType<typeof getSu
   }
 
   return data ?? [];
+}
+
+async function resolvePerformanceParticipants(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  workforce: EvaluationAudienceUser[]
+): Promise<PerformanceParticipant[]> {
+  const userIds = workforce.map((user) => user.id).filter(Boolean);
+  if (userIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('employees')
+    .select('id, user_id')
+    .in('user_id', userIds)
+    .is('deleted_at', null);
+
+  if (error) {
+    throw new Error(`Failed to fetch performance participants: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .filter((row) => typeof row.id === 'string' && typeof row.user_id === 'string')
+    .map((row) => ({
+      userId: row.user_id as string,
+      employeeId: row.id as string,
+    }));
+}
+
+async function resolveActivePerformanceCycle(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  today: Date
+): Promise<ActivePerformanceCycle | null> {
+  const todayIso = today.toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from('review_cycles')
+    .select('id, name, self_review_deadline, okr_submission_deadline, kpi_submission_deadline')
+    .eq('status', 'active')
+    .lte('start_date', todayIso)
+    .gte('end_date', todayIso)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to fetch active performance cycle: ${error.message}`);
+  }
+
+  if (!data?.id) {
+    return null;
+  }
+
+  return {
+    id: data.id as string,
+    name: (data.name as string | null | undefined) ?? null,
+    selfReviewDeadline: (data.self_review_deadline as string | null | undefined) ?? null,
+    okrSubmissionDeadline: (data.okr_submission_deadline as string | null | undefined) ?? null,
+    kpiSubmissionDeadline: (data.kpi_submission_deadline as string | null | undefined) ?? null,
+  };
+}
+
+async function resolveIncompletePerformanceUserIds(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  participants: PerformanceParticipant[],
+  cycleId: string
+): Promise<{ userIds: string[]; breakdown: IncompletePerformanceBreakdown }> {
+  if (participants.length === 0) {
+    return {
+      userIds: [],
+      breakdown: {
+        missingObjectives: 0,
+        missingMetrics: 0,
+        missingProgress: 0,
+      },
+    };
+  }
+
+  const employeeIds = participants.map((participant) => participant.employeeId);
+  const [okrsResult, targetsResult, kpisResult] = await Promise.all([
+    supabase
+      .from('okrs')
+      .select('id, employee_id')
+      .eq('cycle_id', cycleId)
+      .in('employee_id', employeeIds),
+    supabase
+      .from('okr_targets')
+      .select('employee_id, start_value, current_value, created_at, updated_at')
+      .eq('cycle_id', cycleId)
+      .in('employee_id', employeeIds)
+      .is('deleted_at', null),
+    supabase
+      .from('kpis')
+      .select('employee_id, current_value, created_at, updated_at')
+      .eq('cycle_id', cycleId)
+      .in('employee_id', employeeIds),
+  ]);
+
+  if (okrsResult.error) {
+    throw new Error(`Failed to fetch OKRs for reminders: ${okrsResult.error.message}`);
+  }
+
+  if (targetsResult.error) {
+    throw new Error(`Failed to fetch OKR targets for reminders: ${targetsResult.error.message}`);
+  }
+
+  if (kpisResult.error) {
+    throw new Error(`Failed to fetch KPIs for reminders: ${kpisResult.error.message}`);
+  }
+
+  const okrCountByEmployee = new Map<string, number>();
+  for (const row of okrsResult.data ?? []) {
+    const employeeId = row.employee_id as string | null;
+    if (!employeeId) continue;
+    okrCountByEmployee.set(employeeId, (okrCountByEmployee.get(employeeId) ?? 0) + 1);
+  }
+
+  const targetsByEmployee = new Map<string, Array<(typeof targetsResult.data)[number]>>();
+  for (const row of targetsResult.data ?? []) {
+    const employeeId = row.employee_id as string | null;
+    if (!employeeId) continue;
+    const existing = targetsByEmployee.get(employeeId) ?? [];
+    existing.push(row);
+    targetsByEmployee.set(employeeId, existing);
+  }
+
+  const kpisByEmployee = new Map<string, Array<(typeof kpisResult.data)[number]>>();
+  for (const row of kpisResult.data ?? []) {
+    const employeeId = row.employee_id as string | null;
+    if (!employeeId) continue;
+    const existing = kpisByEmployee.get(employeeId) ?? [];
+    existing.push(row);
+    kpisByEmployee.set(employeeId, existing);
+  }
+
+  const userIds: string[] = [];
+  const breakdown: IncompletePerformanceBreakdown = {
+    missingObjectives: 0,
+    missingMetrics: 0,
+    missingProgress: 0,
+  };
+
+  for (const participant of participants) {
+    const okrCount = okrCountByEmployee.get(participant.employeeId) ?? 0;
+    const targets = targetsByEmployee.get(participant.employeeId) ?? [];
+    const kpis = kpisByEmployee.get(participant.employeeId) ?? [];
+    const metricCount = targets.length + kpis.length;
+    const hasProgressActivity =
+      targets.some(hasTargetProgressActivity) || kpis.some(hasKpiProgressActivity);
+
+    if (okrCount === 0 && metricCount === 0) {
+      breakdown.missingObjectives += 1;
+      userIds.push(participant.userId);
+      continue;
+    }
+
+    if (metricCount === 0) {
+      breakdown.missingMetrics += 1;
+      userIds.push(participant.userId);
+      continue;
+    }
+
+    if (!hasProgressActivity) {
+      breakdown.missingProgress += 1;
+      userIds.push(participant.userId);
+    }
+  }
+
+  return { userIds, breakdown };
 }
 
 async function resolveMonthlyMissingUserIds(
@@ -189,7 +468,10 @@ async function resolveAnnouncementAuthorId(
     .limit(1);
 
   if (error) {
-    console.error('[evaluation-cadence-reminders] Failed to resolve announcement author:', error.message);
+    console.error(
+      '[evaluation-cadence-reminders] Failed to resolve announcement author:',
+      error.message
+    );
     return null;
   }
 
@@ -225,7 +507,7 @@ async function resolveQuarterlyCycleDueDate(
 async function ensureQuarterlyLaunchAnnouncement(
   supabase: ReturnType<typeof getSupabaseAdmin>,
   quarterLabel: string,
-  quarterKey: string,
+  _quarterKey: string,
   dueDate: Date
 ): Promise<string | null> {
   const title = `Quarterly Temperature Check Open • ${quarterLabel}`;
@@ -313,8 +595,9 @@ serve(async (req: Request): Promise<Response> => {
     const supabase = getSupabaseAdmin();
     const now = new Date();
     const today = toUtcDate(now);
-    const workforce = await resolveActiveEvaluationAudience(supabase);
+    const workforce = (await resolveActiveEvaluationAudience(supabase)) as EvaluationAudienceUser[];
     const allUserIds = workforce.map((user) => user.id as string);
+    const performanceParticipants = await resolvePerformanceParticipants(supabase, workforce);
 
     const monthlyDueDate = getLastWorkingDayOfMonth(today);
     const monthlyBusinessDaysUntilDue = countBusinessDaysUntil(monthlyDueDate, today);
@@ -330,14 +613,39 @@ serve(async (req: Request): Promise<Response> => {
     const quarterlyLabel = formatQuarterLabel(today);
     const quarterlyDueLabel = formatDueDateLabel(quarterlyDueDate);
 
-    const [monthlyMissingUserIds, quarterlyMissingUserIds] = await Promise.all([
-      today >= monthlyOpenDate
-        ? resolveMonthlyMissingUserIds(supabase, allUserIds, monthlyKey)
-        : Promise.resolve([]),
-      quarterlyDaysUntilDue <= 7
-        ? resolveQuarterlyMissingUserIds(supabase, allUserIds, quarterlyKey)
-        : Promise.resolve([]),
-    ]);
+    const activePerformanceCycle = await resolveActivePerformanceCycle(supabase, today);
+    const performanceDueDate = parseIsoDate(activePerformanceCycle?.selfReviewDeadline ?? null);
+    const performanceDaysUntilDue = performanceDueDate
+      ? countCalendarDaysUntil(performanceDueDate, today)
+      : null;
+    const performanceDueLabel = performanceDueDate ? formatDueDateLabel(performanceDueDate) : null;
+
+    const [monthlyMissingUserIds, quarterlyMissingUserIds, incompletePerformance] =
+      await Promise.all([
+        today >= monthlyOpenDate
+          ? resolveMonthlyMissingUserIds(supabase, allUserIds, monthlyKey)
+          : Promise.resolve([]),
+        quarterlyDaysUntilDue <= 7
+          ? resolveQuarterlyMissingUserIds(supabase, allUserIds, quarterlyKey)
+          : Promise.resolve([]),
+        activePerformanceCycle &&
+        performanceDueDate &&
+        performanceDaysUntilDue !== null &&
+        performanceDaysUntilDue <= 7
+          ? resolveIncompletePerformanceUserIds(
+              supabase,
+              performanceParticipants,
+              activePerformanceCycle.id
+            )
+          : Promise.resolve({
+              userIds: [],
+              breakdown: {
+                missingObjectives: 0,
+                missingMetrics: 0,
+                missingProgress: 0,
+              },
+            }),
+      ]);
 
     const results = {
       monthlyLaunchSent: 0,
@@ -346,6 +654,12 @@ serve(async (req: Request): Promise<Response> => {
       quarterlyAnnouncementSent: 0,
       quarterlyReminderSent: 0,
       quarterlyDeadlineSent: 0,
+      performanceWeekSent: 0,
+      performanceThreeDaySent: 0,
+      performanceFinalSent: 0,
+      performanceMissingObjectives: incompletePerformance.breakdown.missingObjectives,
+      performanceMissingMetrics: incompletePerformance.breakdown.missingMetrics,
+      performanceMissingProgress: incompletePerformance.breakdown.missingProgress,
     };
 
     if (monthlyBusinessDaysUntilDue === 3 && monthlyMissingUserIds.length > 0) {
@@ -443,6 +757,93 @@ serve(async (req: Request): Promise<Response> => {
       results.quarterlyDeadlineSent = quarterlyMissingUserIds.length;
     }
 
+    if (
+      activePerformanceCycle &&
+      performanceDaysUntilDue === 7 &&
+      performanceDueLabel &&
+      incompletePerformance.userIds.length > 0
+    ) {
+      await createBulkInAppNotifications(supabase, incompletePerformance.userIds, {
+        type: 'reminder',
+        title: 'Last week to update your OKRs & KPIs',
+        message: buildPerformanceReminderMessage(
+          activePerformanceCycle,
+          performanceDueLabel,
+          'week'
+        ),
+        link: '/performance',
+        dedupeKey: `performance-deadline-reminder:${activePerformanceCycle.id}:d-7`,
+        metadata: {
+          cadence: 'performance_day_minus_7',
+          cycleId: activePerformanceCycle.id,
+          missingObjectives: incompletePerformance.breakdown.missingObjectives,
+          missingMetrics: incompletePerformance.breakdown.missingMetrics,
+          missingProgress: incompletePerformance.breakdown.missingProgress,
+        },
+        sendEmail: false,
+        sendTelegram: false,
+      });
+      results.performanceWeekSent = incompletePerformance.userIds.length;
+    }
+
+    if (
+      activePerformanceCycle &&
+      performanceDaysUntilDue === 3 &&
+      performanceDueLabel &&
+      incompletePerformance.userIds.length > 0
+    ) {
+      await createBulkInAppNotifications(supabase, incompletePerformance.userIds, {
+        type: 'reminder',
+        title: 'Update your OKRs & KPIs before self-assessment',
+        message: buildPerformanceReminderMessage(
+          activePerformanceCycle,
+          performanceDueLabel,
+          'three_day'
+        ),
+        link: '/performance',
+        dedupeKey: `performance-deadline-reminder:${activePerformanceCycle.id}:d-3`,
+        metadata: {
+          cadence: 'performance_day_minus_3',
+          cycleId: activePerformanceCycle.id,
+          missingObjectives: incompletePerformance.breakdown.missingObjectives,
+          missingMetrics: incompletePerformance.breakdown.missingMetrics,
+          missingProgress: incompletePerformance.breakdown.missingProgress,
+        },
+        sendEmail: true,
+        sendTelegram: true,
+      });
+      results.performanceThreeDaySent = incompletePerformance.userIds.length;
+    }
+
+    if (
+      activePerformanceCycle &&
+      performanceDaysUntilDue === 1 &&
+      performanceDueLabel &&
+      incompletePerformance.userIds.length > 0
+    ) {
+      await createBulkInAppNotifications(supabase, incompletePerformance.userIds, {
+        type: 'reminder',
+        title: 'Final reminder: self-assessment deadline is tomorrow',
+        message: buildPerformanceReminderMessage(
+          activePerformanceCycle,
+          performanceDueLabel,
+          'final'
+        ),
+        link: '/performance',
+        dedupeKey: `performance-deadline-reminder:${activePerformanceCycle.id}:d-1`,
+        metadata: {
+          cadence: 'performance_day_minus_1',
+          cycleId: activePerformanceCycle.id,
+          missingObjectives: incompletePerformance.breakdown.missingObjectives,
+          missingMetrics: incompletePerformance.breakdown.missingMetrics,
+          missingProgress: incompletePerformance.breakdown.missingProgress,
+        },
+        sendEmail: true,
+        sendTelegram: true,
+      });
+      results.performanceFinalSent = incompletePerformance.userIds.length;
+    }
+
     await writeAuditLog(supabase, {
       tableName: 'notifications',
       recordId: `evaluation-cadence-${today.toISOString().slice(0, 10)}`,
@@ -451,20 +852,22 @@ serve(async (req: Request): Promise<Response> => {
         date: today.toISOString().slice(0, 10),
         monthKey: monthlyKey,
         quarterKey: quarterlyKey,
+        performanceCycleId: activePerformanceCycle?.id ?? null,
+        performanceDaysUntilDue,
         ...results,
       },
     });
 
-    return new Response(
-      JSON.stringify({ success: true, data: results }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: true, data: results }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[evaluation-cadence-reminders] Error:', message);
-    return new Response(
-      JSON.stringify({ success: false, error: message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ success: false, error: message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
