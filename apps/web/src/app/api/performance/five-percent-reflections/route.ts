@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { getSubmissionEditStatus } from '@/lib/performance/submission-edit-status';
 import {
   fivePercentReflectionFiltersSchema,
   submitFivePercentReflectionSchema,
@@ -11,7 +12,10 @@ import {
   resolveEmployeeIdForUser,
   resolvePerformanceIdentitySnapshot,
 } from '../_lib';
-import { notifyFivePercentReflectionWebhook } from '../_notifications';
+import {
+  notifyFivePercentReflectionWebhook,
+  notifyPerformanceEvaluationManagers,
+} from '../_notifications';
 
 function getCurrentMonthKey(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -31,7 +35,8 @@ function mapSubmissionPayload(
   input: ReturnType<typeof submitFivePercentReflectionSchema.parse>,
   userId: string,
   employeeId: string | null,
-  profile: { fullName: string; departmentRole: string }
+  profile: { fullName: string; departmentRole: string },
+  timestamp: string
 ) {
   return {
     user_id: userId,
@@ -57,7 +62,8 @@ function mapSubmissionPayload(
     deep_dive_parking_lot: input.deepDiveParkingLot,
     exploration_topics: input.explorationTopics,
     created_by: userId,
-    submitted_at: new Date().toISOString(),
+    submitted_at: timestamp,
+    updated_at: timestamp,
   };
 }
 
@@ -141,6 +147,10 @@ export async function GET(request: NextRequest) {
         })
         .map((member) => {
           const submission = submissionByUserId.get(member.userId) ?? null;
+          const editStatus = getSubmissionEditStatus({
+            submittedAt: submission?.submitted_at ?? null,
+            updatedAt: submission?.updated_at ?? null,
+          });
 
           return {
             id: member.userId,
@@ -151,6 +161,8 @@ export async function GET(request: NextRequest) {
             avatar_url: member.avatarUrl,
             submission_status: submission ? 'submitted' : 'pending',
             submitted_at: submission?.submitted_at ?? null,
+            last_employee_edit_at: editStatus.lastEmployeeEditAt,
+            has_employee_edits: editStatus.hasEmployeeEdits,
             average_rank: submission
               ? getAverageRank({
                   workRank: submission.work_rank as number,
@@ -162,7 +174,58 @@ export async function GET(request: NextRequest) {
           };
         });
 
-      return NextResponse.json({ data: merged });
+      const audienceUserIds = new Set(audience.map((member) => member.userId));
+      const supplementalSubmissions = (data || [])
+        .filter((record) => !audienceUserIds.has(record.user_id as string))
+        .filter((record) => {
+          if (
+            parsedFilters.data.departmentRole &&
+            record.department_role !== parsedFilters.data.departmentRole
+          ) {
+            return false;
+          }
+
+          if (parsedFilters.data.employeeId && record.employee_id !== parsedFilters.data.employeeId) {
+            return false;
+          }
+
+          if (normalizedSearch && !String(record.full_name || '').toLowerCase().includes(normalizedSearch)) {
+            return false;
+          }
+
+          return true;
+        })
+        .map((submission) => {
+          const editStatus = getSubmissionEditStatus({
+            submittedAt: submission.submitted_at ?? null,
+            updatedAt: submission.updated_at ?? null,
+          });
+
+          return {
+            id: submission.user_id as string,
+            user_id: submission.user_id as string,
+            employee_id: (submission.employee_id as string | null) ?? null,
+            full_name: String(submission.full_name || 'Unknown user'),
+            department_role: String(submission.department_role || 'Unassigned'),
+            avatar_url: null,
+            submission_status: 'submitted' as const,
+            submitted_at: submission.submitted_at ?? null,
+            last_employee_edit_at: editStatus.lastEmployeeEditAt,
+            has_employee_edits: editStatus.hasEmployeeEdits,
+            average_rank: getAverageRank({
+              workRank: submission.work_rank as number,
+              familyRank: submission.family_rank as number,
+              personalRank: submission.personal_rank as number,
+            }),
+            submission,
+          };
+        });
+
+      return NextResponse.json({
+        data: [...merged, ...supplementalSubmissions].sort((left, right) =>
+          left.full_name.localeCompare(right.full_name)
+        ),
+      });
     }
 
     const profile = await resolvePerformanceIdentitySnapshot(supabaseAdmin, user, role);
@@ -214,22 +277,72 @@ export async function POST(request: NextRequest) {
 
     const employeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
     const profile = await resolvePerformanceIdentitySnapshot(supabaseAdmin, user, role);
-    const insertPayload = mapSubmissionPayload(parsed.data, user.id, employeeId, profile);
+    const timestamp = new Date().toISOString();
+    const submissionPayload = mapSubmissionPayload(parsed.data, user.id, employeeId, profile, timestamp);
+
+    const { data: existingSubmission, error: existingSubmissionError } = await supabaseAdmin
+      .from('five_percent_reflections')
+      .select('id, submitted_at')
+      .eq('user_id', user.id)
+      .eq('month_key', parsed.data.monthKey)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingSubmissionError) {
+      console.error(
+        'POST /api/performance/five-percent-reflections existing submission lookup error:',
+        existingSubmissionError
+      );
+      return NextResponse.json({ error: 'Failed to submit 5% reflection' }, { status: 500 });
+    }
+
+    if (existingSubmission) {
+      const { data, error: updateError } = await supabaseAdmin
+        .from('five_percent_reflections')
+        .update({
+          ...submissionPayload,
+          submitted_at: existingSubmission.submitted_at,
+          updated_at: timestamp,
+        })
+        .eq('id', existingSubmission.id)
+        .select('*')
+        .single();
+
+      if (updateError || !data) {
+        console.error('POST /api/performance/five-percent-reflections update error:', updateError);
+        return NextResponse.json({ error: 'Failed to update 5% reflection' }, { status: 500 });
+      }
+
+      logActivity(supabaseAdmin, {
+        userId: user.id,
+        action: 'update_five_percent_reflection',
+        tableName: 'five_percent_reflections',
+        recordId: data.id,
+        metadata: {
+          monthKey: data.month_key,
+          departmentRole: data.department_role,
+        },
+      });
+
+      await notifyPerformanceEvaluationManagers({
+        evaluationKind: 'five-percent',
+        action: 'updated',
+        submissionId: data.id,
+        submittedBy: user.id,
+        cycleKey: data.month_key,
+        departmentRole: data.department_role,
+      });
+
+      return NextResponse.json({ data });
+    }
 
     const { data, error: insertError } = await supabaseAdmin
       .from('five_percent_reflections')
-      .insert(insertPayload)
+      .insert(submissionPayload)
       .select('*')
       .single();
 
     if (insertError || !data) {
-      if (insertError?.code === '23505') {
-        return NextResponse.json(
-          { error: 'You already submitted a 5% reflection for this month.' },
-          { status: 409 }
-        );
-      }
-
       console.error('POST /api/performance/five-percent-reflections error:', insertError);
       return NextResponse.json({ error: 'Failed to submit 5% reflection' }, { status: 500 });
     }
@@ -243,6 +356,15 @@ export async function POST(request: NextRequest) {
         monthKey: data.month_key,
         departmentRole: data.department_role,
       },
+    });
+
+    await notifyPerformanceEvaluationManagers({
+      evaluationKind: 'five-percent',
+      action: 'submitted',
+      submissionId: data.id,
+      submittedBy: user.id,
+      cycleKey: data.month_key,
+      departmentRole: data.department_role,
     });
 
     await notifyFivePercentReflectionWebhook({

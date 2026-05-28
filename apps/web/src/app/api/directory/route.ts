@@ -1,12 +1,11 @@
+import {
+  collapseEmployeeEquivalentRole,
+  expandEmployeeEquivalentRoles,
+} from '@/lib/roles';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
-
-// All roles that represent employed staff (non-interns). When the directory is
-// filtered by "employee", admins are included so HR sees everyone regardless
-// of their system role. Must match the user_role enum exactly.
-const EMPLOYEE_EQUIVALENT_ROLES = ['employee', 'admin', 'super_admin'];
 
 interface DirectoryRow {
   full_name: string | null;
@@ -109,19 +108,12 @@ export async function GET(request: NextRequest) {
 
     // Role filter — "employee" expands to all non-intern roles so admins/leadership
     // appear in the directory when HR filters by Employee.
-    function expandEmployeeRole(roles: string[]): string[] {
-      const expanded = roles.flatMap((r) =>
-        r === 'employee' ? EMPLOYEE_EQUIVALENT_ROLES : [r]
-      );
-      return [...new Set(expanded)];
-    }
-
     if (roleFilter) {
-      const expanded = expandEmployeeRole([roleFilter]);
+      const expanded = expandEmployeeEquivalentRoles([roleFilter]);
       query = query.in('role', expanded);
     }
     if (roleFilters.length > 0) {
-      query = query.in('role', expandEmployeeRole(roleFilters));
+      query = query.in('role', expandEmployeeEquivalentRoles(roleFilters));
     }
 
     // Department filter
@@ -142,10 +134,12 @@ export async function GET(request: NextRequest) {
     // Status filter (supports comma-separated values for multi-status filtering)
     // Note: 'probation' is not a valid user_status enum value.
     // Probation is tracked via employment_type='probationary', so we translate accordingly.
+    const requestedStatuses = status.split(',').map((s) => s.trim()).filter(Boolean);
+    const explicitlyIncludesTerminated = requestedStatuses.includes('terminated');
+
     if (status) {
-      const statuses = status.split(',').map((s) => s.trim()).filter(Boolean);
-      const hasProbation = statuses.includes('probation');
-      const validStatuses = statuses.filter((s) => s !== 'probation');
+      const hasProbation = requestedStatuses.includes('probation');
+      const validStatuses = requestedStatuses.filter((s) => s !== 'probation');
 
       if (hasProbation && validStatuses.length > 0) {
         const orParts = validStatuses.map((s) => `status.eq.${s}`);
@@ -165,8 +159,9 @@ export async function GET(request: NextRequest) {
       query = query.eq('employment_type', employmentType);
     }
 
-    // Exclude terminated employees (used by the Active tab to hide former employees)
-    if (excludeTerminated) {
+    // General roster pages should not surface terminated staff unless the caller
+    // explicitly requested the terminated status.
+    if (excludeTerminated || !explicitlyIncludesTerminated) {
       query = query.neq('status', 'terminated');
     }
 
@@ -231,7 +226,7 @@ export async function GET(request: NextRequest) {
           .filter((value: string | null): value is string => Boolean(value))
           // Collapse all non-intern staff roles into "employee" so the filter
           // dropdown shows only "Employee" and "Intern".
-          .map((r: string) => (EMPLOYEE_EQUIVALENT_ROLES.includes(r) ? 'employee' : r))
+          .map((r: string) => collapseEmployeeEquivalentRole(r))
       )
     ).sort();
 

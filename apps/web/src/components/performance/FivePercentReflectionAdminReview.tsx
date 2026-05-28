@@ -68,6 +68,16 @@ function formatMonthKey(monthKey: string): string {
   );
 }
 
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 function renderDetailField(
   field: FivePercentReflectionDetailField,
   record: FivePercentReflectionRecord
@@ -236,6 +246,7 @@ export function FivePercentReflectionAdminReview() {
                   <TableHead>Role</TableHead>
                   <TableHead>Avg Rank</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Last edit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -279,6 +290,20 @@ export function FivePercentReflectionAdminReview() {
                         {record.submission_status === 'submitted' ? 'Submitted' : 'Pending'}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      {record.submission_status !== 'submitted' ? (
+                        '—'
+                      ) : record.last_employee_edit_at ? (
+                        <div className="space-y-1">
+                          <Badge variant="secondary">Edited</Badge>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDateTime(record.last_employee_edit_at)}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Original</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -291,9 +316,27 @@ export function FivePercentReflectionAdminReview() {
             <CardTitle>Reflection detail</CardTitle>
             <CardDescription>
               {selectedEntry
-                ? `${selectedEntry.full_name} • ${selectedEntry.department_role}`
+                ? `${selectedEntry.full_name} • ${selectedEntry.department_role} • ${formatMonthKey(monthKey)}`
                 : 'Choose a teammate to review their reflection.'}
             </CardDescription>
+            {selectedEntry ? (
+              <div className="flex flex-wrap gap-2">
+                <Badge
+                  variant={selectedEntry.submission_status === 'submitted' ? 'success' : 'secondary'}
+                >
+                  {selectedEntry.submission_status === 'submitted' ? 'Submitted' : 'Pending'}
+                </Badge>
+                {selectedEntry.submission_status === 'submitted' ? (
+                  selectedEntry.last_employee_edit_at ? (
+                    <Badge variant="secondary">
+                      Edited {formatDateTime(selectedEntry.last_employee_edit_at)}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Original submission</Badge>
+                  )
+                ) : null}
+              </div>
+            ) : null}
           </CardHeader>
           <CardContent className="space-y-6">
             {!selectedEntry ? (

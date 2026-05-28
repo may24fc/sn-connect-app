@@ -1,3 +1,4 @@
+import { EMPLOYEE_EQUIVALENT_ROLES } from '@/lib/roles';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const PERFORMANCE_ADMIN_ROLES: readonly string[] = ['admin', 'super_admin'];
@@ -123,7 +124,8 @@ export async function listPerformanceAudience(
   const { data, error } = await supabaseAdmin
     .from('employee_directory')
     .select('user_id, employee_id, full_name, department_name, position, avatar_url, role')
-    .in('role', ['employee', 'intern'])
+    .in('role', [...EMPLOYEE_EQUIVALENT_ROLES, 'intern'])
+    .neq('status', 'terminated')
     .not('user_id', 'is', null)
     .order('full_name', { ascending: true });
 

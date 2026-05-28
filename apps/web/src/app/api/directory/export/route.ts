@@ -1,17 +1,9 @@
+import { expandEmployeeEquivalentRoles } from '@/lib/roles';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import ExcelJS from 'exceljs';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
-
-const EMPLOYEE_EQUIVALENT_ROLES = ['employee', 'admin', 'super_admin'];
-
-function expandEmployeeRole(roles: string[]): string[] {
-  const expanded = roles.flatMap((r) =>
-    r === 'employee' ? EMPLOYEE_EQUIVALENT_ROLES : [r]
-  );
-  return [...new Set(expanded)];
-}
 
 interface DirectoryExportRow {
   full_name: string | null;
@@ -86,8 +78,10 @@ export async function GET(request: NextRequest) {
 
     if (!status) query = query.neq('status', 'terminated');
 
-    if (roleFilter) query = query.in('role', expandEmployeeRole([roleFilter]));
-    if (roleFilters.length > 0) query = query.in('role', expandEmployeeRole(roleFilters));
+    if (roleFilter) query = query.in('role', expandEmployeeEquivalentRoles([roleFilter]));
+    if (roleFilters.length > 0) {
+      query = query.in('role', expandEmployeeEquivalentRoles(roleFilters));
+    }
     if (department) query = query.eq('department_name', department);
     if (departmentFilters.length > 0) query = query.in('department_name', departmentFilters);
     if (division) query = query.eq('division_name', division);

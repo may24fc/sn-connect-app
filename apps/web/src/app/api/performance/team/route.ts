@@ -39,7 +39,34 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ data: [] });
     }
 
-    const employeeIds = reports.map((report) => report.employee_id);
+    const { data: reportUsers, error: reportUsersError } = await supabaseAdmin
+      .from('users')
+      .select('id, status')
+      .in(
+        'id',
+        reports.map((report) => report.user_id)
+      );
+
+    if (reportUsersError) {
+      return NextResponse.json(
+        { error: 'Failed to load direct report statuses', details: reportUsersError.message },
+        { status: 500 }
+      );
+    }
+
+    const accessibleUserIds = new Set(
+      (reportUsers || [])
+        .filter((reportUser) => reportUser.status !== 'terminated')
+        .map((reportUser) => reportUser.id)
+    );
+
+    const activeReports = reports.filter((report) => accessibleUserIds.has(report.user_id));
+
+    if (activeReports.length === 0) {
+      return NextResponse.json({ data: [] });
+    }
+
+    const employeeIds = activeReports.map((report) => report.employee_id);
 
     const [{ data: okrs }, { data: kpis }, { data: reviews }] = await Promise.all([
       supabaseAdmin
@@ -57,7 +84,7 @@ export async function GET(_request: NextRequest) {
         .in('employee_id', employeeIds),
     ]);
 
-    const data = reports.map((report) => {
+    const data = activeReports.map((report) => {
       const employeeOkrs = (okrs || []).filter((okr) => okr.employee_id === report.employee_id);
       const employeeKpis = (kpis || []).filter((kpi) => kpi.employee_id === report.employee_id);
       const employeeReviews = (reviews || []).filter(

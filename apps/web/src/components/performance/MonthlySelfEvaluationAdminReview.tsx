@@ -98,6 +98,16 @@ function formatSectionTitle(title: string): string {
   return title.replace(/^SECTION\s+\d+:\s*/i, '');
 }
 
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 function initials(name: string): string {
   return name
     .split(' ')
@@ -445,6 +455,7 @@ export function MonthlySelfEvaluationAdminReview() {
                       <TableHead>Status</TableHead>
                       <TableHead>Score</TableHead>
                       <TableHead>Submitted</TableHead>
+                      <TableHead>Last edit</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -484,6 +495,20 @@ export function MonthlySelfEvaluationAdminReview() {
                               })
                             : '—'}
                         </TableCell>
+                        <TableCell>
+                          {record.submission_status !== 'submitted' ? (
+                            '—'
+                          ) : record.last_employee_edit_at ? (
+                            <div className="space-y-1">
+                              <Badge variant="secondary">Edited</Badge>
+                              <p className="text-xs text-muted-foreground">
+                                {formatDateTime(record.last_employee_edit_at)}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Original</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -505,9 +530,27 @@ export function MonthlySelfEvaluationAdminReview() {
                 <CardTitle>{selectedEntry?.full_name || 'Select a teammate'}</CardTitle>
                 <CardDescription>
                   {selectedEntry
-                    ? `${selectedEntry.department_role}`
+                    ? `${selectedEntry.department_role} • ${formatMonthKey(monthKey)}`
                     : 'Choose a person from the list to review their monthly self-evaluation status.'}
                 </CardDescription>
+                {selectedEntry ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Badge
+                      variant={selectedEntry.submission_status === 'submitted' ? 'success' : 'secondary'}
+                    >
+                      {selectedEntry.submission_status === 'submitted' ? 'Submitted' : 'Pending'}
+                    </Badge>
+                    {selectedEntry.submission_status === 'submitted' ? (
+                      selectedEntry.last_employee_edit_at ? (
+                        <Badge variant="secondary">
+                          Edited {formatDateTime(selectedEntry.last_employee_edit_at)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Original submission</Badge>
+                      )
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
               {selectedRecord ? renderProductivityMetric(selectedRecord.productivity_score) : null}
             </div>

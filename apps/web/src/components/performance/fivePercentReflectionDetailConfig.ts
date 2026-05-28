@@ -22,6 +22,7 @@ export type FivePercentReflectionRecord = {
   deep_dive_parking_lot: string;
   exploration_topics: string;
   submitted_at: string;
+  updated_at: string;
 };
 
 export type FivePercentReflectionAdminListEntry = {
@@ -33,6 +34,8 @@ export type FivePercentReflectionAdminListEntry = {
   avatar_url: string | null;
   submission_status: 'pending' | 'submitted';
   submitted_at: string | null;
+  last_employee_edit_at: string | null;
+  has_employee_edits: boolean;
   average_rank: number | null;
   submission: FivePercentReflectionRecord | null;
 };

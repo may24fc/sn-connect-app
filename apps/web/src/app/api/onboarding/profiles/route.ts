@@ -1,3 +1,4 @@
+import { expandEmployeeEquivalentRoles } from '@/lib/roles';
 import { onboardingProfileFiltersSchema } from '@/lib/schemas/onboarding-view.schema';
 import type { OnboardingReviewState } from '@/lib/onboarding-review-state';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
       // "employee" expands to include admin/super_admin so HR sees all staff
       // onboarding submissions, not just those with the employee role.
       if (filters.role === 'employee') {
-        query = query.in('users.role', ['employee', 'admin', 'super_admin']);
+        query = query.in('users.role', expandEmployeeEquivalentRoles(['employee']));
       } else {
         query = query.eq('users.role', filters.role);
       }

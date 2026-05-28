@@ -105,6 +105,10 @@ export async function GET(
       .eq('id', employee.user_id)
       .maybeSingle();
 
+    if (userData?.status === 'terminated') {
+      return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
+    }
+
     // Resolve department name: use employees.department text, or look up from users.department_id
     let departmentName: string | null = employee.department ?? null;
     if (!departmentName && userData?.department_id) {

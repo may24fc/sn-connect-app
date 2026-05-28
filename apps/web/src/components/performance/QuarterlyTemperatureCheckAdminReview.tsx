@@ -61,6 +61,16 @@ function formatQuarterKey(quarterKey: string): string {
   return `Q${quarter} ${year}`;
 }
 
+function formatDateTime(value: string): string {
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 function getQuarterOptions(count: number = 8, date: Date = new Date()): string[] {
   const results: string[] = [];
   let currentYear = date.getFullYear();
@@ -255,6 +265,7 @@ export function QuarterlyTemperatureCheckAdminReview() {
                       <TableHead>Energy</TableHead>
                       <TableHead>Experience</TableHead>
                       <TableHead>Submitted</TableHead>
+                      <TableHead>Last edit</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -294,6 +305,20 @@ export function QuarterlyTemperatureCheckAdminReview() {
                               })
                             : '—'}
                         </TableCell>
+                        <TableCell>
+                          {record.submission_status !== 'submitted' ? (
+                            '—'
+                          ) : record.last_employee_edit_at ? (
+                            <div className="space-y-1">
+                              <Badge variant="secondary">Edited</Badge>
+                              <p className="text-xs text-muted-foreground">
+                                {formatDateTime(record.last_employee_edit_at)}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Original</span>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -313,6 +338,24 @@ export function QuarterlyTemperatureCheckAdminReview() {
                     ? `${selectedEntry.department_role} • ${formatQuarterKey(quarterKey)}`
                     : 'Choose a person from the list to review their quarterly temperature check status.'}
                 </CardDescription>
+                {selectedEntry ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Badge
+                      variant={selectedEntry.submission_status === 'submitted' ? 'success' : 'secondary'}
+                    >
+                      {selectedEntry.submission_status === 'submitted' ? 'Submitted' : 'Pending'}
+                    </Badge>
+                    {selectedEntry.submission_status === 'submitted' ? (
+                      selectedEntry.last_employee_edit_at ? (
+                        <Badge variant="secondary">
+                          Edited {formatDateTime(selectedEntry.last_employee_edit_at)}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">Original submission</Badge>
+                      )
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
               {selectedRecord ? (
                 <div className="flex flex-wrap gap-2">

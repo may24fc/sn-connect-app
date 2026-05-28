@@ -1,6 +1,9 @@
 'use client';
 
 import {
+  getSubmissionEditStatus,
+} from '@/lib/performance/submission-edit-status';
+import {
   type SubmitMonthlySelfEvaluationInput,
   monthlySelfEvaluationResponseSchema,
   submitMonthlySelfEvaluationSchema,
@@ -27,11 +30,7 @@ import {
 } from '@hr-portal/ui';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import {
-  type MonthlySelfEvaluationDetailField,
-  type MonthlySelfEvaluationRecord,
-  monthlySelfEvaluationDetailSections,
-} from './monthlySelfEvaluationDetailConfig';
+import { type MonthlySelfEvaluationRecord } from './monthlySelfEvaluationDetailConfig';
 
 type PerformanceIdentityProfile = {
   fullName: string;
@@ -254,9 +253,13 @@ export function MonthlySelfEvaluationForm() {
       setSubmittedRecord(payload.data as MonthlySelfEvaluationRecord);
       reset(toFormValues(payload.data as MonthlySelfEvaluationRecord));
 
+      const isUpdate = response.status !== 201;
+
       addToast({
-        title: 'Monthly self-evaluation submitted',
-        description: 'Your response is now locked for this month.',
+        title: isUpdate ? 'Monthly self-evaluation updated' : 'Monthly self-evaluation submitted',
+        description: isUpdate
+          ? 'Your latest answers were saved and remain editable for this month.'
+          : 'Your response was saved and remains editable for this month.',
         variant: 'success',
       });
     } catch (error) {
@@ -281,24 +284,12 @@ export function MonthlySelfEvaluationForm() {
     );
   };
 
-  const renderSubmittedField = (
-    field: MonthlySelfEvaluationDetailField,
-    record: MonthlySelfEvaluationRecord
-  ) => {
-    const value = field.value(record);
-    const valueClassName = field.emphasizeValue
-      ? 'mt-2 text-3xl font-semibold tracking-tight text-foreground'
-      : field.preserveWhitespace
-        ? 'mt-1 whitespace-pre-wrap text-sm text-muted-foreground'
-        : 'mt-1 text-sm text-muted-foreground';
-
-    return (
-      <div key={field.label} className={field.fullWidth ? 'md:col-span-2' : undefined}>
-        <p className="text-sm font-medium text-foreground">{field.label}</p>
-        <p className={valueClassName}>{value}</p>
-      </div>
-    );
-  };
+  const submissionEditStatus = submittedRecord
+    ? getSubmissionEditStatus({
+        submittedAt: submittedRecord.submitted_at,
+        updatedAt: submittedRecord.updated_at,
+      })
+    : null;
 
   if (loading) {
     return (
@@ -309,16 +300,20 @@ export function MonthlySelfEvaluationForm() {
     );
   }
 
-  if (submittedRecord) {
-    return (
-      <div className="mx-auto max-w-3xl space-y-6">
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      {submittedRecord ? (
         <Card className="border-emerald-200 bg-emerald-50/60">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>Monthly self-evaluation submitted</CardTitle>
+                <CardTitle>
+                  {submissionEditStatus?.hasEmployeeEdits
+                    ? 'Monthly self-evaluation updated'
+                    : 'Monthly self-evaluation submitted'}
+                </CardTitle>
                 <CardDescription>
-                  Your {formatMonthKey(submittedRecord.month_key)} response was submitted on{' '}
+                  Submitted on{' '}
                   {new Date(submittedRecord.submitted_at).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -326,31 +321,24 @@ export function MonthlySelfEvaluationForm() {
                     hour: 'numeric',
                     minute: '2-digit',
                   })}
-                  .
+                  .{' '}
+                  {submissionEditStatus?.lastEmployeeEditAt
+                    ? `Last edited on ${new Date(submissionEditStatus.lastEmployeeEditAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}.`
+                    : 'You can still update your answers for this month.'}
                 </CardDescription>
               </div>
-              <Badge variant="success">Locked for this month</Badge>
+              <Badge variant="secondary">Editable after submission</Badge>
             </div>
           </CardHeader>
         </Card>
+      ) : null}
 
-        {monthlySelfEvaluationDetailSections.map((section) => (
-          <Card key={section.title}>
-            <CardHeader>
-              <CardTitle>{section.title}</CardTitle>
-              <CardDescription>{section.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              {section.fields.map((field) => renderSubmittedField(field, submittedRecord))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-3xl space-y-6">
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle>Monthly Self-Evaluation</CardTitle>
@@ -596,7 +584,13 @@ export function MonthlySelfEvaluationForm() {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : `Submit ${formatMonthKey(monthKey)} self-evaluation`}
+            {isSubmitting
+              ? submittedRecord
+                ? 'Saving changes...'
+                : 'Submitting...'
+              : submittedRecord
+                ? 'Save changes'
+                : `Submit ${formatMonthKey(monthKey)} self-evaluation`}
           </Button>
         </div>
       </form>

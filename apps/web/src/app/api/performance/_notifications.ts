@@ -1,5 +1,83 @@
+import {
+  createNotificationsForUsers,
+  getUserDisplayName,
+  getUserIdsByRoles,
+} from '@/lib/notifications/create-notification';
 import { getNotificationUserIdentity } from '@/lib/notifications/user-identity';
 import { getStoredNotificationPreferencesForUser } from '@/lib/settings/notification-preferences.server';
+
+type PerformanceEvaluationKind = 'monthly' | 'five-percent' | 'quarterly';
+type PerformanceEvaluationNotificationAction = 'submitted' | 'updated';
+
+interface NotifyPerformanceEvaluationManagersOptions {
+  evaluationKind: PerformanceEvaluationKind;
+  action: PerformanceEvaluationNotificationAction;
+  submissionId: string;
+  submittedBy: string;
+  cycleKey: string;
+  departmentRole: string;
+}
+
+const PERFORMANCE_EVALUATION_CONFIG: Record<
+  PerformanceEvaluationKind,
+  {
+    title: string;
+    noun: string;
+    tab: 'monthly' | 'five-percent' | 'quarterly';
+  }
+> = {
+  monthly: {
+    title: 'Monthly Self-Evaluation',
+    noun: 'monthly self-evaluation',
+    tab: 'monthly',
+  },
+  'five-percent': {
+    title: '5% Reflection',
+    noun: '5% reflection',
+    tab: 'five-percent',
+  },
+  quarterly: {
+    title: 'Quarterly Temperature Check',
+    noun: 'quarterly temperature check',
+    tab: 'quarterly',
+  },
+};
+
+export async function notifyPerformanceEvaluationManagers({
+  evaluationKind,
+  action,
+  submissionId,
+  submittedBy,
+  cycleKey,
+  departmentRole,
+}: NotifyPerformanceEvaluationManagersOptions): Promise<void> {
+  const config = PERFORMANCE_EVALUATION_CONFIG[evaluationKind];
+  const [submitterName, adminIds] = await Promise.all([
+    getUserDisplayName(submittedBy),
+    getUserIdsByRoles(['admin', 'super_admin']),
+  ]);
+
+  const recipients = adminIds.filter((userId) => userId !== submittedBy);
+  if (recipients.length === 0) {
+    return;
+  }
+
+  await createNotificationsForUsers(recipients, {
+    type: 'system',
+    title: `${config.title} ${action === 'submitted' ? 'Submitted' : 'Updated'}`,
+    message: `${submitterName} ${action} their ${config.noun} for ${cycleKey}.`,
+    link: `/admin/performance/monthly-self-evaluations?tab=${config.tab}`,
+    metadata: {
+      evaluationKind,
+      action,
+      submissionId,
+      submittedBy,
+      cycleKey,
+      departmentRole,
+    },
+    dedupeKey: `performance-evaluation:${evaluationKind}:${action}:${submissionId}:${cycleKey}`,
+  });
+}
 
 interface FivePercentReflectionWebhookPayload {
   id: string;

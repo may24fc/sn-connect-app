@@ -27,6 +27,7 @@ export type MonthlySelfEvaluationRecord = {
   additional_comments: string | null;
   next_month_goal: string;
   submitted_at: string;
+  updated_at: string;
 };
 
 export type MonthlySelfEvaluationAdminListEntry = {
@@ -38,6 +39,8 @@ export type MonthlySelfEvaluationAdminListEntry = {
   avatar_url: string | null;
   submission_status: 'pending' | 'submitted';
   submitted_at: string | null;
+  last_employee_edit_at: string | null;
+  has_employee_edits: boolean;
   productivity_score: number | null;
   submission: MonthlySelfEvaluationRecord | null;
 };

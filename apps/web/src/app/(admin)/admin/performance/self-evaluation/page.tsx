@@ -1,13 +1,13 @@
 import { SelfEvaluationWorkspace } from '@/components/performance/SelfEvaluationWorkspace';
 import type { ReactNode } from 'react';
 
-type SelfEvaluationPageProps = {
+type AdminSelfEvaluationPageProps = {
   searchParams?: Promise<{ tab?: string }>;
 };
 
-export default async function MonthlySelfEvaluationPage({
+export default async function AdminSelfEvaluationPage({
   searchParams,
-}: SelfEvaluationPageProps): Promise<ReactNode> {
+}: AdminSelfEvaluationPageProps): Promise<ReactNode> {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const defaultTab =
     resolvedSearchParams?.tab === 'quarterly'
@@ -16,5 +16,11 @@ export default async function MonthlySelfEvaluationPage({
         ? 'five-percent'
         : 'monthly';
 
-  return <SelfEvaluationWorkspace defaultTab={defaultTab} />;
+  return (
+    <SelfEvaluationWorkspace
+      defaultTab={defaultTab}
+      backHref="/admin/performance/monthly-self-evaluations"
+      backLabel="Back to Reviews"
+    />
+  );
 }

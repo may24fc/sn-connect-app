@@ -1,6 +1,9 @@
 'use client';
 
 import {
+  getSubmissionEditStatus,
+} from '@/lib/performance/submission-edit-status';
+import {
   type SubmitQuarterlyTemperatureCheckInput,
   submitQuarterlyTemperatureCheckSchema,
 } from '@/lib/schemas/performance.schema';
@@ -22,9 +25,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
-  type QuarterlyTemperatureCheckDetailField,
   type QuarterlyTemperatureCheckRecord,
-  quarterlyTemperatureCheckDetailSections,
 } from './quarterlyTemperatureCheckDetailConfig';
 
 type PerformanceIdentityProfile = {
@@ -201,9 +202,13 @@ export function QuarterlyTemperatureCheckForm() {
       setSubmittedRecord(payload.data as QuarterlyTemperatureCheckRecord);
       reset(toFormValues(payload.data as QuarterlyTemperatureCheckRecord));
 
+      const isUpdate = response.status !== 201;
+
       addToast({
-        title: 'Quarterly temperature check submitted',
-        description: 'Your response is now locked for this quarter.',
+        title: isUpdate ? 'Quarterly temperature check updated' : 'Quarterly temperature check submitted',
+        description: isUpdate
+          ? 'Your latest answers were saved and remain editable for this quarter.'
+          : 'Your response was saved and remains editable for this quarter.',
         variant: 'success',
       });
     } catch (error) {
@@ -228,24 +233,12 @@ export function QuarterlyTemperatureCheckForm() {
     );
   };
 
-  const renderSubmittedField = (
-    field: QuarterlyTemperatureCheckDetailField,
-    record: QuarterlyTemperatureCheckRecord
-  ) => {
-    const value = field.value(record);
-    const valueClassName = field.emphasizeValue
-      ? 'mt-2 text-3xl font-semibold tracking-tight text-foreground'
-      : field.preserveWhitespace
-        ? 'mt-1 whitespace-pre-wrap text-sm text-muted-foreground'
-        : 'mt-1 text-sm text-muted-foreground';
-
-    return (
-      <div key={field.label} className={field.fullWidth ? 'md:col-span-2' : undefined}>
-        <p className="text-sm font-medium text-foreground">{field.label}</p>
-        <p className={valueClassName}>{value}</p>
-      </div>
-    );
-  };
+  const submissionEditStatus = submittedRecord
+    ? getSubmissionEditStatus({
+        submittedAt: submittedRecord.submitted_at,
+        updatedAt: submittedRecord.updated_at,
+      })
+    : null;
 
   if (loading) {
     return (
@@ -256,16 +249,20 @@ export function QuarterlyTemperatureCheckForm() {
     );
   }
 
-  if (submittedRecord) {
-    return (
-      <div className="mx-auto max-w-3xl space-y-6">
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      {submittedRecord ? (
         <Card className="border-emerald-200 bg-emerald-50/60">
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>Quarterly temperature check submitted</CardTitle>
+                <CardTitle>
+                  {submissionEditStatus?.hasEmployeeEdits
+                    ? 'Quarterly temperature check updated'
+                    : 'Quarterly temperature check submitted'}
+                </CardTitle>
                 <CardDescription>
-                  Your {formatQuarterKey(submittedRecord.quarter_key)} response was submitted on{' '}
+                  Submitted on{' '}
                   {new Date(submittedRecord.submitted_at).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -273,31 +270,24 @@ export function QuarterlyTemperatureCheckForm() {
                     hour: 'numeric',
                     minute: '2-digit',
                   })}
-                  .
+                  .{' '}
+                  {submissionEditStatus?.lastEmployeeEditAt
+                    ? `Last edited on ${new Date(submissionEditStatus.lastEmployeeEditAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}.`
+                    : 'You can still update your answers for this quarter.'}
                 </CardDescription>
               </div>
-              <Badge variant="success">Locked for this quarter</Badge>
+              <Badge variant="secondary">Editable after submission</Badge>
             </div>
           </CardHeader>
         </Card>
+      ) : null}
 
-        {quarterlyTemperatureCheckDetailSections.map((section) => (
-          <Card key={section.title}>
-            <CardHeader>
-              <CardTitle>{section.title}</CardTitle>
-              <CardDescription>{section.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              {section.fields.map((field) => renderSubmittedField(field, submittedRecord))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-3xl space-y-6">
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle>Quarterly Temperature Check</CardTitle>
@@ -422,8 +412,12 @@ export function QuarterlyTemperatureCheckForm() {
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting
-              ? 'Submitting...'
-              : `Submit ${formatQuarterKey(quarterKey)} temperature check`}
+              ? submittedRecord
+                ? 'Saving changes...'
+                : 'Submitting...'
+              : submittedRecord
+                ? 'Save changes'
+                : `Submit ${formatQuarterKey(quarterKey)} temperature check`}
           </Button>
         </div>
       </form>

@@ -13,6 +13,7 @@ export type QuarterlyTemperatureCheckRecord = {
   overall_experience_score: number;
   overall_experience_reason: string;
   submitted_at: string;
+  updated_at: string;
 };
 
 export type QuarterlyTemperatureCheckAdminListEntry = {
@@ -24,6 +25,8 @@ export type QuarterlyTemperatureCheckAdminListEntry = {
   avatar_url: string | null;
   submission_status: 'pending' | 'submitted';
   submitted_at: string | null;
+  last_employee_edit_at: string | null;
+  has_employee_edits: boolean;
   energy_workload_score: number | null;
   overall_experience_score: number | null;
   submission: QuarterlyTemperatureCheckRecord | null;
