@@ -23,25 +23,80 @@ const PERFORMANCE_EVALUATION_CONFIG: Record<
   {
     title: string;
     noun: string;
+    reviewLabel: string;
     tab: 'monthly' | 'five-percent' | 'quarterly';
   }
 > = {
   monthly: {
     title: 'Monthly Self-Evaluation',
     noun: 'monthly self-evaluation',
+    reviewLabel: 'monthly review queue',
     tab: 'monthly',
   },
   'five-percent': {
     title: '5% Reflection',
     noun: '5% reflection',
+    reviewLabel: '5% reflection queue',
     tab: 'five-percent',
   },
   quarterly: {
     title: 'Quarterly Temperature Check',
     noun: 'quarterly temperature check',
+    reviewLabel: 'quarterly review queue',
     tab: 'quarterly',
   },
 };
+
+function formatEvaluationCycleKey(
+  evaluationKind: PerformanceEvaluationKind,
+  cycleKey: string
+): string {
+  if (evaluationKind === 'quarterly') {
+    const [year, quarter] = cycleKey.split('-Q');
+    return quarter ? `Q${quarter} ${year}` : cycleKey;
+  }
+
+  const [year, month] = cycleKey.split('-').map(Number);
+  if (!year || !month) {
+    return cycleKey;
+  }
+
+  return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+function buildEvaluationNotificationTitle(
+  title: string,
+  action: PerformanceEvaluationNotificationAction
+): string {
+  return action === 'submitted' ? `${title} Ready for Review` : `${title} Updated`;
+}
+
+function buildEvaluationNotificationMessage({
+  submitterName,
+  departmentRole,
+  noun,
+  cycleLabel,
+  reviewLabel,
+  action,
+}: {
+  submitterName: string;
+  departmentRole: string;
+  noun: string;
+  cycleLabel: string;
+  reviewLabel: string;
+  action: PerformanceEvaluationNotificationAction;
+}): string {
+  const roleSuffix = departmentRole.trim() ? ` (${departmentRole.trim()})` : '';
+
+  if (action === 'submitted') {
+    return `${submitterName}${roleSuffix} submitted their ${noun} for ${cycleLabel}. Open the ${reviewLabel} to review the response.`;
+  }
+
+  return `${submitterName}${roleSuffix} updated their ${noun} for ${cycleLabel}. Open the ${reviewLabel} to review the latest answers.`;
+}
 
 export async function notifyPerformanceEvaluationManagers({
   evaluationKind,
@@ -52,6 +107,7 @@ export async function notifyPerformanceEvaluationManagers({
   departmentRole,
 }: NotifyPerformanceEvaluationManagersOptions): Promise<void> {
   const config = PERFORMANCE_EVALUATION_CONFIG[evaluationKind];
+  const cycleLabel = formatEvaluationCycleKey(evaluationKind, cycleKey);
   const [submitterName, adminIds] = await Promise.all([
     getUserDisplayName(submittedBy),
     getUserIdsByRoles(['admin', 'super_admin']),
@@ -64,8 +120,15 @@ export async function notifyPerformanceEvaluationManagers({
 
   await createNotificationsForUsers(recipients, {
     type: 'system',
-    title: `${config.title} ${action === 'submitted' ? 'Submitted' : 'Updated'}`,
-    message: `${submitterName} ${action} their ${config.noun} for ${cycleKey}.`,
+    title: buildEvaluationNotificationTitle(config.title, action),
+    message: buildEvaluationNotificationMessage({
+      submitterName,
+      departmentRole,
+      noun: config.noun,
+      cycleLabel,
+      reviewLabel: config.reviewLabel,
+      action,
+    }),
     link: `/admin/performance/monthly-self-evaluations?tab=${config.tab}`,
     metadata: {
       evaluationKind,

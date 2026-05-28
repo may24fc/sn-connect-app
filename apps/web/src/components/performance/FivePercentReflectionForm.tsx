@@ -25,6 +25,13 @@ import {
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { type FivePercentReflectionRecord } from './fivePercentReflectionDetailConfig';
+import {
+  clearEvaluationDraft,
+  formatEvaluationDraftSavedAt,
+  getEvaluationDraft,
+  shouldRestoreEvaluationDraft,
+  useAutoSaveEvaluationDraft,
+} from './useEvaluationDraft';
 
 type PerformanceIdentityProfile = {
   fullName: string;
@@ -187,6 +194,7 @@ export function FivePercentReflectionForm() {
   const [monthKey, setMonthKey] = useState<string>(getCurrentMonthKey());
   const [loading, setLoading] = useState(true);
   const [submittedRecord, setSubmittedRecord] = useState<FivePercentReflectionRecord | null>(null);
+  const [restoredDraftAt, setRestoredDraftAt] = useState<string | null>(null);
   const [currentProfile, setCurrentProfile] = useState<PerformanceIdentityProfile>({
     fullName: '',
     departmentRole: '',
@@ -197,10 +205,21 @@ export function FivePercentReflectionForm() {
     handleSubmit,
     register,
     reset,
-    formState: { errors, isSubmitting },
+    watch,
+    formState: { errors, isDirty, isSubmitting },
   } = useForm<SubmitFivePercentReflectionInput>({
     resolver: zodResolver(submitFivePercentReflectionSchema),
     defaultValues: buildDefaultValues(monthKey, currentProfile),
+  });
+
+  const watchedValues = watch();
+  const draftIdentityKey = currentProfile.fullName.trim().toLowerCase();
+  const { autoSavedAt, clearDraft } = useAutoSaveEvaluationDraft({
+    formKey: 'five-percent-reflection',
+    cycleKey: monthKey,
+    identityKey: draftIdentityKey,
+    values: watchedValues,
+    enabled: !loading && isDirty && !isSubmitting,
   });
 
   useEffect(() => {
@@ -226,12 +245,40 @@ export function FivePercentReflectionForm() {
 
         setMonthKey(payload.data.monthKey);
         setCurrentProfile(payload.data.profile);
+        const identityKey = payload.data.profile.fullName.trim().toLowerCase();
+        const draft = await getEvaluationDraft<SubmitFivePercentReflectionInput>(
+          'five-percent-reflection',
+          payload.data.monthKey,
+          identityKey
+        );
+
         if (payload.data.submission) {
           setSubmittedRecord(payload.data.submission);
-          reset(toFormValues(payload.data.submission));
+          const serverValues = toFormValues(payload.data.submission);
+          const latestServerSavedAt =
+            payload.data.submission.updated_at ?? payload.data.submission.submitted_at;
+
+          if (draft && shouldRestoreEvaluationDraft(draft.savedAt, latestServerSavedAt)) {
+            setRestoredDraftAt(draft.savedAt);
+            reset({ ...serverValues, ...draft.values });
+          } else {
+            setRestoredDraftAt(null);
+            if (draft) {
+              await clearEvaluationDraft('five-percent-reflection', payload.data.monthKey, identityKey);
+            }
+            reset(serverValues);
+          }
         } else {
           setSubmittedRecord(null);
-          reset(buildDefaultValues(payload.data.monthKey, payload.data.profile));
+          const defaultValues = buildDefaultValues(payload.data.monthKey, payload.data.profile);
+
+          if (draft) {
+            setRestoredDraftAt(draft.savedAt);
+            reset({ ...defaultValues, ...draft.values });
+          } else {
+            setRestoredDraftAt(null);
+            reset(defaultValues);
+          }
         }
       } catch (error) {
         if (!active) return;
@@ -277,6 +324,8 @@ export function FivePercentReflectionForm() {
 
       setSubmittedRecord(payload.data as FivePercentReflectionRecord);
       reset(toFormValues(payload.data as FivePercentReflectionRecord));
+  await clearDraft();
+  setRestoredDraftAt(null);
 
       const isUpdate = response.status !== 201;
 
@@ -422,6 +471,16 @@ export function FivePercentReflectionForm() {
           </div>
         </CardContent>
       </Card>
+
+      {restoredDraftAt || autoSavedAt ? (
+        <Card className="border-amber-200 bg-amber-50/60">
+          <CardContent className="py-4 text-sm text-amber-950">
+            {restoredDraftAt
+              ? `Unsaved draft restored from ${formatEvaluationDraftSavedAt(restoredDraftAt)} in this browser tab.`
+              : `Draft auto-saved at ${formatEvaluationDraftSavedAt(autoSavedAt as string)} in this browser tab.`}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <form className="space-y-6" onSubmit={onSubmit}>
         {reflectionSections.map((section) => (

@@ -31,6 +31,13 @@ import {
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { type MonthlySelfEvaluationRecord } from './monthlySelfEvaluationDetailConfig';
+import {
+  clearEvaluationDraft,
+  formatEvaluationDraftSavedAt,
+  getEvaluationDraft,
+  shouldRestoreEvaluationDraft,
+  useAutoSaveEvaluationDraft,
+} from './useEvaluationDraft';
 
 type PerformanceIdentityProfile = {
   fullName: string;
@@ -164,6 +171,7 @@ export function MonthlySelfEvaluationForm() {
   const [monthKey, setMonthKey] = useState<string>(getCurrentMonthKey());
   const [loading, setLoading] = useState(true);
   const [submittedRecord, setSubmittedRecord] = useState<MonthlySelfEvaluationRecord | null>(null);
+  const [restoredDraftAt, setRestoredDraftAt] = useState<string | null>(null);
   const [currentProfile, setCurrentProfile] = useState<PerformanceIdentityProfile>({
     fullName: '',
     departmentRole: '',
@@ -174,10 +182,21 @@ export function MonthlySelfEvaluationForm() {
     handleSubmit,
     register,
     reset,
-    formState: { errors, isSubmitting },
+    watch,
+    formState: { errors, isDirty, isSubmitting },
   } = useForm<SubmitMonthlySelfEvaluationInput>({
     resolver: zodResolver(submitMonthlySelfEvaluationSchema),
     defaultValues: buildDefaultValues(monthKey, currentProfile),
+  });
+
+  const watchedValues = watch();
+  const draftIdentityKey = currentProfile.fullName.trim().toLowerCase();
+  const { autoSavedAt, clearDraft } = useAutoSaveEvaluationDraft({
+    formKey: 'monthly-self-evaluation',
+    cycleKey: monthKey,
+    identityKey: draftIdentityKey,
+    values: watchedValues,
+    enabled: !loading && isDirty && !isSubmitting,
   });
 
   useEffect(() => {
@@ -203,12 +222,40 @@ export function MonthlySelfEvaluationForm() {
 
         setMonthKey(payload.data.monthKey);
         setCurrentProfile(payload.data.profile);
+        const identityKey = payload.data.profile.fullName.trim().toLowerCase();
+        const draft = await getEvaluationDraft<SubmitMonthlySelfEvaluationInput>(
+          'monthly-self-evaluation',
+          payload.data.monthKey,
+          identityKey
+        );
+
         if (payload.data.submission) {
           setSubmittedRecord(payload.data.submission);
-          reset(toFormValues(payload.data.submission));
+          const serverValues = toFormValues(payload.data.submission);
+          const latestServerSavedAt =
+            payload.data.submission.updated_at ?? payload.data.submission.submitted_at;
+
+          if (draft && shouldRestoreEvaluationDraft(draft.savedAt, latestServerSavedAt)) {
+            setRestoredDraftAt(draft.savedAt);
+            reset({ ...serverValues, ...draft.values });
+          } else {
+            setRestoredDraftAt(null);
+            if (draft) {
+              await clearEvaluationDraft('monthly-self-evaluation', payload.data.monthKey, identityKey);
+            }
+            reset(serverValues);
+          }
         } else {
           setSubmittedRecord(null);
-          reset(buildDefaultValues(payload.data.monthKey, payload.data.profile));
+          const defaultValues = buildDefaultValues(payload.data.monthKey, payload.data.profile);
+
+          if (draft) {
+            setRestoredDraftAt(draft.savedAt);
+            reset({ ...defaultValues, ...draft.values });
+          } else {
+            setRestoredDraftAt(null);
+            reset(defaultValues);
+          }
         }
       } catch (error) {
         if (!active) return;
@@ -252,6 +299,8 @@ export function MonthlySelfEvaluationForm() {
 
       setSubmittedRecord(payload.data as MonthlySelfEvaluationRecord);
       reset(toFormValues(payload.data as MonthlySelfEvaluationRecord));
+  await clearDraft();
+  setRestoredDraftAt(null);
 
       const isUpdate = response.status !== 201;
 
@@ -363,6 +412,16 @@ export function MonthlySelfEvaluationForm() {
           </div>
         </CardContent>
       </Card>
+
+      {restoredDraftAt || autoSavedAt ? (
+        <Card className="border-amber-200 bg-amber-50/60">
+          <CardContent className="py-4 text-sm text-amber-950">
+            {restoredDraftAt
+              ? `Unsaved draft restored from ${formatEvaluationDraftSavedAt(restoredDraftAt)} in this browser tab.`
+              : `Draft auto-saved at ${formatEvaluationDraftSavedAt(autoSavedAt as string)} in this browser tab.`}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <form className="space-y-6" onSubmit={onSubmit}>
         <Card>

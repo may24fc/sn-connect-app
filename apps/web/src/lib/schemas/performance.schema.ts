@@ -299,6 +299,14 @@ export const monthlySelfEvaluationFiltersSchema = z.object({
   search: z.string().trim().max(200).optional(),
 });
 
+export const performanceEvaluationDraftKindSchema = z.enum([
+  'monthly',
+  'quarterly',
+  'five_percent',
+]);
+
+export const submitMonthlySelfEvaluationDraftSchema = submitMonthlySelfEvaluationSchema.partial();
+
 export const submitQuarterlyTemperatureCheckSchema = z.object({
   quarterKey: quarterKeySchema,
   fullName: z.string().trim().min(1).max(200),
@@ -319,6 +327,9 @@ export const quarterlyTemperatureCheckFiltersSchema = z.object({
   employeeId: z.string().uuid().optional(),
   search: z.string().trim().max(200).optional(),
 });
+
+export const submitQuarterlyTemperatureCheckDraftSchema =
+  submitQuarterlyTemperatureCheckSchema.partial();
 
 export const submitFivePercentReflectionSchema = z.object({
   monthKey: monthKeySchema,
@@ -350,6 +361,54 @@ export const fivePercentReflectionFiltersSchema = z.object({
   search: z.string().trim().max(200).optional(),
 });
 
+export const submitFivePercentReflectionDraftSchema =
+  submitFivePercentReflectionSchema.partial();
+
+export const performanceEvaluationDraftQuerySchema = z
+  .object({
+    evaluationKind: performanceEvaluationDraftKindSchema,
+    cycleKey: z.string().trim().min(1).max(20),
+  })
+  .superRefine((data, ctx) => {
+    if (data.evaluationKind === 'monthly' || data.evaluationKind === 'five_percent') {
+      if (!monthKeySchema.safeParse(data.cycleKey).success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Use YYYY-MM for monthly and 5% draft keys',
+          path: ['cycleKey'],
+        });
+      }
+    }
+
+    if (data.evaluationKind === 'quarterly') {
+      if (!quarterKeySchema.safeParse(data.cycleKey).success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Use YYYY-Q# for quarterly draft keys',
+          path: ['cycleKey'],
+        });
+      }
+    }
+  });
+
+export const upsertPerformanceEvaluationDraftSchema = z.discriminatedUnion('evaluationKind', [
+  z.object({
+    evaluationKind: z.literal('monthly'),
+    cycleKey: monthKeySchema,
+    values: submitMonthlySelfEvaluationDraftSchema,
+  }),
+  z.object({
+    evaluationKind: z.literal('quarterly'),
+    cycleKey: quarterKeySchema,
+    values: submitQuarterlyTemperatureCheckDraftSchema,
+  }),
+  z.object({
+    evaluationKind: z.literal('five_percent'),
+    cycleKey: monthKeySchema,
+    values: submitFivePercentReflectionDraftSchema,
+  }),
+]);
+
 export const probationActionSchema = z.discriminatedUnion('action', [
   probationExtendSchema,
   probationCompleteSchema,
@@ -368,13 +427,29 @@ export type CreateKPIInput = z.infer<typeof createKPISchema>;
 export type UpdateKPIInput = z.infer<typeof updateKPISchema>;
 export type SubmitMonthlySelfEvaluationInput = z.infer<typeof submitMonthlySelfEvaluationSchema>;
 export type MonthlySelfEvaluationFiltersInput = z.infer<typeof monthlySelfEvaluationFiltersSchema>;
+export type PerformanceEvaluationDraftKind = z.infer<typeof performanceEvaluationDraftKindSchema>;
+export type SubmitMonthlySelfEvaluationDraftInput = z.infer<
+  typeof submitMonthlySelfEvaluationDraftSchema
+>;
 export type SubmitQuarterlyTemperatureCheckInput = z.infer<
   typeof submitQuarterlyTemperatureCheckSchema
 >;
 export type QuarterlyTemperatureCheckFiltersInput = z.infer<
   typeof quarterlyTemperatureCheckFiltersSchema
 >;
+export type SubmitQuarterlyTemperatureCheckDraftInput = z.infer<
+  typeof submitQuarterlyTemperatureCheckDraftSchema
+>;
 export type SubmitFivePercentReflectionInput = z.infer<typeof submitFivePercentReflectionSchema>;
 export type FivePercentReflectionFiltersInput = z.infer<typeof fivePercentReflectionFiltersSchema>;
+export type SubmitFivePercentReflectionDraftInput = z.infer<
+  typeof submitFivePercentReflectionDraftSchema
+>;
+export type PerformanceEvaluationDraftQueryInput = z.infer<
+  typeof performanceEvaluationDraftQuerySchema
+>;
+export type UpsertPerformanceEvaluationDraftInput = z.infer<
+  typeof upsertPerformanceEvaluationDraftSchema
+>;
 export type CreateOKRTargetEvidenceInput = z.infer<typeof createOKRTargetEvidenceSchema>;
 export type ProbationActionInput = z.infer<typeof probationActionSchema>;
