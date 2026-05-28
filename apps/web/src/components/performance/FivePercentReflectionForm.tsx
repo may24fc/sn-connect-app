@@ -482,7 +482,7 @@ export function FivePercentReflectionForm() {
           <CardDescription className="text-primary text-md">
             As you go through this reflection, please be kind to yourself. This is a safe space for honesty and openness, not judgment. There are no “right” or “wrong” answers, only the real ones.
 Allow yourself to be vulnerable and share what genuinely came up for you. Everything you write here is simply information to help you understand yourself better and take small, meaningful steps forward.
-          </CardDescription>
+  ``          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div>
