@@ -479,10 +479,9 @@ export function FivePercentReflectionForm() {
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle>5% Reflection</CardTitle>
-          <CardDescription>
-            Capture a monthly reflection across work, family, and personal life, then note the
-            topics you want to explore more deeply so future decisions become clearer and more
-            intentional.
+          <CardDescription className="text-primary text-md">
+            As you go through this reflection, please be kind to yourself. This is a safe space for honesty and openness, not judgment. There are no “right” or “wrong” answers, only the real ones.
+Allow yourself to be vulnerable and share what genuinely came up for you. Everything you write here is simply information to help you understand yourself better and take small, meaningful steps forward.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
