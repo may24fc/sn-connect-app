@@ -302,6 +302,35 @@ export function FivePercentReflectionForm() {
     };
   }, [addToast, reset]);
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const onExportPdf = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch(
+        `/api/performance/five-percent-reflections/export-pdf?monthKey=${monthKey}`,
+        { method: 'POST', credentials: 'include' }
+      );
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? 'Failed to export PDF');
+      }
+      addToast({
+        title: 'PDF sent to Telegram',
+        description: 'Your 5% reflection PDF is on its way.',
+        variant: 'success',
+      });
+    } catch (error) {
+      addToast({
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const onSubmit = handleSubmit(async (values) => {
     try {
       const response = await fetch('/api/performance/five-percent-reflections', {
@@ -540,8 +569,18 @@ export function FivePercentReflectionForm() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
+        <div className="flex items-center justify-end gap-3">
+          {submittedRecord ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onExportPdf}
+              disabled={isExporting || isSubmitting}
+            >
+              {isExporting ? 'Sending PDF…' : 'Export PDF'}
+            </Button>
+          ) : null}
+          <Button type="submit" disabled={isSubmitting || isExporting}>
             {isSubmitting
               ? submittedRecord
                 ? 'Saving changes...'

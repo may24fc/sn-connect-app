@@ -171,10 +171,16 @@ interface FivePercentReflectionWebhookPayload {
 
 interface NotifyFivePercentReflectionWebhookOptions {
   submission: FivePercentReflectionWebhookPayload;
+  /** Override delivery channels. Any key not supplied falls back to the user's stored preferences. */
+  channels?: Partial<{ gmail: boolean; telegram: boolean }>;
+  /** Webhook event name. Defaults to 'five_percent_reflection.submitted'. */
+  event?: string;
 }
 
 export async function notifyFivePercentReflectionWebhook({
   submission,
+  channels: channelsOverride,
+  event = 'five_percent_reflection.submitted',
 }: NotifyFivePercentReflectionWebhookOptions): Promise<void> {
   const webhookUrl = process.env.N8N_FIVE_PERCENT_REFLECTION_WEBHOOK_URL?.trim();
   if (!webhookUrl) {
@@ -194,7 +200,7 @@ export async function notifyFivePercentReflectionWebhook({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        event: 'five_percent_reflection.submitted',
+        event,
         submitted_at: submission.submitted_at,
         reflection: {
           id: submission.id,
@@ -233,8 +239,8 @@ export async function notifyFivePercentReflectionWebhook({
           last_name: identity?.lastName ?? null,
           email: identity?.email ?? null,
           channels: {
-            gmail: preferences.gmail,
-            telegram: preferences.telegram,
+            gmail: channelsOverride?.gmail ?? preferences.gmail,
+            telegram: channelsOverride?.telegram ?? preferences.telegram,
           },
           telegram: {
             chat_id: preferences.telegramChatId,
