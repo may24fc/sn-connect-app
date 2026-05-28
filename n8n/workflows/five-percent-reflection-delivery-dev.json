@@ -27,11 +27,27 @@
       }
     },
     {
-      "id": "convert-pdf-file",
-      "name": "Convert PDF Base64 to File",
+      "id": "convert-pdf-gmail",
+      "name": "Convert PDF Base64 to File for Gmail",
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
-      "position": [800, 320],
+      "position": [1360, 260],
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "pdfBase64",
+        "binaryPropertyName": "reflectionPdf",
+        "options": {
+          "fileName": "={{ $json.pdfFileName }}",
+          "mimeType": "application/pdf"
+        }
+      }
+    },
+    {
+      "id": "convert-pdf-telegram",
+      "name": "Convert PDF Base64 to File for Telegram",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1360, 520],
       "parameters": {
         "operation": "toBinary",
         "sourceProperty": "pdfBase64",
@@ -100,14 +116,14 @@
       "name": "Send Gmail Reflection PDF",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
-      "position": [1360, 260],
+      "position": [1640, 260],
       "parameters": {
         "resource": "message",
         "operation": "send",
-        "sendTo": "={{ $json.recipient.email }}",
-        "subject": "={{ $json.emailSubject }}",
+        "sendTo": "={{ $item(0).$node[\"Build Reflection Package\"].json.recipient.email }}",
+        "subject": "={{ $item(0).$node[\"Build Reflection Package\"].json.emailSubject }}",
         "emailType": "html",
-        "message": "={{ $json.emailHtml }}",
+        "message": "={{ $item(0).$node[\"Build Reflection Package\"].json.emailHtml }}",
         "options": {
           "attachmentsUi": {
             "attachmentsBinary": [
@@ -155,15 +171,15 @@
       "name": "Send User Telegram PDF",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1360, 520],
+      "position": [1640, 520],
       "parameters": {
         "resource": "message",
         "operation": "sendDocument",
-        "chatId": "={{ $json.recipient.telegram.chat_id }}",
+        "chatId": "={{ $item(0).$node[\"Build Reflection Package\"].json.recipient.telegram.chat_id }}",
         "binaryData": true,
         "binaryPropertyName": "reflectionPdf",
         "additionalFields": {
-          "caption": "={{ $json.telegramCaption }}",
+          "caption": "={{ $item(0).$node[\"Build Reflection Package\"].json.telegramCaption }}",
           "parse_mode": "HTML"
         }
       },
@@ -191,17 +207,6 @@
       "main": [
         [
           {
-            "node": "Convert PDF Base64 to File",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Convert PDF Base64 to File": {
-      "main": [
-        [
-          {
             "node": "Notify Admin Telegram",
             "type": "main",
             "index": 0
@@ -223,7 +228,7 @@
       "main": [
         [
           {
-            "node": "Send Gmail Reflection PDF",
+            "node": "Convert PDF Base64 to File for Gmail",
             "type": "main",
             "index": 0
           }
@@ -235,12 +240,34 @@
       "main": [
         [
           {
-            "node": "Send User Telegram PDF",
+            "node": "Convert PDF Base64 to File for Telegram",
             "type": "main",
             "index": 0
           }
         ],
         []
+      ]
+    },
+    "Convert PDF Base64 to File for Gmail": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Reflection PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert PDF Base64 to File for Telegram": {
+      "main": [
+        [
+          {
+            "node": "Send User Telegram PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
