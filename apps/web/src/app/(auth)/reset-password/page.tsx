@@ -12,9 +12,67 @@ import {
 } from '@hr-portal/ui';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+
+type BrowserSupabaseClient = NonNullable<ReturnType<typeof createSupabaseBrowserClient>>;
+type RecoveryTokens = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+const INVALID_RESET_LINK_MESSAGE = 'This reset link is invalid or expired. Please request a new one.';
+
+function getRecoveryTokens(hash: string): RecoveryTokens | null {
+  const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+  const accessToken = hashParams.get('access_token');
+  const refreshToken = hashParams.get('refresh_token');
+
+  if (!(accessToken && refreshToken)) {
+    return null;
+  }
+
+  return {
+    accessToken,
+    refreshToken,
+  };
+}
+
+function getRecoveryError(hash: string): string | null {
+  const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+  return hashParams.get('error_description') ?? hashParams.get('error');
+}
+
+async function ensureRecoverySession(
+  supabase: BrowserSupabaseClient,
+  recoveryTokens: RecoveryTokens | null
+): Promise<{ hasSession: boolean; errorMessage?: string }> {
+  const { data: existingSessionData, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    return { hasSession: false, errorMessage: sessionError.message };
+  }
+
+  if (existingSessionData.session) {
+    return { hasSession: true };
+  }
+
+  if (!recoveryTokens) {
+    return { hasSession: false };
+  }
+
+  const { data, error } = await supabase.auth.setSession({
+    access_token: recoveryTokens.accessToken,
+    refresh_token: recoveryTokens.refreshToken,
+  });
+
+  if (error) {
+    return { hasSession: false, errorMessage: INVALID_RESET_LINK_MESSAGE };
+  }
+
+  return { hasSession: Boolean(data.session) };
+}
 
 export default function ResetPasswordPage(): ReactNode {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +84,7 @@ export default function ResetPasswordPage(): ReactNode {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const recoveryTokensRef = useRef<RecoveryTokens | null>(null);
 
   useEffect(() => {
     const checkSession = async (): Promise<void> => {
@@ -35,10 +94,13 @@ export default function ResetPasswordPage(): ReactNode {
         return;
       }
 
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-      const accessToken = hashParams.get('access_token');
-      const refreshToken = hashParams.get('refresh_token');
-      const recoveryError = hashParams.get('error_description') ?? hashParams.get('error');
+      const currentHash = window.location.hash;
+      const recoveryError = getRecoveryError(currentHash);
+      const recoveryTokens = getRecoveryTokens(currentHash);
+
+      if (recoveryTokens) {
+        recoveryTokensRef.current = recoveryTokens;
+      }
 
       if (recoveryError) {
         setError(recoveryError);
@@ -46,34 +108,16 @@ export default function ResetPasswordPage(): ReactNode {
         return;
       }
 
-      if (accessToken && refreshToken) {
-        const { error: setSessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
+      const sessionState = await ensureRecoverySession(supabase, recoveryTokensRef.current);
 
-        if (setSessionError) {
-          setError('This reset link is invalid or expired. Please request a new one.');
-          setIsReady(true);
-          return;
-        }
-
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
-      }
-
-      // SECURITY NOTE: Using getSession() is acceptable here because we're only checking
-      // if a reset token session exists after following a magic link. This is not
-      // role-based logic. The actual password update uses updateUser() which is secure.
-      const { data, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        setError(sessionError.message);
+      if (!sessionState.hasSession) {
+        setError(sessionState.errorMessage ?? INVALID_RESET_LINK_MESSAGE);
         setIsReady(true);
         return;
       }
 
-      if (!data.session) {
-        setError('This reset link is invalid or expired. Please request a new one.');
+      if (recoveryTokens) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
       }
 
       setIsReady(true);
@@ -86,6 +130,11 @@ export default function ResetPasswordPage(): ReactNode {
     event.preventDefault();
     setError('');
 
+    if (!supabase) {
+      setError('Authentication is not configured. Please contact support.');
+      return;
+    }
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters.');
       return;
@@ -97,7 +146,23 @@ export default function ResetPasswordPage(): ReactNode {
     }
 
     setIsLoading(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const sessionState = await ensureRecoverySession(supabase, recoveryTokensRef.current);
+
+    if (!sessionState.hasSession) {
+      setError(sessionState.errorMessage ?? INVALID_RESET_LINK_MESSAGE);
+      setIsLoading(false);
+      return;
+    }
+
+    let { error: updateError } = await supabase.auth.updateUser({ password });
+
+    if (updateError?.message === 'Auth session missing!') {
+      const retrySessionState = await ensureRecoverySession(supabase, recoveryTokensRef.current);
+
+      if (retrySessionState.hasSession) {
+        ({ error: updateError } = await supabase.auth.updateUser({ password }));
+      }
+    }
 
     if (updateError) {
       setError(updateError.message);
