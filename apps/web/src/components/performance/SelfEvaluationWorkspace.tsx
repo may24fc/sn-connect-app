@@ -4,10 +4,10 @@ import { FivePercentReflectionForm } from '@/components/performance/FivePercentR
 import { MonthlyCallFeedbackForm } from '@/components/performance/MonthlyCallFeedbackForm';
 import { MonthlySelfEvaluationForm } from '@/components/performance/MonthlySelfEvaluationForm';
 import { QuarterlyTemperatureCheckForm } from '@/components/performance/QuarterlyTemperatureCheckForm';
-import { Button, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 type SelfEvaluationWorkspaceProps = {
   defaultTab?: 'monthly' | 'monthly-call-feedback' | 'five-percent' | 'quarterly';
@@ -30,10 +30,6 @@ export function SelfEvaluationWorkspace({
   backLabel = 'Back',
 }: SelfEvaluationWorkspaceProps): ReactNode {
   const [activeTab, setActiveTab] = useState<SelfEvaluationTab>(defaultTab);
-  const activeLabel = useMemo(
-    () => EVALUATION_OPTIONS.find((option) => option.value === activeTab)?.label ?? 'Monthly Self-Evaluation',
-    [activeTab]
-  );
 
   return (
     <div className="space-y-6">

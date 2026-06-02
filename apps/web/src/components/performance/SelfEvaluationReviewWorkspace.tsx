@@ -4,10 +4,10 @@ import { FivePercentReflectionAdminReview } from '@/components/performance/FiveP
 import { MonthlyCallFeedbackAdminReview } from '@/components/performance/MonthlyCallFeedbackAdminReview';
 import { MonthlySelfEvaluationAdminReview } from '@/components/performance/MonthlySelfEvaluationAdminReview';
 import { QuarterlyTemperatureCheckAdminReview } from '@/components/performance/QuarterlyTemperatureCheckAdminReview';
-import { Button, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 import { ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 type EvaluationTab = 'monthly' | 'monthly-call-feedback' | 'five-percent' | 'quarterly';
 
@@ -26,11 +26,6 @@ export function SelfEvaluationReviewWorkspace({
   defaultTab = 'monthly',
 }: SelfEvaluationReviewWorkspaceProps): ReactNode {
   const [activeTab, setActiveTab] = useState<EvaluationTab>(defaultTab);
-
-  const activeLabel = useMemo(
-    () => REVIEW_OPTIONS.find((option) => option.value === activeTab)?.label ?? 'Monthly Self-Evaluation',
-    [activeTab]
-  );
 
   return (
     <div className="space-y-6">
