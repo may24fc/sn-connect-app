@@ -25,6 +25,7 @@ export default function AdminProjectsPage() {
   const { data, isLoading } = useAdminProjectsOverview();
   const { data: poolCountData } = useProjectPoolCount();
   const [view, setView] = useState<'mine' | 'all'>('all');
+  const [allProjectsView, setAllProjectsView] = useState<'by_person' | 'all_projects'>('by_person');
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   if (!isAdmin) {
@@ -37,12 +38,19 @@ export default function AdminProjectsPage() {
 
   const myProjectFilters = useMemo(() => ({ pageSize: 50, mineOnly: true as const }), []);
   const { data: myProjectsData, isLoading: loadingMyProjects } = useProjects(myProjectFilters);
+  const allProjectFilters = useMemo(() => ({ pageSize: 100 }), []);
+  const { data: allProjectsData, isLoading: loadingAllProjects } = useProjects(allProjectFilters);
 
   const totals = data?.totals;
   const interns = data?.interns ?? [];
   const departments = data?.departments ?? [];
   const poolCount = poolCountData?.count ?? 0;
   const myProjects = myProjectsData?.data ?? [];
+  const allProjects = allProjectsData?.data ?? [];
+  const internNameByUserId = useMemo(
+    () => new Map(interns.map((intern) => [intern.user_id, intern.full_name ?? 'Unassigned'])),
+    [interns]
+  );
 
   return (
     <div className="space-y-6 p-6">
@@ -101,8 +109,8 @@ export default function AdminProjectsPage() {
         <section className="space-y-4">
           <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              Your projects work the same way as employee projects. Projects you create, lead, supervise,
-              or contribute to count toward your earned points and leaderboard standing.
+              Your projects work the same way as employee projects. Projects you create, lead,
+              supervise, or contribute to count toward your earned points and leaderboard standing.
             </p>
           </div>
 
@@ -126,7 +134,7 @@ export default function AdminProjectsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {myProjects.map((project) => (
-                <Link key={project.id} href={`/projects/${project.id}`}>
+                <Link key={project.id} href={`/admin/projects/${project.id}?mode=readonly`}>
                   <ProjectCard
                     name={project.name}
                     description={project.description}
@@ -142,7 +150,6 @@ export default function AdminProjectsPage() {
         </section>
       ) : (
         <>
-
           {/* Top stats */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             <StatTile
@@ -177,120 +184,198 @@ export default function AdminProjectsPage() {
             />
           </div>
 
-          {/* Departmental heatmap */}
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
-              By department
-            </h2>
-            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-              <table className="w-full text-sm">
-                <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
-                  <tr>
-                    <th className="px-4 py-2">Department</th>
-                    <th className="px-4 py-2 text-center">Interns</th>
-                    <th className="px-4 py-2 text-center">On track</th>
-                    <th className="px-4 py-2 text-center">At risk</th>
-                    <th className="px-4 py-2 text-center">Overdue</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6">
-                        <Skeleton className="h-6" />
-                      </td>
-                    </tr>
-                  ) : departments.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
-                        No departments to display.
-                      </td>
-                    </tr>
-                  ) : (
-                    departments.map((d) => (
-                      <tr key={d.department}>
-                        <td className="px-4 py-2 font-medium">{d.department}</td>
-                        <td className="px-4 py-2 text-center">{d.intern_count}</td>
-                        <td className="px-4 py-2 text-center">
-                          <Cell value={d.on_track} variant="emerald" />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <Cell value={d.at_risk} variant="amber" />
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <Cell value={d.overdue} variant="red" />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <section className="space-y-4">
+            <ToggleGroup
+              value={allProjectsView}
+              onChange={(next) => setAllProjectsView(next as 'by_person' | 'all_projects')}
+              options={[
+                { value: 'by_person', label: 'By Person' },
+                { value: 'all_projects', label: 'All Projects' },
+              ]}
+            />
 
-          {/* Bento grid of intern cards */}
-          <section>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                Interns
-              </h2>
-              <Link href="/leaderboard">
-                <Button variant="outline" size="sm">
-                  <Trophy className="mr-2 h-4 w-4" />
-                  Leaderboard
-                </Button>
-              </Link>
-            </div>
-            {isLoading ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Skeleton key={i} className="h-40" />
-                ))}
-              </div>
-            ) : interns.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-                No interns with active projects yet.
-              </p>
+            {allProjectsView === 'by_person' ? (
+              <>
+                {/* Departmental heatmap */}
+                <section>
+                  <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                    By department
+                  </h2>
+                  <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+                        <tr>
+                          <th className="px-4 py-2">Department</th>
+                          <th className="px-4 py-2 text-center">Interns</th>
+                          <th className="px-4 py-2 text-center">On track</th>
+                          <th className="px-4 py-2 text-center">At risk</th>
+                          <th className="px-4 py-2 text-center">Overdue</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {isLoading ? (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-6">
+                              <Skeleton className="h-6" />
+                            </td>
+                          </tr>
+                        ) : departments.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-6 text-center text-zinc-500">
+                              No departments to display.
+                            </td>
+                          </tr>
+                        ) : (
+                          departments.map((d) => (
+                            <tr key={d.department}>
+                              <td className="px-4 py-2 font-medium">{d.department}</td>
+                              <td className="px-4 py-2 text-center">{d.intern_count}</td>
+                              <td className="px-4 py-2 text-center">
+                                <Cell value={d.on_track} variant="emerald" />
+                              </td>
+                              <td className="px-4 py-2 text-center">
+                                <Cell value={d.at_risk} variant="amber" />
+                              </td>
+                              <td className="px-4 py-2 text-center">
+                                <Cell value={d.overdue} variant="red" />
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* Bento grid of intern cards */}
+                <section>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                      Interns
+                    </h2>
+                    <Link href="/leaderboard">
+                      <Button variant="outline" size="sm">
+                        <Trophy className="mr-2 h-4 w-4" />
+                        Leaderboard
+                      </Button>
+                    </Link>
+                  </div>
+                  {isLoading ? (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <Skeleton key={i} className="h-40" />
+                      ))}
+                    </div>
+                  ) : interns.length === 0 ? (
+                    <p className="rounded-lg border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
+                      No interns with active projects yet.
+                    </p>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {interns.map((i) => (
+                        <Link
+                          key={i.user_id}
+                          href={`/admin/interns/${i.user_id}`}
+                          className="group rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
+                                {i.full_name ?? 'Unnamed intern'}
+                              </p>
+                              {i.department ? (
+                                <p className="truncate text-xs text-zinc-500">{i.department}</p>
+                              ) : null}
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                <TierBadge tier={i.current_tier} />
+                                <StreakChip weeks={i.current_streak} />
+                                <Badge variant="outline" className="text-xs">
+                                  <Trophy className="mr-1 h-3 w-3" />
+                                  {i.total_points} pts
+                                </Badge>
+                              </div>
+                            </div>
+                            <ProgressRing value={i.avg_progress} size={64} strokeWidth={6} />
+                          </div>
+                          <div className="mt-3 flex items-center justify-between text-xs">
+                            <Link
+                              href={`/admin/projects?leadUserId=${i.user_id}`}
+                              className="text-zinc-500 transition-colors hover:text-zinc-700 dark:hover:text-zinc-300"
+                            >
+                              {i.project_count} project{i.project_count === 1 ? '' : 's'}
+                            </Link>
+                            <div className="flex items-center gap-1">
+                              {i.on_track > 0 ? <HealthPill health="on_track" /> : null}
+                              {i.at_risk > 0 ? <HealthPill health="at_risk" /> : null}
+                              {i.overdue > 0 ? <HealthPill health="overdue" /> : null}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {interns.map((i) => (
-                  <Link
-                    key={i.user_id}
-                    href={`/admin/interns/${i.user_id}`}
-                    className="group rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
-                          {i.full_name ?? 'Unnamed intern'}
-                        </p>
-                        {i.department ? (
-                          <p className="truncate text-xs text-zinc-500">{i.department}</p>
-                        ) : null}
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          <TierBadge tier={i.current_tier} />
-                          <StreakChip weeks={i.current_streak} />
-                          <Badge variant="outline" className="text-xs">
-                            <Trophy className="mr-1 h-3 w-3" />
-                            {i.total_points} pts
-                          </Badge>
-                        </div>
-                      </div>
-                      <ProgressRing value={i.avg_progress} size={64} strokeWidth={6} />
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-xs">
-                      <span className="text-zinc-500">
-                        {i.project_count} project{i.project_count === 1 ? '' : 's'}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {i.on_track > 0 ? <HealthPill health="on_track" /> : null}
-                        {i.at_risk > 0 ? <HealthPill health="at_risk" /> : null}
-                        {i.overdue > 0 ? <HealthPill health="overdue" /> : null}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              <section>
+                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                  All projects
+                </h2>
+                {loadingAllProjects ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <Skeleton key={i} className="h-32" />
+                    ))}
+                  </div>
+                ) : allProjects.length === 0 ? (
+                  <EmptyState
+                    icon={<FolderKanban className="h-10 w-10" />}
+                    title="No projects found"
+                    description="No active projects are available yet."
+                  />
+                ) : (
+                  <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+                        <tr>
+                          <th className="px-4 py-2">Project</th>
+                          <th className="px-4 py-2">Health</th>
+                          <th className="px-4 py-2">Assigned Person</th>
+                          <th className="px-4 py-2 text-right">Progress</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {allProjects.map((project) => (
+                          <tr key={project.id}>
+                            <td className="px-4 py-3">
+                              <Link
+                                href={`/admin/projects/${project.id}?mode=readonly`}
+                                className="font-medium text-zinc-900 transition-colors hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-300"
+                              >
+                                {project.name}
+                              </Link>
+                              {project.description ? (
+                                <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">
+                                  {project.description}
+                                </p>
+                              ) : null}
+                            </td>
+                            <td className="px-4 py-3">
+                              <HealthPill health={project.health} />
+                            </td>
+                            <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
+                              {internNameByUserId.get(project.lead_user_id) ?? 'Unassigned'}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-zinc-700 dark:text-zinc-300">
+                              {Math.round(project.progress_pct)}%
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
             )}
           </section>
         </>

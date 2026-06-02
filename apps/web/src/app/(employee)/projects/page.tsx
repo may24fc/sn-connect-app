@@ -35,14 +35,16 @@ import {
 } from '@hr-portal/ui';
 import { FolderKanban, Inbox, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 export default function ProjectsListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { addToast } = useToast();
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const leadUserIdFilter = searchParams.get('leadUserId') || undefined;
 
   const [status, setStatus] = useState<ProjectStatus | 'all'>('all');
   const [health, setHealth] = useState<ProjectHealth | 'all'>('all');
@@ -56,9 +58,10 @@ export default function ProjectsListPage() {
     const f: Parameters<typeof useProjects>[0] = { pageSize: 50 };
     if (status !== 'all') f.status = status;
     if (health !== 'all') f.health = health;
+    if (leadUserIdFilter) f.leadUserId = leadUserIdFilter;
     if (mineOnly) f.mineOnly = true;
     return f;
-  }, [status, health, mineOnly]);
+  }, [status, health, leadUserIdFilter, mineOnly]);
 
   const { data, isLoading } = useProjects(filters);
   const projects = data?.data ?? [];

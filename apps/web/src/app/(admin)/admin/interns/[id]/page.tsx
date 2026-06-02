@@ -792,7 +792,7 @@ function ProjectRow({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <Link
-                href={`/projects/${project.id}`}
+                href={`/admin/projects/${project.id}?mode=readonly`}
                 className="truncate text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-50"
               >
                 {project.name}

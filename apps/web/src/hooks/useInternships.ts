@@ -162,6 +162,7 @@ function buildDailyLogFormData(payload: {
   projectEntries?: Array<ProjectFocusEntry>;
   blockers?: Array<string>;
   nextSteps?: Array<string>;
+  attachmentLinks?: Array<string>;
   retainedAttachments?: Array<DailyLogAttachment>;
   attachments?: Array<File>;
   logId?: string;
@@ -177,6 +178,7 @@ function buildDailyLogFormData(payload: {
       ...(payload.projectEntries !== undefined ? { projectEntries: payload.projectEntries } : {}),
       ...(payload.blockers ? { blockers: payload.blockers } : {}),
       ...(payload.nextSteps ? { nextSteps: payload.nextSteps } : {}),
+      ...(payload.attachmentLinks ? { attachmentLinks: payload.attachmentLinks } : {}),
       ...(payload.retainedAttachments
         ? { retainedAttachments: payload.retainedAttachments }
         : {}),
@@ -289,6 +291,7 @@ export function useCreateInternDailyLog() {
       projectEntries: Array<ProjectFocusEntry>;
       blockers?: Array<string>;
       nextSteps?: Array<string>;
+      attachmentLinks?: Array<string>;
       attachments?: Array<File>;
       retainedAttachments?: Array<DailyLogAttachment>;
       status?: 'draft' | 'submitted';
@@ -301,6 +304,7 @@ export function useCreateInternDailyLog() {
           projectEntries: payload.projectEntries,
           ...(payload.blockers ? { blockers: payload.blockers } : {}),
           ...(payload.nextSteps ? { nextSteps: payload.nextSteps } : {}),
+          ...(payload.attachmentLinks ? { attachmentLinks: payload.attachmentLinks } : {}),
           ...(payload.attachments ? { attachments: payload.attachments } : {}),
           ...(payload.retainedAttachments
             ? { retainedAttachments: payload.retainedAttachments }
@@ -342,6 +346,7 @@ export function useUpdateInternDraftLog() {
       projectEntries?: Array<ProjectFocusEntry>;
       blockers?: Array<string>;
       nextSteps?: Array<string>;
+      attachmentLinks?: Array<string>;
       attachments?: Array<File>;
       retainedAttachments?: Array<DailyLogAttachment>;
       status?: 'draft' | 'submitted';
@@ -357,6 +362,7 @@ export function useUpdateInternDraftLog() {
             : {}),
           ...(payload.blockers ? { blockers: payload.blockers } : {}),
           ...(payload.nextSteps ? { nextSteps: payload.nextSteps } : {}),
+          ...(payload.attachmentLinks ? { attachmentLinks: payload.attachmentLinks } : {}),
           ...(payload.attachments ? { attachments: payload.attachments } : {}),
           ...(payload.retainedAttachments
             ? { retainedAttachments: payload.retainedAttachments }

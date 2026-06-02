@@ -38,6 +38,22 @@ export interface ProjectContributorRecord {
   joined_at: string;
 }
 
+export interface ProjectDocumentationRecord {
+  id: string;
+  project_id: string;
+  submitted_by: string;
+  submitted_by_name?: string;
+  documentation_type: 'link' | 'file';
+  content: string;
+  label: string | null;
+  file_name: string | null;
+  file_size: number | null;
+  mime_type: string | null;
+  access_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ProjectDetail extends ProjectRecord {
   contributors: ProjectContributorRecord[];
 }
@@ -82,6 +98,10 @@ interface ProjectListResponse {
   pagination: { page: number; pageSize: number; total: number };
 }
 
+interface ProjectDocumentationListResponse {
+  data: ProjectDocumentationRecord[];
+}
+
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
   if (!response.ok) {
@@ -120,6 +140,16 @@ export function useProject(projectId: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.projects.detail(projectId ?? ''),
     queryFn: () => jsonFetch<{ data: ProjectDetail }>(`/api/projects/${projectId}`),
+    enabled: !!projectId,
+    staleTime: STALE_TIMES.dynamic,
+  });
+}
+
+export function useProjectDocumentation(projectId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.projects.documentation(projectId ?? ''),
+    queryFn: () =>
+      jsonFetch<ProjectDocumentationListResponse>(`/api/projects/${projectId}/documentation`),
     enabled: !!projectId,
     staleTime: STALE_TIMES.dynamic,
   });
@@ -211,6 +241,79 @@ export function useDeleteProject() {
     onSuccess: (_data, vars) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
+    },
+  });
+}
+
+export function useCreateProjectDocumentation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      projectId: string;
+      documentationType: 'link' | 'file';
+      content?: string;
+      label?: string | null;
+      file?: File;
+    }) => {
+      if (input.documentationType === 'file') {
+        if (!(input.file instanceof File)) {
+          throw new Error('File is required for file documentation');
+        }
+
+        const formData = new FormData();
+        formData.append('file', input.file);
+        if (input.label) {
+          formData.append('label', input.label);
+        }
+
+        return jsonFetch<{ data: ProjectDocumentationRecord }>(
+          `/api/projects/${input.projectId}/documentation`,
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
+      }
+
+      if (!input.content) {
+        throw new Error('Link URL is required');
+      }
+
+      return jsonFetch<{ data: ProjectDocumentationRecord }>(
+        `/api/projects/${input.projectId}/documentation`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentationType: 'link',
+            content: input.content,
+            label: input.label,
+          }),
+        }
+      );
+    },
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.documentation(vars.projectId),
+      });
+    },
+  });
+}
+
+export function useDeleteProjectDocumentation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { projectId: string; documentationId: string }) =>
+      jsonFetch<{ success: true }>(
+        `/api/projects/${input.projectId}/documentation?documentationId=${input.documentationId}`,
+        { method: 'DELETE' }
+      ),
+    onSuccess: (_data, vars) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.projects.documentation(vars.projectId),
+      });
     },
   });
 }

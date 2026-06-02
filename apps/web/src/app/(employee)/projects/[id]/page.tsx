@@ -6,12 +6,16 @@ import {
   type ChecklistItemRecord,
   type MilestoneRecord,
   useCreateChecklistItem,
+  useCreateProjectDocumentation,
   useCreateMilestone,
+  useDeleteProjectDocumentation,
   useDeleteChecklistItem,
   useDeleteMilestone,
   useDeleteProject,
   useCompleteMilestone,
   useMilestoneChecklist,
+  type ProjectDocumentationRecord,
+  useProjectDocumentation,
   useProject,
   useProjectMilestones,
   useUpdateChecklistItem,
@@ -45,14 +49,19 @@ import {
   Skeleton,
   Textarea,
   useToast,
+  FileDropZone,
 } from '@hr-portal/ui';
 import {
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
+  FileText,
+  Link2,
   Pencil,
   Plus,
+  Upload,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -102,12 +111,94 @@ export default function ProjectDetailPage() {
 
   const { data: projectResp, isLoading: loadingProject } = useProject(projectId);
   const { data: milestonesResp, isLoading: loadingMilestones } = useProjectMilestones(projectId);
+  const { data: projectDocumentationResp, isLoading: loadingDocumentation } =
+    useProjectDocumentation(projectId);
+  const createDocumentation = useCreateProjectDocumentation();
+  const deleteDocumentation = useDeleteProjectDocumentation();
   const project = projectResp?.data;
   const milestones = milestonesResp?.data ?? [];
+  const documentation = projectDocumentationResp?.data ?? [];
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
+  const isReadOnlyAdminView = isAdmin;
   const isLead = !!project && project.lead_user_id === user?.id;
-  const canEditProject = isLead || isAdmin;
+  const canEditProject = isLead || (isAdmin && !isReadOnlyAdminView);
+  const canAddDocumentation =
+    !!project &&
+    !isReadOnlyAdminView &&
+    (canEditProject ||
+      project.created_by === user?.id ||
+      project.supervisor_id === user?.id ||
+      project.contributors.some((contributor) => contributor.user_id === user?.id));
+  const projectListPath = isAdmin ? '/admin/projects' : '/projects';
+
+  const [docLink, setDocLink] = useState('');
+  const [docLabel, setDocLabel] = useState('');
+  const [docFiles, setDocFiles] = useState<File[]>([]);
+  const [activeTab, setActiveTab] = useState<'milestones' | 'documentation'>('milestones');
+
+  async function handleAddDocumentationLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    try {
+      await createDocumentation.mutateAsync({
+        projectId,
+        documentationType: 'link',
+        content: docLink,
+        label: docLabel || null,
+      });
+      setDocLink('');
+      setDocLabel('');
+      addToast({ title: 'Documentation link added', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Failed to add documentation link',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleUploadDocumentationFiles() {
+    if (docFiles.length === 0) {
+      return;
+    }
+
+    try {
+      for (const file of docFiles) {
+        await createDocumentation.mutateAsync({
+          projectId,
+          documentationType: 'file',
+          label: docLabel || null,
+          file,
+        });
+      }
+      setDocFiles([]);
+      setDocLabel('');
+      addToast({ title: 'Documentation file uploaded', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Failed to upload documentation file',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleDeleteDocumentation(item: ProjectDocumentationRecord) {
+    try {
+      await deleteDocumentation.mutateAsync({
+        projectId,
+        documentationId: item.id,
+      });
+      addToast({ title: 'Documentation removed', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Failed to remove documentation',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
 
   // Group milestones: monthly with their weekly children
   const grouped = useMemo(() => {
@@ -132,7 +223,7 @@ export default function ProjectDetailPage() {
     try {
       await deleteProject.mutateAsync({ projectId });
       addToast({ title: 'Project deleted', variant: 'success' });
-      router.push('/projects');
+      router.push(projectListPath);
     } catch (error) {
       addToast({
         title: 'Delete failed',
@@ -163,7 +254,7 @@ export default function ProjectDetailPage() {
       <header className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <div className="flex items-start gap-4">
           <Link
-            href="/projects"
+            href={projectListPath}
             className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -224,49 +315,222 @@ export default function ProjectDetailPage() {
             </div>
           ) : null}
         </div>
+        {isReadOnlyAdminView ? (
+          <div className="mt-2">
+            <Badge variant="outline">Read-only admin view</Badge>
+          </div>
+        ) : null}
       </header>
 
-      <main className="flex-1 overflow-x-auto overflow-y-hidden">
-        {loadingMilestones ? (
-          <div className="p-6">
-            <Skeleton className="h-64" />
+      <main className="flex-1 overflow-y-auto">
+        <div className="space-y-6 p-6">
+          <div className="inline-flex w-fit items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+            <Button
+              size="sm"
+              variant={activeTab === 'milestones' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('milestones')}
+            >
+              Milestones
+              <Badge variant="secondary" className="ml-2">
+                {grouped.length}
+              </Badge>
+            </Button>
+            <Button
+              size="sm"
+              variant={activeTab === 'documentation' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('documentation')}
+            >
+              Documentation
+              <Badge variant="secondary" className="ml-2">
+                {documentation.length}
+              </Badge>
+            </Button>
           </div>
-        ) : grouped.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-center">
+
+          {activeTab === 'documentation' ? (
+            <Card>
+              <CardContent className="space-y-4 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                      Project Documentations
+                    </p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Add links or file attachments as supporting documentation for this project.
+                    </p>
+                  </div>
+                  <Badge variant="outline">
+                    {documentation.length} item{documentation.length === 1 ? '' : 's'}
+                  </Badge>
+                </div>
+
+                {canAddDocumentation ? (
+                  <div className="grid gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-2">
+                    <form className="space-y-2" onSubmit={handleAddDocumentationLink}>
+                      <Label htmlFor="project-doc-link">Documentation link</Label>
+                      <Input
+                        id="project-doc-link"
+                        value={docLink}
+                        onChange={(event) => setDocLink(event.target.value)}
+                        placeholder="https://docs.google.com/..."
+                      />
+                      <Input
+                        value={docLabel}
+                        onChange={(event) => setDocLabel(event.target.value)}
+                        placeholder="Optional label"
+                      />
+                      <Button type="submit" size="sm" disabled={createDocumentation.isPending}>
+                        <Link2 className="mr-2 h-4 w-4" />
+                        Add Link
+                      </Button>
+                    </form>
+
+                    <div className="space-y-2">
+                      <Label>Upload documentation file</Label>
+                      <FileDropZone
+                        onFilesSelected={(files) =>
+                          setDocFiles((current) => [...current, ...files])
+                        }
+                        selectedFiles={docFiles}
+                        onRemoveFile={(index) => {
+                          setDocFiles((currentFiles) =>
+                            currentFiles.filter((_, fileIndex) => fileIndex !== index)
+                          );
+                        }}
+                        multiple
+                        maxFiles={10}
+                        maxSizeMB={10}
+                        compact
+                        label="Drop documentation files or browse"
+                        formatHint="PDF, DOC, DOCX, XLSX, PPTX, PNG, JPG, WEBP - max 10 MB each"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={docFiles.length === 0 || createDocumentation.isPending}
+                        onClick={() => {
+                          void handleUploadDocumentationFiles();
+                        }}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Files
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {loadingDocumentation ? (
+                  <Skeleton className="h-24" />
+                ) : documentation.length === 0 ? (
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    No project documentation has been added yet.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {documentation.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-start justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-950"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="capitalize">
+                              {item.documentation_type}
+                            </Badge>
+                            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                              {item.label || item.file_name || 'Project documentation'}
+                            </p>
+                          </div>
+                          {item.documentation_type === 'file' ? (
+                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {item.file_name || 'File'}
+                              {item.file_size
+                                ? ` - ${Math.max(1, Math.round(item.file_size / 1024))} KB`
+                                : ''}
+                            </p>
+                          ) : (
+                            <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                              {item.content}
+                            </p>
+                          )}
+                          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                            Added by {item.submitted_by_name || 'Unknown'} on{' '}
+                            {new Date(item.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {item.access_url ? (
+                            <a href={item.access_url} target="_blank" rel="noreferrer">
+                              <Button variant="outline" size="sm">
+                                {item.documentation_type === 'file' ? (
+                                  <FileText className="mr-2 h-4 w-4" />
+                                ) : (
+                                  <ExternalLink className="mr-2 h-4 w-4" />
+                                )}
+                                Open
+                              </Button>
+                            </a>
+                          ) : null}
+                          {canAddDocumentation ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                void handleDeleteDocumentation(item);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : loadingMilestones ? (
             <div>
-              <p className="text-sm text-zinc-500">No milestones yet.</p>
-              {canEditProject ? (
-                <Button
-                  className="mt-2"
-                  size="sm"
-                  onClick={() => {
-                    setCreateParent(null);
+              <Skeleton className="h-64" />
+            </div>
+          ) : grouped.length === 0 ? (
+            <div className="flex items-center justify-center py-10 text-center">
+              <div>
+                <p className="text-sm text-zinc-500">No milestones yet.</p>
+                {canEditProject ? (
+                  <Button
+                    className="mt-2"
+                    size="sm"
+                    onClick={() => {
+                      setCreateParent(null);
+                      setCreateOpen(true);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add first milestone
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto pb-2">
+              {grouped.map(({ month, weeks }) => (
+                <MonthColumn
+                  key={month.id}
+                  month={month}
+                  weeks={weeks}
+                  projectId={projectId}
+                  canEdit={canEditProject}
+                  projectEndDate={project.target_end_date}
+                  onAddWeek={() => {
+                    setCreateParent(month);
                     setCreateOpen(true);
                   }}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Add first milestone
-                </Button>
-              ) : null}
+                />
+              ))}
             </div>
-          </div>
-        ) : (
-          <div className="flex h-full gap-4 overflow-x-auto p-6">
-            {grouped.map(({ month, weeks }) => (
-              <MonthColumn
-                key={month.id}
-                month={month}
-                weeks={weeks}
-                projectId={projectId}
-                canEdit={canEditProject}
-                projectEndDate={project.target_end_date}
-                onAddWeek={() => {
-                  setCreateParent(month);
-                  setCreateOpen(true);
-                }}
-              />
-            ))}
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       <CreateMilestoneDialog
