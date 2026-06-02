@@ -277,6 +277,7 @@ export function OKRDetailWorkspace({
   const [objectiveDeleteOpen, setObjectiveDeleteOpen] = useState(false);
   const [progressTarget, setProgressTarget] = useState<OKRTarget | null>(null);
   const [progressValue, setProgressValue] = useState('');
+  const [booleanValue, setBooleanValue] = useState(0);
   const [selectedEvidenceFiles, setSelectedEvidenceFiles] = useState<Array<File>>([]);
   const [evidenceLabel, setEvidenceLabel] = useState('');
   const [evidenceLink, setEvidenceLink] = useState('');
@@ -423,6 +424,7 @@ export function OKRDetailWorkspace({
   const handleCloseProgressDialog = useCallback((): void => {
     setProgressTarget(null);
     setProgressValue('');
+    setBooleanValue(0);
     setSelectedEvidenceFiles([]);
     setEvidenceLabel('');
     setEvidenceLink('');
@@ -540,11 +542,7 @@ export function OKRDetailWorkspace({
       }
 
       const newValue =
-        progressTarget.metricType === 'boolean'
-          ? progressTarget.currentValue === 0
-            ? 1
-            : 0
-          : Number(progressValue);
+        progressTarget.metricType === 'boolean' ? booleanValue : Number(progressValue);
       await updateTarget.mutateAsync({
         id: progressTarget.id,
         okrId,
@@ -917,6 +915,7 @@ export function OKRDetailWorkspace({
                 onUpdateProgress={() => {
                   setProgressTarget(target);
                   setProgressValue(String(target.currentValue));
+                  setBooleanValue(target.currentValue);
                 }}
               />
             ))}
@@ -1194,14 +1193,14 @@ export function OKRDetailWorkspace({
                 {progressTarget.metricType === 'boolean' ? (
                   <div className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
                     <span className="font-medium">
-                      {progressTarget.currentValue === 0 ? 'Not completed' : 'Completed'}
+                      {booleanValue === 0 ? 'Not completed' : 'Completed'}
                     </span>
                     <Button
                       size="sm"
-                      variant={progressTarget.currentValue === 0 ? 'default' : 'outline'}
-                      onClick={() => void handleUpdateProgress()}
+                      variant={booleanValue === 0 ? 'default' : 'outline'}
+                      onClick={() => setBooleanValue(booleanValue === 0 ? 1 : 0)}
                     >
-                      {progressTarget.currentValue === 0 ? 'Mark Done' : 'Mark Undone'}
+                      {booleanValue === 0 ? 'Mark Done' : 'Mark Undone'}
                     </Button>
                   </div>
                 ) : (
