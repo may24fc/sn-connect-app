@@ -303,9 +303,57 @@ export const performanceEvaluationDraftKindSchema = z.enum([
   'monthly',
   'quarterly',
   'five_percent',
+  'monthly_call_feedback',
 ]);
 
 export const submitMonthlySelfEvaluationDraftSchema = submitMonthlySelfEvaluationSchema.partial();
+
+export const monthlyCallFeedbackValuablePartSchema = z.enum([
+  'CEO Discussion (Financial Growth)',
+  'Icebreaker / Conversation Starters',
+  '5% Reflection Worksheet Sharing',
+  'Announcements',
+]);
+
+export const monthlyCallFeedbackCallLengthSchema = z.enum([
+  'too_long',
+  'just_right',
+  'too_short',
+]);
+
+export const monthlyCallFeedbackClaritySchema = z.enum([
+  'very_clear',
+  'clear',
+  'neutral',
+  'not_clear',
+]);
+
+export const submitMonthlyCallFeedbackSchema = z.object({
+  monthKey: monthKeySchema,
+  fullName: z.string().trim().min(1).max(200),
+  departmentRole: assignmentSnapshotSchema,
+  engagementLevel: z.number().int().min(1).max(4),
+  engagementReason: z.string().trim().min(1).max(2000),
+  valuableParts: z.array(monthlyCallFeedbackValuablePartSchema).min(1),
+  valuablePartsReason: z.string().trim().min(1).max(2000),
+  callLength: monthlyCallFeedbackCallLengthSchema,
+  clarityFinancialGrowthDiscussion: monthlyCallFeedbackClaritySchema,
+  clarityIcebreakerConversationStarters: monthlyCallFeedbackClaritySchema,
+  clarityFivePercentReflectionWorksheet: monthlyCallFeedbackClaritySchema,
+  overallRating: z.number().int().min(1).max(4),
+  keyTakeaway: z.string().trim().min(1).max(2000),
+  futureImprovements: z.string().trim().min(1).max(2000),
+  nextTopics: z.string().trim().min(1).max(2000),
+});
+
+export const monthlyCallFeedbackFiltersSchema = z.object({
+  monthKey: monthKeySchema.optional(),
+  departmentRole: assignmentSnapshotSchema.optional(),
+  employeeId: z.string().uuid().optional(),
+  search: z.string().trim().max(200).optional(),
+});
+
+export const submitMonthlyCallFeedbackDraftSchema = submitMonthlyCallFeedbackSchema.partial();
 
 export const submitQuarterlyTemperatureCheckSchema = z.object({
   quarterKey: quarterKeySchema,
@@ -370,11 +418,15 @@ export const performanceEvaluationDraftQuerySchema = z
     cycleKey: z.string().trim().min(1).max(20),
   })
   .superRefine((data, ctx) => {
-    if (data.evaluationKind === 'monthly' || data.evaluationKind === 'five_percent') {
+    if (
+      data.evaluationKind === 'monthly' ||
+      data.evaluationKind === 'five_percent' ||
+      data.evaluationKind === 'monthly_call_feedback'
+    ) {
       if (!monthKeySchema.safeParse(data.cycleKey).success) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Use YYYY-MM for monthly and 5% draft keys',
+          message: 'Use YYYY-MM for monthly, monthly call feedback, and 5% draft keys',
           path: ['cycleKey'],
         });
       }
@@ -407,6 +459,11 @@ export const upsertPerformanceEvaluationDraftSchema = z.discriminatedUnion('eval
     cycleKey: monthKeySchema,
     values: submitFivePercentReflectionDraftSchema,
   }),
+  z.object({
+    evaluationKind: z.literal('monthly_call_feedback'),
+    cycleKey: monthKeySchema,
+    values: submitMonthlyCallFeedbackDraftSchema,
+  }),
 ]);
 
 export const probationActionSchema = z.discriminatedUnion('action', [
@@ -430,6 +487,11 @@ export type MonthlySelfEvaluationFiltersInput = z.infer<typeof monthlySelfEvalua
 export type PerformanceEvaluationDraftKind = z.infer<typeof performanceEvaluationDraftKindSchema>;
 export type SubmitMonthlySelfEvaluationDraftInput = z.infer<
   typeof submitMonthlySelfEvaluationDraftSchema
+>;
+export type SubmitMonthlyCallFeedbackInput = z.infer<typeof submitMonthlyCallFeedbackSchema>;
+export type MonthlyCallFeedbackFiltersInput = z.infer<typeof monthlyCallFeedbackFiltersSchema>;
+export type SubmitMonthlyCallFeedbackDraftInput = z.infer<
+  typeof submitMonthlyCallFeedbackDraftSchema
 >;
 export type SubmitQuarterlyTemperatureCheckInput = z.infer<
   typeof submitQuarterlyTemperatureCheckSchema

@@ -10,9 +10,11 @@ export default async function AdminSelfEvaluationPage({
 }: AdminSelfEvaluationPageProps): Promise<ReactNode> {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const defaultTab =
-    resolvedSearchParams?.tab === 'quarterly'
-      ? 'quarterly'
-      : resolvedSearchParams?.tab === 'five-percent'
+    resolvedSearchParams?.tab === 'monthly-call-feedback'
+      ? 'monthly-call-feedback'
+      : resolvedSearchParams?.tab === 'quarterly'
+        ? 'quarterly'
+        : resolvedSearchParams?.tab === 'five-percent'
         ? 'five-percent'
         : 'monthly';
 

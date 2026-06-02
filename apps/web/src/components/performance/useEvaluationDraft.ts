@@ -8,6 +8,7 @@ const AUTO_SAVE_DELAY_MS = 500;
 
 const FORM_KEY_TO_EVALUATION_KIND = {
   'monthly-self-evaluation': 'monthly',
+  'monthly-call-feedback': 'monthly_call_feedback',
   'quarterly-temperature-check': 'quarterly',
   'five-percent-reflection': 'five_percent',
 } as const;

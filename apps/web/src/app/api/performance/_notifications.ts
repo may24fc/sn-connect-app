@@ -6,7 +6,7 @@ import {
 import { getNotificationUserIdentity } from '@/lib/notifications/user-identity';
 import { getStoredNotificationPreferencesForUser } from '@/lib/settings/notification-preferences.server';
 
-type PerformanceEvaluationKind = 'monthly' | 'five-percent' | 'quarterly';
+type PerformanceEvaluationKind = 'monthly' | 'monthly-call-feedback' | 'five-percent' | 'quarterly';
 type PerformanceEvaluationNotificationAction = 'submitted' | 'updated';
 
 interface NotifyPerformanceEvaluationManagersOptions {
@@ -24,7 +24,7 @@ const PERFORMANCE_EVALUATION_CONFIG: Record<
     title: string;
     noun: string;
     reviewLabel: string;
-    tab: 'monthly' | 'five-percent' | 'quarterly';
+    tab: 'monthly' | 'monthly-call-feedback' | 'five-percent' | 'quarterly';
   }
 > = {
   monthly: {
@@ -32,6 +32,12 @@ const PERFORMANCE_EVALUATION_CONFIG: Record<
     noun: 'monthly self-evaluation',
     reviewLabel: 'monthly review queue',
     tab: 'monthly',
+  },
+  'monthly-call-feedback': {
+    title: 'Monthly Call Feedback',
+    noun: 'monthly call feedback',
+    reviewLabel: 'monthly call feedback queue',
+    tab: 'monthly-call-feedback',
   },
   'five-percent': {
     title: '5% Reflection',

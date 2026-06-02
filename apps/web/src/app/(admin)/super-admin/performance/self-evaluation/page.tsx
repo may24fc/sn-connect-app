@@ -11,7 +11,12 @@ export default async function SuperAdminSelfEvaluationRedirectPage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const tab = resolvedSearchParams?.tab;
 
-  if (tab === 'monthly' || tab === 'five-percent' || tab === 'quarterly') {
+  if (
+    tab === 'monthly' ||
+    tab === 'monthly-call-feedback' ||
+    tab === 'five-percent' ||
+    tab === 'quarterly'
+  ) {
     redirect(`/admin/performance/self-evaluation?tab=${tab}`);
   }
 
