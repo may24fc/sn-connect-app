@@ -2,7 +2,7 @@
 
 **Control Hub - Sprint Implementation Checklist**
 
-**6-Sprint Delivery Plan**
+**8-Sprint Delivery Plan**
 
 *"Where Policy Meets Productivity"*
 
@@ -10,7 +10,7 @@
 
 **Project:** Control Hub - HR Portal Feature Refinements
 
-**Sprint Period:** May 5 - June 13, 2026 (6 Sprints)
+**Sprint Period:** May 5 - June 27, 2026 (8 Sprints)
 
 **Developer:** Ceferino, Senior AI Intern
 
@@ -23,11 +23,13 @@ Current sprint order:
 - **Week 1 (May 5-9):** Marketing Reports & Admin Dashboard closeout and usability verification.
 - **Week 2 (May 12-16):** EOD Intern Automation completion review plus follow-up reminder and formatting improvements.
 - **Week 3 (May 19-23):** Automated Monthly Self-Evaluation Form rollout plus Multi-Evaluator Feedback Form.
-- **Week 4 (May 26-30):** Standardized Approval Workflow implementation.
-- **Week 5 (June 2-6):** AI SOP Chatbot refinement, safeguard work, and full SOP/tutorial knowledge base ingestion.
-- **Week 6 (June 9-13):** Tech Expense Tracker for managing subscriptions and operational tool spend.
+- **Week 4 (May 26-30):** New Evaluation Forms — 5% Reflection and Quarterly Temperature Check.
+- **Week 5 (June 2-6):** Dual-Pipeline CRM Tracker for SFO retail orders and SN Tech B2B software inquiries.
+- **Week 6 (June 9-13):** AI SOP Chatbot refinement, safeguard work, and full SOP/tutorial knowledge base ingestion.
+- **Week 7 (June 16-20):** Standardized Approval Workflow implementation.
+- **Week 8 (June 23-27):** Tech Expense Tracker for managing subscriptions and operational tool spend.
 
-At the end of these six sprints, the portal should have cleaner admin workflows, stronger automation coverage, a recurring leadership feedback loop with both self and peer evaluation, a traceable approval chain, a more reliable AI assistant backed by the full SOP library, and full visibility into tech spend.
+At the end of these eight sprints, the portal should have cleaner admin workflows, stronger automation coverage, a dual-pipeline CRM tracker for retail and B2B tech sales, a recurring leadership feedback loop with both self and peer evaluation, a traceable approval chain, a more reliable AI assistant backed by the full SOP library, and full visibility into tech spend.
 
 ## **WEEK 1 · May 5-9, 2026 - Marketing Reports & Admin Dashboard**
 
@@ -153,43 +155,107 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 - [x] The first version or mockup is ready for review.
 
 
-## **WEEK 4 · May 26-30, 2026 - Standardized Approval Workflow**
+## **WEEK 4 · May 26-30, 2026 - New Evaluation Forms: 5% Reflection & Quarterly Temperature Check**
 
-**Sprint status:** Planned
+**Sprint status:** Completed
 
-**Sprint goal:** Build a 6-stage approval chain with immutable history, reference numbers, role-gated transitions, notifications, and traceable completion proof.
+**Sprint goal:** Launch two new recurring evaluation forms — the 5% Reflection form for capturing incremental personal growth and the Quarterly Temperature Check for measuring team-wide morale, alignment, and engagement — with automated distribution, response deduplication, and leadership review access.
 
 **Implementation checklist**
 
-- [ ] Expand the approval lifecycle from 3 states to 6 states: Pending Endorsement -> Pending Approval -> Approved -> Implementing -> Completed -> Rejected.
-- [ ] Prevent skipped stages and backward jumps once a state transition is invalid.
-- [ ] Create a permanent history log for every status change with actor, timestamp, note, and attachment metadata.
-- [ ] Auto-generate unique request reference numbers in the format `SN-2026-NNN`.
-- [ ] Track the assigned endorser, approver, and implementor for each request.
-- [ ] Enforce security rules so only the correct assignee can move a request at each stage.
-- [ ] Block requestors from approving their own request.
-- [ ] Block endorsers from marking a request as completed.
-- [ ] Build the transition rules engine for allowed and disallowed status moves.
-- [ ] Build the transition action that validates permission, validates the move, records history, updates status, and notifies the next actor.
-- [ ] Send in-app notifications and email notifications to the next actor in the chain.
-- [ ] Add automated tests for blocked invalid transitions and rejected-request finality.
-- [ ] Build the 3-step submission form.
-- [ ] Build the `My Actions` queue for endorsers, approvers, and implementors.
-- [ ] Build the admin `Global Tracker` table.
-- [ ] Build the request comment thread.
-- [ ] Allow optional proof-of-completion attachment upload when the implementor marks the request as completed.
+**5% Reflection Form**
+
+- [x] Build the 5% Reflection form focused on capturing small but compounding personal improvements: habits, skill gaps, mindset shifts, and professional momentum.
+- [x] Frame the form around the principle that 1-5% consistent improvement each period compounds into significant growth over a quarter.
+- [x] Include fields: current role and department, one skill or habit improved since the last reflection, one blocker holding back personal growth, one action committed to for the next period, and a free-form reflection note.
+- [x] Enforce one submission per person per reflection period and block duplicates.
+- [x] Make responses visible to leadership for coaching and development tracking.
+
+**Quarterly Temperature Check Form**
+
+- [x] Build the Quarterly Temperature Check form to measure team morale, communication health, alignment with company direction, and overall engagement.
+- [x] Include a numerical pulse score (1-10) for overall team energy this quarter.
+- [x] Include fields covering: clarity on company goals, confidence in leadership direction, quality of team communication, feelings of recognition and appreciation, and workload sustainability.
+- [x] Include a free-form open-response field: "What is one thing we should start, stop, or continue as a team?"
+- [x] Enforce one submission per person per quarter and block duplicate responses.
+- [x] Aggregate results into a leadership summary view showing team average scores, score distribution, and open-response highlights per quarter.
+
+**Shared Distribution & Automation**
+
+- [x] Trigger the 5% Reflection form automatically at the end of each month alongside the self-evaluation cadence.
+- [x] Trigger the Quarterly Temperature Check form automatically at the end of Q1, Q2, Q3, and Q4.
+- [x] Send email and Telegram reminders to non-respondents for both forms following the same deduplication pattern established in Week 3.
+- [x] Display both forms in the employee and intern portal under a unified Feedback & Evaluations section.
 
 **Verification checklist**
 
-- [ ] Full E2E chain is verified from requestor submission through completed implementation with attachment.
-- [ ] The history log contains one entry per status change with the correct actor and timestamp.
-- [ ] Reference numbers generate correctly for at least three test submissions.
-- [ ] A requestor calling the approval action directly is blocked.
-- [ ] Automated approval rule tests pass.
-- [ ] The comment thread works and displays properly.
-- [ ] No new errors are introduced during the approval workflow rollout.
+- [x] The 5% Reflection form triggers automatically on the monthly cadence alongside the self-evaluation.
+- [x] The Quarterly Temperature Check form triggers at the correct quarter-end dates.
+- [x] Duplicate submissions are blocked per person per period for both forms.
+- [x] Reminders only target non-respondents for both forms.
+- [x] Leadership can view aggregated temperature check scores and 5% reflection highlights per quarter.
+- [x] Both forms are accessible from the employee and intern portal.
+- [x] No new errors were introduced during the evaluation form rollout.
 
-## **WEEK 5 · June 2-6, 2026 - AI SOP Chatbot & Knowledge Base Ingestion**
+
+## **WEEK 5 · June 2-6, 2026 - Dual-Pipeline CRM Tracker**
+
+**Sprint status:** Planned
+
+**Sprint goal:** Build a dual-pipeline CRM tracker inside Control Hub that handles two distinct business flows: SFO (high-volume B2C retail orders) and SN Tech Inquiries (B2B software requirements), with a unified workspace layout, state-driven form morphing, and real-time Philippine Peso precision.
+
+**Implementation checklist**
+
+**State-Driven Form Morphing**
+
+- [ ] Design the CRM interaction panel with a `pipelineContext` prop accepting `'SFO' | 'TECH'` values to drive all field rendering.
+- [ ] SFO Mode: Render fast transactional row cards with ₱ currency amount fields, Invoice Number, Product parameters, platform selector (META/IG), and status dropdowns (New, For Follow Up, Closed, Lost).
+- [ ] TECH Mode: Render a comprehensive multi-step profile review grid covering company background, software requirements checklist, pipeline stage, and long-form remarks.
+- [ ] Ensure the form fully morphs its field set when `pipelineContext` switches, with no stale fields from the inactive pipeline visible.
+
+**Shared Layout Canvas Core**
+
+- [ ] Wrap both SFO and TECH views inside a single unified workspace component with consistent headers and focus underline indicators.
+- [ ] Build a global top-level switcher tab bar (`[SFO Dashboard]` | `[SN Tech Pipeline]`) using the existing tab primitive from `packages/ui`.
+- [ ] Implement client-side pipeline switching so the active view updates instantly without a page reload or route navigation.
+- [ ] Apply consistent active-state focus underlines to distinguish the selected pipeline context visually.
+
+**Numeric Real-time Precision**
+
+- [ ] Display all SFO sales amounts with the Philippine Peso symbol (₱) aligned cleanly inside row card amount columns.
+- [ ] Match the ₱ symbol weight and spacing to the app's existing Inter font stack for consistent inline rendering.
+- [ ] Ensure amount fields update in real-time as values are entered or edited without requiring a form submission.
+
+**Data & Database**
+
+- [ ] Create the SFO CRM database schema: customer name, Facebook/social link, message or comment source, platform (META/IG), date of contact, action plan, follow-up status, action taken, customer type, reason for reaching out, contact number, address, order date, products, amount, invoice number, and remarks.
+- [ ] Create the TECH pipeline schema: company name, contact person, requirements summary, pipeline stage, long-form remarks, follow-up date, and assigned rep.
+- [ ] Enable RLS policies scoped to `admin` and `super_admin` roles for both CRM tables.
+- [ ] Log all CRM record creates, updates, and status changes to `audit_logs`.
+
+**SFO Dashboard**
+
+- [ ] Build the SFO row card list view with columns: Customer Name, Facebook Link, Message/Comment, Platform, Date of Contact, Action Plan, Status of Follow-up, Action Taken, Customer Type, Reason for Reaching Out, Contact Number, Address, Order Date.
+- [ ] Build the SFO detail/expand panel: Products, Amount (₱), Status, Invoice Number, and Other Remarks.
+- [ ] Add the SFO status dropdown with options: New, For Follow Up, Closed, and Lost.
+- [ ] Add a Customer Type badge: New, Returning, and Wholesale.
+
+**SN Tech Pipeline**
+
+- [ ] Build the TECH pipeline board view with stage columns: Initial Contact, Requirements Gathering, Proposal Sent, Under Review, Closed Won, and Closed Lost.
+- [ ] Build the TECH contact detail panel with a company profile section, requirements checklist, and a long-form remarks thread.
+
+**Verification checklist**
+
+- [ ] Switching between `[SFO Dashboard]` and `[SN Tech Pipeline]` updates the view instantly without any page navigation.
+- [ ] SFO Mode renders all transactional fields with the ₱ symbol correctly aligned inside row cards.
+- [ ] TECH Mode renders the multi-step profile review grid with no SFO-specific fields visible.
+- [ ] CRM records are restricted to `admin` and `super_admin`; `employee` and `intern` roles cannot access or create CRM records.
+- [ ] All create, update, and status change actions are logged to `audit_logs`.
+- [ ] Amount fields in SFO mode display ₱ aligned with the Inter font stack at current app font sizes.
+- [ ] No new errors are introduced during the CRM tracker rollout.
+
+## **WEEK 6 · June 9-13, 2026 - AI SOP Chatbot & Knowledge Base Ingestion**
 
 **Sprint status:** Partially implemented; keyword search, source deduplication, PII filters, and SOP ingestion pending
 
@@ -229,7 +295,43 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 - [ ] The knowledge base coverage report is accessible to admins.
 - [ ] The ingestion intake process is documented and ready for ongoing use.
 
-## **WEEK 6 · June 9-13, 2026 - Tech Expense Tracker**
+## **WEEK 7 · June 16-20, 2026 - Standardized Approval Workflow**
+
+**Sprint status:** Planned
+
+**Sprint goal:** Build a 6-stage approval chain with immutable history, reference numbers, role-gated transitions, notifications, and traceable completion proof.
+
+**Implementation checklist**
+
+- [ ] Expand the approval lifecycle from 3 states to 6 states: Pending Endorsement -> Pending Approval -> Approved -> Implementing -> Completed -> Rejected.
+- [ ] Prevent skipped stages and backward jumps once a state transition is invalid.
+- [ ] Create a permanent history log for every status change with actor, timestamp, note, and attachment metadata.
+- [ ] Auto-generate unique request reference numbers in the format `SN-2026-NNN`.
+- [ ] Track the assigned endorser, approver, and implementor for each request.
+- [ ] Enforce security rules so only the correct assignee can move a request at each stage.
+- [ ] Block requestors from approving their own request.
+- [ ] Block endorsers from marking a request as completed.
+- [ ] Build the transition rules engine for allowed and disallowed status moves.
+- [ ] Build the transition action that validates permission, validates the move, records history, updates status, and notifies the next actor.
+- [ ] Send in-app notifications and email notifications to the next actor in the chain.
+- [ ] Add automated tests for blocked invalid transitions and rejected-request finality.
+- [ ] Build the 3-step submission form.
+- [ ] Build the `My Actions` queue for endorsers, approvers, and implementors.
+- [ ] Build the admin `Global Tracker` table.
+- [ ] Build the request comment thread.
+- [ ] Allow optional proof-of-completion attachment upload when the implementor marks the request as completed.
+
+**Verification checklist**
+
+- [ ] Full E2E chain is verified from requestor submission through completed implementation with attachment.
+- [ ] The history log contains one entry per status change with the correct actor and timestamp.
+- [ ] Reference numbers generate correctly for at least three test submissions.
+- [ ] A requestor calling the approval action directly is blocked.
+- [ ] Automated approval rule tests pass.
+- [ ] The comment thread works and displays properly.
+- [ ] No new errors are introduced during the approval workflow rollout.
+
+## **WEEK 8 · June 23-27, 2026 - Tech Expense Tracker**
 
 **Sprint status:** Planned
 
@@ -269,16 +371,18 @@ At the end of these six sprints, the portal should have cleaner admin workflows,
 | Week 1 - May 5-9 | Marketing Reports & Admin Dashboard | Final closeout and usability verification | Completed feature work plus final admin dashboard clarity walkthrough | Completed |
 | Week 2 - May 12-16 | EOD Intern Automation | Preserve completed automation and add delivery improvements | Dual-channel reminders and per-intern weekly summaries are live; the project-based leadership summary is still pending | Completed with follow-up |
 | Week 3 - May 19-23 | Monthly Self-Evaluation | Launch recurring monthly self and peer feedback collection | Monthly self-evaluation flow is live with reminders and admin review; multi-evaluator feedback remains pending | In progress |
-| Week 4 - May 26-30 | Standardized Approval Workflow | Multi-step chain with full audit trail | 6-stage state machine, history log, ref numbers, dashboards | Planned |
-| Week 5 - June 2-6 | AI SOP Chatbot & Knowledge Base Ingestion | Smarter answers, safer responses, full SOP coverage | Hybrid retrieval, fallback response, privacy filters, chat polish, all SOPs ingested | Planned |
-| Week 6 - June 9-13 | Tech Expense Tracker | Full visibility into technology spend and renewals | Expense CRUD, category dashboard, renewal alerts, audit logging | Planned |
+| Week 4 - May 26-30 | New Evaluation Forms | Launch 5% Reflection and Quarterly Temperature Check with automated distribution | Both forms live with deduplication, reminders, and leadership summary views | Completed |
+| Week 5 - June 2-6 | Dual-Pipeline CRM Tracker | Unified workspace for SFO retail orders and SN Tech B2B inquiries | State-driven form morphing, shared tab switcher, ₱ precision in SFO cards | Planned |
+| Week 6 - June 9-13 | AI SOP Chatbot & Knowledge Base Ingestion | Smarter answers, safer responses, full SOP coverage | Hybrid retrieval, fallback response, privacy filters, chat polish, all SOPs ingested | Planned |
+| Week 7 - June 16-20 | Standardized Approval Workflow | Multi-step chain with full audit trail | 6-stage state machine, history log, ref numbers, dashboards | Planned |
+| Week 8 - June 23-27 | Tech Expense Tracker | Full visibility into technology spend and renewals | Expense CRUD, category dashboard, renewal alerts, audit logging | Planned |
 
 | Delivery Summary | Details |
 | :---- | :---- |
-| **Total Sprints** | 6 - one focused sprint per delivery area |
-| **Sprint Period** | May 5 - June 13, 2026 |
+| **Total Sprints** | 8 - one focused sprint per delivery area |
+| **Sprint Period** | May 5 - June 27, 2026 |
 | **Developer** | Ceferino, Senior AI Intern |
-| **Type of Work** | Refinement plus two new recurring feedback forms, full knowledge base ingestion, and a new operational spend tracker |
+| **Type of Work** | Refinement plus dual-pipeline CRM tracker, two new recurring feedback forms, full knowledge base ingestion, and a new operational spend tracker |
 | **Tracking Method** | Checklist-driven implementation and verification per sprint |
 | **Definition of Done** | Each sprint is only complete when all required implementation and verification checkboxes are satisfied |
 

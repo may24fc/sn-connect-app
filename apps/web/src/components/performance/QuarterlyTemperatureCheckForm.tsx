@@ -18,6 +18,11 @@ import {
   CardTitle,
   Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
   Textarea,
   useToast,
@@ -64,6 +69,15 @@ function getCurrentQuarterKey(date: Date = new Date()): string {
 function formatQuarterKey(quarterKey: string): string {
   const [year, quarter] = quarterKey.split('-Q');
   return `Q${quarter} ${year}`;
+}
+
+function parseQuarterKey(quarterKey: string): { year: string; quarter: string } {
+  const [year, quarter] = quarterKey.split('-Q');
+
+  return {
+    year: year || String(new Date().getFullYear()),
+    quarter: quarter || '1',
+  };
 }
 
 function toFormValues(
@@ -154,7 +168,7 @@ export function QuarterlyTemperatureCheckForm() {
       setLoading(true);
       try {
         const response = await fetch(
-          `/api/performance/quarterly-temperature-checks?quarterKey=${getCurrentQuarterKey()}`,
+          `/api/performance/quarterly-temperature-checks?quarterKey=${quarterKey}`,
           {
             method: 'GET',
             credentials: 'include',
@@ -168,7 +182,6 @@ export function QuarterlyTemperatureCheckForm() {
 
         if (!active) return;
 
-        setQuarterKey(payload.data.quarterKey);
         setCurrentProfile(payload.data.profile);
         const identityKey = payload.data.profile.fullName.trim().toLowerCase();
         const draft = await getEvaluationDraft<SubmitQuarterlyTemperatureCheckInput>(
@@ -229,7 +242,7 @@ export function QuarterlyTemperatureCheckForm() {
     return () => {
       active = false;
     };
-  }, [addToast, reset]);
+  }, [addToast, quarterKey, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -252,16 +265,16 @@ export function QuarterlyTemperatureCheckForm() {
 
       setSubmittedRecord(payload.data as QuarterlyTemperatureCheckRecord);
       reset(toFormValues(payload.data as QuarterlyTemperatureCheckRecord));
-  await clearDraft();
-  setRestoredDraftAt(null);
+    await clearDraft();
+    setRestoredDraftAt(null);
 
       const isUpdate = response.status !== 201;
 
       addToast({
         title: isUpdate ? 'Quarterly temperature check updated' : 'Quarterly temperature check submitted',
         description: isUpdate
-          ? 'Your latest answers were saved and remain editable for this quarter.'
-          : 'Your response was saved and remains editable for this quarter.',
+          ? 'Your latest answers were saved and remain editable for the selected quarter.'
+          : 'Your response was saved and remains editable for the selected quarter.',
         variant: 'success',
       });
     } catch (error) {
@@ -332,7 +345,7 @@ export function QuarterlyTemperatureCheckForm() {
                         hour: 'numeric',
                         minute: '2-digit',
                       })}.`
-                    : 'You can still update your answers for this quarter.'}
+                    : 'You can still update your answers for the selected quarter.'}
                 </CardDescription>
               </div>
               <Badge variant="secondary">Editable after submission</Badge>
@@ -352,8 +365,50 @@ export function QuarterlyTemperatureCheckForm() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div>
-            <p className="text-sm font-medium text-foreground">Current quarter</p>
-            <p className="mt-1 text-sm text-muted-foreground">{formatQuarterKey(quarterKey)}</p>
+            <div className="space-y-2">
+              <Label>Select quarter</Label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Select
+                  onValueChange={(value) => {
+                    const parsedQuarter = parseQuarterKey(quarterKey);
+                    const nextQuarterKey = `${parsedQuarter.year}-Q${value}`;
+                    if (nextQuarterKey !== quarterKey) {
+                      setQuarterKey(nextQuarterKey);
+                    }
+                  }}
+                  value={parseQuarterKey(quarterKey).quarter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select quarter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Q1</SelectItem>
+                    <SelectItem value="2">Q2</SelectItem>
+                    <SelectItem value="3">Q3</SelectItem>
+                    <SelectItem value="4">Q4</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  min={2000}
+                  max={2100}
+                  value={parseQuarterKey(quarterKey).year}
+                  onChange={(event) => {
+                    const nextYear = event.target.value.replace(/\D/g, '').slice(0, 4);
+                    if (nextYear.length !== 4) {
+                      return;
+                    }
+
+                    const parsedQuarter = parseQuarterKey(quarterKey);
+                    const nextQuarterKey = `${nextYear}-Q${parsedQuarter.quarter}`;
+                    if (nextQuarterKey !== quarterKey) {
+                      setQuarterKey(nextQuarterKey);
+                    }
+                  }}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">{formatQuarterKey(quarterKey)}</p>
+            </div>
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Submission rule</p>

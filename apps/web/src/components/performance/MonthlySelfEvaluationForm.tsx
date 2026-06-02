@@ -206,7 +206,7 @@ export function MonthlySelfEvaluationForm() {
       setLoading(true);
       try {
         const response = await fetch(
-          `/api/performance/monthly-self-evaluations?monthKey=${getCurrentMonthKey()}`,
+          `/api/performance/monthly-self-evaluations?monthKey=${monthKey}`,
           {
             method: 'GET',
             credentials: 'include',
@@ -220,7 +220,6 @@ export function MonthlySelfEvaluationForm() {
 
         if (!active) return;
 
-        setMonthKey(payload.data.monthKey);
         setCurrentProfile(payload.data.profile);
         const identityKey = payload.data.profile.fullName.trim().toLowerCase();
         const draft = await getEvaluationDraft<SubmitMonthlySelfEvaluationInput>(
@@ -277,7 +276,7 @@ export function MonthlySelfEvaluationForm() {
     return () => {
       active = false;
     };
-  }, [addToast, reset]);
+  }, [addToast, monthKey, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -299,16 +298,16 @@ export function MonthlySelfEvaluationForm() {
 
       setSubmittedRecord(payload.data as MonthlySelfEvaluationRecord);
       reset(toFormValues(payload.data as MonthlySelfEvaluationRecord));
-  await clearDraft();
-  setRestoredDraftAt(null);
+    await clearDraft();
+    setRestoredDraftAt(null);
 
       const isUpdate = response.status !== 201;
 
       addToast({
         title: isUpdate ? 'Monthly self-evaluation updated' : 'Monthly self-evaluation submitted',
         description: isUpdate
-          ? 'Your latest answers were saved and remain editable for this month.'
-          : 'Your response was saved and remains editable for this month.',
+          ? 'Your latest answers were saved and remain editable for the selected month.'
+          : 'Your response was saved and remains editable for the selected month.',
         variant: 'success',
       });
     } catch (error) {
@@ -379,7 +378,7 @@ export function MonthlySelfEvaluationForm() {
                         hour: 'numeric',
                         minute: '2-digit',
                       })}.`
-                    : 'You can still update your answers for this month.'}
+                    : 'You can still update your answers for the selected month.'}
                 </CardDescription>
               </div>
               <Badge variant="secondary">Editable after submission</Badge>
@@ -399,8 +398,20 @@ export function MonthlySelfEvaluationForm() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div>
-            <p className="text-sm font-medium text-foreground">Current month</p>
-            <p className="mt-1 text-sm text-muted-foreground">{formatMonthKey(monthKey)}</p>
+            {renderRequiredLabel('Select month', 'monthly-self-evaluation-month')}
+            <Input
+              id="monthly-self-evaluation-month"
+              type="month"
+              className="mt-2"
+              value={monthKey}
+              onChange={(event) => {
+                if (!event.target.value || event.target.value === monthKey) {
+                  return;
+                }
+
+                setMonthKey(event.target.value);
+              }}
+            />
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Submission rule</p>

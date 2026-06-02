@@ -16,6 +16,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
   Label,
   Skeleton,
   Textarea,
@@ -229,7 +230,7 @@ export function FivePercentReflectionForm() {
       setLoading(true);
       try {
         const response = await fetch(
-          `/api/performance/five-percent-reflections?monthKey=${getCurrentMonthKey()}`,
+          `/api/performance/five-percent-reflections?monthKey=${monthKey}`,
           {
             method: 'GET',
             credentials: 'include',
@@ -243,7 +244,6 @@ export function FivePercentReflectionForm() {
 
         if (!active) return;
 
-        setMonthKey(payload.data.monthKey);
         setCurrentProfile(payload.data.profile);
         const identityKey = payload.data.profile.fullName.trim().toLowerCase();
         const draft = await getEvaluationDraft<SubmitFivePercentReflectionInput>(
@@ -300,7 +300,7 @@ export function FivePercentReflectionForm() {
     return () => {
       active = false;
     };
-  }, [addToast, reset]);
+  }, [addToast, monthKey, reset]);
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -353,16 +353,16 @@ export function FivePercentReflectionForm() {
 
       setSubmittedRecord(payload.data as FivePercentReflectionRecord);
       reset(toFormValues(payload.data as FivePercentReflectionRecord));
-  await clearDraft();
-  setRestoredDraftAt(null);
+    await clearDraft();
+    setRestoredDraftAt(null);
 
       const isUpdate = response.status !== 201;
 
       addToast({
         title: isUpdate ? '5% reflection updated' : '5% reflection submitted',
         description: isUpdate
-          ? 'Your latest answers were saved and remain editable for this month.'
-          : 'Your response was saved and remains editable for this month.',
+          ? 'Your latest answers were saved and remain editable for the selected month.'
+          : 'Your response was saved and remains editable for the selected month.',
         variant: 'success',
       });
     } catch (error) {
@@ -467,7 +467,7 @@ export function FivePercentReflectionForm() {
                         hour: 'numeric',
                         minute: '2-digit',
                       })}.`
-                    : 'You can still update your answers for this month.'}
+                    : 'You can still update your answers for the selected month.'}
                 </CardDescription>
               </div>
               <Badge variant="secondary">Editable after submission</Badge>
@@ -486,8 +486,20 @@ Allow yourself to be vulnerable and share what genuinely came up for you. Everyt
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div>
-            <p className="text-sm font-medium text-foreground">Current month</p>
-            <p className="mt-1 text-sm text-muted-foreground">{formatMonthKey(monthKey)}</p>
+            {renderRequiredLabel('Select month', 'five-percent-reflection-month')}
+            <Input
+              id="five-percent-reflection-month"
+              type="month"
+              className="mt-2"
+              value={monthKey}
+              onChange={(event) => {
+                if (!event.target.value || event.target.value === monthKey) {
+                  return;
+                }
+
+                setMonthKey(event.target.value);
+              }}
+            />
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Submission rule</p>
