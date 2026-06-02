@@ -202,14 +202,14 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 
 **Sprint status:** Planned
 
-**Sprint goal:** Build a dual-pipeline CRM tracker inside Control Hub that handles two distinct business flows: SFO (high-volume B2C retail orders) and SN Tech Inquiries (B2B software requirements), with a unified workspace layout, state-driven form morphing, and real-time Philippine Peso precision.
+**Sprint goal:** Build a dual-pipeline CRM tracker inside Control Hub that handles two distinct business flows: SFO (high-volume B2C retail orders) and SN Tech Inquiries (B2B software requirements), with a unified workspace layout, state-driven form morphing, and real-time Australian Dollar precision.
 
 **Implementation checklist**
 
 **State-Driven Form Morphing**
 
 - [ ] Design the CRM interaction panel with a `pipelineContext` prop accepting `'SFO' | 'TECH'` values to drive all field rendering.
-- [ ] SFO Mode: Render fast transactional row cards with ₱ currency amount fields, Invoice Number, Product parameters, platform selector (META/IG), and status dropdowns (New, For Follow Up, Closed, Lost).
+- [ ] SFO Mode: Render fast transactional row cards with A$ currency amount fields, Invoice Number, Product parameters, platform selector (META/IG), and status dropdowns (New, For Follow Up, Closed, Lost).
 - [ ] TECH Mode: Render a comprehensive multi-step profile review grid covering company background, software requirements checklist, pipeline stage, and long-form remarks.
 - [ ] Ensure the form fully morphs its field set when `pipelineContext` switches, with no stale fields from the inactive pipeline visible.
 
@@ -222,8 +222,8 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 
 **Numeric Real-time Precision**
 
-- [ ] Display all SFO sales amounts with the Philippine Peso symbol (₱) aligned cleanly inside row card amount columns.
-- [ ] Match the ₱ symbol weight and spacing to the app's existing Inter font stack for consistent inline rendering.
+- [ ] Display all SFO sales amounts with the Australian Dollar symbol (A$) aligned cleanly inside row card amount columns.
+- [ ] Match the Australian Dollar symbol weight and spacing to the app's existing Inter font stack for consistent inline rendering.
 - [ ] Ensure amount fields update in real-time as values are entered or edited without requiring a form submission.
 
 **Data & Database**
@@ -236,7 +236,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 **SFO Dashboard**
 
 - [ ] Build the SFO row card list view with columns: Customer Name, Facebook Link, Message/Comment, Platform, Date of Contact, Action Plan, Status of Follow-up, Action Taken, Customer Type, Reason for Reaching Out, Contact Number, Address, Order Date.
-- [ ] Build the SFO detail/expand panel: Products, Amount (₱), Status, Invoice Number, and Other Remarks.
+- [ ] Build the SFO detail/expand panel: Products, Amount (A$), Status, Invoice Number, and Other Remarks.
 - [ ] Add the SFO status dropdown with options: New, For Follow Up, Closed, and Lost.
 - [ ] Add a Customer Type badge: New, Returning, and Wholesale.
 
@@ -248,11 +248,11 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 **Verification checklist**
 
 - [ ] Switching between `[SFO Dashboard]` and `[SN Tech Pipeline]` updates the view instantly without any page navigation.
-- [ ] SFO Mode renders all transactional fields with the ₱ symbol correctly aligned inside row cards.
+- [ ] SFO Mode renders all transactional fields with the A$ symbol correctly aligned inside row cards.
 - [ ] TECH Mode renders the multi-step profile review grid with no SFO-specific fields visible.
 - [ ] CRM records are restricted to `admin` and `super_admin`; `employee` and `intern` roles cannot access or create CRM records.
 - [ ] All create, update, and status change actions are logged to `audit_logs`.
-- [ ] Amount fields in SFO mode display ₱ aligned with the Inter font stack at current app font sizes.
+- [ ] Amount fields in SFO mode display A$ aligned with the Inter font stack at current app font sizes.
 - [ ] No new errors are introduced during the CRM tracker rollout.
 
 ## **WEEK 6 · June 9-13, 2026 - AI SOP Chatbot & Knowledge Base Ingestion**

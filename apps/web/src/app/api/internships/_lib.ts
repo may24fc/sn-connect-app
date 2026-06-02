@@ -68,14 +68,36 @@ export async function canAccessInternship(
 }> {
   const adminClient = createSupabaseAdminClient();
 
-  const { data: internship, error: internshipError } = await adminClient
+  const { data: internshipById, error: internshipError } = await adminClient
     .from('internships')
     .select('*')
     .eq('id', internshipId)
+    .is('deleted_at', null)
     .maybeSingle();
 
-  if (internshipError || !internship) {
+  if (internshipError) {
     return { allowed: false, internship: null, employeeId: null };
+  }
+
+  let internship = internshipById;
+
+  // Projects Tracker currently links intern user IDs. Resolve the latest active
+  // internship for that user as a compatibility fallback.
+  if (!internship) {
+    const { data: internshipByUserId, error: userLookupError } = await adminClient
+      .from('internships')
+      .select('*, employees!inner(user_id)')
+      .eq('employees.user_id', internshipId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (userLookupError || !internshipByUserId) {
+      return { allowed: false, internship: null, employeeId: null };
+    }
+
+    internship = internshipByUserId;
   }
 
   if (isInternshipAdmin(role)) {

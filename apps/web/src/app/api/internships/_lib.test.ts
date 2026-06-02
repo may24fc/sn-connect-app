@@ -12,22 +12,38 @@ type MockRecord = Record<string, unknown> | null;
 
 function createMockAdminClient(records: {
   internship?: MockRecord;
+  internshipByUserId?: MockRecord;
   employee?: MockRecord;
 }) {
   return {
     from(table: string) {
+      const state: { source: 'byId' | 'byUserId' } = { source: 'byId' };
+
       return {
         select() {
           return this;
         },
-        eq() {
+        eq(column?: string) {
+          if (table === 'internships' && column === 'employees.user_id') {
+            state.source = 'byUserId';
+          }
           return this;
         },
         is() {
           return this;
         },
+        order() {
+          return this;
+        },
+        limit() {
+          return this;
+        },
         maybeSingle: async () => {
           if (table === 'internships') {
+            if (state.source === 'byUserId') {
+              return { data: records.internshipByUserId ?? null, error: null };
+            }
+
             return { data: records.internship ?? null, error: null };
           }
 
@@ -100,6 +116,29 @@ describe('isInternshipAdmin', () => {
     ).resolves.toMatchObject({
       allowed: true,
       employeeId: 'employee-1',
+    });
+  });
+
+  it('resolves internship by intern user id when route param is not an internship id', async () => {
+    vi.mocked(createSupabaseAdminClient).mockReturnValue(
+      createMockAdminClient({
+        internship: null,
+        internshipByUserId: {
+          id: 'internship-2',
+          employee_id: 'employee-2',
+          supervisor_id: 'supervisor-2',
+        },
+      }) as never
+    );
+
+    await expect(
+      canAccessInternship({} as never, 'intern-user-id', 'admin-user', 'admin')
+    ).resolves.toMatchObject({
+      allowed: true,
+      employeeId: 'employee-2',
+      internship: {
+        id: 'internship-2',
+      },
     });
   });
 });

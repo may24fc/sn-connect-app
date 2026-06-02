@@ -103,6 +103,7 @@ export default function InternDashboardPage(): ReactNode {
       projectEntries: data.projectEntries,
       ...(data.blockers ? { blockers: data.blockers } : {}),
       ...(data.nextSteps ? { nextSteps: data.nextSteps } : {}),
+      ...(data.attachmentLinks ? { attachmentLinks: data.attachmentLinks } : {}),
       ...(data.attachments ? { attachments: data.attachments } : {}),
       ...(data.existingAttachments
         ? { retainedAttachments: data.existingAttachments }
