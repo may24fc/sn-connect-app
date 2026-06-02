@@ -276,7 +276,7 @@ export function EODReportDetailModal({
               {attachments.map((attachment) => (
                 <a
                   key={attachment.id}
-                  href={attachment.signedUrl ?? '#'}
+                  href={attachment.signedUrl ?? attachment.filePath}
                   target="_blank"
                   rel="noreferrer"
                   className="block rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:bg-zinc-900"

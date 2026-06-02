@@ -3,19 +3,6 @@ import { z } from 'zod';
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const nonEmptyTrimmedStringSchema = z.string().trim().min(1);
 const stringListSchema = z.array(nonEmptyTrimmedStringSchema).max(20);
-const dailyLogHoursSchema = z.coerce
-  .number()
-  .min(0.25, 'Hours worked must be at least 0.25')
-  .max(40, 'Hours worked cannot exceed 40');
-
-function isFutureIsoDate(value: string): boolean {
-  const today = new Date().toISOString().split('T')[0] ?? '';
-  return value > today;
-}
-
-const dailyLogDateSchema = isoDateSchema.refine((value) => !isFutureIsoDate(value), {
-  message: 'Log date cannot be in the future',
-});
 
 export const dailyLogProjectEntrySchema = z.object({
   id: z.string().uuid().optional(),
@@ -80,11 +67,12 @@ export const internshipActionSchema = z.discriminatedUnion('action', [
 export const internDailyLogStatusSchema = z.enum(['draft', 'submitted']);
 
 export const createInternDailyLogSchema = z.object({
-  logDate: dailyLogDateSchema,
-  hoursWorked: dailyLogHoursSchema,
+  logDate: isoDateSchema,
+  hoursWorked: z.coerce.number().min(0.25).max(24),
   projectEntries: z.array(dailyLogProjectEntrySchema).min(1).max(20),
   blockers: stringListSchema.optional(),
   nextSteps: stringListSchema.optional(),
+  attachmentLinks: z.array(z.string().trim().url()).max(20).optional(),
   retainedAttachments: z.array(dailyLogAttachmentPersistedSchema).optional(),
   status: internDailyLogStatusSchema.default('submitted'),
 });
@@ -92,11 +80,12 @@ export const createInternDailyLogSchema = z.object({
 /** Schema for interns editing their own draft logs. */
 export const updateInternDraftLogSchema = z.object({
   logId: z.string().uuid(),
-  logDate: dailyLogDateSchema.optional(),
-  hoursWorked: dailyLogHoursSchema.optional(),
+  logDate: isoDateSchema.optional(),
+  hoursWorked: z.coerce.number().min(0.25).max(24).optional(),
   projectEntries: z.array(dailyLogProjectEntrySchema).min(1).max(20).optional(),
   blockers: stringListSchema.optional(),
   nextSteps: stringListSchema.optional(),
+  attachmentLinks: z.array(z.string().trim().url()).max(20).optional(),
   retainedAttachments: z.array(dailyLogAttachmentPersistedSchema).optional(),
   status: internDailyLogStatusSchema.optional(),
 });

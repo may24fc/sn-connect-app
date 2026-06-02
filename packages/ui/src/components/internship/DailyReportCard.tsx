@@ -153,7 +153,7 @@ export function DailyReportCard({
                 {attachments.map((attachment) => (
                   <a
                     key={attachment.id}
-                    href={attachment.signedUrl ?? '#'}
+                    href={attachment.signedUrl ?? attachment.filePath}
                     target="_blank"
                     rel="noreferrer"
                     className="block rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm font-medium hover:bg-muted/40"

@@ -6,6 +6,7 @@ import {
   Clock,
   FileEdit,
   FolderKanban,
+  Link2,
   Paperclip,
   Plus,
   Send,
@@ -14,8 +15,6 @@ import {
   X,
 } from 'lucide-react';
 import * as React from 'react';
-import { FormErrorMessage } from '../forms/FormErrorMessage';
-import { FormGroup } from '../forms/FormGroup';
 import { Button } from '../../primitives/button';
 import {
   Card,
@@ -77,15 +76,16 @@ function StringListField({
   };
 
   return (
-    <FormGroup
-      label={title}
-      required={required}
-      showOptional={false}
-      description={description || undefined}
-      error={errorMessage}
-      icon={icon}
-      className="space-y-3"
-    >
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label className="flex items-center gap-2 text-sm font-medium">
+          {icon}
+          {title}
+          {required && <span className="text-error">*</span>}
+        </Label>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+
       <div className="space-y-2">
         {normalizedEntries.map((entry, index) => (
           <div key={`${title}-${index}`} className="flex items-start gap-2">
@@ -93,9 +93,7 @@ function StringListField({
               value={entry}
               onChange={(event) => updateEntry(index, event.target.value)}
               placeholder={placeholder}
-              error={invalid}
-              aria-invalid={invalid || undefined}
-              className="h-9 text-sm"
+              className={cn('h-9 text-sm', invalid ? 'border-error' : '')}
             />
             <button
               type="button"
@@ -118,7 +116,8 @@ function StringListField({
         {addLabel}
       </button>
 
-    </FormGroup>
+      {errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
+    </div>
   );
 }
 
@@ -181,8 +180,6 @@ function ProjectEntryField({
             value={entry.projectFocus}
             onChange={(event) => updateField('projectFocus', event.target.value)}
             placeholder="Example: Employee onboarding guide"
-            error={invalid}
-            aria-invalid={invalid || undefined}
             className="h-9"
           />
         </div>
@@ -196,8 +193,6 @@ function ProjectEntryField({
             onChange={(event) => updateField('challenge', event.target.value)}
             placeholder="Describe the challenge, blocker, or constraint for this focus area"
             rows={3}
-            error={invalid}
-            aria-invalid={invalid || undefined}
           />
         </div>
 
@@ -210,8 +205,6 @@ function ProjectEntryField({
             onChange={(event) => updateField('actionTaken', event.target.value)}
             placeholder="Describe the work you completed for this focus area"
             rows={3}
-            error={invalid}
-            aria-invalid={invalid || undefined}
           />
         </div>
 
@@ -224,8 +217,6 @@ function ProjectEntryField({
             onChange={(event) => updateField('outcome', event.target.value)}
             placeholder="State the result, impact, or what moved forward"
             rows={3}
-            error={invalid}
-            aria-invalid={invalid || undefined}
           />
         </div>
       </div>
@@ -326,7 +317,7 @@ export function EODReportForm({
   isSubmitting = false,
   isSavingDraft = false,
   defaultDate,
-  maxHoursPerDay = 40,
+  maxHoursPerDay = 12,
   className,
   defaultValues,
   editMode = false,
@@ -351,6 +342,10 @@ export function EODReportForm({
         : splitLines(defaultValues?.focusTomorrow),
     [defaultValues]
   );
+  const initialAttachmentLinks = React.useMemo(
+    () => defaultValues?.attachmentLinks ?? [],
+    [defaultValues]
+  );
   const initialExistingAttachments = React.useMemo(
     () => buildInitialExistingAttachments(defaultValues),
     [defaultValues]
@@ -362,15 +357,14 @@ export function EODReportForm({
   const [blockers, setBlockers] = React.useState<string[]>(initialBlockers);
   const [nextSteps, setNextSteps] = React.useState<string[]>(initialNextSteps);
   const [attachments, setAttachments] = React.useState<Array<File>>(defaultValues?.attachments ?? []);
+  const [attachmentLinks, setAttachmentLinks] = React.useState<string[]>(
+    initialAttachmentLinks
+  );
   const [existingAttachments, setExistingAttachments] = React.useState<Array<DailyLogAttachment>>(
     initialExistingAttachments
   );
   const [errors, setErrors] = React.useState<FormErrors>({});
   const [submitError, setSubmitError] = React.useState<string | null>(null);
-  const todayIso = React.useMemo(
-    () => new Date().toISOString().split('T')[0] ?? '',
-    []
-  );
 
   const getSubmissionErrorMessage = (error: unknown): string => {
     if (error instanceof Error) {
@@ -416,8 +410,6 @@ export function EODReportForm({
 
     if (!date) {
       nextErrors.date = 'Date is required';
-    } else if (date > todayIso) {
-      nextErrors.date = 'Date cannot be in the future';
     }
 
     if (hoursLogged <= 0) {
@@ -447,6 +439,9 @@ export function EODReportForm({
     const normalizedEntries = normalizeProjectEntries();
     const normalizedBlockers = blockers.map((entry) => entry.trim()).filter(Boolean);
     const normalizedNextSteps = nextSteps.map((entry) => entry.trim()).filter(Boolean);
+    const normalizedAttachmentLinks = attachmentLinks
+      .map((entry) => entry.trim())
+      .filter(Boolean);
 
     return {
       date,
@@ -455,6 +450,9 @@ export function EODReportForm({
       ...(normalizedBlockers.length > 0 ? { blockers: normalizedBlockers } : {}),
       ...(normalizedNextSteps.length > 0 ? { nextSteps: normalizedNextSteps } : {}),
       ...(attachments.length > 0 ? { attachments } : {}),
+      ...(normalizedAttachmentLinks.length > 0
+        ? { attachmentLinks: normalizedAttachmentLinks }
+        : {}),
       ...(existingAttachments.length > 0 ? { existingAttachments } : {}),
       status,
     } satisfies EODReportFormData & { status: 'draft' | 'submitted' };
@@ -528,6 +526,7 @@ export function EODReportForm({
     setBlockers(initialBlockers);
     setNextSteps(initialNextSteps);
     setAttachments(defaultValues?.attachments ?? []);
+    setAttachmentLinks(initialAttachmentLinks);
     setExistingAttachments(initialExistingAttachments);
     setErrors({});
     setSubmitError(null);
@@ -566,14 +565,12 @@ export function EODReportForm({
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormGroup
-              label="Date"
-              htmlFor="date"
-              required
-              showOptional={false}
-              error={errors.date}
-              icon={<Calendar className="h-4 w-4" />}
-            >
+            <div className="space-y-1.5">
+              <Label htmlFor="date" className="flex items-center gap-2 text-sm font-medium">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                Date
+                <span className="text-error">*</span>
+              </Label>
               <Input
                 id="date"
                 type="date"
@@ -584,26 +581,24 @@ export function EODReportForm({
                     setErrors((currentErrors) => ({ ...currentErrors, date: undefined }));
                   }
                 }}
-                error={Boolean(errors.date)}
-                aria-invalid={Boolean(errors.date) || undefined}
-                className="h-9"
+                max={new Date().toISOString().split('T')[0]}
+                className={cn('h-9', errors.date ? 'border-error' : '')}
               />
-            </FormGroup>
+              {errors.date && <p className="text-xs text-error">{errors.date}</p>}
+            </div>
 
-            <FormGroup
-              label="Hours Logged"
-              htmlFor="hours"
-              required
-              showOptional={false}
-              error={errors.hoursLogged}
-              description={`Enter up to ${maxHoursPerDay} hours for the day.`}
-              icon={<Clock className="h-4 w-4" />}
-            >
+            <div className="space-y-1.5">
+              <Label htmlFor="hours" className="flex items-center gap-2 text-sm font-medium">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Hours Logged
+                <span className="text-error">*</span>
+              </Label>
               <Input
                 id="hours"
                 type="number"
+                min="0.5"
+                max={maxHoursPerDay}
                 step="0.5"
-                inputMode="decimal"
                 value={hoursLogged}
                 onChange={(event) => {
                   setHoursLogged(Number.parseFloat(event.target.value) || 0);
@@ -611,11 +606,10 @@ export function EODReportForm({
                     setErrors((currentErrors) => ({ ...currentErrors, hoursLogged: undefined }));
                   }
                 }}
-                error={Boolean(errors.hoursLogged)}
-                aria-invalid={Boolean(errors.hoursLogged) || undefined}
-                className="h-9"
+                className={cn('h-9', errors.hoursLogged ? 'border-error' : '')}
               />
-            </FormGroup>
+              {errors.hoursLogged && <p className="text-xs text-error">{errors.hoursLogged}</p>}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -650,7 +644,9 @@ export function EODReportForm({
               Add another project / focus
             </button>
 
-            <FormErrorMessage message={errors.projectEntries} />
+            {errors.projectEntries && (
+              <p className="text-xs text-error">{errors.projectEntries}</p>
+            )}
           </div>
 
           <StringListField
@@ -710,17 +706,24 @@ export function EODReportForm({
                       className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-950"
                     >
                       <div className="min-w-0">
+                        {attachment.mimeType === 'text/uri-list' ||
+                        attachment.filePath.startsWith('http') ? (
+                          <p className="text-xs text-muted-foreground">Link attachment</p>
+                        ) : null}
                         <a
-                          href={attachment.signedUrl ?? '#'}
+                          href={attachment.signedUrl ?? attachment.filePath}
                           target="_blank"
                           rel="noreferrer"
                           className="truncate font-medium text-zinc-900 hover:text-primary dark:text-zinc-100"
                         >
                           {attachment.fileName}
                         </a>
-                        <p className="text-xs text-muted-foreground">
-                          {Math.max(1, Math.round(attachment.fileSize / 1024))} KB
-                        </p>
+                        {attachment.mimeType === 'text/uri-list' ||
+                        attachment.filePath.startsWith('http') ? null : (
+                          <p className="text-xs text-muted-foreground">
+                            {Math.max(1, Math.round(attachment.fileSize / 1024))} KB
+                          </p>
+                        )}
                       </div>
                       <Button
                         type="button"
@@ -758,6 +761,16 @@ export function EODReportForm({
                   currentFiles.filter((_, fileIndex) => fileIndex !== index)
                 );
               }}
+            />
+
+            <StringListField
+              entries={attachmentLinks}
+              onChange={setAttachmentLinks}
+              placeholder="https://drive.google.com/..."
+              addLabel="Add another link"
+              icon={<Link2 className="h-4 w-4 text-muted-foreground" />}
+              title="Link Attachments (Optional)"
+              description="Use links when your proof is hosted online instead of uploaded as a file."
             />
           </div>
         </CardContent>

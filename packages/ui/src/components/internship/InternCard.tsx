@@ -145,8 +145,16 @@ export function InternCard({
 
         {/* Progress */}
         <HoursProgressMini
-          completedHours={hoursMode === 'weekly' ? intern.weeklyCompletedHours : intern.completedHours}
-          requiredHours={hoursMode === 'weekly' ? intern.weeklyRequiredHours : intern.requiredHours}
+          completedHours={
+            hoursMode === 'weekly'
+              ? (intern.weeklyCompletedHours ?? intern.completedHours)
+              : intern.completedHours
+          }
+          requiredHours={
+            hoursMode === 'weekly'
+              ? (intern.weeklyRequiredHours ?? intern.requiredHours)
+              : intern.requiredHours
+          }
           startDate={intern.startDate}
           endDate={intern.endDate}
         />
@@ -279,8 +287,16 @@ export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, clas
       <div className="flex items-center gap-6">
         <div className="hidden md:block w-32">
           <HoursProgressMini
-            completedHours={hoursMode === 'weekly' ? intern.weeklyCompletedHours : intern.completedHours}
-            requiredHours={hoursMode === 'weekly' ? intern.weeklyRequiredHours : intern.requiredHours}
+            completedHours={
+              hoursMode === 'weekly'
+                ? (intern.weeklyCompletedHours ?? intern.completedHours)
+                : intern.completedHours
+            }
+            requiredHours={
+              hoursMode === 'weekly'
+                ? (intern.weeklyRequiredHours ?? intern.requiredHours)
+                : intern.requiredHours
+            }
             startDate={intern.startDate}
             endDate={intern.endDate}
           />

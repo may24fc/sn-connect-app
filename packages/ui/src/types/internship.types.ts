@@ -94,9 +94,9 @@ export interface InternSummary {
   endDate: string;
   requiredHours: number;
   completedHours: number;
+  weeklyRequiredHours?: number;
+  weeklyCompletedHours?: number;
   progressPercentage: number;
-  weeklyRequiredHours: number;
-  weeklyCompletedHours: number;
   status: InternshipStatus;
   lastReportDate?: string;
   pendingReports: number;
@@ -137,6 +137,7 @@ export interface EODReportFormData {
   blockers?: string[];
   nextSteps?: string[];
   attachments?: File[];
+  attachmentLinks?: string[];
   existingAttachments?: Array<DailyLogAttachment>;
   tasksCompleted?: string;
   challenges?: string;

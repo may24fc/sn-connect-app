@@ -25,6 +25,7 @@ import { canAccessInternship, getAuthedInternshipContext, isInternshipAdmin } fr
 const DAILY_LOG_ATTACHMENT_BUCKET = 'intern-daily-log-attachments';
 const DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 10;
 const DAILY_LOG_ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024;
+const DAILY_LOG_LINK_ATTACHMENT_MIME_TYPE = 'text/uri-list';
 const DAILY_LOG_ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
   'image/jpeg',
   'image/png',
@@ -37,6 +38,37 @@ const DAILY_LOG_ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
 ]);
 
 type DailyLogPayload = z.infer<typeof createInternDailyLogSchema>;
+
+function isExternalLinkAttachment(attachment: DailyLogAttachment): boolean {
+  return (
+    attachment.mimeType === DAILY_LOG_LINK_ATTACHMENT_MIME_TYPE ||
+    /^https?:\/\//i.test(attachment.filePath)
+  );
+}
+
+function buildLinkAttachmentDisplayName(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.hostname}${parsed.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
+function buildLinkAttachments(links: Array<string> | undefined): Array<DailyLogAttachment> {
+  if (!links || links.length === 0) {
+    return [];
+  }
+
+  return links.map((url) => ({
+    id: crypto.randomUUID(),
+    fileName: buildLinkAttachmentDisplayName(url),
+    filePath: url,
+    fileSize: 0,
+    mimeType: DAILY_LOG_LINK_ATTACHMENT_MIME_TYPE,
+    signedUrl: url,
+  }));
+}
 
 function sanitizeAttachmentName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -86,6 +118,13 @@ async function signDailyLogAttachments(
 ): Promise<Array<DailyLogAttachment>> {
   return Promise.all(
     attachments.map(async (attachment) => {
+      if (isExternalLinkAttachment(attachment)) {
+        return {
+          ...attachment,
+          signedUrl: attachment.filePath,
+        };
+      }
+
       const { data, error } = await adminClient.storage
         .from(DAILY_LOG_ATTACHMENT_BUCKET)
         .createSignedUrl(attachment.filePath, DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS);
@@ -147,9 +186,16 @@ async function removeDailyLogAttachments(
     return;
   }
 
+  const storageAttachments = attachments.filter(
+    (attachment) => !isExternalLinkAttachment(attachment)
+  );
+  if (storageAttachments.length === 0) {
+    return;
+  }
+
   await adminClient.storage
     .from(DAILY_LOG_ATTACHMENT_BUCKET)
-    .remove(attachments.map((attachment) => attachment.filePath));
+    .remove(storageAttachments.map((attachment) => attachment.filePath));
 }
 
 function buildDailyLogInsertValues(
@@ -183,30 +229,6 @@ function buildDailyLogInsertValues(
     approved_by: null,
     approved_at: null,
   };
-}
-
-function getDailyLogPersistenceErrorResponse(
-  error: { code?: string | null; message?: string | null } | null | undefined,
-  fallbackMessage: string
-) {
-  if (error?.code === '23505') {
-    return NextResponse.json(
-      { error: 'A daily log already exists for this date' },
-      { status: 409 }
-    );
-  }
-
-  if (
-    error?.code === '23514' &&
-    error.message?.includes('chk_intern_daily_logs_hours_valid')
-  ) {
-    return NextResponse.json(
-      { error: 'Hours worked must be between 0.25 and 40.' },
-      { status: 400 }
-    );
-  }
-
-  return NextResponse.json({ error: fallbackMessage }, { status: 500 });
 }
 
 export async function GET(
@@ -296,6 +318,7 @@ export async function POST(
     const payload = parsed.data;
     const logId = crypto.randomUUID();
     let uploadedAttachments: Array<DailyLogAttachment> = [];
+    const linkAttachments = buildLinkAttachments(payload.attachmentLinks);
 
     try {
       uploadedAttachments = await uploadDailyLogAttachments(adminClient, id, logId, files);
@@ -317,6 +340,7 @@ export async function POST(
         buildDailyLogInsertValues(id, logId, payload, [
           ...normalizeAttachmentRecords(payload.retainedAttachments),
           ...uploadedAttachments,
+          ...linkAttachments,
         ])
       )
       .select('*')
@@ -324,8 +348,14 @@ export async function POST(
 
     if (insertError || !data) {
       await removeDailyLogAttachments(adminClient, uploadedAttachments);
+      if (insertError?.code === '23505') {
+        return NextResponse.json(
+          { error: 'A daily log already exists for this date' },
+          { status: 409 }
+        );
+      }
       console.error('Error creating intern daily log:', insertError);
-      return getDailyLogPersistenceErrorResponse(insertError, 'Failed to create daily log');
+      return NextResponse.json({ error: 'Failed to create daily log' }, { status: 500 });
     }
 
     if ((payload.status ?? 'submitted') === 'submitted') {
@@ -467,6 +497,7 @@ export async function PATCH(
         payload.nextSteps !== undefined
           ? payload.nextSteps
           : normalizeStringList(undefined, existingLog.learnings);
+      const linkAttachments = buildLinkAttachments(payload.attachmentLinks);
 
       const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (payload.logDate !== undefined) updates.log_date = payload.logDate;
@@ -481,8 +512,16 @@ export async function PATCH(
       if (payload.nextSteps !== undefined) {
         updates.learnings = buildListSummary(nextSteps);
       }
-      if (payload.retainedAttachments !== undefined || uploadedAttachments.length > 0) {
-        updates.attachments = [...retainedAttachments, ...uploadedAttachments];
+      if (
+        payload.retainedAttachments !== undefined ||
+        payload.attachmentLinks !== undefined ||
+        uploadedAttachments.length > 0
+      ) {
+        updates.attachments = [
+          ...retainedAttachments,
+          ...uploadedAttachments,
+          ...linkAttachments,
+        ];
       }
       if (payload.status !== undefined) updates.status = payload.status;
 
@@ -497,7 +536,7 @@ export async function PATCH(
       if (updateError || !data) {
         await removeDailyLogAttachments(adminClient, uploadedAttachments);
         console.error('Error updating draft log:', updateError);
-        return getDailyLogPersistenceErrorResponse(updateError, 'Failed to update daily log');
+        return NextResponse.json({ error: 'Failed to update daily log' }, { status: 500 });
       }
 
       await removeDailyLogAttachments(adminClient, removedAttachments);
