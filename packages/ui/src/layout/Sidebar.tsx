@@ -19,6 +19,7 @@ import {
   Megaphone,
   Receipt,
   Sparkles,
+  Store,
   Target,
   Trophy,
   User,
@@ -103,6 +104,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
+  { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   {
     label: 'Self-Evaluations',
     href: '/admin/performance/monthly-self-evaluations',
@@ -128,6 +130,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
+  { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   {
     label: 'Self-Evaluations',
     href: '/admin/performance/monthly-self-evaluations',

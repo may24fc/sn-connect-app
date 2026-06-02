@@ -248,6 +248,22 @@ export interface TicketFilters {
   pageSize?: number;
 }
 
+export interface CrmSfoFilters {
+  search?: string;
+  status?: 'new' | 'for_follow_up' | 'closed' | 'lost';
+}
+
+export interface CrmTechFilters {
+  search?: string;
+  stage?:
+    | 'initial_contact'
+    | 'requirements_gathering'
+    | 'proposal_sent'
+    | 'under_review'
+    | 'closed_won'
+    | 'closed_lost';
+}
+
 export const queryKeys = {
   // Employees
   employees: {
@@ -530,6 +546,20 @@ export const queryKeys = {
     comments: (id: string) => [...queryKeys.tickets.all, 'comments', id] as const,
   },
 
+  crm: {
+    all: ['crm'] as const,
+    sfo: {
+      all: () => [...queryKeys.crm.all, 'sfo'] as const,
+      list: (filters: CrmSfoFilters) => [...queryKeys.crm.sfo.all(), 'list', filters] as const,
+      detail: (id: string) => [...queryKeys.crm.sfo.all(), 'detail', id] as const,
+    },
+    tech: {
+      all: () => [...queryKeys.crm.all, 'tech'] as const,
+      list: (filters: CrmTechFilters) => [...queryKeys.crm.tech.all(), 'list', filters] as const,
+      detail: (id: string) => [...queryKeys.crm.tech.all(), 'detail', id] as const,
+    },
+  },
+
   // Ticket Handlers
   ticketHandlers: {
     all: ['ticket-handlers'] as const,
@@ -551,6 +581,8 @@ export const queryKeys = {
     list: (filters: ProjectFilters) => [...queryKeys.projects.lists(), filters] as const,
     details: () => [...queryKeys.projects.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.projects.details(), id] as const,
+    documentation: (projectId: string) =>
+      [...queryKeys.projects.all, 'documentation', projectId] as const,
     milestones: (projectId: string) =>
       [...queryKeys.projects.all, 'milestones', projectId] as const,
     checklist: (milestoneId: string) =>
