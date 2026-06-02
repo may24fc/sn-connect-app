@@ -4,7 +4,7 @@ import { FivePercentReflectionForm } from '@/components/performance/FivePercentR
 import { MonthlyCallFeedbackForm } from '@/components/performance/MonthlyCallFeedbackForm';
 import { MonthlySelfEvaluationForm } from '@/components/performance/MonthlySelfEvaluationForm';
 import { QuarterlyTemperatureCheckForm } from '@/components/performance/QuarterlyTemperatureCheckForm';
-import { Button, Card, CardContent, CardHeader, CardTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import { Button, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -57,23 +57,20 @@ export function SelfEvaluationWorkspace({
           ) : null}
         </div>
 
-        <Card>
-          <CardContent className="mt-6">
-            <Select value={activeTab} onValueChange={(value) => setActiveTab(value as SelfEvaluationTab)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a form" />
-              </SelectTrigger>
-              <SelectContent>
-                {EVALUATION_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="mt-2 text-sm text-muted-foreground">Currently answering: {activeLabel}</p>
-          </CardContent>
-        </Card>
+        <div>
+          <Select value={activeTab} onValueChange={(value) => setActiveTab(value as SelfEvaluationTab)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a form" />
+            </SelectTrigger>
+            <SelectContent>
+              {EVALUATION_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div >
       </div>
 
       {activeTab === 'monthly' ? <MonthlySelfEvaluationForm /> : null}

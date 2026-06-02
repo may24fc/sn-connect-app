@@ -4,7 +4,7 @@ import { FivePercentReflectionAdminReview } from '@/components/performance/FiveP
 import { MonthlyCallFeedbackAdminReview } from '@/components/performance/MonthlyCallFeedbackAdminReview';
 import { MonthlySelfEvaluationAdminReview } from '@/components/performance/MonthlySelfEvaluationAdminReview';
 import { QuarterlyTemperatureCheckAdminReview } from '@/components/performance/QuarterlyTemperatureCheckAdminReview';
-import { Button, Card, CardContent, CardHeader, CardTitle, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
+import { Button, Card, CardContent, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@hr-portal/ui';
 import { ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -52,23 +52,20 @@ export function SelfEvaluationReviewWorkspace({
           </Button>
         </div>
 
-        <Card className="max-w-md">
-          <CardContent className="mt-6">
+        <div className="max-w-md">
             <Select value={activeTab} onValueChange={(value) => setActiveTab(value as EvaluationTab)}>
-              <SelectTrigger>
+                <SelectTrigger>
                 <SelectValue placeholder="Select a form" />
-              </SelectTrigger>
-              <SelectContent>
+                </SelectTrigger>
+                <SelectContent>
                 {REVIEW_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                    <SelectItem key={option.value} value={option.value}>
                     {option.label}
-                  </SelectItem>
+                    </SelectItem>
                 ))}
-              </SelectContent>
+                </SelectContent>
             </Select>
-            <p className="mt-2 text-sm text-muted-foreground">Currently viewing: {activeLabel}</p>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       {activeTab === 'monthly' ? <MonthlySelfEvaluationAdminReview /> : null}
