@@ -235,13 +235,13 @@ export const updateKPISchema = z.object({
 export const createKPIEvidenceSchema = z.object({
   evidenceType: z.enum(['link', 'note', 'file']),
   content: z.string().min(1).max(2000),
-  label: z.string().max(200).optional().nullable(),
+  label: z.string().max(1000).optional().nullable(),
 });
 
 export const createOKRTargetEvidenceSchema = z.object({
   evidenceType: z.enum(['link', 'note', 'file']),
   content: z.string().min(1).max(2000),
-  label: z.string().max(200).optional().nullable(),
+  label: z.string().max(1000).optional().nullable(),
 });
 
 export const probationExtendSchema = z.object({

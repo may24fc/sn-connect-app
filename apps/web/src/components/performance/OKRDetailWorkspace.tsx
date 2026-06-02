@@ -1310,6 +1310,7 @@ export function OKRDetailWorkspace({
                         value={evidenceLabel}
                         onChange={(event) => setEvidenceLabel(event.target.value)}
                         placeholder="Optional note about this attachment"
+                        maxLength={1000}
                       />
                     </div>
 

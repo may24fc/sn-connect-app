@@ -209,6 +209,7 @@ interface PerformanceItemDetail {
   id: string;
   type: 'target' | 'kpi';
   title: string;
+  description: string | null;
   objectiveTitle: string;
   cycleName: string | null;
   metricLabel: string;
@@ -287,6 +288,7 @@ function buildTargetDetailItem({
     id: target.id,
     type: 'target',
     title: target.name,
+    description: target.description ?? null,
     objectiveTitle,
     cycleName,
     metricLabel: metricTypeLabel(target.metric_type),
@@ -314,6 +316,7 @@ function buildStandaloneKpiDetailItem({
     id: kpi.id,
     type: 'kpi',
     title: kpi.name,
+    description: null,
     objectiveTitle: 'Standalone KPI',
     cycleName,
     metricLabel: kpi.kpi_type === 'scale' ? 'Scale KPI' : 'Numeric KPI',
@@ -1279,6 +1282,11 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                         {selectedPerformanceItem.sourceLabel}
                       </Badge>
                     </div>
+                    {selectedPerformanceItem.description && (
+                      <p className="text-sm text-muted-foreground mt-2 italic">
+                        {selectedPerformanceItem.description}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground mt-2">
                       Under objective: {selectedPerformanceItem.objectiveTitle}
                     </p>
