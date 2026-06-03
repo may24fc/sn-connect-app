@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
+import { EvaluationSummaryView } from './EvaluationSummaryView';
 import {
   monthlySelfEvaluationDetailSections,
   type MonthlySelfEvaluationAdminListEntry,
@@ -14,6 +15,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -40,6 +42,8 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useEvaluationSummary } from './useEvaluationSummary';
+import { Sparkles } from 'lucide-react';
 
 type AdminListResponse = {
   data?: MonthlySelfEvaluationAdminListEntry[];
@@ -355,6 +359,17 @@ export function MonthlySelfEvaluationAdminReview() {
     () => records.filter((record) => record.submission_status === 'submitted').length,
     [records]
   );
+  const summaryState = useEvaluationSummary({
+    evaluationKind: 'monthly',
+    periodKey: monthKey,
+    onError: (title, description) => {
+      addToast({
+        title,
+        description,
+        variant: 'error',
+      });
+    },
+  });
 
   useEffect(() => {
     if (!selectedEntry) {
@@ -382,44 +397,61 @@ export function MonthlySelfEvaluationAdminReview() {
             Review responses by month, person, and department or role. The detail panel follows the same section order and question wording as the employee self-evaluation form.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-[14rem_22rem_20rem] md:justify-start">
-          <div className="space-y-2 md:w-56">
-            <Label htmlFor="review-month">Month</Label>
-            <Input
-              ref={monthInputRef}
-              id="review-month"
-              type="month"
-              value={monthKey}
-              onChange={(event) => setMonthKey(event.target.value)}
-              onClick={openMonthPicker}
-              className="cursor-pointer"
-            />
+        <CardContent className="flex gap-4 justify-between items-end">
+          <div className="flex flex-wrap gap-4 md:flex-nowrap">
+            <div className="space-y-2 md:w-56">
+              <Label htmlFor="review-month">Month</Label>
+              <Input
+                ref={monthInputRef}
+                id="review-month"
+                type="month"
+                value={monthKey}
+                onChange={(event) => setMonthKey(event.target.value)}
+                onClick={openMonthPicker}
+                className="cursor-pointer"
+              />
+            </div>
+            <div className="space-y-2 md:w-[22rem]">
+              <Label>Department / Role</Label>
+              <Select value={departmentRole} onValueChange={setDepartmentRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments and roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All departments and roles</SelectItem>
+                  {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:w-80">
+              <Label htmlFor="review-search">Search</Label>
+              <Input
+                id="review-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by full name"
+              />
+            </div>
           </div>
-          <div className="space-y-2 md:w-[22rem]">
-            <Label>Department / Role</Label>
-            <Select value={departmentRole} onValueChange={setDepartmentRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="All departments and roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All departments and roles</SelectItem>
-                {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2 md:w-80">
-            <Label htmlFor="review-search">Search</Label>
-            <Input
-              id="review-search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by full name"
-            />
-          </div>
+          <Button
+            onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
+            disabled={
+              summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
+            }
+          >
+            {summaryState.isViewingSummary ? (
+              'Back to Details'
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                {summaryState.primaryActionLabel}
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
@@ -527,13 +559,19 @@ export function MonthlySelfEvaluationAdminReview() {
           <CardHeader className="border-b border-border/80 bg-card/80 pb-4 backdrop-blur-sm">
             <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
               <div className='flex flex-col gap-2'>
-                <CardTitle>{selectedEntry?.full_name || 'Select a teammate'}</CardTitle>
+                <CardTitle>
+                  {summaryState.isViewingSummary
+                    ? 'Monthly Self-Evaluation Summary'
+                    : selectedEntry?.full_name || 'Select a teammate'}
+                </CardTitle>
                 <CardDescription>
-                  {selectedEntry
+                  {summaryState.isViewingSummary
+                    ? `Executive summary for ${formatMonthKey(monthKey)}.`
+                    : selectedEntry
                     ? `${selectedEntry.department_role} • ${formatMonthKey(monthKey)}`
                     : 'Choose a person from the list to review their monthly self-evaluation status.'}
                 </CardDescription>
-                {selectedEntry ? (
+                {!summaryState.isViewingSummary && selectedEntry ? (
                   <div className="flex flex-wrap gap-2">
                     <Badge
                       variant={selectedEntry.submission_status === 'submitted' ? 'success' : 'secondary'}
@@ -552,9 +590,13 @@ export function MonthlySelfEvaluationAdminReview() {
                   </div>
                 ) : null}
               </div>
-              {selectedRecord ? renderProductivityMetric(selectedRecord.productivity_score) : null}
+              <div className="flex flex-col items-stretch gap-3 sm:items-end">
+                {!summaryState.isViewingSummary && selectedRecord
+                  ? renderProductivityMetric(selectedRecord.productivity_score)
+                  : null}
+              </div>
             </div>
-            {selectedRecord ? (
+            {selectedRecord && !summaryState.isViewingSummary ? (
               <TabsList className="mt-3 h-auto w-full justify-start gap-5 rounded-none bg-transparent p-0 text-muted-foreground">
                 {detailViewTabs.map((tab) => (
                   <TabsTrigger
@@ -570,7 +612,18 @@ export function MonthlySelfEvaluationAdminReview() {
           </CardHeader>
           <CardContent className="p-0">
             <div ref={detailScrollRef} className="max-h-[72vh] overflow-y-auto px-6 py-5">
-            {!selectedRecord ? (
+            {summaryState.isViewingSummary && summaryState.summary ? (
+              <EvaluationSummaryView
+                title="Monthly Self-Evaluation"
+                periodLabel={formatMonthKey(monthKey)}
+                summaryMarkdown={summaryState.summary.summaryMarkdown}
+                totalSubmissionsAnalyzed={summaryState.summary.totalSubmissionsAnalyzed}
+                generatedAt={summaryState.summary.generatedAt}
+                isStale={summaryState.summary.isStale}
+                isRegenerating={summaryState.isGenerating}
+                onRegenerate={summaryState.regenerateSummary}
+              />
+            ) : !selectedRecord ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                 {selectedEntry
                   ? `${selectedEntry.full_name} has not submitted a monthly self-evaluation for ${formatMonthKey(monthKey)} yet.`

@@ -1,6 +1,7 @@
 'use client';
 
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
+import { EvaluationSummaryView } from './EvaluationSummaryView';
 import {
   formatMonthlyCallEngagement,
   formatMonthlyCallOverallRating,
@@ -14,6 +15,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -36,6 +38,8 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { useEffect, useMemo, useState } from 'react';
+import { useEvaluationSummary } from './useEvaluationSummary';
+import { Sparkles } from 'lucide-react';
 
 type AdminListResponse = {
   data?: MonthlyCallFeedbackAdminListEntry[];
@@ -166,6 +170,17 @@ export function MonthlyCallFeedbackAdminReview() {
     () => records.filter((record) => record.submission_status === 'submitted').length,
     [records]
   );
+  const summaryState = useEvaluationSummary({
+    evaluationKind: 'monthly_call_feedback',
+    periodKey: monthKey,
+    onError: (title, description) => {
+      addToast({
+        title,
+        description,
+        variant: 'error',
+      });
+    },
+  });
 
   if (loading) {
     return (
@@ -185,41 +200,58 @@ export function MonthlyCallFeedbackAdminReview() {
             Review feedback on engagement, clarity, and future call improvements for each monthly session.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="monthly-call-feedback-review-month">Month</Label>
-            <Input
-              id="monthly-call-feedback-review-month"
-              type="month"
-              value={monthKey}
-              onChange={(event) => setMonthKey(event.target.value || getCurrentMonthKey())}
-            />
+        <CardContent className="flex gap-4 justify-between items-end">
+          <div className="flex flex-wrap gap-4 md:flex-nowrap">
+            <div className="space-y-2">
+              <Label htmlFor="monthly-call-feedback-review-month">Month</Label>
+              <Input
+                id="monthly-call-feedback-review-month"
+                type="month"
+                value={monthKey}
+                onChange={(event) => setMonthKey(event.target.value || getCurrentMonthKey())}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Department / Role</Label>
+              <Select value={departmentRole} onValueChange={setDepartmentRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments and roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All departments and roles</SelectItem>
+                  {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="monthly-call-feedback-review-search">Search</Label>
+              <Input
+                id="monthly-call-feedback-review-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by full name"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Department / Role</Label>
-            <Select value={departmentRole} onValueChange={setDepartmentRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="All departments and roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All departments and roles</SelectItem>
-                {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="monthly-call-feedback-review-search">Search</Label>
-            <Input
-              id="monthly-call-feedback-review-search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by full name"
-            />
-          </div>
+          <Button
+            onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
+            disabled={
+              summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
+            }
+          >
+            {summaryState.isViewingSummary ? (
+              'Back to Details'
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                {summaryState.primaryActionLabel}
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
@@ -314,22 +346,43 @@ export function MonthlyCallFeedbackAdminReview() {
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>{selectedEntry?.full_name || 'Select a teammate'}</CardTitle>
+                <CardTitle>
+                  {summaryState.isViewingSummary
+                    ? 'Monthly Call Feedback Summary'
+                    : selectedEntry?.full_name || 'Select a teammate'}
+                </CardTitle>
                 <CardDescription>
-                  {selectedEntry
+                  {summaryState.isViewingSummary
+                    ? `Executive summary for ${formatMonthKey(monthKey)}.`
+                    : selectedEntry
                     ? `${selectedEntry.department_role} • ${formatMonthKey(monthKey)}`
                     : 'Choose a person from the list to review their monthly call feedback status.'}
                 </CardDescription>
               </div>
-              {selectedEntry?.submission_status === 'submitted' ? (
-                <Badge variant="success">Submitted</Badge>
-              ) : (
-                <Badge variant="secondary">Pending</Badge>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {!summaryState.isViewingSummary ? (
+                  selectedEntry?.submission_status === 'submitted' ? (
+                    <Badge variant="success">Submitted</Badge>
+                  ) : (
+                    <Badge variant="secondary">Pending</Badge>
+                  )
+                ) : null}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            {!selectedEntry ? (
+            {summaryState.isViewingSummary && summaryState.summary ? (
+              <EvaluationSummaryView
+                title="Monthly Call Feedback"
+                periodLabel={formatMonthKey(monthKey)}
+                summaryMarkdown={summaryState.summary.summaryMarkdown}
+                totalSubmissionsAnalyzed={summaryState.summary.totalSubmissionsAnalyzed}
+                generatedAt={summaryState.summary.generatedAt}
+                isStale={summaryState.summary.isStale}
+                isRegenerating={summaryState.isGenerating}
+                onRegenerate={summaryState.regenerateSummary}
+              />
+            ) : !selectedEntry ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                 Select a teammate to inspect their response details.
               </div>

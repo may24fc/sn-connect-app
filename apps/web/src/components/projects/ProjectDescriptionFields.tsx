@@ -55,8 +55,11 @@ export function ProjectDescriptionFields({
     <div className="space-y-4">
       <Label>Description</Label>
       {SECTION_CONFIGS.map((sectionConfig) => (
-        <div key={sectionConfig.key} className="space-y-2 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
-          <div className="flex items-center justify-between">
+        <div
+          key={sectionConfig.key}
+          className="rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden"
+        >
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-2 bg-zinc-50 dark:bg-zinc-900 p-3 border-b">
             <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
               {sectionConfig.title}
             </p>
@@ -70,7 +73,8 @@ export function ProjectDescriptionFields({
               Add
             </Button>
           </div>
-          <div className="space-y-2">
+
+          <div className="max-h-[180px] overflow-y-auto p-3 space-y-2">
             {value[sectionConfig.key].map((item, index) => (
               <div key={`${sectionConfig.key}-${index}`} className="flex items-center gap-2">
                 <Input

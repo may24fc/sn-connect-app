@@ -1,11 +1,13 @@
 'use client';
 
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
+import { EvaluationSummaryView } from './EvaluationSummaryView';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -28,6 +30,8 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { useEffect, useMemo, useState } from 'react';
+import { useEvaluationSummary } from './useEvaluationSummary';
+import { Sparkles } from 'lucide-react';
 import {
   type FivePercentReflectionAdminListEntry,
   type FivePercentReflectionDetailField,
@@ -171,6 +175,17 @@ export function FivePercentReflectionAdminReview() {
     () => records.filter((record) => record.submission_status === 'submitted').length,
     [records]
   );
+  const summaryState = useEvaluationSummary({
+    evaluationKind: 'five_percent',
+    periodKey: monthKey,
+    onError: (title, description) => {
+      addToast({
+        title,
+        description,
+        variant: 'error',
+      });
+    },
+  });
 
   if (loading) {
     return (
@@ -191,41 +206,58 @@ export function FivePercentReflectionAdminReview() {
             decision-making topics each teammate wants to explore next.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-[14rem_22rem_20rem] md:justify-start">
-          <div className="space-y-2 md:w-56">
-            <Label htmlFor="reflection-month">Month</Label>
-            <Input
-              id="reflection-month"
-              type="month"
-              value={monthKey}
-              onChange={(event) => setMonthKey(event.target.value)}
-            />
+        <CardContent className="flex gap-4 justify-between items-end">
+          <div className="flex flex-wrap gap-4 md:flex-nowrap">
+            <div className="space-y-2 md:w-56">
+              <Label htmlFor="reflection-month">Month</Label>
+              <Input
+                id="reflection-month"
+                type="month"
+                value={monthKey}
+                onChange={(event) => setMonthKey(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2 md:w-[22rem]">
+              <Label>Department / Role</Label>
+              <Select value={departmentRole} onValueChange={setDepartmentRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments and roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All departments and roles</SelectItem>
+                  {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:w-80">
+              <Label htmlFor="reflection-search">Search</Label>
+              <Input
+                id="reflection-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by full name"
+              />
+            </div>
           </div>
-          <div className="space-y-2 md:w-[22rem]">
-            <Label>Department / Role</Label>
-            <Select value={departmentRole} onValueChange={setDepartmentRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="All departments and roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All departments and roles</SelectItem>
-                {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2 md:w-80">
-            <Label htmlFor="reflection-search">Search</Label>
-            <Input
-              id="reflection-search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by full name"
-            />
-          </div>
+          <Button
+            onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
+            disabled={
+              summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
+            }
+          >
+            {summaryState.isViewingSummary ? (
+              'Back to Details'
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                {summaryState.primaryActionLabel}
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
@@ -313,13 +345,21 @@ export function FivePercentReflectionAdminReview() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Reflection detail</CardTitle>
-            <CardDescription>
-              {selectedEntry
-                ? `${selectedEntry.full_name} • ${selectedEntry.department_role} • ${formatMonthKey(monthKey)}`
-                : 'Choose a teammate to review their reflection.'}
-            </CardDescription>
-            {selectedEntry ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle>
+                  {summaryState.isViewingSummary ? '5% Reflection Summary' : 'Reflection detail'}
+                </CardTitle>
+                <CardDescription>
+                  {summaryState.isViewingSummary
+                    ? `Executive summary for ${formatMonthKey(monthKey)}.`
+                    : selectedEntry
+                      ? `${selectedEntry.full_name} • ${selectedEntry.department_role} • ${formatMonthKey(monthKey)}`
+                      : 'Choose a teammate to review their reflection.'}
+                </CardDescription>
+              </div>
+            </div>
+            {!summaryState.isViewingSummary && selectedEntry ? (
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant={selectedEntry.submission_status === 'submitted' ? 'success' : 'secondary'}
@@ -339,7 +379,18 @@ export function FivePercentReflectionAdminReview() {
             ) : null}
           </CardHeader>
           <CardContent className="space-y-6">
-            {!selectedEntry ? (
+            {summaryState.isViewingSummary && summaryState.summary ? (
+              <EvaluationSummaryView
+                title="5% Reflection"
+                periodLabel={formatMonthKey(monthKey)}
+                summaryMarkdown={summaryState.summary.summaryMarkdown}
+                totalSubmissionsAnalyzed={summaryState.summary.totalSubmissionsAnalyzed}
+                generatedAt={summaryState.summary.generatedAt}
+                isStale={summaryState.summary.isStale}
+                isRegenerating={summaryState.isGenerating}
+                onRegenerate={summaryState.regenerateSummary}
+              />
+            ) : !selectedEntry ? (
               <p className="text-sm text-muted-foreground">No reflection selected.</p>
             ) : !selectedRecord ? (
               <p className="text-sm text-muted-foreground">

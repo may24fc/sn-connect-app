@@ -1,7 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import { sfoLeadUpdateSchema } from '@/lib/schemas/crm.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getCrmAuthedContext } from '../../_lib';
+import { assertCrmTrackerAccess, getCrmAuthedContext, getSfoTrackerKey } from '../../_lib';
 
 export async function PATCH(
   request: NextRequest,
@@ -32,7 +32,7 @@ export async function PATCH(
 
     const { data: existing, error: existingError } = await supabaseAdmin
       .from('crm_sfo_leads')
-      .select('id, status, follow_up_status')
+      .select('id, status, follow_up_status, platform')
       .eq('id', id)
       .is('deleted_at', null)
       .maybeSingle();
@@ -46,7 +46,29 @@ export async function PATCH(
       return NextResponse.json({ error: 'SFO CRM record not found' }, { status: 404 });
     }
 
+    const existingTrackerAccess = assertCrmTrackerAccess(
+      auth.context.role,
+      auth.context.grantedTrackers,
+      getSfoTrackerKey(existing.platform),
+    );
+
+    if (!existingTrackerAccess.ok) {
+      return NextResponse.json({ error: existingTrackerAccess.error }, { status: existingTrackerAccess.status });
+    }
+
     const payload = parsed.data;
+    if (payload.platform) {
+      const nextTrackerAccess = assertCrmTrackerAccess(
+        auth.context.role,
+        auth.context.grantedTrackers,
+        getSfoTrackerKey(payload.platform),
+      );
+
+      if (!nextTrackerAccess.ok) {
+        return NextResponse.json({ error: nextTrackerAccess.error }, { status: nextTrackerAccess.status });
+      }
+    }
+
     const { data, error } = await supabaseAdmin
       .from('crm_sfo_leads')
       .update({
@@ -98,6 +120,74 @@ export async function PATCH(
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/crm/sfo/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await getCrmAuthedContext();
+
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const { id } = await params;
+    const { supabaseAdmin, user } = auth.context;
+
+    const { data: existing, error: existingError } = await supabaseAdmin
+      .from('crm_sfo_leads')
+      .select('id, platform')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('DELETE /api/crm/sfo/[id] lookup error:', existingError);
+      return NextResponse.json({ error: 'Failed to delete SFO CRM record' }, { status: 500 });
+    }
+
+    if (!existing) {
+      return NextResponse.json({ error: 'SFO CRM record not found' }, { status: 404 });
+    }
+
+    const trackerAccess = assertCrmTrackerAccess(
+      auth.context.role,
+      auth.context.grantedTrackers,
+      getSfoTrackerKey(existing.platform),
+    );
+
+    if (!trackerAccess.ok) {
+      return NextResponse.json({ error: trackerAccess.error }, { status: trackerAccess.status });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('crm_sfo_leads')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('deleted_at', null);
+
+    if (error) {
+      console.error('DELETE /api/crm/sfo/[id] delete error:', error);
+      return NextResponse.json({ error: 'Failed to delete SFO CRM record' }, { status: 500 });
+    }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'delete_crm_sfo_record',
+      tableName: 'crm_sfo_leads',
+      recordId: id,
+      metadata: {
+        platform: existing.platform,
+      },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Unexpected error in DELETE /api/crm/sfo/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

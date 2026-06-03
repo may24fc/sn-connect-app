@@ -1,7 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import { techInquiryUpdateSchema } from '@/lib/schemas/crm.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getCrmAuthedContext } from '../../_lib';
+import { assertCrmTrackerAccess, getCrmAuthedContext } from '../../_lib';
 
 export async function PATCH(
   request: NextRequest,
@@ -12,6 +12,16 @@ export async function PATCH(
 
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const trackerAccess = assertCrmTrackerAccess(
+      auth.context.role,
+      auth.context.grantedTrackers,
+      'sn_tech_inquiries',
+    );
+
+    if (!trackerAccess.ok) {
+      return NextResponse.json({ error: trackerAccess.error }, { status: trackerAccess.status });
     }
 
     const { id } = await params;
@@ -86,6 +96,72 @@ export async function PATCH(
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/crm/tech/[id]:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const auth = await getCrmAuthedContext();
+
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const trackerAccess = assertCrmTrackerAccess(
+      auth.context.role,
+      auth.context.grantedTrackers,
+      'sn_tech_inquiries',
+    );
+
+    if (!trackerAccess.ok) {
+      return NextResponse.json({ error: trackerAccess.error }, { status: trackerAccess.status });
+    }
+
+    const { id } = await params;
+    const { supabaseAdmin, user } = auth.context;
+
+    const { data: existing, error: existingError } = await supabaseAdmin
+      .from('crm_tech_inquiries')
+      .select('id')
+      .eq('id', id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('DELETE /api/crm/tech/[id] lookup error:', existingError);
+      return NextResponse.json({ error: 'Failed to delete TECH CRM record' }, { status: 500 });
+    }
+
+    if (!existing) {
+      return NextResponse.json({ error: 'TECH CRM record not found' }, { status: 404 });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('crm_tech_inquiries')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('deleted_at', null);
+
+    if (error) {
+      console.error('DELETE /api/crm/tech/[id] delete error:', error);
+      return NextResponse.json({ error: 'Failed to delete TECH CRM record' }, { status: 500 });
+    }
+
+    logActivity(supabaseAdmin, {
+      userId: user.id,
+      action: 'delete_crm_tech_record',
+      tableName: 'crm_tech_inquiries',
+      recordId: id,
+      metadata: {},
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Unexpected error in DELETE /api/crm/tech/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

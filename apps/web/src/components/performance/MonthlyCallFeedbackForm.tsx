@@ -381,7 +381,6 @@ export function MonthlyCallFeedbackForm() {
             />
           </div>
           <div className="space-y-2 rounded-xl border border-dashed border-border p-4">
-            <p className="text-sm font-medium text-foreground">Draft status</p>
             <p className="text-sm text-muted-foreground">
               {restoredDraftAt
                 ? `Restored unsent changes saved ${formatEvaluationDraftSavedAt(restoredDraftAt)}.`

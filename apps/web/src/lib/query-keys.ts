@@ -251,6 +251,7 @@ export interface TicketFilters {
 export interface CrmSfoFilters {
   search?: string;
   status?: 'new' | 'for_follow_up' | 'closed' | 'lost';
+  platform?: 'Meta' | 'Google Ads';
 }
 
 export interface CrmTechFilters {
@@ -548,6 +549,8 @@ export const queryKeys = {
 
   crm: {
     all: ['crm'] as const,
+    accessGrants: (tracker?: 'meta_leads' | 'google_ads_leads' | 'sn_tech_inquiries') =>
+      [...queryKeys.crm.all, 'access-grants', tracker ?? 'all'] as const,
     sfo: {
       all: () => [...queryKeys.crm.all, 'sfo'] as const,
       list: (filters: CrmSfoFilters) => [...queryKeys.crm.sfo.all(), 'list', filters] as const,

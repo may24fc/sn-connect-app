@@ -282,14 +282,17 @@ function EditProjectDialog({
     }
   }
 
+  const formId = `edit-project-form-${project.id}`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[640px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Project</DialogTitle>
           <DialogDescription>Update the project name, description, status, and dates.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <form id={formId} onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pr-1">
           <div className="space-y-2">
             <Label htmlFor="edit-proj-name">Name</Label>
             <Input
@@ -342,15 +345,16 @@ function EditProjectDialog({
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateProject.isPending}>
-              {updateProject.isPending ? 'Saving…' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
         </form>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button form={formId} type="submit" disabled={updateProject.isPending}>
+            {updateProject.isPending ? 'Saving…' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

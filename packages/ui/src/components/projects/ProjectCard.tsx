@@ -202,7 +202,7 @@ export function ProjectCard({
 
       {description ? (
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{name}</DialogTitle>
               <DialogDescription>Project description details</DialogDescription>

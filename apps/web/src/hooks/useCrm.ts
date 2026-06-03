@@ -45,6 +45,7 @@ export interface SfoLeadRecord {
   remarks: string | null;
   created_at: string;
   updated_at: string;
+  created_by_name: string | null;
 }
 
 export interface TechInquiryRecord {
@@ -60,6 +61,7 @@ export interface TechInquiryRecord {
   assigned_rep: string | null;
   created_at: string;
   updated_at: string;
+  created_by_name: string | null;
 }
 
 interface ListResponse<T> {
@@ -74,6 +76,7 @@ export function useSfoLeads(filters: CrmSfoFilters = {}, options: { enabled?: bo
 
       if (filters.search) params.append('search', filters.search);
       if (filters.status) params.append('status', filters.status);
+      if (filters.platform) params.append('platform', filters.platform);
 
       const response = await fetch(`/api/crm/sfo?${params.toString()}`);
 
@@ -134,6 +137,27 @@ export function useUpdateSfoLead() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.sfo.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.sfo.detail(variables.id) });
+    },
+  });
+}
+
+export function useDeleteSfoLead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }): Promise<void> => {
+      const response = await fetch(`/api/crm/sfo/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete SFO CRM record' }));
+        throw new Error(error.error || 'Failed to delete SFO CRM record');
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.sfo.all() });
+      queryClient.removeQueries({ queryKey: queryKeys.crm.sfo.detail(variables.id) });
     },
   });
 }
@@ -206,6 +230,27 @@ export function useUpdateTechInquiry() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.tech.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.crm.tech.detail(variables.id) });
+    },
+  });
+}
+
+export function useDeleteTechInquiry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }): Promise<void> => {
+      const response = await fetch(`/api/crm/tech/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Failed to delete TECH CRM record' }));
+        throw new Error(error.error || 'Failed to delete TECH CRM record');
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.crm.tech.all() });
+      queryClient.removeQueries({ queryKey: queryKeys.crm.tech.detail(variables.id) });
     },
   });
 }

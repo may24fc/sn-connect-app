@@ -321,9 +321,6 @@ export default function ProjectDetailPage() {
               <span className="font-medium text-amber-600">
                 {project.earned_points ?? 0} earned points
               </span>
-              {project.points_total > 0 ? (
-                <span>{project.points_total} point budget</span>
-              ) : null}
               {project.contributors.length > 0 ? (
                 <ContributorAvatarStack
                   contributors={project.contributors.map((c) => ({ userId: c.user_id }))}
@@ -573,7 +570,7 @@ export default function ProjectDetailPage() {
 
       {project.description ? (
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{project.name}</DialogTitle>
               <DialogDescription>Project description details</DialogDescription>
@@ -1162,12 +1159,13 @@ function EditProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px]">
+      <DialogContent className="sm:max-w-[640px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Project</DialogTitle>
           <DialogDescription>Update the project details and target window.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <form id="edit-project-form" onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1 pr-1">
           <div className="space-y-2">
             <Label htmlFor="project-edit-name">Project name</Label>
             <Input
@@ -1220,28 +1218,16 @@ function EditProjectDialog({
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="project-edit-points">Points budget</Label>
-            <Input
-              id="project-edit-points"
-              type="number"
-              min="0"
-              step="1"
-              inputMode="numeric"
-              value={pointsTotal}
-              onChange={(event) => setPointsTotal(event.target.value)}
-              placeholder="0"
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateProject.isPending}>
-              {updateProject.isPending ? 'Saving…' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
         </form>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button form="edit-project-form" type="submit" disabled={updateProject.isPending}>
+            {updateProject.isPending ? 'Saving…' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

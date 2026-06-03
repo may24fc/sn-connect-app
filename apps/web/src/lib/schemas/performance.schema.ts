@@ -443,6 +443,44 @@ export const performanceEvaluationDraftQuerySchema = z
     }
   });
 
+export const performanceEvaluationSummaryQuerySchema = z
+  .object({
+    evaluationKind: performanceEvaluationDraftKindSchema,
+    periodKey: z.string().trim().min(1).max(20),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.evaluationKind === 'monthly' ||
+      data.evaluationKind === 'five_percent' ||
+      data.evaluationKind === 'monthly_call_feedback'
+    ) {
+      if (!monthKeySchema.safeParse(data.periodKey).success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Use YYYY-MM for monthly, monthly call feedback, and 5% summary keys',
+          path: ['periodKey'],
+        });
+      }
+    }
+
+    if (data.evaluationKind === 'quarterly') {
+      if (!quarterKeySchema.safeParse(data.periodKey).success) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Use YYYY-Q# for quarterly summary keys',
+          path: ['periodKey'],
+        });
+      }
+    }
+  });
+
+export const generatePerformanceEvaluationSummarySchema =
+  performanceEvaluationSummaryQuerySchema.and(
+    z.object({
+      forceRegenerate: z.boolean().optional().default(false),
+    })
+  );
+
 export const upsertPerformanceEvaluationDraftSchema = z.discriminatedUnion('evaluationKind', [
   z.object({
     evaluationKind: z.literal('monthly'),
@@ -509,6 +547,12 @@ export type SubmitFivePercentReflectionDraftInput = z.infer<
 >;
 export type PerformanceEvaluationDraftQueryInput = z.infer<
   typeof performanceEvaluationDraftQuerySchema
+>;
+export type PerformanceEvaluationSummaryQueryInput = z.infer<
+  typeof performanceEvaluationSummaryQuerySchema
+>;
+export type GeneratePerformanceEvaluationSummaryInput = z.infer<
+  typeof generatePerformanceEvaluationSummarySchema
 >;
 export type UpsertPerformanceEvaluationDraftInput = z.infer<
   typeof upsertPerformanceEvaluationDraftSchema

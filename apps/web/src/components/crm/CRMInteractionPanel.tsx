@@ -23,7 +23,7 @@ import {
   type TechInquiryInput,
 } from '@/hooks/useCrm';
 
-export type PipelineContext = 'SFO' | 'TECH';
+export type PipelineContext = 'META' | 'GOOGLE_ADS' | 'TECH';
 
 const CRM_FORM_VISIBILITY_STORAGE_KEY = 'crm-form-visibility-v1';
 
@@ -39,7 +39,7 @@ type SfoFormState = {
   customerName: string;
   socialLink: string;
   messageSource: string;
-  platform: 'META' | 'IG';
+  platform: 'Meta' | 'Google Ads';
   dateOfContact: string;
   actionPlan: string;
   followUpStatus: 'new' | 'for_follow_up' | 'closed' | 'lost';
@@ -78,7 +78,7 @@ const sfoInitialState: SfoFormState = {
   customerName: '',
   socialLink: '',
   messageSource: '',
-  platform: 'META' as const,
+  platform: 'Meta' as const,
   dateOfContact: new Date().toISOString().slice(0, 10),
   actionPlan: '',
   followUpStatus: 'new' as const,
@@ -117,7 +117,8 @@ export function CRMInteractionPanel({
   const [sfoForm, setSfoForm] = useState<SfoFormState>(sfoInitialState);
   const [techForm, setTechForm] = useState<TechFormState>(techInitialState);
   const [formVisibility, setFormVisibility] = useState<Record<PipelineContext, boolean>>({
-    SFO: true,
+    META: true,
+    GOOGLE_ADS: true,
     TECH: true,
   });
 
@@ -137,8 +138,12 @@ export function CRMInteractionPanel({
 
   useEffect(() => {
     // Reset inactive pipeline form so stale fields never bleed across modes.
-    if (pipelineContext === 'SFO') {
+    if (pipelineContext === 'META' || pipelineContext === 'GOOGLE_ADS') {
       setTechForm(techInitialState);
+      setSfoForm((prev) => ({
+        ...prev,
+        platform: pipelineContext === 'GOOGLE_ADS' ? 'Google Ads' : 'Meta',
+      }));
       return;
     }
 
@@ -155,7 +160,9 @@ export function CRMInteractionPanel({
 
       const parsed = JSON.parse(rawValue) as Partial<Record<PipelineContext, boolean>>;
       setFormVisibility((prev) => ({
-        SFO: typeof parsed.SFO === 'boolean' ? parsed.SFO : prev.SFO,
+        META: typeof parsed.META === 'boolean' ? parsed.META : prev.META,
+        GOOGLE_ADS:
+          typeof parsed.GOOGLE_ADS === 'boolean' ? parsed.GOOGLE_ADS : prev.GOOGLE_ADS,
         TECH: typeof parsed.TECH === 'boolean' ? parsed.TECH : prev.TECH,
       }));
     } catch {
@@ -225,27 +232,27 @@ export function CRMInteractionPanel({
     setTechForm(techInitialState);
   }
 
-  if (pipelineContext === 'SFO') {
-    const isOpen = formVisibility.SFO;
+  if (pipelineContext === 'META' || pipelineContext === 'GOOGLE_ADS') {
+    const isOpen = formVisibility[pipelineContext];
+    const isGoogleAds = pipelineContext === 'GOOGLE_ADS';
 
     return (
       <Card>
         <CardHeader className="gap-2">
           <div className="flex items-center justify-between gap-3">
-            <CardTitle className="text-base">New SFO Transaction</CardTitle>
+            <CardTitle className="text-base">
+              {isGoogleAds ? 'New Google Ads Lead' : 'New Meta Lead'}
+            </CardTitle>
             <button
               type="button"
               className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-muted/50"
-              onClick={() => toggleFormVisibility('SFO')}
+              onClick={() => toggleFormVisibility(pipelineContext)}
               aria-expanded={isOpen}
             >
               {isOpen ? 'Collapse' : 'Expand'}
               {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             </button>
           </div>
-          <CardDescription>
-            Capture high-volume order data with real-time A$ precision fields.
-          </CardDescription>
         </CardHeader>
         {isOpen ? (
         <CardContent>
@@ -283,18 +290,12 @@ export function CRMInteractionPanel({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="grid gap-2">
                 <Label htmlFor="sfo-platform">Platform</Label>
-                <Select
-                  value={sfoForm.platform}
-                  onValueChange={(value) => patchSfoForm('platform', value as 'META' | 'IG')}
-                >
-                  <SelectTrigger id="sfo-platform">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="META">META</SelectItem>
-                    <SelectItem value="IG">IG</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="sfo-platform"
+                  value={isGoogleAds ? 'Google Ads' : 'Meta'}
+                  readOnly
+                  disabled
+                />
               </div>
 
               <div className="grid gap-2">
@@ -331,7 +332,7 @@ export function CRMInteractionPanel({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="sfo-amount">Amount (A$)</Label>
+                <Label htmlFor="sfo-amount">Amount (AU$)</Label>
                 <Input
                   id="sfo-amount"
                   type="number"

@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const CRM_PIPELINE_CONTEXT_VALUES = ['SFO', 'TECH'] as const;
 export type CrmPipelineContext = (typeof CRM_PIPELINE_CONTEXT_VALUES)[number];
 
-export const SFO_PLATFORM_VALUES = ['META', 'IG'] as const;
+export const SFO_PLATFORM_VALUES = ['Meta', 'Google Ads'] as const;
 export const SFO_STATUS_VALUES = ['new', 'for_follow_up', 'closed', 'lost'] as const;
 export const SFO_CUSTOMER_TYPE_VALUES = ['new', 'returning', 'wholesale'] as const;
 

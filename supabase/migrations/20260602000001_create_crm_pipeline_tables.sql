@@ -5,7 +5,7 @@ CREATE TABLE public.crm_sfo_leads (
   customer_name text NOT NULL,
   social_link text,
   message_source text,
-  platform text NOT NULL CHECK (platform IN ('META', 'IG')),
+  platform text NOT NULL CHECK (platform IN ('Meta', 'Google Ads')),
   date_of_contact date NOT NULL,
   action_plan text,
   follow_up_status text NOT NULL DEFAULT 'new' CHECK (follow_up_status IN ('new', 'for_follow_up', 'closed', 'lost')),

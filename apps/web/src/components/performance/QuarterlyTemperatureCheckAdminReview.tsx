@@ -1,6 +1,7 @@
 'use client';
 
 import { monthlySelfEvaluationDepartmentRoleOptions } from '@/lib/schemas/performance.schema';
+import { EvaluationSummaryView } from './EvaluationSummaryView';
 import {
   quarterlyTemperatureCheckDetailSections,
   type QuarterlyTemperatureCheckAdminListEntry,
@@ -12,6 +13,7 @@ import {
   AvatarFallback,
   AvatarImage,
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -34,6 +36,8 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { useEffect, useMemo, useState } from 'react';
+import { useEvaluationSummary } from './useEvaluationSummary';
+import { Sparkles } from 'lucide-react';
 
 type AdminListResponse = {
   data?: QuarterlyTemperatureCheckAdminListEntry[];
@@ -178,6 +182,17 @@ export function QuarterlyTemperatureCheckAdminReview() {
     () => records.filter((record) => record.submission_status === 'submitted').length,
     [records]
   );
+  const summaryState = useEvaluationSummary({
+    evaluationKind: 'quarterly',
+    periodKey: quarterKey,
+    onError: (title, description) => {
+      addToast({
+        title,
+        description,
+        variant: 'error',
+      });
+    },
+  });
 
   if (loading) {
     return (
@@ -197,47 +212,64 @@ export function QuarterlyTemperatureCheckAdminReview() {
             Review quarter-level team health responses by quarter, person, and department or role.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Quarter</Label>
-            <Select value={quarterKey} onValueChange={setQuarterKey}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a quarter" />
-              </SelectTrigger>
-              <SelectContent>
-                {getQuarterOptions().map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {formatQuarterKey(option)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <CardContent className="flex gap-4 justify-between items-end">
+          <div className="flex flex-wrap gap-4 md:flex-nowrap">
+            <div className="space-y-2">
+              <Label>Quarter</Label>
+              <Select value={quarterKey} onValueChange={setQuarterKey}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a quarter" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getQuarterOptions().map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {formatQuarterKey(option)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Department / Role</Label>
+              <Select value={departmentRole} onValueChange={setDepartmentRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments and roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All departments and roles</SelectItem>
+                  {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quarterly-review-search">Search</Label>
+              <Input
+                id="quarterly-review-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by full name"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Department / Role</Label>
-            <Select value={departmentRole} onValueChange={setDepartmentRole}>
-              <SelectTrigger>
-                <SelectValue placeholder="All departments and roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All departments and roles</SelectItem>
-                {monthlySelfEvaluationDepartmentRoleOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="quarterly-review-search">Search</Label>
-            <Input
-              id="quarterly-review-search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by full name"
-            />
-          </div>
+          <Button
+            onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
+            disabled={
+              summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
+            }
+          >
+            {summaryState.isViewingSummary ? (
+              'Back to Details'
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                {summaryState.primaryActionLabel}
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
 
@@ -332,13 +364,19 @@ export function QuarterlyTemperatureCheckAdminReview() {
           <CardHeader>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle>{selectedEntry?.full_name || 'Select a teammate'}</CardTitle>
+                <CardTitle>
+                  {summaryState.isViewingSummary
+                    ? 'Quarterly Temperature Check Summary'
+                    : selectedEntry?.full_name || 'Select a teammate'}
+                </CardTitle>
                 <CardDescription>
-                  {selectedEntry
+                  {summaryState.isViewingSummary
+                    ? `Executive summary for ${formatQuarterKey(quarterKey)}.`
+                    : selectedEntry
                     ? `${selectedEntry.department_role} • ${formatQuarterKey(quarterKey)}`
                     : 'Choose a person from the list to review their quarterly temperature check status.'}
                 </CardDescription>
-                {selectedEntry ? (
+                {!summaryState.isViewingSummary && selectedEntry ? (
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Badge
                       variant={selectedEntry.submission_status === 'submitted' ? 'success' : 'secondary'}
@@ -357,20 +395,33 @@ export function QuarterlyTemperatureCheckAdminReview() {
                   </div>
                 ) : null}
               </div>
-              {selectedRecord ? (
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="px-3 py-1 text-base font-semibold tracking-tight">
-                    Energy {selectedRecord.energy_workload_score} / 10
-                  </Badge>
-                  <Badge variant="secondary" className="px-3 py-1 text-base font-semibold tracking-tight">
-                    Experience {selectedRecord.overall_experience_score} / 5
-                  </Badge>
-                </div>
-              ) : null}
+              <div className="flex flex-col items-stretch gap-3 sm:items-end">
+                {!summaryState.isViewingSummary && selectedRecord ? (
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary" className="px-3 py-1 text-base font-semibold tracking-tight">
+                      Energy {selectedRecord.energy_workload_score} / 10
+                    </Badge>
+                    <Badge variant="secondary" className="px-3 py-1 text-base font-semibold tracking-tight">
+                      Experience {selectedRecord.overall_experience_score} / 5
+                    </Badge>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-5">
-            {!selectedRecord ? (
+            {summaryState.isViewingSummary && summaryState.summary ? (
+              <EvaluationSummaryView
+                title="Quarterly Temperature Check"
+                periodLabel={formatQuarterKey(quarterKey)}
+                summaryMarkdown={summaryState.summary.summaryMarkdown}
+                totalSubmissionsAnalyzed={summaryState.summary.totalSubmissionsAnalyzed}
+                generatedAt={summaryState.summary.generatedAt}
+                isStale={summaryState.summary.isStale}
+                isRegenerating={summaryState.isGenerating}
+                onRegenerate={summaryState.regenerateSummary}
+              />
+            ) : !selectedRecord ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                 {selectedEntry
                   ? `${selectedEntry.full_name} has not submitted a quarterly temperature check for ${formatQuarterKey(quarterKey)} yet.`

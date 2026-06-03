@@ -1,7 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import { sfoLeadCreateSchema, SFO_STATUS_VALUES } from '@/lib/schemas/crm.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getCrmAuthedContext } from '../_lib';
+import { assertCrmTrackerAccess, getCrmAuthedContext, getSfoTrackerKey } from '../_lib';
 
 interface SfoLeadRow {
   id: string;
@@ -10,7 +10,7 @@ interface SfoLeadRow {
   customer_name: string;
   social_link: string | null;
   message_source: string | null;
-  platform: 'META' | 'IG';
+  platform: 'Meta' | 'Google Ads';
   date_of_contact: string;
   action_plan: string | null;
   action_taken: string | null;
@@ -26,6 +26,7 @@ interface SfoLeadRow {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  created_by_name: string | null;
   deleted_at: string | null;
 }
 
@@ -41,6 +42,21 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = (searchParams.get('search') || '').trim();
     const status = searchParams.get('status');
+    const platform = searchParams.get('platform');
+
+    if (platform === 'Meta' || platform === 'Google Ads') {
+      const trackerAccess = assertCrmTrackerAccess(
+        auth.context.role,
+        auth.context.grantedTrackers,
+        getSfoTrackerKey(platform),
+      );
+
+      if (!trackerAccess.ok) {
+        return NextResponse.json({ error: trackerAccess.error }, { status: trackerAccess.status });
+      }
+    } else if (!auth.context.role || (auth.context.role !== 'admin' && auth.context.role !== 'super_admin')) {
+      return NextResponse.json({ error: 'A valid platform filter is required' }, { status: 400 });
+    }
 
     let query = supabaseAdmin
       .from('crm_sfo_leads')
@@ -64,6 +80,10 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status);
     }
 
+    if (platform === 'Meta' || platform === 'Google Ads') {
+      query = query.eq('platform', platform);
+    }
+
     const { data, error } = await query;
 
     if (error) {
@@ -71,7 +91,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch SFO CRM records' }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data || []) as Array<SfoLeadRow> });
+    const rows = (data || []) as Array<SfoLeadRow>;
+    const creatorIds = Array.from(new Set(rows.map((row) => row.created_by).filter(Boolean)));
+
+    let creatorNameById = new Map<string, string>();
+
+    if (creatorIds.length > 0) {
+      const { data: creators, error: creatorsError } = await supabaseAdmin
+        .from('users')
+        .select('id, full_name, first_name, last_name')
+        .in('id', creatorIds);
+
+      if (creatorsError) {
+        console.error('GET /api/crm/sfo creator lookup error:', creatorsError);
+      } else {
+        creatorNameById = new Map(
+          (creators || []).map((creator) => {
+            const fullName =
+              creator.full_name ||
+              [creator.first_name, creator.last_name].filter(Boolean).join(' ').trim() ||
+              'Unknown user';
+
+            return [creator.id, fullName];
+          })
+        );
+      }
+    }
+
+    return NextResponse.json({
+      data: rows.map((row) => ({
+        ...row,
+        created_by_name: row.created_by ? creatorNameById.get(row.created_by) ?? null : null,
+      })) as Array<SfoLeadRow>,
+    });
   } catch (error) {
     console.error('Unexpected error in GET /api/crm/sfo:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -98,6 +150,16 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = parsed.data;
+    const trackerAccess = assertCrmTrackerAccess(
+      auth.context.role,
+      auth.context.grantedTrackers,
+      getSfoTrackerKey(payload.platform),
+    );
+
+    if (!trackerAccess.ok) {
+      return NextResponse.json({ error: trackerAccess.error }, { status: trackerAccess.status });
+    }
+
     const { data, error } = await supabaseAdmin
       .from('crm_sfo_leads')
       .insert({

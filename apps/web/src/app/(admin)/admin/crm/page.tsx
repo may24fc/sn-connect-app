@@ -1,13 +1,19 @@
 'use client';
 
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { CrmAccessManagerButton } from '@/components/admin/CrmAccessManagerDialog';
 import { CRMInteractionPanel, type PipelineContext } from '@/components/crm/CRMInteractionPanel';
 import {
+  type SfoLeadInput,
   type SfoLeadRecord,
   type SfoStatus,
+  type TechInquiryInput,
   type TechInquiryRecord,
   type TechPipelineStage,
   useCreateSfoLead,
   useCreateTechInquiry,
+  useDeleteSfoLead,
+  useDeleteTechInquiry,
   useSfoLeads,
   useTechInquiries,
   useUpdateSfoLead,
@@ -15,13 +21,21 @@ import {
 } from '@/hooks/useCrm';
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -31,10 +45,13 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
   useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, Building2, Loader2, Store } from 'lucide-react';
-import { type ReactNode, useMemo, useState } from 'react';
+import { AlertCircle, Building2, Loader2, Pencil, Store, Trash2 } from 'lucide-react';
+import { type ReactNode, useEffect, useMemo, useState, type FormEvent } from 'react';
+
+type CrmTab = 'META' | 'GOOGLE_ADS' | 'TECH';
 
 const sfoStatusOptions: Array<{ value: SfoStatus; label: string }> = [
   { value: 'new', label: 'New' },
@@ -58,9 +75,7 @@ const customerTypeBadgeClassMap: Record<'new' | 'returning' | 'wholesale', strin
   wholesale: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-200',
 };
 
-const audFormatter = new Intl.NumberFormat('en-AU', {
-  style: 'currency',
-  currency: 'AUD',
+const audNumberFormatter = new Intl.NumberFormat('en-AU', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -89,9 +104,120 @@ function formatCreatedAt(value: string): string {
   return createdAtFormatter.format(parsedDate);
 }
 
+function formatCreatorName(value: string | null): string {
+  return value?.trim() || 'Unknown user';
+}
+
+function formatAudAmount(value: number): string {
+  return `AU$${audNumberFormatter.format(value)}`;
+}
+
+type SfoEditFormState = {
+  customerName: string;
+  socialLink: string;
+  messageSource: string;
+  platform: 'Meta' | 'Google Ads';
+  dateOfContact: string;
+  actionPlan: string;
+  followUpStatus: SfoStatus;
+  actionTaken: string;
+  customerType: 'new' | 'returning' | 'wholesale';
+  reasonForReachingOut: string;
+  contactNumber: string;
+  address: string;
+  orderDate: string;
+  productsInput: string;
+  amountInput: string;
+  invoiceNumber: string;
+  status: SfoStatus;
+  remarks: string;
+};
+
+type TechEditFormState = {
+  companyName: string;
+  contactPerson: string;
+  companyBackground: string;
+  requirementsSummary: string;
+  requirementsChecklistInput: string;
+  pipelineStage: TechPipelineStage;
+  longFormRemarks: string;
+  followUpDate: string;
+  assignedRep: string;
+};
+
+const emptySfoEditFormState: SfoEditFormState = {
+  customerName: '',
+  socialLink: '',
+  messageSource: '',
+  platform: 'Meta',
+  dateOfContact: '',
+  actionPlan: '',
+  followUpStatus: 'new',
+  actionTaken: '',
+  customerType: 'new',
+  reasonForReachingOut: '',
+  contactNumber: '',
+  address: '',
+  orderDate: '',
+  productsInput: '',
+  amountInput: '0.00',
+  invoiceNumber: '',
+  status: 'new',
+  remarks: '',
+};
+
+const emptyTechEditFormState: TechEditFormState = {
+  companyName: '',
+  contactPerson: '',
+  companyBackground: '',
+  requirementsSummary: '',
+  requirementsChecklistInput: '',
+  pipelineStage: 'initial_contact',
+  longFormRemarks: '',
+  followUpDate: '',
+  assignedRep: '',
+};
+
+function createSfoEditFormState(lead: SfoLeadRecord): SfoEditFormState {
+  return {
+    customerName: lead.customer_name,
+    socialLink: lead.social_link || '',
+    messageSource: lead.message_source || '',
+    platform: lead.platform,
+    dateOfContact: lead.date_of_contact,
+    actionPlan: lead.action_plan || '',
+    followUpStatus: lead.follow_up_status,
+    actionTaken: lead.action_taken || '',
+    customerType: lead.customer_type,
+    reasonForReachingOut: lead.reason_for_reaching_out || '',
+    contactNumber: lead.contact_number || '',
+    address: lead.address || '',
+    orderDate: lead.order_date || '',
+    productsInput: lead.products.join(', '),
+    amountInput: String(lead.amount),
+    invoiceNumber: lead.invoice_number || '',
+    status: lead.status,
+    remarks: lead.remarks || '',
+  };
+}
+
+function createTechEditFormState(record: TechInquiryRecord): TechEditFormState {
+  return {
+    companyName: record.company_name,
+    contactPerson: record.contact_person,
+    companyBackground: record.company_background || '',
+    requirementsSummary: record.requirements_summary,
+    requirementsChecklistInput: record.requirements_checklist.join(', '),
+    pipelineStage: record.pipeline_stage,
+    longFormRemarks: record.long_form_remarks || '',
+    followUpDate: record.follow_up_date || '',
+    assignedRep: record.assigned_rep || '',
+  };
+}
+
 export default function AdminCrmPage(): ReactNode {
   const { addToast } = useToast();
-  const [pipelineContext, setPipelineContext] = useState<PipelineContext>('SFO');
+  const [pipelineContext, setPipelineContext] = useState<CrmTab>('META');
 
   const [sfoSearch, setSfoSearch] = useState('');
   const [sfoStatusFilter, setSfoStatusFilter] = useState<'all' | SfoStatus>('all');
@@ -105,8 +231,13 @@ export default function AdminCrmPage(): ReactNode {
     () => ({
       ...(sfoSearch ? { search: sfoSearch } : {}),
       ...(sfoStatusFilter !== 'all' ? { status: sfoStatusFilter } : {}),
+      ...(pipelineContext === 'META'
+        ? { platform: 'Meta' as const }
+        : pipelineContext === 'GOOGLE_ADS'
+          ? { platform: 'Google Ads' as const }
+          : {}),
     }),
-    [sfoSearch, sfoStatusFilter]
+    [pipelineContext, sfoSearch, sfoStatusFilter]
   );
 
   const techFilters = useMemo(
@@ -117,13 +248,22 @@ export default function AdminCrmPage(): ReactNode {
     [techSearch, techStageFilter]
   );
 
-  const sfoLeadsQuery = useSfoLeads(sfoFilters, { enabled: pipelineContext === 'SFO' });
+  const sfoLeadsQuery = useSfoLeads(sfoFilters, {
+    enabled: pipelineContext === 'META' || pipelineContext === 'GOOGLE_ADS',
+  });
   const techInquiriesQuery = useTechInquiries(techFilters, { enabled: pipelineContext === 'TECH' });
 
   const createSfoLead = useCreateSfoLead();
   const createTechInquiry = useCreateTechInquiry();
+  const deleteSfoLead = useDeleteSfoLead();
+  const deleteTechInquiry = useDeleteTechInquiry();
   const updateSfoLead = useUpdateSfoLead();
   const updateTechInquiry = useUpdateTechInquiry();
+
+  const [editingSfoLead, setEditingSfoLead] = useState<SfoLeadRecord | null>(null);
+  const [deletingSfoLead, setDeletingSfoLead] = useState<SfoLeadRecord | null>(null);
+  const [editingTechInquiry, setEditingTechInquiry] = useState<TechInquiryRecord | null>(null);
+  const [deletingTechInquiry, setDeletingTechInquiry] = useState<TechInquiryRecord | null>(null);
 
   const sfoLeads = sfoLeadsQuery.data?.data ?? [];
   const techInquiries = techInquiriesQuery.data?.data ?? [];
@@ -193,6 +333,262 @@ export default function AdminCrmPage(): ReactNode {
     }
   }
 
+  async function handleSaveSfoLead(id: string, payload: SfoLeadInput): Promise<void> {
+    try {
+      await updateSfoLead.mutateAsync({ id, payload });
+      setEditingSfoLead(null);
+      addToast({ title: 'SFO record updated', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: error instanceof Error ? error.message : 'Failed to update SFO record',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleDeleteSfoLead(): Promise<void> {
+    if (!deletingSfoLead) {
+      return;
+    }
+
+    try {
+      await deleteSfoLead.mutateAsync({ id: deletingSfoLead.id });
+      if (selectedSfoId === deletingSfoLead.id) {
+        setSelectedSfoId(null);
+      }
+      setDeletingSfoLead(null);
+      addToast({ title: 'SFO record deleted', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: error instanceof Error ? error.message : 'Failed to delete SFO record',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleSaveTechInquiry(id: string, payload: TechInquiryInput): Promise<void> {
+    try {
+      await updateTechInquiry.mutateAsync({ id, payload });
+      setEditingTechInquiry(null);
+      addToast({ title: 'TECH inquiry updated', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: error instanceof Error ? error.message : 'Failed to update TECH inquiry',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleDeleteTechInquiry(): Promise<void> {
+    if (!deletingTechInquiry) {
+      return;
+    }
+
+    try {
+      await deleteTechInquiry.mutateAsync({ id: deletingTechInquiry.id });
+      if (selectedTechId === deletingTechInquiry.id) {
+        setSelectedTechId(null);
+      }
+      setDeletingTechInquiry(null);
+      addToast({ title: 'TECH inquiry deleted', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: error instanceof Error ? error.message : 'Failed to delete TECH inquiry',
+        variant: 'error',
+      });
+    }
+  }
+
+  function renderSfoContent(tabLabel: string): ReactNode {
+    const emptyDescription =
+      tabLabel === 'Meta Leads'
+        ? 'Create the first Meta lead from the interaction panel.'
+        : 'Create the first Google Ads lead from the interaction panel.';
+
+    return sfoLeadsQuery.isLoading ? (
+      <Card>
+        <CardContent className="p-6">
+          <EmptyState
+            icon={<Loader2 className="h-5 w-5 animate-spin" />}
+            title={`Loading ${tabLabel}`}
+            description="Fetching transactional cards."
+            size="sm"
+          />
+        </CardContent>
+      </Card>
+    ) : sfoLeadsQuery.error ? (
+      <Card>
+        <CardContent className="p-6">
+          <EmptyState
+            icon={AlertCircle}
+            title={`Failed to load ${tabLabel}`}
+            description={sfoLeadsQuery.error.message}
+            size="sm"
+          />
+        </CardContent>
+      </Card>
+    ) : sfoLeads.length === 0 ? (
+      <Card>
+        <CardContent className="p-6">
+          <EmptyState
+            icon={Store}
+            title={`No ${tabLabel.toLowerCase()} yet`}
+            description={emptyDescription}
+            size="sm"
+          />
+        </CardContent>
+      </Card>
+    ) : (
+      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+        <div className="space-y-3">
+          {sfoLeads.map((lead) => (
+            <Card
+              key={lead.id}
+              onClick={() => setSelectedSfoId(lead.id)}
+              className={`group ${lead.id === selectedSfoId ? 'border-zinc-900 dark:border-zinc-100' : ''}`}
+            >
+              <CardContent className="relative cursor-pointer space-y-3 p-4">
+                <div className="absolute right-4 top-4 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setEditingSfoLead(lead);
+                    }}
+                    aria-label={`Edit ${lead.customer_name}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-zinc-500 hover:text-red-600"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setDeletingSfoLead(lead);
+                    }}
+                    aria-label={`Delete ${lead.customer_name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    className="pr-20 text-left"
+                    onClick={() => setSelectedSfoId(lead.id)}
+                  >
+                    <p className="font-semibold text-foreground">{lead.customer_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {lead.message_source || 'No source provided'}
+                    </p>
+                  </button>
+                  <div className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1 text-md">
+                    <span className="font-semibold text-foreground">
+                      {formatAudAmount(lead.amount)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-2 lg:grid-cols-3">
+                  <p>Facebook Link: {lead.social_link || '-'}</p>
+                  <p>Platform: {lead.platform}</p>
+                  <p>Date of Contact: {lead.date_of_contact}</p>
+                  <p>Action Plan: {lead.action_plan || '-'}</p>
+                  <p>Action Taken: {lead.action_taken || '-'}</p>
+                  <p>Reason: {lead.reason_for_reaching_out || '-'}</p>
+                  <p>Contact Number: {lead.contact_number || '-'}</p>
+                  <p>Address: {lead.address || '-'}</p>
+                  <p>Order Date: {lead.order_date || '-'}</p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between pt-4">
+                  <div className="flex items-center gap-2">
+                    <Badge className={customerTypeBadgeClassMap[lead.customer_type]}>
+                      {lead.customer_type === 'new'
+                        ? 'New'
+                        : lead.customer_type === 'returning'
+                          ? 'Returning'
+                          : 'Wholesale'}
+                    </Badge>
+
+                    <Select
+                      value={lead.status}
+                      onValueChange={(value) => void handleSfoStatusUpdate(lead, value as SfoStatus, 'status')}
+                    >
+                      <SelectTrigger className="h-8 w-[170px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sfoStatusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={lead.follow_up_status}
+                      onValueChange={(value) =>
+                        void handleSfoStatusUpdate(lead, value as SfoStatus, 'followUpStatus')
+                      }
+                    >
+                      <SelectTrigger className="h-8 w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sfoStatusOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end">
+                    <p className="text-xs text-muted-foreground">
+                      Created {formatCreatedAt(lead.created_at)} by {formatCreatorName(lead.created_by_name)}
+                    </p>
+                  </div>
+                </div>
+
+                
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card className="h-fit xl:sticky xl:top-6">
+          <CardHeader>
+            <CardTitle className="text-base">SFO Detail Panel</CardTitle>
+            <CardDescription>
+              Products, amount, status, invoice number, and remarks.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            {selectedSfoLead ? (
+              <>
+                <p className="font-semibold text-foreground">{selectedSfoLead.customer_name}</p>
+                <p>Products: {selectedSfoLead.products.join(', ') || '-'}</p>
+                <p>Amount: {formatAudAmount(selectedSfoLead.amount)}</p>
+                <p>Status: {formatStatusLabel(selectedSfoLead.status)}</p>
+                <p>Invoice Number: {selectedSfoLead.invoice_number || '-'}</p>
+                <p>Other Remarks: {selectedSfoLead.remarks || '-'}</p>
+              </>
+            ) : (
+              <p>Select a row card to open details.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-3">
       <div>
@@ -212,22 +608,28 @@ export default function AdminCrmPage(): ReactNode {
       >
         <TabsList className="h-auto w-full justify-start gap-2 rounded-none border-b bg-transparent p-0">
           <TabsTrigger
-            value="SFO"
+            value="META"
             className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
           >
-            SFO Dashboard
+            Meta Leads
+          </TabsTrigger>
+          <TabsTrigger
+            value="GOOGLE_ADS"
+            className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
+          >
+            Google Ads Leads
           </TabsTrigger>
           <TabsTrigger
             value="TECH"
             className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
           >
-            SN Tech Pipeline
+            SN Tech Inquiries
           </TabsTrigger>
         </TabsList>
 
         <div className="pt-4">
           <CRMInteractionPanel
-            pipelineContext={pipelineContext}
+            pipelineContext={pipelineContext as PipelineContext}
             isSubmittingSfo={createSfoLead.isPending}
             isSubmittingTech={createTechInquiry.isPending}
             onCreateSfoLead={handleCreateSfoLead}
@@ -235,8 +637,9 @@ export default function AdminCrmPage(): ReactNode {
           />
         </div>
 
-        <TabsContent value="SFO" className="mt-6 space-y-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <TabsContent value="META" className="mt-6 space-y-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <Input
               value={sfoSearch}
               onChange={(event) => setSfoSearch(event.target.value)}
@@ -256,140 +659,47 @@ export default function AdminCrmPage(): ReactNode {
                 ))}
               </SelectContent>
             </Select>
+            </div>
+
+            <CrmAccessManagerButton tracker="meta_leads" label="Meta Leads" />
           </div>
 
-          {sfoLeadsQuery.isLoading ? (
-            <Card>
-              <CardContent className="p-6">
-                <EmptyState icon={<Loader2 className="h-5 w-5 animate-spin" />} title="Loading SFO records" description="Fetching transactional cards." size="sm" />
-              </CardContent>
-            </Card>
-          ) : sfoLeadsQuery.error ? (
-            <Card>
-              <CardContent className="p-6">
-                <EmptyState icon={AlertCircle} title="Failed to load SFO records" description={sfoLeadsQuery.error.message} size="sm" />
-              </CardContent>
-            </Card>
-          ) : sfoLeads.length === 0 ? (
-            <Card>
-              <CardContent className="p-6">
-                <EmptyState icon={Store} title="No SFO records yet" description="Create the first transaction from the interaction panel." size="sm" />
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-              <div className="space-y-3">
-                {sfoLeads.map((lead) => (
-                  <Card key={lead.id} onClick={() => setSelectedSfoId(lead.id)} className={lead.id === selectedSfoId ? 'border-zinc-900 dark:border-zinc-100' : ''}>
-                    <CardContent className="space-y-3 p-4 cursor-pointer">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          className="text-left"
-                          onClick={() => setSelectedSfoId(lead.id)}
-                        >
-                          <p className="font-semibold text-foreground">{lead.customer_name}</p>
-                          <p className="text-xs text-muted-foreground">{lead.message_source || 'No source provided'}</p>
-                        </button>
-                        <div className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1 text-sm">
-                          <span className="font-medium tracking-tight text-foreground">A$</span>
-                          <span className="font-semibold text-foreground">{audFormatter.format(lead.amount).replace('A$', '').trim()}</span>
-                        </div>
-                      </div>
+          {renderSfoContent('Meta Leads')}
+        </TabsContent>
 
-                      <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-2 lg:grid-cols-3">
-                        <p>Facebook Link: {lead.social_link || '-'}</p>
-                        <p>Platform: {lead.platform}</p>
-                        <p>Date of Contact: {lead.date_of_contact}</p>
-                        <p>Action Plan: {lead.action_plan || '-'}</p>
-                        <p>Action Taken: {lead.action_taken || '-'}</p>
-                        <p>Reason: {lead.reason_for_reaching_out || '-'}</p>
-                        <p>Contact Number: {lead.contact_number || '-'}</p>
-                        <p>Address: {lead.address || '-'}</p>
-                        <p>Order Date: {lead.order_date || '-'}</p>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={customerTypeBadgeClassMap[lead.customer_type]}>
-                          {lead.customer_type === 'new'
-                            ? 'New'
-                            : lead.customer_type === 'returning'
-                              ? 'Returning'
-                              : 'Wholesale'}
-                        </Badge>
-
-                        <Select
-                          value={lead.status}
-                          onValueChange={(value) => void handleSfoStatusUpdate(lead, value as SfoStatus, 'status')}
-                        >
-                          <SelectTrigger className="h-8 w-[170px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {sfoStatusOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <Select
-                          value={lead.follow_up_status}
-                          onValueChange={(value) =>
-                            void handleSfoStatusUpdate(lead, value as SfoStatus, 'followUpStatus')
-                          }
-                        >
-                          <SelectTrigger className="h-8 w-[180px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {sfoStatusOptions.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                Follow Up: {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                      </div>
-
-                      <div className="flex justify-end">
-                        <p className="text-xs text-muted-foreground">Created {formatCreatedAt(lead.created_at)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+        <TabsContent value="GOOGLE_ADS" className="mt-6 space-y-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <Input
+              value={sfoSearch}
+              onChange={(event) => setSfoSearch(event.target.value)}
+              placeholder="Search customer, invoice, source, remarks"
+              className="md:max-w-md"
+            />
+            <Select value={sfoStatusFilter} onValueChange={(value) => setSfoStatusFilter(value as 'all' | SfoStatus)}>
+              <SelectTrigger className="w-full md:w-56">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {sfoStatusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
                 ))}
-              </div>
-
-              <Card className="h-fit xl:sticky xl:top-6">
-                <CardHeader>
-                  <CardTitle className="text-base">SFO Detail Panel</CardTitle>
-                  <CardDescription>
-                    Products, amount, status, invoice number, and remarks.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  {selectedSfoLead ? (
-                    <>
-                      <p className="font-semibold text-foreground">{selectedSfoLead.customer_name}</p>
-                      <p>Products: {selectedSfoLead.products.join(', ') || '-'}</p>
-                      <p>Amount: {audFormatter.format(selectedSfoLead.amount)}</p>
-                      <p>Status: {formatStatusLabel(selectedSfoLead.status)}</p>
-                      <p>Invoice Number: {selectedSfoLead.invoice_number || '-'}</p>
-                      <p>Other Remarks: {selectedSfoLead.remarks || '-'}</p>
-                    </>
-                  ) : (
-                    <p>Select a row card to open details.</p>
-                  )}
-                </CardContent>
-              </Card>
+              </SelectContent>
+            </Select>
             </div>
-          )}
+
+            <CrmAccessManagerButton tracker="google_ads_leads" label="Google Ads Leads" />
+          </div>
+
+          {renderSfoContent('Google Ads Leads')}
         </TabsContent>
 
         <TabsContent value="TECH" className="mt-6 space-y-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <Input
               value={techSearch}
               onChange={(event) => setTechSearch(event.target.value)}
@@ -409,18 +719,31 @@ export default function AdminCrmPage(): ReactNode {
                 ))}
               </SelectContent>
             </Select>
+            </div>
+
+            <CrmAccessManagerButton tracker="sn_tech_inquiries" label="SN Tech Inquiries" />
           </div>
 
           {techInquiriesQuery.isLoading ? (
             <Card>
               <CardContent className="p-6">
-                <EmptyState icon={<Loader2 className="h-5 w-5 animate-spin" />} title="Loading TECH pipeline" description="Fetching board columns." size="sm" />
+                <EmptyState
+                  icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                  title="Loading TECH pipeline"
+                  description="Fetching board columns."
+                  size="sm"
+                />
               </CardContent>
             </Card>
           ) : techInquiriesQuery.error ? (
             <Card>
               <CardContent className="p-6">
-                <EmptyState icon={AlertCircle} title="Failed to load TECH records" description={techInquiriesQuery.error.message} size="sm" />
+                <EmptyState
+                  icon={AlertCircle}
+                  title="Failed to load TECH records"
+                  description={techInquiriesQuery.error.message}
+                  size="sm"
+                />
               </CardContent>
             </Card>
           ) : techInquiries.length === 0 ? (
@@ -443,19 +766,50 @@ export default function AdminCrmPage(): ReactNode {
                         <p className="text-xs text-muted-foreground">No inquiries in this stage.</p>
                       ) : (
                         records.map((record) => (
-                          <button
-                            key={record.id}
-                            type="button"
-                            onClick={() => setSelectedTechId(record.id)}
-                            className="w-full rounded-md border border-border p-2 text-left text-sm transition-colors hover:bg-muted/40"
-                          >
-                            <p className="font-medium text-foreground">{record.company_name}</p>
-                            <p className="text-xs text-muted-foreground">{record.contact_person}</p>
-                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{record.requirements_summary}</p>
-                            <div className="mt-2 flex justify-end">
-                              <p className="text-[11px] text-muted-foreground">Created {formatCreatedAt(record.created_at)}</p>
+                          <div key={record.id} className="group relative">
+                            <div className="absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setEditingTechInquiry(record);
+                                }}
+                                aria-label={`Edit ${record.company_name}`}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-zinc-500 hover:text-red-600"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setDeletingTechInquiry(record);
+                                }}
+                                aria-label={`Delete ${record.company_name}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
                             </div>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTechId(record.id)}
+                              className="w-full rounded-md border border-border p-2 pr-16 text-left text-sm transition-colors hover:bg-muted/40"
+                            >
+                              <p className="font-medium text-foreground">{record.company_name}</p>
+                              <p className="text-xs text-muted-foreground">{record.contact_person}</p>
+                              <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{record.requirements_summary}</p>
+                              <div className="mt-2 flex justify-end">
+                                <p className="text-[11px] text-muted-foreground">
+                                  Created {formatCreatedAt(record.created_at)} by {record.created_by_name || 'Unknown user'}
+                                </p>
+                              </div>
+                            </button>
+                          </div>
                         ))
                       )}
                     </CardContent>
@@ -529,6 +883,524 @@ export default function AdminCrmPage(): ReactNode {
           )}
         </TabsContent>
       </Tabs>
+
+      <EditSfoLeadDialog
+        lead={editingSfoLead}
+        open={!!editingSfoLead}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingSfoLead(null);
+          }
+        }}
+        isPending={updateSfoLead.isPending}
+        onSubmit={handleSaveSfoLead}
+      />
+
+      <EditTechInquiryDialog
+        inquiry={editingTechInquiry}
+        open={!!editingTechInquiry}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingTechInquiry(null);
+          }
+        }}
+        isPending={updateTechInquiry.isPending}
+        onSubmit={handleSaveTechInquiry}
+      />
+
+      <ConfirmActionDialog
+        open={!!deletingSfoLead}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingSfoLead(null);
+          }
+        }}
+        title="Delete SFO lead?"
+        description={deletingSfoLead ? `\"${deletingSfoLead.customer_name}\" will be removed from the CRM tracker.` : ''}
+        confirmLabel="Delete lead"
+        isPending={deleteSfoLead.isPending}
+        onConfirm={() => {
+          void handleDeleteSfoLead();
+        }}
+      />
+
+      <ConfirmActionDialog
+        open={!!deletingTechInquiry}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeletingTechInquiry(null);
+          }
+        }}
+        title="Delete TECH inquiry?"
+        description={deletingTechInquiry ? `\"${deletingTechInquiry.company_name}\" will be removed from the CRM tracker.` : ''}
+        confirmLabel="Delete inquiry"
+        isPending={deleteTechInquiry.isPending}
+        onConfirm={() => {
+          void handleDeleteTechInquiry();
+        }}
+      />
     </div>
+  );
+}
+
+function EditSfoLeadDialog({
+  lead,
+  open,
+  onOpenChange,
+  isPending,
+  onSubmit,
+}: {
+  lead: SfoLeadRecord | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isPending: boolean;
+  onSubmit: (id: string, payload: SfoLeadInput) => Promise<void>;
+}) {
+  const [form, setForm] = useState<SfoEditFormState>(lead ? createSfoEditFormState(lead) : emptySfoEditFormState);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setForm(lead ? createSfoEditFormState(lead) : emptySfoEditFormState);
+  }, [lead, open]);
+
+  if (!lead) {
+    return null;
+  }
+
+  function patchField<K extends keyof SfoEditFormState>(key: K, value: SfoEditFormState[K]): void {
+    setForm((current) => (current ? { ...current, [key]: value } : current));
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+
+    if (!lead) {
+      return;
+    }
+
+    await onSubmit(lead.id, {
+      customerName: form.customerName,
+      socialLink: form.socialLink || undefined,
+      messageSource: form.messageSource || undefined,
+      platform: form.platform,
+      dateOfContact: form.dateOfContact,
+      actionPlan: form.actionPlan || undefined,
+      followUpStatus: form.followUpStatus,
+      actionTaken: form.actionTaken || undefined,
+      customerType: form.customerType,
+      reasonForReachingOut: form.reasonForReachingOut || undefined,
+      contactNumber: form.contactNumber || undefined,
+      address: form.address || undefined,
+      orderDate: form.orderDate || undefined,
+      products: form.productsInput.split(',').map((value) => value.trim()).filter(Boolean),
+      amount: Number.parseFloat(form.amountInput || '0'),
+      invoiceNumber: form.invoiceNumber || undefined,
+      status: form.status,
+      remarks: form.remarks || undefined,
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Edit SFO Lead</DialogTitle>
+          <DialogDescription>Update the lead details, status, and transaction notes.</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="edit-sfo-customer-name">Customer Name</Label>
+            <Input
+              id="edit-sfo-customer-name"
+              value={form.customerName}
+              onChange={(event) => patchField('customerName', event.target.value)}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-social-link">Facebook/Social Link</Label>
+              <Input
+                id="edit-sfo-social-link"
+                value={form.socialLink}
+                onChange={(event) => patchField('socialLink', event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-message-source">Message/Comment Source</Label>
+              <Input
+                id="edit-sfo-message-source"
+                value={form.messageSource}
+                onChange={(event) => patchField('messageSource', event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-platform">Platform</Label>
+              <Select value={form.platform} onValueChange={(value) => patchField('platform', value as 'Meta' | 'Google Ads')}>
+                <SelectTrigger id="edit-sfo-platform">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Meta">Meta</SelectItem>
+                  <SelectItem value="Google Ads">Google Ads</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-date-of-contact">Date of Contact</Label>
+              <Input
+                id="edit-sfo-date-of-contact"
+                type="date"
+                value={form.dateOfContact}
+                onChange={(event) => patchField('dateOfContact', event.target.value)}
+                required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-order-date">Order Date</Label>
+              <Input
+                id="edit-sfo-order-date"
+                type="date"
+                value={form.orderDate}
+                onChange={(event) => patchField('orderDate', event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-products">Products (comma-separated)</Label>
+              <Input
+                id="edit-sfo-products"
+                value={form.productsInput}
+                onChange={(event) => patchField('productsInput', event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-amount">Amount (AU$)</Label>
+              <Input
+                id="edit-sfo-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.amountInput}
+                onChange={(event) => patchField('amountInput', event.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-status">Status</Label>
+              <Select value={form.status} onValueChange={(value) => patchField('status', value as SfoStatus)}>
+                <SelectTrigger id="edit-sfo-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sfoStatusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-follow-up-status">Status of Follow-up</Label>
+              <Select value={form.followUpStatus} onValueChange={(value) => patchField('followUpStatus', value as SfoStatus)}>
+                <SelectTrigger id="edit-sfo-follow-up-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sfoStatusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-customer-type">Customer Type</Label>
+              <Select value={form.customerType} onValueChange={(value) => patchField('customerType', value as 'new' | 'returning' | 'wholesale')}>
+                <SelectTrigger id="edit-sfo-customer-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="returning">Returning</SelectItem>
+                  <SelectItem value="wholesale">Wholesale</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-invoice-number">Invoice Number</Label>
+              <Input
+                id="edit-sfo-invoice-number"
+                value={form.invoiceNumber}
+                onChange={(event) => patchField('invoiceNumber', event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-sfo-contact-number">Contact Number</Label>
+              <Input
+                id="edit-sfo-contact-number"
+                value={form.contactNumber}
+                onChange={(event) => patchField('contactNumber', event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-sfo-reason">Reason for Reaching Out</Label>
+            <Input
+              id="edit-sfo-reason"
+              value={form.reasonForReachingOut}
+              onChange={(event) => patchField('reasonForReachingOut', event.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-sfo-action-plan">Action Plan</Label>
+            <Textarea
+              id="edit-sfo-action-plan"
+              value={form.actionPlan}
+              onChange={(event) => patchField('actionPlan', event.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-sfo-action-taken">Action Taken</Label>
+            <Textarea
+              id="edit-sfo-action-taken"
+              value={form.actionTaken}
+              onChange={(event) => patchField('actionTaken', event.target.value)}
+              rows={2}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-sfo-address">Address</Label>
+            <Input
+              id="edit-sfo-address"
+              value={form.address}
+              onChange={(event) => patchField('address', event.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-sfo-remarks">Other Remarks</Label>
+            <Textarea
+              id="edit-sfo-remarks"
+              value={form.remarks}
+              onChange={(event) => patchField('remarks', event.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditTechInquiryDialog({
+  inquiry,
+  open,
+  onOpenChange,
+  isPending,
+  onSubmit,
+}: {
+  inquiry: TechInquiryRecord | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isPending: boolean;
+  onSubmit: (id: string, payload: TechInquiryInput) => Promise<void>;
+}) {
+  const [form, setForm] = useState<TechEditFormState>(inquiry ? createTechEditFormState(inquiry) : emptyTechEditFormState);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setForm(inquiry ? createTechEditFormState(inquiry) : emptyTechEditFormState);
+  }, [inquiry, open]);
+
+  if (!inquiry) {
+    return null;
+  }
+
+  function patchField<K extends keyof TechEditFormState>(key: K, value: TechEditFormState[K]): void {
+    setForm((current) => (current ? { ...current, [key]: value } : current));
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+
+    if (!inquiry) {
+      return;
+    }
+
+    await onSubmit(inquiry.id, {
+      companyName: form.companyName,
+      contactPerson: form.contactPerson,
+      companyBackground: form.companyBackground || undefined,
+      requirementsSummary: form.requirementsSummary,
+      requirementsChecklist: form.requirementsChecklistInput.split(',').map((value) => value.trim()).filter(Boolean),
+      pipelineStage: form.pipelineStage,
+      longFormRemarks: form.longFormRemarks || undefined,
+      followUpDate: form.followUpDate || undefined,
+      assignedRep: form.assignedRep || undefined,
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Edit TECH Inquiry</DialogTitle>
+          <DialogDescription>Update the company context, requirements, and deal stage.</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-tech-company-name">Company Name</Label>
+              <Input
+                id="edit-tech-company-name"
+                value={form.companyName}
+                onChange={(event) => patchField('companyName', event.target.value)}
+                required
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-tech-contact-person">Contact Person</Label>
+              <Input
+                id="edit-tech-contact-person"
+                value={form.contactPerson}
+                onChange={(event) => patchField('contactPerson', event.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-tech-company-background">Company Background</Label>
+            <Textarea
+              id="edit-tech-company-background"
+              value={form.companyBackground}
+              onChange={(event) => patchField('companyBackground', event.target.value)}
+              rows={3}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-tech-requirements-summary">Requirements Summary</Label>
+            <Textarea
+              id="edit-tech-requirements-summary"
+              value={form.requirementsSummary}
+              onChange={(event) => patchField('requirementsSummary', event.target.value)}
+              rows={4}
+              required
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-tech-requirements-checklist">Requirements Checklist (comma-separated)</Label>
+            <Input
+              id="edit-tech-requirements-checklist"
+              value={form.requirementsChecklistInput}
+              onChange={(event) => patchField('requirementsChecklistInput', event.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-tech-pipeline-stage">Pipeline Stage</Label>
+              <Select value={form.pipelineStage} onValueChange={(value) => patchField('pipelineStage', value as TechPipelineStage)}>
+                <SelectTrigger id="edit-tech-pipeline-stage">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {techStageOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-tech-follow-up-date">Follow-up Date</Label>
+              <Input
+                id="edit-tech-follow-up-date"
+                type="date"
+                value={form.followUpDate}
+                onChange={(event) => patchField('followUpDate', event.target.value)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit-tech-assigned-rep">Assigned Rep</Label>
+              <Input
+                id="edit-tech-assigned-rep"
+                value={form.assignedRep}
+                onChange={(event) => patchField('assignedRep', event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="edit-tech-long-form-remarks">Long-form Remarks</Label>
+            <Textarea
+              id="edit-tech-long-form-remarks"
+              value={form.longFormRemarks}
+              onChange={(event) => patchField('longFormRemarks', event.target.value)}
+              rows={5}
+            />
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

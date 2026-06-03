@@ -1,7 +1,7 @@
 import { logActivity } from '@/lib/audit';
 import { techInquiryCreateSchema, TECH_PIPELINE_STAGE_VALUES } from '@/lib/schemas/crm.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getCrmAuthedContext } from '../_lib';
+import { assertCrmTrackerAccess, getCrmAuthedContext } from '../_lib';
 
 interface TechInquiryRow {
   id: string;
@@ -17,6 +17,7 @@ interface TechInquiryRow {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  created_by_name: string | null;
   deleted_at: string | null;
 }
 
@@ -26,6 +27,16 @@ export async function GET(request: NextRequest) {
 
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const trackerAccess = assertCrmTrackerAccess(
+      auth.context.role,
+      auth.context.grantedTrackers,
+      'sn_tech_inquiries',
+    );
+
+    if (!trackerAccess.ok) {
+      return NextResponse.json({ error: trackerAccess.error }, { status: trackerAccess.status });
     }
 
     const { supabaseAdmin } = auth.context;
@@ -64,7 +75,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch TECH CRM records' }, { status: 500 });
     }
 
-    return NextResponse.json({ data: (data || []) as Array<TechInquiryRow> });
+    const rows = (data || []) as Array<TechInquiryRow>;
+    const creatorIds = Array.from(new Set(rows.map((row) => row.created_by).filter(Boolean)));
+
+    let creatorNameById = new Map<string, string>();
+
+    if (creatorIds.length > 0) {
+      const { data: creators, error: creatorsError } = await supabaseAdmin
+        .from('users')
+        .select('id, full_name, first_name, last_name')
+        .in('id', creatorIds);
+
+      if (creatorsError) {
+        console.error('GET /api/crm/tech creator lookup error:', creatorsError);
+      } else {
+        creatorNameById = new Map(
+          (creators || []).map((creator) => {
+            const fullName =
+              creator.full_name ||
+              [creator.first_name, creator.last_name].filter(Boolean).join(' ').trim() ||
+              'Unknown user';
+
+            return [creator.id, fullName];
+          })
+        );
+      }
+    }
+
+    return NextResponse.json({
+      data: rows.map((row) => ({
+        ...row,
+        created_by_name: row.created_by ? creatorNameById.get(row.created_by) ?? null : null,
+      })) as Array<TechInquiryRow>,
+    });
   } catch (error) {
     console.error('Unexpected error in GET /api/crm/tech:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -77,6 +120,16 @@ export async function POST(request: NextRequest) {
 
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const trackerAccess = assertCrmTrackerAccess(
+      auth.context.role,
+      auth.context.grantedTrackers,
+      'sn_tech_inquiries',
+    );
+
+    if (!trackerAccess.ok) {
+      return NextResponse.json({ error: trackerAccess.error }, { status: trackerAccess.status });
     }
 
     const { supabaseAdmin, user } = auth.context;

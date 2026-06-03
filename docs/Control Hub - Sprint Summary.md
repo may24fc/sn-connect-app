@@ -209,7 +209,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 **State-Driven Form Morphing**
 
 - [ ] Design the CRM interaction panel with a `pipelineContext` prop accepting `'SFO' | 'TECH'` values to drive all field rendering.
-- [ ] SFO Mode: Render fast transactional row cards with A$ currency amount fields, Invoice Number, Product parameters, platform selector (META/IG), and status dropdowns (New, For Follow Up, Closed, Lost).
+- [ ] SFO Mode: Render fast transactional row cards with A$ currency amount fields, Invoice Number, Product parameters, platform selector (Meta/Google Ads), and status dropdowns (New, For Follow Up, Closed, Lost).
 - [ ] TECH Mode: Render a comprehensive multi-step profile review grid covering company background, software requirements checklist, pipeline stage, and long-form remarks.
 - [ ] Ensure the form fully morphs its field set when `pipelineContext` switches, with no stale fields from the inactive pipeline visible.
 
@@ -228,7 +228,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 
 **Data & Database**
 
-- [ ] Create the SFO CRM database schema: customer name, Facebook/social link, message or comment source, platform (META/IG), date of contact, action plan, follow-up status, action taken, customer type, reason for reaching out, contact number, address, order date, products, amount, invoice number, and remarks.
+- [ ] Create the SFO CRM database schema: customer name, Facebook/social link, message or comment source, platform (Meta/Google Ads), date of contact, action plan, follow-up status, action taken, customer type, reason for reaching out, contact number, address, order date, products, amount, invoice number, and remarks.
 - [ ] Create the TECH pipeline schema: company name, contact person, requirements summary, pipeline stage, long-form remarks, follow-up date, and assigned rep.
 - [ ] Enable RLS policies scoped to `admin` and `super_admin` roles for both CRM tables.
 - [ ] Log all CRM record creates, updates, and status changes to `audit_logs`.

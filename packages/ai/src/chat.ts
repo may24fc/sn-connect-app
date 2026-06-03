@@ -100,7 +100,7 @@ export type ChatStreamEvent =
 
 const DEFAULT_CHAT_CONFIG: Required<ChatConfig> = {
   apiKey: '',
-  model: 'gpt-4o-mini',
+  model: 'gpt-5.4-mini',
   maxTokens: 2048,
   temperature: 0.3,
   maxContextChunks: 5,
