@@ -69,27 +69,71 @@ export function CitedContent({
 
   return (
     <div className={cn('text-sm leading-relaxed space-y-2', className)}>
-      {blocks.map((block, idx) =>
-        block.type === 'list' ? (
-          <ul key={idx} className="space-y-1">
-            {block.items.map((item, i) => (
-              <li key={i} className="flex gap-2">
-                <span className="mt-[7px] h-1 w-1 flex-shrink-0 rounded-full bg-current opacity-40" />
-                <span>{renderLineCited(item, citations, onCitationClick)}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p key={idx}>
-            {block.lines.map((line, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <br />}
-                {renderLineCited(line, citations, onCitationClick)}
-              </React.Fragment>
-            ))}
-          </p>
-        )
-      )}
+      {blocks.map((block, idx) => {
+        if (block.type === 'list') {
+          return (
+            <ul key={idx} className="space-y-1">
+              {block.items.map((item: string, i: number) => (
+                <li key={i} className="flex gap-2">
+                  <span className="mt-[7px] h-1 w-1 flex-shrink-0 rounded-full bg-current opacity-40" />
+                  <span>{renderLineCited(item, citations, onCitationClick)}</span>
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        if (block.type === 'paragraph') {
+          return (
+            <p key={idx}>
+              {block.lines.map((line: string, i: number) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <br />}
+                  {renderLineCited(line, citations, onCitationClick)}
+                </React.Fragment>
+              ))}
+            </p>
+          );
+        }
+
+        if (block.type === 'blockquote') {
+          return (
+            <blockquote key={idx} className="pl-4 border-l-2 italic text-muted-foreground">
+              {block.lines.map((line: string, i: number) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <br />}
+                  {renderLineCited(line, citations, onCitationClick)}
+                </React.Fragment>
+              ))}
+            </blockquote>
+          );
+        }
+
+        if (block.type === 'heading') {
+          if (block.level === 2) {
+            return (
+              <h2 key={idx} className="text-base font-semibold">
+                {renderLineCited(block.text, citations, onCitationClick)}
+              </h2>
+            );
+          }
+          return (
+            <h3 key={idx} className="text-sm font-semibold">
+              {renderLineCited(block.text, citations, onCitationClick)}
+            </h3>
+          );
+        }
+
+        if (block.type === 'code') {
+          return (
+            <pre key={idx} className="rounded bg-muted/10 p-3 overflow-auto text-xs font-mono">
+              <code>{block.code}</code>
+            </pre>
+          );
+        }
+
+        return null;
+      })}
     </div>
   );
 }

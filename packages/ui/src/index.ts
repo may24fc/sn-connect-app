@@ -1,5 +1,6 @@
 // Utility functions
 export { cn } from './utils/cn';
+export { MarkdownContent, parseMarkdownBlocks, renderInlineRich, renderInlineRich as renderInlineBold } from './utils/markdown';
 
 // Primitives
 export { Button, buttonVariants, type ButtonProps } from './primitives/button';
