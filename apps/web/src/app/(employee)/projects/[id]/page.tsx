@@ -54,6 +54,7 @@ import {
 import {
   ArrowLeft,
   CheckCircle2,
+  CircleHelp,
   ChevronDown,
   ChevronRight,
   ExternalLink,
@@ -136,6 +137,7 @@ export default function ProjectDetailPage() {
   const [docLabel, setDocLabel] = useState('');
   const [docFiles, setDocFiles] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState<'milestones' | 'documentation'>('milestones');
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   async function handleAddDocumentationLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -271,9 +273,16 @@ export default function ProjectDetailPage() {
               </Badge>
             </div>
             {project.description ? (
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                {project.description}
-              </p>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-1 h-6 px-0 text-xs font-medium text-zinc-600 hover:bg-transparent hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                onClick={() => setDetailsOpen(true)}
+              >
+                <CircleHelp className="mr-1 h-3.5 w-3.5" />
+                View Full Details
+              </Button>
             ) : null}
             <div className="mt-2 flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
               <span>
@@ -532,6 +541,20 @@ export default function ProjectDetailPage() {
           )}
         </div>
       </main>
+
+      {project.description ? (
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{project.name}</DialogTitle>
+              <DialogDescription>Project description details</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+              <p className="whitespace-pre-wrap break-words">{project.description}</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       <CreateMilestoneDialog
         open={createOpen}
