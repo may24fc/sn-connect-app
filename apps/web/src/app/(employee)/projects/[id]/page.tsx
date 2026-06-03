@@ -1,7 +1,13 @@
 'use client';
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  type ProjectDescriptionSections,
+  composeProjectDescription,
+  parseProjectDescription,
+} from '@/lib/projects/descriptionSections';
 import {
   type ChecklistItemRecord,
   type MilestoneRecord,
@@ -47,7 +53,6 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
-  Textarea,
   useToast,
   FileDropZone,
 } from '@hr-portal/ui';
@@ -102,6 +107,26 @@ function getMilestoneDateWindowError(
   return null;
 }
 
+function DescriptionSection({ title, items }: { title: string; items: string[] }) {
+  const normalizedItems = items.map((item) => item.trim()).filter(Boolean);
+  if (normalizedItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        {title}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-200">
+        {normalizedItems.map((item, index) => (
+          <li key={`${title}-${index}`}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -138,6 +163,10 @@ export default function ProjectDetailPage() {
   const [docFiles, setDocFiles] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState<'milestones' | 'documentation'>('milestones');
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const parsedDescription = useMemo(
+    () => parseProjectDescription(project?.description),
+    [project?.description]
+  );
 
   async function handleAddDocumentationLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -550,7 +579,14 @@ export default function ProjectDetailPage() {
               <DialogDescription>Project description details</DialogDescription>
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-              <p className="whitespace-pre-wrap break-words">{project.description}</p>
+              <div className="space-y-4">
+                <DescriptionSection title="Goals" items={parsedDescription.goals} />
+                <DescriptionSection title="Scope" items={parsedDescription.scope} />
+                <DescriptionSection
+                  title="Success Criteria"
+                  items={parsedDescription.successCriteria}
+                />
+              </div>
             </div>
           </DialogContent>
         </Dialog>
@@ -1067,7 +1103,9 @@ function EditProjectDialog({
   const updateProject = useUpdateProject();
   const { addToast } = useToast();
   const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description ?? '');
+  const [descriptionSections, setDescriptionSections] = useState<ProjectDescriptionSections>(
+    parseProjectDescription(project.description)
+  );
   const [startDate, setStartDate] = useState(project.start_date);
   const [targetEndDate, setTargetEndDate] = useState(project.target_end_date);
   const [status, setStatus] = useState(project.status);
@@ -1079,7 +1117,7 @@ function EditProjectDialog({
     }
 
     setName(project.name);
-    setDescription(project.description ?? '');
+    setDescriptionSections(parseProjectDescription(project.description));
     setStartDate(project.start_date);
     setTargetEndDate(project.target_end_date);
     setStatus(project.status);
@@ -1101,10 +1139,11 @@ function EditProjectDialog({
     }
 
     try {
+      const composedDescription = composeProjectDescription(descriptionSections);
       await updateProject.mutateAsync({
         projectId: project.id,
         name: name.trim(),
-        description: description.trim() || null,
+        description: composedDescription || null,
         startDate,
         targetEndDate,
         status,
@@ -1138,15 +1177,10 @@ function EditProjectDialog({
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="project-edit-description">Description</Label>
-            <Textarea
-              id="project-edit-description"
-              rows={4}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-          </div>
+          <ProjectDescriptionFields
+            value={descriptionSections}
+            onChange={setDescriptionSections}
+          />
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="project-edit-status">Status</Label>

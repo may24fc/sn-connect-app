@@ -47,6 +47,65 @@ function formatDate(dateStr: string): string {
   }
 }
 
+function parseDescriptionSections(description: string): {
+  goals: string[];
+  scope: string[];
+  successCriteria: string[];
+} {
+  const raw = description.trim();
+  const sectionRegex = /(Goals|Scope|Success Criteria):\s*([\s\S]*?)(?=\n(?:Goals|Scope|Success Criteria):|$)/gi;
+  const parsed: {
+    goals?: string[];
+    scope?: string[];
+    successCriteria?: string[];
+  } = {};
+
+  for (const match of raw.matchAll(sectionRegex)) {
+    const sectionName = match[1]?.toLowerCase();
+    const lines = (match[2] ?? '')
+      .split('\n')
+      .map((line) => line.replace(/^[-*]\s*/, '').trim())
+      .filter(Boolean);
+
+    if (sectionName === 'goals') parsed.goals = lines;
+    if (sectionName === 'scope') parsed.scope = lines;
+    if (sectionName === 'success criteria') parsed.successCriteria = lines;
+  }
+
+  if (!parsed.goals && !parsed.scope && !parsed.successCriteria) {
+    return {
+      goals: [raw],
+      scope: [],
+      successCriteria: [],
+    };
+  }
+
+  return {
+    goals: parsed.goals ?? [],
+    scope: parsed.scope ?? [],
+    successCriteria: parsed.successCriteria ?? [],
+  };
+}
+
+function DescriptionSection({ title, items }: { title: string; items: string[] }) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        {title}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-200">
+        {items.map((item, index) => (
+          <li key={`${title}-${index}`}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function ProjectCard({
   name,
   description,
@@ -61,6 +120,7 @@ export function ProjectCard({
   className,
 }: ProjectCardProps): React.ReactElement {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const parsedDescription = description ? parseDescriptionSections(description) : null;
 
   const hoverActions = [
     ...(onEdit
@@ -148,7 +208,16 @@ export function ProjectCard({
               <DialogDescription>Project description details</DialogDescription>
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
-              <p className="whitespace-pre-wrap break-words">{description}</p>
+              {parsedDescription ? (
+                <div className="space-y-4">
+                  <DescriptionSection title="Goals" items={parsedDescription.goals} />
+                  <DescriptionSection title="Scope" items={parsedDescription.scope} />
+                  <DescriptionSection
+                    title="Success Criteria"
+                    items={parsedDescription.successCriteria}
+                  />
+                </div>
+              ) : null}
             </div>
           </DialogContent>
         </Dialog>

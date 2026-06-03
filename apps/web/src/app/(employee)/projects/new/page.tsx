@@ -1,14 +1,18 @@
 'use client';
 
+import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreateProject } from '@/hooks/useProjects';
+import {
+  type ProjectDescriptionSections,
+  composeProjectDescription,
+} from '@/lib/projects/descriptionSections';
 import {
   Button,
   Card,
   CardContent,
   Input,
   Label,
-  Textarea,
   useToast,
 } from '@hr-portal/ui';
 import { ArrowLeft } from 'lucide-react';
@@ -24,7 +28,11 @@ export default function NewProjectPage() {
 
   const today = new Date().toISOString().slice(0, 10);
   const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [descriptionSections, setDescriptionSections] = useState<ProjectDescriptionSections>({
+    goals: [''],
+    scope: [''],
+    successCriteria: [''],
+  });
   const [startDate, setStartDate] = useState(today);
   const [targetEndDate, setTargetEndDate] = useState('');
 
@@ -36,9 +44,10 @@ export default function NewProjectPage() {
       return;
     }
     try {
+      const composedDescription = composeProjectDescription(descriptionSections);
       const result = await createProject.mutateAsync({
         name: name.trim(),
-        description: description.trim() || null,
+        description: composedDescription || null,
         leadUserId: user.id,
         startDate,
         targetEndDate,
@@ -109,17 +118,10 @@ export default function NewProjectPage() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  placeholder="Goals, scope, success criteria..."
-                  className='h-[400px]'
-                />
-              </div>
+              <ProjectDescriptionFields
+                value={descriptionSections}
+                onChange={setDescriptionSections}
+              />
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel

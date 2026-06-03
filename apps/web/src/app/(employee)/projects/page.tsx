@@ -1,6 +1,7 @@
 'use client';
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
+import { ProjectDescriptionFields } from '@/components/projects/ProjectDescriptionFields';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   type ProjectHealth,
@@ -11,6 +12,11 @@ import {
   useUpdateProject,
 } from '@/hooks/useProjects';
 import { useProjectPoolCount } from '@/hooks/useProjectPool';
+import {
+  type ProjectDescriptionSections,
+  composeProjectDescription,
+  parseProjectDescription,
+} from '@/lib/projects/descriptionSections';
 import {
   Badge,
   Button,
@@ -30,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
-  Textarea,
   useToast,
 } from '@hr-portal/ui';
 import { FolderKanban, Inbox, Plus } from 'lucide-react';
@@ -230,7 +235,9 @@ function EditProjectDialog({
   const updateProject = useUpdateProject();
   const { addToast } = useToast();
   const [name, setName] = useState(project.name);
-  const [description, setDescription] = useState(project.description ?? '');
+  const [descriptionSections, setDescriptionSections] = useState<ProjectDescriptionSections>(
+    parseProjectDescription(project.description)
+  );
   const [status, setStatus] = useState<ProjectStatus>(project.status);
   const [startDate, setStartDate] = useState(project.start_date);
   const [targetEndDate, setTargetEndDate] = useState(project.target_end_date);
@@ -238,7 +245,7 @@ function EditProjectDialog({
   useEffect(() => {
     if (!open) return;
     setName(project.name);
-    setDescription(project.description ?? '');
+    setDescriptionSections(parseProjectDescription(project.description));
     setStatus(project.status);
     setStartDate(project.start_date);
     setTargetEndDate(project.target_end_date);
@@ -255,10 +262,11 @@ function EditProjectDialog({
       return;
     }
     try {
+      const composedDescription = composeProjectDescription(descriptionSections);
       await updateProject.mutateAsync({
         projectId: project.id,
         name: name.trim(),
-        description: description.trim() || null,
+        description: composedDescription || null,
         status,
         startDate,
         targetEndDate,
@@ -291,15 +299,10 @@ function EditProjectDialog({
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-proj-desc">Description</Label>
-            <Textarea
-              id="edit-proj-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-            />
-          </div>
+          <ProjectDescriptionFields
+            value={descriptionSections}
+            onChange={setDescriptionSections}
+          />
           <div className="space-y-2">
             <Label htmlFor="edit-proj-status">Status</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as ProjectStatus)}>
