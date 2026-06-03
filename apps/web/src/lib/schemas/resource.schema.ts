@@ -145,7 +145,7 @@ export const resourceSearchSchema = z.object({
 
 export const createCollectionSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
-  description: z.string().max(2000).optional().nullable(),
+  description: z.string().max(5000).optional().nullable(),
   thumbnailPath: z.string().optional().nullable(),
   isPublic: z.boolean().default(false),
   targetRoles: z.array(z.string()).default([]),
@@ -154,7 +154,7 @@ export const createCollectionSchema = z.object({
 
 export const updateCollectionSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  description: z.string().max(2000).optional().nullable(),
+  description: z.string().max(3000).optional().nullable(),
   thumbnailPath: z.string().optional().nullable(),
   isPublic: z.boolean().optional(),
   targetRoles: z.array(z.string()).optional(),

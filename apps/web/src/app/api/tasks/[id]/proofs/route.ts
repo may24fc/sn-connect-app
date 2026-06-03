@@ -9,7 +9,7 @@ import { getTaskAuthedContext } from '../../_lib';
 
 const proofCreateSchema = z.object({
   proofType: z.enum(['link', 'note']),
-  content: z.string().min(1, 'Content is required').max(2000),
+  content: z.string().min(1, 'Content is required').max(3000),
   label: z.string().max(200).optional().nullable(),
 });
 

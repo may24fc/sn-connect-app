@@ -27,7 +27,7 @@ export const projectContributorRoleSchema = z.enum(['lead', 'contributor']);
 // ----- Project -----
 export const projectCreateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(200),
-  description: z.string().trim().max(2000).optional().nullable(),
+  description: z.string().trim().max(5000).optional().nullable(),
   leadUserId: z.string().uuid('Lead user is required'),
   supervisorId: z.string().uuid().optional().nullable(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate must be YYYY-MM-DD'),
@@ -44,7 +44,7 @@ export const milestoneCreateSchema = z.object({
   parentMilestoneId: z.string().uuid().optional().nullable(),
   periodType: milestonePeriodTypeSchema,
   title: z.string().trim().min(1).max(200),
-  description: z.string().trim().max(2000).optional().nullable(),
+  description: z.string().trim().max(3000).optional().nullable(),
   periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -59,13 +59,13 @@ export const milestoneUpdateSchema = milestoneCreateSchema
 export const checklistItemCreateSchema = z.object({
   milestoneId: z.string().uuid(),
   title: z.string().trim().min(1).max(300),
-  description: z.string().trim().max(2000).optional().nullable(),
+  description: z.string().trim().max(3000).optional().nullable(),
   position: z.number().int().nonnegative().optional(),
 });
 
 export const checklistItemUpdateSchema = z.object({
   title: z.string().trim().min(1).max(300).optional(),
-  description: z.string().trim().max(2000).optional().nullable(),
+  description: z.string().trim().max(3000).optional().nullable(),
   status: checklistItemStatusSchema.optional(),
   position: z.number().int().nonnegative().optional(),
 });

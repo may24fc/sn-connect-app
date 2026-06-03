@@ -87,8 +87,8 @@ export const contentCreationEntrySchema = z.object({
 
 export const contentCreationDetailsSchema = z.object({
   entries: z.array(contentCreationEntrySchema).default([]),
-  results: z.string().trim().max(2000).optional().nullable(),
-  observations: z.string().trim().max(4000).optional().nullable(),
+  results: z.string().trim().max(5000).optional().nullable(),
+  observations: z.string().trim().max(5000).optional().nullable(),
 });
 
 export const weeklyPlanItemSchema = z.string().trim().min(1, 'Plan item is required').max(300);
