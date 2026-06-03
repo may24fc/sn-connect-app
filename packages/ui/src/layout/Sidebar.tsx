@@ -197,6 +197,13 @@ export function Sidebar({
 
   const filteredNavItems = baseNavItems.filter((item) => {
     if (
+      variant === 'employee' &&
+      (item.href === '/projects' || item.href === '/leaderboard')
+    ) {
+      return false;
+    }
+
+    if (
       (variant === 'employee' || variant === 'intern') &&
       !showMarketingReports &&
       item.href === '/reports'
