@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge, Button, MarkdownContent } from '@hr-portal/ui';
+import { Badge, MarkdownContent } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
 
 type EvaluationSummaryViewProps = {
@@ -10,8 +10,6 @@ type EvaluationSummaryViewProps = {
   totalSubmissionsAnalyzed: number;
   generatedAt: string;
   isStale: boolean;
-  isRegenerating: boolean;
-  onRegenerate: () => void;
 };
 
 function formatDateTime(value: string): string {
@@ -31,8 +29,6 @@ export function EvaluationSummaryView({
   totalSubmissionsAnalyzed,
   generatedAt,
   isStale,
-  isRegenerating,
-  onRegenerate,
 }: EvaluationSummaryViewProps): ReactNode {
   return (
     <div className="space-y-6">
@@ -53,11 +49,6 @@ export function EvaluationSummaryView({
             <Badge variant={isStale ? 'secondary' : 'success'}>
               {isStale ? 'New submissions detected' : 'Up to date'}
             </Badge>
-            {isStale ? (
-              <Button onClick={onRegenerate} disabled={isRegenerating}>
-                {isRegenerating ? 'Regenerating...' : 'Regenerate Summary'}
-              </Button>
-            ) : null}
           </div>
         </div>
       </div>

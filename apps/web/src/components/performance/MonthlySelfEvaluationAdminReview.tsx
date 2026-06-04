@@ -437,21 +437,32 @@ export function MonthlySelfEvaluationAdminReview() {
               />
             </div>
           </div>
-          <Button
-            onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
-            disabled={
-              summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
-            }
-          >
-            {summaryState.isViewingSummary ? (
-              'Back to Details'
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                {summaryState.primaryActionLabel}
-              </>
-            )}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
+              disabled={
+                summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
+              }
+            >
+              {summaryState.isViewingSummary ? (
+                'Back to Details'
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  {summaryState.primaryActionLabel}
+                </>
+              )}
+            </Button>
+            {summaryState.hasSummary ? (
+              <Button
+                variant="outline"
+                onClick={summaryState.regenerateSummary}
+                disabled={summaryState.isGenerating}
+              >
+                {summaryState.isGenerating ? 'Regenerating...' : 'Regenerate Summary'}
+              </Button>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
 
@@ -550,7 +561,7 @@ export function MonthlySelfEvaluationAdminReview() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden h-full min-h-0">
           <Tabs
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as DetailTabValue)}
@@ -610,8 +621,8 @@ export function MonthlySelfEvaluationAdminReview() {
               </TabsList>
             ) : null}
           </CardHeader>
-          <CardContent className="p-0">
-            <div ref={detailScrollRef} className="max-h-[72vh] overflow-y-auto px-6 py-5">
+          <CardContent className="flex-1 min-h-0 p-0">
+            <div ref={detailScrollRef} className="h-full overflow-y-auto px-6 py-5">
             {summaryState.isViewingSummary && summaryState.summary ? (
               <EvaluationSummaryView
                 title="Monthly Self-Evaluation"
@@ -620,8 +631,6 @@ export function MonthlySelfEvaluationAdminReview() {
                 totalSubmissionsAnalyzed={summaryState.summary.totalSubmissionsAnalyzed}
                 generatedAt={summaryState.summary.generatedAt}
                 isStale={summaryState.summary.isStale}
-                isRegenerating={summaryState.isGenerating}
-                onRegenerate={summaryState.regenerateSummary}
               />
             ) : !selectedRecord ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">

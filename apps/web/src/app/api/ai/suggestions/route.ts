@@ -178,7 +178,7 @@ async function generateSuggestionsWithAI(sources: CandidateSource[]): Promise<Su
     const completion = await openai.chat.completions.create({
       model: FAST_MODEL,
       temperature: 0.3,
-      max_tokens: 350,
+      max_completion_tokens: 350,
       response_format: { type: 'json_object' },
       messages: [
         {

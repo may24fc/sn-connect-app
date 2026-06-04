@@ -237,21 +237,32 @@ export function MonthlyCallFeedbackAdminReview() {
               />
             </div>
           </div>
-          <Button
-            onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
-            disabled={
-              summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
-            }
-          >
-            {summaryState.isViewingSummary ? (
-              'Back to Details'
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                {summaryState.primaryActionLabel}
-              </>
-            )}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={summaryState.isViewingSummary ? summaryState.hideSummary : summaryState.handlePrimaryAction}
+              disabled={
+                summaryState.isGenerating || (!summaryState.hasSummary && submittedCount === 0)
+              }
+            >
+              {summaryState.isViewingSummary ? (
+                'Back to Details'
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  {summaryState.primaryActionLabel}
+                </>
+              )}
+            </Button>
+            {summaryState.hasSummary ? (
+              <Button
+                variant="outline"
+                onClick={summaryState.regenerateSummary}
+                disabled={summaryState.isGenerating}
+              >
+                {summaryState.isGenerating ? 'Regenerating...' : 'Regenerate Summary'}
+              </Button>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
 
@@ -379,8 +390,6 @@ export function MonthlyCallFeedbackAdminReview() {
                 totalSubmissionsAnalyzed={summaryState.summary.totalSubmissionsAnalyzed}
                 generatedAt={summaryState.summary.generatedAt}
                 isStale={summaryState.summary.isStale}
-                isRegenerating={summaryState.isGenerating}
-                onRegenerate={summaryState.regenerateSummary}
               />
             ) : !selectedEntry ? (
               <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">

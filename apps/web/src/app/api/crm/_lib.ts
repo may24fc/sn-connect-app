@@ -117,8 +117,12 @@ export async function listCrmAccessGrants(
     throw grantsError;
   }
 
-  const userIds = [...new Set((grantRows ?? []).map((row) => row.user_id))];
-  const granterIds = [...new Set((grantRows ?? []).map((row) => row.granted_by).filter(Boolean))] as string[];
+  if (!grantRows || grantRows.length === 0) {
+    return [];
+  }
+
+  const userIds = [...new Set(grantRows.map((row) => row.user_id))];
+  const granterIds = [...new Set(grantRows.map((row) => row.granted_by).filter(Boolean))] as string[];
 
   const { data: userRows, error: usersError } = await admin
     .from('users')
@@ -151,7 +155,7 @@ export async function listCrmAccessGrants(
     }
   }
 
-  return (grantRows ?? []).map((row) => {
+  return grantRows.map((row) => {
     const userRow = userById.get(row.user_id);
     const granter = row.granted_by ? userById.get(row.granted_by) : null;
     const employee = employeeByUserId.get(row.user_id);

@@ -9,7 +9,7 @@ import {
 } from '@/lib/ats/evaluation';
 import { inngest } from '../client';
 
-const EVALUATION_MODEL = 'gpt-4o-mini';
+const EVALUATION_MODEL = 'gpt-5.4-mini';
 
 /**
  * JSON Schema passed to OpenAI structured outputs. Mirrors the Zod
@@ -268,7 +268,7 @@ export const evaluateResume = inngest.createFunction(
           const response = await openai.chat.completions.create({
             model: EVALUATION_MODEL,
             temperature: 0.2,
-            max_tokens: 2048,
+            max_completion_tokens: 2048,
             messages: [
               { role: 'system', content: buildSystemPrompt() },
               { role: 'user', content: userMessage },

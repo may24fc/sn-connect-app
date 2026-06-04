@@ -1,0 +1,536 @@
+{
+  "_comment": "Intern Weekly Projects Digest — sends one Telegram message per active intern (project list with progress, health, milestone overview), then one AI-compressed aggregate for all interns. Mirrors intern-eod-telegram-department-digest pattern. Runs every Monday 09:00 PHT. Uses intern_eod_digest_runs table with destination_key='weekly-projects-digest' for idempotency. Payload: week_start_date, intern_name, department, total_projects, projects[{name,status,health,progress_pct,points_total,monthly_milestone{title,status,progress_pct}}]",
+  "name": "intern-weekly-projects-digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 1 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Weekly Trigger (09:00 PHT Mon)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 280]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "weekStart",
+              "type": "string",
+              "value": "={{ $now.setZone('Asia/Manila').startOf('week').toFormat('yyyy-MM-dd') }}"
+            },
+            {
+              "id": "a2",
+              "name": "destinationKey",
+              "type": "string",
+              "value": "weekly-projects-digest"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "set-report-context",
+      "name": "Set Report Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/rpc/get_intern_weekly_projects_digest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "week_start",
+              "value": "={{ $json.weekStart }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "fetch-digest-rows",
+      "name": "Fetch Digest Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 280],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] Control Hub Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// fullResponse wraps body → always 1 item even when body is []\nconst rows = Array.isArray($json.body) ? $json.body : JSON.parse($json.body || '[]');\nreturn [{ json: { rows } }];"
+      },
+      "id": "collect-rows",
+      "name": "Collect Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [940, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $json.rows;\nconst weekStart = $('Set Report Context').first().json.weekStart;\nconst destinationKey = $('Set Report Context').first().json.destinationKey;\n\nlet totalProjects = 0;\nconst interns = rows.map((row) => {\n  const projects = Array.isArray(row.projects) ? row.projects : [];\n  totalProjects += projects.length;\n  return {\n    internshipId:      row.internship_id,\n    internEmployeeId:  row.intern_employee_id,\n    internUserId:      row.intern_user_id,\n    name:              row.intern_name || 'Unnamed Intern',\n    email:             row.intern_email,\n    department:        row.department || 'Unassigned',\n    totalProjects:     row.total_projects || projects.length,\n    projects\n  };\n});\n\nreturn [{\n  json: {\n    weekStart,\n    destinationKey,\n    totalInterns: interns.length,\n    totalProjects,\n    interns\n  }\n}];"
+      },
+      "id": "group-interns",
+      "name": "Group Interns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 280]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-total-interns",
+              "leftValue": "={{ $json.totalInterns }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt",
+                "name": "filter.operator.gt",
+                "rightType": "any"
+              }
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        }
+      },
+      "id": "has-data",
+      "name": "Has Active Interns?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1380, 280]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/intern_eod_digest_runs?select=id,status&report_date=eq.' + $json.weekStart + '&channel=eq.telegram&destination_key=eq.' + $json.destinationKey + '&deleted_at=is.null' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "check-existing-run",
+      "name": "Check Existing Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1600, 180],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] Control Hub Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = items[0]?.json?.body;\nconst existingRows = Array.isArray(body) ? body : [];\nconst grouped = $('Group Interns').first().json;\nconst runExists = existingRows.some((row) => row.status === 'sent');\n\nreturn [{\n  json: {\n    ...grouped,\n    existingRunId: existingRows.length > 0 ? (existingRows[0].id ?? null) : null,\n    runExists\n  }\n}];"
+      },
+      "id": "merge-run-state",
+      "name": "Merge Run State",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1820, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-run-exists",
+              "leftValue": "={{ $json.runExists }}",
+              "rightValue": "",
+              "operator": {
+                "name": "filter.operator.true",
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              }
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        }
+      },
+      "id": "already-sent",
+      "name": "Already Sent?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2040, 180]
+    },
+    {
+      "parameters": {},
+      "id": "skip-already-sent",
+      "name": "Skip Already Sent",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2260, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "const grouped = $json;\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst output = [];\n\nconst healthEmoji = { on_track: '✅', at_risk: '⚠️', overdue: '🔴' };\nconst statusEmoji = { active: '🟢', planning: '🔵', on_hold: '⏸', completed: '✅', archived: '📦' };\n\nconst fmtMilestone = (ms) => {\n  if (!ms) return '<i>No milestone set</i>';\n  const statusLabel = ms.status ? ms.status.replace(/_/g, ' ') : '—';\n  return `${ms.title || 'Untitled'} — <i>${statusLabel}</i> (${ms.progress_pct ?? 0}%)`;\n};\n\nfor (const intern of grouped.interns) {\n  const lines = [\n    `<b>Control Hub | Weekly Projects Digest</b>`,\n    ``,\n    `📅 <b>Week of:</b> ${grouped.weekStart}`,\n    `🏢 <b>Department:</b> ${intern.department}`,\n    ``,\n    div,\n    ``,\n    `👤 <b>${intern.name}</b>`,\n    `📊 <b>Total Projects:</b> ${intern.totalProjects}`,\n  ];\n\n  const projects = Array.isArray(intern.projects) ? intern.projects : [];\n  for (const proj of projects) {\n    const he = healthEmoji[proj.health] || '❓';\n    const se = statusEmoji[proj.status] || '❓';\n    lines.push(``);\n    lines.push(`📁 <b>${proj.name}</b>  ${se} ${he}`);\n    lines.push(`  📈 Progress: <b>${proj.progress_pct ?? 0}%</b>  |  🏅 Pts: <b>${proj.points_total ?? 0}</b>`);\n    lines.push(`  📌 Milestone: ${fmtMilestone(proj.monthly_milestone)}`);\n  }\n\n  lines.push(``);\n  lines.push(div);\n\n  output.push({ json: { telegramText: lines.join('\\n') } });\n}\n\nreturn output;"
+      },
+      "id": "build-individual-messages",
+      "name": "Build Individual Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2260, 280]
+    },
+    {
+      "parameters": {
+        "chatId": "6708968435",
+        "text": "={{ $json.telegramText }}",
+        "resource": "message",
+        "operation": "sendMessage",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "send-individual-telegram",
+      "name": "Send Individual Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2480, 280],
+      "credentials": {
+        "telegramApi": {
+          "id": "br7oYixc6HEh3DQc",
+          "name": "Control Hub Notifications"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const grouped = $('Merge Run State').first().json;\nreturn [{ json: grouped }];"
+      },
+      "id": "collect-after-sends",
+      "name": "Collect After Sends",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2700, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-5.4-mini\",\n  \"max_completion_tokens\": 1500,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You transform raw intern weekly project data into an ultra-brief executive digest sent via Telegram to company owners.\\n\\nSTRICT RULES:\\n1. COMPRESSION: For each intern write ONE short paragraph — total active projects, key progress highlights across milestones, and any risks (at_risk or overdue health).\\n2. SCANNABILITY: No redundant stats. Leadership cares about momentum, milestone completion, and blockers.\\n3. STRUCTURE: Group strictly by Department. Optimize for narrow mobile screens.\\n4. NO JARGON: Plain business English. Translate progress percentages into plain language (e.g. '65% complete').\\n\\nOutput ONLY valid Telegram HTML. Supported tags: <b>, <i>. No markdown, no asterisks.\\n\\nUse this EXACT structure:\\n\\n🗓 <b>Weekly Projects Digest</b> | [week_start]\\n━━━━━━━━━━━━━━━━━━\\n\\n🏢 <b>[Department Name]</b>\\n• <b>[Intern Name]</b> ([N] project[s])\\n  ↳ <i>Progress:</i> [Single sentence on overall project momentum and milestone status].\\n  ↳ <i>Risks:</i> [None OR the specific at-risk/overdue project and why in one sentence].\\n\\n[repeat for each intern in the department]\\n━━━━━━━━━━━━━━━━━━\\n[repeat for each department]\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Transform this intern weekly project dataset into an executive digest. Week of: ' + $json.weekStart + '\\n\\nDataset:\\n' + JSON.stringify($json.interns)) }}\n    }\n  ]\n}",
+        "options": {
+          "continueOnFail": true,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "summarize-with-ai",
+      "name": "Summarize With AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2920, 280],
+      "credentials": {
+        "openAiApi": {
+          "id": "iuc44Cp6qiyVISxA",
+          "name": "Control Hub EOD Summarizer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const grouped = $('Merge Run State').first().json;\nconst aiResponse = items[0]?.json;\nconst aiText = aiResponse?.choices?.[0]?.message?.content?.trim();\n\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst healthEmoji = { on_track: '✅', at_risk: '⚠️', overdue: '🔴' };\n\n// Fallback: build a compact summary template\nconst lines = [\n  `🗓 <b>Weekly Projects Digest</b> | ${grouped.weekStart}`,\n  div,\n];\n\n// Group interns by department for the fallback\nconst deptMap = new Map();\nfor (const intern of grouped.interns) {\n  if (!deptMap.has(intern.department)) deptMap.set(intern.department, []);\n  deptMap.get(intern.department).push(intern);\n}\n\nfor (const [dept, deptInterns] of deptMap) {\n  lines.push('');\n  lines.push(`🏢 <b>${dept.toUpperCase()}</b>`);\n  for (const intern of deptInterns) {\n    const projects = Array.isArray(intern.projects) ? intern.projects : [];\n    const risks = projects.filter(p => p.health === 'at_risk' || p.health === 'overdue');\n    const progressSummary = projects.length > 0\n      ? projects.map(p => `${p.name} (${p.progress_pct ?? 0}%)`).join(', ')\n      : 'No active projects';\n    const riskText = risks.length > 0\n      ? risks.map(p => `${p.name} — ${(p.health || '').replace(/_/g, ' ')}`).join('; ')\n      : 'None';\n    lines.push(`• <b>${intern.name}</b> (${intern.totalProjects} project${intern.totalProjects !== 1 ? 's' : ''})`);\n    lines.push(`  ↳ <i>Progress:</i> ${progressSummary}.`);\n    lines.push(`  ↳ <i>Risks:</i> ${riskText}.`);\n  }\n  lines.push('');\n  lines.push(div);\n}\n\nreturn [{\n  json: {\n    ...grouped,\n    telegramText: aiText || lines.join('\\n').trim(),\n    usedAiSummary: Boolean(aiText)\n  }\n}];"
+      },
+      "id": "build-telegram-message",
+      "name": "Build Telegram Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3140, 280]
+    },
+    {
+      "parameters": {
+        "chatId": "6708968435",
+        "text": "={{ $json.telegramText }}",
+        "resource": "message",
+        "operation": "sendMessage",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "send-telegram",
+      "name": "Send Telegram Digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [3360, 280],
+      "credentials": {
+        "telegramApi": {
+          "id": "br7oYixc6HEh3DQc",
+          "name": "Control Hub Notifications"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/intern_eod_digest_runs?on_conflict=report_date,channel,destination_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"report_date\": \"{{ $('Build Telegram Message').first().json.weekStart }}\",\n  \"channel\": \"telegram\",\n  \"destination_key\": \"{{ $('Build Telegram Message').first().json.destinationKey }}\",\n  \"workflow_execution_id\": \"{{ $execution.id }}\",\n  \"status\": \"{{ $json.result.message_id ? 'sent' : 'failed' }}\",\n  \"sent_at\": {{ $json.result.message_id ? ('\"' + $now.toISO() + '\"') : 'null' }},\n  \"error_message\": {{ $json.result.message_id ? 'null' : '\"Telegram delivery failed\"' }},\n  \"summary_json\": {\n    \"totalInterns\": {{ $('Build Telegram Message').first().json.totalInterns }},\n    \"totalProjects\": {{ $('Build Telegram Message').first().json.totalProjects }},\n    \"usedAiSummary\": {{ $('Build Telegram Message').first().json.usedAiSummary }},\n    \"telegramMessageId\": {{ $json.result.message_id ?? 'null' }}\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "record-run",
+      "name": "Record Digest Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3580, 280],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] Control Hub Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://zihdtxpvugdphieujhzk.supabase.co/rest/v1/intern_eod_digest_runs?on_conflict=report_date,channel,destination_key",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sb_publishable_desXdUKwQjsFPFUFYVLNPg_57UQsOdC"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"report_date\": \"{{ $json.weekStart }}\",\n  \"channel\": \"telegram\",\n  \"destination_key\": \"{{ $json.destinationKey }}\",\n  \"workflow_execution_id\": \"{{ $execution.id }}\",\n  \"status\": \"skipped\",\n  \"summary_json\": {\n    \"reason\": \"no-active-intern-projects\",\n    \"totalInterns\": {{ $json.totalInterns }},\n    \"totalProjects\": {{ $json.totalProjects }}\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "record-skip-no-data",
+      "name": "Record Skip (No Data)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1600, 420],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "8PiOwCGuX9Imored",
+          "name": "[Dev] Control Hub Supabase Service Role"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "finish-no-data",
+      "name": "No Active Intern Projects",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1820, 420]
+    }
+  ],
+  "connections": {
+    "Weekly Trigger (09:00 PHT Mon)": {
+      "main": [
+        [{ "node": "Set Report Context", "type": "main", "index": 0 }]
+      ]
+    },
+    "Set Report Context": {
+      "main": [
+        [{ "node": "Fetch Digest Rows", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Digest Rows": {
+      "main": [
+        [{ "node": "Collect Rows", "type": "main", "index": 0 }]
+      ]
+    },
+    "Collect Rows": {
+      "main": [
+        [{ "node": "Group Interns", "type": "main", "index": 0 }]
+      ]
+    },
+    "Group Interns": {
+      "main": [
+        [{ "node": "Has Active Interns?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Has Active Interns?": {
+      "main": [
+        [{ "node": "Check Existing Run", "type": "main", "index": 0 }],
+        [{ "node": "Record Skip (No Data)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Existing Run": {
+      "main": [
+        [{ "node": "Merge Run State", "type": "main", "index": 0 }]
+      ]
+    },
+    "Merge Run State": {
+      "main": [
+        [{ "node": "Already Sent?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Already Sent?": {
+      "main": [
+        [{ "node": "Skip Already Sent", "type": "main", "index": 0 }],
+        [{ "node": "Build Individual Messages", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Individual Messages": {
+      "main": [
+        [{ "node": "Send Individual Telegram", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Individual Telegram": {
+      "main": [
+        [{ "node": "Collect After Sends", "type": "main", "index": 0 }]
+      ]
+    },
+    "Collect After Sends": {
+      "main": [
+        [{ "node": "Summarize With AI", "type": "main", "index": 0 }]
+      ]
+    },
+    "Summarize With AI": {
+      "main": [
+        [{ "node": "Build Telegram Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Telegram Message": {
+      "main": [
+        [{ "node": "Send Telegram Digest", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Telegram Digest": {
+      "main": [
+        [{ "node": "Record Digest Run", "type": "main", "index": 0 }]
+      ]
+    },
+    "Record Skip (No Data)": {
+      "main": [
+        [{ "node": "No Active Intern Projects", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-06-03T00:00:00.000Z",
+  "versionId": "1"
+}

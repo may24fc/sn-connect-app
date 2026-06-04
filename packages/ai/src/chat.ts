@@ -246,7 +246,7 @@ export async function chat(
 
   const response = await client.chat.completions.create({
     model: mergedConfig.model,
-    max_tokens: mergedConfig.maxTokens,
+    max_completion_tokens: mergedConfig.maxTokens,
     temperature: mergedConfig.temperature,
     messages: [
       { role: 'system', content: systemPrompt },
@@ -327,7 +327,7 @@ export async function* chatStream(
   try {
     const stream = await client.chat.completions.create({
       model: mergedConfig.model,
-      max_tokens: mergedConfig.maxTokens,
+      max_completion_tokens: mergedConfig.maxTokens,
       temperature: mergedConfig.temperature,
       stream: true,
       stream_options: { include_usage: true },

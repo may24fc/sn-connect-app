@@ -152,7 +152,7 @@ async function classifyComplexity(openai: OpenAI, query: string): Promise<Comple
   try {
     const response = await openai.chat.completions.create({
       model: FAST_MODEL,
-      max_tokens: 60,
+      max_completion_tokens: 60,
       temperature: 0,
       response_format: { type: 'json_object' },
       messages: [
@@ -488,7 +488,7 @@ export async function POST(request: NextRequest) {
 
                 const stream = await openai.chat.completions.create({
                   model: selectedModel,
-                  max_tokens: complexity.complexity === 'high' ? 2048 : 1024,
+                  max_completion_tokens: complexity.complexity === 'high' ? 2048 : 1024,
                   temperature: 0.3,
                   stream: true,
                   stream_options: { include_usage: true },

@@ -25,6 +25,8 @@ type SummarySource = {
   snapshotHash: string;
 };
 
+type SummaryCohort = 'employees' | 'interns';
+
 export type PerformanceEvaluationSummaryRecord = {
   evaluationKind: PerformanceEvaluationDraftKind;
   periodKey: string;
@@ -152,6 +154,58 @@ function buildSnapshotHash(records: Array<Record<string, unknown>>): string {
   return createHash('sha256').update(JSON.stringify(records)).digest('hex');
 }
 
+function getDepartmentRoleLabel(record: Record<string, unknown>): string {
+  const departmentRole = record['department_role'];
+  return typeof departmentRole === 'string' ? departmentRole : 'Unspecified';
+}
+
+function getSummaryCohort(record: Record<string, unknown>): SummaryCohort {
+  return /intern/i.test(getDepartmentRoleLabel(record)) ? 'interns' : 'employees';
+}
+
+function buildRoleDistribution(records: Array<Record<string, unknown>>): Record<string, number> {
+  return records.reduce<Record<string, number>>((accumulator, record) => {
+    const role = getDepartmentRoleLabel(record);
+    accumulator[role] = (accumulator[role] ?? 0) + 1;
+    return accumulator;
+  }, {});
+}
+
+function buildTimestampRange(records: Array<Record<string, unknown>>): string | null {
+  const timestamps = records
+    .flatMap((record) => [record['submitted_at'], record['updated_at']])
+    .filter((value): value is string => typeof value === 'string')
+    .sort();
+
+  if (timestamps.length === 0) {
+    return null;
+  }
+
+  return `${timestamps[0]} to ${timestamps[timestamps.length - 1]}`;
+}
+
+function buildPromptContext(records: Array<Record<string, unknown>>): {
+  overview: Record<string, unknown>;
+  employeeRecords: Array<Record<string, unknown>>;
+  internRecords: Array<Record<string, unknown>>;
+} {
+  const employeeRecords = records.filter((record) => getSummaryCohort(record) === 'employees');
+  const internRecords = records.filter((record) => getSummaryCohort(record) === 'interns');
+
+  return {
+    overview: {
+      totalSubmissions: records.length,
+      employeeSubmissions: employeeRecords.length,
+      internSubmissions: internRecords.length,
+      employeeRoleDistribution: buildRoleDistribution(employeeRecords),
+      internRoleDistribution: buildRoleDistribution(internRecords),
+      sourceTimestampRange: buildTimestampRange(records),
+    },
+    employeeRecords,
+    internRecords,
+  };
+}
+
 function extractSentimentDistribution(summaryMarkdown: string): Record<string, number> | null {
   const positive = summaryMarkdown.match(/Positive \((\d+)%\)/i);
   const neutral = summaryMarkdown.match(/Neutral \((\d+)%\)/i);
@@ -240,42 +294,81 @@ function buildSummaryPrompt(
   periodKey: string,
   records: Array<Record<string, unknown>>
 ): string {
+  const promptContext = buildPromptContext(records);
+
   return [
     'You are an expert Data Analyst and Production-Ready AI Summarization Engine.',
     `Evaluation form type: ${SUMMARY_KIND_LABELS[evaluationKind]}.`,
     `Reporting period: ${formatPeriodLabel(evaluationKind, periodKey)}.`,
     `Total submissions analyzed: ${records.length}.`,
     'All source data is anonymized. Do not infer identities or add data that is not present.',
+    'Your job is to extract the significant operational details, recurring risks, wins, and actionable signals from a large batch of submissions.',
+    'Analyze employees and interns separately first, then synthesize the cross-cohort picture.',
+    'Use the dataset overview to ground your summary before reading the detailed submissions.',
+    'Header customization note: Lines beginning with "###" or "####" indicate Markdown header levels and their labels are customizable. Render them as proper Markdown headers in the output (for example: "#### Employees") — do not treat the hash characters as literal inline text. You may adjust header labels for clarity but preserve the header hierarchy and structure.',
     'You must follow this markdown schema exactly:',
     '## Executive Form Summary',
-    '**Total Submissions Analyzed:** [Insert Count]',
-    '**Analysis Timestamp:** [Insert Date/Time]',
     '',
-    '### 1. Key Takeaways & Recurring Themes',
-    '* **[Theme 1 Title]:** Brief explanation of what users are saying, backed by a generalized synthesis of quotes or data.',
-    '* **[Theme 2 Title]:** Brief explanation of the second most common pattern.',
+    '### 1. Cohort Snapshot',
+    '#### Employees',
+    '* **Volume & Representation:** Explain how many employee submissions were analyzed and what role mix stands out.',
+    '* **Most Material Signals:** Summarize the strongest recurring themes, wins, or blockers for employees.',
+    '#### Interns',
+    '* **Volume & Representation:** Explain how many intern submissions were analyzed and what role mix stands out.',
+    '* **Most Material Signals:** Summarize the strongest recurring themes, wins, or blockers for interns.',
     '',
-    '### 2. Sentiment Analytics',
+    '### 2. Key Takeaways & Recurring Themes',
+    '#### Employees',
+    '* **[Theme 1 Title]:** Brief explanation of what employees are saying, backed by a generalized synthesis of quotes or data.',
+    '* **[Theme 2 Title]:** Brief explanation of the second most common employee pattern.',
+    '#### Interns',
+    '* **[Theme 1 Title]:** Brief explanation of what interns are saying, backed by a generalized synthesis of quotes or data.',
+    '* **[Theme 2 Title]:** Brief explanation of the second most common intern pattern.',
+    '#### Cross-Cohort Alignment',
+    '* **Shared Signal:** Call out the most important overlap or divergence between employees and interns.',
+    '',
+    '### 3. Sentiment Analytics',
+    '#### Employees',
+    '* 🟢 **Positive (X%):** Summary of positive employee feedback highlights.',
+    '* 🟡 **Neutral (Y%):** Summary of passive or neutral employee feedback.',
+    '* 🔴 **Negative (Z%):** Critical employee issues or blockers raised.',
+    '#### Interns',
+    '* 🟢 **Positive (X%):** Summary of positive intern feedback highlights.',
+    '* 🟡 **Neutral (Y%):** Summary of passive or neutral intern feedback.',
+    '* 🔴 **Negative (Z%):** Critical intern issues or blockers raised.',
+    '#### Overall',
     '* 🟢 **Positive (X%):** Summary of positive feedback highlights.',
     '* 🟡 **Neutral (Y%):** Summary of passive or neutral feedback.',
     '* 🔴 **Negative (Z%):** Critical issues or blockers raised by users.',
     '',
-    '### 3. Critical Outliers & Edge Cases',
-    '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact piece of unique user feedback]" — *Context/Impact*',
+    '### 4. Critical Outliers & Edge Cases',
+    '#### Employees',
+    '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact employee signal]" — *Context/Impact*',
+    '#### Interns',
+    '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact intern signal]" — *Context/Impact*',
     '',
-    '### 4. Recommended Actions',
+    '### 5. Recommended Actions',
     '1. **Immediate Fix:** [Action item derived from high-frequency complaints]',
-    '2. **Strategic Adjustments:** [Long-term roadmap suggestion based on user desires]',
-    '3. **Operational Follow-through:** [Action item grounded in the evidence]',
+    '2. **Employee Follow-through:** [Action item grounded in employee evidence]',
+    '3. **Intern Follow-through:** [Action item grounded in intern evidence]',
+    '4. **Strategic Adjustments:** [Long-term roadmap suggestion based on combined signals]',
     '',
     'Guardrails:',
     '- Do not include any introductory prose before the H2 heading.',
     '- Do not fabricate counts, percentages, or themes; estimate sentiment only from the provided submissions.',
     '- Keep the tone objective and professional.',
     '- Strip or avoid any PII.',
+    '- If one cohort has zero submissions, explicitly state that and do not invent findings for it.',
+    '- Prioritize repeated operational details, blockers, requested support, and concrete wins over vague commentary.',
     '',
-    'Anonymized submissions JSON:',
-    JSON.stringify(records),
+    'Dataset overview JSON:',
+    JSON.stringify(promptContext.overview),
+    '',
+    'Employees submissions JSON:',
+    JSON.stringify(promptContext.employeeRecords),
+    '',
+    'Interns submissions JSON:',
+    JSON.stringify(promptContext.internRecords),
   ].join('\n');
 }
 

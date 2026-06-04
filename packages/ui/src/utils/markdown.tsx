@@ -5,7 +5,7 @@ import * as React from 'react';
 export type MarkdownBlock =
   | { type: 'paragraph'; lines: string[] }
   | { type: 'list'; items: string[] }
-  | { type: 'heading'; level: 2 | 3; text: string }
+  | { type: 'heading'; level: 2 | 3 | 4; text: string }
   | { type: 'blockquote'; lines: string[] }
   | { type: 'code'; code: string; lang?: string };
 
@@ -15,82 +15,112 @@ export type MarkdownBlock =
  */
 export function parseMarkdownBlocks(content: string): MarkdownBlock[] {
   const blocks: MarkdownBlock[] = [];
-  for (const rawBlock of content.split(/\n{2,}/)) {
-    const raw = rawBlock.replace(/\r/g, '').trim();
-    if (!raw) continue;
+  const lines = content.replace(/\r/g, '').split('\n');
+  let paragraphLines: string[] = [];
+  let listItems: string[] = [];
+  let quoteLines: string[] = [];
+  let codeFenceLang: string | undefined;
+  let codeLines: string[] = [];
 
-    // Code fence block
-    if (/^```/.test(raw)) {
-      const fenceLines = rawBlock.split('\n');
-      if (fenceLines.length === 0) continue;
-      const first = (fenceLines[0] || '').trim();
-      const langCandidate = first.replace(/^```\s*/, '').trim();
-      const lang = langCandidate === '' ? undefined : langCandidate;
-      const codeLines = fenceLines.slice(1, fenceLines.length - 1).join('\n');
-      if (lang) {
-        blocks.push({ type: 'code', code: codeLines, lang });
-      } else {
-        blocks.push({ type: 'code', code: codeLines });
-      }
-      continue;
+  function flushParagraph(): void {
+    if (paragraphLines.length > 0) {
+      blocks.push({ type: 'paragraph', lines: [...paragraphLines] });
+      paragraphLines = [];
     }
-
-    const lines = rawBlock.split('\n').filter((l) => l.trim() !== '');
-    if (lines.length === 0) continue;
-
-    // Heading on first line (allow following paragraph lines)
-    const firstLine = lines[0] ?? '';
-    if (/^##\s+/.test(firstLine)) {
-      blocks.push({ type: 'heading', level: 2, text: firstLine.replace(/^##\s+/, '').trim() });
-      if (lines.length === 1) continue;
-      // process remaining lines in this block as a paragraph/list
-      const remainder = lines.slice(1);
-      if (remainder.every((l) => /^>\s?/.test(l))) {
-        blocks.push({ type: 'blockquote', lines: remainder.map((l) => l.replace(/^>\s?/, '').trim()) });
-        continue;
-      }
-      // fall through to normal paragraph/list handling with remainder
-      lines.splice(0, lines.length, ...remainder);
-    }
-    if (/^###\s+/.test(firstLine)) {
-      blocks.push({ type: 'heading', level: 3, text: firstLine.replace(/^###\s+/, '').trim() });
-      if (lines.length === 1) continue;
-      const remainder = lines.slice(1);
-      if (remainder.every((l) => /^>\s?/.test(l))) {
-        blocks.push({ type: 'blockquote', lines: remainder.map((l) => l.replace(/^>\s?/, '').trim()) });
-        continue;
-      }
-      lines.splice(0, lines.length, ...remainder);
-    }
-
-    // Blockquote (all lines starting with >)
-    if (lines.every((l) => /^>\s?/.test(l))) {
-      blocks.push({ type: 'blockquote', lines: lines.map((l) => l.replace(/^>\s?/, '').trim()) });
-      continue;
-    }
-
-    let listItems: string[] = [];
-    let paraLines: string[] = [];
-
-    for (const line of lines) {
-      if (/^[-*]\s/.test(line)) {
-        if (paraLines.length > 0) {
-          blocks.push({ type: 'paragraph', lines: [...paraLines] });
-          paraLines = [];
-        }
-        listItems.push(line.replace(/^[-*]\s+/, ''));
-      } else {
-        if (listItems.length > 0) {
-          blocks.push({ type: 'list', items: [...listItems] });
-          listItems = [];
-        }
-        paraLines.push(line);
-      }
-    }
-
-    if (listItems.length > 0) blocks.push({ type: 'list', items: listItems });
-    if (paraLines.length > 0) blocks.push({ type: 'paragraph', lines: paraLines });
   }
+
+  function flushList(): void {
+    if (listItems.length > 0) {
+      blocks.push({ type: 'list', items: [...listItems] });
+      listItems = [];
+    }
+  }
+
+  function flushQuote(): void {
+    if (quoteLines.length > 0) {
+      blocks.push({ type: 'blockquote', lines: [...quoteLines] });
+      quoteLines = [];
+    }
+  }
+
+  function flushAll(): void {
+    flushParagraph();
+    flushList();
+    flushQuote();
+  }
+
+  for (const rawLine of lines) {
+    const trimmedLine = rawLine.trim();
+
+    if (codeFenceLang !== undefined) {
+      if (/^```/.test(trimmedLine)) {
+        blocks.push(
+          codeFenceLang
+            ? { type: 'code', code: codeLines.join('\n'), lang: codeFenceLang }
+            : { type: 'code', code: codeLines.join('\n') }
+        );
+        codeFenceLang = undefined;
+        codeLines = [];
+      } else {
+        codeLines.push(rawLine);
+      }
+      continue;
+    }
+
+    if (/^```/.test(trimmedLine)) {
+      flushAll();
+      const langCandidate = trimmedLine.replace(/^```\s*/, '').trim();
+      codeFenceLang = langCandidate === '' ? '' : langCandidate;
+      codeLines = [];
+      continue;
+    }
+
+    if (trimmedLine === '') {
+      flushAll();
+      continue;
+    }
+
+    const headingMatch = trimmedLine.match(/^(#{2,4})\s+(.+)$/);
+    if (headingMatch) {
+      flushAll();
+      const headingHashes = headingMatch[1] ?? '##';
+      const headingText = headingMatch[2] ?? '';
+      blocks.push({
+        type: 'heading',
+        level: headingHashes.length as 2 | 3 | 4,
+        text: headingText.trim(),
+      });
+      continue;
+    }
+
+    if (/^>\s?/.test(trimmedLine)) {
+      flushParagraph();
+      flushList();
+      quoteLines.push(trimmedLine.replace(/^>\s?/, '').trim());
+      continue;
+    }
+
+    if (/^[-*]\s+/.test(trimmedLine)) {
+      flushParagraph();
+      flushQuote();
+      listItems.push(trimmedLine.replace(/^[-*]\s+/, ''));
+      continue;
+    }
+
+    flushList();
+    flushQuote();
+    paragraphLines.push(trimmedLine);
+  }
+
+  if (codeFenceLang !== undefined) {
+    blocks.push(
+      codeFenceLang
+        ? { type: 'code', code: codeLines.join('\n'), lang: codeFenceLang }
+        : { type: 'code', code: codeLines.join('\n') }
+    );
+  }
+
+  flushAll();
   return blocks;
 }
 
@@ -149,10 +179,17 @@ export function MarkdownContent({
               </h2>
             );
           }
+          if (block.level === 3) {
+            return (
+              <h3 key={idx} className="text-sm font-semibold">
+                {renderInlineRich(block.text)}
+              </h3>
+            );
+          }
           return (
-            <h3 key={idx} className="text-sm font-semibold">
+            <h4 key={idx} className="text-sm font-medium text-foreground/85">
               {renderInlineRich(block.text)}
-            </h3>
+            </h4>
           );
         }
 

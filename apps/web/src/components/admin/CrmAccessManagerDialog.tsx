@@ -28,6 +28,12 @@ interface CrmAccessManagerDialogProps {
   label: string;
 }
 
+const MARKETING_DEPARTMENT = 'marketing';
+
+function isMarketingDepartment(value: string | null | undefined): boolean {
+  return typeof value === 'string' && value.trim().toLowerCase().includes(MARKETING_DEPARTMENT);
+}
+
 function formatRole(role: string | null): string {
   if (!role) {
     return 'Unknown role';
@@ -51,6 +57,7 @@ export function CrmAccessManagerDialog({
   const directoryQuery = useDirectory({
     search,
     roles: ['employee', 'intern'],
+    department: MARKETING_DEPARTMENT,
     sortBy: 'full_name',
     sortOrder: 'asc',
     page: 1,
@@ -64,7 +71,10 @@ export function CrmAccessManagerDialog({
   const grantedUserIds = useMemo(() => new Set(grants.map((grant) => grant.userId)), [grants]);
 
   const candidates = useMemo(() => {
-    return (directoryQuery.data?.data ?? []).filter((entry) => !grantedUserIds.has(entry.user_id));
+    return (directoryQuery.data?.data ?? []).filter(
+      (entry) =>
+        isMarketingDepartment(entry.department_name) && !grantedUserIds.has(entry.user_id)
+    );
   }, [directoryQuery.data?.data, grantedUserIds]);
 
   const isLoading = directoryQuery.isLoading || grantsQuery.isLoading;
@@ -109,7 +119,7 @@ export function CrmAccessManagerDialog({
         <DialogHeader>
           <DialogTitle>Manage {label} access</DialogTitle>
           <DialogDescription>
-            Grant employee or intern accounts access to this specific CRM tracker without changing their primary role.
+            Grant Marketing employee or intern accounts access to this specific CRM tracker without changing their primary role.
           </DialogDescription>
         </DialogHeader>
 
@@ -181,7 +191,7 @@ export function CrmAccessManagerDialog({
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Grant access</h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Search existing employee and intern accounts, then grant access to {label}.
+                Search existing Marketing employee and intern accounts, then grant access to {label}.
               </p>
             </div>
 
@@ -210,8 +220,8 @@ export function CrmAccessManagerDialog({
             ) : candidates.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border px-4 py-6 text-sm text-zinc-500 dark:text-zinc-400">
                 {search
-                  ? 'No matching employee or intern accounts found.'
-                  : 'Everyone in the current result set already has access to this tracker.'}
+                  ? 'No matching Marketing employee or intern accounts found.'
+                  : 'Everyone in the current Marketing result set already has access to this tracker.'}
               </div>
             ) : (
               <div className="space-y-2">

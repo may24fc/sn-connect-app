@@ -112,7 +112,7 @@ async function generateSummary(transcript: string): Promise<string> {
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+        max_tokens_to_sample: 1024,
         messages: [{ role: 'user', content: prompt }],
       }),
       signal: AbortSignal.timeout(60_000),
