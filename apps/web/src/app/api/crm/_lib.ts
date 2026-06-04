@@ -126,7 +126,7 @@ export async function listCrmAccessGrants(
 
   const { data: userRows, error: usersError } = await admin
     .from('users')
-    .select('id, role, full_name, first_name, last_name')
+    .select('id, role')
     .in('id', [...new Set([...userIds, ...granterIds])])
     .is('deleted_at', null);
 

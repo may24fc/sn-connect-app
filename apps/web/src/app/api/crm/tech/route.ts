@@ -81,23 +81,17 @@ export async function GET(request: NextRequest) {
     let creatorNameById = new Map<string, string>();
 
     if (creatorIds.length > 0) {
-      const { data: creators, error: creatorsError } = await supabaseAdmin
-        .from('users')
-        .select('id, full_name, first_name, last_name')
-        .in('id', creatorIds);
+      // Prefer the `employee_directory` view for display names (guaranteed `full_name`)
+      const { data: directoryRows, error: directoryError } = await supabaseAdmin
+        .from('employee_directory')
+        .select('user_id, full_name')
+        .in('user_id', creatorIds);
 
-      if (creatorsError) {
-        console.error('GET /api/crm/tech creator lookup error:', creatorsError);
+      if (directoryError) {
+        console.error('GET /api/crm/tech creator directory lookup error:', directoryError);
       } else {
         creatorNameById = new Map(
-          (creators || []).map((creator) => {
-            const fullName =
-              creator.full_name ||
-              [creator.first_name, creator.last_name].filter(Boolean).join(' ').trim() ||
-              'Unknown user';
-
-            return [creator.id, fullName];
-          })
+          (directoryRows || []).map((entry) => [entry.user_id, (entry.full_name || 'Unknown user').trim()])
         );
       }
     }
