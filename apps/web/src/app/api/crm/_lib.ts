@@ -157,18 +157,19 @@ export async function listCrmAccessGrants(
 
   return grantRows.map((row) => {
     const userRow = userById.get(row.user_id);
-    const granter = row.granted_by ? userById.get(row.granted_by) : null;
     const employee = employeeByUserId.get(row.user_id);
-    const fullName =
-      userRow?.full_name ||
-      [employee?.first_name, employee?.middle_name, employee?.last_name].filter(Boolean).join(' ').trim() ||
-      [userRow?.first_name, userRow?.last_name].filter(Boolean).join(' ').trim() ||
-      authEmailById.get(row.user_id) ||
-      'CRM user';
-    const grantedByName =
-      granter?.full_name ||
-      [granter?.first_name, granter?.last_name].filter(Boolean).join(' ').trim() ||
-      null;
+
+    // Prefer the `employees` table (or `employee_directory` view) for display names
+    const fullName = (
+      employee
+        ? [employee.first_name, employee.middle_name, employee.last_name].filter(Boolean).join(' ').trim()
+        : authEmailById.get(row.user_id) ?? null
+    ) || 'CRM user';
+
+    const granterEmployee = row.granted_by ? employeeByUserId.get(row.granted_by) : null;
+    const grantedByName = granterEmployee
+      ? [granterEmployee.first_name, granterEmployee.last_name].filter(Boolean).join(' ').trim() || null
+      : null;
 
     return {
       id: row.id,
