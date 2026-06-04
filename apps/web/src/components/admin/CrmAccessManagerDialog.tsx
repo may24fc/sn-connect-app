@@ -57,7 +57,6 @@ export function CrmAccessManagerDialog({
   const directoryQuery = useDirectory({
     search,
     roles: ['employee', 'intern'],
-    department: MARKETING_DEPARTMENT,
     sortBy: 'full_name',
     sortOrder: 'asc',
     page: 1,
