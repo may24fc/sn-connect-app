@@ -1,7 +1,7 @@
 'use client';
 
 import { type PerformanceEvaluationDraftKind } from '@/lib/schemas/performance.schema';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 type SummaryRecord = {
   evaluationKind: PerformanceEvaluationDraftKind;
@@ -49,6 +49,13 @@ export function useEvaluationSummary({
   const [isLoadingStatus, setIsLoadingStatus] = useState(enabled);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isViewingSummary, setIsViewingSummary] = useState(false);
+  const onErrorRef = useRef(onError);
+
+  // keep latest onError in a ref so we don't re-run effects when parent
+  // passes a new inline function on every render
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   useEffect(() => {
     setIsViewingSummary(false);
@@ -89,7 +96,8 @@ export function useEvaluationSummary({
           return;
         }
 
-        onError(
+        // use ref to call the latest onError without forcing effect re-run
+        onErrorRef.current?.(
           'Unable to load saved summary',
           error instanceof Error ? error.message : 'Please try again.'
         );
@@ -105,7 +113,7 @@ export function useEvaluationSummary({
     return () => {
       active = false;
     };
-  }, [enabled, evaluationKind, onError, periodKey]);
+  }, [enabled, evaluationKind, periodKey]);
 
   async function generateSummary(forceRegenerate = false): Promise<void> {
     setIsGenerating(true);
@@ -133,7 +141,7 @@ export function useEvaluationSummary({
       setHasSourceData(true);
       setIsViewingSummary(true);
     } catch (error) {
-      onError(
+      onErrorRef.current?.(
         'Unable to generate summary',
         error instanceof Error ? error.message : 'Please try again.'
       );
