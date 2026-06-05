@@ -673,10 +673,22 @@ function MonthColumn({
     }
   }
 
-  const canComplete = canEdit && month.status !== 'approved' && month.progress_pct >= 100;
-  const canManage = canEdit && month.status !== 'approved';
-  const [showMonthTasks, setShowMonthTasks] = useState(weeks.length === 0 || !canManage);
   const monthChecklistItems = monthChecklistResp?.data ?? [];
+
+  // If a milestone was approved but new checklist items were added afterwards,
+  // surface that to the UI by showing an "in_progress" badge and recomputing
+  // progress from the checklist so the user sees accurate state immediately.
+  const hasIncompleteChecklist = monthChecklistItems.some((it) => it.status !== 'done');
+  const displayStatus = month.status === 'approved' && hasIncompleteChecklist ? 'in_progress' : month.status;
+  const displayProgressPct =
+    monthChecklistItems.length > 0
+      ? (monthChecklistItems.filter((it) => it.status === 'done').length / monthChecklistItems.length) * 100
+      : month.progress_pct;
+
+  const canComplete = canEdit && month.status !== 'approved' && displayProgressPct >= 100;
+  // Allow editing/deleting even when marked approved (user requested milestones stay editable).
+  const canManage = canEdit;
+  const [showMonthTasks, setShowMonthTasks] = useState(weeks.length === 0 || month.status === 'approved');
 
   const maxWeeks = useMemo(() => {
     const start = new Date(month.period_start);
@@ -687,10 +699,10 @@ function MonthColumn({
   }, [month.period_start, month.period_end]);
 
   useEffect(() => {
-    if (weeks.length === 0 || !canManage) {
+    if (weeks.length === 0 || month.status === 'approved') {
       setShowMonthTasks(true);
     }
-  }, [canManage, weeks.length]);
+  }, [month.status, weeks.length]);
 
   return (
     <>
@@ -726,14 +738,14 @@ function MonthColumn({
               Due {new Date(month.due_date).toLocaleDateString()}
             </p>
             <div className="mt-2 flex items-center gap-2">
-              <Progress value={month.progress_pct} className="h-1.5 flex-1" />
+              <Progress value={displayProgressPct} className="h-1.5 flex-1" />
               <span className="text-xs tabular-nums text-zinc-500">
-                {Math.round(month.progress_pct)}%
+                {Math.round(displayProgressPct)}%
               </span>
             </div>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <MilestoneStatusBadge status={month.status} />
+            <MilestoneStatusBadge status={displayStatus} />
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
             {canComplete ? (
@@ -742,7 +754,7 @@ function MonthColumn({
                 Complete
               </Button>
             ) : null}
-            {canEdit && month.status !== 'approved' && maxWeeks >= 1 ? (
+            {canEdit && maxWeeks >= 1 ? (
               <div className="flex items-center gap-1.5">
                 <Button size="sm" variant="outline" onClick={onAddWeek}>
                   <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -766,7 +778,7 @@ function MonthColumn({
             <ChecklistSection
               milestone={month}
               projectId={projectId}
-              canEdit={canManage}
+              canEdit={canEdit}
             />
           ) : (
             <>
@@ -775,7 +787,8 @@ function MonthColumn({
                   key={week.id}
                   week={week}
                   projectId={projectId}
-                  canEdit={canManage}
+                  canEdit={canEdit}
+                  canEditChecklist={canEdit}
                   projectEndDate={projectEndDate}
                 />
               ))}
@@ -799,7 +812,7 @@ function MonthColumn({
                     <ChecklistSection
                       milestone={month}
                       projectId={projectId}
-                      canEdit={canManage}
+                      canEdit={canEdit}
                       showEmptyState={false}
                     />
                   </CardContent>
@@ -835,11 +848,13 @@ function WeekCard({
   week,
   projectId,
   canEdit,
+  canEditChecklist,
   projectEndDate,
 }: {
   week: MilestoneRecord;
   projectId: string;
   canEdit: boolean;
+  canEditChecklist?: boolean;
   projectEndDate: string;
 }) {
   const [open, setOpen] = useState(true);
@@ -862,7 +877,7 @@ function WeekCard({
     }
   }
 
-  const canManage = canEdit && week.status !== 'approved';
+  const canManage = canEdit;
 
   return (
     <>
@@ -918,7 +933,11 @@ function WeekCard({
           </div>
           {open ? (
             <div className="mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800">
-              <ChecklistSection milestone={week} projectId={projectId} canEdit={canEdit} />
+              <ChecklistSection
+                milestone={week}
+                projectId={projectId}
+                canEdit={canEditChecklist ?? canEdit}
+              />
             </div>
           ) : null}
         </CardContent>

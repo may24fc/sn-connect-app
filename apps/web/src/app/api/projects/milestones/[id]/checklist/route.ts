@@ -55,9 +55,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     .maybeSingle();
 
   if (!milestone) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  if (milestone.status === 'approved') {
-    return NextResponse.json({ error: 'Milestone is already approved' }, { status: 409 });
-  }
   if (!(await userCanAccessProject(supabaseAdmin, milestone.project_id, user.id, role))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

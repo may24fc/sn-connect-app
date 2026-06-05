@@ -34,9 +34,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { supabaseAdmin, supabase, user, role } = auth.context;
   const ctx = await getItemContext(supabaseAdmin, id);
   if (!ctx) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  if (ctx.milestoneStatus === 'approved') {
-    return NextResponse.json({ error: 'Milestone is already approved' }, { status: 409 });
-  }
   if (!(await userCanAccessProject(supabaseAdmin, ctx.projectId, user.id, role))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
