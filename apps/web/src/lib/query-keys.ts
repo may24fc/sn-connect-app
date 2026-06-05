@@ -549,6 +549,7 @@ export const queryKeys = {
 
   crm: {
     all: ['crm'] as const,
+    access: () => [...queryKeys.crm.all, 'access'] as const,
     accessGrants: (tracker?: 'meta_leads' | 'google_ads_leads' | 'sn_tech_inquiries') =>
       [...queryKeys.crm.all, 'access-grants', tracker ?? 'all'] as const,
     sfo: {

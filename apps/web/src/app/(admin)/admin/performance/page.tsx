@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 function getInitials(name: string): string {
   return name
@@ -204,7 +204,7 @@ export default function AdminPerformancePage(): ReactNode {
   const [search, setSearch] = useState('');
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState('accessible');
+  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [summaryMode, setSummaryMode] = useState<SummaryMode>('progress');
   const [cardSortMode, setCardSortMode] = useState<CardSortMode>('weighted_desc');
@@ -213,29 +213,22 @@ export default function AdminPerformancePage(): ReactNode {
 
   // Fetch cycles + OKRs for performance data
   const { data: cycles = [] } = usePerformanceCycles();
-  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
-  const { data: okrs = [] } = usePerformanceOKRs(activeCycle?.id);
+  const fallbackCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
+  const selectedCycle =
+    cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
+  const { data: okrs = [] } = usePerformanceOKRs(selectedCycleId || selectedCycle?.id);
+
+  useEffect(() => {
+    if (!selectedCycleId && fallbackCycle) {
+      setSelectedCycleId(fallbackCycle.id);
+    }
+  }, [fallbackCycle, selectedCycleId]);
 
   // Fetch directory entries
-  // Map status filter values to API status params
-  const statusFilterMap: Record<string, string | undefined> = {
-    all: undefined,
-    accessible: 'active,probation',
-    active: 'active',
-    probation: 'probation',
-    pending_onboarding: 'pending_onboarding',
-    awaiting_approval: 'awaiting_approval',
-    on_leave: 'on_leave',
-    terminated: 'terminated',
-  };
-
   const filters = {
     ...(search ? { search } : {}),
     ...(roleFilters.length > 0 ? { roles: roleFilters } : {}),
     ...(departmentFilters.length > 0 ? { departments: departmentFilters } : {}),
-    ...(statusFilter !== 'all' && statusFilterMap[statusFilter]
-      ? { status: statusFilterMap[statusFilter] }
-      : {}),
     page,
     pageSize,
     sortBy: 'full_name',
@@ -431,7 +424,7 @@ export default function AdminPerformancePage(): ReactNode {
       </div>
 
       {/* Current Cycle Banner */}
-      {activeCycle && (
+      {selectedCycle && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -440,13 +433,15 @@ export default function AdminPerformancePage(): ReactNode {
                   <Calendar className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="font-semibold">{activeCycle.name}</h2>
+                  <h2 className="font-semibold">{selectedCycle.name}</h2>
                   <p className="text-sm text-muted-foreground">
-                    {formatDate(activeCycle.startDate)} - {formatDate(activeCycle.endDate)}
+                    {formatDate(selectedCycle.startDate)} - {formatDate(selectedCycle.endDate)}
                   </p>
                 </div>
               </div>
-              <Badge variant="success">Active Cycle</Badge>
+              <Badge variant={selectedCycle.status === 'active' ? 'success' : 'secondary'}>
+                {selectedCycle.status === 'active' ? 'Active Cycle' : 'Selected Cycle'}
+              </Badge>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div>
@@ -454,8 +449,8 @@ export default function AdminPerformancePage(): ReactNode {
                   OKR Due
                 </p>
                 <p className="text-sm font-medium text-foreground mt-1">
-                  {activeCycle.okrSubmissionDeadline
-                    ? formatDate(activeCycle.okrSubmissionDeadline)
+                  {selectedCycle.okrSubmissionDeadline
+                    ? formatDate(selectedCycle.okrSubmissionDeadline)
                     : 'Not set'}
                 </p>
               </div>
@@ -464,8 +459,8 @@ export default function AdminPerformancePage(): ReactNode {
                   KPI Due
                 </p>
                 <p className="text-sm font-medium text-foreground mt-1">
-                  {activeCycle.kpiSubmissionDeadline
-                    ? formatDate(activeCycle.kpiSubmissionDeadline)
+                  {selectedCycle.kpiSubmissionDeadline
+                    ? formatDate(selectedCycle.kpiSubmissionDeadline)
                     : 'Not set'}
                 </p>
               </div>
@@ -474,8 +469,8 @@ export default function AdminPerformancePage(): ReactNode {
                   Self-Assessment
                 </p>
                 <p className="text-sm font-medium text-foreground mt-1">
-                  {activeCycle.selfAssessmentDeadline
-                    ? formatDate(activeCycle.selfAssessmentDeadline)
+                  {selectedCycle.selfAssessmentDeadline
+                    ? formatDate(selectedCycle.selfAssessmentDeadline)
                     : 'Not set'}
                 </p>
               </div>
@@ -520,24 +515,22 @@ export default function AdminPerformancePage(): ReactNode {
           }}
         />
         <Select
-          value={statusFilter}
+          value={selectedCycleId}
           onValueChange={(value) => {
-            setStatusFilter(value);
+            setSelectedCycleId(value);
             setPage(1);
           }}
+          disabled={cycles.length === 0}
         >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Cycle" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="accessible">Active & Probation</SelectItem>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="probation">Probation</SelectItem>
-            <SelectItem value="pending_onboarding">Pending Onboarding</SelectItem>
-            <SelectItem value="awaiting_approval">Awaiting Approval</SelectItem>
-            <SelectItem value="on_leave">On Leave</SelectItem>
-            <SelectItem value="terminated">Terminated</SelectItem>
+            {cycles.map((cycle) => (
+              <SelectItem key={cycle.id} value={cycle.id}>
+                {cycle.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">

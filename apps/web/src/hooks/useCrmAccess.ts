@@ -58,6 +58,7 @@ export function useGrantCrmAccess(tracker: CrmTrackerKey) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.crm.accessGrants(tracker) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.crm.access() });
     },
   });
 }
@@ -77,6 +78,30 @@ export function useRevokeCrmAccess(tracker: CrmTrackerKey) {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.crm.accessGrants(tracker) });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.crm.access() });
     },
+  });
+}
+
+export interface CrmAccessResponse {
+  canAccess: boolean;
+  grantedTrackers: CrmTrackerKey[];
+}
+
+export function useCrmAccess(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.crm.access(),
+    enabled,
+    queryFn: async (): Promise<CrmAccessResponse> => {
+      const response = await fetch('/api/crm/access');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({ error: 'Failed to fetch CRM access' }));
+        throw new Error(payload.error || 'Failed to fetch CRM access');
+      }
+
+      const payload = await response.json();
+      return payload.data as CrmAccessResponse;
+    },
+    staleTime: 60 * 1000,
   });
 }

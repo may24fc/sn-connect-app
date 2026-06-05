@@ -40,7 +40,7 @@ import {
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -104,10 +104,19 @@ export default function PerformancePage(): ReactNode {
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
-  const displayCycle = activeCycle || cycles[0] || null;
+  const fallbackCycle = activeCycle || cycles[0] || null;
   const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
   const canCreateObjective = Boolean(activeCycle);
-  const { data: okrs = [] } = usePerformanceOKRs(displayCycle?.id);
+  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
+  const displayCycle =
+    cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
+  useEffect(() => {
+    if (selectedCycleId) return;
+    if (fallbackCycle) {
+      setSelectedCycleId(fallbackCycle.id);
+    }
+  }, [fallbackCycle, selectedCycleId]);
+  const { data: okrs = [] } = usePerformanceOKRs(selectedCycleId || displayCycle?.id);
   const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = usePerformanceOKRs();
   const createOKR = useCreateOKR();
 
@@ -364,20 +373,38 @@ export default function PerformancePage(): ReactNode {
             Objectives
             <SectionTooltip content="OKRs you've set for the current review cycle. Progress auto-calculates from key results." />
           </h2>
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filter status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="not_started">Not Started</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedCycleId}
+              onValueChange={setSelectedCycleId}
+              disabled={cycles.length === 0}
+            >
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Filter cycle" />
+              </SelectTrigger>
+              <SelectContent>
+                {cycles.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id}>
+                    {cycle.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Filter status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="not_started">Not Started</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {okrs.length === 0 ? (

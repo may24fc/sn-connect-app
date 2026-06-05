@@ -111,16 +111,26 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
-  const displayCycle = activeCycle || cycles[0] || null;
+  const fallbackCycle = activeCycle || cycles[0] || null;
   const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
   const canCreateObjective = Boolean(activeCycle);
-  const { data: okrs = [] } = useMyPerformanceOKRs(displayCycle?.id);
+  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
+  const displayCycle =
+    cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
+  const { data: okrs = [] } = useMyPerformanceOKRs(selectedCycleId || displayCycle?.id);
   const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = useMyPerformanceOKRs();
   const createOKR = useCreateOKR();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [formState, setFormState] = useState<CreateObjectiveFormState>(emptyForm);
   const [statusFilter, setStatusFilter] = useState<'all' | 'not_started' | 'in_progress' | 'completed'>('all');
+
+  useEffect(() => {
+    if (selectedCycleId) return;
+    if (fallbackCycle) {
+      setSelectedCycleId(fallbackCycle.id);
+    }
+  }, [fallbackCycle, selectedCycleId]);
 
   const totalWeight = okrs.reduce((sum, okr) => sum + (okr.weight || 1), 0);
   const selectedCycleIdForWeight = formState.cycleId || activeCycle?.id || '';
@@ -346,17 +356,38 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
             Objectives
             <SectionTooltip content="OKRs you've set for the current review cycle. Progress auto-calculates from key results." />
           </h2>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filter status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="not_started">Not Started</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select
+              value={selectedCycleId}
+              onValueChange={setSelectedCycleId}
+              disabled={cycles.length === 0}
+            >
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Filter cycle" />
+              </SelectTrigger>
+              <SelectContent>
+                {cycles.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id}>
+                    {cycle.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Filter status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="not_started">Not Started</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {okrs.length === 0 ? (
@@ -386,7 +417,7 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
               <EmptyState
                 icon={Target}
                 title="No objectives match the selected filter"
-                description="Adjust the status filter to widen the objective list."
+                description="Adjust the cycle or status filter to widen the objective list."
                 size="sm"
               />
             </CardContent>

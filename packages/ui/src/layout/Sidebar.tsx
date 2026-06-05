@@ -49,6 +49,7 @@ export interface SidebarProps {
   onToggleCollapse?: () => void;
   showMarketingReports?: boolean;
   showAtsAccess?: boolean;
+  showCrmAccess?: boolean;
 }
 
 const employeeAtsNavItems: Array<NavItem> = [
@@ -185,6 +186,7 @@ export function Sidebar({
   onToggleCollapse,
   showMarketingReports = true,
   showAtsAccess = false,
+  showCrmAccess = false,
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
     variant === 'employee'
@@ -214,10 +216,22 @@ export function Sidebar({
     return true;
   });
 
-  const navItems =
+  let navItems =
     (variant === 'employee' || variant === 'intern') && showAtsAccess
       ? [...filteredNavItems, ...employeeAtsNavItems]
       : filteredNavItems;
+
+  // Insert CRM nav item for granted non-admin users directly below Marketing Reports
+  if ((variant === 'employee' || variant === 'intern') && showCrmAccess) {
+    const crmItem: NavItem = { label: 'CRM Tracker', href: '/crm', icon: Store };
+    const reportsIndex = navItems.findIndex((it) => it.href === '/reports');
+    if (reportsIndex >= 0) {
+      navItems = [...navItems.slice(0, reportsIndex + 1), crmItem, ...navItems.slice(reportsIndex + 1)];
+    } else {
+      // fallback to append if Reports is not present (edge case)
+      navItems = [...navItems, crmItem];
+    }
+  }
 
   const activeHref = navItems.reduce<{ href: string; matchLength: number } | null>(
     (bestMatch, item) => {

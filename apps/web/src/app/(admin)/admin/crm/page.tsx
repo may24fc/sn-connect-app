@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import { CrmAccessManagerButton } from '@/components/admin/CrmAccessManagerDialog';
@@ -8,7 +8,6 @@ import {
   type SfoLeadRecord,
   type SfoStatus,
   type TechInquiryInput,
-  type TechInquiryRecord,
   type TechPipelineStage,
   useCreateSfoLead,
   useCreateTechInquiry,
@@ -19,109 +18,52 @@ import {
   useUpdateSfoLead,
   useUpdateTechInquiry,
 } from '@/hooks/useCrm';
+
+import { type ReactNode, useState, useMemo, useEffect, type FormEvent } from 'react';
+import { type TechInquiryRecord, type SfoCustomerType, type SfoPlatform } from '@/hooks/useCrm';
+import { type CrmTrackerKey } from '@/hooks/useCrmAccess';
+// schema constants intentionally not imported here (hard-coded option arrays below)
 import {
-  Badge,
   Button,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
+  CardDescription,
+  EmptyState,
+  Badge,
+  Input,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Label,
+  Textarea,
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  EmptyState,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Textarea,
+  DialogDescription,
   useToast,
 } from '@hr-portal/ui';
-import { AlertCircle, Building2, Loader2, Pencil, Store, Trash2 } from 'lucide-react';
-import { type ReactNode, useEffect, useMemo, useState, type FormEvent } from 'react';
-
-type CrmTab = 'META' | 'GOOGLE_ADS' | 'TECH';
-
-const sfoStatusOptions: Array<{ value: SfoStatus; label: string }> = [
-  { value: 'new', label: 'New' },
-  { value: 'for_follow_up', label: 'For Follow Up' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'lost', label: 'Lost' },
-];
-
-const techStageOptions: Array<{ value: TechPipelineStage; label: string }> = [
-  { value: 'initial_contact', label: 'Initial Contact' },
-  { value: 'requirements_gathering', label: 'Requirements Gathering' },
-  { value: 'proposal_sent', label: 'Proposal Sent' },
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'closed_won', label: 'Closed Won' },
-  { value: 'closed_lost', label: 'Closed Lost' },
-];
-
-const customerTypeBadgeClassMap: Record<'new' | 'returning' | 'wholesale', string> = {
-  new: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200',
-  returning: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200',
-  wholesale: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-200',
-};
-
-const audNumberFormatter = new Intl.NumberFormat('en-AU', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const createdAtFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-});
-
-function formatStageLabel(value: TechPipelineStage): string {
-  return techStageOptions.find((option) => option.value === value)?.label ?? value;
-}
-
-function formatStatusLabel(value: SfoStatus): string {
-  return sfoStatusOptions.find((option) => option.value === value)?.label ?? value;
-}
-
-function formatCreatedAt(value: string): string {
-  const parsedDate = new Date(value);
-
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'Invalid date';
-  }
-
-  return createdAtFormatter.format(parsedDate);
-}
-
-function formatCreatorName(value: string | null): string {
-  return value?.trim() || 'Unknown user';
-}
-
-function formatAudAmount(value: number): string {
-  return `AU$${audNumberFormatter.format(value)}`;
-}
+import { Loader2, AlertCircle, Store, Building2, Pencil, Trash2 } from 'lucide-react';
 
 type SfoEditFormState = {
   customerName: string;
   socialLink: string;
   messageSource: string;
-  platform: 'Meta' | 'Google Ads';
+  platform: SfoPlatform;
   dateOfContact: string;
   actionPlan: string;
   followUpStatus: SfoStatus;
   actionTaken: string;
-  customerType: 'new' | 'returning' | 'wholesale';
+  customerType: SfoCustomerType;
   reasonForReachingOut: string;
   contactNumber: string;
   address: string;
@@ -178,6 +120,54 @@ const emptyTechEditFormState: TechEditFormState = {
   assignedRep: '',
 };
 
+// Options and formatting helpers used throughout the CRM admin page
+const sfoStatusOptions = [
+  { value: 'new', label: 'New' },
+  { value: 'for_follow_up', label: 'For Follow Up' },
+  { value: 'closed', label: 'Closed' },
+  { value: 'lost', label: 'Lost' },
+];
+
+const techStageOptions = [
+  { value: 'initial_contact', label: 'Initial Contact' },
+  { value: 'requirements_gathering', label: 'Requirements Gathering' },
+  { value: 'proposal_sent', label: 'Proposal Sent' },
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'closed_won', label: 'Closed Won' },
+  { value: 'closed_lost', label: 'Closed Lost' },
+];
+
+const customerTypeBadgeClassMap: Record<string, string> = {
+  new: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200',
+  returning: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-200',
+  wholesale: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-200',
+};
+
+const audNumberFormatter = new Intl.NumberFormat('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const createdAtFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+function formatStageLabel(value: string) {
+  return techStageOptions.find((option) => option.value === value)?.label ?? value;
+}
+
+function formatStatusLabel(value: string) {
+  return sfoStatusOptions.find((option) => option.value === value)?.label ?? value;
+}
+
+function formatCreatedAt(value: string) {
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) return 'Invalid date';
+  return createdAtFormatter.format(parsedDate);
+}
+
+function formatCreatorName(value: string | null | undefined) {
+  return value?.trim() || 'Unknown user';
+}
+
+function formatAudAmount(value: number) {
+  return `AU$${audNumberFormatter.format(value)}`;
+}
+
 function createSfoEditFormState(lead: SfoLeadRecord): SfoEditFormState {
   return {
     customerName: lead.customer_name,
@@ -215,9 +205,25 @@ function createTechEditFormState(record: TechInquiryRecord): TechEditFormState {
   };
 }
 
-export default function AdminCrmPage(): ReactNode {
+type CrmTab = 'META' | 'GOOGLE_ADS' | 'TECH';
+
+function trackerKeyToTab(key: CrmTrackerKey): CrmTab {
+  if (key === 'meta_leads') return 'META';
+  if (key === 'google_ads_leads') return 'GOOGLE_ADS';
+  return 'TECH';
+}
+
+export default function AdminCrmPage({ allowedTrackers }: { allowedTrackers?: CrmTrackerKey[] }): ReactNode {
   const { addToast } = useToast();
-  const [pipelineContext, setPipelineContext] = useState<CrmTab>('META');
+  // Determine which tabs to show. If `allowedTrackers` is provided (non-admin users),
+  // only show the corresponding tracker tabs. Admins pass `undefined` and see all tabs.
+  const allowedTabs: CrmTab[] = (allowedTrackers && allowedTrackers.length > 0)
+    ? Array.from(new Set(allowedTrackers.map(trackerKeyToTab)))
+    : (['META', 'GOOGLE_ADS', 'TECH'] as CrmTab[]);
+
+  const defaultTab: CrmTab = allowedTabs.length > 0 ? (allowedTabs.includes('META') ? 'META' : (allowedTabs[0] as CrmTab)) : 'TECH';
+
+  const [pipelineContext, setPipelineContext] = useState<CrmTab>(defaultTab);
 
   const [sfoSearch, setSfoSearch] = useState('');
   const [sfoStatusFilter, setSfoStatusFilter] = useState<'all' | SfoStatus>('all');
@@ -607,24 +613,32 @@ export default function AdminCrmPage(): ReactNode {
         }}
       >
         <TabsList className="h-auto w-full justify-start gap-2 rounded-none border-b bg-transparent p-0">
-          <TabsTrigger
-            value="META"
-            className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
-          >
-            Meta Leads
-          </TabsTrigger>
-          <TabsTrigger
-            value="GOOGLE_ADS"
-            className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
-          >
-            Google Ads Leads
-          </TabsTrigger>
-          <TabsTrigger
-            value="TECH"
-            className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
-          >
-            SN Tech Inquiries
-          </TabsTrigger>
+          {allowedTabs.includes('META') && (
+            <TabsTrigger
+              value="META"
+              className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
+            >
+              Meta Leads
+            </TabsTrigger>
+          )}
+
+          {allowedTabs.includes('GOOGLE_ADS') && (
+            <TabsTrigger
+              value="GOOGLE_ADS"
+              className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
+            >
+              Google Ads Leads
+            </TabsTrigger>
+          )}
+
+          {allowedTabs.includes('TECH') && (
+            <TabsTrigger
+              value="TECH"
+              className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-zinc-900 data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-zinc-100"
+            >
+              SN Tech Inquiries
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <div className="pt-4">
@@ -766,8 +780,8 @@ export default function AdminCrmPage(): ReactNode {
                         <p className="text-xs text-muted-foreground">No inquiries in this stage.</p>
                       ) : (
                         records.map((record) => (
-                          <div key={record.id} className="group relative">
-                            <div className="absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                          <div key={record.id} className={`group relative`}> 
+                            <div className="absolute right-4 top-4 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                               <Button
                                 type="button"
                                 size="sm"
@@ -795,6 +809,7 @@ export default function AdminCrmPage(): ReactNode {
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
+
                             <button
                               type="button"
                               onClick={() => setSelectedTechId(record.id)}

@@ -80,10 +80,13 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
-  const displayCycle = activeCycle || cycles[0] || null;
+  const fallbackCycle = activeCycle || cycles[0] || null;
   const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
   const canCreateObjective = Boolean(activeCycle);
-  const { data: okrs = [] } = useMyPerformanceOKRs(displayCycle?.id);
+  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
+  const displayCycle =
+    cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
+  const { data: okrs = [] } = useMyPerformanceOKRs(selectedCycleId || displayCycle?.id);
   const createOKR = useCreateOKR();
   const updateOKR = useUpdateOKR();
 
@@ -94,6 +97,13 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
   const [newOKR, setNewOKR] = useState<NewOKRFormState>(emptyForm);
   const [subtaskInput, setSubtaskInput] = useState('');
   const handledCreateDeepLinkRef = useRef(false);
+
+  useEffect(() => {
+    if (selectedCycleId) return;
+    if (fallbackCycle) {
+      setSelectedCycleId(fallbackCycle.id);
+    }
+  }, [fallbackCycle, selectedCycleId]);
 
   const displayOKRs = currentOKRs.map((okr) => ({
     ...okr,
@@ -404,6 +414,22 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
           <Filter className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Filter by:</span>
         </div>
+        <Select
+          value={selectedCycleId}
+          onValueChange={setSelectedCycleId}
+          disabled={cycles.length === 0}
+        >
+          <SelectTrigger className="w-[220px]">
+            <SelectValue placeholder="Cycle" />
+          </SelectTrigger>
+          <SelectContent>
+            {cycles.map((cycle) => (
+              <SelectItem key={cycle.id} value={cycle.id}>
+                {cycle.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Status" />
@@ -433,7 +459,7 @@ export function OKRSelfServiceWorkspace({ fallbackPath }: OKRSelfServiceWorkspac
           }
           description={
             statusFilter !== 'all'
-              ? 'Adjust the status filter to widen the OKR list.'
+              ? 'Adjust the cycle or status filter to widen the OKR list.'
               : canCreateObjective
                 ? 'Click "New Objective" to create your first OKR and start tracking progress.'
                 : 'Objective creation is disabled until an active review cycle is available.'

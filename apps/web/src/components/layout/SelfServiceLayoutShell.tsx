@@ -10,6 +10,7 @@ import {
 import { useAIChat } from '@/hooks/useAIChat';
 import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
 import { useAtsAccess } from '@/hooks/useAtsAccess';
+import { useCrmAccess } from '@/hooks/useCrmAccess';
 import { useConversations, useCreateConversation, useDeleteConversation, useRenameConversation } from '@/hooks/useConversations';
 import {
   useDeleteNotification,
@@ -130,6 +131,7 @@ function SelfServiceLayoutInner({
   const { theme, setTheme } = useTheme();
   const marketingReportsAccess = useMarketingReportsAccess();
   const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'intern');
+  const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'intern');
   const sidebarVariant =
     user.role === 'intern'
       ? 'intern'
@@ -149,6 +151,7 @@ function SelfServiceLayoutInner({
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           showMarketingReports={marketingReportsAccess.canAccess}
           showAtsAccess={Boolean(atsAccess.data?.canAccess)}
+          showCrmAccess={Boolean(crmAccess.data?.canAccess)}
         />
       </div>
 
@@ -162,6 +165,7 @@ function SelfServiceLayoutInner({
               onNavigate={onNavigate}
               showMarketingReports={marketingReportsAccess.canAccess}
               showAtsAccess={Boolean(atsAccess.data?.canAccess)}
+              showCrmAccess={Boolean(crmAccess.data?.canAccess)}
             />
           </div>
         </div>
