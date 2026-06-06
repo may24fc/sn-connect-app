@@ -350,7 +350,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const grouped = $('Merge Run State').first().json;\nconst aiResponse = items[0]?.json;\nconst aiText = aiResponse?.choices?.[0]?.message?.content?.trim();\n\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst lines = [\n  `📱 <b>Daily EOD Digest</b> | ${grouped.reportDate}`,\n  div,\n];\n\nfor (const dept of grouped.departments) {\n  lines.push('');\n  lines.push(`🏢 <b>DEPARTMENT: ${dept.department.toUpperCase()}</b>`);\n  for (const intern of dept.interns) {\n    const blockerText = (intern.blockers && intern.blockers.length > 0) ? intern.blockers.join('; ') : 'None';\n    const projectFocus = intern.projectEntries && intern.projectEntries.length > 0\n      ? intern.projectEntries.map(e => e.projectFocus).join(', ')\n      : 'General Operations';\n    lines.push(`• <b>${intern.name}</b> - ${projectFocus}`);\n    lines.push(`  ↳ <i>Progress:</i> ${intern.summary || 'Updates submitted for review.'}`);\n    lines.push(`  ↳ <i>Blockers:</i> ${blockerText}`);\n  }\n  lines.push('');\n  lines.push(div);\n}\n\nreturn [{\n  json: {\n    ...grouped,\n    telegramText: aiText || lines.join('\\n').trim(),\n    usedAiSummary: Boolean(aiText)\n  }\n}];"
+        "jsCode": "// One output item per department — each dept gets its own Telegram message\nconst grouped = $('Merge Run State').first().json;\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst output = [];\n\nfor (const dept of grouped.departments) {\n  const lines = [\n    `📱 <b>Daily EOD Digest</b> | ${grouped.reportDate}`,\n    div,\n    ``,\n    `🏢 <b>DEPARTMENT: ${dept.department.toUpperCase()}</b>`,\n  ];\n\n  for (const intern of dept.interns) {\n    const blockerText = intern.blockers?.length > 0 ? intern.blockers.join('; ') : 'None';\n    const projectFocus = intern.projectEntries?.length > 0\n      ? intern.projectEntries.map(e => e.projectFocus).join(', ')\n      : 'General Operations';\n    lines.push(``);\n    lines.push(`• <b>${intern.name}</b> - ${projectFocus}`);\n    lines.push(`  ↳ <i>Progress:</i> ${intern.summary || 'Updates submitted for review.'}`);\n    lines.push(`  ↳ <i>Blockers:</i> ${blockerText}`);\n  }\n\n  lines.push(``);\n  lines.push(div);\n\n  output.push({ json: { ...grouped, department: dept.department, telegramText: lines.join('\\n') } });\n}\n\nreturn output;"
       },
       "id": "build-telegram-message",
       "name": "Build Telegram Message",
@@ -413,7 +413,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={\n  \"report_date\": \"{{ $('Build Telegram Message').first().json.reportDate }}\",\n  \"channel\": \"telegram\",\n  \"destination_key\": \"{{ $('Build Telegram Message').first().json.destinationKey }}\",\n  \"workflow_execution_id\": \"{{ $execution.id }}\",\n  \"status\": \"{{ $json.result.message_id ? 'sent' : 'failed' }}\",\n  \"sent_at\": {{ $json.result.message_id ? ('\"' + $now.toISO() + '\"') : 'null' }},\n  \"error_message\": {{ $json.result.message_id ? 'null' : '\"Telegram delivery failed\"' }},\n  \"summary_json\": {\n    \"totalLogs\": {{ $('Build Telegram Message').first().json.totalLogs }},\n    \"totalDepartments\": {{ $('Build Telegram Message').first().json.totalDepartments }},\n    \"usedAiSummary\": {{ $('Build Telegram Message').first().json.usedAiSummary }},\n    \"telegramMessageId\": {{ $json.result.message_id ?? 'null' }}\n  }\n}",
+        "jsonBody": "={\n  \"report_date\": \"{{ $json.reportDate }}\",\n  \"channel\": \"telegram\",\n  \"destination_key\": \"{{ $json.destinationKey }}\",\n  \"workflow_execution_id\": \"{{ $execution.id }}\",\n  \"status\": \"{{ $json.digestSent ? 'sent' : 'failed' }}\",\n  \"sent_at\": {{ $json.digestSent ? ('\"' + $now.toISO() + '\"') : 'null' }},\n  \"error_message\": {{ $json.digestSent ? 'null' : '\"Telegram delivery failed\"' }},\n  \"summary_json\": {\n    \"totalLogs\": {{ $json.totalLogs }},\n    \"totalDepartments\": {{ $json.totalDepartments }},\n    \"usedAiSummary\": false,\n    \"telegramMessageId\": null\n  }\n}",
         "options": {
           "response": {
             "response": {
@@ -422,12 +422,25 @@
           }
         }
       },
+      "id": "collect-after-digest-sends-eod-dev",
+      "name": "Collect After Digest Sends",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "// Re-anchor to grouped state; check if any dept Telegram send succeeded\nconst grouped = $('Merge Run State').first().json;\nconst sends = $input.all();\nconst anySuccess = sends.some(i => i.json?.result?.message_id);\nreturn [{ json: { ...grouped, digestSent: anySuccess } }];"
+      },
+      "position": [
+        3380,
+        280
+      ]
+    },
+    {
       "id": "record-run",
       "name": "Record Digest Run",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3580,
+        3600,
         280
       ],
       "credentials": {
@@ -669,6 +682,17 @@
       ]
     },
     "Send Telegram Digest": {
+      "main": [
+        [
+          {
+            "node": "Collect After Digest Sends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect After Digest Sends": {
       "main": [
         [
           {
