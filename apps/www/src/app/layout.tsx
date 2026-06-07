@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { ScrollProgress } from '@/components/shared/ScrollProgress';
-import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
 import { Providers } from './providers';
+import { SiteFrame } from '@/components/layout/SiteFrame';
+import { aspekta, robotoMono } from './fonts';
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -74,7 +72,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
   return (
-    <html lang="en" className="font-sans">
+    <html lang="en" className={`font-sans ${aspekta.variable} ${robotoMono.variable} aspekta-fonts button-fonts`}>
       <head>
         <script
           type="application/ld+json"
@@ -83,11 +81,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       </head>
       <body className="min-h-screen overflow-x-clip font-sans antialiased">
         <Providers>
-          <ScrollProgress />
-          <Header />
-          <AnnouncementBanner />
-          <main id="main-content">{children}</main>
-          <Footer />
+          <SiteFrame>{children}</SiteFrame>
         </Providers>
       </body>
     </html>

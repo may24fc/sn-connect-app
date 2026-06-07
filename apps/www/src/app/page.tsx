@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { HeroSection } from '@/components/home/HeroSection';
-import { BusinessCards } from '@/components/home/BusinessCards';
+import RebrandHome from '@/components/home/rebrand/RebrandHome';
 
 export const metadata: Metadata = {
   title: 'VA Outsourcing and Remote Support',
@@ -9,9 +8,6 @@ export const metadata: Metadata = {
 
 export default function HomePage(): ReactNode {
   return (
-    <>
-      <HeroSection />
-      <BusinessCards />
-    </>
+    <RebrandHome />
   );
 }
