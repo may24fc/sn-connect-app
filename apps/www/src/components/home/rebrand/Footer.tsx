@@ -1,9 +1,9 @@
 'use client';
 
-import { type MouseEvent } from 'react';
 import { motion } from 'framer-motion';
+import type { MouseEvent } from 'react';
+import { ChromaFlow, FlutedGlass, Shader, Swirl } from 'shaders/react';
 import SplitCTA from '../../ui/SplitCTA';
-import { Shader, Swirl, ChromaFlow, FlutedGlass } from 'shaders/react';
 
 const ease = [0.19, 1, 0.22, 1] as const;
 
@@ -58,13 +58,16 @@ export default function Footer() {
 
       {/* ── Content ── */}
       <div className="relative z-10 w-full px-6 md:px-12 pt-20 md:pt-28 pb-0" id="footer-inner">
-
         {/* ── Main row ── */}
-        <div className="grid grid-cols-1 md:grid-cols-[5fr_7fr] md:gap-72 items-start pb-[100px]" id="footer-main">
-
+        <div
+          className="grid grid-cols-1 md:grid-cols-[5fr_7fr] md:gap-72 items-start pb-[100px]"
+          id="footer-main"
+        >
           {/* Left — heading + CTA */}
-          <div className="flex flex-col w-full max-w-lg gap-10 md:gap-12 pb-12 md:pb-0" id="footer-content">
-
+          <div
+            className="flex flex-col w-full max-w-lg gap-10 md:gap-12 pb-12 md:pb-0"
+            id="footer-content"
+          >
             <motion.div
               className="overflow-hidden pb-[0.04em]"
               initial="hidden"
@@ -74,10 +77,13 @@ export default function Footer() {
               <motion.h4
                 className="text-2xl sm:text-3xl md:text-[38px] lg:text-[44px] font-normal font-sans"
                 style={{ lineHeight: '1.06' }}
-                variants={{ hidden: { y: '110%' }, visible: { y: 0, transition: { duration: 1.0, ease: [0.19, 1, 0.22, 1] } } }}
+                variants={{
+                  hidden: { y: '110%' },
+                  visible: { y: 0, transition: { duration: 1.0, ease: [0.19, 1, 0.22, 1] } },
+                }}
                 id="footer-heading"
               >
-                Remote support teams, matched with care and built around your work.
+                Scale smarter with <br /> AI-powered talent.
               </motion.h4>
             </motion.div>
 
@@ -88,7 +94,9 @@ export default function Footer() {
               viewport={{ once: true, margin: '-60px' }}
             >
               <div
-                style={{ '--btn-main-bg': '#d6e4f0', '--btn-arrow-bg': '#3b86d2' } as React.CSSProperties}
+                style={
+                  { '--btn-main-bg': '#d6e4f0', '--btn-arrow-bg': '#3b86d2' } as React.CSSProperties
+                }
                 className="footer-cta"
               >
                 <SplitCTA title="REQUEST A BRIEF" href="#contact" />
@@ -106,19 +114,26 @@ export default function Footer() {
             id="footer-info"
           >
             {/* Navigate */}
-            <motion.div variants={fade} className="flex flex-col gap-5 min-w-[160px] border-l border-[#f6f6f2]/20 pl-5" id="footer-col-navigate">
+            <motion.div
+              variants={fade}
+              className="flex flex-col gap-5 min-w-[160px] border-l border-[#f6f6f2]/20 pl-5"
+              id="footer-col-navigate"
+            >
               <span className="button-mono text-xs font-medium uppercase tracking-[0.15em] text-[#f6f6f2]/40">
                 Navigate
               </span>
               <ul className="flex flex-col">
                 {[
-                  { label: 'Services',      href: '#services' },
-                  { label: 'About Us',      href: '#about' },
+                  { label: 'Services', href: '#services' },
+                  { label: 'About Us', href: '#about' },
                   { label: 'Meet the Team', href: '#team' },
-                  { label: 'Contact',       href: '#contact' },
+                  { label: 'Contact', href: '#contact' },
                 ].map(({ label, href }) => (
                   <li key={label}>
-                    <a href={href} className="font-sans text-sm sm:text-base text-[#f6f6f2]/70 hover:text-white transition-colors duration-300">
+                    <a
+                      href={href}
+                      className="font-sans text-sm sm:text-base text-[#f6f6f2]/70 hover:text-white transition-colors duration-300"
+                    >
                       {label}
                     </a>
                   </li>
@@ -127,18 +142,29 @@ export default function Footer() {
             </motion.div>
 
             {/* Connect */}
-            <motion.div variants={fade} className="flex flex-col gap-5 min-w-[160px] border-l border-[#f6f6f2]/20 pl-5" id="footer-col-connect">
+            <motion.div
+              variants={fade}
+              className="flex flex-col gap-5 min-w-[160px] border-l border-[#f6f6f2]/20 pl-5"
+              id="footer-col-connect"
+            >
               <span className="button-mono text-xs font-medium uppercase tracking-[0.15em] text-[#f6f6f2]/40">
                 Connect
               </span>
               <ul className="flex flex-col">
                 {[
-                  { label: 'LinkedIn',              href: 'https://www.linkedin.com/company/sn-international-group' },
-                  { label: 'info@sngroup.com.au',   href: 'mailto:info@sngroup.com.au' },
+                  {
+                    label: 'LinkedIn',
+                    href: 'https://www.linkedin.com/company/sn-international-group',
+                  },
+                  { label: 'info@sngroup.com.au', href: 'mailto:info@sngroup.com.au' },
                 ].map(({ label, href }) => (
                   <li key={label}>
-                    <a href={href} target="_blank" rel="noreferrer"
-                      className="font-sans text-sm sm:text-base text-[#f6f6f2]/70 hover:text-white transition-colors duration-300">
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-sans text-sm sm:text-base text-[#f6f6f2]/70 hover:text-white transition-colors duration-300"
+                    >
                       {label}
                     </a>
                   </li>
@@ -158,16 +184,30 @@ export default function Footer() {
               <div className="absolute top-0 left-0 w-full flex flex-col transition-transform duration-[750ms] ease-[cubic-bezier(0.19,1,0.22,1)] delay-0 group-hover:delay-[150ms] group-hover:-translate-y-12">
                 <div className="flex items-center justify-center w-12 h-12 shrink-0">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path transform="rotate(-90, 12, 12)" d="M5 12h14M13 6l6 6-6 6"
-                      stroke="rgba(246,246,242,0.4)" strokeWidth="1.5" strokeLinecap="round"
-                      strokeLinejoin="round" fill="none" vectorEffect="non-scaling-stroke" />
+                    <path
+                      transform="rotate(-90, 12, 12)"
+                      d="M5 12h14M13 6l6 6-6 6"
+                      stroke="rgba(246,246,242,0.4)"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                      vectorEffect="non-scaling-stroke"
+                    />
                   </svg>
                 </div>
                 <div className="flex items-center justify-center w-12 h-12 shrink-0 bg-white rounded-lg">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path transform="rotate(-90, 12, 12)" d="M5 12h14M13 6l6 6-6 6"
-                      stroke="#0c1d2e" strokeWidth="1.5" strokeLinecap="round"
-                      strokeLinejoin="round" fill="none" vectorEffect="non-scaling-stroke" />
+                    <path
+                      transform="rotate(-90, 12, 12)"
+                      d="M5 12h14M13 6l6 6-6 6"
+                      stroke="#0c1d2e"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                      vectorEffect="non-scaling-stroke"
+                    />
                   </svg>
                 </div>
               </div>
@@ -188,7 +228,10 @@ export default function Footer() {
             style={{ fontSize: 'clamp(32px, 14vw, 190px)' }}
             variants={{
               hidden: { y: '100%' },
-              visible: { y: 0, transition: { duration: 1.2, delay: 0.2, ease: [0.19, 1, 0.22, 1] } },
+              visible: {
+                y: 0,
+                transition: { duration: 1.2, delay: 0.2, ease: [0.19, 1, 0.22, 1] },
+              },
             }}
             aria-hidden
           >
@@ -202,7 +245,6 @@ export default function Footer() {
             &copy; 2026 SN INTERNATIONAL GROUP. ALL RIGHTS RESERVED.
           </span>
         </div>
-
       </div>
     </footer>
   );

@@ -1,15 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
-import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
+import { useEffect } from 'react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 // Module-level ref so other components can access the instance
 let _lenis: Lenis | null = null;
-export function getLenis(): Lenis | null { return _lenis; }
+export function getLenis(): Lenis | null {
+  return _lenis;
+}
 
 export function useSmoothScroll() {
   useEffect(() => {

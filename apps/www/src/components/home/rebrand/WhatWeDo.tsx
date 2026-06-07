@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useLayoutEffect, useCallback, useEffect } from 'react';
-import { motion, type MotionValue, useTransform, useMotionValueEvent } from 'framer-motion';
+import { type MotionValue, motion, useMotionValueEvent, useTransform } from 'framer-motion';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 interface WhatWeDoProps {
   scrollYProgress: MotionValue<number>;
@@ -12,28 +12,34 @@ const LINE_STAGGER = 0.022;
 
 const slides = [
   {
-    text: 'Your workflow is unique. We shape our support around the tools, cadence, and communication style your team already runs on.',
+    text: 'Every specialist combines professional expertise with AI-powered workflows—helping your team work smarter and deliver faster.',
     wordRevealRange: [0, 0.28] as [number, number],
     entryRange: null as [number, number] | null, // visible from scroll 0
     exitRange: [0.28, 0.34] as [number, number],
   },
   {
-    text: 'From executive assistants who manage your inbox to marketers who run your campaigns. One brief gets you matched with the right remote team.',
+    text: 'From operations and marketing to support and technology, we match you with talent ready to contribute from day one.',
     wordRevealRange: [0.41, 0.61] as [number, number],
     entryRange: [0.35, 0.41] as [number, number],
     exitRange: [0.61, 0.67] as [number, number],
   },
   {
-    text: 'We handle the recurring work so your team can focus on growth. Dependable offshore support with AU and US coverage windows and a 7-day typical launch.',
+    text: 'Dedicated remote specialists integrated into your workflow, with AU and US timezone coverage available.',
     wordRevealRange: [0.74, 0.92] as [number, number],
     entryRange: [0.68, 0.74] as [number, number],
     exitRange: null, // last text — stays visible, no exit animation
   },
 ];
 
-function c01(t: number) { return Math.max(0, Math.min(1, t)); }
-function easeOut(t: number) { return 1 - (1 - c01(t)) ** 2; }
-function easeIn(t: number) { return c01(t) ** 2; }
+function c01(t: number) {
+  return Math.max(0, Math.min(1, t));
+}
+function easeOut(t: number) {
+  return 1 - (1 - c01(t)) ** 2;
+}
+function easeIn(t: number) {
+  return c01(t) ** 2;
+}
 
 interface SlideProps {
   words: string[];
@@ -44,63 +50,96 @@ interface SlideProps {
 }
 
 function Slide({ words, scrollY, wordRevealRange, entryRange, exitRange }: SlideProps) {
-  const spanRefs  = useRef<(HTMLSpanElement | null)[]>([]);
+  const spanRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const lineGroups = useRef<number[][]>([]); // word indices per visual line
-  const rootRef   = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   // ── Compute + apply styles for a given scrollY value ─────────────────
-  const applyStyles = useCallback((v: number) => {
-    const lines = lineGroups.current;
-    if (!lines.length) return;
+  const applyStyles = useCallback(
+    (v: number) => {
+      const lines = lineGroups.current;
+      if (!lines.length) return;
 
-    const total = words.length;
-    const [wrs, wre] = wordRevealRange;
-    const slideProgress = c01((v - wrs) / (wre - wrs));
+      const total = words.length;
+      const [wrs, wre] = wordRevealRange;
+      const slideProgress = c01((v - wrs) / (wre - wrs));
 
-    lines.forEach((wordIndices, lineIdx) => {
-      const s = lineIdx * LINE_STAGGER;
-      let lineOpacity: number;
-      let lineY: number;
+      lines.forEach((wordIndices, lineIdx) => {
+        const s = lineIdx * LINE_STAGGER;
+        let lineOpacity: number;
+        let lineY: number;
 
-      if (entryRange && exitRange) {
-        const [es, ee] = [entryRange[0] + s, entryRange[1] + s];
-        const [xs, xe] = [exitRange[0] + s, exitRange[1] + s];
-        if      (v < es) { lineOpacity = 0; lineY = 28; }
-        else if (v < ee) { const t = easeOut((v - es) / (ee - es)); lineOpacity = t; lineY = 28 * (1 - t); }
-        else if (v < xs) { lineOpacity = 1; lineY = 0; }
-        else if (v < xe) { const t = easeIn((v - xs) / (xe - xs)); lineOpacity = 1 - t; lineY = -28 * t; }
-        else             { lineOpacity = 0; lineY = -28; }
-      } else if (entryRange && !exitRange) {
-        // Last slide — fades up in, never exits
-        const [es, ee] = [entryRange[0] + s, entryRange[1] + s];
-        if      (v < es) { lineOpacity = 0; lineY = 28; }
-        else if (v < ee) { const t = easeOut((v - es) / (ee - es)); lineOpacity = t; lineY = 28 * (1 - t); }
-        else             { lineOpacity = 1; lineY = 0; }
-      } else if (exitRange) {
-        // Slide 1 — no entry, only exit
-        const [xs, xe] = [exitRange[0] + s, exitRange[1] + s];
-        if      (v < xs) { lineOpacity = 1; lineY = 0; }
-        else if (v < xe) { const t = easeIn((v - xs) / (xe - xs)); lineOpacity = 1 - t; lineY = -28 * t; }
-        else             { lineOpacity = 0; lineY = -28; }
-      } else {
-        lineOpacity = 1; lineY = 0;
-      }
+        if (entryRange && exitRange) {
+          const [es, ee] = [entryRange[0] + s, entryRange[1] + s];
+          const [xs, xe] = [exitRange[0] + s, exitRange[1] + s];
+          if (v < es) {
+            lineOpacity = 0;
+            lineY = 28;
+          } else if (v < ee) {
+            const t = easeOut((v - es) / (ee - es));
+            lineOpacity = t;
+            lineY = 28 * (1 - t);
+          } else if (v < xs) {
+            lineOpacity = 1;
+            lineY = 0;
+          } else if (v < xe) {
+            const t = easeIn((v - xs) / (xe - xs));
+            lineOpacity = 1 - t;
+            lineY = -28 * t;
+          } else {
+            lineOpacity = 0;
+            lineY = -28;
+          }
+        } else if (entryRange && !exitRange) {
+          // Last slide — fades up in, never exits
+          const [es, ee] = [entryRange[0] + s, entryRange[1] + s];
+          if (v < es) {
+            lineOpacity = 0;
+            lineY = 28;
+          } else if (v < ee) {
+            const t = easeOut((v - es) / (ee - es));
+            lineOpacity = t;
+            lineY = 28 * (1 - t);
+          } else {
+            lineOpacity = 1;
+            lineY = 0;
+          }
+        } else if (exitRange) {
+          // Slide 1 — no entry, only exit
+          const [xs, xe] = [exitRange[0] + s, exitRange[1] + s];
+          if (v < xs) {
+            lineOpacity = 1;
+            lineY = 0;
+          } else if (v < xe) {
+            const t = easeIn((v - xs) / (xe - xs));
+            lineOpacity = 1 - t;
+            lineY = -28 * t;
+          } else {
+            lineOpacity = 0;
+            lineY = -28;
+          }
+        } else {
+          lineOpacity = 1;
+          lineY = 0;
+        }
 
-      wordIndices.forEach(wi => {
-        const el = spanRefs.current[wi];
-        if (!el) return;
+        wordIndices.forEach((wi) => {
+          const el = spanRefs.current[wi];
+          if (!el) return;
 
-        // Combine line-transition opacity × per-word reveal opacity (0.25 → 1)
-        const wordStart = wi / total;
-        const wordEnd   = (wi + 1) / total;
-        const wordT     = c01((slideProgress - wordStart) / Math.max(wordEnd - wordStart, 1e-6));
-        const wordOpacity = 0.25 + 0.75 * wordT;
+          // Combine line-transition opacity × per-word reveal opacity (0.25 → 1)
+          const wordStart = wi / total;
+          const wordEnd = (wi + 1) / total;
+          const wordT = c01((slideProgress - wordStart) / Math.max(wordEnd - wordStart, 1e-6));
+          const wordOpacity = 0.25 + 0.75 * wordT;
 
-        el.style.opacity   = String(lineOpacity * wordOpacity);
-        el.style.transform = `translateY(${lineY}px)`;
+          el.style.opacity = String(lineOpacity * wordOpacity);
+          el.style.transform = `translateY(${lineY}px)`;
+        });
       });
-    });
-  }, [words.length, wordRevealRange, entryRange, exitRange]);
+    },
+    [words.length, wordRevealRange, entryRange, exitRange]
+  );
 
   // ── Measure visual lines by offsetTop after layout ────────────────────
   const measureLines = useCallback(() => {
@@ -153,7 +192,9 @@ function Slide({ words, scrollY, wordRevealRange, entryRange, exitRange }: Slide
       {words.map((word, i) => (
         <span
           key={`${word}-${i}`}
-          ref={el => { spanRefs.current[i] = el; }}
+          ref={(el) => {
+            spanRefs.current[i] = el;
+          }}
           className="text-[#0c1d2e] select-none font-sans inline-block"
           style={{ opacity: initialOpacity, willChange: 'opacity, transform' }}
         >
@@ -192,12 +233,14 @@ export default function WhatWeDo({ scrollYProgress }: WhatWeDoProps) {
       {/* ── Progress divider ─────────────────────────────────────────── */}
       <div className="relative flex-shrink-0 h-px" id="what-wedo-divider">
         <div className="absolute inset-0 h-[2px] bg-[#0c1d2e]/15" />
-        <motion.div style={{ width: progressPercent }} className="absolute left-0 top-0 h-[2px] bg-[#0c1d2e]" />
+        <motion.div
+          style={{ width: progressPercent }}
+          className="absolute left-0 top-0 h-[2px] bg-[#0c1d2e]"
+        />
       </div>
 
       {/* ── Main ─────────────────────────────────────────────────────── */}
       <div className="flex-1 flex gap-x-32 md:gap-x-72 px-6 md:px-12" id="what-wedo-main">
-
         {/* Counter */}
         <div className="w-28 md:w-36 flex-shrink-0 flex items-start pt-12">
           <div className="button-mono border border-[#0c1d2e]/30 px-5 py-1 rounded-full flex items-center gap-[0.4em] tracking-[0.2em] text-sm">
@@ -225,7 +268,6 @@ export default function WhatWeDo({ scrollYProgress }: WhatWeDoProps) {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );

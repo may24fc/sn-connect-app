@@ -30,7 +30,6 @@ export default function IntegratedPlatform() {
 
       <div className="w-full px-6 md:px-12 pt-16 md:pt-[145px] pb-16 md:pb-[124px]">
         <div className="grid grid-cols-1 md:grid-cols-3">
-
           {/* ── Left sidebar ── */}
           <aside className="md:col-span-1 md:pr-4 pt-0 md:pt-12 pb-8 md:pb-0" id="platform-sidebar">
             <motion.div
@@ -39,7 +38,10 @@ export default function IntegratedPlatform() {
               whileInView="visible"
               viewport={{ once: true, margin: '-80px' }}
             >
-              <motion.div variants={fade} className="inline-flex items-center py-1 pl-2 pr-3 rounded-sm bg-white gap-2">
+              <motion.div
+                variants={fade}
+                className="inline-flex items-center py-1 pl-2 pr-3 rounded-sm bg-white gap-2"
+              >
                 <span className="w-[10px] h-[10px] bg-[#3b86d2] flex-shrink-0" />
                 <span className="button-mono text-sm font-medium text-[#0c1d2e] uppercase tracking-[0.2em]">
                   How We Work
@@ -49,8 +51,10 @@ export default function IntegratedPlatform() {
           </aside>
 
           {/* ── Right content ── */}
-          <aside className="md:col-span-2 md:pl-4 pt-0 md:pt-12 flex flex-col gap-8 md:gap-10" id="platform-content">
-
+          <aside
+            className="md:col-span-2 md:pl-4 pt-0 md:pt-12 flex flex-col gap-8 md:gap-10"
+            id="platform-content"
+          >
             {/* Heading — two lines staggered */}
             <motion.h2
               className="text-4xl sm:text-5xl md:text-[76px] font-normal leading-[1.06] tracking-tight"
@@ -62,12 +66,12 @@ export default function IntegratedPlatform() {
             >
               <div className="overflow-hidden pb-[0.04em]">
                 <motion.span className="block" variants={line}>
-                  You tell us what you need.
+                  Tell us what you need.
                 </motion.span>
               </div>
               <div className="overflow-hidden pb-[0.04em]">
                 <motion.span className="block text-[#0c1d2e]/30" variants={line}>
-                  We match, onboard, and launch in days.
+                  We'll help you get there.
                 </motion.span>
               </div>
             </motion.h2>
@@ -86,11 +90,10 @@ export default function IntegratedPlatform() {
                   className="max-w-3xl text-base md:text-lg text-[#0c1d2e]/65 tracking-[-0.04em]"
                   style={{ lineHeight: '1.35' }}
                 >
-                  Every engagement starts with a single brief. We map your workflow, identify the right
-                  support profile, and match you with a vetted remote specialist — already trained on
-                  your tools and communication style. Most clients are live within 7 days. No long
-                  recruitment cycles, no onboarding overhead. Just dependable execution from day one,
-                  with AU and US timezone coverage built in.
+                  Every engagement starts with understanding your goals, systems, and workflow. We
+                  then match you with remote specialists who can integrate quickly and contribute
+                  immediately. AI-powered processes help streamline execution, but the focus remains
+                  the same: reliable people delivering meaningful work from day one.
                 </motion.p>
               </div>
 
@@ -98,7 +101,6 @@ export default function IntegratedPlatform() {
                 <SplitCTA title="REQUEST A BRIEF" href="#contact" />
               </motion.div>
             </motion.div>
-
           </aside>
         </div>
       </div>

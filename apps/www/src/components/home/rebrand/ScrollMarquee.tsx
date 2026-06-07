@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useLayoutEffect } from 'react';
+import { getLenis } from '@/hooks/useSmoothScroll';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { getLenis } from '@/hooks/useSmoothScroll';
+import { useLayoutEffect, useRef } from 'react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -16,13 +16,13 @@ const COPY_COUNT = 6;
 
 export default function ScrollMarquee() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const trackRef   = useRef<HTMLDivElement>(null);
-  const innerRef   = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
-    const track   = trackRef.current;
-    const inner   = innerRef.current;
+    const track = trackRef.current;
+    const inner = innerRef.current;
     if (!section || !track || !inner) return;
 
     // Oversize the track (matches integratedbio technique) so the ±10vw parallax
@@ -69,6 +69,8 @@ export default function ScrollMarquee() {
     let lastDirection = 1;
     let idleDirection = 1;
 
+    const lenis = getLenis();
+
     let isActive = false;
     const dirTrigger = ScrollTrigger.create({
       trigger: section,
@@ -97,7 +99,6 @@ export default function ScrollMarquee() {
       },
     });
 
-    const lenis = getLenis();
     const handleLenis = (instance: { velocity: number; direction: number }) => {
       if (!isActive) return;
       const absVelocity = Math.abs(instance.velocity);
@@ -170,7 +171,7 @@ export default function ScrollMarquee() {
               style={{ willChange: 'transform' }}
             >
               <span className="whitespace-nowrap text-5xl sm:text-6xl md:text-[clamp(48px,11.1vw,160px)] font-sans font-normal tracking-tight text-[#0c1d2e]">
-                Remote support, matched with care
+                Smarter talent. Faster execution. Better outcomes.
               </span>
               <span className="whitespace-nowrap text-5xl sm:text-6xl md:text-[clamp(48px,11.1vw,160px)] font-sans font-light text-[#0c1d2e]/25 leading-none">
                 &ndash;

@@ -1,21 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { getLenis } from '@/hooks/useSmoothScroll';
 import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
 interface MenuItem {
   name: string;
-  hasDropdown?: boolean;
+  href: string;
 }
 
 const menuItems: MenuItem[] = [
-  { name: 'Services' },
-  { name: 'About Us' },
-  { name: 'Our Team' },
+  { name: 'Services', href: '/businesses' },
+  { name: 'About Us', href: '/about' },
+  { name: 'Our Team', href: '/team' },
 ];
 
 export default function Navbar() {
   const [inWhatWeDo, setInWhatWeDo] = useState(false);
+  const pathname = usePathname();
+
+  const handleLogoClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (pathname === '/') {
+        e.preventDefault();
+        const lenis = getLenis();
+        if (lenis) {
+          lenis.scrollTo(0, { duration: 1.4, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    },
+    [pathname]
+  );
 
   useEffect(() => {
     const startEl = document.getElementById('what-we-do-scroll-root');
@@ -28,7 +46,9 @@ export default function Navbar() {
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         const startTop = startEl.getBoundingClientRect().top + window.scrollY;
-        const footerTop = endEl ? endEl.getBoundingClientRect().top + window.scrollY : Infinity;
+        const footerTop = endEl
+          ? endEl.getBoundingClientRect().top + window.scrollY
+          : Number.POSITIVE_INFINITY;
         const scrollY = window.scrollY + 1; // small offset so at very top it's 0
 
         if (scrollY >= startTop && scrollY < footerTop) {
@@ -61,12 +81,17 @@ export default function Navbar() {
         transition={{ duration: 1.0, delay: 0.8, ease: [0.19, 1, 0.22, 1] }}
       >
         <div className="flex items-center justify-between">
-          <div id="navbar-logo-container" className={`logo-container ${inWhatWeDo ? 'logo-pill' : ''}`}>
+          <a
+            href="/"
+            onClick={handleLogoClick}
+            id="navbar-logo-container"
+            className={`logo-container ${inWhatWeDo ? 'logo-pill' : ''}`}
+          >
             <img src="/sn-logomark-dark.png" alt="SN" className="h-6 w-6 object-contain" />
             <span className="font-medium tracking-tight text-lg" id="navbar-logo-text">
               SN International Group
             </span>
-          </div>
+          </a>
 
           <div className="hidden lg:flex items-center" id="navbar-menu">
             <div className="mono-ui nav-pill uppercase tracking-[0.2em] text-[#0c1d2e]">
@@ -74,7 +99,7 @@ export default function Navbar() {
                 <a
                   key={item.name}
                   className="nav-item transition-colors hover:bg-white hover:text-[#0c1d2e] text-[14px]"
-                  href="#"
+                  href={item.href}
                 >
                   {item.name}
                 </a>
@@ -83,10 +108,13 @@ export default function Navbar() {
               <a
                 className="group button-mono nav-cta uppercase tracking-[0.2em] text-[14px]"
                 id="navbar-cta"
-                href="#"
+                href="/contact"
               >
                 {/* Invisible spacer — gives <a> the exact same natural size as nav items */}
-                <span className="block px-5 py-2 invisible select-none pointer-events-none whitespace-nowrap" aria-hidden="true">
+                <span
+                  className="block px-5 py-2 invisible select-none pointer-events-none whitespace-nowrap"
+                  aria-hidden="true"
+                >
                   Work with us
                 </span>
                 {/* Clipping wrapper — fills the <a> bounds, masks the slide */}

@@ -1,19 +1,18 @@
 'use client';
 
-import { useRef } from 'react';
 import { motion, useScroll } from 'framer-motion';
-import { ArrowUpRight } from 'lucide-react';
-import Navbar from './Navbar';
-import SplitCTA from '../../ui/SplitCTA';
-import WhatWeDo from './WhatWeDo';
-import IntegratedPlatform from './IntegratedPlatform';
-import ThreeCards from './ThreeCards';
-import ScrollMarquee from './ScrollMarquee';
-import OurCompany from './OurCompany';
-import Footer from './Footer';
-import IntroReveal from './IntroReveal';
-import SequenceBackground from './SequenceBackground';
+import { useRef } from 'react';
 import { useSmoothScroll } from '../../../hooks/useSmoothScroll';
+import SplitCTA from '../../ui/SplitCTA';
+import Footer from './Footer';
+import IntegratedPlatform from './IntegratedPlatform';
+import IntroReveal from './IntroReveal';
+import Navbar from './Navbar';
+import OurCompany from './OurCompany';
+import ScrollMarquee from './ScrollMarquee';
+import SequenceBackground from './SequenceBackground';
+import ThreeCards from './ThreeCards';
+import WhatWeDo from './WhatWeDo';
 
 export default function RebrandHome() {
   useSmoothScroll();
@@ -55,7 +54,7 @@ export default function RebrandHome() {
                         animate={{ y: 0 }}
                         transition={{ duration: 1.1, delay: 1.2, ease: [0.19, 1, 0.22, 1] }}
                       >
-                        Remote support teams,
+                        Scale smarter with
                       </motion.span>
                     </div>
                     <div className="overflow-hidden pb-[0.05em]">
@@ -65,13 +64,16 @@ export default function RebrandHome() {
                         animate={{ y: 0 }}
                         transition={{ duration: 1.1, delay: 1.38, ease: [0.19, 1, 0.22, 1] }}
                       >
-                        built around your work.
+                        AI-powered talent.
                       </motion.span>
                     </div>
                   </h1>
                 </div>
 
-                <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between" id="hero-bottom-row">
+                <div
+                  className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between"
+                  id="hero-bottom-row"
+                >
                   <div className="overflow-hidden">
                     <motion.p
                       initial={{ y: '110%' }}
@@ -80,7 +82,9 @@ export default function RebrandHome() {
                       className="max-w-xl text-base sm:text-lg md:text-xl text-[#0c1d2e]/65 leading-relaxed"
                       id="hero-subtitle"
                     >
-                      We build dependable offshore support around your workflow — from executive assistance and marketing support to content creation and AI operations.
+                      AI-enabled specialists across operations, marketing, support, and
+                      technology—embedded into your team and ready to help your business scale
+                      faster.
                     </motion.p>
                   </div>
 

@@ -16,7 +16,13 @@ export default function BottomRightCorner() {
         className="absolute -top-[2rem] md:-top-[4rem] right-0 w-[2rem] md:w-[4rem] h-[2rem] md:h-[4rem] pointer-events-none"
         id="corner-mask-top"
       >
-        <svg width="100%" height="100%" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 56 56"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path d="M56 56V0C56 30.9279 30.9279 56 0 56H56Z" fill="#f0f0f0" />
         </svg>
       </div>
@@ -25,7 +31,13 @@ export default function BottomRightCorner() {
         className="absolute bottom-0 -left-[2rem] md:-left-[4rem] w-[2rem] md:w-[4rem] h-[2rem] md:h-[4rem] pointer-events-none"
         id="corner-mask-left"
       >
-        <svg width="100%" height="100%" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg
+          width="100%"
+          height="100%"
+          viewBox="0 0 56 56"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path d="M56 56H0C30.9279 56 56 30.9279 56 0V56Z" fill="#f0f0f0" />
         </svg>
       </div>
@@ -38,7 +50,10 @@ export default function BottomRightCorner() {
       </div>
 
       <div className="flex flex-col select-none" id="info-column">
-        <h3 className="text-lg md:text-2xl font-normal text-[#1e325a] leading-tight" id="info-title">
+        <h3
+          className="text-lg md:text-2xl font-normal text-[#1e325a] leading-tight"
+          id="info-title"
+        >
           Documentation
         </h3>
         <div

@@ -1,11 +1,11 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
+import { Footer } from '@/components/layout/Footer';
+import { Header } from '@/components/layout/Header';
+import { ScrollProgress } from '@/components/shared/ScrollProgress';
+import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
 
 const HIDE_LAYOUT_PATHS = new Set(['/']);
 

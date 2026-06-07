@@ -1,14 +1,10 @@
 'use client';
 
-// @ts-expect-error — shaders package ships ESM without bundled types
-import { Shader, Swirl, ChromaFlow, FlutedGlass, FilmGrain } from 'shaders/react';
+import { ChromaFlow, FilmGrain, FlutedGlass, Shader, Swirl } from 'shaders/react';
 
 export default function SequenceBackground() {
   return (
-    <Shader
-      className="absolute inset-0 w-full h-full"
-      style={{ width: '100%', height: '100%' }}
-    >
+    <Shader className="absolute inset-0 w-full h-full" style={{ width: '100%', height: '100%' }}>
       {/* Base fluid animation — light blue tones from the homepage palette */}
       <Swirl colorA="#ffffff" colorB="#d6e4f0" detail={1.7} />
 

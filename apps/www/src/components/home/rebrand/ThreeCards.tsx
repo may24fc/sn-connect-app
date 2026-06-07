@@ -1,13 +1,13 @@
 'use client';
 
-import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { useRef } from 'react';
 
 const cardsData = [
   {
     index: '01.',
-    heading: 'Real People',
-    text: 'Vetted specialists matched to your team and briefed on your business.',
+    heading: 'Specialized Talent',
+    text: 'Professionals matched to your goals and ready to contribute.',
     bg: '#ffffff',
     textColor: '#0c1d2e',
     textOpacity: 'rgba(12,29,46,0.65)',
@@ -15,8 +15,8 @@ const cardsData = [
   },
   {
     index: '02.',
-    heading: 'Tech-Ready',
-    text: 'Fluent in your existing stack from day one — no ramp-up, no friction.',
+    heading: 'AI-Enabled Execution',
+    text: 'AI-powered workflows that improve speed, quality, and efficiency.',
     bg: '#0c1d2e',
     textColor: '#d6e4f0',
     textOpacity: 'rgba(214,228,240,0.65)',
@@ -24,8 +24,8 @@ const cardsData = [
   },
   {
     index: '03.',
-    heading: 'AI-Augmented',
-    text: 'Backed by AI workflows that sharpen output and cut turnaround time.',
+    heading: 'Faster Time to Value',
+    text: 'Integrated quickly and delivering results from day one.',
     bg: '#a1c6e7',
     textColor: '#0c1d2e',
     textOpacity: 'rgba(12,29,46,0.65)',
@@ -36,7 +36,7 @@ const cardsData = [
 const ease = [0.19, 1, 0.22, 1] as const;
 
 interface CardProps {
-  card: typeof cardsData[number];
+  card: (typeof cardsData)[number];
   idx: number;
 }
 
@@ -76,7 +76,9 @@ function Card({ card, idx }: CardProps) {
             alt={card.heading}
             referrerPolicy="no-referrer"
             className="w-24 h-24 md:w-28 md:h-28 object-contain"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
           />
         )}
         <span
@@ -118,10 +120,7 @@ function Card({ card, idx }: CardProps) {
 
 export default function ThreeCards() {
   return (
-    <section
-      className="relative w-full overflow-hidden select-none"
-      id="three-cards-section"
-    >
+    <section className="relative w-full overflow-hidden select-none" id="three-cards-section">
       <div className="w-full grid grid-cols-1 md:grid-cols-3" id="three-cards-grid">
         {cardsData.map((card, idx) => (
           <Card key={card.index} card={card} idx={idx} />

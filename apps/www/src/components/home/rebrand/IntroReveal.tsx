@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useEffect, useRef } from 'react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 // Background color of the rebrand-home wrapper — must match exactly
 const BG = '#D6E4F0';
-const INSET = 12;   // px — white border width at rest
-const RADIUS = 20;  // px — border-radius at rest
+const INSET = 12; // px — white border width at rest
+const RADIUS = 20; // px — border-radius at rest
 
 export default function IntroReveal() {
   const frameRef = useRef<HTMLDivElement>(null);
