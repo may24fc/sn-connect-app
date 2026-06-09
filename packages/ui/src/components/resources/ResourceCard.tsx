@@ -30,10 +30,11 @@ export interface ResourceCardProps {
   id: string;
   title: string;
   excerpt: string | null;
-  resourceType: ResourceType;
-  category: ResourceCategory;
+  resourceType?: ResourceType;
+  category?: ResourceCategory;
   status?: ResourceStatus;
-  tags: Array<string>;
+  approvalStatus?: 'pending_approval' | 'pending_update' | 'pending_deletion' | 'rejected' | 'approved';
+  tags?: Array<string>;
   thumbnailPath: string | null;
   viewCount: number;
   downloadCount: number;
@@ -96,8 +97,9 @@ export function ResourceCard({
   onClick,
   onBookmark,
   actions,
+  approvalStatus,
 }: ResourceCardProps): React.ReactNode {
-  const TypeIcon = typeIcons[resourceType];
+  const TypeIcon = resourceType ? typeIcons[resourceType] : FileText;
 
   return (
     <div
@@ -152,6 +154,23 @@ export function ResourceCard({
           <h3 className="flex-1 text-sm font-medium text-zinc-900 dark:text-zinc-50 line-clamp-2 leading-snug">
             {title}
           </h3>
+          {/* Approval status badge for owner-submitted content */}
+          {approvalStatus && approvalStatus !== 'approved' && (
+            <Badge
+              className={cn(
+                'text-[10px] px-1.5 py-0 font-medium',
+                approvalStatus === 'pending_approval' && 'bg-amber-50 text-amber-700',
+                approvalStatus === 'pending_update' && 'bg-sky-50 text-sky-700',
+                approvalStatus === 'pending_deletion' && 'bg-rose-50 text-rose-700',
+                approvalStatus === 'rejected' && 'bg-zinc-100 text-zinc-700'
+              )}
+            >
+              {approvalStatus === 'pending_approval' && 'Pending Review'}
+              {approvalStatus === 'pending_update' && 'Update Pending'}
+              {approvalStatus === 'pending_deletion' && 'Deletion Requested'}
+              {approvalStatus === 'rejected' && 'Rejected'}
+            </Badge>
+          )}
           {isFeatured && (
             <Star className="h-3.5 w-3.5 shrink-0 text-amber-500 fill-amber-500" />
           )}
@@ -167,17 +186,19 @@ export function ResourceCard({
         {/* Meta: category · pinned · tags */}
         <div className="flex flex-wrap justify-between items-center gap-1.5">
           <div className="flex flex-wrap items-center gap-1">
-            <Badge
-              className={cn('text-[11px] px-1.5 py-0 font-medium border', categoryColors[category])}
-            >
-              {categoryLabels[category]}
-            </Badge>
+            {category && (
+              <Badge
+                className={cn('text-[11px] px-1.5 py-0 font-medium border', categoryColors[category])}
+              >
+                {categoryLabels[category]}
+              </Badge>
+            )}
             {isPinned && (
               <Badge variant="navy" className="text-[11px] px-1.5 py-0">
                 Pinned
               </Badge>
             )}
-            {tags.length > 0 && (
+            {tags && tags.length > 0 && (
               <>
                 {tags.slice(0, 2).map((tag) => (
                   <Badge key={tag} variant="outline" className="text-[10px] px-1.5 py-0">

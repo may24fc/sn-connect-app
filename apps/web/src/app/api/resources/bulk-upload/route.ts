@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { category, resourceType, isPublic, targetRoles } = parsed.data;
+    const { isPublic, targetRoles } = parsed.data;
 
     const results: Array<{
       fileName: string;
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       // Generate unique file path
       const timestamp = Date.now();
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `${category}/${timestamp}_${sanitizedFileName}`;
+      const filePath = `bulk-uploads/${timestamp}_${sanitizedFileName}`;
 
       // Upload to Supabase Storage
       const arrayBuffer = await file.arrayBuffer();
@@ -114,9 +114,9 @@ export async function POST(request: NextRequest) {
           title,
           description: null,
           excerpt: normalizeExcerpt(null, null),
-          resource_type: resourceType,
-          category,
-          tags: [],
+          // resource_type: resourceType, // legacy field — intentionally not written
+          // category, // category is used for file organization but not persisted here
+          // tags: [], // tags deprecated
           file_path: filePath,
           file_size: file.size,
           mime_type: file.type,

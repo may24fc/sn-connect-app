@@ -25,7 +25,7 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
     const { data: resource, error: resourceError } = await supabase
       .from('resources')
-      .select('id, file_path, external_url, resource_type, access_level')
+      .select('id, file_path, external_url, access_level')
       .eq('id', id)
       .is('deleted_at', null)
       .single();

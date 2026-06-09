@@ -27,10 +27,9 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  TagInput,
   Textarea,
+  useToast,
 } from '@hr-portal/ui';
-import { useToast } from '@hr-portal/ui';
 import { Archive, ArrowLeft, Loader2, MoreHorizontal, Save, Send, Star, StarOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -55,7 +54,6 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [tags, setTags] = useState<Array<string>>([]);
   const [targeting, setTargeting] = useState({
     rolesCsv: '',
     departmentsCsv: '',
@@ -66,7 +64,6 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
     if (!resource) return;
     setTitle(resource.title);
     setDescription(resource.description || '');
-    setTags(resource.tags || []);
     setTargeting({
       rolesCsv: (resource.target_roles || []).join(', '),
       departmentsCsv: (resource.target_departments || []).join(', '),
@@ -92,7 +89,6 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
       await updateResource.mutateAsync({
         title,
         description,
-        tags,
         targetRoles: targeting.rolesCsv
           .split(',')
           .map((value) => value.trim())
@@ -188,7 +184,6 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
               />
-              <TagInput value={tags} onChange={setTags} />
               <Button onClick={saveDetails} disabled={updateResource.isPending}>
                 <Save className="mr-2 h-4 w-4" />
                 Save Changes

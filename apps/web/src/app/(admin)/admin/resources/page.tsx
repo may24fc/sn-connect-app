@@ -19,6 +19,7 @@ import {
   Skeleton,
   useToast,
 } from '@hr-portal/ui';
+import { usePendingResources } from '@/hooks/useResources';
 import { Archive, FileImage, FolderOpen, MoreHorizontal, Plus, Star, StarOff, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
@@ -54,10 +55,21 @@ export default function AdminResourcesPage() {
   };
 
   const { data, isLoading, error } = useResources(queryFilters);
+  const { data: pendingData } = usePendingResources();
   const archiveResource = useArchiveResource();
   const toggleFeatured = useToggleResourceFeatured();
 
   const resources = data?.data || [];
+
+  const pendingCount = (() => {
+    try {
+      if (!pendingData || !pendingData.data) return 0;
+      const lists = Object.values(pendingData.data as Record<string, any[]>);
+      return lists.reduce((acc, list) => acc + (Array.isArray(list) ? list.length : 0), 0);
+    } catch (err) {
+      return 0;
+    }
+  })();
 
   const stats = useMemo(() => {
     const total = resources.length;
@@ -79,6 +91,11 @@ export default function AdminResourcesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {pendingData && (
+              <Button asChild size="sm" variant="outline" className="mr-2">
+                <a href="/admin/resources/pending">Pending ({pendingCount})</a>
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">

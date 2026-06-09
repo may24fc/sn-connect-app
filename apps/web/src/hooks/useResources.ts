@@ -83,6 +83,7 @@ export function useResources(filters: ResourceFilters = {}) {
       if (filters.isPinned !== undefined) params.append('isPinned', String(filters.isPinned));
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
+          if ((filters as any).folderId) params.append('folderId', (filters as any).folderId);
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -337,6 +338,137 @@ export function useUploadResource() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
+    },
+  });
+}
+
+// ============================================
+// Pending / Admin Hooks
+// ============================================
+
+export function usePendingResources() {
+  return useQuery({
+    queryKey: ['resources', 'pending'],
+    queryFn: async () => {
+      const response = await fetch(`/api/resources/pending`);
+      if (!response.ok) throw new Error('Failed to fetch pending resources');
+      return response.json();
+    },
+  });
+}
+
+export function useApproveResource() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/resources/${id}/approve`, { method: 'POST' });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to approve resource');
+      }
+      return response.json();
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ['resources', 'pending'] });
+    },
+  });
+}
+
+export function useRejectResource() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes?: string }) => {
+      const response = await fetch(`/api/resources/${id}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to reject resource');
+      }
+      return response.json();
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.resources.detail(id) });
+      queryClient.invalidateQueries({ queryKey: ['resources', 'pending'] });
+    },
+  });
+}
+
+// ============================================
+// Folder Hooks
+// ============================================
+
+export function useResourceFolders() {
+  return useQuery({
+    queryKey: ['resource_folders'],
+    queryFn: async () => {
+      const response = await fetch('/api/resources/folders');
+      if (!response.ok) throw new Error('Failed to fetch resource folders');
+      return response.json();
+    },
+  });
+}
+
+export function useCreateResourceFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { name: string; description?: string; color?: string; icon?: string }) => {
+      const response = await fetch('/api/resources/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create folder');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resource_folders'] });
+    },
+  });
+}
+
+export function useUpdateResourceFolder(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Record<string, any>) => {
+      const response = await fetch(`/api/resources/folders/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update folder');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resource_folders'] });
+    },
+  });
+}
+
+export function useDeleteResourceFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/resources/folders/${id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete folder');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resource_folders'] });
     },
   });
 }
