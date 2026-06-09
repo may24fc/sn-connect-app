@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@hr-portal/ui', '@hr-portal/database'],
+  transpilePackages: ['@hr-portal/ui', '@hr-portal/database', 'shaders', 'three'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname, 'src');

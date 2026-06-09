@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { ScrollProgress } from '@/components/shared/ScrollProgress';
-import { AnnouncementBanner } from '@/components/layout/AnnouncementBanner';
+import { SiteFrame } from '@/components/layout/SiteFrame';
+import { aspekta, robotoMono } from './fonts';
 import { Providers } from './providers';
 
 const jsonLd = {
@@ -52,9 +50,7 @@ export const metadata: Metadata = {
     'AI operations support',
   ],
   icons: {
-    icon: [
-      { url: '/sn-logo.png', sizes: '192x192', type: 'image/png' },
-    ],
+    icon: [{ url: '/sn-logo.png', sizes: '192x192', type: 'image/png' }],
     shortcut: ['/sn-logo.png'],
     apple: [{ url: '/sn-logo.png', sizes: '180x180', type: 'image/png' }],
   },
@@ -74,7 +70,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }): ReactNode {
   return (
-    <html lang="en" className="font-sans">
+    <html
+      lang="en"
+      className={`font-sans ${aspekta.variable} ${robotoMono.variable} aspekta-fonts button-fonts`}
+    >
       <head>
         <script
           type="application/ld+json"
@@ -83,11 +82,7 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       </head>
       <body className="min-h-screen overflow-x-clip font-sans antialiased">
         <Providers>
-          <ScrollProgress />
-          <Header />
-          <AnnouncementBanner />
-          <main id="main-content">{children}</main>
-          <Footer />
+          <SiteFrame>{children}</SiteFrame>
         </Providers>
       </body>
     </html>

@@ -3,6 +3,16 @@
 @tailwind components;
 @tailwind utilities;
 
+.aspekta-fonts {
+  --font-body: var(--font-aspekta);
+  --font-heading: var(--font-aspekta);
+}
+
+.button-fonts {
+  --font-button: var(--font-roboto-mono);
+  --font-button-weight: 400;
+}
+
 @layer base {
   *,
   *::before,
@@ -13,7 +23,7 @@
   }
 
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     @apply font-sans;
@@ -29,7 +39,7 @@
   }
 
   ::selection {
-    background-color: #175063;
+    background-color: #2b5a8c;
     color: #FFFFFF;
   }
 
@@ -39,9 +49,29 @@
     letter-spacing: -0.01em;
   }
 
+  button {
+    font-family: var(--font-button, var(--font-body));
+    font-weight: var(--font-button-weight, 400);
+    /* only adjust letter spacing for Roboto Mono */
+    letter-spacing: -0.02em !important;
+  }
+
+  .button-mono {
+    font-family: var(--font-button, var(--font-body));
+    font-weight: var(--font-button-weight, 400);
+    letter-spacing: -0.02em !important;
+  }
+
+  .mono-ui {
+    font-family: var(--font-button, var(--font-body));
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: -0.02em !important;
+  }
+
   /* Focus-visible outlines for keyboard accessibility */
   *:focus-visible {
-    outline: 2px solid #175063;
+    outline: 2px solid #2b5a8c;
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -169,6 +199,228 @@
 }
 
 @layer components {
+  /* Navbar pill and item styles */
+  .nav-pill {
+    @apply flex items-center gap-1 pl-3 pr-1 py-1 text-[#0c1d2e];
+    /* white glassmorphism: 80% opacity with subtle blur and border */
+    @apply bg-white/85 backdrop-blur-sm border border-white/30;
+    border-radius: 0.60rem; /* not fully pill-shaped, gently rounded */
+  }
+
+  /* logo: default (no pill) then transitions into pill that matches the right nav */
+  .logo-container {
+    @apply inline-flex items-center gap-3;
+    padding: 0; /* no background at rest */
+    border-radius: 0.6rem;
+    background: transparent;
+    color: #0c1d2e; /* dark wordmark on light hero */
+    border: 1px solid transparent;
+    transition: background-color 220ms ease, color 220ms ease, border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease, padding 220ms ease;
+  }
+
+  .logo-pill {
+    @apply inline-flex items-center gap-3 px-3 py-2 bg-white/90 border border-white/30 text-[#0c1d2e];
+    border-radius: 0.60rem; /* match nav-pill rounding */
+    /* small blur to match nav pill look but keep consistent with nav-pill */
+    backdrop-filter: blur(3px);
+    transition: background-color 220ms ease, color 220ms ease, border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease, padding 220ms ease;
+  }
+
+  .nav-item {
+    @apply px-4 py-2 transition-colors;
+    @apply rounded-md; /* subtle corner rounding */
+  }
+
+  .nav-cta {
+    display: inline-block;
+    margin-left: 0.5rem;
+    border-radius: 0.5rem;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Split CTA (two-part) - premium, techy button */
+  .split-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem; /* small gap between main and arrow */
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  /* colors */
+  :root {
+    --split-cta-dark: #0c1d2e; /* deep blue */
+    --split-cta-lime: #3b86d2; /* medium blue */
+    --split-cta-radius: 20px;
+    --split-cta-height: 48px;
+    --split-cta-transition: 250ms ease;
+  }
+
+  .split-cta__main {
+    display: inline-flex;
+    align-items: center;
+    height: var(--split-cta-height);
+    padding: 0 1.25rem; /* horizontal padding */
+    background: var(--split-cta-dark);
+    color: #ffffff;
+    font-family: var(--font-button, ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace);
+    font-weight: 400 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.2em !important;
+    font-size: 14px !important;
+    border-radius: var(--split-cta-radius);
+    transition: background var(--split-cta-transition), color var(--split-cta-transition), box-shadow var(--split-cta-transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+  }
+
+  .split-cta__arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--split-cta-height);
+    width: var(--split-cta-height);
+    background: var(--split-cta-lime);
+    color: var(--split-cta-dark);
+    border-radius: var(--split-cta-radius);
+    transition: background var(--split-cta-transition), color var(--split-cta-transition), box-shadow var(--split-cta-transition);
+    pointer-events: none; /* arrow portion delegates click to whole anchor */
+  }
+
+  .split-cta__arrow svg { width: 18px; height: 18px; }
+
+  /* Hover: color inversion */
+  .split-cta:hover .split-cta__main {
+    background: var(--split-cta-lime);
+    color: var(--split-cta-dark);
+    box-shadow: 0 6px 18px rgba(12,29,46,0.08);
+  }
+
+  .split-cta:hover .split-cta__arrow {
+    background: var(--split-cta-dark);
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(12,29,46,0.08);
+  }
+
+  /* ensure text/icon color changes are applied to children */
+  .split-cta__main,
+  .split-cta__arrow {
+    transition: background var(--split-cta-transition), color var(--split-cta-transition), box-shadow var(--split-cta-transition);
+  }
+
+  .split-cta:focus-visible {
+    outline: 2px solid rgba(27,39,48,0.12);
+    outline-offset: 3px;
+    border-radius: var(--split-cta-radius);
+  }
+
+  /* Styles matching provided markup: .u-btn--1.button_el */
+  .u-btn--1.button_el {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem !important; /* force a tighter gap between text pill and arrow pill */
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .u-btn--1.button_el .btn_label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    isolation: isolate; /* own stacking context so z-index:-1 shape stays inside */
+    height: var(--split-cta-height);
+    /* min-width ensures the label diagonal angle always matches the icon pill diagonal.
+       Both SVG paths have a 12.3-unit horizontal shift; over 259 vs 73 total units.
+       At icon width = height × 1.25: min label width = 259/73 × height × 1.25 ≈ 4.43 × height */
+    min-width: calc(3.75 * var(--split-cta-height));
+    /* reduced horizontal padding for a tighter pill */
+    padding: 0 1rem;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 14px;
+    font-weight: 400;
+    overflow: visible;
+    /* allow CSS var to control SVG fill */
+    --btn-main-bg: var(--split-cta-dark);
+  }
+
+  /* SVG background shape sits absolutely and scales to height */
+  .u-btn--1.button_el .btn_label .btn_label_shape {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1; /* behind the text */
+  }
+
+  .u-btn--1.button_el .btn_label .btn_label_text {
+    position: relative;
+    z-index: 2;
+    padding-right: 0.4rem;
+  }
+
+  .u-btn--1.button_el .btn_icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--split-cta-height);
+    width: calc(var(--split-cta-height) * 1.25);
+    border-radius: 0;
+    overflow: hidden;
+    pointer-events: none; /* arrow portion delegates click to whole anchor */
+    color: var(--split-cta-dark); /* glyph color */
+    transition: color var(--split-cta-transition), box-shadow var(--split-cta-transition);
+    margin-left: -4px; /* pull arrow slightly closer into the label's corner */
+  }
+  .u-btn--1.button_el .btn_icon_svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .u-btn--1.button_el .btn_icon_bg {
+    transition: fill var(--split-cta-transition);
+  }
+
+  /* ensure arrow pill uses its own CSS var for background */
+  .u-btn--1.button_el {
+    --btn-arrow-bg: var(--split-cta-lime);
+  }
+
+  .u-btn--1.button_el:hover .btn_label {
+    --btn-main-bg: var(--split-cta-lime);
+    color: var(--split-cta-dark);
+    box-shadow: 0 6px 18px rgba(12,29,46,0.08);
+  }
+
+  /* Footer variant — white text, keep hover as dark */
+  .footer-cta .u-btn--1.button_el .btn_label {
+    color: #ffffff;
+  }
+  .footer-cta .u-btn--1.button_el:hover .btn_label {
+    color: var(--split-cta-dark);
+  }
+
+  .u-btn--1.button_el:hover .btn_icon {
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(12,29,46,0.08);
+  }
+
+  .u-btn--1.button_el:hover .btn_icon_bg {
+    fill: var(--split-cta-dark);
+  }
+
   .section-padding {
     @apply px-4 sm:px-6 lg:px-8 xl:px-16;
   }
@@ -176,6 +428,15 @@
   .section-max {
     @apply mx-auto max-w-7xl;
   }
+
+  .marquee-track {
+    animation: marquee-scroll var(--marquee-duration, 25s) linear infinite;
+  }
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 @layer utilities {
