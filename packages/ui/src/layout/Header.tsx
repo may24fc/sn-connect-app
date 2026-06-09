@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, ChevronDown, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User } from 'lucide-react';
+import { Bell, ChevronDown, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User, Phone } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Badge } from '../primitives/badge';
@@ -89,6 +89,12 @@ export function Header({
       .slice(0, 2);
   };
 
+  // Booking link for the "Call with Steven" action. Set in the hosting environment.
+  const bookingUrl =
+    process.env.NEXT_PUBLIC_CALL_WITH_STEVEN_URL ?? process.env.NEXT_PUBLIC_STEVEN_BOOKING_URL;
+  const embedUrl =
+    process.env.NEXT_PUBLIC_CALL_WITH_STEVEN_EMBED_URL ?? process.env.NEXT_PUBLIC_STEVEN_BOOKING_EMBED_URL;
+
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
       {/* Left Section */}
@@ -136,6 +142,39 @@ export function Header({
 
       {/* Right Section */}
       <div className="flex items-center gap-2">
+        {/* Call with Steven: show when booking or embed env is provided. If an embed URL is configured, open the internal embed page; otherwise open the external booking link in a new tab. */}
+        {(bookingUrl || embedUrl) && (
+          embedUrl ? (
+            <a href="/booking/steven" aria-label="Call with Steven (embed)">
+              <div className="flex items-center gap-1 group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md px-2 py-1 pr-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <Phone
+                  className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                  strokeWidth={1.5}
+                  />
+                </Button>
+                <p>Call with Steven</p>
+              </div>
+            </a>
+          ) : (
+            <a href={bookingUrl} target="_blank" rel="noopener noreferrer" aria-label="Call with Steven">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <Phone
+                  className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                  strokeWidth={1.5}
+                />
+              </Button>
+            </a>
+          )
+        )}
         {/* Help / Guided Tour */}
         {onHelpClick && (
           <Button

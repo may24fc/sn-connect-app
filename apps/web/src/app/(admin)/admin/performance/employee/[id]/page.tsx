@@ -8,7 +8,7 @@ import {
 } from '@/hooks/useIndividualPerformance';
 import { type KPIEvidenceRow, useKPIEvidence } from '@/hooks/useKPIEvidence';
 import { type OKRTargetEvidenceRow, useOKRTargetEvidence } from '@/hooks/useOKRTargetEvidence';
-import { useUpdateOKR, useUpdateOKRTarget } from '@/hooks/usePerformance';
+import { usePerformanceCycles, useUpdateOKR, useUpdateOKRTarget } from '@/hooks/usePerformance';
 import {
   Avatar,
   AvatarFallback,
@@ -29,6 +29,11 @@ import {
   Label,
   type PerformanceRating,
   RATING_CONFIG,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsContent,
   TabsList,
@@ -59,7 +64,7 @@ import {
   Weight,
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -561,12 +566,14 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   const employeeId = params.id as string;
 
   const { data, isLoading, isError, refetch } = useIndividualPerformance(employeeId);
+  const { data: cycles = [] } = usePerformanceCycles();
   const updateOKR = useUpdateOKR();
   const updateTarget = useUpdateOKRTarget();
   const isSupervisorReview = user?.role === 'super_admin';
 
   const [expandedOkrs, setExpandedOkrs] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'view' | 'evaluate'>('view');
+  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
 
   // Evaluation modal state
   const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false);
@@ -602,8 +609,11 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
 
   // All objectives stay evaluatable regardless of progress or current status.
   const evaluatableObjectives = useMemo(() => {
-    return objectives;
-  }, [objectives]);
+    return objectives.filter((objective) => {
+      if (!selectedCycleId) return true;
+      return objective.okr.cycle_id === selectedCycleId;
+    });
+  }, [objectives, selectedCycleId]);
 
   const cycleNamesById = useMemo(() => {
     if (!data) return new Map<string, string | null>();
@@ -625,6 +635,25 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
       })
     );
   }, [cycleNamesById, data]);
+
+  const filteredStandaloneKpis = useMemo(() => {
+    if (!selectedCycleId) return standaloneKpis;
+
+    return standaloneKpis.filter((kpi) => {
+      const sourceKpi = data?.kpis.find((item) => item.id === kpi.id);
+      return sourceKpi?.cycle_id === selectedCycleId;
+    });
+  }, [data?.kpis, selectedCycleId, standaloneKpis]);
+
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
+  const fallbackCycle = activeCycle || cycles[0] || null;
+
+  useEffect(() => {
+    if (selectedCycleId) return;
+    if (fallbackCycle) {
+      setSelectedCycleId(fallbackCycle.id);
+    }
+  }, [fallbackCycle, selectedCycleId]);
 
   const { data: selectedTargetEvidenceResponse, isLoading: isTargetEvidenceLoading } =
     useOKRTargetEvidence(
@@ -876,29 +905,47 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
         onValueChange={(v) => setActiveTab(v as 'view' | 'evaluate')}
         className="w-full"
       >
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="view" className="flex items-center gap-2">
-            <Eye className="h-4 w-4" />
-            View OKRs & KPIs
-          </TabsTrigger>
-          <TabsTrigger value="evaluate" className="flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4" />
-            Evaluate ({evaluatableObjectives.length})
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="view" className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              View OKRs & KPIs
+            </TabsTrigger>
+            <TabsTrigger value="evaluate" className="flex items-center gap-2">
+              <ClipboardCheck className="h-4 w-4" />
+              Evaluate ({evaluatableObjectives.length})
+            </TabsTrigger>
+          </TabsList>
+          <Select
+            value={selectedCycleId}
+            onValueChange={setSelectedCycleId}
+            disabled={cycles.length === 0}
+          >
+            <SelectTrigger className="w-full sm:w-[240px]">
+              <SelectValue placeholder="Filter cycle" />
+            </SelectTrigger>
+            <SelectContent>
+              {cycles.map((cycle) => (
+                <SelectItem key={cycle.id} value={cycle.id}>
+                  {cycle.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* ═══════════════ VIEW TAB ═══════════════ */}
         <TabsContent value="view" className="mt-4 space-y-4">
-          {objectives.length === 0 && standaloneKpis.length === 0 ? (
+          {evaluatableObjectives.length === 0 && filteredStandaloneKpis.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Target className="h-8 w-8 text-muted-foreground/40 mb-2" strokeWidth={1.5} />
-                <p className="text-sm text-muted-foreground">No OKRs or KPIs assigned</p>
+                <p className="text-sm text-muted-foreground">No OKRs or KPIs in this cycle</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
-              {objectives.map(({ okr, targets, mean }) => {
+              {evaluatableObjectives.map(({ okr, targets, mean }) => {
                 const isExpanded = expandedOkrs.has(okr.id);
                 const displayStatus = getObjectiveDisplayStatus(okr.status, mean);
 
@@ -1093,13 +1140,13 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                 );
               })}
 
-              {standaloneKpis.length > 0 && (
+              {filteredStandaloneKpis.length > 0 && (
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">Standalone KPIs</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {standaloneKpis.map((item) => (
+                    {filteredStandaloneKpis.map((item) => (
                       <button
                         key={item.id}
                         type="button"
