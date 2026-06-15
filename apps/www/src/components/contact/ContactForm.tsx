@@ -4,8 +4,9 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Send, CheckCircle, User, Mail, Phone, MessageSquare, Type, Clock } from 'lucide-react';
+import { CheckCircle, User, Mail, Phone, MessageSquare, Type, Clock } from 'lucide-react';
 import { inquirySchema, type InquiryFormData } from '@/lib/schemas/inquiry.schema';
+import SplitCTA from '@/components/ui/SplitCTA';
 
 export function ContactForm(): ReactNode {
   const [submitted, setSubmitted] = useState(false);
@@ -96,15 +97,15 @@ export function ContactForm(): ReactNode {
       onSubmit={handleSubmit(onSubmit)}
       className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-8 shadow-card"
     >
-      <h3 className="text-xl font-bold text-zinc-900">Request support</h3>
+      {/* <h3 className="text-xl font-semibold text-[#0c1d2e]">Request support</h3>
       <p className="mt-1 text-sm text-zinc-500">
         Give us enough context to scope the right role, working style, and next step.
-      </p>
+      </p> */}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 button-mono font-medium uppercase">
         {/* Name */}
         <div className="sm:col-span-1">
-          <label htmlFor="contact-name" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="contact-name" className="block text-xs">
             Full Name <span className="text-red-500">*</span>
           </label>
           <div className="relative mt-1">
@@ -113,17 +114,17 @@ export function ContactForm(): ReactNode {
               id="contact-name"
               {...register('name')}
               placeholder="Your full name"
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.name && (
-            <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
+            <p className="mt-1 text-xs uppercase text-red-500">{errors.name.message}</p>
           )}
         </div>
 
         {/* Email */}
         <div className="sm:col-span-1">
-          <label htmlFor="contact-email" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="contact-email" className="block text-xs">
             Email <span className="text-red-500">*</span>
           </label>
           <div className="relative mt-1">
@@ -133,7 +134,7 @@ export function ContactForm(): ReactNode {
               type="email"
               {...register('email')}
               placeholder="name@company.com"
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.email && (
@@ -143,7 +144,7 @@ export function ContactForm(): ReactNode {
 
         {/* Phone */}
         <div className="sm:col-span-2">
-          <label htmlFor="contact-phone" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="contact-phone" className="block text-xs">
             Phone
           </label>
           <div className="relative mt-1">
@@ -152,14 +153,14 @@ export function ContactForm(): ReactNode {
               id="contact-phone"
               {...register('phone')}
               placeholder="Optional"
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
         </div>
 
         {/* Subject */}
         <div className="sm:col-span-2">
-          <label htmlFor="contact-subject" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="contact-subject" className="block text-xs">
             What support do you need? <span className="text-red-500">*</span>
           </label>
           <div className="relative mt-1">
@@ -167,8 +168,8 @@ export function ContactForm(): ReactNode {
             <input
               id="contact-subject"
               {...register('subject')}
-              placeholder="Example: Executive assistance for inbox, calendar, and weekly reporting"
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
+              placeholder="Executive assistance for inbox, calendar, etc."
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.subject && (
@@ -178,7 +179,7 @@ export function ContactForm(): ReactNode {
 
         {/* Message */}
         <div className="sm:col-span-2">
-          <label htmlFor="contact-message" className="block text-sm font-medium text-zinc-700">
+          <label htmlFor="contact-message" className="block text-xs">
             Brief details <span className="text-red-500">*</span>
           </label>
           <div className="relative mt-1">
@@ -188,7 +189,7 @@ export function ContactForm(): ReactNode {
               {...register('message')}
               rows={5}
               placeholder="Tell us about the tasks, hours, timezone, tools, and how quickly you want to start."
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-sm focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
+              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
           {errors.message && (
@@ -200,17 +201,16 @@ export function ContactForm(): ReactNode {
       {submitError && <p className="mt-4 text-sm text-red-500">{submitError}</p>}
 
       <div className="mt-auto pt-6 flex flex-col gap-3">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-900 disabled:opacity-50"
+        <div
+          className={`flex justify-end${isSubmitting ? ' pointer-events-none opacity-60' : ''}`}
+          style={{ '--btn-main-bg': '#0c1d2e', '--btn-arrow-bg': '#3b86d2' } as React.CSSProperties}
         >
-          <Send className="h-4 w-4" />
-          {isSubmitting ? 'Sending...' : 'Send Brief'}
-        </button>
-        <p className="text-center text-xs text-zinc-400">
-          We typically respond within 1 business day.
-        </p>
+          <SplitCTA
+            title={isSubmitting ? 'SENDING...' : 'SEND BRIEF'}
+            onClick={handleSubmit(onSubmit)}
+            ariaLabel={isSubmitting ? 'Sending your brief' : 'Send brief'}
+          />
+        </div>
       </div>
     </form>
   );

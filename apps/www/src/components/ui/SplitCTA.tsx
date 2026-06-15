@@ -6,6 +6,19 @@ interface SplitCTAProps {
   href?: string;
   onClick?: () => void;
   ariaLabel?: string;
+  /** Label pill bg at rest. Enables color animation when paired with mainBgHover. */
+  mainBg?: string;
+  mainBgHover?: string;
+  /** Arrow pill bg at rest. Enables color animation when paired with arrowBgHover. */
+  arrowBg?: string;
+  arrowBgHover?: string;
+  /** Default arrow stroke color (the one that exits on hover). */
+  arrowColor?: string;
+  /** Hover arrow stroke color (the one that enters on hover). */
+  arrowHoverColor?: string;
+  /** Overrides the CSS default text color (color: #fff). Animates if labelColorHover differs. */
+  labelColor?: string;
+  labelColorHover?: string;
 }
 
 // Left side frozen — only right angled corners morph
@@ -22,14 +35,11 @@ const ICON_HOVER =
 
 const DURATION = 300;
 
-// Arrow SVG viewBox is 24×24; pill SVG is 73×50 rendered at 60×48px.
-// Scale to produce a visually ~16×16px arrow despite non-square user units.
-// px-per-unit: x = 60/73 ≈ 0.822, y = 48/50 = 0.96
-const ARROW_SX = 16 / (24 * (60 / 73)); // ≈ 0.812
-const ARROW_SY = 16 / (24 * (48 / 50)); // ≈ 0.694
-const ARROW_CX = 36.5 - (24 * ARROW_SX) / 2; // left edge when centered ≈ 26.75
-const ARROW_CY = 25 - (24 * ARROW_SY) / 2; // top  edge when centered ≈ 16.67
-const ARROW_SLIDE = 52; // SVG units — enough to clear the 73-unit wide pill
+const ARROW_SX = 16 / (24 * (60 / 73));
+const ARROW_SY = 16 / (24 * (48 / 50));
+const ARROW_CX = 36.5 - (24 * ARROW_SX) / 2;
+const ARROW_CY = 25 - (24 * ARROW_SY) / 2;
+const ARROW_SLIDE = 52;
 
 const ARROW_PATH = 'M5 12h14M13 6l6 6-6 6';
 
@@ -54,6 +64,20 @@ function easeOut(t: number): number {
   return 1 - (1 - t) * (1 - t);
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+function lerpColor(from: string, to: string, t: number): string {
+  const [r1, g1, b1] = hexToRgb(from);
+  const [r2, g2, b2] = hexToRgb(to);
+  const r = Math.round(r1 + (r2 - r1) * t).toString(16).padStart(2, '0');
+  const g = Math.round(g1 + (g2 - g1) * t).toString(16).padStart(2, '0');
+  const b = Math.round(b1 + (b2 - b1) * t).toString(16).padStart(2, '0');
+  return `#${r}${g}${b}`;
+}
+
 function arrowTransform(cx: number): string {
   return `translate(${cx.toFixed(3)},${ARROW_CY.toFixed(3)}) scale(${ARROW_SX.toFixed(4)},${ARROW_SY.toFixed(4)})`;
 }
@@ -63,15 +87,25 @@ export default function SplitCTA({
   href = '#',
   onClick,
   ariaLabel,
+  mainBg,
+  mainBgHover,
+  arrowBg,
+  arrowBgHover,
+  arrowColor = 'currentColor',
+  arrowHoverColor = 'white',
+  labelColor,
+  labelColorHover,
 }: SplitCTAProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const clipId = `pill-clip-${uid}`;
 
+  const labelSpanRef = useRef<HTMLSpanElement>(null);
   const labelPathRef = useRef<SVGPathElement>(null);
   const iconBgRef = useRef<SVGPathElement>(null);
   const iconClipRef = useRef<SVGPathElement>(null);
   const arrowDefRef = useRef<SVGGElement>(null);
   const arrowHovRef = useRef<SVGGElement>(null);
+  const arrowDefPathRef = useRef<SVGPathElement>(null);
   const rafRef = useRef<number>(0);
   const progressRef = useRef<number>(0);
 
@@ -90,7 +124,7 @@ export default function SplitCTA({
         const p = from + (to - from) * easeOut(raw);
         progressRef.current = p;
 
-        // morph label background
+        // morph label background path
         labelPathRef.current?.setAttribute('d', lerpPath(LABEL_DEFAULT, LABEL_HOVER, p));
 
         // morph icon background + clip path in lockstep
@@ -104,6 +138,28 @@ export default function SplitCTA({
           'transform',
           arrowTransform(ARROW_CX + (p - 1) * ARROW_SLIDE)
         );
+
+        // lerp label bg fill — use style.fill to beat the CSS hover rule
+        if (mainBg && mainBgHover) {
+          const el = labelPathRef.current;
+          if (el) el.style.fill = lerpColor(mainBg, mainBgHover, p);
+        }
+
+        // lerp arrow bg fill — use style.fill to beat `.btn_icon_bg:hover { fill: var(--split-cta-dark) }`
+        if (arrowBg && arrowBgHover) {
+          const el = iconBgRef.current;
+          if (el) el.style.fill = lerpColor(arrowBg, arrowBgHover, p);
+          // lerp default arrow stroke to stay contrasting
+          if (arrowColor !== 'currentColor') {
+            arrowDefPathRef.current?.setAttribute('stroke', lerpColor(arrowColor, arrowHoverColor, p));
+          }
+        }
+
+        // lerp label text color if both states provided
+        if (labelColor && labelColorHover && labelColor !== labelColorHover) {
+          const el = labelSpanRef.current;
+          if (el) el.style.color = lerpColor(labelColor, labelColorHover, p);
+        }
 
         if (raw < 1) rafRef.current = requestAnimationFrame(frame);
       };
@@ -123,7 +179,11 @@ export default function SplitCTA({
       onMouseEnter={() => animate(true)}
       onMouseLeave={() => animate(false)}
     >
-      <span className="btn_label button-mono">
+      <span
+        ref={labelSpanRef}
+        className="btn_label button-mono"
+        style={labelColor ? { color: labelColor } : undefined}
+      >
         <svg
           className="btn_label_shape"
           xmlns="http://www.w3.org/2000/svg"
@@ -131,17 +191,12 @@ export default function SplitCTA({
           preserveAspectRatio="none"
           aria-hidden
         >
-          <path ref={labelPathRef} fill="var(--btn-main-bg, #0c1d2e)" d={LABEL_DEFAULT} />
+          <path ref={labelPathRef} fill={mainBg ?? 'var(--btn-main-bg, #0c1d2e)'} d={LABEL_DEFAULT} />
         </svg>
         <span className="btn_label_text">{title}</span>
       </span>
 
       <i className="btn_icon" aria-hidden>
-        {/*
-          Single SVG: background + clipPath + arrows in one coordinate space.
-          The clipPath mirrors the background path and is updated every RAF frame,
-          so arrows are always clipped precisely to the morphing pill shape.
-        */}
         <svg
           className="btn_icon_svg"
           xmlns="http://www.w3.org/2000/svg"
@@ -158,7 +213,7 @@ export default function SplitCTA({
           <path
             ref={iconBgRef}
             className="btn_icon_bg"
-            fill="var(--btn-arrow-bg, #3b86d2)"
+            fill={arrowBg ?? 'var(--btn-arrow-bg, #3b86d2)'}
             d={ICON_DEFAULT}
           />
 
@@ -167,8 +222,9 @@ export default function SplitCTA({
             {/* default arrow — slides out to right on hover */}
             <g ref={arrowDefRef} transform={arrowTransform(ARROW_CX)}>
               <path
+                ref={arrowDefPathRef}
                 d={ARROW_PATH}
-                stroke="currentColor"
+                stroke={arrowColor}
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -176,11 +232,11 @@ export default function SplitCTA({
                 vectorEffect="non-scaling-stroke"
               />
             </g>
-            {/* hover arrow — enters from left on hover, always white */}
+            {/* hover arrow — enters from left on hover */}
             <g ref={arrowHovRef} transform={arrowTransform(ARROW_CX - ARROW_SLIDE)}>
               <path
                 d={ARROW_PATH}
-                stroke="white"
+                stroke={arrowHoverColor}
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"

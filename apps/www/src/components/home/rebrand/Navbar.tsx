@@ -10,13 +10,17 @@ interface MenuItem {
   href: string;
 }
 
+interface NavbarProps {
+  alwaysLogoPill?: boolean;
+}
+
 const menuItems: MenuItem[] = [
   { name: 'Services', href: '/businesses' },
   { name: 'About Us', href: '/about' },
   { name: 'Our Team', href: '/team' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ alwaysLogoPill = false }: NavbarProps) {
   const [inWhatWeDo, setInWhatWeDo] = useState(false);
   const pathname = usePathname();
 
@@ -85,7 +89,7 @@ export default function Navbar() {
             href="/"
             onClick={handleLogoClick}
             id="navbar-logo-container"
-            className={`logo-container ${inWhatWeDo ? 'logo-pill' : ''}`}
+            className={`logo-container ${inWhatWeDo || alwaysLogoPill ? 'logo-pill' : ''}`}
           >
             <img src="/sn-logomark-dark.png" alt="SN" className="h-6 w-6 object-contain" />
             <span className="font-medium tracking-tight text-lg" id="navbar-logo-text">
