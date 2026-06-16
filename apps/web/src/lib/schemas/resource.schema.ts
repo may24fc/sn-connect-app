@@ -4,6 +4,7 @@ import { z } from 'zod';
 // Enum Schemas
 // ============================================
 
+export const resourceStatusSchema = z.enum(['draft', 'published', 'archived']);
 export const resourceTypeSchema = z.enum([
   'video',
   'document',
@@ -12,7 +13,6 @@ export const resourceTypeSchema = z.enum([
   'presentation',
   'interactive',
 ]);
-
 export const resourceCategorySchema = z.enum([
   'onboarding',
   'training',
@@ -26,8 +26,6 @@ export const resourceCategorySchema = z.enum([
   'emergency',
 ]);
 
-export const resourceStatusSchema = z.enum(['draft', 'published', 'archived']);
-
 // ============================================
 // Base Schemas
 // ============================================
@@ -36,10 +34,12 @@ const resourceBaseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
   description: z.string().max(5000, 'Description is too long').optional().nullable(),
   excerpt: z.string().max(300, 'Excerpt is too long').optional().nullable(),
-  resourceType: resourceTypeSchema,
-  category: resourceCategorySchema,
+  // Legacy compatibility while dynamic categories migrate fully.
+  resourceType: resourceTypeSchema.optional(),
+  category: resourceCategorySchema.optional(),
+  tags: z.array(z.string()).optional(),
   subcategory: z.string().max(100).optional().nullable(),
-  tags: z.array(z.string().max(50)).max(20).default([]),
+  folderId: z.string().uuid().optional().nullable(),
   filePath: z.string().optional().nullable(),
   externalUrl: z.string().url('Invalid URL').optional().nullable(),
   thumbnailPath: z.string().optional().nullable(),
@@ -78,8 +78,8 @@ export const updateResourceSchema = z
     excerpt: z.string().max(300).optional().nullable(),
     resourceType: resourceTypeSchema.optional(),
     category: resourceCategorySchema.optional(),
+    tags: z.array(z.string()).optional(),
     subcategory: z.string().max(100).optional().nullable(),
-    tags: z.array(z.string().max(50)).max(20).optional(),
     filePath: z.string().optional().nullable(),
     externalUrl: z.string().url('Invalid URL').optional().nullable(),
     thumbnailPath: z.string().optional().nullable(),
@@ -109,9 +109,8 @@ export const updateResourceSchema = z
 export const resourceFiltersSchema = z.object({
   search: z.string().optional(),
   status: resourceStatusSchema.optional(),
-  category: resourceCategorySchema.optional(),
-  resourceType: resourceTypeSchema.optional(),
-  tags: z.array(z.string()).optional(),
+  folderId: z.string().uuid().optional(),
+  // Note: `category`, `resourceType`, and `tags` were removed
   authorId: z.string().uuid().optional(),
   isFeatured: z.coerce.boolean().optional(),
   isPinned: z.coerce.boolean().optional(),
@@ -125,17 +124,12 @@ export const resourceFiltersSchema = z.object({
 
 export const resourceFeedFiltersSchema = z.object({
   search: z.string().optional(),
-  category: resourceCategorySchema.optional(),
-  resourceType: resourceTypeSchema.optional(),
-  tags: z.array(z.string()).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
 });
 
 export const resourceSearchSchema = z.object({
   query: z.string().min(2, 'Search query must be at least 2 characters'),
-  category: resourceCategorySchema.optional(),
-  resourceType: resourceTypeSchema.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
@@ -189,13 +183,9 @@ export const trackViewSchema = z.object({
 
 export const resourceUploadSchema = z.object({
   fileName: z.string().min(1),
-  category: resourceCategorySchema,
-  resourceType: resourceTypeSchema,
 });
 
 export const bulkUploadSchema = z.object({
-  category: resourceCategorySchema,
-  resourceType: resourceTypeSchema,
   isPublic: z.boolean().default(false),
   targetRoles: z.array(z.string()).default([]),
 });
@@ -204,8 +194,6 @@ export const bulkUploadSchema = z.object({
 // Type Exports
 // ============================================
 
-export type ResourceType = z.infer<typeof resourceTypeSchema>;
-export type ResourceCategory = z.infer<typeof resourceCategorySchema>;
 export type ResourceStatus = z.infer<typeof resourceStatusSchema>;
 export type CreateResourceInput = z.infer<typeof createResourceSchema>;
 export type UpdateResourceInput = z.infer<typeof updateResourceSchema>;

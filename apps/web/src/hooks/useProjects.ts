@@ -54,6 +54,11 @@ export interface ProjectDocumentationRecord {
   updated_at: string;
 }
 
+export interface ProjectDocumentationCreateResponse {
+  data: ProjectDocumentationRecord;
+  resourceFolderId?: string;
+}
+
 export interface ProjectDetail extends ProjectRecord {
   contributors: ProjectContributorRecord[];
 }
@@ -267,7 +272,7 @@ export function useCreateProjectDocumentation() {
           formData.append('label', input.label);
         }
 
-        return jsonFetch<{ data: ProjectDocumentationRecord }>(
+        return jsonFetch<ProjectDocumentationCreateResponse>(
           `/api/projects/${input.projectId}/documentation`,
           {
             method: 'POST',
@@ -280,7 +285,7 @@ export function useCreateProjectDocumentation() {
         throw new Error('Link URL is required');
       }
 
-      return jsonFetch<{ data: ProjectDocumentationRecord }>(
+      return jsonFetch<ProjectDocumentationCreateResponse>(
         `/api/projects/${input.projectId}/documentation`,
         {
           method: 'POST',
@@ -391,26 +396,6 @@ export function useDeleteMilestone() {
       });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
-    },
-  });
-}
-
-export function useCompleteMilestone() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: { milestoneId: string; projectId: string }) =>
-      jsonFetch<{ data: MilestoneRecord }>(
-        `/api/projects/milestones/${input.milestoneId}/submit`,
-        { method: 'POST' }
-      ),
-    onSuccess: (_data, vars) => {
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.projects.milestones(vars.projectId),
-      });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(vars.projectId) });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.projects.lists() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.adminProjects.overview() });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.leaderboard.all });
     },
   });
 }

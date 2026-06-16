@@ -6,7 +6,9 @@ import {
   useResourceBookmarks,
 } from '@/hooks/useResourceBookmarks';
 import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
+import { useResources } from '@/hooks/useResources';
 import { formatDate } from '@/lib/format';
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import {
   Button,
   Card,
@@ -20,6 +22,16 @@ import {
   ResourceCard,
   ResourceGrid,
   useToast,
+  ResourceFolderCard,
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+  Label,
 } from '@hr-portal/ui';
 import {
   Bookmark,
@@ -28,9 +40,12 @@ import {
   Loader2,
   Search,
   Star,
+  Plus,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { useResourceFolders, useCreateResourceFolder, useDeleteResource, useDeleteResourceFolder } from '@/hooks/useResources';
+import { useAuth } from '@/contexts/AuthContext';
 
 const categoryLabels: Record<string, string> = {
   onboarding: 'Onboarding',
@@ -45,10 +60,21 @@ const categoryLabels: Record<string, string> = {
   emergency: 'Emergency',
 };
 
+function isPendingApprovalStatus(
+  approvalStatus?: 'pending_approval' | 'pending_update' | 'pending_deletion' | 'rejected' | 'approved'
+): boolean {
+  return approvalStatus !== undefined && approvalStatus !== 'approved';
+}
+
 export default function ResourcesPage() {
   const [search, setSearch] = useState('');
   const [resourcePage, setResourcePage] = useState(1);
   const [selectedResourceCategory, setSelectedResourceCategory] = useState<string>('');
+  const [folderName, setFolderName] = useState('');
+  const [folderDesc, setFolderDesc] = useState('');
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+  const [resourceDeleteTarget, setResourceDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [folderDeleteTarget, setFolderDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: resourceData, isLoading: isResourcesLoading } = useResourceFeed({
     ...(search ? { search } : {}),
@@ -68,6 +94,13 @@ export default function ResourcesPage() {
   const featuredResources = featuredData?.data || [];
   const recentResources = recentData?.data || [];
   const bookmarks = bookmarksData?.data || [];
+
+  const { data: foldersData } = useResourceFolders();
+  const createFolder = useCreateResourceFolder();
+  const { user } = useAuth();
+  const deleteResource = useDeleteResource();
+  const deleteFolder = useDeleteResourceFolder();
+  const { data: mySubmissionsData } = useResources(user ? { authorId: user.id, page: 1, pageSize: 12 } : { page: 1, pageSize: 12 });
 
   const bookmarkIds = useMemo(
     () => new Set(bookmarks.map((bookmark) => bookmark.resource_id)),
@@ -111,6 +144,30 @@ export default function ResourcesPage() {
     });
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteResource.mutateAsync(id);
+      addToast({ title: 'Resource deleted', variant: 'success' });
+      setResourceDeleteTarget(null);
+    } catch (err) {
+      addToast({ title: 'Failed to delete resource', variant: 'error' });
+    }
+  };
+
+  const handleFolderDelete = async (id: string) => {
+    try {
+      const response = await deleteFolder.mutateAsync(id);
+      if (response?.pendingApproval) {
+        addToast({ title: 'Folder deletion request submitted for approval', variant: 'success' });
+      } else {
+        addToast({ title: 'Folder deleted', variant: 'success' });
+      }
+      setFolderDeleteTarget(null);
+    } catch (err) {
+      addToast({ title: 'Failed to delete folder', variant: 'error' });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -120,16 +177,130 @@ export default function ResourcesPage() {
             Browse and discover company resources
           </p>
         </div>
-        <Link href="/information-hub/resources/bookmarks">
-          <Button variant="outline" size="sm" className="flex items-center gap-2 shrink-0">
-            <Bookmark className="h-4 w-4" />
-            My Bookmarks
-            {bookmarks.length > 0 && (
-              <CountBadge className="ml-1" variant="accent" size="md" count={bookmarks.length} />
-            )}
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/information-hub/resources/bookmarks">
+            <Button variant="outline" size="sm" className="flex items-center gap-2 shrink-0">
+              <Bookmark className="h-4 w-4" />
+              My Bookmarks
+              {bookmarks.length > 0 && (
+                <CountBadge className="ml-1" variant="accent" size="md" count={bookmarks.length} />
+              )}
+            </Button>
+          </Link>
+
+          <Link href="/information-hub/resources/new">
+            <Button size="sm" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Upload Resource
+            </Button>
+          </Link>
+
+          <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="ghost">New Folder</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create new folder</DialogTitle>
+                <DialogDescription>Folders are company-wide and can be used to organize resources.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 mt-2">
+                <Label className="text-xs">Name</Label>
+                <Input id="folder-name" value={folderName} onChange={(e) => setFolderName(e.target.value)} />
+                <Label className="text-xs">Description</Label>
+                <Input id="folder-desc" value={folderDesc} onChange={(e) => setFolderDesc(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="ghost">Cancel</Button>
+                </DialogClose>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await createFolder.mutateAsync({ name: folderName, description: folderDesc });
+                      setFolderName('');
+                      setFolderDesc('');
+                      setIsFolderDialogOpen(false);
+                    } catch (err) {
+                      // ignore - mutation will surface toasts elsewhere
+                    }
+                  }}
+                >
+                  Create
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* Folder Row */}
+      <div>
+        <h2 className="text-sm font-semibold mb-3">Folders</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {(foldersData?.data || []).map((folder: any) => (
+            <ResourceFolderCard
+              key={folder.id}
+              id={folder.id}
+              name={folder.name}
+              description={folder.description}
+              color={folder.color}
+              icon={folder.icon}
+              resourceCount={folder.resource_count || 0}
+              approvalStatus={folder.approval_status}
+              onClick={() => (window.location.href = `/information-hub/resources/folder/${folder.id}`)}
+              {...(user?.id === folder.created_by && folder.approval_status !== 'pending_deletion'
+                ? {
+                    onDelete: () => setFolderDeleteTarget({ id: folder.id, name: folder.name }),
+                  }
+                : {})}
+            />
+          ))}
+        </div>
+      </div>
+      {mySubmissionsData && mySubmissionsData.data && mySubmissionsData.data.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold mt-4 mb-3">My Submissions</h2>
+          <ResourceGrid columns={3} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mySubmissionsData.data.map((res: any) => {
+              const isPending = isPendingApprovalStatus(res.approval_status);
+              return (
+                <ResourceCard
+                  key={res.id}
+                  id={res.id}
+                  title={res.title}
+                  excerpt={res.excerpt}
+                  resourceType={res.resource_type}
+                  category={res.category}
+                  status={res.status}
+                  approvalStatus={res.approval_status}
+                  tags={res.tags}
+                  thumbnailPath={res.thumbnail_path}
+                  viewCount={res.view_count}
+                  downloadCount={res.download_count}
+                  bookmarkCount={res.bookmark_count}
+                  isFeatured={res.is_featured}
+                  isPinned={res.is_pinned}
+                  isBookmarked={bookmarkIds.has(res.id)}
+                  dateLabel={formatDate(res.published_at || res.created_at)}
+                  disabled={isPending}
+                  {...(!isPending
+                    ? {
+                        onClick: () => {
+                          window.location.href = `/information-hub/resources/${res.id}`;
+                        },
+                        onBookmark: () => handleBookmarkToggle(res.id),
+                      }
+                    : {})}
+                  isOwner={user?.id === res.author_id}
+                  onEdit={() => (window.location.href = `/information-hub/resources/${res.id}`)}
+                  onDelete={() => setResourceDeleteTarget({ id: res.id, title: res.title })}
+                />
+              );
+            })}
+          </ResourceGrid>
+        </div>
+      )}
 
       <div className="relative w-full max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -210,6 +381,9 @@ export default function ResourcesPage() {
                     window.location.href = `/information-hub/resources/${resource.id}`;
                   }}
                   onBookmark={() => handleBookmarkToggle(resource.id)}
+                  isOwner={user?.id === resource.author_id}
+                  onEdit={() => (window.location.href = `/information-hub/resources/${resource.id}`)}
+                  onDelete={() => setResourceDeleteTarget({ id: resource.id, title: resource.title })}
                 />
               ))}
             </ResourceGrid>
@@ -278,6 +452,9 @@ export default function ResourcesPage() {
                   window.location.href = `/information-hub/resources/${resource.id}`;
                 }}
                 onBookmark={() => handleBookmarkToggle(resource.id)}
+                isOwner={user?.id === resource.author_id}
+                onEdit={() => (window.location.href = `/information-hub/resources/${resource.id}`)}
+                onDelete={() => setResourceDeleteTarget({ id: resource.id, title: resource.title })}
               />
             ))}
           </ResourceGrid>
@@ -304,6 +481,46 @@ export default function ResourcesPage() {
           </Card>
         ) : null}
       </div>
+
+      <ConfirmActionDialog
+        open={resourceDeleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setResourceDeleteTarget(null);
+        }}
+        title="Delete resource?"
+        description={
+          resourceDeleteTarget
+            ? `"${resourceDeleteTarget.title}" will be removed. This action cannot be undone.`
+            : 'This resource will be removed.'
+        }
+        confirmLabel="Delete resource"
+        isPending={deleteResource.isPending}
+        onConfirm={() => {
+          if (resourceDeleteTarget) {
+            void handleDelete(resourceDeleteTarget.id);
+          }
+        }}
+      />
+
+      <ConfirmActionDialog
+        open={folderDeleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setFolderDeleteTarget(null);
+        }}
+        title="Request folder deletion?"
+        description={
+          folderDeleteTarget
+            ? `"${folderDeleteTarget.name}" will be marked for admin approval before deletion.`
+            : 'This folder deletion requires admin approval.'
+        }
+        confirmLabel="Request delete"
+        isPending={deleteFolder.isPending}
+        onConfirm={() => {
+          if (folderDeleteTarget) {
+            void handleFolderDelete(folderDeleteTarget.id);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -205,7 +205,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
     });
 
-    const calendar = google.calendar({ version: 'v3', auth });
+    // Cast `auth` to `any` to avoid cross-package GoogleAuth typing conflicts
+    // (different versions of google-auth-library may be present in the monorepo).
+    const calendar = google.calendar({ version: 'v3', auth: auth as any });
 
     const { data } = await calendar.events.list({
       calendarId,

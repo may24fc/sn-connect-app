@@ -14,29 +14,6 @@ import type { ResourceId, UserId } from '../branded-types';
 // ============================================
 
 /** Resource type classification */
-export const resourceTypeSchema = z.enum([
-  'video',
-  'document',
-  'image',
-  'link',
-  'presentation',
-  'interactive',
-]);
-
-/** Resource category for organization */
-export const resourceCategorySchema = z.enum([
-  'onboarding',
-  'training',
-  'policies',
-  'benefits',
-  'tools',
-  'culture',
-  'department_specific',
-  'forms_templates',
-  'performance',
-  'emergency',
-]);
-
 /** Resource publishing status */
 export const resourceStatusSchema = z.enum(['draft', 'published', 'archived']);
 
@@ -85,23 +62,12 @@ const resourceBaseSchema = z.object({
   excerpt: z.string().max(500, 'Excerpt must be 500 characters or fewer').nullish().default(null),
 
   /** Resource type classification */
-  resource_type: resourceTypeSchema,
-
-  /** Resource category */
-  category: resourceCategorySchema,
-
   /** Optional subcategory for finer grouping */
   subcategory: z
     .string()
     .max(100, 'Subcategory must be 100 characters or fewer')
     .nullish()
     .default(null),
-
-  /** Tags for search and filtering, max 20 items, each 1-50 chars */
-  tags: z
-    .array(z.string().min(1, 'Tag cannot be empty').max(50, 'Tag must be 50 characters or fewer'))
-    .max(20, 'Maximum 20 tags allowed')
-    .default([]),
 
   /** File path in storage (required if no external_url) */
   file_path: z.string().min(1).nullish().default(null),
@@ -182,11 +148,10 @@ export const resourceSchema = resourceBaseSchema
   .refine(
     (data) => {
       if (data.file_size == null) return true;
-      const limit = data.resource_type === 'video' ? MAX_VIDEO_FILE_SIZE : MAX_DOCUMENT_FILE_SIZE;
-      return data.file_size <= limit;
+      return data.file_size <= MAX_DOCUMENT_FILE_SIZE;
     },
     {
-      message: 'File size exceeds the maximum allowed for this resource type',
+      message: 'File size exceeds the maximum allowed',
       path: ['file_size'],
     }
   );
@@ -215,10 +180,5 @@ export type ResourceCreateInput = z.infer<typeof resourceSchema>;
 export type ResourceUpdateInput = z.infer<typeof resourceUpdateSchema>;
 
 /** Resource type enum values */
-export type ResourceTypeValue = z.infer<typeof resourceTypeSchema>;
-
-/** Resource category enum values */
-export type ResourceCategoryValue = z.infer<typeof resourceCategorySchema>;
-
 /** Resource status enum values */
 export type ResourceStatusValue = z.infer<typeof resourceStatusSchema>;

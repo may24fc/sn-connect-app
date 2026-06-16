@@ -13,9 +13,6 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const parsed = resourceFeedFiltersSchema.safeParse({
       search: searchParams.get('search') || undefined,
-      category: searchParams.get('category') || undefined,
-      resourceType: searchParams.get('resourceType') || undefined,
-      tags: searchParams.get('tags')?.split(',').filter(Boolean) || undefined,
       page: searchParams.get('page') || undefined,
       pageSize: searchParams.get('pageSize') || undefined,
     });
@@ -58,20 +55,15 @@ export async function GET(request: NextRequest) {
       query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
     }
 
-    // Apply category filter
-    if (filters.category) {
-      query = query.eq('category', filters.category);
-    }
+    // Note: `category`, `resourceType`, and `tags` were removed from feed filters
 
-    // Apply resource type filter
-    if (filters.resourceType) {
-      query = query.eq('resource_type', filters.resourceType);
-    }
-
-    // Apply tags filter
-    if (filters.tags && filters.tags.length > 0) {
-      query = query.overlaps('tags', filters.tags);
-    }
+    // Legacy filters `resourceType` and `tags` are accepted but ignored server-side
+    // if (filters.resourceType) {
+    //   query = query.eq('resource_type', filters.resourceType);
+    // }
+    // if (filters.tags && filters.tags.length > 0) {
+    //   query = query.overlaps('tags', filters.tags);
+    // }
 
     const from = (filters.page - 1) * filters.pageSize;
     const to = from + filters.pageSize - 1;

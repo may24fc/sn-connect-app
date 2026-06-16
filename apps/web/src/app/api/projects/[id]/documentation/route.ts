@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/lib/audit';
 import { getProjectAuthedContext, isProjectAdmin, userCanAccessProject } from '../../_lib';
+import { mapMimeTypeToResourceType } from '@/lib/mux/server';
 
 const PROJECT_DOCUMENTATION_BUCKET = 'project-documentations';
+const RESOURCE_LIBRARY_BUCKET = 'resources-library';
 const SIGNED_URL_TTL_SECONDS = 60 * 10;
 
 interface RouteParams {
@@ -35,6 +37,129 @@ function isValidHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+async function ensureProjectResourceFolder(
+  supabaseAdmin: any,
+  projectId: string,
+  projectName: string,
+  creatorId: string
+): Promise<string> {
+  const marker = `[project:${projectId}]`;
+
+  const { data: existing } = await supabaseAdmin
+    .from('resource_folders')
+    .select('id')
+    .ilike('description', `%${marker}%`)
+    .is('deleted_at', null)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) {
+    return existing.id;
+  }
+
+  const { data: created, error: createError } = await supabaseAdmin
+    .from('resource_folders')
+    .insert({
+      name: projectName,
+      created_by: creatorId,
+      approval_status: 'approved',
+    })
+    .select('id')
+    .single();
+
+  if (createError || !created) {
+    throw new Error('Failed to create project resource folder');
+  }
+
+  return created.id;
+}
+
+async function createResourceFromProjectDocLink(
+  supabaseAdmin: any,
+  params: {
+    projectId: string;
+    projectName: string;
+    folderId: string;
+    authorId: string;
+    url: string;
+    label: string | null;
+  }
+): Promise<void> {
+  const now = new Date().toISOString();
+  const title = params.label || `${params.projectName} Documentation Link`;
+
+  await supabaseAdmin.from('resources').insert({
+    title,
+    description: `Project documentation link for ${params.projectName}`,
+    excerpt: params.label || 'Project documentation link',
+    resource_type: 'link',
+    category: 'tools',
+    folder_id: params.folderId,
+    external_url: params.url,
+    author_id: params.authorId,
+    created_by: params.authorId,
+    status: 'published',
+    approval_status: 'approved',
+    published_at: now,
+    is_public: true,
+    is_pinned: true,
+    display_order: 0,
+    target_roles: [],
+    target_departments: [],
+    target_employees: [],
+  });
+}
+
+async function createResourceFromProjectDocFile(
+  supabaseAdmin: any,
+  params: {
+    projectId: string;
+    projectName: string;
+    folderId: string;
+    authorId: string;
+    file: File;
+    label: string | null;
+  }
+): Promise<void> {
+  const now = new Date().toISOString();
+  const safeName = sanitizeFileName(params.file.name);
+  const resourcePath = `projects/${params.projectId}/${params.authorId}/${Date.now()}-${safeName}`;
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from(RESOURCE_LIBRARY_BUCKET)
+    .upload(resourcePath, params.file, {
+      upsert: false,
+      contentType: params.file.type || 'application/octet-stream',
+    });
+
+  if (uploadError) {
+    throw new Error('Failed to upload documentation file to resources library');
+  }
+
+  await supabaseAdmin.from('resources').insert({
+    title: params.label || params.file.name,
+    description: `Project documentation file for ${params.projectName}`,
+    excerpt: params.file.name,
+    resource_type: mapMimeTypeToResourceType(params.file.type || null),
+    category: 'tools',
+    folder_id: params.folderId,
+    file_path: resourcePath,
+    file_size: params.file.size,
+    mime_type: params.file.type || null,
+    author_id: params.authorId,
+    created_by: params.authorId,
+    status: 'published',
+    approval_status: 'approved',
+    published_at: now,
+    is_public: true,
+    is_pinned: false,
+    display_order: 0,
+    target_roles: [],
+    target_departments: [],
+    target_employees: [],
+  });
 }
 
 async function getSubmittedByNames(supabaseAdmin: any, userIds: string[]): Promise<Map<string, string>> {
@@ -126,6 +251,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const contentType = request.headers.get('content-type') || '';
 
+    const { data: projectRow, error: projectError } = await supabaseAdmin
+      .from('projects')
+      .select('id, name, created_by')
+      .eq('id', projectId)
+      .is('deleted_at', null)
+      .single();
+
+    if (projectError || !projectRow) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    const folderId = await ensureProjectResourceFolder(
+      supabaseAdmin,
+      projectId,
+      projectRow.name,
+      projectRow.created_by || user.id
+    );
+
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       const label = String(formData.get('label') || '').trim() || null;
@@ -169,6 +312,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: 'Failed to save file metadata' }, { status: 500 });
       }
 
+      try {
+        await createResourceFromProjectDocFile(supabaseAdmin, {
+          projectId,
+          projectName: projectRow.name,
+          folderId,
+          authorId: user.id,
+          file,
+          label,
+        });
+      } catch (syncError) {
+        console.error('Project documentation resource sync (file) failed:', syncError);
+      }
+
       logActivity(supabase, {
         userId: user.id,
         action: 'create_project_documentation',
@@ -177,7 +333,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         metadata: { projectId, documentationType: 'file' },
       });
 
-      return NextResponse.json({ data: created }, { status: 201 });
+      return NextResponse.json({ data: created, resourceFolderId: folderId }, { status: 201 });
     }
 
     const payload = (await request.json().catch(() => null)) as
@@ -212,6 +368,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Failed to save documentation link' }, { status: 500 });
     }
 
+    try {
+      await createResourceFromProjectDocLink(supabaseAdmin, {
+        projectId,
+        projectName: projectRow.name,
+        folderId,
+        authorId: user.id,
+        url: content,
+        label,
+      });
+    } catch (syncError) {
+      console.error('Project documentation resource sync (link) failed:', syncError);
+    }
+
     logActivity(supabase, {
       userId: user.id,
       action: 'create_project_documentation',
@@ -220,7 +389,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       metadata: { projectId, documentationType: 'link' },
     });
 
-    return NextResponse.json({ data: created }, { status: 201 });
+    return NextResponse.json({ data: created, resourceFolderId: folderId }, { status: 201 });
   } catch (error) {
     console.error('Unexpected error in POST /api/projects/[id]/documentation:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

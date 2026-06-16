@@ -42,6 +42,9 @@ import { FolderKanban, Inbox, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
+import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
+import { useMyWeeklyCommitment } from '@/hooks/useWeeklyCommitments';
 
 export default function ProjectsListPage() {
   const router = useRouter();
@@ -56,6 +59,27 @@ export default function ProjectsListPage() {
   const [mineOnly, setMineOnly] = useState<boolean>(!isAdmin);
   const [editingProject, setEditingProject] = useState<ProjectRecord | null>(null);
   const [deletingProject, setDeletingProject] = useState<ProjectRecord | null>(null);
+
+  // Weekly commitment modal state (moved here from Tasks page)
+  const { data: myCommitment, isLoading: isMyCommitmentLoading } = useMyWeeklyCommitment({ enabled: Boolean(user?.id) });
+  const [commitModalOpen, setCommitModalOpen] = useState(false);
+
+  // Show the MondayCommitmentModal every day until user locks a weekly commitment.
+  const DISMISS_KEY = 'weeklyCommitmentModalDismissedDate';
+  useEffect(() => {
+    if (!user) return;
+    if (isMyCommitmentLoading) return;
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const dismissed = localStorage.getItem(DISMISS_KEY);
+      const needsShow = !myCommitment || !(myCommitment as any).locked_at;
+      if (needsShow && dismissed !== today) {
+        setCommitModalOpen(true);
+      }
+    } catch (e) {
+      // ignore localStorage errors
+    }
+  }, [user, isMyCommitmentLoading, myCommitment]);
 
   const deleteProject = useDeleteProject();
 
@@ -206,6 +230,27 @@ export default function ProjectsListPage() {
           project={editingProject}
         />
       ) : null}
+      {/* Weekly Focus card anchored at the top of the Projects page */}
+      <div className="px-6">
+        <WeeklyFocusCard />
+      </div>
+
+      {/* Monday commitment modal (auto-opens until user locks a weekly commitment) */}
+      <MondayCommitmentModal
+        open={commitModalOpen}
+        onOpenChange={(open) => {
+          setCommitModalOpen(open);
+          if (!open) {
+            try {
+              const today = new Date().toISOString().slice(0, 10);
+              localStorage.setItem(DISMISS_KEY, today);
+            } catch (e) {
+              /* ignore */
+            }
+          }
+        }}
+        availableMilestones={[]}
+      />
       <ConfirmActionDialog
         open={!!deletingProject}
         onOpenChange={(v) => {

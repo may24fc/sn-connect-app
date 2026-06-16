@@ -515,19 +515,20 @@ function TargetEvaluationCard({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="overflow-hidden"
             >
-              <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <Label className="text-xs font-medium">
-                  Reason for score calibration from HR baseline{' '}
-                  <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  placeholder={`Explain why this score changed from ${baselineConfig.label}.`}
-                  value={evaluation.comments}
-                  onChange={(e) => onChange({ ...evaluation, comments: e.target.value })}
-                  className="min-h-[88px] text-sm"
-                />
+              <div className="overflow-hidden">
+                <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <Label className="text-xs font-medium">
+                    Reason for score calibration from HR baseline{' '}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Textarea
+                    placeholder={`Explain why this score changed from ${baselineConfig.label}.`}
+                    value={evaluation.comments}
+                    onChange={(e) => onChange({ ...evaluation, comments: e.target.value })}
+                    className="min-h-[88px] text-sm"
+                  />
+                </div>
               </div>
             </motion.div>
           )}
@@ -1708,19 +1709,20 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className="overflow-hidden"
                       >
-                        <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
-                          <Label className="text-xs font-medium">
-                            Reason for score calibration from HR baseline{' '}
-                            <span className="text-destructive">*</span>
-                          </Label>
-                          <Textarea
-                            placeholder={`Explain why this overall score changed from ${overallBaselineConfig.label}.`}
-                            value={evalForm.comments}
-                            onChange={(e) => setEvalForm({ ...evalForm, comments: e.target.value })}
-                            className="min-h-[88px] text-sm"
-                          />
+                        <div className="overflow-hidden">
+                          <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                            <Label className="text-xs font-medium">
+                              Reason for score calibration from HR baseline{' '}
+                              <span className="text-destructive">*</span>
+                            </Label>
+                            <Textarea
+                              placeholder={`Explain why this overall score changed from ${overallBaselineConfig.label}.`}
+                              value={evalForm.comments}
+                              onChange={(e) => setEvalForm({ ...evalForm, comments: e.target.value })}
+                              className="min-h-[88px] text-sm"
+                            />
+                          </div>
                         </div>
                       </motion.div>
                     )}

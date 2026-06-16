@@ -12,7 +12,7 @@ interface RouteParams {
 async function getItemContext(
   supabaseAdmin: ReturnType<typeof import('@/lib/supabase/server').createSupabaseAdminClient>,
   itemId: string
-): Promise<{ projectId: string; milestoneStatus: string } | null> {
+): Promise<{ projectId: string; milestoneId: string; milestoneStatus: string } | null> {
   const { data } = await supabaseAdmin
     .from('project_checklist_items')
     .select('milestone_id, project_milestones:project_milestones!inner(project_id, status)')
@@ -20,10 +20,63 @@ async function getItemContext(
     .maybeSingle();
   if (!data) return null;
   const m = (data as unknown as {
+    milestone_id?: string;
     project_milestones?: { project_id?: string; status?: string };
-  }).project_milestones;
-  if (!m?.project_id || !m.status) return null;
-  return { projectId: m.project_id, milestoneStatus: m.status };
+  });
+  if (!m.milestone_id || !m.project_milestones?.project_id || !m.project_milestones.status) {
+    return null;
+  }
+
+  return {
+    projectId: m.project_milestones.project_id,
+    milestoneId: m.milestone_id,
+    milestoneStatus: m.project_milestones.status,
+  };
+}
+
+async function syncMilestoneCompletionFromProgress(
+  supabaseAdmin: ReturnType<typeof import('@/lib/supabase/server').createSupabaseAdminClient>,
+  milestoneId: string,
+  actorUserId: string
+): Promise<void> {
+  const { data: milestone, error: milestoneError } = await supabaseAdmin
+    .from('project_milestones')
+    .select('id, status, progress_pct')
+    .eq('id', milestoneId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (milestoneError || !milestone) {
+    return;
+  }
+
+  const progressPct = Number(milestone.progress_pct ?? 0);
+  if (progressPct >= 100 && milestone.status !== 'approved') {
+    await supabaseAdmin
+      .from('project_milestones')
+      .update({
+        status: 'approved',
+        submitted_at: new Date().toISOString(),
+        submitted_by: actorUserId,
+        approved_at: new Date().toISOString(),
+        approved_by: actorUserId,
+      })
+      .eq('id', milestoneId);
+    return;
+  }
+
+  if (progressPct < 100 && milestone.status === 'approved') {
+    await supabaseAdmin
+      .from('project_milestones')
+      .update({
+        status: progressPct === 0 ? 'not_started' : 'in_progress',
+        submitted_at: null,
+        submitted_by: null,
+        approved_at: null,
+        approved_by: null,
+      })
+      .eq('id', milestoneId);
+  }
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
@@ -90,6 +143,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     metadata: { fields: Object.keys(update) },
   });
 
+  await syncMilestoneCompletionFromProgress(supabaseAdmin, ctx.milestoneId, user.id);
+
   return NextResponse.json({ data });
 }
 
@@ -114,6 +169,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     tableName: 'project_checklist_items',
     recordId: id,
   });
+
+  await syncMilestoneCompletionFromProgress(supabaseAdmin, ctx.milestoneId, user.id);
 
   return NextResponse.json({ ok: true });
 }

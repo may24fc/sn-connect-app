@@ -6,6 +6,7 @@ export {
   type ResourceCategory,
 } from './ResourceCard';
 export { ResourceGrid, type ResourceGridProps } from './ResourceGrid';
+export { ResourceFolderCard, type ResourceFolderCardProps } from './ResourceFolderCard';
 export {
   ResourceFilters,
   type ResourceFiltersProps,

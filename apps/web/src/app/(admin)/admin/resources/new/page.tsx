@@ -1,69 +1,13 @@
 'use client';
 
 import { useCreateResource, useUploadResource } from '@/hooks/useResources';
-import {
-  Button,
-  Input,
-  Label,
-  ResourceTargetingSelector,
-  ResourceUploader,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  TagInput,
-  Textarea,
-} from '@hr-portal/ui';
-import { useToast } from '@hr-portal/ui';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Award,
-  BookOpen,
-  ChevronDown,
-  ChevronUp,
-  FileText,
-  FolderOpen,
-  Globe,
-  Heart,
-  Image,
-  Link2,
-  MonitorPlay,
-  Presentation,
-  Send,
-  Shield,
-  Tag as TagIcon,
-  Target,
-  TrendingUp,
-  Upload,
-  Wrench,
-  Zap,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import type { CreateResourceInput } from '@/lib/schemas/resource.schema';
+import { Button, Input, ResourceTargetingSelector, ResourceUploader, Textarea, useToast } from '@hr-portal/ui';
+import { ArrowLeft, FileText, Globe, Link2, Send, Target, ChevronDown, ChevronUp, Upload, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const categoryOptions: Array<{ value: string; label: string; icon: LucideIcon }> = [
-  { value: 'onboarding', label: 'Onboarding', icon: FolderOpen },
-  { value: 'training', label: 'Training', icon: BookOpen },
-  { value: 'policies', label: 'Policies & Guidelines', icon: FileText },
-  { value: 'benefits', label: 'Benefits', icon: Award },
-  { value: 'tools', label: 'Tools & Software', icon: Wrench },
-  { value: 'culture', label: 'Culture & Values', icon: Heart },
-  { value: 'forms_templates', label: 'Forms & Templates', icon: FileText },
-  { value: 'performance', label: 'OKRs & KPIs', icon: TrendingUp },
-  { value: 'emergency', label: 'Emergency Procedures', icon: AlertTriangle },
-];
-
-const resourceTypeOptions: Array<{ value: string; label: string; icon: LucideIcon }> = [
-  { value: 'document', label: 'Document', icon: FileText },
-  { value: 'video', label: 'Video', icon: MonitorPlay },
-  { value: 'presentation', label: 'Presentation', icon: Presentation },
-  { value: 'link', label: 'External Link', icon: Link2 },
-  { value: 'image', label: 'Image', icon: Image },
-  { value: 'interactive', label: 'Interactive', icon: Zap },
-];
+// Resource Type / Category / Tags removed from UI — defaults applied in payload
 
 export default function NewResourcePage() {
   const router = useRouter();
@@ -73,13 +17,11 @@ export default function NewResourcePage() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('training');
-  const [resourceType, setResourceType] = useState('document');
   const [externalUrl, setExternalUrl] = useState('');
+  const isExternalLink = Boolean(externalUrl && externalUrl.trim());
   const [filePath, setFilePath] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
   const [fileMeta, setFileMeta] = useState<{ fileSize: number; mimeType: string } | null>(null);
-  const [tags, setTags] = useState<Array<string>>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [targeting, setTargeting] = useState({
     rolesCsv: '',
@@ -100,7 +42,6 @@ export default function NewResourcePage() {
   const handleFileSelected = async (file: File): Promise<void> => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('category', category);
 
     const response = await uploadResource.mutateAsync(formData);
     setFilePath(response.data.filePath);
@@ -108,28 +49,13 @@ export default function NewResourcePage() {
     setFileMeta({ fileSize: response.data.fileSize, mimeType: response.data.mimeType });
   };
 
-  const buildPayload = (publishImmediately: boolean) => ({
+  const buildPayload = (publishImmediately: boolean): CreateResourceInput => ({
     title: title.trim() || 'Untitled',
     description,
-    resourceType: resourceType as
-      | 'link'
-      | 'video'
-      | 'document'
-      | 'image'
-      | 'presentation'
-      | 'interactive',
-    category: category as
-      | 'benefits'
-      | 'performance'
-      | 'training'
-      | 'emergency'
-      | 'onboarding'
-      | 'policies'
-      | 'tools'
-      | 'culture'
-      | 'department_specific'
-      | 'forms_templates',
-    tags,
+    // defaults applied since selection removed from UI
+    resourceType: 'document' as const,
+    category: 'training' as const,
+    tags: [] as string[],
     filePath: filePath || undefined,
     externalUrl: externalUrl || undefined,
     fileSize: fileMeta?.fileSize,
@@ -151,7 +77,7 @@ export default function NewResourcePage() {
     isFeatured: false,
     isPinned: false,
     displayOrder: 0,
-  });
+  }) as unknown as CreateResourceInput;
 
   // Auto-save draft silently to prevent data loss
   const autoSaveDraft = useCallback(async (): Promise<void> => {
@@ -178,7 +104,7 @@ export default function NewResourcePage() {
     } finally {
       isSavingRef.current = false;
     }
-  }, [title, description, category, resourceType, tags, filePath, externalUrl, fileMeta, isPublic, targeting, createdId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [title, description, filePath, externalUrl, fileMeta, isPublic, targeting, createdId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced auto-save: 10 seconds after last change
   useEffect(() => {
@@ -191,7 +117,7 @@ export default function NewResourcePage() {
     return () => {
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     };
-  }, [title, description, category, resourceType, tags, filePath, externalUrl, fileMeta, isPublic, targeting, autoSaveDraft]);
+  }, [title, description, filePath, externalUrl, fileMeta, isPublic, targeting, autoSaveDraft]);
 
   const create = async (publishImmediately: boolean): Promise<void> => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
@@ -223,8 +149,9 @@ export default function NewResourcePage() {
     }
   };
 
-  const isExternalLink = resourceType === 'link';
   const canPublish = title && description && (filePath || externalUrl);
+
+  
 
   return (
     <div className="min-h-screen bg-background">
@@ -320,14 +247,13 @@ export default function NewResourcePage() {
                 </span>
               </div>
               <div className="p-4">
-                {isExternalLink ? (
+                <div className="space-y-3">
                   <Input
-                    placeholder="https://example.com/resource"
+                    placeholder="https://example.com/resource (optional)"
                     value={externalUrl}
                     onChange={(e) => setExternalUrl(e.target.value)}
                     type="url"
                   />
-                ) : (
                   <div className="space-y-2">
                     <ResourceUploader
                       onFileSelected={handleFileSelected}
@@ -343,7 +269,7 @@ export default function NewResourcePage() {
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -354,67 +280,7 @@ export default function NewResourcePage() {
               isDescriptionFocused ? 'opacity-60' : 'opacity-100'
             }`}
           >
-            {/* Resource Type Card */}
-            <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5" />
-                Resource Type
-              </Label>
-              <Select value={resourceType} onValueChange={setResourceType}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {resourceTypeOptions.map((option) => {
-                    const Icon = option.icon;
-                    return (
-                      <SelectItem key={option.value} value={option.value}>
-                        <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 shrink-0" />
-                          {option.label}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Category Card */}
-            <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                <TagIcon className="w-3.5 h-3.5" />
-                Category
-              </Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryOptions.map((option) => {
-                    const Icon = option.icon;
-                    return (
-                      <SelectItem key={option.value} value={option.value}>
-                        <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 shrink-0" />
-                          {option.label}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Tags Card */}
-            <div className="bg-card rounded-lg border border-border shadow-card p-4 space-y-3">
-              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
-                <TagIcon className="w-3.5 h-3.5" />
-                Tags
-              </Label>
-              <TagInput value={tags} onChange={setTags} />
-              <p className="text-xs text-muted-foreground">Press Enter to add a tag</p>
-            </div>
+            {/* Resource Type, Category, Tags removed from admin UI — defaults applied in payload */}
 
             {/* Access & Visibility Card */}
             <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">

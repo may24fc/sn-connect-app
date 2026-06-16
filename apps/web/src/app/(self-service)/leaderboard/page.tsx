@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useLeaderboard, type LeaderboardPeriod, type LeaderboardScope } from '@/hooks/useGamification';
@@ -11,12 +11,17 @@ import {
 } from '@hr-portal/ui';
 import { Trophy } from 'lucide-react';
 import { useState } from 'react';
+import { LeaderboardUserDrawer } from './_components/LeaderboardUserDrawer';
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const [scope, setScope] = useState<LeaderboardScope>('interns');
   const [period, setPeriod] = useState<LeaderboardPeriod>('all');
   const { data: rows, isLoading } = useLeaderboard(scope, period);
+
+  // Drawer state for admin view
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const podium: PodiumEntry[] = (rows ?? []).slice(0, 3).map((r) => ({
     user_id: r.user_id,
@@ -26,6 +31,13 @@ export default function LeaderboardPage() {
     tier: r.current_tier,
     streak: r.current_streak,
   }));
+
+  function handleRowClick(row: any) {
+    setSelectedUserId(row.user_id);
+    setDrawerOpen(true);
+  }
+
+  const selectedUser = rows?.find((r) => r.user_id === selectedUserId) ?? null;
 
   return (
     <div className="space-y-6 p-6">
@@ -73,8 +85,21 @@ export default function LeaderboardPage() {
           rows={rows ?? []}
           highlightUserId={user?.id ?? null}
           showPeriodCol={period === 'month'}
+          onRowClick={handleRowClick}
         />
       )}
+
+      <LeaderboardUserDrawer
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setDrawerOpen(open);
+          if (!open) setSelectedUserId(null);
+        }}
+        userId={selectedUserId}
+        fullName={selectedUser?.full_name ?? null}
+        avatarUrl={selectedUser?.avatar_url ?? null}
+        department={selectedUser?.department ?? null}
+      />
     </div>
   );
 }

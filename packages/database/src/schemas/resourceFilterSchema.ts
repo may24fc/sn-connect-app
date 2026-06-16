@@ -5,7 +5,7 @@
  * All fields are optional with sensible defaults.
  */
 import { z } from 'zod';
-import { resourceCategorySchema, resourceStatusSchema, resourceTypeSchema } from './resourceSchema';
+import { resourceStatusSchema } from './resourceSchema';
 
 // ============================================
 // Sort & Pagination
@@ -45,12 +45,6 @@ export const pageSizeSchema = z.coerce
 export const resourceFilterSchema = z.object({
   /** Free text search across title, description, and tags */
   search: z.string().max(200).optional(),
-
-  /** Filter by resource type(s) */
-  resource_type: z.union([resourceTypeSchema, z.array(resourceTypeSchema)]).optional(),
-
-  /** Filter by category(s) */
-  category: z.union([resourceCategorySchema, z.array(resourceCategorySchema)]).optional(),
 
   /** Filter by status */
   status: resourceStatusSchema.optional(),
