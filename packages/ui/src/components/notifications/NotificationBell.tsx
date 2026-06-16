@@ -46,6 +46,10 @@ export type NotificationType =
   | 'onboarding_rejected'
   | 'announcement_new'
   | 'resource_new'
+  | 'resource_submitted'
+  | 'resource_approved'
+  | 'resource_rejected'
+  | 'resource_deletion_requested'
   | 'reminder'
   | 'onboarding_step'
   | 'probation_update'
@@ -92,6 +96,10 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ElementType> = {
   onboarding_rejected: XCircle,
   announcement_new: Megaphone,
   resource_new: FolderOpen,
+  resource_submitted: FolderOpen,
+  resource_approved: CheckCircle,
+  resource_rejected: XCircle,
+  resource_deletion_requested: FolderOpen,
   reminder: Bell,
   onboarding_step: BookOpen,
   probation_update: UserCheck,
@@ -115,6 +123,10 @@ const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   onboarding_rejected: 'text-rose-500',
   announcement_new: 'text-violet-500',
   resource_new: 'text-teal-500',
+  resource_submitted: 'text-teal-500',
+  resource_approved: 'text-emerald-500',
+  resource_rejected: 'text-rose-500',
+  resource_deletion_requested: 'text-amber-500',
   reminder: 'text-amber-500',
   onboarding_step: 'text-cyan-500',
   probation_update: 'text-orange-500',

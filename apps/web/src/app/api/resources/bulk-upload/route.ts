@@ -1,6 +1,9 @@
 import { bulkUploadSchema } from '@/lib/schemas/resource.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isResourceAdmin, normalizeExcerpt } from '../_lib';
+import { mapMimeTypeToResourceType } from '@/lib/mux/server';
+
+const DEFAULT_RESOURCE_CATEGORY = 'tools';
 
 const ALLOWED_MIME_TYPES = [
   'video/mp4',
@@ -17,7 +20,7 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
 ];
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+// No MAX_FILE_SIZE enforced for bulk uploads; accept larger files
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { category, resourceType, isPublic, targetRoles } = parsed.data;
+    const { isPublic, targetRoles } = parsed.data;
 
     const results: Array<{
       fileName: string;
@@ -76,20 +79,12 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Validate file size
-      if (file.size > MAX_FILE_SIZE) {
-        results.push({
-          fileName: file.name,
-          success: false,
-          error: 'File size exceeds 100MB limit',
-        });
-        continue;
-      }
+      // No file-size validation here — accept files of any size
 
       // Generate unique file path
       const timestamp = Date.now();
       const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filePath = `${category}/${timestamp}_${sanitizedFileName}`;
+      const filePath = `bulk-uploads/${timestamp}_${sanitizedFileName}`;
 
       // Upload to Supabase Storage
       const arrayBuffer = await file.arrayBuffer();
@@ -114,9 +109,9 @@ export async function POST(request: NextRequest) {
           title,
           description: null,
           excerpt: normalizeExcerpt(null, null),
-          resource_type: resourceType,
-          category,
-          tags: [],
+          resource_type: mapMimeTypeToResourceType(file.type),
+          category: DEFAULT_RESOURCE_CATEGORY,
+          // tags: [], // tags deprecated
           file_path: filePath,
           file_size: file.size,
           mime_type: file.type,

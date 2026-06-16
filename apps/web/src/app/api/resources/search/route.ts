@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const parsed = resourceSearchSchema.safeParse({
       query: searchParams.get('query') || undefined,
-      category: searchParams.get('category') || undefined,
-      resourceType: searchParams.get('resourceType') || undefined,
       limit: searchParams.get('limit') || undefined,
     });
 
@@ -25,7 +23,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { query, category, resourceType, limit } = parsed.data;
+    const { query, limit } = parsed.data;
 
     // Use Postgres full-text search
     // The search index should be: to_tsvector('english', title || ' ' || description || ' ' || array_to_string(tags, ' '))
@@ -40,13 +38,8 @@ export async function GET(request: NextRequest) {
       .order('view_count', { ascending: false })
       .limit(limit);
 
-    if (category) {
-      dbQuery = dbQuery.eq('category', category);
-    }
-
-    if (resourceType) {
-      dbQuery = dbQuery.eq('resource_type', resourceType);
-    }
+    // Legacy filter `resourceType` is accepted but ignored server-side
+    // (no-op)
 
     const { data, error: searchError } = await dbQuery;
 

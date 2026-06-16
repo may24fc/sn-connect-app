@@ -19,15 +19,18 @@ import {
   VideoPlayer,
   useToast,
 } from '@hr-portal/ui';
-import { Bookmark, CheckCircle2, Download, FileText, Loader2 } from 'lucide-react';
+import { Bookmark, CheckCircle2, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export default function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [resourceId, setResourceId] = useState<string>('');
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [streamAccessLevel, setStreamAccessLevel] = useState<ResourceAccessLevel>('full');
+  const [isVideoProcessing, setIsVideoProcessing] = useState(false);
+  const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
+  const trackedResourceIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
     params.then((value) => setResourceId(value.id));
@@ -49,24 +52,89 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     if (!resourceId) return;
-    trackView.mutate({ resourceId });
-  }, [resourceId, trackView]);
+
+    // Prevent duplicate "view" events from rerenders and StrictMode remounts.
+    if (trackedResourceIdsRef.current.has(resourceId)) return;
+
+    const sessionKey = `resource:view-tracked:${resourceId}`;
+    if (typeof window !== 'undefined' && window.sessionStorage.getItem(sessionKey) === '1') {
+      trackedResourceIdsRef.current.add(resourceId);
+      return;
+    }
+
+    trackedResourceIdsRef.current.add(resourceId);
+
+    fetch(`/api/resources/${resourceId}/view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then((res) => {
+        if (res.ok && typeof window !== 'undefined') {
+          window.sessionStorage.setItem(sessionKey, '1');
+        }
+      })
+      .catch(() => {
+        // Allow retry on next render/navigation if request failed.
+        trackedResourceIdsRef.current.delete(resourceId);
+      });
+  }, [resourceId]);
+
+  const handleDownload = useCallback(async (): Promise<void> => {
+    if (!resource) return;
+
+    const response = await fetch(`/api/resources/${resource.id}/download`);
+    if (!response.ok) {
+      const payload = await response.json();
+      if (response.status === 403) {
+        addToast({ title: 'Download restricted', description: payload?.error ?? 'This resource is view-only and cannot be downloaded.', variant: 'error' });
+        return;
+      }
+      return;
+    }
+    const payload = await response.json();
+    if (payload?.data?.url) {
+      window.open(payload.data.url, '_blank', 'noopener,noreferrer');
+    }
+  }, [resource, addToast]);
 
   // Fetch signed stream URL for video resources
   useEffect(() => {
-    if (!resource || resource.resource_type !== 'video') return;
+    if (!resource || resource.resource_type !== 'video') {
+      setIsVideoProcessing(false);
+      setVideoStatusMessage(null);
+      return;
+    }
+
+    setStreamUrl(null);
+    setIsVideoProcessing(false);
+    setVideoStatusMessage(null);
 
     const fetchStreamUrl = async () => {
       try {
         const response = await fetch(`/api/resources/${resource.id}/stream`);
-        if (!response.ok) return;
+        if (response.status === 409) {
+          const payload = await response.json().catch(() => null);
+          setIsVideoProcessing(true);
+          setVideoStatusMessage(payload?.error ?? 'Video is still processing');
+          setStreamUrl(null);
+          return;
+        }
+
+        if (!response.ok) {
+          setVideoStatusMessage('Unable to load video stream right now');
+          return;
+        }
+
         const payload = await response.json();
         if (payload?.data?.url) {
           setStreamUrl(payload.data.url);
           setStreamAccessLevel(payload.data.accessLevel ?? 'full');
+          setIsVideoProcessing(false);
+          setVideoStatusMessage(null);
         }
       } catch {
-        // Fallback to direct URL if stream endpoint fails
+        setVideoStatusMessage('Unable to load video stream right now');
       }
     };
 
@@ -99,25 +167,10 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
   const isBookmarked = bookmarkIds.has(resource.id);
   const isVideo = resource.resource_type === 'video';
   const isDocument = resource.resource_type === 'document';
+  const hasAttachedExternalLink = isVideo && Boolean(resource.file_path) && Boolean(resource.external_url);
   const relatedResources = (relatedData?.data || [])
     .filter((item) => item.id !== resource.id)
     .slice(0, 3);
-
-  const handleDownload = useCallback(async (): Promise<void> => {
-    const response = await fetch(`/api/resources/${resource.id}/download`);
-    if (!response.ok) {
-      const payload = await response.json();
-      if (response.status === 403) {
-        addToast({ title: 'Download restricted', description: payload?.error ?? 'This resource is view-only and cannot be downloaded.', variant: 'error' });
-        return;
-      }
-      return;
-    }
-    const payload = await response.json();
-    if (payload?.data?.url) {
-      window.open(payload.data.url, '_blank', 'noopener,noreferrer');
-    }
-  }, [resource.id, addToast]);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden -m-4 lg:-m-6">
@@ -142,14 +195,25 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
       <div className="flex-1 overflow-y-auto">
         <div className="bg-zinc-900 aspect-video w-full">
           {isVideo ? (
-            <VideoPlayer
-              src={streamUrl || resource.external_url || resource.file_path || ''}
-              title={resource.title}
-              className="rounded-none"
-              accessLevel={streamAccessLevel}
-              onTimeUpdate={(time) => setDurationSeconds(Math.floor(time))}
-              {...(resource.thumbnail_path ? { poster: resource.thumbnail_path } : {})}
-            />
+            isVideoProcessing ? (
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Video is still processing"
+                description={videoStatusMessage ?? 'Please wait a moment and refresh.'}
+                size="sm"
+                appearance="inverse"
+                className="h-full"
+              />
+            ) : (
+              <VideoPlayer
+                src={streamUrl || resource.external_url || resource.file_path || ''}
+                title={resource.title}
+                className="rounded-none"
+                accessLevel={streamAccessLevel}
+                onTimeUpdate={(time) => setDurationSeconds(Math.floor(time))}
+                {...(resource.thumbnail_path ? { poster: resource.thumbnail_path } : {})}
+              />
+            )
           ) : isDocument ? (
             <DocumentViewer
               src={resource.external_url || resource.file_path || ''}
@@ -169,6 +233,23 @@ export default function ResourceDetailPage({ params }: { params: Promise<{ id: s
             />
           )}
         </div>
+
+        {hasAttachedExternalLink && (
+          <div className="border-b border-border bg-card px-6 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Attached Link
+            </p>
+            <a
+              href={resource.external_url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              Open attached link
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        )}
 
         <div className="bg-card border-b border-border p-6">
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resource.title}</h1>

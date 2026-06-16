@@ -134,10 +134,90 @@ export async function GET(request: Request) {
             current_streak: g?.current_streak ?? 0,
             longest_streak: g?.longest_streak ?? 0,
             last_activity_at: g?.last_activity_at ?? null,
+            // placeholders for weekly metrics - will be filled below
+            weeklyAchieved: 0,
+            weeklyTotal: 0,
           },
         ];
       }
     );
+
+    // Compute ISO week and year for current date to lookup weekly commitments
+    function getIsoWeekAndYear(d = new Date()) {
+      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+      return { iso_week: weekNo, iso_year: date.getUTCFullYear() };
+    }
+
+    const { iso_week, iso_year } = getIsoWeekAndYear();
+
+    try {
+      // Fetch commitments for current week for the users in scope
+      const { data: commitments, error: commitmentsErr } = await supabaseAdmin
+        .from('weekly_commitments')
+        .select('id, user_id')
+        .in('user_id', userIds)
+        .eq('iso_week', iso_week)
+        .eq('iso_year', iso_year)
+        .is('deleted_at', null);
+
+      if (!commitmentsErr && commitments && commitments.length > 0) {
+        const commitmentIds = commitments.map((c: any) => c.id);
+
+        const { data: items, error: itemsErr } = await supabaseAdmin
+          .from('weekly_commitment_items')
+          .select('commitment_id, milestone_id')
+          .in('commitment_id', commitmentIds);
+
+        if (!itemsErr && items && items.length > 0) {
+          const milestoneIds = Array.from(new Set(items.map((it: any) => it.milestone_id)));
+
+          const { data: milestones, error: milestonesErr } = await supabaseAdmin
+            .from('project_milestones')
+            .select('id, status')
+            .in('id', milestoneIds);
+
+          const milestoneStatus = new Map<string, string | null>();
+          if (!milestonesErr && milestones) {
+            for (const m of milestones) {
+              milestoneStatus.set(m.id, m.status ?? null);
+            }
+          }
+
+          // Map commitment_id -> user_id
+          const commitmentToUser = new Map<string, string>();
+          for (const c of commitments) commitmentToUser.set(c.id, c.user_id);
+
+          const weeklyTotalMap = new Map<string, number>();
+          const weeklyAchievedMap = new Map<string, number>();
+
+          for (const it of items) {
+            const uid = commitmentToUser.get(it.commitment_id);
+            if (!uid) continue;
+            weeklyTotalMap.set(uid, (weeklyTotalMap.get(uid) ?? 0) + 1);
+            const st = milestoneStatus.get(it.milestone_id);
+            if (st === 'completed') {
+              weeklyAchievedMap.set(uid, (weeklyAchievedMap.get(uid) ?? 0) + 1);
+            }
+          }
+
+          // Attach to rows
+          for (const row of rows) {
+            const achieved = weeklyAchievedMap.get(row.user_id) ?? 0;
+            const total = weeklyTotalMap.get(row.user_id) ?? 0;
+            (row as any).weeklyAchieved = achieved;
+            (row as any).weeklyTotal = total;
+          }
+        }
+      }
+    } catch (err) {
+      // Don't block leaderboard if weekly metrics fail; log in server console
+      // eslint-disable-next-line no-console
+      console.warn('Failed to compute weekly commitment metrics', err);
+    }
 
     rows.sort((a, b) => {
       const va = period === 'month' ? a.points_period : a.points_total;

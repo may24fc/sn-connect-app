@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "framer-motion": "^11.15.0",
+    "hls.js": "^1.6.16",
     "react-hook-form": "^7.55.0",
     "recharts": "^2.15.4"
   },
