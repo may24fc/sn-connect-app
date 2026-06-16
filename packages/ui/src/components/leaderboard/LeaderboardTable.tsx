@@ -1,7 +1,9 @@
+import type { KeyboardEvent } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../primitives/avatar';
 import { cn } from '../../utils/cn';
 import { StreakChip } from './StreakChip';
 import { TierBadge, type Tier } from './TierBadge';
+import { Badge } from '../../primitives/badge';
 
 export interface LeaderboardTableRow {
   rank: number;
@@ -13,6 +15,8 @@ export interface LeaderboardTableRow {
   points_period: number;
   current_tier: Tier;
   current_streak: number;
+  weeklyAchieved?: number;
+  weeklyTotal?: number;
 }
 
 export interface LeaderboardTableProps {
@@ -20,6 +24,7 @@ export interface LeaderboardTableProps {
   highlightUserId?: string | null;
   showPeriodCol?: boolean;
   className?: string;
+  onRowClick?: (row: LeaderboardTableRow) => void;
 }
 
 function initials(name: string | null) {
@@ -38,6 +43,7 @@ export function LeaderboardTable({
   highlightUserId,
   showPeriodCol = false,
   className,
+  onRowClick,
 }: LeaderboardTableProps) {
   return (
     <div className={cn('overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950', className)}>
@@ -50,17 +56,33 @@ export function LeaderboardTable({
             <th className="hidden px-4 py-3 sm:table-cell">Streak</th>
             {showPeriodCol ? <th className="px-4 py-3 text-right">This month</th> : null}
             <th className="px-4 py-3 text-right">Total points</th>
+            <th className="px-4 py-3 text-right">Weekly</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {rows.map((r) => {
             const isMe = highlightUserId && r.user_id === highlightUserId;
+            const clickable = Boolean((onRowClick));
             return (
               <tr
                 key={r.user_id}
+                role={clickable ? 'button' : undefined}
+                tabIndex={clickable ? 0 : undefined}
+                onClick={clickable ? () => onRowClick?.(r) : undefined}
+                onKeyDown={
+                  clickable
+                    ? (e: KeyboardEvent<HTMLTableRowElement>) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onRowClick?.(r);
+                        }
+                      }
+                    : undefined
+                }
                 className={cn(
                   'transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50',
-                  isMe && 'bg-emerald-50/60 dark:bg-emerald-950/30'
+                  isMe && 'bg-emerald-50/60 dark:bg-emerald-950/30',
+                  clickable && 'cursor-pointer'
                 )}
               >
                 <td className="px-4 py-3 font-mono text-xs text-zinc-500">{r.rank}</td>
@@ -95,12 +117,24 @@ export function LeaderboardTable({
                 <td className="px-4 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-100">
                   {r.points_total}
                 </td>
+                <td className="px-4 py-3 text-right">
+                  {typeof r.weeklyTotal === 'number' && r.weeklyTotal > 0 ? (
+                    <Badge
+                      variant={r.weeklyAchieved === r.weeklyTotal ? 'success' : 'pending'}
+                      className={r.weeklyAchieved === r.weeklyTotal ? 'text-emerald-600' : undefined}
+                    >
+                      {`${r.weeklyAchieved ?? 0}/${r.weeklyTotal} Achieved`}
+                    </Badge>
+                  ) : (
+                    <span className="text-zinc-400">—</span>
+                  )}
+                </td>
               </tr>
             );
           })}
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={showPeriodCol ? 6 : 5} className="px-4 py-12 text-center text-sm text-zinc-500">
+              <td colSpan={showPeriodCol ? 7 : 6} className="px-4 py-12 text-center text-sm text-zinc-500">
                 No leaderboard entries yet. Approve a milestone to start the points clock.
               </td>
             </tr>

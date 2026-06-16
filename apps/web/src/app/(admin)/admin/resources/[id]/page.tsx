@@ -1,74 +1,118 @@
 'use client';
 
 import {
-  useArchiveResource,
-  usePublishResource,
   useResource,
-  useResourceAnalytics,
-  useToggleResourceFeatured,
-  useUpdateResource,
 } from '@/hooks/useResources';
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DocumentViewer,
   EmptyState,
-  Input,
-  ResourceAnalytics,
-  ResourceTargetingSelector,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Textarea,
+  type ResourceAccessLevel,
+  VideoPlayer,
   useToast,
 } from '@hr-portal/ui';
-import { Archive, ArrowLeft, Loader2, MoreHorizontal, Save, Send, Star, StarOff } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, FileText, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function AdminResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [resourceId, setResourceId] = useState('');
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [streamAccessLevel, setStreamAccessLevel] = useState<ResourceAccessLevel>('full');
+  const [isVideoProcessing, setIsVideoProcessing] = useState(false);
+  const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
     params.then((value) => setResourceId(value.id));
   }, [params]);
 
   const { data, isLoading } = useResource(resourceId);
-  const { data: analyticsData } = useResourceAnalytics(resourceId);
-  const updateResource = useUpdateResource(resourceId);
-  const publishResource = usePublishResource();
-  const archiveResource = useArchiveResource();
-  const toggleFeatured = useToggleResourceFeatured();
   const { addToast } = useToast();
 
   const resource = data?.data;
 
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [targeting, setTargeting] = useState({
-    rolesCsv: '',
-    departmentsCsv: '',
-    employeesCsv: '',
-  });
-
   useEffect(() => {
     if (!resource) return;
-    setTitle(resource.title);
-    setDescription(resource.description || '');
-    setTargeting({
-      rolesCsv: (resource.target_roles || []).join(', '),
-      departmentsCsv: (resource.target_departments || []).join(', '),
-      employeesCsv: (resource.target_employees || []).join(', '),
-    });
+
+    if (resource.resource_type === 'link' && resource.external_url) {
+      window.location.href = resource.external_url;
+    }
+  }, [resource]);
+
+  const handleDownload = useCallback(async (): Promise<void> => {
+    if (!resource) return;
+
+    const response = await fetch(`/api/resources/${resource.id}/download`);
+    if (!response.ok) {
+      const payload = await response.json();
+      if (response.status === 403) {
+        addToast({
+          title: 'Download restricted',
+          description:
+            payload?.error ?? 'This resource is view-only and cannot be downloaded.',
+          variant: 'error',
+        });
+        return;
+      }
+      addToast({ title: 'Unable to download resource', variant: 'error' });
+      return;
+    }
+
+    const payload = await response.json();
+    if (payload?.data?.url) {
+      window.open(payload.data.url, '_blank', 'noopener,noreferrer');
+    }
+  }, [resource, addToast]);
+
+  useEffect(() => {
+    if (!resource || resource.resource_type !== 'video') {
+      setStreamUrl(null);
+      setIsVideoProcessing(false);
+      setVideoStatusMessage(null);
+      return;
+    }
+
+    setStreamUrl(null);
+    setIsVideoProcessing(false);
+    setVideoStatusMessage(null);
+
+    const fetchStreamUrl = async () => {
+      try {
+        const response = await fetch(`/api/resources/${resource.id}/stream`);
+        if (response.status === 409) {
+          const payload = await response.json().catch(() => null);
+          setIsVideoProcessing(true);
+          setVideoStatusMessage(payload?.error ?? 'Video is still processing');
+          setStreamUrl(null);
+          return;
+        }
+
+        if (!response.ok) {
+          setVideoStatusMessage('Unable to load video stream right now');
+          return;
+        }
+
+        const payload = await response.json();
+        if (payload?.data?.url) {
+          setStreamUrl(payload.data.url);
+          setStreamAccessLevel(payload.data.accessLevel ?? 'full');
+          setIsVideoProcessing(false);
+          setVideoStatusMessage(null);
+        }
+      } catch {
+        setVideoStatusMessage('Unable to load video stream right now');
+      }
+    };
+
+    fetchStreamUrl();
+
+    const refreshInterval = setInterval(
+      fetchStreamUrl,
+      resource.access_level === 'view_only' ? 4 * 60 * 1000 : 14 * 60 * 1000
+    );
+
+    return () => clearInterval(refreshInterval);
   }, [resource]);
 
   if (isLoading || !resource) {
@@ -84,164 +128,98 @@ export default function AdminResourceDetailPage({ params }: { params: Promise<{ 
     );
   }
 
-  const saveDetails = async (): Promise<void> => {
-    try {
-      await updateResource.mutateAsync({
-        title,
-        description,
-        targetRoles: targeting.rolesCsv
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
-        targetDepartments: targeting.departmentsCsv
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
-        targetEmployees: targeting.employeesCsv
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
-      });
-      addToast({ title: 'Resource updated', variant: 'success' });
-    } catch {
-      addToast({ title: 'Failed to update resource', variant: 'error' });
-    }
-  };
+  const isVideo = resource.resource_type === 'video';
+  const isDocument = resource.resource_type === 'document';
+  const hasAttachedExternalLink = isVideo && Boolean(resource.file_path) && Boolean(resource.external_url);
+  const isViewOnly = streamAccessLevel === 'view_only';
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resource.title}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Resource ID: {resource.id}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/admin/resources')}>
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Back
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <MoreHorizontal className="h-4 w-4 mr-1.5" />
-                Actions
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => publishResource.mutate(resource.id, {
-                onSuccess: () => addToast({ title: 'Resource published', variant: 'success' }),
-                onError: () => addToast({ title: 'Failed to publish resource', variant: 'error' }),
-              })}>
-                <Send className="mr-2 h-4 w-4" />
-                Publish
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  toggleFeatured.mutate({ id: resource.id, featured: !resource.is_featured }, {
-                    onSuccess: () => addToast({ title: resource.is_featured ? 'Resource unfeatured' : 'Resource featured', variant: 'success' }),
-                    onError: () => addToast({ title: 'Failed to update feature status', variant: 'error' }),
-                  })
-                }
-              >
-                {resource.is_featured ? (
-                  <><StarOff className="mr-2 h-4 w-4" />Unfeature</>
-                ) : (
-                  <><Star className="mr-2 h-4 w-4" />Feature</>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => archiveResource.mutate(resource.id, {
-                onSuccess: () => {
-                  addToast({ title: 'Resource archived', variant: 'success' });
-                  router.push('/admin/resources');
-                },
-                onError: () => addToast({ title: 'Failed to archive resource', variant: 'error' }),
-              })}>
-                <Archive className="mr-2 h-4 w-4" />
-                Archive
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+    <div className="h-screen bg-background flex flex-col overflow-hidden -m-4 lg:-m-6">
+      <div className="border-b border-border bg-card px-6 py-3">
+        <Button variant="ghost" size="sm" onClick={() => router.push('/admin/resources')}>
+          <ArrowLeft className="h-4 w-4 mr-1.5" />
+          Back
+        </Button>
       </div>
 
-      <Tabs defaultValue="details" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="targeting">Targeting</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="version">Version History</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details">
-          <Card>
-            <CardHeader>
-              <CardTitle>Edit Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Input value={title} onChange={(event) => setTitle(event.target.value)} />
-              <Textarea
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
+      <div className="flex-1 overflow-y-auto">
+        <div className="bg-zinc-900 aspect-video w-full">
+          {isVideo ? (
+            isVideoProcessing ? (
+              <EmptyState
+                icon={<Loader2 className="h-5 w-5 animate-spin" />}
+                title="Video is still processing"
+                description={videoStatusMessage ?? 'Please wait a moment and refresh.'}
+                size="sm"
+                appearance="inverse"
+                className="h-full"
               />
-              <Button onClick={saveDetails} disabled={updateResource.isPending}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Changes
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            ) : (
+              <VideoPlayer
+                src={streamUrl || resource.external_url || resource.file_path || ''}
+                title={resource.title}
+                className="rounded-none"
+                accessLevel={streamAccessLevel}
+                {...(resource.thumbnail_path ? { poster: resource.thumbnail_path } : {})}
+              />
+            )
+          ) : isDocument ? (
+            <DocumentViewer
+              src={resource.external_url || resource.file_path || ''}
+              fileName={resource.title}
+              className="rounded-none border-0"
+              onDownload={handleDownload}
+              {...(resource.mime_type ? { mimeType: resource.mime_type } : {})}
+            />
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="No inline preview available"
+              description="Download the file or open the source link to view this resource."
+              size="sm"
+              appearance="inverse"
+              className="h-full"
+            />
+          )}
+        </div>
 
-        <TabsContent value="targeting">
-          <Card>
-            <CardHeader>
-              <CardTitle>Audience Targeting</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ResourceTargetingSelector value={targeting} onChange={setTargeting} />
-              <Button onClick={saveDetails} disabled={updateResource.isPending}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Targeting
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {hasAttachedExternalLink && (
+          <div className="border-b border-border bg-card px-6 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Attached Link
+            </p>
+            <a
+              href={resource.external_url || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+            >
+              Open attached link
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+        )}
 
-        <TabsContent value="analytics">
-          <ResourceAnalytics
-            viewCount={analyticsData?.data?.viewCount ?? resource.view_count}
-            uniqueViewers={analyticsData?.data?.uniqueViewers ?? 0}
-            downloadCount={analyticsData?.data?.downloadCount ?? resource.download_count}
-            bookmarkCount={analyticsData?.data?.bookmarkCount ?? resource.bookmark_count}
-            avgDurationSeconds={analyticsData?.data?.avgDurationSeconds ?? null}
-            completionRate={analyticsData?.data?.completionRate ?? null}
-            viewTrend={(analyticsData?.data?.timeSeries || []).map(
-              (item: { date: string; views: number }) => ({
-                date: item.date,
-                count: item.views,
-              })
-            )}
-          />
-        </TabsContent>
+        <div className="bg-card border-b border-border p-6">
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{resource.title}</h1>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+            {resource.description || resource.excerpt}
+          </p>
 
-        <TabsContent value="version">
-          <Card>
-            <CardHeader>
-              <CardTitle>Version History</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <p>Current Version: v{resource.version}</p>
-              <p>
-                Previous Version ID:{' '}
-                {resource.previous_version_id ? resource.previous_version_id : 'None'}
-              </p>
-              <Button variant="outline" disabled>
-                Restore Previous Version
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <div className="flex items-center gap-3 mt-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-50 px-4 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              onClick={handleDownload}
+              disabled={isViewOnly}
+              title={isViewOnly ? 'This resource is view-only' : 'Download resource'}
+            >
+              <Download className="h-4 w-4" />
+              {isViewOnly ? 'View Only' : 'Download'}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

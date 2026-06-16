@@ -18,7 +18,6 @@ import {
   useDeleteChecklistItem,
   useDeleteMilestone,
   useDeleteProject,
-  useCompleteMilestone,
   useMilestoneChecklist,
   type ProjectDocumentationRecord,
   useProjectDocumentation,
@@ -73,6 +72,8 @@ import {
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
+import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
 
 function isIsoAfter(left: string, right: string): boolean {
   return left > right;
@@ -171,7 +172,7 @@ export default function ProjectDetailPage() {
   async function handleAddDocumentationLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      await createDocumentation.mutateAsync({
+      const created = await createDocumentation.mutateAsync({
         projectId,
         documentationType: 'link',
         content: docLink,
@@ -180,6 +181,12 @@ export default function ProjectDetailPage() {
       setDocLink('');
       setDocLabel('');
       addToast({ title: 'Documentation link added', variant: 'success' });
+
+      if (created.resourceFolderId) {
+        router.push(`/information-hub/resources/folder/${created.resourceFolderId}`);
+      } else {
+        router.push('/information-hub');
+      }
     } catch (error) {
       addToast({
         title: 'Failed to add documentation link',
@@ -195,17 +202,25 @@ export default function ProjectDetailPage() {
     }
 
     try {
+      let lastFolderId: string | undefined;
       for (const file of docFiles) {
-        await createDocumentation.mutateAsync({
+        const created = await createDocumentation.mutateAsync({
           projectId,
           documentationType: 'file',
           label: docLabel || null,
           file,
         });
+        lastFolderId = created.resourceFolderId || lastFolderId;
       }
       setDocFiles([]);
       setDocLabel('');
       addToast({ title: 'Documentation file uploaded', variant: 'success' });
+
+      if (lastFolderId) {
+        router.push(`/information-hub/resources/folder/${lastFolderId}`);
+      } else {
+        router.push('/information-hub');
+      }
     } catch (error) {
       addToast({
         title: 'Failed to upload documentation file',
@@ -244,11 +259,33 @@ export default function ProjectDetailPage() {
     }));
   }, [milestones]);
 
+  // Map project milestones into MilestoneItem shape expected by MondayCommitmentModal
+  const availableMilestones = useMemo(() => {
+    return milestones.map((m) => ({
+      id: m.id,
+      milestone_id: m.id,
+      title: m.title,
+      project_id: projectId,
+      project_name: project?.name ?? '',
+      status: m.status,
+      progress_pct: m.progress_pct ?? 0,
+    }));
+  }, [milestones, projectId, project?.name]);
+
   // Dialog state
   const [createOpen, setCreateOpen] = useState(false);
   const [createParent, setCreateParent] = useState<MilestoneRecord | null>(null);
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
+  // Weekly commitment modal state (auto-open until user locks a commitment)
+  const [commitModalOpen, setCommitModalOpen] = useState(false);
+  useEffect(() => {
+    const DISMISS_KEY = `weekly-commit-dismissed:${projectId}`;
+    const dismissed = typeof window !== 'undefined' ? localStorage.getItem(DISMISS_KEY) : null;
+    if (!dismissed) {
+      setCommitModalOpen(true);
+    }
+  }, [projectId]);
 
   async function handleDeleteProject() {
     try {
@@ -339,6 +376,15 @@ export default function ProjectDetailPage() {
                 Edit Project
               </Button>
               <Button
+                variant="outline"
+                onClick={() => {
+                  setCommitModalOpen(true);
+                }}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Set Week Commitments
+              </Button>
+              <Button
                 onClick={() => {
                   setCreateParent(null);
                   setCreateOpen(true);
@@ -380,6 +426,11 @@ export default function ProjectDetailPage() {
                 {documentation.length}
               </Badge>
             </Button>
+          </div>
+
+          {/* Weekly Focus card for this project (user-scoped) */}
+          <div className="px-6">
+            <WeeklyFocusCard />
           </div>
 
           {activeTab === 'documentation' ? (
@@ -616,6 +667,17 @@ export default function ProjectDetailPage() {
           void handleDeleteProject();
         }}
       />
+      <MondayCommitmentModal
+        open={commitModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            const DISMISS_KEY = `weekly-commit-dismissed:${projectId}`;
+            if (typeof window !== 'undefined') localStorage.setItem(DISMISS_KEY, '1');
+          }
+          setCommitModalOpen(open);
+        }}
+        availableMilestones={availableMilestones}
+      />
     </div>
   );
 }
@@ -638,26 +700,12 @@ function MonthColumn({
   onAddWeek,
 }: MonthColumnProps) {
   const { addToast } = useToast();
-  const completeMutation = useCompleteMilestone();
   const deleteMilestone = useDeleteMilestone();
   const { data: monthChecklistResp, isLoading: loadingMonthChecklist } = useMilestoneChecklist(
     month.id
   );
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-
-  async function handleComplete() {
-    try {
-      await completeMutation.mutateAsync({ milestoneId: month.id, projectId });
-      addToast({ title: 'Milestone completed', variant: 'success' });
-    } catch (e) {
-      addToast({
-        title: 'Complete failed',
-        description: e instanceof Error ? e.message : 'Unknown error',
-        variant: 'error',
-      });
-    }
-  }
 
   async function handleDelete() {
     try {
@@ -685,7 +733,6 @@ function MonthColumn({
       ? (monthChecklistItems.filter((it) => it.status === 'done').length / monthChecklistItems.length) * 100
       : month.progress_pct;
 
-  const canComplete = canEdit && month.status !== 'approved' && displayProgressPct >= 100;
   // Allow editing/deleting even when marked approved (user requested milestones stay editable).
   const canManage = canEdit;
   const [showMonthTasks, setShowMonthTasks] = useState(weeks.length === 0 || month.status === 'approved');
@@ -748,12 +795,6 @@ function MonthColumn({
             <MilestoneStatusBadge status={displayStatus} />
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
-            {canComplete ? (
-              <Button size="sm" onClick={handleComplete} disabled={completeMutation.isPending}>
-                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
-                Complete
-              </Button>
-            ) : null}
             {canEdit && maxWeeks >= 1 ? (
               <div className="flex items-center gap-1.5">
                 <Button size="sm" variant="outline" onClick={onAddWeek}>

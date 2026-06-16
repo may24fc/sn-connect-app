@@ -62,7 +62,7 @@ export async function POST(_: NextRequest, context: RouteContext) {
             type: 'resource_approved',
             title: 'Resource approved',
             message: `Your resource "${resourceRow.title}" was approved by ${user.email || user.id}`,
-            link: `/resources/${id}`,
+            link: `/information-hub/resources/${id}`,
             metadata: { resourceId: id },
           };
           const { error: notifError } = await supabase.from('notifications').insert(notif);
@@ -100,7 +100,7 @@ export async function POST(_: NextRequest, context: RouteContext) {
             type: 'resource_approved',
             title: 'Resource update approved',
             message: `An update to your resource "${resourceRow.title}" was approved by ${user.email || user.id}`,
-            link: `/resources/${id}`,
+            link: `/information-hub/resources/${id}`,
             metadata: { resourceId: id },
           };
           const { error: notifError } = await supabase.from('notifications').insert(notif);
@@ -140,7 +140,7 @@ export async function POST(_: NextRequest, context: RouteContext) {
             type: 'resource_approved',
             title: 'Deletion approved',
             message: `Your deletion request for "${resourceRow.title}" was approved by ${user.email || user.id}`,
-            link: `/resources/${id}`,
+            link: '/information-hub',
             metadata: { resourceId: id },
           };
           const { error: notifError } = await supabase.from('notifications').insert(notif);

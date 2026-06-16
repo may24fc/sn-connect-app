@@ -8,6 +8,7 @@ import {
 import { useFeaturedResources, useRecentResources, useResourceFeed } from '@/hooks/useResourceFeed';
 import { useResources } from '@/hooks/useResources';
 import { formatDate } from '@/lib/format';
+import { ConfirmActionDialog } from '@/components/ConfirmActionDialog';
 import {
   Button,
   Card,
@@ -43,7 +44,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { useResourceFolders, useCreateResourceFolder } from '@/hooks/useResources';
+import { useResourceFolders, useCreateResourceFolder, useDeleteResource, useDeleteResourceFolder } from '@/hooks/useResources';
 import { useAuth } from '@/contexts/AuthContext';
 
 const categoryLabels: Record<string, string> = {
@@ -59,6 +60,12 @@ const categoryLabels: Record<string, string> = {
   emergency: 'Emergency',
 };
 
+function isPendingApprovalStatus(
+  approvalStatus?: 'pending_approval' | 'pending_update' | 'pending_deletion' | 'rejected' | 'approved'
+): boolean {
+  return approvalStatus !== undefined && approvalStatus !== 'approved';
+}
+
 export default function ResourcesPage() {
   const [search, setSearch] = useState('');
   const [resourcePage, setResourcePage] = useState(1);
@@ -66,6 +73,8 @@ export default function ResourcesPage() {
   const [folderName, setFolderName] = useState('');
   const [folderDesc, setFolderDesc] = useState('');
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+  const [resourceDeleteTarget, setResourceDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [folderDeleteTarget, setFolderDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: resourceData, isLoading: isResourcesLoading } = useResourceFeed({
     ...(search ? { search } : {}),
@@ -89,6 +98,8 @@ export default function ResourcesPage() {
   const { data: foldersData } = useResourceFolders();
   const createFolder = useCreateResourceFolder();
   const { user } = useAuth();
+  const deleteResource = useDeleteResource();
+  const deleteFolder = useDeleteResourceFolder();
   const { data: mySubmissionsData } = useResources(user ? { authorId: user.id, page: 1, pageSize: 12 } : { page: 1, pageSize: 12 });
 
   const bookmarkIds = useMemo(
@@ -131,6 +142,30 @@ export default function ResourcesPage() {
     addBookmark.mutate({ resourceId }, {
       onSuccess: () => addToast({ title: 'Resource bookmarked', variant: 'success' }),
     });
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteResource.mutateAsync(id);
+      addToast({ title: 'Resource deleted', variant: 'success' });
+      setResourceDeleteTarget(null);
+    } catch (err) {
+      addToast({ title: 'Failed to delete resource', variant: 'error' });
+    }
+  };
+
+  const handleFolderDelete = async (id: string) => {
+    try {
+      const response = await deleteFolder.mutateAsync(id);
+      if (response?.pendingApproval) {
+        addToast({ title: 'Folder deletion request submitted for approval', variant: 'success' });
+      } else {
+        addToast({ title: 'Folder deleted', variant: 'success' });
+      }
+      setFolderDeleteTarget(null);
+    } catch (err) {
+      addToast({ title: 'Failed to delete folder', variant: 'error' });
+    }
   };
 
   return (
@@ -212,7 +247,13 @@ export default function ResourcesPage() {
               color={folder.color}
               icon={folder.icon}
               resourceCount={folder.resource_count || 0}
+              approvalStatus={folder.approval_status}
               onClick={() => (window.location.href = `/information-hub/resources/folder/${folder.id}`)}
+              {...(user?.id === folder.created_by && folder.approval_status !== 'pending_deletion'
+                ? {
+                    onDelete: () => setFolderDeleteTarget({ id: folder.id, name: folder.name }),
+                  }
+                : {})}
             />
           ))}
         </div>
@@ -221,29 +262,42 @@ export default function ResourcesPage() {
         <div>
           <h2 className="text-sm font-semibold mt-4 mb-3">My Submissions</h2>
           <ResourceGrid columns={3} className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mySubmissionsData.data.map((res: any) => (
-              <ResourceCard
-                key={res.id}
-                id={res.id}
-                title={res.title}
-                excerpt={res.excerpt}
-                resourceType={res.resource_type}
-                category={res.category}
-                status={res.status}
-                approvalStatus={res.approval_status}
-                tags={res.tags}
-                thumbnailPath={res.thumbnail_path}
-                viewCount={res.view_count}
-                downloadCount={res.download_count}
-                bookmarkCount={res.bookmark_count}
-                isFeatured={res.is_featured}
-                isPinned={res.is_pinned}
-                isBookmarked={bookmarkIds.has(res.id)}
-                dateLabel={formatDate(res.published_at || res.created_at)}
-                onClick={() => window.location.href = `/information-hub/resources/${res.id}`}
-                onBookmark={() => handleBookmarkToggle(res.id)}
-              />
-            ))}
+            {mySubmissionsData.data.map((res: any) => {
+              const isPending = isPendingApprovalStatus(res.approval_status);
+              return (
+                <ResourceCard
+                  key={res.id}
+                  id={res.id}
+                  title={res.title}
+                  excerpt={res.excerpt}
+                  resourceType={res.resource_type}
+                  category={res.category}
+                  status={res.status}
+                  approvalStatus={res.approval_status}
+                  tags={res.tags}
+                  thumbnailPath={res.thumbnail_path}
+                  viewCount={res.view_count}
+                  downloadCount={res.download_count}
+                  bookmarkCount={res.bookmark_count}
+                  isFeatured={res.is_featured}
+                  isPinned={res.is_pinned}
+                  isBookmarked={bookmarkIds.has(res.id)}
+                  dateLabel={formatDate(res.published_at || res.created_at)}
+                  disabled={isPending}
+                  {...(!isPending
+                    ? {
+                        onClick: () => {
+                          window.location.href = `/information-hub/resources/${res.id}`;
+                        },
+                        onBookmark: () => handleBookmarkToggle(res.id),
+                      }
+                    : {})}
+                  isOwner={user?.id === res.author_id}
+                  onEdit={() => (window.location.href = `/information-hub/resources/${res.id}`)}
+                  onDelete={() => setResourceDeleteTarget({ id: res.id, title: res.title })}
+                />
+              );
+            })}
           </ResourceGrid>
         </div>
       )}
@@ -327,6 +381,9 @@ export default function ResourcesPage() {
                     window.location.href = `/information-hub/resources/${resource.id}`;
                   }}
                   onBookmark={() => handleBookmarkToggle(resource.id)}
+                  isOwner={user?.id === resource.author_id}
+                  onEdit={() => (window.location.href = `/information-hub/resources/${resource.id}`)}
+                  onDelete={() => setResourceDeleteTarget({ id: resource.id, title: resource.title })}
                 />
               ))}
             </ResourceGrid>
@@ -395,6 +452,9 @@ export default function ResourcesPage() {
                   window.location.href = `/information-hub/resources/${resource.id}`;
                 }}
                 onBookmark={() => handleBookmarkToggle(resource.id)}
+                isOwner={user?.id === resource.author_id}
+                onEdit={() => (window.location.href = `/information-hub/resources/${resource.id}`)}
+                onDelete={() => setResourceDeleteTarget({ id: resource.id, title: resource.title })}
               />
             ))}
           </ResourceGrid>
@@ -421,6 +481,46 @@ export default function ResourcesPage() {
           </Card>
         ) : null}
       </div>
+
+      <ConfirmActionDialog
+        open={resourceDeleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setResourceDeleteTarget(null);
+        }}
+        title="Delete resource?"
+        description={
+          resourceDeleteTarget
+            ? `"${resourceDeleteTarget.title}" will be removed. This action cannot be undone.`
+            : 'This resource will be removed.'
+        }
+        confirmLabel="Delete resource"
+        isPending={deleteResource.isPending}
+        onConfirm={() => {
+          if (resourceDeleteTarget) {
+            void handleDelete(resourceDeleteTarget.id);
+          }
+        }}
+      />
+
+      <ConfirmActionDialog
+        open={folderDeleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setFolderDeleteTarget(null);
+        }}
+        title="Request folder deletion?"
+        description={
+          folderDeleteTarget
+            ? `"${folderDeleteTarget.name}" will be marked for admin approval before deletion.`
+            : 'This folder deletion requires admin approval.'
+        }
+        confirmLabel="Request delete"
+        isPending={deleteFolder.isPending}
+        onConfirm={() => {
+          if (folderDeleteTarget) {
+            void handleFolderDelete(folderDeleteTarget.id);
+          }
+        }}
+      />
     </div>
   );
 }

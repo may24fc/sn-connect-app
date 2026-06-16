@@ -248,11 +248,7 @@ export default function PerformancePage(): ReactNode {
                     ? `${formatDate(displayCycle.startDate)} - ${formatDate(displayCycle.endDate)}`
                     : 'No performance cycle has been created yet'}
                 </p>
-                {displayCycle && (
-                  <p className="text-xs font-medium text-primary mt-0.5">
-                    {getQuarterLabel(displayCycle.startDate)}
-                  </p>
-                )}
+                
               </div>
             </div>
             <Badge variant={activeCycle ? 'success' : 'secondary'}>

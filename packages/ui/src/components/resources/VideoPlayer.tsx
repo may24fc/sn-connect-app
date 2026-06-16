@@ -27,13 +27,14 @@ export function VideoPlayer({
   onTimeUpdate,
 }: VideoPlayerProps): React.ReactNode {
   const isExternal = src.startsWith('http') && (src.includes('youtube') || src.includes('vimeo'));
+  const isHlsSource = /\.m3u8($|\?)/i.test(src);
   const isViewOnly = accessLevel === 'view_only';
   const videoRef = useRef<HTMLVideoElement>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   // For view-only mode, fetch the video as a blob to prevent URL copying
   useEffect(() => {
-    if (!isViewOnly || isExternal || !src) return;
+    if (!isViewOnly || isExternal || isHlsSource || !src) return;
 
     let revoked = false;
     const controller = new AbortController();
@@ -56,7 +57,56 @@ export function VideoPlayer({
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [src, isViewOnly, isExternal]);
+  }, [src, isViewOnly, isExternal, isHlsSource]);
+
+  // Mux playback uses HLS (.m3u8). Safari can play HLS natively; other browsers
+  // require hls.js attached to the <video> element.
+  useEffect(() => {
+    if (!isHlsSource || isExternal) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    let hlsInstance: { destroy: () => void } | null = null;
+    let cancelled = false;
+
+    const attachHls = async () => {
+      // Native HLS support (Safari, some mobile browsers)
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = src;
+        return;
+      }
+
+      try {
+        const mod = await import('hls.js');
+        const Hls = mod.default;
+        if (cancelled || !Hls || !Hls.isSupported()) {
+          // Last-resort fallback to direct source assignment
+          video.src = src;
+          return;
+        }
+
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+        });
+        hls.loadSource(src);
+        hls.attachMedia(video);
+        hlsInstance = hls;
+      } catch {
+        video.src = src;
+      }
+    };
+
+    attachHls();
+
+    return () => {
+      cancelled = true;
+      if (hlsInstance) {
+        hlsInstance.destroy();
+      }
+    };
+  }, [src, isExternal, isHlsSource]);
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
@@ -94,7 +144,7 @@ export function VideoPlayer({
     >
       <video
         ref={videoRef}
-        src={videoSrc}
+        src={isHlsSource ? undefined : videoSrc}
         poster={poster}
         controls
         className="h-full w-full"

@@ -5,6 +5,26 @@ import { z } from 'zod';
 // ============================================
 
 export const resourceStatusSchema = z.enum(['draft', 'published', 'archived']);
+export const resourceTypeSchema = z.enum([
+  'video',
+  'document',
+  'image',
+  'link',
+  'presentation',
+  'interactive',
+]);
+export const resourceCategorySchema = z.enum([
+  'onboarding',
+  'training',
+  'policies',
+  'benefits',
+  'tools',
+  'culture',
+  'department_specific',
+  'forms_templates',
+  'performance',
+  'emergency',
+]);
 
 // ============================================
 // Base Schemas
@@ -14,6 +34,10 @@ const resourceBaseSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
   description: z.string().max(5000, 'Description is too long').optional().nullable(),
   excerpt: z.string().max(300, 'Excerpt is too long').optional().nullable(),
+  // Legacy compatibility while dynamic categories migrate fully.
+  resourceType: resourceTypeSchema.optional(),
+  category: resourceCategorySchema.optional(),
+  tags: z.array(z.string()).optional(),
   subcategory: z.string().max(100).optional().nullable(),
   folderId: z.string().uuid().optional().nullable(),
   filePath: z.string().optional().nullable(),
@@ -52,6 +76,9 @@ export const updateResourceSchema = z
     title: z.string().min(1, 'Title is required').max(200).optional(),
     description: z.string().max(5000).optional().nullable(),
     excerpt: z.string().max(300).optional().nullable(),
+    resourceType: resourceTypeSchema.optional(),
+    category: resourceCategorySchema.optional(),
+    tags: z.array(z.string()).optional(),
     subcategory: z.string().max(100).optional().nullable(),
     filePath: z.string().optional().nullable(),
     externalUrl: z.string().url('Invalid URL').optional().nullable(),

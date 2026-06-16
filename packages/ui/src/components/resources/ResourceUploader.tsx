@@ -18,7 +18,7 @@ export interface ResourceUploaderProps {
 
 export function ResourceUploader({
   accept = 'video/mp4,video/webm,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/jpeg,image/png,image/gif',
-  maxSizeMB = 50,
+  maxSizeMB = undefined,
   onFileSelected,
   isUploading,
   uploadProgress,
@@ -49,7 +49,7 @@ export function ResourceUploader({
       uploadProgress={uploadProgress}
       label="Drag & drop a file here"
       hint="or click to browse"
-      formatHint={`Video, PDF, Office, Images — max ${maxSizeMB} MB`}
+      formatHint={`Video, PDF, Office, Images`}
       selectedFiles={selectedFile ? [selectedFile] : undefined}
       onRemoveFile={onClearFile ? handleRemove : undefined}
     />

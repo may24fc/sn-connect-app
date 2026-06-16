@@ -121,32 +121,52 @@ const SelectLabel = React.forwardRef<
 ));
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
+const EMPTY_SELECT_SENTINEL = '__hrportal_empty__';
+
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm text-zinc-700 outline-none transition-colors',
-      'focus:bg-slate-50 focus:text-slate-900',
-      'data-[state=checked]:bg-slate-900 data-[state=checked]:font-medium data-[state=checked]:text-white',
-      'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-      'dark:text-zinc-300 dark:focus:bg-slate-800/50 dark:focus:text-slate-200',
-      'dark:data-[state=checked]:bg-slate-700 dark:data-[state=checked]:text-white',
-      className
-    )}
-    {...props}
-  >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-3.5 w-3.5" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
+>(({ className, children, ...props }, ref) => {
+  // Ensure we never pass an explicit empty string as a Select item value.
+  // Radix Select treats empty string as the clear sentinel, which causes the runtime error
+  // when consumers accidentally render an item with value="". Substitute a sentinel
+  // value and keep the original in a data attribute for debugging.
+  const { value, ...rest } = props as any;
+  const safeValue = value === '' ? EMPTY_SELECT_SENTINEL : value;
 
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-));
+  if (value === '') {
+    // eslint-disable-next-line no-console
+    console.warn(
+      'SelectItem received an empty string `value` — substituting sentinel to avoid Radix error.'
+    );
+  }
+
+  return (
+    <SelectPrimitive.Item
+      ref={ref}
+      value={safeValue}
+      data-original-value={value ?? undefined}
+      className={cn(
+        'relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm text-zinc-700 outline-none transition-colors',
+        'focus:bg-slate-50 focus:text-slate-900',
+        'data-[state=checked]:bg-slate-900 data-[state=checked]:font-medium data-[state=checked]:text-white',
+        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'dark:text-zinc-300 dark:focus:bg-slate-800/50 dark:focus:text-slate-200',
+        'dark:data-[state=checked]:bg-slate-700 dark:data-[state=checked]:text-white',
+        className
+      )}
+      {...(rest as any)}
+    >
+      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <SelectPrimitive.ItemIndicator>
+          <Check className="h-3.5 w-3.5" />
+        </SelectPrimitive.ItemIndicator>
+      </span>
+
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    </SelectPrimitive.Item>
+  );
+});
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 const SelectSeparator = React.forwardRef<

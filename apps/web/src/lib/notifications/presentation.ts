@@ -29,6 +29,10 @@ export type NotificationType =
   | 'onboarding_rejected'
   | 'announcement_new'
   | 'resource_new'
+  | 'resource_submitted'
+  | 'resource_approved'
+  | 'resource_rejected'
+  | 'resource_deletion_requested'
   | 'reminder'
   | 'onboarding_step'
   | 'probation_update'
@@ -51,6 +55,10 @@ export const NOTIFICATION_ICONS: Record<NotificationType, LucideIcon> = {
   onboarding_rejected: XCircle,
   announcement_new: Megaphone,
   resource_new: FolderOpen,
+  resource_submitted: FolderOpen,
+  resource_approved: CheckCircle,
+  resource_rejected: XCircle,
+  resource_deletion_requested: FolderOpen,
   reminder: Bell,
   onboarding_step: BookOpen,
   probation_update: UserCheck,
@@ -74,6 +82,10 @@ export const NOTIFICATION_COLORS: Record<NotificationType, string> = {
   onboarding_rejected: 'text-rose-500',
   announcement_new: 'text-violet-500',
   resource_new: 'text-teal-500',
+  resource_submitted: 'text-teal-500',
+  resource_approved: 'text-emerald-500',
+  resource_rejected: 'text-rose-500',
+  resource_deletion_requested: 'text-amber-500',
   reminder: 'text-amber-500',
   onboarding_step: 'text-cyan-500',
   probation_update: 'text-orange-500',
@@ -97,6 +109,10 @@ export const NOTIFICATION_TYPE_LABELS: Record<NotificationType, string> = {
   onboarding_rejected: 'Onboarding Rejected',
   announcement_new: 'Announcement',
   resource_new: 'New Resource',
+  resource_submitted: 'Resource Submitted',
+  resource_approved: 'Resource Approved',
+  resource_rejected: 'Resource Rejected',
+  resource_deletion_requested: 'Resource Deletion Requested',
   reminder: 'Reminder',
   onboarding_step: 'Onboarding',
   probation_update: 'Probation',

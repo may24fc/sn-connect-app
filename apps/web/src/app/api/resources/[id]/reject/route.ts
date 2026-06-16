@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
             type: 'resource_rejected',
             title: 'Resource rejected',
             message: `Your submission \"${resource.title}\" was rejected${notes ? `: ${notes}` : ''}`,
-            link: `/resources/${id}`,
+            link: `/information-hub/resources/${id}`,
             metadata: { resourceId: id, reviewerId: user.id },
           };
           const { error: notifError } = await supabase.from('notifications').insert(notif);
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
             type: 'resource_rejected',
             title: 'Resource update rejected',
             message: `An update to \"${resource.title}\" was rejected${notes ? `: ${notes}` : ''}`,
-            link: `/resources/${id}`,
+            link: `/information-hub/resources/${id}`,
             metadata: { resourceId: id, reviewerId: user.id },
           };
           const { error: notifError } = await supabase.from('notifications').insert(notif);
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
             type: 'resource_rejected',
             title: 'Deletion request rejected',
             message: `Your deletion request for \"${resource.title}\" was rejected${notes ? `: ${notes}` : ''}`,
-            link: `/resources/${id}`,
+            link: `/information-hub/resources/${id}`,
             metadata: { resourceId: id, reviewerId: user.id },
           };
           const { error: notifError } = await supabase.from('notifications').insert(notif);

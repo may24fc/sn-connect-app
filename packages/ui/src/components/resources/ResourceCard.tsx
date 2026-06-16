@@ -8,6 +8,7 @@ import {
   Presentation,
   Star,
 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import type * as React from 'react';
 import { Badge } from '../../primitives/badge';
 import { cn } from '../../utils/cn';
@@ -44,8 +45,13 @@ export interface ResourceCardProps {
   isBookmarked?: boolean;
   dateLabel: string;
   onClick?: () => void;
+  disabled?: boolean;
   onBookmark?: () => void;
   actions?: React.ReactNode;
+  // Ownership + actions
+  isOwner?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const typeIcons: Record<ResourceType, typeof FileText> = {
@@ -95,46 +101,90 @@ export function ResourceCard({
   isBookmarked,
   dateLabel,
   onClick,
+  disabled = false,
   onBookmark,
   actions,
   approvalStatus,
+  isOwner = false,
+  onEdit,
+  onDelete,
 }: ResourceCardProps): React.ReactNode {
   const TypeIcon = resourceType ? typeIcons[resourceType] : FileText;
 
   return (
     <div
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       className={cn(
         'relative group bg-card border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-colors',
-        onClick && 'cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700'
+        onClick && !disabled && 'cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700',
+        disabled && 'cursor-not-allowed opacity-60'
       )}
     >
       {/* Bookmark — top-right, revealed on hover (only when no actions overlay is present) */}
-      {onBookmark && !actions && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onBookmark();
-          }}
-          className={cn(
-            'absolute top-2 right-2 z-10 p-1.5 rounded-md transition-all duration-150',
-            'bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm',
-            isBookmarked
-              ? 'opacity-100'
-              : 'opacity-0 group-hover:opacity-100'
+          {(actions && (
+            <div
+              className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {actions}
+            </div>
+          )) || (
+            <div
+              className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {onBookmark && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBookmark();
+                  }}
+                  className={cn(
+                    'p-1.5 rounded-md transition-all duration-150 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm',
+                    isBookmarked ? 'opacity-100' : 'opacity-80'
+                  )}
+                >
+                  <Bookmark
+                    className={cn(
+                      'h-3.5 w-3.5',
+                      isBookmarked
+                        ? 'text-zinc-700 fill-zinc-600 dark:text-zinc-300 dark:fill-zinc-400'
+                        : 'text-zinc-400 dark:text-zinc-500'
+                    )}
+                  />
+                </button>
+              )}
+
+              {isOwner && onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  aria-label="Edit resource"
+                  className="p-1.5 rounded-md transition-all duration-150 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-300" />
+                </button>
+              )}
+
+              {isOwner && onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                  aria-label="Delete resource"
+                  className="p-1.5 rounded-md transition-all duration-150 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                </button>
+              )}
+            </div>
           )}
-        >
-          <Bookmark
-            className={cn(
-              'h-3.5 w-3.5',
-              isBookmarked
-                ? 'text-zinc-700 fill-zinc-600 dark:text-zinc-300 dark:fill-zinc-400'
-                : 'text-zinc-400 dark:text-zinc-500'
-            )}
-          />
-        </button>
-      )}
 
       {/* Thumbnail / type icon strip */}
       {thumbnailPath ? (

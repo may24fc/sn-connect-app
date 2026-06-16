@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase } from '../../_lib';
+import { isMuxUploadPath } from '@/lib/mux/server';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -47,6 +48,18 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
     if (!resource.file_path) {
       return NextResponse.json({ error: 'No streamable file available' }, { status: 400 });
+    }
+
+    if (isMuxUploadPath(resource.file_path)) {
+      return NextResponse.json(
+        {
+          error: 'Video is still processing',
+          data: {
+            isProcessing: true,
+          },
+        },
+        { status: 409 }
+      );
     }
 
     const isViewOnly = resource.access_level === 'view_only';

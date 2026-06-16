@@ -43,7 +43,7 @@ export default function EmployeeNewResourcePage() {
     description,
     folderId: folderId || undefined,
     filePath: filePath || undefined,
-    externalUrl: externalUrl || undefined,
+      externalUrl: externalUrl.trim() || undefined,
     fileSize: fileMeta?.fileSize,
     mimeType: fileMeta?.mimeType,
     isPublic,
@@ -66,16 +66,22 @@ export default function EmployeeNewResourcePage() {
 
   const submit = async (): Promise<void> => {
     try {
-      const created = await createResource.mutateAsync(buildPayload());
+      await createResource.mutateAsync(buildPayload());
       addToast({ title: 'Submitted for approval', variant: 'success' });
-      router.push(`/information-hub/resources/${created.data.id}`);
+      // Pending resources are not always viewable from detail routes for non-admin users.
+      // Redirect users to the originating list page to avoid indefinite loading states.
+      if (folderId) {
+        router.push(`/information-hub/resources/folder/${folderId}`);
+      } else {
+        router.push('/information-hub');
+      }
     } catch (err) {
       addToast({ title: 'Failed to submit resource', variant: 'error' });
     }
   };
 
-  const isExternalLink = Boolean(externalUrl && externalUrl.trim());
-  const canSubmit = title && (filePath || externalUrl);
+  const hasExternalUrl = Boolean(externalUrl.trim());
+  const canSubmit = title.trim() && (filePath || hasExternalUrl);
 
   return (
     <div className="min-h-screen bg-background">
@@ -123,24 +129,38 @@ export default function EmployeeNewResourcePage() {
 
             <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
               <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 flex items-center gap-2">
-                {isExternalLink ? <Link2 className="w-3.5 h-3.5 text-muted-foreground" /> : <Upload className="w-3.5 h-3.5 text-muted-foreground" />}
-                <span className="text-xs font-medium text-muted-foreground">{isExternalLink ? 'External Link' : 'Upload File'}</span>
+                <Upload className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">Upload File (Optional)</span>
               </div>
               <div className="p-4">
-                {isExternalLink ? (
-                  <Input placeholder="https://example.com/resource" value={externalUrl} onChange={(e) => setExternalUrl(e.target.value)} type="url" />
-                ) : (
-                  <div className="space-y-2">
-                    <ResourceUploader onFileSelected={handleFileSelected} isUploading={uploadResource.isPending} />
-                    {fileName && (
-                      <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                        <FileText className="w-4 h-4" />
-                        <span>{fileName}</span>
-                        <span className="text-xs text-muted-foreground">({(fileMeta?.fileSize ? fileMeta.fileSize / 1024 / 1024 : 0).toFixed(2)} MB)</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <ResourceUploader onFileSelected={handleFileSelected} isUploading={uploadResource.isPending} />
+                  {fileName && (
+                    <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <FileText className="w-4 h-4" />
+                      <span>{fileName}</span>
+                      <span className="text-xs text-muted-foreground">({(fileMeta?.fileSize ? fileMeta.fileSize / 1024 / 1024 : 0).toFixed(2)} MB)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-lg border border-border shadow-card overflow-hidden">
+              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 flex items-center gap-2">
+                <Link2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">External Link (Optional)</span>
+              </div>
+              <div className="p-4 space-y-2">
+                <Input
+                  placeholder="https://example.com/resource"
+                  value={externalUrl}
+                  onChange={(e) => setExternalUrl(e.target.value)}
+                  type="url"
+                />
+                <p className="text-xs text-muted-foreground">
+                  You can submit with file only, link only, or both.
+                </p>
               </div>
             </div>
           </div>

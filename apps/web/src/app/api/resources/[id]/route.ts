@@ -3,6 +3,7 @@ import { updateResourceSchema } from '@/lib/schemas/resource.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAuthedSupabase, isResourceAdmin, normalizeExcerpt } from '../_lib';
 import { NOTIFICATION_ADMIN_ROLES } from '../../notifications/_lib';
+import { createNotificationsForUsers } from '@/lib/notifications/create-notification';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -11,7 +12,7 @@ interface RouteContext {
 export async function GET(_: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const { supabase, user, error } = await getAuthedSupabase();
+    const { supabase, user, role, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -23,6 +24,13 @@ export async function GET(_: NextRequest, context: RouteContext) {
 
     if (fetchError || !data) {
       return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+    }
+
+    // Non-admin users must not view other users' pending/rejected submissions directly.
+    // However, the original author should be able to view their own pending submission
+    // (so they can see status, edit, or navigate back to it). Admins always have access.
+    if (!isResourceAdmin(role) && data.approval_status !== 'approved' && data.author_id !== user.id) {
+      return NextResponse.json({ error: 'Resource is pending approval' }, { status: 403 });
     }
 
     return NextResponse.json({ data });
@@ -168,16 +176,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         .is('deleted_at', null);
 
       if (admins && admins.length > 0) {
-        const notifications = admins.map((a: any) => ({
-          user_id: a.id,
-          type: 'resource_submitted',
-          title: 'Resource update requested',
-          message: `${user.email || user.id} requested an update to "${pendingData.title}"`,
-          link: `/admin/resources/${id}`,
-          metadata: { resourceId: id, authorId: user.id },
-        }));
-        const { error: notifError } = await supabase.from('notifications').insert(notifications);
-        if (notifError) console.error('Failed to insert update notifications:', notifError);
+        await createNotificationsForUsers(
+          admins.map((a: { id: string }) => a.id),
+          {
+            type: 'resource_submitted',
+            title: 'Resource update requested',
+            message: `${user.email || user.id} requested an update to "${pendingData.title}"`,
+            link: '/admin/resources/pending',
+            metadata: { resourceId: id, authorId: user.id },
+            dedupeKey: `resource:pending_update:${id}`,
+            dedupeWindowHours: 6,
+          }
+        );
       }
     } catch (err) {
       console.error('Notification error (update request):', err);
@@ -267,16 +277,18 @@ export async function DELETE(_: NextRequest, context: RouteContext) {
         .is('deleted_at', null);
 
       if (admins && admins.length > 0) {
-        const notifications = admins.map((a: any) => ({
-          user_id: a.id,
-          type: 'resource_deletion_requested',
-          title: 'Resource deletion requested',
-          message: `${user.email || user.id} requested deletion of resource "${existing.id}"`,
-          link: `/admin/resources/${id}`,
-          metadata: { resourceId: id, authorId: user.id },
-        }));
-        const { error: notifError } = await supabase.from('notifications').insert(notifications);
-        if (notifError) console.error('Failed to insert deletion notifications:', notifError);
+        await createNotificationsForUsers(
+          admins.map((a: { id: string }) => a.id),
+          {
+            type: 'resource_deletion_requested',
+            title: 'Resource deletion requested',
+            message: `${user.email || user.id} requested deletion of resource "${existing.id}"`,
+            link: '/admin/resources/pending',
+            metadata: { resourceId: id, authorId: user.id },
+            dedupeKey: `resource:pending_deletion:${id}`,
+            dedupeWindowHours: 6,
+          }
+        );
       }
     } catch (err) {
       console.error('Notification error (deletion request):', err);
