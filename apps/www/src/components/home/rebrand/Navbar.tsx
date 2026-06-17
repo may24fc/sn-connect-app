@@ -15,7 +15,7 @@ interface NavbarProps {
 }
 
 const menuItems: MenuItem[] = [
-  { name: 'Services', href: '/businesses' },
+  { name: 'Services', href: '/services' },
   { name: 'About Us', href: '/about' },
   { name: 'Our Team', href: '/team' },
 ];
