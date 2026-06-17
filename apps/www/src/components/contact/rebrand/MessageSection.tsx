@@ -28,7 +28,7 @@ export default function MessageSection() {
   return (
     <section
       ref={ref}
-      className="relative w-full bg-[#d6e4f0] overflow-hidden"
+      className="relative w-full bg-[#d6e4f0] overflow-hidden rounded-b-[2rem]"
       id="message-us"
       aria-label="Message us"
     >

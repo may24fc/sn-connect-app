@@ -26,8 +26,10 @@ export default function RebrandContact({ scheduleUrl, embedUrl }: RebrandContact
       {/* ── Booking discovery call section ── */}
       <BookingCard scheduleUrl={scheduleUrl} embedUrl={embedUrl} />
 
-      {/* ── Message us — contact form ── */}
-      <MessageSection />
+      {/* ── Message us — dark wrapper lets rounded-b-[2rem] show over footer bg ── */}
+      <div className="bg-[#0c1d2e]">
+        <MessageSection />
+      </div>
 
       {/* ── Footer ── */}
       <Footer />
