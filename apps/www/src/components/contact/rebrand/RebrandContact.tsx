@@ -8,7 +8,7 @@ import BookingCard from './BookingCard';
 import MessageSection from './MessageSection';
 
 interface RebrandContactProps {
-  scheduleUrl: string | null;
+  scheduleUrl: string;
   embedUrl: string | null;
 }
 

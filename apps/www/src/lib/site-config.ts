@@ -60,11 +60,14 @@ export function getPublicSiteUrl(): string {
   );
 }
 
-export function getGoogleAppointmentScheduleUrl(): string | null {
+const GOOGLE_APPOINTMENT_SCHEDULE_URL =
+  'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3-g5R-G8Rboj0miglsqLCCy0plgqNvFEpCcswQraL9wxpLl-sT2cQeUuhlCaFiVtpDi1UWx9kG';
+
+export function getGoogleAppointmentScheduleUrl(): string {
   return getOptionalConfiguredUrl([
     process.env.NEXT_PUBLIC_GOOGLE_APPOINTMENT_SCHEDULE_URL,
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_URL,
-  ]);
+  ]) ?? GOOGLE_APPOINTMENT_SCHEDULE_URL;
 }
 
 export function getGoogleAppointmentEmbedUrl(): string | null {

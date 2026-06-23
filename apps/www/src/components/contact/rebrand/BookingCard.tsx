@@ -5,6 +5,9 @@ import { useRef, useState } from 'react';
 import { ChromaFlow, FlutedGlass, Shader, Swirl } from 'shaders/react';
 import SplitCTA from '@/components/ui/SplitCTA';
 
+const BOOKING_URL =
+  'https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3-g5R-G8Rboj0miglsqLCCy0plgqNvFEpCcswQraL9wxpLl-sT2cQeUuhlCaFiVtpDi1UWx9kG';
+
 interface BookingCardProps {
   scheduleUrl: string | null;
   embedUrl: string | null;
@@ -124,7 +127,7 @@ export default function BookingCard({ scheduleUrl, embedUrl }: BookingCardProps)
               {/* Primary CTA */}
               <SplitCTA
                 title="BOOK A CALL"
-                href={scheduleUrl ?? '#'}
+                href={scheduleUrl ?? BOOKING_URL}
                 ariaLabel="Book a discovery call"
                 mainBg="#ffffff"
                 mainBgHover="#3b86d2"
@@ -165,16 +168,16 @@ export default function BookingCard({ scheduleUrl, embedUrl }: BookingCardProps)
               id="inline-calendar"
               key="calendar"
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 700, opacity: 1 }}
+              animate={{ height: 760, opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.7, ease }}
-              className="relative z-10 overflow-hidden px-8 md:px-12 lg:px-16"
+              className="relative z-10 overflow-hidden px-8 md:px-12 lg:px-16 pb-10 md:pb-14"
             >
-              <div className="w-full h-[700px] pb-2">
+              <div className="w-full h-[700px] pb-2 bg-white rounded-2xl overflow-hidden shadow-sm p-3">
                 <iframe
                   src={embedUrl}
                   title="Book a discovery call"
-                  className="w-full h-full rounded-2xl border-0"
+                  className="w-full h-full rounded-xl border-0"
                   loading="lazy"
                 />
               </div>

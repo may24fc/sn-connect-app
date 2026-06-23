@@ -106,7 +106,7 @@ export function ContactForm(): ReactNode {
         {/* Name */}
         <div className="sm:col-span-1">
           <label htmlFor="contact-name" className="block text-xs">
-            Full Name <span className="text-red-500">*</span>
+            Full Name <span className="text-[#3b86d2]">*</span>
           </label>
           <div className="relative mt-1">
             <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -125,7 +125,7 @@ export function ContactForm(): ReactNode {
         {/* Email */}
         <div className="sm:col-span-1">
           <label htmlFor="contact-email" className="block text-xs">
-            Email <span className="text-red-500">*</span>
+            Email <span className="text-[#3b86d2]">*</span>
           </label>
           <div className="relative mt-1">
             <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -161,7 +161,7 @@ export function ContactForm(): ReactNode {
         {/* Subject */}
         <div className="sm:col-span-2">
           <label htmlFor="contact-subject" className="block text-xs">
-            What support do you need? <span className="text-red-500">*</span>
+            What support do you need? <span className="text-[#3b86d2]">*</span>
           </label>
           <div className="relative mt-1">
             <Type className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -180,7 +180,7 @@ export function ContactForm(): ReactNode {
         {/* Message */}
         <div className="sm:col-span-2">
           <label htmlFor="contact-message" className="block text-xs">
-            Brief details <span className="text-red-500">*</span>
+            Brief details <span className="text-[#3b86d2]">*</span>
           </label>
           <div className="relative mt-1">
             <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-zinc-400" />
