@@ -7,7 +7,7 @@ import { ScrollProgress } from '@/components/shared/ScrollProgress';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-const HIDE_LAYOUT_PATHS = new Set(['/', '/contact', '/services']);
+const HIDE_LAYOUT_PATHS = new Set(['/', '/contact', '/services', '/about', '/team']);
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
