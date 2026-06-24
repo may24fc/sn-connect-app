@@ -93,7 +93,7 @@ export default function RebrandHome() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 1.75, ease: [0.19, 1, 0.22, 1] }}
                   >
-                    <SplitCTA title="EXPLORE OUR SERVICES" href="#" />
+                    <SplitCTA title="EXPLORE OUR SERVICES" href="/services" />
                   </motion.div>
                 </div>
               </div>

@@ -98,7 +98,7 @@ export default function IntegratedPlatform() {
               </div>
 
               <motion.div variants={fade}>
-                <SplitCTA title="REQUEST A BRIEF" href="#contact" />
+                <SplitCTA title="REQUEST A BRIEF" href="/contact" />
               </motion.div>
             </motion.div>
           </aside>

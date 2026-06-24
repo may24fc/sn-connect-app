@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { MouseEvent } from 'react';
 import { ChromaFlow, FlutedGlass, Shader, Swirl } from 'shaders/react';
 import SplitCTA from '../../ui/SplitCTA';
@@ -18,6 +20,8 @@ const stagger = (delay = 0) => ({
 });
 
 export default function Footer() {
+  const pathname = usePathname();
+
   const handleScrollToTop = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -99,7 +103,7 @@ export default function Footer() {
                 }
                 className="footer-cta"
               >
-                <SplitCTA title="REQUEST A BRIEF" href="#contact" />
+                <SplitCTA title="REQUEST A BRIEF" href="/contact" />
               </div>
             </motion.div>
           </div>
@@ -124,18 +128,22 @@ export default function Footer() {
               </span>
               <ul className="flex flex-col">
                 {[
-                  { label: 'Services', href: '#services' },
-                  { label: 'About Us', href: '#about' },
-                  { label: 'Meet the Team', href: '#team' },
-                  { label: 'Contact', href: '#contact' },
+                  { label: 'Services', href: '/services' },
+                  { label: 'About Us', href: '/about' },
+                  { label: 'Our Team', href: '/team' },
+                  { label: 'Contact', href: '/contact' },
                 ].map(({ label, href }) => (
                   <li key={label}>
-                    <a
+                    <Link
                       href={href}
-                      className="font-sans text-sm sm:text-base text-[#f6f6f2]/70 hover:text-white transition-colors duration-300"
+                      className={`font-sans text-sm sm:text-base transition-colors duration-300 ${
+                        pathname === href
+                          ? 'text-white'
+                          : 'text-[#f6f6f2]/70 hover:text-white'
+                      }`}
                     >
                       {label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

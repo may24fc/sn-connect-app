@@ -147,7 +147,7 @@ export default function OurCompany() {
             viewport={{ once: true, margin: '-80px' }}
             id="company-btn-wrapper"
           >
-            <SplitCTA title="MEET THE TEAM" href="#about" />
+            <SplitCTA title="MEET THE TEAM" href="/team" />
           </motion.div>
         </div>
       </div>
