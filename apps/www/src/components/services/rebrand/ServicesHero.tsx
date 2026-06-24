@@ -81,13 +81,11 @@ export default function ServicesHero() {
             }
           }}
         >
-          {/* Two-slot panel — slides DOWN on hover */}
           <div
             className="absolute -top-12 left-0 w-full flex flex-col
                        transition-transform duration-[750ms] ease-[cubic-bezier(0.19,1,0.22,1)]
                        delay-0 group-hover:delay-[150ms] group-hover:translate-y-12"
           >
-            {/* Slot 1 — hover: dark bg, white arrow */}
             <div className="flex items-center justify-center w-12 h-12 shrink-0 bg-[#0c1d2e] rounded-lg">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
@@ -102,7 +100,6 @@ export default function ServicesHero() {
                 />
               </svg>
             </div>
-            {/* Slot 2 — default: transparent bg, muted arrow */}
             <div className="flex items-center justify-center w-12 h-12 shrink-0">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
@@ -120,7 +117,6 @@ export default function ServicesHero() {
           </div>
         </motion.a>
 
-        {/* Subtitle — pushed to the right */}
         <motion.p
           className="ml-auto max-w-lg text-base sm:text-lg md:text-xl text-[#0c1d2e]/55 leading-relaxed text-right"
           initial={{ opacity: 0, y: 14 }}

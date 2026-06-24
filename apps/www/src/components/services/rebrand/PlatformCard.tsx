@@ -33,7 +33,7 @@ export default function PlatformCard() {
         initial="hidden"
         animate={inView ? 'visible' : 'hidden'}
       >
-        {/* ── Fluted glass background — same as footer ── */}
+        {/* ── Shader background ── */}
         <div className="absolute inset-0 z-0" aria-hidden>
           <Shader style={{ width: '100%', height: '100%' }}>
             <Swirl colorA="#0c1d2e" colorB="#1b3b5a" detail={1.7} />
@@ -63,7 +63,6 @@ export default function PlatformCard() {
 
         {/* ── Content ── */}
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-[1fr_1.6fr] gap-0 px-8 md:px-12 lg:px-16 py-16 md:py-20">
-          {/* Label — upper left */}
           <motion.div
             className="mb-6 md:mb-0 pt-1"
             custom={0.2}
@@ -71,7 +70,7 @@ export default function PlatformCard() {
             initial="hidden"
             animate={inView ? 'visible' : 'hidden'}
           >
-            <div className="inline-flex items-center py- pl-2 pr-3 rounded-sm bg-white gap-2">
+            <div className="inline-flex items-center py-1 pl-2 pr-3 rounded-sm bg-white gap-2">
               <span className="w-[10px] h-[10px] bg-[#3b86d2] flex-shrink-0" />
               <span className="button-mono text-sm font-medium text-[#0c1d2e] uppercase tracking-[0.2em]">
                 Our Platform
@@ -79,7 +78,6 @@ export default function PlatformCard() {
             </div>
           </motion.div>
 
-          {/* Right: description text */}
           <motion.p
             className="text-base md:text-5xl text-[#ffffff] tracking-[-0.04em] w-full"
             style={{ lineHeight: '1.15' }}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import { PageTransitionWrapper } from '@/components/layout/PageTransitionWrapper';
 import { SiteFrame } from '@/components/layout/SiteFrame';
 import { aspekta, robotoMono } from './fonts';
 import { Providers } from './providers';
@@ -82,7 +83,9 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       </head>
       <body className="min-h-screen overflow-x-clip font-sans antialiased">
         <Providers>
-          <SiteFrame>{children}</SiteFrame>
+          <PageTransitionWrapper>
+            <SiteFrame>{children}</SiteFrame>
+          </PageTransitionWrapper>
         </Providers>
       </body>
     </html>
