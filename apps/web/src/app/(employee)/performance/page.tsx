@@ -50,20 +50,6 @@ function formatDate(dateString: string): string {
   });
 }
 
-function getQuarterLabel(dateString: string): string {
-  const date = new Date(dateString);
-  const month = date.getMonth();
-  const year = date.getFullYear();
-  const quarter = Math.floor(month / 3) + 1;
-  const quarterMonths: Record<number, string> = {
-    1: 'January - March',
-    2: 'April - June',
-    3: 'July - September',
-    4: 'October - December',
-  };
-  return `Q${quarter}: ${quarterMonths[quarter]} ${year}`;
-}
-
 function getProgressBarColor(value: number): string {
   if (value >= 80) return 'bg-success';
   if (value >= 50) return 'bg-warning';
@@ -248,11 +234,7 @@ export default function PerformancePage(): ReactNode {
                     ? `${formatDate(displayCycle.startDate)} - ${formatDate(displayCycle.endDate)}`
                     : 'No performance cycle has been created yet'}
                 </p>
-                {displayCycle && (
-                  <p className="text-xs font-medium text-primary mt-0.5">
-                    {getQuarterLabel(displayCycle.startDate)}
-                  </p>
-                )}
+                
               </div>
             </div>
             <Badge variant={activeCycle ? 'success' : 'secondary'}>

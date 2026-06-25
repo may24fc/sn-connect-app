@@ -191,6 +191,8 @@ export default function MyTasksPage() {
   const [newTags, setNewTags] = useState<string[]>([]);
   const createTask = useCreateTask();
 
+  // Weekly commitment UI moved to Projects page
+
   const resetAddTaskForm = useCallback(() => {
     setNewTitle('');
     setNewDescription('');
@@ -295,6 +297,8 @@ export default function MyTasksPage() {
           Add Task
         </Button>
       </div>
+
+      {/* Weekly Focus moved to the Projects page */}
 
       {/* Stats Cards */}
       <StatCardGrid columns={4}>
@@ -548,6 +552,7 @@ export default function MyTasksPage() {
           </form>
         </DialogContent>
       </Dialog>
+      {/* MondayCommitmentModal moved to Projects page */}
     </div>
   );
 }

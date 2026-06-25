@@ -43,7 +43,42 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .single();
 
     if (resourceError || !resource) {
-      return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+      // The initial lookup uses the request's Supabase session client which is
+      // subject to Row Level Security (RLS). If the resource exists but the
+      // current user is not allowed to SELECT it, the query will return no row
+      // instead of a clear "not found". To provide a clearer response, fall
+      // back to an admin lookup to determine whether the resource truly does
+      // not exist (404) or exists but is access-restricted (403).
+      try {
+        const adminClient = createSupabaseAdminClient();
+        const { data: adminResource, error: adminErr } = await adminClient
+          .from('resources')
+          .select('id, author_id')
+          .eq('id', id)
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        if (adminErr) {
+          console.error('Admin lookup failed while resolving resource visibility:', adminErr);
+          return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+        }
+
+        if (adminResource) {
+          // If the current user is the author of the resource, allow them to track a view
+          // even when RLS prevents a session-level SELECT. Otherwise, forbid.
+          if (adminResource.author_id === user.id) {
+            // fall through to insert view record below
+          } else {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+          }
+        }
+
+        // Resource truly does not exist
+        return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+      } catch (adminLookupError) {
+        console.error('Error during admin resource lookup:', adminLookupError);
+        return NextResponse.json({ error: 'Resource not found' }, { status: 404 });
+      }
     }
 
     const adminClient = createSupabaseAdminClient();

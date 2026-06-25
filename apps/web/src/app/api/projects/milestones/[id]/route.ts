@@ -184,5 +184,31 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     metadata: { deletedMilestoneIds: milestoneIds },
   });
 
+  const [{ data: recalculatedProgress, error: progressError }, { data: recalculatedHealth, error: healthError }] =
+    await Promise.all([
+      supabaseAdmin.rpc('calculate_project_progress', { p_project_id: milestone.projectId }),
+      supabaseAdmin.rpc('calculate_project_health', { p_project_id: milestone.projectId }),
+    ]);
+
+  if (progressError) {
+    return NextResponse.json({ error: progressError.message }, { status: 500 });
+  }
+
+  if (healthError) {
+    return NextResponse.json({ error: healthError.message }, { status: 500 });
+  }
+
+  const { error: projectRefreshError } = await supabaseAdmin
+    .from('projects')
+    .update({
+      progress_pct: Number(recalculatedProgress ?? 0),
+      health: recalculatedHealth,
+    })
+    .eq('id', milestone.projectId);
+
+  if (projectRefreshError) {
+    return NextResponse.json({ error: projectRefreshError.message }, { status: 500 });
+  }
+
   return NextResponse.json({ ok: true });
 }

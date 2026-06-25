@@ -197,19 +197,21 @@ export async function POST(request: NextRequest) {
 
         const batchResult = await generateBatchEmbeddings(chunks.map((c) => c.content));
 
-        const rows = chunks
-          .map((chunk, i) => {
-            const result = batchResult.results[i];
-            if (!result || result.embedding.length === 0) return null;
-            return {
-              source_id: sourceData.id,
-              chunk_index: chunk.metadata.chunkIndex,
-              chunk_text: chunk.content,
-              embedding: JSON.stringify(result.embedding),
-              metadata: { ...chunk.metadata },
-            };
-          })
-          .filter(Boolean);
+        const rowsWithNullable = chunks.map((chunk, i) => {
+          const result = batchResult.results[i];
+          if (!result || result.embedding.length === 0) return null;
+          return {
+            source_id: sourceData.id,
+            chunk_index: chunk.metadata.chunkIndex,
+            chunk_text: chunk.content,
+            embedding: JSON.stringify(result.embedding),
+            metadata: { ...chunk.metadata },
+          };
+        });
+
+        const rows = rowsWithNullable.filter(
+          (r): r is NonNullable<typeof r> => r !== null
+        );
 
         if (rows.length > 0) {
           const { error: embedInsertError } = await adminClient

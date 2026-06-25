@@ -279,6 +279,7 @@ export function OKRDetailWorkspace({
   const [progressValue, setProgressValue] = useState('');
   const [booleanValue, setBooleanValue] = useState(0);
   const [selectedEvidenceFiles, setSelectedEvidenceFiles] = useState<Array<File>>([]);
+  const [pendingEvidenceLinks, setPendingEvidenceLinks] = useState<Array<string>>([]);
   const [evidenceLabel, setEvidenceLabel] = useState('');
   const [evidenceLink, setEvidenceLink] = useState('');
   const { data: evidenceResponse, isLoading: evidenceLoading } = useOKRTargetEvidence(
@@ -426,6 +427,7 @@ export function OKRDetailWorkspace({
     setProgressValue('');
     setBooleanValue(0);
     setSelectedEvidenceFiles([]);
+    setPendingEvidenceLinks([]);
     setEvidenceLabel('');
     setEvidenceLink('');
   }, []);
@@ -433,15 +435,17 @@ export function OKRDetailWorkspace({
   const handleUploadEvidence = async (): Promise<void> => {
     if (!progressTarget || selectedEvidenceFiles.length === 0) return;
 
-    const file = selectedEvidenceFiles[0];
-    if (!file) return;
-
     try {
-      await createEvidence.mutateAsync({
-        file,
-        ...(evidenceLabel.trim() ? { label: evidenceLabel.trim() } : {}),
+      for (const file of selectedEvidenceFiles) {
+        await createEvidence.mutateAsync({
+          file,
+          ...(evidenceLabel.trim() ? { label: evidenceLabel.trim() } : {}),
+        });
+      }
+      addToast({
+        title: selectedEvidenceFiles.length > 1 ? 'Evidence files uploaded' : 'Evidence uploaded',
+        variant: 'success',
       });
-      addToast({ title: 'Evidence uploaded', variant: 'success' });
       setSelectedEvidenceFiles([]);
       setEvidenceLabel('');
     } catch (error) {
@@ -479,22 +483,13 @@ export function OKRDetailWorkspace({
       return;
     }
 
-    try {
-      await createEvidence.mutateAsync({
-        evidenceType: 'link',
-        content: link,
-        ...(evidenceLabel.trim() ? { label: evidenceLabel.trim() } : {}),
-      });
-      addToast({ title: 'Link attached', variant: 'success' });
-      setEvidenceLink('');
-      setEvidenceLabel('');
-    } catch (error) {
-      addToast({
-        title: 'Error attaching link',
-        description: error instanceof Error ? error.message : 'Failed to attach link',
-        variant: 'error',
-      });
-    }
+    setPendingEvidenceLinks((previous) => {
+      if (previous.includes(link)) {
+        return previous;
+      }
+      return [...previous, link];
+    });
+    setEvidenceLink('');
   };
 
   const handleUpdateProgress = async (): Promise<void> => {
@@ -504,40 +499,55 @@ export function OKRDetailWorkspace({
       const hasStoredEvidence = evidenceItems.length > 0;
 
       if (!hasStoredEvidence) {
-        const file = selectedEvidenceFiles[0];
-        const link = evidenceLink.trim();
+        const hasSelectedFiles = selectedEvidenceFiles.length > 0;
+        const typedLink = evidenceLink.trim();
 
-        if (file) {
-          await createEvidence.mutateAsync({
-            file,
-            ...(evidenceLabel.trim() ? { label: evidenceLabel.trim() } : {}),
+        if (typedLink && !isValidEvidenceLink(typedLink)) {
+          addToast({
+            title: 'Invalid link',
+            description: 'Enter a valid http or https link before updating progress.',
+            variant: 'error',
           });
-          setSelectedEvidenceFiles([]);
-          setEvidenceLabel('');
-        } else if (link) {
-          if (!isValidEvidenceLink(link)) {
-            addToast({
-              title: 'Invalid link',
-              description: 'Enter a valid http or https link before updating progress.',
-              variant: 'error',
-            });
-            return;
-          }
+          return;
+        }
 
+        const linksToUpload = typedLink
+          ? Array.from(new Set([...pendingEvidenceLinks, typedLink]))
+          : pendingEvidenceLinks;
+
+        if (hasSelectedFiles) {
+          for (const file of selectedEvidenceFiles) {
+            await createEvidence.mutateAsync({
+              file,
+              ...(evidenceLabel.trim() ? { label: evidenceLabel.trim() } : {}),
+            });
+          }
+          setSelectedEvidenceFiles([]);
+        }
+
+        if (linksToUpload.length > 0) {
+          for (const link of linksToUpload) {
           await createEvidence.mutateAsync({
             evidenceType: 'link',
             content: link,
             ...(evidenceLabel.trim() ? { label: evidenceLabel.trim() } : {}),
           });
+          }
           setEvidenceLink('');
-          setEvidenceLabel('');
-        } else {
+          setPendingEvidenceLinks([]);
+        }
+
+        if (!hasSelectedFiles && linksToUpload.length === 0) {
           addToast({
             title: 'Supporting attachment required',
             description: 'Add at least one supporting attachment or link before updating progress.',
             variant: 'error',
           });
           return;
+        }
+
+        if (hasSelectedFiles || linksToUpload.length > 0) {
+          setEvidenceLabel('');
         }
       }
 
@@ -1326,18 +1336,47 @@ export function OKRDetailWorkspace({
                           type="button"
                           variant="outline"
                           onClick={() => void handleAddEvidenceLink()}
-                          disabled={!evidenceLink.trim() || createEvidence.isPending}
+                          disabled={!evidenceLink.trim()}
                         >
-                          Add Link
+                          Add to Queue
                         </Button>
                       </div>
                     </div>
 
+                    {pendingEvidenceLinks.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground">Queued links</p>
+                        {pendingEvidenceLinks.map((link, index) => (
+                          <div
+                            key={`${link}-${index}`}
+                            className="flex items-center gap-2 rounded-md border border-border px-2.5 py-2"
+                          >
+                            <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                              {link}
+                            </p>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-destructive hover:text-destructive"
+                              onClick={() =>
+                                setPendingEvidenceLinks((previous) =>
+                                  previous.filter((_, linkIndex) => linkIndex !== index)
+                                )
+                              }
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <FileDropZone
-                      onFilesSelected={(files) => setSelectedEvidenceFiles(files.slice(0, 1))}
+                      onFilesSelected={(files) => setSelectedEvidenceFiles((current) => [...current, ...files])}
                       accept="image/jpeg,image/png,image/gif,image/webp,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                      multiple={false}
-                      maxFiles={1}
+                      multiple
+                      maxFiles={10}
                       maxSizeMB={10}
                       compact
                       selectedFiles={selectedEvidenceFiles}
@@ -1357,7 +1396,7 @@ export function OKRDetailWorkspace({
                         onClick={() => void handleUploadEvidence()}
                         disabled={selectedEvidenceFiles.length === 0 || createEvidence.isPending}
                       >
-                        {createEvidence.isPending ? 'Uploading...' : 'Upload Evidence'}
+                        {createEvidence.isPending ? 'Uploading...' : 'Upload Files'}
                       </Button>
                     </div>
                   </div>

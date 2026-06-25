@@ -128,6 +128,7 @@ export interface ResourceFilters {
   pageSize?: number;
   sortBy?: 'created_at' | 'published_at' | 'view_count' | 'title';
   sortOrder?: 'asc' | 'desc';
+  folderId?: string;
 }
 
 export interface ResourceFeedFilters {
@@ -457,6 +458,7 @@ export const queryKeys = {
       [...queryKeys.resources.all, 'search', query, filters] as const,
     category: (category: string) => [...queryKeys.resources.all, 'category', category] as const,
     analytics: (id: string) => [...queryKeys.resources.all, 'analytics', id] as const,
+    pending: () => [...queryKeys.resources.all, 'pending'] as const,
   },
 
   collections: {

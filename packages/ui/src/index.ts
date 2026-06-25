@@ -566,6 +566,7 @@ export type {
 // Resources Components
 export {
   ResourceCard,
+  ResourceFolderCard,
   ResourceGrid,
   ResourceFilters,
   ResourceUploader,
@@ -579,6 +580,7 @@ export {
 } from './components/resources';
 export type {
   ResourceCardProps,
+  ResourceFolderCardProps,
   ResourceType,
   ResourceStatus,
   ResourceCategory,

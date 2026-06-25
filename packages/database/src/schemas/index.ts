@@ -2,8 +2,7 @@
 export {
   resourceSchema,
   resourceUpdateSchema,
-  resourceTypeSchema,
-  resourceCategorySchema,
+  
   resourceStatusSchema,
   resourceIdSchema,
   userIdSchema,
@@ -11,8 +10,7 @@ export {
   MAX_DOCUMENT_FILE_SIZE,
   type ResourceCreateInput,
   type ResourceUpdateInput,
-  type ResourceTypeValue,
-  type ResourceCategoryValue,
+  
   type ResourceStatusValue,
 } from './resourceSchema';
 

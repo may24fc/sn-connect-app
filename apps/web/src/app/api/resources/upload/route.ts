@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedSupabase, isResourceAdmin } from '../_lib';
+import { getAuthedSupabase } from '../_lib';
+import { createMuxDirectUpload, isMuxConfigured, isVideoMimeType, uploadFileToMux } from '@/lib/mux/server';
 
 const ALLOWED_MIME_TYPES = [
   'video/mp4',
@@ -17,19 +18,16 @@ const ALLOWED_MIME_TYPES = [
   'image/gif',
 ];
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
-
 export async function POST(request: NextRequest) {
   try {
-    const { user, role, error } = await getAuthedSupabase();
+    const { user, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!isResourceAdmin(role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    // Allow any authenticated user to upload a file. Admins keep full privileges.
+    // Uploaded files will be associated with the uploader via the file path.
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -44,16 +42,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `File type ${file.type} is not allowed` }, { status: 400 });
     }
 
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ error: 'File size exceeds 100MB limit' }, { status: 400 });
-    }
+    // No client-enforced file size limit here — accept files of any size
 
     // Generate unique file path
     const timestamp = Date.now();
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const folder = category || 'uncategorized';
-    const filePath = `${folder}/${timestamp}_${sanitizedFileName}`;
+
+    // Video uploads are routed to Mux when credentials are available.
+    // The resulting file_path stores the upload id marker, then webhook finalizes playback URL.
+    if (isVideoMimeType(file.type) && isMuxConfigured()) {
+      try {
+        const { uploadId, uploadUrl } = await createMuxDirectUpload({
+          contentType: file.type,
+          fileName: file.name,
+        });
+        await uploadFileToMux(uploadUrl, file);
+
+        return NextResponse.json({
+          data: {
+            filePath: `mux-upload:${uploadId}`,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            provider: 'mux',
+          },
+        });
+      } catch (muxError) {
+        console.error('Error uploading video to Mux:', muxError);
+        return NextResponse.json({ error: 'Failed to upload video' }, { status: 500 });
+      }
+    }
+
+    // Scope uploads by uploader to make ownership and cleanup easier
+    const filePath = `resources/${user.id}/${folder}/${timestamp}_${sanitizedFileName}`;
 
     // Upload to Supabase Storage using admin client to bypass storage RLS
     // (user is already verified as admin above).
