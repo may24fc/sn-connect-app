@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
+import { PageTransitionWrapper } from '@/components/layout/PageTransitionWrapper';
 import { SiteFrame } from '@/components/layout/SiteFrame';
 import { aspekta, robotoMono } from './fonts';
 import { Providers } from './providers';
@@ -50,9 +51,12 @@ export const metadata: Metadata = {
     'AI operations support',
   ],
   icons: {
-    icon: [{ url: '/sn-logo.png', sizes: '192x192', type: 'image/png' }],
-    shortcut: ['/sn-logo.png'],
-    apple: [{ url: '/sn-logo.png', sizes: '180x180', type: 'image/png' }],
+    icon: [
+      { url: '/sn-logomark-dark.png', media: '(prefers-color-scheme: light)', type: 'image/png' },
+      { url: '/sn-logomark.png', media: '(prefers-color-scheme: dark)', type: 'image/png' },
+    ],
+    shortcut: ['/sn-logomark-dark.png'],
+    apple: [{ url: '/sn-logomark-dark.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
     type: 'website',
@@ -82,7 +86,9 @@ export default function RootLayout({ children }: { children: ReactNode }): React
       </head>
       <body className="min-h-screen overflow-x-clip font-sans antialiased">
         <Providers>
-          <SiteFrame>{children}</SiteFrame>
+          <PageTransitionWrapper>
+            <SiteFrame>{children}</SiteFrame>
+          </PageTransitionWrapper>
         </Providers>
       </body>
     </html>

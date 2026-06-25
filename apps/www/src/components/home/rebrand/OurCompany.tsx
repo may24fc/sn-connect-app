@@ -51,9 +51,9 @@ export default function OurCompany() {
         id="our-company-inner"
       >
         {/* CEO portrait */}
-        <aside className="hidden md:block" id="company-sidebar">
+        <aside id="company-sidebar">
           <div
-            className="group relative w-full overflow-hidden rounded-2xl bg-[#a1c6e7] cursor-pointer h-[520px]"
+            className="group relative w-full overflow-hidden rounded-2xl bg-[#a1c6e7] cursor-pointer h-[300px] md:h-[520px]"
             id="company-image-container"
           >
             <img
@@ -82,21 +82,28 @@ export default function OurCompany() {
         </aside>
 
         <div className="flex flex-col gap-10" id="company-main-content">
-          {/* Heading — two lines staggered */}
+          {/* Heading */}
           <motion.h2
-            className="text-3xl sm:text-4xl md:text-[42px] font-normal leading-tight tracking-tight text-[#0c1d2e] font-sans text-left select-none max-w-3xl"
+            className="text-[1.75rem] sm:text-4xl md:text-[42px] font-normal leading-tight tracking-tight text-[#0c1d2e] font-sans text-left select-none max-w-3xl"
             variants={stagger()}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-80px' }}
             id="company-heading"
           >
-            <div className="overflow-hidden pb-[0.04em]">
+            {/* Mobile: single flowing block */}
+            <div className="overflow-visible pb-[0.04em] md:hidden">
+              <motion.span className="block" variants={line}>
+                Built for modern teams and <span className="text-[#0c1d2e]/30">the next generation of remote work.</span>
+              </motion.span>
+            </div>
+            {/* Desktop: two separately masked lines */}
+            <div className="hidden md:block overflow-hidden pb-[0.04em]">
               <motion.span className="block" variants={line}>
                 Built for modern teams and
               </motion.span>
             </div>
-            <div className="overflow-hidden pb-[0.18em]">
+            <div className="hidden md:block overflow-hidden pb-[0.18em]">
               <motion.span className="block" variants={line}>
                 the next generation of remote work.
               </motion.span>
@@ -115,7 +122,7 @@ export default function OurCompany() {
               <div className="overflow-hidden">
                 <motion.p
                   variants={line}
-                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-normal tracking-[-0.04em]"
+                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-medium sm:font-normal tracking-[-0.04em]"
                   style={{ lineHeight: '1.6' }}
                   id="company-text-col-1"
                 >
@@ -128,7 +135,7 @@ export default function OurCompany() {
               <div className="overflow-hidden">
                 <motion.p
                   variants={line}
-                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-normal tracking-[-0.04em]"
+                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-medium sm:font-normal tracking-[-0.04em]"
                   style={{ lineHeight: '1.6' }}
                   id="company-text-col-2"
                 >
@@ -147,7 +154,7 @@ export default function OurCompany() {
             viewport={{ once: true, margin: '-80px' }}
             id="company-btn-wrapper"
           >
-            <SplitCTA title="MEET THE TEAM" href="#about" />
+            <SplitCTA title="MEET THE TEAM" href="/team" />
           </motion.div>
         </div>
       </div>

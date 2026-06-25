@@ -50,7 +50,7 @@ function Card({ card, idx }: CardProps) {
   return (
     <div
       ref={ref}
-      className="relative flex flex-col justify-between px-8 py-10 sm:px-10 sm:py-12 md:px-12 md:py-14 h-[420px]"
+      className="relative flex flex-col justify-between px-8 py-10 sm:px-10 sm:py-12 md:px-12 md:py-14 h-[280px] sm:h-[340px] md:h-[420px]"
       id={`three-cards-item-${idx + 1}`}
     >
       {/* Background — slides in from left */}
@@ -104,7 +104,7 @@ function Card({ card, idx }: CardProps) {
         </div>
         <div className="overflow-hidden">
           <motion.p
-            className="text-sm md:text-lg tracking-[-0.04em] font-normal max-w-sm line-clamp-2"
+            className="text-sm md:text-lg tracking-[-0.04em] font-medium md:font-normal max-w-sm line-clamp-2"
             style={{ color: card.textOpacity, lineHeight: '1.35' }}
             initial={{ y: '110%' }}
             animate={{ y: inView ? 0 : '110%' }}

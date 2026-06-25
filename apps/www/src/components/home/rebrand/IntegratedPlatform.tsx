@@ -55,21 +55,28 @@ export default function IntegratedPlatform() {
             className="md:col-span-2 md:pl-4 pt-0 md:pt-12 flex flex-col gap-8 md:gap-10"
             id="platform-content"
           >
-            {/* Heading — two lines staggered */}
+            {/* Heading — single line on mobile, two lines on md+ */}
             <motion.h2
-              className="text-4xl sm:text-5xl md:text-[76px] font-normal leading-[1.06] tracking-tight"
+              className="text-[1.75rem] sm:text-5xl md:text-[76px] font-normal leading-[1.06] tracking-tight"
               variants={stagger()}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: '-80px' }}
               id="platform-heading"
             >
-              <div className="overflow-hidden pb-[0.04em]">
+              {/* Mobile: both sentences flow as one block, wraps naturally */}
+              <div className="overflow-visible pb-[0.04em] md:hidden">
+                <motion.span className="block" variants={line}>
+                  Tell us what you need. <span className="text-[#0c1d2e]/30">We'll help you get there.</span>
+                </motion.span>
+              </div>
+              {/* Desktop: two separate staggered lines */}
+              <div className="hidden md:block overflow-hidden pb-[0.04em]">
                 <motion.span className="block" variants={line}>
                   Tell us what you need.
                 </motion.span>
               </div>
-              <div className="overflow-hidden pb-[0.04em]">
+              <div className="hidden md:block overflow-hidden pb-[0.04em]">
                 <motion.span className="block text-[#0c1d2e]/30" variants={line}>
                   We'll help you get there.
                 </motion.span>
@@ -87,7 +94,7 @@ export default function IntegratedPlatform() {
               <div className="overflow-hidden">
                 <motion.p
                   variants={line}
-                  className="max-w-3xl text-base md:text-lg text-[#0c1d2e]/65 tracking-[-0.04em]"
+                  className="max-w-3xl text-base md:text-lg font-medium sm:font-normal text-[#0c1d2e]/65 tracking-[-0.04em]"
                   style={{ lineHeight: '1.35' }}
                 >
                   Every engagement starts with understanding your goals, systems, and workflow. We
@@ -98,7 +105,7 @@ export default function IntegratedPlatform() {
               </div>
 
               <motion.div variants={fade}>
-                <SplitCTA title="REQUEST A BRIEF" href="#contact" />
+                <SplitCTA title="REQUEST A BRIEF" href="/contact" />
               </motion.div>
             </motion.div>
           </aside>

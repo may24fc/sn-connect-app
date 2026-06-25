@@ -1,9 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import type { MouseEvent } from 'react';
 import { ChromaFlow, FlutedGlass, Shader, Swirl } from 'shaders/react';
 import SplitCTA from '../../ui/SplitCTA';
+import { getLenis } from '@/hooks/useSmoothScroll';
+import { getAppLoginUrl } from '@/lib/site-config';
 
 const ease = [0.19, 1, 0.22, 1] as const;
 
@@ -17,15 +21,111 @@ const stagger = (delay = 0) => ({
   visible: { transition: { staggerChildren: 0.13, delayChildren: delay } },
 });
 
-export default function Footer() {
-  const handleScrollToTop = (e: MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+const navLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'Services', href: '/services' },
+  { label: 'About Us', href: '/about' },
+  { label: 'Our Team', href: '/team' },
+  { label: 'Contact', href: '/contact' },
+];
 
+const connectLinks = [
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/company/sn-international-group', external: true },
+  { label: 'info@sngroup.com.au', href: 'mailto:info@sngroup.com.au', external: true },
+  { label: 'Log In', href: getAppLoginUrl(), external: true },
+];
+
+const scrollToTop = (e: MouseEvent<HTMLAnchorElement>) => {
+  e.preventDefault();
+  const lenis = getLenis();
+  if (lenis) {
+    lenis.scrollTo(0, { duration: 1.4, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+const ScrollUpBtnDesktop = () => (
+  <motion.a
+    href="#app-wrapper"
+    aria-label="Scroll to top"
+    className="block group relative w-12 h-12 rounded-lg border border-[#f6f6f2]/20
+               hover:border-transparent cursor-pointer shrink-0 overflow-hidden
+               transition-[border-color] duration-[750ms] delay-0 hover:delay-[150ms]"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.7, delay: 0.85 }}
+    onClick={scrollToTop}
+  >
+    <div
+      className="absolute top-0 left-0 w-full flex flex-col
+                 transition-transform duration-[750ms] ease-[cubic-bezier(0.19,1,0.22,1)]
+                 delay-0 group-hover:delay-[150ms] group-hover:-translate-y-12"
+    >
+      {/* Slot 1 — default: transparent bg, muted white up-arrow (visible at rest) */}
+      <div className="flex items-center justify-center w-12 h-12 shrink-0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            transform="rotate(-90, 12, 12)"
+            d="M5 12h14M13 6l6 6-6 6"
+            stroke="rgba(246,246,242,0.45)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      </div>
+      {/* Slot 2 — hover: white bg, dark up-arrow (slides up into view on hover) */}
+      <div className="flex items-center justify-center w-12 h-12 shrink-0 bg-[#f6f6f2] rounded-lg">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            transform="rotate(-90, 12, 12)"
+            d="M5 12h14M13 6l6 6-6 6"
+            stroke="#0c1d2e"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      </div>
+    </div>
+  </motion.a>
+);
+
+// Mobile — static, no hover animation
+const ScrollUpBtnMobile = ({ className }: { className?: string }) => (
+  <a
+    href="#app-wrapper"
+    onClick={scrollToTop}
+    aria-label="Scroll to top"
+    className={`relative w-12 h-12 rounded-lg border border-[#f6f6f2]/30
+                cursor-pointer shrink-0 overflow-hidden flex items-center justify-center
+                ${className ?? ''}`}
+  >
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        transform="rotate(-90, 12, 12)"
+        d="M5 12h14M13 6l6 6-6 6"
+        stroke="rgba(246,246,242,0.45)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  </a>
+);
+
+export default function Footer() {
+  const pathname = usePathname();
   return (
     <footer
-      className="relative w-full bg-[#0c1d2e] text-[#f6f6f2] overflow-hidden select-none"
+      className="relative z-[1] w-full bg-[#0c1d2e] text-[#f6f6f2] overflow-hidden select-none"
       id="footer-section"
     >
       {/* ── Dark fluted glass background ── */}
@@ -58,9 +158,10 @@ export default function Footer() {
 
       {/* ── Content ── */}
       <div className="relative z-10 w-full px-6 md:px-12 pt-20 md:pt-28 pb-0" id="footer-inner">
+
         {/* ── Main row ── */}
         <div
-          className="grid grid-cols-1 md:grid-cols-[5fr_7fr] md:gap-72 items-start pb-[100px]"
+          className="grid grid-cols-1 md:grid-cols-[5fr_7fr] md:gap-72 items-start pb-16 md:pb-[100px]"
           id="footer-main"
         >
           {/* Left — heading + CTA */}
@@ -75,7 +176,7 @@ export default function Footer() {
               viewport={{ once: true, margin: '-60px' }}
             >
               <motion.h4
-                className="text-2xl sm:text-3xl md:text-[38px] lg:text-[44px] font-normal font-sans"
+                className="text-3xl sm:text-3xl md:text-[38px] lg:text-[44px] font-normal font-sans"
                 style={{ lineHeight: '1.06' }}
                 variants={{
                   hidden: { y: '110%' },
@@ -99,71 +200,69 @@ export default function Footer() {
                 }
                 className="footer-cta"
               >
-                <SplitCTA title="REQUEST A BRIEF" href="#contact" />
+                <SplitCTA title="REQUEST A BRIEF" href="/contact" />
               </div>
             </motion.div>
           </div>
 
-          {/* Right — nav columns + scroll button */}
+          {/* Right — nav columns */}
           <motion.div
-            className="flex items-start gap-12"
+            className="flex flex-col md:flex-row items-start gap-10 md:gap-40 border-l border-[#f6f6f2]/20 pl-5 md:border-l-0 md:pl-0"
             variants={stagger(0.15)}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-60px' }}
             id="footer-info"
           >
-            {/* Navigate */}
+            {/* Navigate — scroll btn sits on right on mobile */}
             <motion.div
               variants={fade}
-              className="flex flex-col gap-5 min-w-[160px] border-l border-[#f6f6f2]/20 pl-5"
+              className="w-full md:w-auto flex items-start justify-between md:flex-col md:gap-5 md:border-l md:border-[#f6f6f2]/20 md:pl-5"
               id="footer-col-navigate"
             >
-              <span className="button-mono text-xs font-medium uppercase tracking-[0.15em] text-[#f6f6f2]/40">
-                Navigate
-              </span>
-              <ul className="flex flex-col">
-                {[
-                  { label: 'Services', href: '#services' },
-                  { label: 'About Us', href: '#about' },
-                  { label: 'Meet the Team', href: '#team' },
-                  { label: 'Contact', href: '#contact' },
-                ].map(({ label, href }) => (
-                  <li key={label}>
-                    <a
-                      href={href}
-                      className="font-sans text-sm sm:text-base text-[#f6f6f2]/70 hover:text-white transition-colors duration-300"
-                    >
-                      {label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <div className="flex flex-col gap-3 md:gap-5">
+                <span className="button-mono text-xs font-medium uppercase tracking-[0.15em] text-[#f6f6f2]/60">
+                  Navigate
+                </span>
+                <ul className="flex flex-col gap-1">
+                  {navLinks.map(({ label, href }) => (
+                    <li key={label}>
+                      <Link
+                        href={href}
+                        className={`font-sans text-3xl md:text-base leading-tight tracking-tight transition-colors duration-300 ${
+                          pathname === href
+                            ? 'text-white'
+                            : 'text-[#f6f6f2]/50 hover:text-[#f6f6f2]/80'
+                        }`}
+                      >
+                        {label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Scroll btn — mobile only, right side of navigate row */}
+              <ScrollUpBtnMobile className="md:hidden mt-1" />
             </motion.div>
 
             {/* Connect */}
             <motion.div
               variants={fade}
-              className="flex flex-col gap-5 min-w-[160px] border-l border-[#f6f6f2]/20 pl-5"
+              className="flex flex-col gap-3 md:gap-5 md:border-l md:border-[#f6f6f2]/20 md:pl-5"
               id="footer-col-connect"
             >
-              <span className="button-mono text-xs font-medium uppercase tracking-[0.15em] text-[#f6f6f2]/40">
+              <span className="button-mono text-xs font-medium uppercase tracking-[0.15em] text-[#f6f6f2]/60">
                 Connect
               </span>
-              <ul className="flex flex-col">
-                {[
-                  {
-                    label: 'LinkedIn',
-                    href: 'https://www.linkedin.com/company/sn-international-group',
-                  },
-                  { label: 'info@sngroup.com.au', href: 'mailto:info@sngroup.com.au' },
-                ].map(({ label, href }) => (
+              <ul className="flex flex-col gap-1">
+                {connectLinks.map(({ label, href }) => (
                   <li key={label}>
                     <a
                       href={href}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-sans text-sm sm:text-base text-[#f6f6f2]/70 hover:text-white transition-colors duration-300"
+                      className="font-sans text-3xl md:text-base leading-tight tracking-tight text-white hover:text-[#f6f6f2]/70 transition-colors duration-300"
                     >
                       {label}
                     </a>
@@ -171,48 +270,12 @@ export default function Footer() {
                 ))}
               </ul>
             </motion.div>
-
-            {/* Scroll to top */}
-            <motion.a
-              variants={fade}
-              href="#app-wrapper"
-              onClick={handleScrollToTop}
-              aria-label="Scroll to top of the page"
-              className="group hidden md:block ml-auto relative w-12 h-12 rounded-lg border border-[#f6f6f2]/30 group-hover:border-transparent cursor-pointer shrink-0 overflow-hidden transition-[border-color] duration-[750ms] delay-0 group-hover:delay-[150ms]"
-              id="footer-scroll-btn"
-            >
-              <div className="absolute top-0 left-0 w-full flex flex-col transition-transform duration-[750ms] ease-[cubic-bezier(0.19,1,0.22,1)] delay-0 group-hover:delay-[150ms] group-hover:-translate-y-12">
-                <div className="flex items-center justify-center w-12 h-12 shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path
-                      transform="rotate(-90, 12, 12)"
-                      d="M5 12h14M13 6l6 6-6 6"
-                      stroke="rgba(246,246,242,0.4)"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      fill="none"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </svg>
-                </div>
-                <div className="flex items-center justify-center w-12 h-12 shrink-0 bg-white rounded-lg">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path
-                      transform="rotate(-90, 12, 12)"
-                      d="M5 12h14M13 6l6 6-6 6"
-                      stroke="#0c1d2e"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      fill="none"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </motion.a>
           </motion.div>
+        </div>
+
+        {/* Scroll btn — desktop only, absolute top-right of footer content */}
+        <div className="hidden md:block absolute top-28 right-12">
+          <ScrollUpBtnDesktop />
         </div>
 
         {/* ── Wordmark ── */}
@@ -224,7 +287,7 @@ export default function Footer() {
           viewport={{ once: true, margin: '-60px' }}
         >
           <motion.p
-            className="w-full font-sans font-medium text-white whitespace-nowrap leading-none tracking-tight select-none"
+            className="w-full font-sans font-medium text-white leading-none tracking-tight select-none md:whitespace-nowrap text-right md:text-left"
             style={{ fontSize: 'clamp(32px, 14vw, 190px)' }}
             variants={{
               hidden: { y: '100%' },
@@ -239,9 +302,12 @@ export default function Footer() {
           </motion.p>
         </motion.div>
 
-        {/* ── Credits ── */}
-        <div className="pb-6" id="footer-bottom">
-          <span className="button-mono text-xs text-white tracking-[0.05em]">
+        {/* ── Copyright ── */}
+        <div className="pb-8 md:pb-6" id="footer-bottom">
+          <p className="md:hidden text-right button-mono text-xs text-white tracking-[0.05em]">
+            &copy; 2026 SN INTERNATIONAL GROUP.<br />All rights reserved.
+          </p>
+          <span className="hidden md:block button-mono text-xs text-white tracking-[0.05em]">
             &copy; 2026 SN INTERNATIONAL GROUP. ALL RIGHTS RESERVED.
           </span>
         </div>
