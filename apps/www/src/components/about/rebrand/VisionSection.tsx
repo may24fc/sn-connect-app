@@ -25,7 +25,7 @@ export default function VisionSection() {
       className="relative w-full bg-[#d6e4f0] text-[#0c1d2e] overflow-hidden rounded-b-[2rem]"
       id="vision-section"
     >
-      <div className="w-full px-12 md:px-[4.5rem] lg:px-[5.5rem] pt-4 md:pt-8 pb-16 md:pb-[124px]">
+      <div className="w-full px-6 md:px-[4.5rem] lg:px-[5.5rem] pt-4 md:pt-8 pb-16 md:pb-[124px]">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr]">
           {/* ── Left sidebar ── */}
           <aside className="md:pr-4 pt-0 md:pt-12 pb-8 md:pb-0">
@@ -51,21 +51,31 @@ export default function VisionSection() {
           <aside className="pt-0 md:pt-12 flex flex-col gap-8 md:gap-10">
             {/* Heading — two lines staggered */}
             <motion.h2
-              className="text-4xl sm:text-5xl md:text-[76px] font-normal leading-[1.06] tracking-tight"
+              className="font-normal leading-[1.06] tracking-tight"
               variants={stagger()}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: '-80px' }}
             >
-              <div className="overflow-hidden pb-[0.04em]">
-                <motion.span className="block" variants={line}>
-                  The operating partner
+              {/* Mobile: single flowing line */}
+              <div className="block md:hidden overflow-visible pb-[0.04em]">
+                <motion.span className="text-[1.75rem] sm:text-5xl" variants={line}>
+                  The operating partner{' '}
+                  <span className="text-[#0c1d2e]/30">behind your team.</span>
                 </motion.span>
               </div>
-              <div className="overflow-hidden pb-[0.04em]">
-                <motion.span className="block text-[#0c1d2e]/30" variants={line}>
-                  behind your team.
-                </motion.span>
+              {/* Desktop: two masked lines */}
+              <div className="hidden md:block">
+                <div className="overflow-hidden pb-[0.04em]">
+                  <motion.span className="block md:text-[76px]" variants={line}>
+                    The operating partner
+                  </motion.span>
+                </div>
+                <div className="overflow-hidden pb-[0.04em]">
+                  <motion.span className="block md:text-[76px] text-[#0c1d2e]/30" variants={line}>
+                    behind your team.
+                  </motion.span>
+                </div>
               </div>
             </motion.h2>
 
@@ -80,7 +90,7 @@ export default function VisionSection() {
               <div className="overflow-hidden">
                 <motion.p
                   variants={line}
-                  className="max-w-3xl text-base md:text-lg text-[#0c1d2e]/65 tracking-[-0.04em]"
+                  className="max-w-3xl text-base md:text-lg font-medium sm:font-normal text-[#0c1d2e]/65 tracking-[-0.04em]"
                   style={{ lineHeight: '1.35' }}
                 >
                   We're building toward a future where remote support is as dependable as any

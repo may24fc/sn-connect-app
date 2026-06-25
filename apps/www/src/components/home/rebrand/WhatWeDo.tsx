@@ -240,9 +240,9 @@ export default function WhatWeDo({ scrollYProgress }: WhatWeDoProps) {
       </div>
 
       {/* ── Main ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 flex gap-x-32 md:gap-x-72 px-6 md:px-12" id="what-wedo-main">
+      <div className="flex-1 flex flex-col md:flex-row gap-x-32 md:gap-x-72 px-6 md:px-12" id="what-wedo-main">
         {/* Counter */}
-        <div className="w-28 md:w-36 flex-shrink-0 flex items-start pt-12">
+        <div className="md:w-36 flex-shrink-0 flex items-start pt-8 md:pt-12">
           <div className="button-mono border border-[#0c1d2e]/30 px-5 py-1 rounded-full flex items-center gap-[0.4em] tracking-[0.2em] text-sm">
             <motion.span className="text-[#0c1d2e] font-medium">{currentNum}</motion.span>
             <span className="text-[#0c1d2e]/40 font-medium">/ 03</span>
@@ -250,10 +250,10 @@ export default function WhatWeDo({ scrollYProgress }: WhatWeDoProps) {
         </div>
 
         {/* Text slides */}
-        <div className="flex-1 min-w-0 flex items-start pt-12">
+        <div className="flex-1 min-w-0 flex items-start pt-10 md:pt-12">
           <div
-            className="relative w-full text-2xl sm:text-4xl md:text-5xl lg:text-[56px] font-normal tracking-[-0.04em]"
-            style={{ lineHeight: '0.95', minHeight: '280px' }}
+            className="relative w-full text-[1.75rem] sm:text-4xl md:text-5xl lg:text-[56px] font-normal tracking-[-0.04em]"
+            style={{ lineHeight: '0.95', minHeight: '200px' }}
             id="what-wedo-texts-layer"
           >
             {slides.map((slide, idx) => (

@@ -81,7 +81,7 @@ export default function AboutCard() {
 
           {/* Right: description */}
           <motion.p
-            className="text-base md:text-5xl text-[#ffffff] tracking-[-0.04em] w-full"
+            className="text-xl sm:text-2xl md:text-5xl font-medium md:font-normal text-[#ffffff] tracking-[-0.04em] w-full"
             style={{ lineHeight: '1.15' }}
             custom={0.3}
             variants={fade}

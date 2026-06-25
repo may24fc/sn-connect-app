@@ -47,12 +47,12 @@ function LeaderCard({
     <motion.div variants={fade} custom={delay} className="group flex flex-col bg-white rounded-[1.5rem] overflow-hidden">
       {/* Portrait — inset with padding, image has its own rounded corners */}
       <div className="p-3 pb-0">
-        <div className="relative w-full aspect-[4/3] overflow-hidden rounded-[0.85rem] bg-[#e8f0f8]">
+        <div className="relative w-full aspect-[3/4] md:aspect-[4/3] overflow-hidden rounded-[0.85rem] bg-[#e8f0f8]">
           <Image
             src={leader.image}
             alt={leader.name}
             fill
-            className="object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-110"
+            className="object-cover object-top"
             sizes="(max-width: 768px) 50vw, 25vw"
           />
         </div>
@@ -83,7 +83,7 @@ export default function LeadershipSection() {
       className="relative w-full bg-[#d6e4f0] text-[#0c1d2e] overflow-hidden"
       id="leadership-section"
     >
-      <div className="w-full px-12 md:px-[4.5rem] lg:px-[5.5rem] pt-4 md:pt-8 pb-16 md:pb-[124px]">
+      <div className="w-full px-6 md:px-[4.5rem] lg:px-[5.5rem] pt-4 md:pt-8 pb-16 md:pb-[124px]">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr] gap-10 md:gap-0">
           {/* ── Left: label + body ── */}
           <aside className="md:pr-8 pt-0 md:pt-12">
@@ -115,7 +115,7 @@ export default function LeadershipSection() {
 
               <motion.p
                 variants={fade}
-                className="text-base md:text-lg text-[#0c1d2e]/65 tracking-[-0.04em]"
+                className="text-base md:text-lg font-medium sm:font-normal text-[#0c1d2e]/65 tracking-[-0.04em]"
                 style={{ lineHeight: '1.35' }}
               >
                 Our leadership team sets the strategic direction, operating culture, and delivery standards behind everything we build.
@@ -125,7 +125,7 @@ export default function LeadershipSection() {
 
           {/* ── Right: portrait cards ── */}
           <motion.div
-            className="grid grid-cols-2 gap-4 md:pt-12"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2 md:pt-12"
             variants={stagger(0.1)}
             initial="hidden"
             whileInView="visible"

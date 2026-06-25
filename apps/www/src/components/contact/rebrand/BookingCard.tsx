@@ -106,7 +106,7 @@ export default function BookingCard({ scheduleUrl, embedUrl }: BookingCardProps)
             </div>
 
             <motion.p
-              className="text-base md:text-lg text-[#ffffff] tracking-[-0.04em] max-w-md"
+              className="text-base md:text-lg font-medium md:font-normal text-[#ffffff] tracking-[-0.04em] max-w-md"
               style={{ lineHeight: '1.35' }}
               custom={0.3}
               variants={fade}

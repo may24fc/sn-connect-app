@@ -57,7 +57,7 @@ export default function MessageSection() {
 
           {/* Description */}
           <motion.p
-            className="text-base md:text-lg text-[#0c1d2e]/65 tracking-[-0.04em]"
+            className="text-base md:text-lg font-medium sm:font-normal text-[#0c1d2e]/65 tracking-[-0.04em]"
             style={{ lineHeight: '1.35' }}
             custom={0.15}
             variants={fade}
@@ -70,7 +70,7 @@ export default function MessageSection() {
 
           {/* Contact links */}
           <motion.div
-            className="flex flex-col gap-14 mt-14"
+            className="flex flex-col gap-8 md:gap-14 mt-8 md:mt-14"
             custom={0.25}
             variants={fade}
             initial="hidden"

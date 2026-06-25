@@ -8,12 +8,14 @@ const ease = [0.19, 1, 0.22, 1] as const;
 function LineReveal({
   children,
   delay = 0,
+  pb = 'pb-[30px]',
 }: {
   children: React.ReactNode;
   delay?: number;
+  pb?: string;
 }) {
   return (
-    <div className="overflow-hidden pb-[0.06em]">
+    <div className={`overflow-visible md:overflow-hidden ${pb}`}>
       <motion.div
         initial={{ y: '110%' }}
         animate={{ y: 0 }}
@@ -37,13 +39,12 @@ export default function ServicesHero() {
       <div>
         <h1
           className="font-normal tracking-tight text-[#0c1d2e] leading-[0.84]"
-          style={{ fontSize: 'clamp(56px, 10.5vw, 152px)' }}
         >
-          <LineReveal delay={0.3}>
-            <span className="text-lg sm:text-xl md:text-[132px]">Services</span>
+          <LineReveal delay={0.3} pb="pb-[6px]">
+            <span className="text-[3.2rem] sm:text-6xl md:text-[132px]">Services</span>
           </LineReveal>
           <LineReveal delay={0.45}>
-            <span className="text-[#0c1d2e]/30 text-lg sm:text-xl md:text-[132px]">
+            <span className="text-[#0c1d2e]/30 text-[2.8rem] md:text-[132px]">
               SN International Group
             </span>
           </LineReveal>
@@ -51,7 +52,7 @@ export default function ServicesHero() {
 
         {/* ── Divider ── */}
         <motion.div
-          className="w-full h-px bg-[#0c1d2e]/10 mt-8 md:mt-36"
+          className="hidden md:block w-full h-px bg-[#0c1d2e]/10 mt-8 md:mt-16"
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
           transition={{ duration: 1.0, delay: 0.55, ease }}
@@ -65,7 +66,7 @@ export default function ServicesHero() {
         <motion.a
           href="#platform"
           aria-label="Scroll to content"
-          className="group relative w-12 h-12 rounded-lg border border-[#0c1d2e]/20
+          className="hidden sm:block group relative w-12 h-12 rounded-lg border border-[#0c1d2e]/20
                      group-hover:border-transparent cursor-pointer shrink-0 overflow-hidden
                      transition-[border-color] duration-[750ms] delay-0 group-hover:delay-[150ms]"
           initial={{ opacity: 0 }}
@@ -118,7 +119,7 @@ export default function ServicesHero() {
         </motion.a>
 
         <motion.p
-          className="ml-auto max-w-lg text-base sm:text-lg md:text-xl text-[#0c1d2e]/55 leading-relaxed text-right"
+          className="sm:ml-auto max-w-lg text-lg sm:text-lg md:text-xl font-medium sm:font-normal text-[#0c1d2e]/55 leading-snug sm:leading-relaxed sm:text-right tracking-[-0.04em]"
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.62, ease }}

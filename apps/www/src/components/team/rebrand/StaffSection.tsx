@@ -219,8 +219,33 @@ function StaffCarousel({ title, description, members }: { title: string; descrip
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr]">
-      {/* Left: section header + description */}
+    <div>
+      {/* Mobile: section name + description above carousel */}
+      <motion.div
+        className="md:hidden flex flex-col gap-3 mb-5"
+        variants={stagger()}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: '-60px' }}
+      >
+        <motion.p
+          variants={fade}
+          className="font-sans font-normal text-2xl text-[#0c1d2e] tracking-[-0.03em] leading-tight"
+          style={{ whiteSpace: 'pre-line' }}
+        >
+          {title}
+        </motion.p>
+        <motion.p
+          variants={fade}
+          className="text-base font-medium text-[#0c1d2e]/65 tracking-[-0.04em]"
+          style={{ lineHeight: '1.35' }}
+        >
+          {description}
+        </motion.p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr]">
+      {/* Left: section header + description (desktop only) */}
       <motion.div
         className="hidden md:flex flex-col gap-4 md:pr-8 pt-0 md:pt-3"
         variants={stagger()}
@@ -277,16 +302,15 @@ function StaffCarousel({ title, description, members }: { title: string; descrip
             {members.map((member) => (
               <div
                 key={member.name}
-                className="group flex flex-col bg-white rounded-[1.25rem] overflow-hidden flex-shrink-0"
-                style={{ width: 'calc((100% - 32px) / 3)' }}
+                className="group flex flex-col bg-white rounded-[1.25rem] overflow-hidden flex-shrink-0 w-full md:w-[calc((100%-32px)/3)]"
               >
                 <div className="p-2.5 pb-0">
-                  <div className="relative w-full aspect-[4/5] overflow-hidden rounded-[0.65rem] bg-[#e8f0f8]">
+                  <div className="relative w-full aspect-[4/4] overflow-hidden rounded-[0.65rem] bg-[#e8f0f8]">
                     <Image
                       src={member.image}
                       alt={member.name}
                       fill
-                      className="object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-110"
+                      className="object-cover object-top"
                       sizes="(max-width: 640px) 80vw, (max-width: 768px) 50vw, 25vw"
                     />
                   </div>
@@ -309,6 +333,7 @@ function StaffCarousel({ title, description, members }: { title: string; descrip
           <ArrowNavButton direction="right" onClick={() => scroll('right')} disabled={atEnd} />
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }
@@ -342,7 +367,7 @@ const hrStaff: StaffMember[] = [
   {
     name: 'Hazel Joyce Valerozo',
     title: 'Accounting Associate',
-    image: '/staff-images/Hazel Joyce Valerozo.jpg',
+    image: '/associate-images/Hazel Joyce Valerozo.jpg',
   },
 ];
 
@@ -408,7 +433,7 @@ export default function StaffSection() {
       className="relative w-full bg-[#d6e4f0] text-[#0c1d2e] overflow-hidden rounded-b-[2rem]"
       id="staff-section"
     >
-      <div className="w-full px-12 md:px-[4.5rem] lg:px-[5.5rem] pt-4 md:pt-8 pb-16 md:pb-[124px]">
+      <div className="w-full px-6 md:px-[4.5rem] lg:px-[5.5rem] pt-4 md:pt-8 pb-16 md:pb-[124px]">
 
         {/* ── Top row: label left · body right ── */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr] mb-6 md:mb-8">
@@ -435,7 +460,7 @@ export default function StaffSection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-80px' }}
-            className="pt-0 md:pt-3 text-base md:text-lg text-[#0c1d2e]/65 tracking-[-0.04em]"
+            className="pt-0 md:pt-3 text-base md:text-lg font-medium sm:font-normal text-[#0c1d2e]/65 tracking-[-0.04em]"
             style={{ lineHeight: '1.35' }}
           >
             Meet the staff behind the daily work, creative output, and operational momentum across
@@ -444,7 +469,7 @@ export default function StaffSection() {
         </div>
 
         {/* Full-width divider */}
-        <div className="h-px bg-[#0c1d2e]/10 -mx-12 md:-mx-[4.5rem] lg:-mx-[5.5rem] mb-10 md:mb-14" />
+        <div className="hidden md:block h-px bg-[#0c1d2e]/10 -mx-[4.5rem] lg:-mx-[5.5rem] mb-14" />
 
         {/* ── HR carousel ── */}
         <StaffCarousel

@@ -40,13 +40,12 @@ export default function RebrandHome() {
                 <Navbar />
               </div>
 
-              <div className="h-full flex flex-col justify-between px-6 sm:px-10 md:px-12 lg:px-12 pt-16 sm:pt-20 md:pt-28 lg:pt-[148px] pb-8 md:pb-11">
+              <div className="h-full flex flex-col justify-between px-6 sm:px-10 md:px-12 lg:px-12 pt-28 sm:pt-28 md:pt-28 lg:pt-[148px] pb-8 md:pb-11">
                 <div id="hero-title-block">
                   <h1
-                    className="text-4xl sm:text-6xl md:text-7xl lg:text-[112px] font-normal text-[#0c1d2e] tracking-tight leading-[0.95]"
+                    className="text-[43px] sm:text-6xl md:text-7xl lg:text-[112px] font-normal text-[#0c1d2e] tracking-tight leading-[0.95]"
                     id="hero-title"
                   >
-                    {/* Each line masked so text slides up from beneath its own baseline */}
                     <div className="overflow-hidden pb-[0.05em]">
                       <motion.span
                         className="block"
@@ -54,7 +53,7 @@ export default function RebrandHome() {
                         animate={{ y: 0 }}
                         transition={{ duration: 1.1, delay: 1.2, ease: [0.19, 1, 0.22, 1] }}
                       >
-                        Scale smarter with
+                        Scale smarter
                       </motion.span>
                     </div>
                     <div className="overflow-hidden pb-[0.05em]">
@@ -62,9 +61,19 @@ export default function RebrandHome() {
                         className="block"
                         initial={{ y: '110%' }}
                         animate={{ y: 0 }}
-                        transition={{ duration: 1.1, delay: 1.38, ease: [0.19, 1, 0.22, 1] }}
+                        transition={{ duration: 1.1, delay: 1.35, ease: [0.19, 1, 0.22, 1] }}
                       >
-                        AI-powered talent.
+                        with AI-powered
+                      </motion.span>
+                    </div>
+                    <div className="overflow-hidden pb-[0.05em]">
+                      <motion.span
+                        className="block"
+                        initial={{ y: '110%' }}
+                        animate={{ y: 0 }}
+                        transition={{ duration: 1.1, delay: 1.5, ease: [0.19, 1, 0.22, 1] }}
+                      >
+                        talent.
                       </motion.span>
                     </div>
                   </h1>
@@ -79,7 +88,7 @@ export default function RebrandHome() {
                       initial={{ y: '110%' }}
                       animate={{ y: 0 }}
                       transition={{ duration: 1.0, delay: 1.58, ease: [0.19, 1, 0.22, 1] }}
-                      className="max-w-xl text-base sm:text-lg md:text-xl text-[#0c1d2e]/65 leading-relaxed"
+                      className="max-w-xl text-lg sm:text-lg md:text-xl font-medium sm:font-normal text-[#0c1d2e]/65 leading-snug sm:leading-relaxed"
                       id="hero-subtitle"
                     >
                       AI-enabled specialists across operations, marketing, support, and
