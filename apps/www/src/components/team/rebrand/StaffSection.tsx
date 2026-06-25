@@ -253,7 +253,7 @@ function StaffCarousel({ title, description, members }: { title: string; descrip
         whileInView="visible"
         viewport={{ once: true, margin: '-60px' }}
       >
-        <div className="overflow-hidden">
+        <div className="overflow-hidden pb-[10px]">
           <motion.p
             variants={line}
             className="font-sans font-normal text-2xl md:text-3xl text-[#0c1d2e] tracking-[-0.03em] leading-tight"

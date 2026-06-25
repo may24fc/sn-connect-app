@@ -66,12 +66,12 @@ export default function VisionSection() {
               </div>
               {/* Desktop: two masked lines */}
               <div className="hidden md:block">
-                <div className="overflow-hidden pb-[0.04em]">
+                <div className="overflow-hidden pb-[20px]">
                   <motion.span className="block md:text-[76px]" variants={line}>
                     The operating partner
                   </motion.span>
                 </div>
-                <div className="overflow-hidden pb-[0.04em]">
+                <div className="overflow-hidden pb-[20px]">
                   <motion.span className="block md:text-[76px] text-[#0c1d2e]/30" variants={line}>
                     behind your team.
                   </motion.span>

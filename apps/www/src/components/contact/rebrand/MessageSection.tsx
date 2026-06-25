@@ -43,7 +43,7 @@ export default function MessageSection() {
         {/* ── Left sidebar ── */}
         <div className="mb-10 md:mb-0 md:pr-12 lg:pr-20 flex flex-col justify-start gap-8 md:gap-2">
           {/* Heading */}
-          <div className="overflow-hidden pb-[0.04em]">
+          <div className="overflow-hidden pb-[14px]">
             <motion.h2
               className="font-normal text-[#0c1d2e] tracking-tight leading-[1.24]"
               style={{ fontSize: 'clamp(28px, 3.2vw, 48px)' }}

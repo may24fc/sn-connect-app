@@ -104,7 +104,7 @@ export default function LeadershipSection() {
                 </span>
               </motion.div>
 
-              <div className="overflow-hidden">
+              <div className="overflow-hidden pb-[12px]">
                 <motion.p
                   variants={line}
                   className="text-3xl sm:text-4xl md:text-[42px] font-normal leading-tight tracking-tight text-[#0c1d2e] font-sans"

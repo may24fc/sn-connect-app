@@ -93,7 +93,7 @@ export default function BookingCard({ scheduleUrl, embedUrl }: BookingCardProps)
           <div className="flex flex-col gap-6 md:items-start">
             {/* Inner wrapper: pushed right as a block, children left-align naturally */}
             <div className="flex flex-col gap-6 items-start">
-            <div className="overflow-hidden pb-[0.04em]">
+            <div className="overflow-hidden pb-[14px]">
               <motion.h2
                 className="font-normal text-[#ffffff] tracking-tight leading-[1.24]"
                 style={{ fontSize: 'clamp(28px, 3.2vw, 48px)' }}
