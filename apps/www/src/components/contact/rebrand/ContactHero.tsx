@@ -8,12 +8,14 @@ const ease = [0.19, 1, 0.22, 1] as const;
 function LineReveal({
   children,
   delay = 0,
+  pb = 'pb-[30px]',
 }: {
   children: React.ReactNode;
   delay?: number;
+  pb?: string;
 }) {
   return (
-    <div className="overflow-visible md:overflow-hidden pb-[30px]">
+    <div className={`overflow-visible md:overflow-hidden ${pb}`}>
       <motion.div
         initial={{ y: '110%' }}
         animate={{ y: 0 }}
@@ -38,7 +40,7 @@ export default function ContactHero() {
         <h1
           className="font-normal tracking-tight text-[#0c1d2e] leading-[0.84]"
         >
-          <LineReveal delay={0.3}>
+          <LineReveal delay={0.3} pb="pb-[6px]">
             <span className="text-[3.2rem] md:text-[132px]">Contact</span>
           </LineReveal>
           <LineReveal delay={0.45}>
