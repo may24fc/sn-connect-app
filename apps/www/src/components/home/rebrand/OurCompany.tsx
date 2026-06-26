@@ -61,7 +61,7 @@ export default function OurCompany() {
               decoding="async"
               src="/steven-nhan-candid.png"
               alt="SN International Group team"
-              className="w-full h-full object-cover object-[center_40%] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+              className="w-full h-full object-cover object-[70%_40%] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
               id="company-ceo-photo"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
