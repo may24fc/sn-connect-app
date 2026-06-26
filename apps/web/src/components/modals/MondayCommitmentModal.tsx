@@ -10,6 +10,7 @@ import {
   DialogFooter,
   Button,
   Label,
+  Progress,
 } from '@hr-portal/ui';
 import { useCreateCommitment, type MilestoneItem } from '@/hooks/useWeeklyCommitments';
 
@@ -79,20 +80,29 @@ export function MondayCommitmentModal({ open, onOpenChange, availableMilestones 
                 <p className="text-sm text-zinc-500">No active milestones found.</p>
               ) : (
                 availableMilestones.map((m) => (
+                  (() => {
+                    const progressValue = Math.max(0, Math.min(100, m.progress_pct ?? 0));
+
+                    return (
                   <button
                     key={m.milestone_id}
                     onClick={() => handlePick(m)}
                     className="w-full rounded border px-3 py-2 text-left hover:bg-zinc-50"
                     type="button"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="font-medium">{m.title}</div>
                         <div className="text-xs text-zinc-500">{m.project_name}</div>
+                        <div className="mt-2 space-y-1">
+                          <Progress value={progressValue} className="h-1.5" />
+                          <div className="text-[11px] text-zinc-400">{progressValue}% complete</div>
+                        </div>
                       </div>
-                      <div className="text-xs text-zinc-400">{m.progress_pct ? `${m.progress_pct}%` : ''}</div>
                     </div>
                   </button>
+                    );
+                  })()
                 ))
               )}
             </div>
@@ -123,7 +133,7 @@ export function MondayCommitmentModal({ open, onOpenChange, availableMilestones 
                 <Button variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => void handleLock()} disabled={filledCount < 3 || (createCommitment as any).isLoading}>
+                <Button onClick={() => void handleLock()} disabled={filledCount < 1 || (createCommitment as any).isLoading}>
                   {(createCommitment as any).isLoading ? 'Saving...' : 'Lock in Weekly Focus'}
                 </Button>
               </DialogFooter>

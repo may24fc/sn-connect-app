@@ -90,6 +90,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (input.targetEndDate !== undefined) update.target_end_date = input.targetEndDate;
   if (input.status !== undefined) update.status = input.status;
   if (input.pointsTotal !== undefined) update.points_total = input.pointsTotal;
+  if (input.progressPct !== undefined) update.progress_pct = input.progressPct;
+
+  if (typeof update.progress_pct === 'number' && update.progress_pct >= 100 && update.status === undefined) {
+    update.status = 'completed';
+  }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });

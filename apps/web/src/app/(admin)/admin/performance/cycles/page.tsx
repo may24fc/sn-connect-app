@@ -2,7 +2,6 @@
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import {
-  useCreatePerformanceCycle,
   useDeletePerformanceCycle,
   usePerformanceCycles,
   useUpdatePerformanceCycle,
@@ -41,33 +40,71 @@ import {
   CheckCircle2,
   Clock,
   Edit2,
-  FileEdit,
   MoreVertical,
   Pause,
   Play,
-  Plus,
-  Send,
   Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 interface CycleFormData {
-  name: string;
-  startDate: string;
-  endDate: string;
+  quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  year: number;
   okrSubmissionDeadline: string;
   kpiSubmissionDeadline: string;
   selfAssessmentDeadline: string;
 }
 
-const emptyFormData: CycleFormData = {
-  name: '',
-  startDate: '',
-  endDate: '',
-  okrSubmissionDeadline: '',
-  kpiSubmissionDeadline: '',
-  selfAssessmentDeadline: '',
+function getQuarterFromMonth(month: number): 'Q1' | 'Q2' | 'Q3' | 'Q4' {
+  if (month <= 2) return 'Q1';
+  if (month <= 5) return 'Q2';
+  if (month <= 8) return 'Q3';
+  return 'Q4';
+}
+
+function createDefaultFormData(): CycleFormData {
+  const now = new Date();
+  return {
+    quarter: getQuarterFromMonth(now.getMonth()),
+    year: now.getFullYear(),
+    okrSubmissionDeadline: '',
+    kpiSubmissionDeadline: '',
+    selfAssessmentDeadline: '',
+  };
+}
+
+function getQuarterDateRange(
+  year: number,
+  quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'
+): { startDate: string; endDate: string } {
+  const quarterStartMonthMap: Record<'Q1' | 'Q2' | 'Q3' | 'Q4', number> = {
+    Q1: 0,
+    Q2: 3,
+    Q3: 6,
+    Q4: 9,
+  };
+
+  const startMonth = quarterStartMonthMap[quarter];
+  const start = new Date(Date.UTC(year, startMonth, 1));
+  const end = new Date(Date.UTC(year, startMonth + 3, 0));
+
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  };
+}
+
+function getQuarterFromDate(dateString: string): 'Q1' | 'Q2' | 'Q3' | 'Q4' {
+  const date = new Date(`${dateString}T00:00:00.000Z`);
+  return getQuarterFromMonth(date.getUTCMonth());
+}
+
+const quarterLabels: Record<'Q1' | 'Q2' | 'Q3' | 'Q4', string> = {
+  Q1: 'January - March',
+  Q2: 'April - June',
+  Q3: 'July - September',
+  Q4: 'October - December',
 };
 
 const statusConfig: Record<
@@ -90,27 +127,21 @@ function formatDate(dateString: string): string {
 export default function CyclesPage(): ReactNode {
   const { addToast } = useToast();
   const { data: cycleData = [] } = usePerformanceCycles();
-  const createCycle = useCreatePerformanceCycle();
   const updateCycle = useUpdatePerformanceCycle();
   const deleteCycle = useDeletePerformanceCycle();
 
-  const [cycles, setCycles] = useState<Array<PerformanceCycle>>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingCycle, setEditingCycle] = useState<PerformanceCycle | null>(null);
   const [deletingCycle, setDeletingCycle] = useState<PerformanceCycle | null>(null);
-  const [formData, setFormData] = useState<CycleFormData>(emptyFormData);
-  const [savingAs, setSavingAs] = useState<'draft' | 'active' | null>(null);
-
-  useEffect(() => {
-    setCycles(cycleData);
-  }, [cycleData]);
+  const [formData, setFormData] = useState<CycleFormData>(createDefaultFormData);
+  const [saving, setSaving] = useState(false);
 
   const cycleStatusOrder: Record<string, number> = { active: 0, draft: 1, closed: 2 };
 
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({ initialColumn: 'startDate', initialDirection: 'desc' });
 
-  const sortedCycles = sortItems(cycles, {
+  const sortedCycles = sortItems(cycleData, {
     name: (c) => c.name.toLowerCase(),
     period: (c) => c.startDate,
     okrSubmission: (c) => c.okrSubmissionDeadline ?? '',
@@ -121,18 +152,11 @@ export default function CyclesPage(): ReactNode {
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
-  const handleOpenCreate = (): void => {
-    setEditingCycle(null);
-    setFormData(emptyFormData);
-    setDialogOpen(true);
-  };
-
   const handleOpenEdit = (cycle: PerformanceCycle): void => {
     setEditingCycle(cycle);
     setFormData({
-      name: cycle.name,
-      startDate: cycle.startDate,
-      endDate: cycle.endDate,
+      quarter: getQuarterFromDate(cycle.startDate),
+      year: new Date(`${cycle.startDate}T00:00:00.000Z`).getUTCFullYear(),
       okrSubmissionDeadline: cycle.okrSubmissionDeadline || '',
       kpiSubmissionDeadline: cycle.kpiSubmissionDeadline || '',
       selfAssessmentDeadline: cycle.selfAssessmentDeadline || '',
@@ -145,56 +169,38 @@ export default function CyclesPage(): ReactNode {
     setDeleteDialogOpen(true);
   };
 
-  const handleSave = async (status: 'draft' | 'active' = 'active'): Promise<void> => {
-    setSavingAs(status);
+  const handleSave = async (): Promise<void> => {
+    if (!editingCycle) {
+      return;
+    }
+
+    setSaving(true);
     try {
-      if (editingCycle) {
-        await updateCycle.mutateAsync({
-          id: editingCycle.id,
-          name: formData.name,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          okrSubmissionDeadline: formData.okrSubmissionDeadline || null,
-          kpiSubmissionDeadline: formData.kpiSubmissionDeadline || null,
-          selfReviewDeadline: formData.selfAssessmentDeadline || null,
-        });
+      await updateCycle.mutateAsync({
+        id: editingCycle.id,
+        quarter: formData.quarter,
+        year: formData.year,
+        okrSubmissionDeadline: formData.okrSubmissionDeadline || null,
+        kpiSubmissionDeadline: formData.kpiSubmissionDeadline || null,
+        selfReviewDeadline: formData.selfAssessmentDeadline || null,
+      });
 
-        addToast({
-          title: 'Cycle updated',
-          description: `"${formData.name}" has been updated`,
-          variant: 'success',
-        });
-      } else {
-        await createCycle.mutateAsync({
-          name: formData.name,
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          okrSubmissionDeadline: formData.okrSubmissionDeadline || null,
-          kpiSubmissionDeadline: formData.kpiSubmissionDeadline || null,
-          selfReviewDeadline: formData.selfAssessmentDeadline || null,
-          status,
-          description: null,
-        });
-
-        addToast({
-          title: status === 'draft' ? 'Draft saved' : 'Cycle created',
-          description: status === 'draft'
-            ? `"${formData.name}" has been saved as draft`
-            : `"${formData.name}" has been created and activated`,
-          variant: 'success',
-        });
-      }
+      addToast({
+        title: 'Cycle updated',
+        description: `"${formData.quarter} ${formData.year}" has been updated`,
+        variant: 'success',
+      });
 
       setDialogOpen(false);
-      setFormData(emptyFormData);
+      setFormData(createDefaultFormData());
     } catch (error) {
       addToast({
         title: 'Error',
-        description: `Failed to ${editingCycle ? 'update' : 'create'} cycle`,
+        description: 'Failed to update cycle',
         variant: 'error',
       });
     } finally {
-      setSavingAs(null);
+      setSaving(false);
     }
   };
 
@@ -209,9 +215,14 @@ export default function CyclesPage(): ReactNode {
           variant: 'success',
         });
       } catch (error) {
+        const message =
+          error instanceof Error && error.message.trim().length > 0
+            ? error.message
+            : 'Failed to delete cycle';
+
         addToast({
           title: 'Error',
-          description: 'Failed to delete cycle',
+          description: message,
           variant: 'error',
         });
       }
@@ -222,7 +233,7 @@ export default function CyclesPage(): ReactNode {
 
   const handleActivate = async (cycle: PerformanceCycle): Promise<void> => {
     try {
-      const currentActive = cycles.find((item) => item.status === 'active');
+      const currentActive = cycleData.find((item) => item.status === 'active');
 
       if (currentActive && currentActive.id !== cycle.id) {
         await updateCycle.mutateAsync({
@@ -266,13 +277,10 @@ export default function CyclesPage(): ReactNode {
   };
 
   const isFormValid = (): boolean => {
-    return (
-      formData.name.trim() !== '' &&
-      formData.startDate !== '' &&
-      formData.endDate !== '' &&
-      new Date(formData.startDate) < new Date(formData.endDate)
-    );
+    return Number.isInteger(formData.year) && formData.year >= 2000 && formData.year <= 2100;
   };
+
+  const selectedBounds = getQuarterDateRange(formData.year, formData.quarter);
 
   return (
     <div className="space-y-6">
@@ -286,32 +294,23 @@ export default function CyclesPage(): ReactNode {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Review Cycles</h1>
-            <p className="text-muted-foreground">Manage OKRs &amp; KPIs review cycles and deadlines</p>
+            <p className="text-muted-foreground">Manage calendar-quarter review cycles and deadlines</p>
           </div>
         </div>
-        <Button onClick={handleOpenCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Cycle
-        </Button>
       </div>
 
       {/* Quarterly Reference Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { quarter: 'Q1', months: 'January - March', range: 'Jan 1 - Mar 31' },
-          { quarter: 'Q2', months: 'April - June', range: 'Apr 1 - Jun 30' },
-          { quarter: 'Q3', months: 'July - September', range: 'Jul 1 - Sep 30' },
-          { quarter: 'Q4', months: 'October - December', range: 'Oct 1 - Dec 31' },
-        ].map((q) => (
-          <Card key={q.quarter} className="border-border">
+        {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((quarter) => (
+          <Card key={quarter} className="border-border">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                   <Calendar className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{q.quarter} 2026</p>
-                  <p className="text-xs text-muted-foreground">{q.months}</p>
+                  <p className="text-sm font-medium">{quarter} {new Date().getFullYear()}</p>
+                  <p className="text-xs text-muted-foreground">{quarterLabels[quarter]}</p>
                 </div>
               </div>
             </CardContent>
@@ -335,7 +334,7 @@ export default function CyclesPage(): ReactNode {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {cycles.length > 0 ? (
+              {cycleData.length > 0 ? (
                 sortedCycles.map((cycle) => {
                   const config = statusConfig[cycle.status];
                   const StatusIcon = config.icon;
@@ -436,7 +435,7 @@ export default function CyclesPage(): ReactNode {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No review cycles found. Click "New Cycle" to create one.
+                    No review cycles found.
                   </TableCell>
                 </TableRow>
               )}
@@ -451,46 +450,60 @@ export default function CyclesPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              {editingCycle ? 'Edit Cycle' : 'Create New Cycle'}
+              Edit Cycle
             </DialogTitle>
             <DialogDescription>
-              {editingCycle
-                ? 'Update the review cycle details and deadlines.'
-                : 'Set up a new OKRs & KPIs review cycle with submission deadlines.'}
+              Update the quarter assignment and submission deadlines.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Cycle Name</Label>
-              <Input
-                id="name"
-                placeholder="e.g., Q1 2024 Review Cycle"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                />
+                  <Label htmlFor="quarter">Quarter</Label>
+                  <select
+                    id="quarter"
+                    value={formData.quarter}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        quarter: e.target.value as 'Q1' | 'Q2' | 'Q3' | 'Q4',
+                      })
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="Q1">Q1 (Jan-Mar)</option>
+                    <option value="Q2">Q2 (Apr-Jun)</option>
+                    <option value="Q3">Q3 (Jul-Sep)</option>
+                    <option value="Q4">Q4 (Oct-Dec)</option>
+                  </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
+                  <Label htmlFor="year">Year</Label>
                 <Input
-                  id="endDate"
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    id="year"
+                    type="number"
+                    min={2000}
+                    max={2100}
+                    value={formData.year}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        year: Number.parseInt(e.target.value || '0', 10),
+                      })
+                    }
                 />
               </div>
             </div>
+
+              <Card className="border-dashed">
+                <CardContent className="p-4 space-y-1">
+                  <p className="text-sm font-semibold">{formData.quarter} {formData.year}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(selectedBounds.startDate)} - {formatDate(selectedBounds.endDate)}
+                  </p>
+                </CardContent>
+              </Card>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -536,51 +549,21 @@ export default function CyclesPage(): ReactNode {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
-            {!editingCycle && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  void handleSave('draft');
-                }}
-                disabled={!isFormValid() || savingAs !== null}
-              >
-                {savingAs === 'draft' ? (
-                  <>
-                    <Clock className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <FileEdit className="mr-2 h-4 w-4" />
-                    Save as Draft
-                  </>
-                )}
-              </Button>
-            )}
             <Button
               onClick={() => {
-                void handleSave('active');
+                void handleSave();
               }}
-              disabled={!isFormValid() || savingAs !== null}
+              disabled={!isFormValid() || saving}
             >
-              {savingAs === 'active' || (editingCycle && updateCycle.isPending) ? (
+              {saving || updateCycle.isPending ? (
                 <>
                   <Clock className="mr-2 h-4 w-4 animate-spin" />
-                  {editingCycle ? 'Saving...' : 'Creating...'}
+                  Saving...
                 </>
               ) : (
                 <>
-                  {editingCycle ? (
-                    <>
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Create Cycle
-                    </>
-                  )}
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Save Changes
                 </>
               )}
             </Button>

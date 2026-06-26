@@ -109,15 +109,20 @@ export async function GET(
       return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
     }
 
-    // Resolve department name: use employees.department text, or look up from users.department_id
-    let departmentName: string | null = employee.department ?? null;
-    if (!departmentName && userData?.department_id) {
+    // Resolve department name from the canonical users.department_id first.
+    // Fall back to the legacy employees.department text only if the FK is missing.
+    let departmentName: string | null = null;
+    if (userData?.department_id) {
       const { data: dept } = await db
         .from('departments')
         .select('name')
         .eq('id', userData.department_id)
         .maybeSingle();
       departmentName = dept?.name ?? null;
+    }
+
+    if (!departmentName) {
+      departmentName = employee.department ?? null;
     }
 
     // Fetch KPIs

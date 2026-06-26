@@ -91,12 +91,24 @@ export async function PATCH(request: NextRequest, context: any) {
         .select('id, title, project_id, status, progress_pct')
         .in('id', milestoneIds || []);
 
+      const commitmentProjectId = (updated as { project_id?: string | null })?.project_id ?? null;
+      const { data: project } = commitmentProjectId
+        ? await supabaseAdmin.from('projects').select('name').eq('id', commitmentProjectId).maybeSingle()
+        : { data: null };
+
       const mMap = new Map<string, any>();
       for (const m of milestones ?? []) mMap.set(m.id, m);
 
-      const enriched = (itemsList ?? []).map((it: any) => ({ id: it.id, slot_order: it.slot_order, milestone: mMap.get(it.milestone_id) ?? { id: it.milestone_id } }));
+      const enriched = (itemsList ?? []).map((it: any) => ({
+        id: it.id,
+        slot_order: it.slot_order,
+        milestone: {
+          ...(mMap.get(it.milestone_id) ?? { id: it.milestone_id }),
+          project_name: project?.name ?? null,
+        },
+      }));
 
-      return NextResponse.json({ data: { ...updated, items: enriched } });
+      return NextResponse.json({ data: { ...updated, project_name: project?.name ?? null, items: enriched } });
     }
 
     // Edit items (only when not locked)
@@ -113,6 +125,55 @@ export async function PATCH(request: NextRequest, context: any) {
         milestoneSet.add(it.milestone_id);
       }
 
+      const { data: selectedMilestones, error: selectedMilestonesErr } = await supabaseAdmin
+        .from('project_milestones')
+        .select('id, project_id')
+        .in('id', items.map((item) => item.milestone_id));
+
+      if (selectedMilestonesErr) {
+        return NextResponse.json({ error: selectedMilestonesErr.message }, { status: 500 });
+      }
+
+      if (!selectedMilestones || selectedMilestones.length !== items.length) {
+        return NextResponse.json(
+          { error: 'One or more selected milestones no longer exist.' },
+          { status: 400 }
+        );
+      }
+
+      const selectedProjectIds = Array.from(
+        new Set(
+          selectedMilestones
+            .map((milestone) => milestone.project_id)
+            .filter((projectId): projectId is string => !!projectId)
+        )
+      );
+
+      if (selectedProjectIds.length !== 1) {
+        return NextResponse.json(
+          { error: 'Weekly commitment items must belong to the same project.' },
+          { status: 400 }
+        );
+      }
+
+      const commitmentProjectId = (commitment as { project_id?: string | null })?.project_id ?? null;
+      if (commitmentProjectId && selectedProjectIds[0] !== commitmentProjectId) {
+        return NextResponse.json(
+          { error: 'Weekly commitment items must belong to the commitment project.' },
+          { status: 400 }
+        );
+      }
+
+      if (!commitmentProjectId) {
+        const { error: attachProjectErr } = await supabaseAdmin
+          .from('weekly_commitments')
+          .update({ project_id: selectedProjectIds[0] })
+          .eq('id', id);
+        if (attachProjectErr) {
+          return NextResponse.json({ error: attachProjectErr.message }, { status: 500 });
+        }
+      }
+
       const { error: delErr } = await supabaseAdmin.from('weekly_commitment_items').delete().eq('commitment_id', id);
       if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
 
@@ -126,10 +187,23 @@ export async function PATCH(request: NextRequest, context: any) {
         .select('id, title, project_id, status, progress_pct')
         .in('id', milestoneIds2 || []);
 
+      const { data: project } = await supabaseAdmin
+        .from('projects')
+        .select('name')
+        .eq('id', selectedProjectIds[0])
+        .maybeSingle();
+
       const mMap2 = new Map<string, any>();
       for (const m of milestones2 ?? []) mMap2.set(m.id, m);
 
-      const enriched2 = createdItems.map((ci: any) => ({ id: ci.id, slot_order: ci.slot_order, milestone: mMap2.get(ci.milestone_id) ?? { id: ci.milestone_id } }));
+      const enriched2 = createdItems.map((ci: any) => ({
+        id: ci.id,
+        slot_order: ci.slot_order,
+        milestone: {
+          ...(mMap2.get(ci.milestone_id) ?? { id: ci.milestone_id }),
+          project_name: project?.name ?? null,
+        },
+      }));
 
       logActivity(supabase, {
         userId: user.id,
@@ -141,11 +215,11 @@ export async function PATCH(request: NextRequest, context: any) {
 
       const { data: commitAfter } = await supabaseAdmin
         .from('weekly_commitments')
-        .select('id, user_id, iso_week, iso_year, locked_at, created_at, updated_at')
+        .select('id, user_id, project_id, iso_week, iso_year, locked_at, created_at, updated_at')
         .eq('id', id)
         .maybeSingle();
 
-      return NextResponse.json({ data: { ...commitAfter, items: enriched2 } });
+      return NextResponse.json({ data: { ...commitAfter, project_name: project?.name ?? null, items: enriched2 } });
     }
 
     return NextResponse.json({ error: 'No actionable fields provided' }, { status: 400 });

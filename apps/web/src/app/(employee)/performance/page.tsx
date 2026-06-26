@@ -90,7 +90,7 @@ export default function PerformancePage(): ReactNode {
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
-  const fallbackCycle = activeCycle || cycles[0] || null;
+  const fallbackCycle = activeCycle;
   const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
   const canCreateObjective = Boolean(activeCycle);
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
@@ -102,7 +102,8 @@ export default function PerformancePage(): ReactNode {
       setSelectedCycleId(fallbackCycle.id);
     }
   }, [fallbackCycle, selectedCycleId]);
-  const { data: okrs = [] } = usePerformanceOKRs(selectedCycleId || displayCycle?.id);
+  const selectedCycleFilterId = selectedCycleId || displayCycle?.id || '__no_active_cycle__';
+  const { data: okrs = [] } = usePerformanceOKRs(selectedCycleFilterId);
   const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = usePerformanceOKRs();
   const createOKR = useCreateOKR();
 
@@ -241,40 +242,6 @@ export default function PerformancePage(): ReactNode {
               {activeCycle ? 'Active Cycle' : displayCycle ? 'Cycle Not Active' : 'No Active Cycle'}
             </Badge>
           </div>
-          {displayCycle && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  OKR Due
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {displayCycle.okrSubmissionDeadline
-                    ? formatDate(displayCycle.okrSubmissionDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  KPI Due
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {displayCycle.kpiSubmissionDeadline
-                    ? formatDate(displayCycle.kpiSubmissionDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Self-Assessment
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {displayCycle.selfAssessmentDeadline
-                    ? formatDate(displayCycle.selfAssessmentDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 

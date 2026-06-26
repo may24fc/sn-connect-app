@@ -3,6 +3,8 @@ import { z } from 'zod';
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const monthKeySchema = z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-MM');
 const quarterKeySchema = z.string().regex(/^\d{4}-Q[1-4]$/, 'Use YYYY-Q#');
+const reviewCycleQuarterSchema = z.enum(['Q1', 'Q2', 'Q3', 'Q4']);
+const reviewCycleYearSchema = z.number().int().min(2000).max(2100);
 
 export const reviewCycleStatusSchema = z.enum(['draft', 'active', 'completed', 'archived']);
 export const reviewStatusSchema = z.enum(['pending', 'self_review', 'manager_review', 'completed']);
@@ -20,6 +22,7 @@ export const monthlySelfEvaluationDepartmentRoleOptions = [
   'HR Intern',
   'Admin Assistant',
   'AI Intern',
+  'Accounting',
   'Accounting Intern',
   'Other',
 ] as const;
@@ -39,46 +42,59 @@ export const keyResultSchema = z.object({
   progressPercentage: z.number().min(0).max(100).default(0),
 });
 
-export const createReviewCycleSchema = z
-  .object({
-    name: z.string().min(1),
-    description: z.string().optional().nullable(),
-    startDate: dateSchema,
-    endDate: dateSchema,
-    okrSubmissionDeadline: dateSchema.optional().nullable(),
-    kpiSubmissionDeadline: dateSchema.optional().nullable(),
-    selfReviewDeadline: dateSchema.optional().nullable(),
-    managerReviewDeadline: dateSchema.optional().nullable(),
-    status: reviewCycleStatusSchema.default('draft'),
-  })
-  .refine((data) => data.startDate <= data.endDate, {
-    message: 'startDate must be earlier than or equal to endDate',
-    path: ['endDate'],
-  });
-
 export const updateReviewCycleSchema = z
   .object({
     id: z.string().uuid(),
-    name: z.string().min(1).optional(),
     description: z.string().optional().nullable(),
-    startDate: dateSchema.optional(),
-    endDate: dateSchema.optional(),
+    quarter: reviewCycleQuarterSchema.optional(),
+    year: reviewCycleYearSchema.optional(),
     okrSubmissionDeadline: dateSchema.optional().nullable(),
     kpiSubmissionDeadline: dateSchema.optional().nullable(),
     selfReviewDeadline: dateSchema.optional().nullable(),
     managerReviewDeadline: dateSchema.optional().nullable(),
     status: reviewCycleStatusSchema.optional(),
   })
+  .strict()
   .refine(
     (data) => {
-      if (!data.startDate || !data.endDate) return true;
-      return data.startDate <= data.endDate;
+      const hasQuarter = data.quarter !== undefined;
+      const hasYear = data.year !== undefined;
+      return hasQuarter === hasYear;
     },
     {
-      message: 'startDate must be earlier than or equal to endDate',
-      path: ['endDate'],
+      message: 'quarter and year must be provided together',
+      path: ['quarter'],
     }
   );
+
+export type ReviewCycleQuarter = z.infer<typeof reviewCycleQuarterSchema>;
+
+export function getReviewCycleQuarterBounds(
+  year: number,
+  quarter: ReviewCycleQuarter
+): { startDate: string; endDate: string } {
+  const quarterStartMonthMap: Record<ReviewCycleQuarter, number> = {
+    Q1: 0,
+    Q2: 3,
+    Q3: 6,
+    Q4: 9,
+  };
+
+  const startMonth = quarterStartMonthMap[quarter];
+  const start = new Date(Date.UTC(year, startMonth, 1));
+  const end = new Date(Date.UTC(year, startMonth + 3, 0));
+
+  const toIsoDate = (value: Date): string => value.toISOString().slice(0, 10);
+
+  return {
+    startDate: toIsoDate(start),
+    endDate: toIsoDate(end),
+  };
+}
+
+export function getReviewCycleName(year: number, quarter: ReviewCycleQuarter): string {
+  return `${quarter} ${year}`;
+}
 
 export const createPerformanceReviewSchema = z.object({
   cycleId: z.string().uuid(),
@@ -510,7 +526,6 @@ export const probationActionSchema = z.discriminatedUnion('action', [
   probationSetStatusSchema,
 ]);
 
-export type CreateReviewCycleInput = z.infer<typeof createReviewCycleSchema>;
 export type UpdateReviewCycleInput = z.infer<typeof updateReviewCycleSchema>;
 export type CreatePerformanceReviewInput = z.infer<typeof createPerformanceReviewSchema>;
 export type UpdatePerformanceReviewInput = z.infer<typeof updatePerformanceReviewSchema>;
