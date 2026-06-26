@@ -2,7 +2,11 @@
 
 import { useDepartments } from '@/hooks/useDepartments';
 import { type DirectoryEntry, useDirectory } from '@/hooks/useDirectory';
-import { usePerformanceCycles, usePerformanceOKRs } from '@/hooks/usePerformance';
+import {
+  usePerformanceCycles,
+  usePerformanceOKRs,
+  useUpdatePerformanceCycle,
+} from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
 import {
   Avatar,
@@ -25,6 +29,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  useToast,
 } from '@hr-portal/ui';
 import {
   Calendar,
@@ -199,12 +204,20 @@ function getEvaluationBadgeLabel(state: EmployeePerformanceSummary['evaluationSt
 export default function AdminPerformancePage(): ReactNode {
   usePerformanceRealtime();
   const router = useRouter();
+  const { addToast } = useToast();
+  const selectedCycleStorageKey = 'admin-performance-selected-cycle-id';
 
   // Filters & pagination
   const [search, setSearch] = useState('');
   const [roleFilters, setRoleFilters] = useState<string[]>([]);
   const [departmentFilters, setDepartmentFilters] = useState<string[]>([]);
-  const [selectedCycleId, setSelectedCycleId] = useState<string>('');
+  const [selectedCycleId, setSelectedCycleId] = useState<string>(() => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+
+    return window.localStorage.getItem(selectedCycleStorageKey) || '';
+  });
   const [viewMode, setViewMode] = useState<ViewMode>('cards');
   const [summaryMode, setSummaryMode] = useState<SummaryMode>('progress');
   const [cardSortMode, setCardSortMode] = useState<CardSortMode>('weighted_desc');
@@ -213,16 +226,38 @@ export default function AdminPerformancePage(): ReactNode {
 
   // Fetch cycles + OKRs for performance data
   const { data: cycles = [] } = usePerformanceCycles();
-  const fallbackCycle = cycles.find((cycle) => cycle.status === 'active') || cycles[0] || null;
+  const updateCycle = useUpdatePerformanceCycle();
+  const orderedCycles = useMemo(
+    () =>
+      [...cycles].sort(
+        (left, right) =>
+          new Date(left.startDate).getTime() - new Date(right.startDate).getTime()
+      ),
+    [cycles]
+  );
+  const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const nextUpcomingCycle = orderedCycles.find((cycle) => cycle.startDate >= todayIso) || null;
+  const latestKnownCycle = orderedCycles.length > 0 ? orderedCycles[orderedCycles.length - 1] : null;
+  const fallbackCycle = activeCycle || nextUpcomingCycle || latestKnownCycle;
   const selectedCycle =
     cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
-  const { data: okrs = [] } = usePerformanceOKRs(selectedCycleId || selectedCycle?.id);
+  const selectedCycleFilterId = selectedCycleId || selectedCycle?.id || '__no_active_cycle__';
+  const { data: okrs = [] } = usePerformanceOKRs(selectedCycleFilterId);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (selectedCycleId) {
+        window.localStorage.setItem(selectedCycleStorageKey, selectedCycleId);
+      } else {
+        window.localStorage.removeItem(selectedCycleStorageKey);
+      }
+    }
+
     if (!selectedCycleId && fallbackCycle) {
       setSelectedCycleId(fallbackCycle.id);
     }
-  }, [fallbackCycle, selectedCycleId]);
+  }, [fallbackCycle, selectedCycleId, selectedCycleStorageKey]);
 
   // Fetch directory entries
   const filters = {
@@ -358,6 +393,89 @@ export default function AdminPerformancePage(): ReactNode {
     }
   };
 
+  const getNextCycleAfter = (cycleId: string): (typeof cycles)[number] | null => {
+    const currentIndex = orderedCycles.findIndex((cycle) => cycle.id === cycleId);
+    if (currentIndex < 0 || currentIndex + 1 >= orderedCycles.length) {
+      return null;
+    }
+
+    return orderedCycles[currentIndex + 1] || null;
+  };
+
+  const handleCloseSelectedCycle = async (): Promise<void> => {
+    if (!selectedCycle || selectedCycle.status !== 'active') {
+      return;
+    }
+
+    const nextCycle = getNextCycleAfter(selectedCycle.id);
+
+    try {
+      await updateCycle.mutateAsync({
+        id: selectedCycle.id,
+        status: 'completed',
+      });
+
+      setSelectedCycleId(nextCycle?.id || '');
+      addToast({
+        title: 'Cycle closed',
+        description: nextCycle
+          ? `${selectedCycle.name} is now closed. Review ${nextCycle.name} and activate it when ready.`
+          : `${selectedCycle.name} is now closed.`,
+        variant: 'success',
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message.trim().length > 0
+          ? error.message
+          : 'Failed to close cycle';
+
+      addToast({
+        title: 'Error',
+        description: message,
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleActivateSelectedCycle = async (): Promise<void> => {
+    if (!selectedCycle || selectedCycle.status === 'active') {
+      return;
+    }
+
+    try {
+      const currentActive = cycles.find((cycle) => cycle.status === 'active');
+
+      if (currentActive && currentActive.id !== selectedCycle.id) {
+        await updateCycle.mutateAsync({
+          id: currentActive.id,
+          status: 'completed',
+        });
+      }
+
+      await updateCycle.mutateAsync({
+        id: selectedCycle.id,
+        status: 'active',
+      });
+
+      addToast({
+        title: 'Cycle activated',
+        description: `${selectedCycle.name} is now active`,
+        variant: 'success',
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message.trim().length > 0
+          ? error.message
+          : 'Failed to activate cycle';
+
+      addToast({
+        title: 'Error',
+        description: message,
+        variant: 'error',
+      });
+    }
+  };
+
   const sortedCardEntries = useMemo(() => {
     const scoreFor = (entry: DirectoryEntry): number => {
       if (!entry.employee_id) return -1;
@@ -433,47 +551,43 @@ export default function AdminPerformancePage(): ReactNode {
                   <Calendar className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="font-semibold">{selectedCycle.name}</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold">{selectedCycle.name}</h2>
+                    <Badge variant={selectedCycle.status === 'active' ? 'success' : 'secondary'}>
+                      {selectedCycle.status === 'active' ? 'Active Cycle' : 'Next Quarter Cycle'}
+                    </Badge>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {formatDate(selectedCycle.startDate)} - {formatDate(selectedCycle.endDate)}
                   </p>
+                  {selectedCycle.status !== 'active' && (
+                    <p className="mt-1 text-xs font-medium text-muted-foreground">
+                      This quarter is ready. Activate it when you want filters and KPIs to move.
+                    </p>
+                  )}
                 </div>
               </div>
-              <Badge variant={selectedCycle.status === 'active' ? 'success' : 'secondary'}>
-                {selectedCycle.status === 'active' ? 'Active Cycle' : 'Selected Cycle'}
-              </Badge>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  OKR Due
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {selectedCycle.okrSubmissionDeadline
-                    ? formatDate(selectedCycle.okrSubmissionDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  KPI Due
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {selectedCycle.kpiSubmissionDeadline
-                    ? formatDate(selectedCycle.kpiSubmissionDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Self-Assessment
-                </p>
-                <p className="text-sm font-medium text-foreground mt-1">
-                  {selectedCycle.selfAssessmentDeadline
-                    ? formatDate(selectedCycle.selfAssessmentDeadline)
-                    : 'Not set'}
-                </p>
-              </div>
+              {selectedCycle.status === 'active' ? (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    void handleCloseSelectedCycle();
+                  }}
+                  disabled={updateCycle.isPending}
+                >
+                  {updateCycle.isPending ? 'Closing...' : 'Close Quarter Cycle'}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    void handleActivateSelectedCycle();
+                  }}
+                  disabled={updateCycle.isPending}
+                >
+                  {updateCycle.isPending ? 'Activating...' : 'Activate Quarter Cycle'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

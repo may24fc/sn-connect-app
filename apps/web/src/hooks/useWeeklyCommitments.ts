@@ -13,6 +13,8 @@ export type MilestoneItem = {
 export type WeeklyCommitment = {
   id: string;
   user_id: string;
+  project_id?: string | null;
+  project_name?: string | null;
   iso_week: number;
   iso_year: number;
   locked_at?: string | null;
@@ -36,6 +38,8 @@ function normalizeCommitment(raw: any): WeeklyCommitment | null {
   return {
     id: raw.id,
     user_id: raw.user_id,
+    project_id: raw.project_id ?? null,
+    project_name: raw.project_name ?? null,
     iso_week: raw.iso_week,
     iso_year: raw.iso_year,
     locked_at: raw.locked_at ?? null,
@@ -45,36 +49,107 @@ function normalizeCommitment(raw: any): WeeklyCommitment | null {
   };
 }
 
-export function useMyWeeklyCommitment(options?: { enabled?: boolean }) {
-  return useQuery<WeeklyCommitment | null>({
-    queryKey: ['weekly-commitment', 'me'],
+function normalizeCommitments(raw: any): WeeklyCommitment[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw
+      .map((entry) => normalizeCommitment(entry))
+      .filter((entry): entry is WeeklyCommitment => entry !== null);
+  }
+
+  const single = normalizeCommitment(raw);
+  return single ? [single] : [];
+}
+
+function buildQuery(params: Record<string, string | null | undefined>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) query.set(key, value);
+  }
+  const queryString = query.toString();
+  return queryString ? `?${queryString}` : '';
+}
+
+export function useMyWeeklyCommitments(options?: {
+  enabled?: boolean;
+  projectId?: string | null;
+}) {
+  const projectId = options?.projectId ?? null;
+
+  return useQuery<WeeklyCommitment[]>({
+    queryKey: ['weekly-commitments', 'me', projectId ?? 'all-projects'],
     queryFn: async () => {
-      const res = await fetch('/api/weekly-commitments');
+      const query = buildQuery({ projectId });
+      const res = await fetch(`/api/weekly-commitments${query}`);
+      if (res.status === 403) throw new Error('Forbidden');
+      if (!res.ok) {
+        return [];
+      }
+      const body = await res.json();
+      return normalizeCommitments(body?.data ?? null);
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+export function useMyWeeklyCommitment(options?: { enabled?: boolean; projectId?: string | null }) {
+  const projectId = options?.projectId ?? null;
+
+  return useQuery<WeeklyCommitment | null>({
+    queryKey: ['weekly-commitment', 'me', projectId ?? 'any-project'],
+    queryFn: async () => {
+      const query = buildQuery({ projectId });
+      const res = await fetch(`/api/weekly-commitments${query}`);
       if (res.status === 403) throw new Error('Forbidden');
       if (!res.ok) {
         return null;
       }
       const body = await res.json();
-      return normalizeCommitment(body?.data ?? null);
+      const commitments = normalizeCommitments(body?.data ?? null);
+      return commitments[0] ?? null;
     },
     staleTime: 1000 * 60 * 2,
-    ...options,
   });
 }
 
-export function useWeeklyCommitment(userId?: string | null, options?: { enabled?: boolean }) {
-  return useQuery<WeeklyCommitment | null>({
-    queryKey: ['weekly-commitment', userId ?? 'me'],
+export function useWeeklyCommitments(
+  userId?: string | null,
+  options?: { enabled?: boolean; projectId?: string | null }
+) {
+  const projectId = options?.projectId ?? null;
+
+  return useQuery<WeeklyCommitment[]>({
+    queryKey: ['weekly-commitments', userId ?? 'me', projectId ?? 'all-projects'],
     queryFn: async () => {
-      const url = userId ? `/api/weekly-commitments?userId=${encodeURIComponent(userId)}` : '/api/weekly-commitments';
-      const res = await fetch(url);
+      const query = buildQuery({ userId: userId ?? null, projectId });
+      const res = await fetch(`/api/weekly-commitments${query}`);
+      if (res.status === 403) throw new Error('Forbidden');
+      if (!res.ok) return [];
+      const body = await res.json();
+      return normalizeCommitments(body?.data ?? null);
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+export function useWeeklyCommitment(
+  userId?: string | null,
+  options?: { enabled?: boolean; projectId?: string | null }
+) {
+  const projectId = options?.projectId ?? null;
+
+  return useQuery<WeeklyCommitment | null>({
+    queryKey: ['weekly-commitment', userId ?? 'me', projectId ?? 'any-project'],
+    queryFn: async () => {
+      const query = buildQuery({ userId: userId ?? null, projectId });
+      const res = await fetch(`/api/weekly-commitments${query}`);
       if (res.status === 403) throw new Error('Forbidden');
       if (!res.ok) return null;
       const body = await res.json();
-      return normalizeCommitment(body?.data ?? null);
+      const commitments = normalizeCommitments(body?.data ?? null);
+      return commitments[0] ?? null;
     },
     staleTime: 1000 * 60 * 2,
-    ...options,
   });
 }
 
@@ -90,7 +165,10 @@ export function useCreateCommitment() {
       if (!res.ok) throw new Error('Failed to create weekly commitment');
       return res.json();
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['weekly-commitment'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['weekly-commitment'] });
+      qc.invalidateQueries({ queryKey: ['weekly-commitments'] });
+    },
   });
 }
 
@@ -106,6 +184,9 @@ export function useLockCommitment() {
       if (!res.ok) throw new Error('Failed to lock commitment');
       return res.json();
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['weekly-commitment'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['weekly-commitment'] });
+      qc.invalidateQueries({ queryKey: ['weekly-commitments'] });
+    },
   });
 }

@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
   }
 
   const input = parsed.data;
+  const progressPct = input.progressPct ?? (input.isCompletedAlready ? 100 : 0);
 
   const { data: created, error } = await supabaseAdmin
     .from('projects')
@@ -134,7 +135,8 @@ export async function POST(request: NextRequest) {
       supervisor_id: input.supervisorId ?? null,
       start_date: input.startDate,
       target_end_date: input.targetEndDate,
-      status: input.status,
+      status: progressPct >= 100 ? 'completed' : input.status,
+      progress_pct: progressPct,
       created_by: user.id,
     })
     .select('*')

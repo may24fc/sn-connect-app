@@ -50,6 +50,7 @@ export interface SidebarProps {
   showMarketingReports?: boolean;
   showAtsAccess?: boolean;
   showCrmAccess?: boolean;
+  showExpensesAccess?: boolean;
 }
 
 const employeeAtsNavItems: Array<NavItem> = [
@@ -69,6 +70,8 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
+  { label: 'Expenses', href: '/expenses', icon: Receipt },
+  { label: 'Verify Expenses', href: '/expenses/verify', icon: FileCheck },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
   { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Documents', href: '/files', icon: FolderOpen },
@@ -88,6 +91,8 @@ const internNavItems: Array<NavItem> = [
   { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
+  { label: 'Expenses', href: '/expenses', icon: Receipt },
+  { label: 'Verify Expenses', href: '/expenses/verify', icon: FileCheck },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
   { label: 'Checklist', href: '/onboarding', icon: ClipboardList },
   { label: 'Documents', href: '/files', icon: FolderOpen },
@@ -119,6 +124,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Announcements', href: '/admin/announcements', icon: Megaphone },
   { label: 'Resources', href: '/admin/resources', icon: Library },
   { label: 'Tickets', href: '/admin/tickets', icon: LifeBuoy },
+  { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
 ];
 
 // Super Admin navigation - same as admin plus payroll approvals
@@ -144,6 +150,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Checklists', href: '/super-admin/checklists', icon: ClipboardList },
   { label: 'Announcements', href: '/super-admin/announcements', icon: Megaphone },
   { label: 'Resources', href: '/super-admin/resources', icon: Library },
+  { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
 ];
 
 const exactOnlyNavHrefs = new Set([
@@ -187,6 +194,7 @@ export function Sidebar({
   showMarketingReports = true,
   showAtsAccess = false,
   showCrmAccess = false,
+  showExpensesAccess = true,
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
     variant === 'employee'
@@ -209,6 +217,14 @@ export function Sidebar({
       (variant === 'employee' || variant === 'intern') &&
       !showMarketingReports &&
       item.href === '/reports'
+    ) {
+      return false;
+    }
+
+    if (
+      (variant === 'employee' || variant === 'intern') &&
+      !showExpensesAccess &&
+      item.href === '/expenses/verify'
     ) {
       return false;
     }

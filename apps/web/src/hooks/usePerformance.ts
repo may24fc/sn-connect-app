@@ -1,6 +1,5 @@
 import { queryKeys } from '@/lib/query-keys';
 import type {
-  CreateReviewCycleInput,
   UpdateReviewCycleInput,
 } from '@/lib/schemas/performance.schema';
 import type {
@@ -261,7 +260,7 @@ export function usePerformanceCycles() {
   return useQuery({
     queryKey: queryKeys.performance.cycles(),
     queryFn: async (): Promise<Array<PerformanceCycle>> => {
-      const response = await fetch('/api/performance/cycles');
+      const response = await fetch('/api/performance/cycles', { cache: 'no-store' });
       if (!response.ok) throw new Error('Failed to fetch cycles');
       const payload = (await response.json()) as { data: Array<ReviewCycleRow> };
       return (payload.data || []).map(toUiCycle);
@@ -329,30 +328,6 @@ export function usePerformanceReviews(cycleId?: string) {
   });
 }
 
-export function useCreatePerformanceCycle() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (payload: CreateReviewCycleInput) => {
-      const response = await fetch('/api/performance/cycles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to create cycle');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.performance.cycles() });
-    },
-  });
-}
-
 export function useUpdatePerformanceCycle() {
   const queryClient = useQueryClient();
 
@@ -391,6 +366,27 @@ export function useDeletePerformanceCycle() {
       }
 
       return response.json();
+    },
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.performance.cycles() });
+
+      const previousCycles = queryClient.getQueryData<Array<PerformanceCycle>>(
+        queryKeys.performance.cycles()
+      );
+
+      if (previousCycles) {
+        queryClient.setQueryData<Array<PerformanceCycle>>(
+          queryKeys.performance.cycles(),
+          previousCycles.filter((cycle) => cycle.id !== id)
+        );
+      }
+
+      return { previousCycles };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previousCycles) {
+        queryClient.setQueryData(queryKeys.performance.cycles(), context.previousCycles);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.cycles() });
