@@ -58,6 +58,7 @@ import {
 import {
   ArrowLeft,
   CheckCircle2,
+  ChevronLeft,
   CircleHelp,
   ChevronDown,
   ChevronRight,
@@ -74,6 +75,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
 import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
+import { useMyWeeklyCommitment } from '@/hooks/useWeeklyCommitments';
 
 function isIsoAfter(left: string, right: string): boolean {
   return left > right;
@@ -135,6 +137,7 @@ export default function ProjectDetailPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
   const deleteProject = useDeleteProject();
+  const updateProject = useUpdateProject();
 
   const { data: projectResp, isLoading: loadingProject } = useProject(projectId);
   const { data: milestonesResp, isLoading: loadingMilestones } = useProjectMilestones(projectId);
@@ -148,6 +151,10 @@ export default function ProjectDetailPage() {
 
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isReadOnlyAdminView = isAdmin;
+  const { data: myProjectCommitment, isLoading: loadingMyProjectCommitment } = useMyWeeklyCommitment({
+    enabled: !isReadOnlyAdminView && Boolean(projectId),
+    projectId,
+  });
   const isLead = !!project && project.lead_user_id === user?.id;
   const canEditProject = isLead || (isAdmin && !isReadOnlyAdminView);
   const canAddDocumentation =
@@ -259,17 +266,41 @@ export default function ProjectDetailPage() {
     }));
   }, [milestones]);
 
+  const MILESTONES_PER_PAGE = 4;
+  const [milestonesPage, setMilestonesPage] = useState(1);
+  const milestonesTotalPages = Math.max(1, Math.ceil(grouped.length / MILESTONES_PER_PAGE));
+
+  const pagedGrouped = useMemo(() => {
+    const start = (milestonesPage - 1) * MILESTONES_PER_PAGE;
+    return grouped.slice(start, start + MILESTONES_PER_PAGE);
+  }, [grouped, milestonesPage]);
+
+  useEffect(() => {
+    setMilestonesPage((currentPage) => Math.min(currentPage, milestonesTotalPages));
+  }, [milestonesTotalPages]);
+
+  function isAvailableWeeklyMilestone(milestone: MilestoneRecord): boolean {
+    const status = (milestone.status ?? '').toString().toLowerCase();
+    if (status === 'completed' || status === 'approved' || status === 'done') {
+      return false;
+    }
+
+    return (milestone.progress_pct ?? 0) < 100;
+  }
+
   // Map project milestones into MilestoneItem shape expected by MondayCommitmentModal
   const availableMilestones = useMemo(() => {
-    return milestones.map((m) => ({
-      id: m.id,
-      milestone_id: m.id,
-      title: m.title,
-      project_id: projectId,
-      project_name: project?.name ?? '',
-      status: m.status,
-      progress_pct: m.progress_pct ?? 0,
-    }));
+    return milestones
+      .filter(isAvailableWeeklyMilestone)
+      .map((m) => ({
+        id: m.id,
+        milestone_id: m.id,
+        title: m.title,
+        project_id: projectId,
+        project_name: project?.name ?? '',
+        status: m.status,
+        progress_pct: m.progress_pct ?? 0,
+      }));
   }, [milestones, projectId, project?.name]);
 
   // Dialog state
@@ -280,12 +311,26 @@ export default function ProjectDetailPage() {
   // Weekly commitment modal state (auto-open until user locks a commitment)
   const [commitModalOpen, setCommitModalOpen] = useState(false);
   useEffect(() => {
+    if (isReadOnlyAdminView) {
+      setCommitModalOpen(false);
+      return;
+    }
+
+    if (loadingMyProjectCommitment) {
+      return;
+    }
+
+    if (myProjectCommitment) {
+      setCommitModalOpen(false);
+      return;
+    }
+
     const DISMISS_KEY = `weekly-commit-dismissed:${projectId}`;
     const dismissed = typeof window !== 'undefined' ? localStorage.getItem(DISMISS_KEY) : null;
     if (!dismissed) {
       setCommitModalOpen(true);
     }
-  }, [projectId]);
+  }, [isReadOnlyAdminView, loadingMyProjectCommitment, myProjectCommitment, projectId]);
 
   async function handleDeleteProject() {
     try {
@@ -295,6 +340,23 @@ export default function ProjectDetailPage() {
     } catch (error) {
       addToast({
         title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    }
+  }
+
+  async function handleMarkProjectCompleted() {
+    try {
+      await updateProject.mutateAsync({
+        projectId,
+        status: 'completed',
+        progressPct: 100,
+      });
+      addToast({ title: 'Project marked completed', variant: 'success' });
+    } catch (error) {
+      addToast({
+        title: 'Update failed',
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'error',
       });
@@ -317,6 +379,8 @@ export default function ProjectDetailPage() {
     );
   }
 
+  const showHealthPill = project.progress_pct < 100 && project.status !== 'completed';
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <header className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
@@ -333,7 +397,7 @@ export default function ProjectDetailPage() {
               <h1 className="truncate text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
                 {project.name}
               </h1>
-              <HealthPill health={project.health} />
+              {showHealthPill ? <HealthPill health={project.health} /> : null}
               <Badge variant="outline" className="capitalize">
                 {project.status.replace('_', ' ')}
               </Badge>
@@ -368,21 +432,20 @@ export default function ProjectDetailPage() {
           {canEditProject ? (
             <div className="flex shrink-0 items-center gap-2">
               <Button variant="outline" onClick={() => setDeleteProjectOpen(true)}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Project
+                <Trash2 className="h-4 w-4" />
               </Button>
               <Button variant="outline" onClick={() => setEditProjectOpen(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Project
+                <Pencil className="h-4 w-4" />
               </Button>
               <Button
+                disabled={Boolean(myProjectCommitment)}
                 variant="outline"
                 onClick={() => {
                   setCommitModalOpen(true);
                 }}
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
-                Set Week Commitments
+                {myProjectCommitment ? 'Week Commitments Set' : 'Set Week Commitments'}
               </Button>
               <Button
                 onClick={() => {
@@ -405,32 +468,47 @@ export default function ProjectDetailPage() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="space-y-6 p-6">
-          <div className="inline-flex w-fit items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
-            <Button
-              size="sm"
-              variant={activeTab === 'milestones' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('milestones')}
-            >
-              Milestones
-              <Badge variant="secondary" className="ml-2">
-                {grouped.length}
-              </Badge>
-            </Button>
-            <Button
-              size="sm"
-              variant={activeTab === 'documentation' ? 'default' : 'ghost'}
-              onClick={() => setActiveTab('documentation')}
-            >
-              Documentation
-              <Badge variant="secondary" className="ml-2">
-                {documentation.length}
-              </Badge>
-            </Button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex w-fit items-center gap-1 rounded-md border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+              <Button
+                size="sm"
+                variant={activeTab === 'milestones' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('milestones')}
+              >
+                Milestones
+                <Badge variant="secondary" className="ml-2">
+                  {grouped.length}
+                </Badge>
+              </Button>
+              <Button
+                size="sm"
+                variant={activeTab === 'documentation' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('documentation')}
+              >
+                Documentation
+                <Badge variant="secondary" className="ml-2">
+                  {documentation.length}
+                </Badge>
+              </Button>
+            </div>
+
+            {canEditProject && project.status !== 'completed' ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void handleMarkProjectCompleted();
+                }}
+                disabled={updateProject.isPending}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                {updateProject.isPending ? 'Updating…' : 'Mark Project Completed'}
+              </Button>
+            ) : null}
           </div>
 
           {/* Weekly Focus card for this project (user-scoped) */}
           <div className="px-6">
-            <WeeklyFocusCard />
+            <WeeklyFocusCard projectId={projectId} />
           </div>
 
           {activeTab === 'documentation' ? (
@@ -599,21 +677,62 @@ export default function ProjectDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {grouped.map(({ month, weeks }) => (
-                <MonthColumn
-                  key={month.id}
-                  month={month}
-                  weeks={weeks}
-                  projectId={projectId}
-                  canEdit={canEditProject}
-                  projectEndDate={project.target_end_date}
-                  onAddWeek={() => {
-                    setCreateParent(month);
-                    setCreateOpen(true);
-                  }}
-                />
-              ))}
+            <div className="space-y-3">
+              {milestonesTotalPages > 1 ? (
+                <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {(milestonesPage - 1) * MILESTONES_PER_PAGE + 1}-
+                    {Math.min(milestonesPage * MILESTONES_PER_PAGE, grouped.length)} of{' '}
+                    {grouped.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label="Previous milestones page"
+                      onClick={() => setMilestonesPage((page) => Math.max(1, page - 1))}
+                      disabled={milestonesPage <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label="Next milestones page"
+                      onClick={() =>
+                        setMilestonesPage((page) => Math.min(milestonesTotalPages, page + 1))
+                      }
+                      disabled={milestonesPage >= milestonesTotalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div
+                className="grid gap-4 pb-2"
+                style={{
+                  gridTemplateColumns: `repeat(${Math.max(1, pagedGrouped.length)}, minmax(0, 1fr))`,
+                }}
+              >
+                {pagedGrouped.map(({ month, weeks }) => (
+                  <MonthColumn
+                    key={month.id}
+                    month={month}
+                    weeks={weeks}
+                    projectId={projectId}
+                    canEdit={canEditProject}
+                    projectEndDate={project.target_end_date}
+                    onAddWeek={() => {
+                      setCreateParent(month);
+                      setCreateOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -667,17 +786,19 @@ export default function ProjectDetailPage() {
           void handleDeleteProject();
         }}
       />
-      <MondayCommitmentModal
-        open={commitModalOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            const DISMISS_KEY = `weekly-commit-dismissed:${projectId}`;
-            if (typeof window !== 'undefined') localStorage.setItem(DISMISS_KEY, '1');
-          }
-          setCommitModalOpen(open);
-        }}
-        availableMilestones={availableMilestones}
-      />
+      {!isReadOnlyAdminView ? (
+        <MondayCommitmentModal
+          open={commitModalOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              const DISMISS_KEY = `weekly-commit-dismissed:${projectId}`;
+              if (typeof window !== 'undefined') localStorage.setItem(DISMISS_KEY, '1');
+            }
+            setCommitModalOpen(open);
+          }}
+          availableMilestones={availableMilestones}
+        />
+      ) : null}
     </div>
   );
 }
@@ -753,7 +874,7 @@ function MonthColumn({
 
   return (
     <>
-      <div className="flex w-80 shrink-0 flex-col rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="flex min-w-0 flex-col rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
         <div className="group relative border-b border-zinc-200 p-3 dark:border-zinc-800">
           {canManage ? (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">

@@ -121,6 +121,7 @@ export function ProjectCard({
 }: ProjectCardProps): React.ReactElement {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const parsedDescription = description ? parseDescriptionSections(description) : null;
+  const showHealthPill = progressPct < 100;
 
   const hoverActions = [
     ...(onEdit
@@ -161,7 +162,7 @@ export function ProjectCard({
               <h3 className="line-clamp-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                 {name}
               </h3>
-              <HealthPill health={health} />
+              {showHealthPill ? <HealthPill health={health} /> : null}
             </div>
             {description ? (
               <Button

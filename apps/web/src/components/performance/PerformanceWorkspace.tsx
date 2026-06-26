@@ -111,13 +111,14 @@ export function PerformanceWorkspace({ detailHrefBase }: PerformanceWorkspacePro
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
-  const fallbackCycle = activeCycle || cycles[0] || null;
+  const fallbackCycle = activeCycle;
   const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
   const canCreateObjective = Boolean(activeCycle);
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
   const displayCycle =
     cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
-  const { data: okrs = [] } = useMyPerformanceOKRs(selectedCycleId || displayCycle?.id);
+  const selectedCycleFilterId = selectedCycleId || displayCycle?.id || '__no_active_cycle__';
+  const { data: okrs = [] } = useMyPerformanceOKRs(selectedCycleFilterId);
   const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = useMyPerformanceOKRs();
   const createOKR = useCreateOKR();
 

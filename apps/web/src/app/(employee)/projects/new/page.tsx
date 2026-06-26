@@ -35,6 +35,7 @@ export default function NewProjectPage() {
   });
   const [startDate, setStartDate] = useState(today);
   const [targetEndDate, setTargetEndDate] = useState('');
+  const [isCompletedAlready, setIsCompletedAlready] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -51,7 +52,8 @@ export default function NewProjectPage() {
         leadUserId: user.id,
         startDate,
         targetEndDate,
-        status: 'active',
+        status: isCompletedAlready ? 'completed' : 'active',
+        isCompletedAlready,
       });
       addToast({ title: 'Project created', description: name.trim(), variant: 'success' });
       router.push(`/projects/${result.data.id}`);
@@ -122,6 +124,25 @@ export default function NewProjectPage() {
                 value={descriptionSections}
                 onChange={setDescriptionSections}
               />
+              <div className="space-y-2">
+                <Label>Is this project completed already?</Label>
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Yes</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Turn this on if the project is already complete when you create it.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={isCompletedAlready ? 'default' : 'outline'}
+                    aria-pressed={isCompletedAlready}
+                    onClick={() => setIsCompletedAlready((current) => !current)}
+                  >
+                    Yes
+                  </Button>
+                </div>
+              </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => router.back()}>
                   Cancel

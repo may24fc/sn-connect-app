@@ -361,7 +361,9 @@ export default function AdminProjectsPage() {
                               ) : null}
                             </td>
                             <td className="px-4 py-3">
-                              <HealthPill health={project.health} />
+                              {project.progress_pct < 100 ? (
+                                <HealthPill health={project.health} />
+                              ) : null}
                             </td>
                             <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
                               {internNameByUserId.get(project.lead_user_id) ?? 'Unassigned'}

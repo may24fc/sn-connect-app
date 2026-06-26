@@ -46,3 +46,11 @@ export {
   type IntakeExtractionConfig,
   type VoiceTranscriptionConfig,
 } from './intake';
+
+export {
+  extractReceiptFromImage,
+  extractReceiptFromText,
+  type ReceiptExtractionResult,
+  type ReceiptExtractionConfig,
+  type ReceiptExtractionFieldConfidence,
+} from './receipt';

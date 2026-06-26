@@ -797,7 +797,7 @@ function ProjectRow({
               >
                 {project.name}
               </Link>
-              <HealthPill health={project.health} />
+              {project.progress_pct < 100 ? <HealthPill health={project.health} /> : null}
               <Badge variant="outline">{project.points_total} pts</Badge>
             </div>
             <p className="mt-2 text-xs text-zinc-500">

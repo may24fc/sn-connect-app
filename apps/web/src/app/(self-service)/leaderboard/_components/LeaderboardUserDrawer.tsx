@@ -12,7 +12,7 @@ import {
   Avatar,
   Badge,
 } from '@hr-portal/ui';
-import { useWeeklyCommitment, type WeeklyCommitment } from '@/hooks/useWeeklyCommitments';
+import { useWeeklyCommitments, type WeeklyCommitment } from '@/hooks/useWeeklyCommitments';
 
 interface LeaderboardUserDrawerProps {
   open: boolean;
@@ -24,16 +24,20 @@ interface LeaderboardUserDrawerProps {
 }
 
 export function LeaderboardUserDrawer({ open, onOpenChange, userId, fullName, avatarUrl, department }: LeaderboardUserDrawerProps) {
-  // Fetch the weekly commitment for the provided userId (admin) or the current user when the drawer opens
-  const { data } = useWeeklyCommitment(userId ?? null, { enabled: Boolean(open) });
+  // Fetch all weekly commitments for the provided userId (admin) or the current user when the drawer opens.
+  const { data } = useWeeklyCommitments(userId ?? null, { enabled: Boolean(open) });
 
   function isCompletedStatus(status?: string | null) {
     const s = (status ?? '').toLowerCase();
     return s === 'completed' || s === 'approved' || s === 'done';
   }
 
-  const items = (data as WeeklyCommitment | null)?.items ?? [];
-  const pct = items.length > 0 ? `${Math.round((items.filter((i) => isCompletedStatus(i.status)).length / items.length) * 100)}%` : '—';
+  const commitments = (data as WeeklyCommitment[] | null) ?? [];
+  const allItems = commitments.flatMap((commitment) => commitment.items ?? []);
+  const pct =
+    allItems.length > 0
+      ? `${Math.round((allItems.filter((item) => isCompletedStatus(item.status)).length / allItems.length) * 100)}%`
+      : '—';
 
   return (
     <SlidePanel open={open} onOpenChange={onOpenChange}>
@@ -65,18 +69,31 @@ export function LeaderboardUserDrawer({ open, onOpenChange, userId, fullName, av
               <SlidePanelBody>
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold">Top Weekly Milestones</h3>
-                  {(data as WeeklyCommitment | null)?.items?.length ? (
-                    (data as WeeklyCommitment).items.map((m) => (
-                      <div key={m.id} className="rounded border p-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{m.title}</div>
-                            <div className="text-xs text-zinc-500">{m.project_name}</div>
+                  {commitments.length > 0 ? (
+                    commitments.map((commitment) => {
+                      const projectLabel =
+                        commitment.project_name ?? commitment.items[0]?.project_name ?? 'Unknown project';
+
+                      return (
+                        <div key={commitment.id} className="rounded border p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="text-sm font-semibold">{projectLabel}</div>
+                            <Badge variant="secondary">{commitment.items.length} item(s)</Badge>
                           </div>
-                          <div className="text-xs text-zinc-400">{m.progress_pct ?? 0}%</div>
+                          <div className="space-y-2">
+                            {commitment.items.map((milestone) => (
+                              <div key={milestone.id} className="flex items-center justify-between rounded bg-zinc-50 px-2 py-1.5">
+                                <div>
+                                  <div className="font-medium">{milestone.title}</div>
+                                  <div className="text-xs text-zinc-500">Slot {milestone.slot_order ?? '-'}</div>
+                                </div>
+                                <div className="text-xs text-zinc-400">{milestone.progress_pct ?? 0}%</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <p className="text-sm text-zinc-500">No weekly commitments found.</p>
                   )}

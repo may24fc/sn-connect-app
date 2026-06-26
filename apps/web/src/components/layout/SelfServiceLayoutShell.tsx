@@ -11,6 +11,7 @@ import { useAIChat } from '@/hooks/useAIChat';
 import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
 import { useAtsAccess } from '@/hooks/useAtsAccess';
 import { useCrmAccess } from '@/hooks/useCrmAccess';
+import { useExpensesAccess } from '@/hooks/useExpensesAccess';
 import { useConversations, useCreateConversation, useDeleteConversation, useRenameConversation } from '@/hooks/useConversations';
 import {
   useDeleteNotification,
@@ -132,6 +133,7 @@ function SelfServiceLayoutInner({
   const marketingReportsAccess = useMarketingReportsAccess();
   const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'intern');
   const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'intern');
+  const expensesAccess = useExpensesAccess();
   const sidebarVariant =
     user.role === 'intern'
       ? 'intern'
@@ -152,6 +154,7 @@ function SelfServiceLayoutInner({
           showMarketingReports={marketingReportsAccess.canAccess}
           showAtsAccess={Boolean(atsAccess.data?.canAccess)}
           showCrmAccess={Boolean(crmAccess.data?.canAccess)}
+          showExpensesAccess={expensesAccess.canAccess}
         />
       </div>
 
@@ -166,6 +169,7 @@ function SelfServiceLayoutInner({
               showMarketingReports={marketingReportsAccess.canAccess}
               showAtsAccess={Boolean(atsAccess.data?.canAccess)}
               showCrmAccess={Boolean(crmAccess.data?.canAccess)}
+              showExpensesAccess={expensesAccess.canAccess}
             />
           </div>
         </div>
