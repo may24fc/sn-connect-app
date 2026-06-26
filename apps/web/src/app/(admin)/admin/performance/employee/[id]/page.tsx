@@ -156,9 +156,14 @@ function computeOverallWeightedMean(objectives: ObjectiveWithTargets[]): number 
 function parseQuarterCycleName(name: string): { quarter: number; year: number } | null {
   const match = /^Q([1-4])\s+(\d{4})$/i.exec(name.trim());
   if (!match) return null;
+  const quarterValue = match[1];
+  const yearValue = match[2];
+
+  if (!quarterValue || !yearValue) return null;
+
   return {
-    quarter: Number.parseInt(match[1], 10),
-    year: Number.parseInt(match[2], 10),
+    quarter: Number.parseInt(quarterValue, 10),
+    year: Number.parseInt(yearValue, 10),
   };
 }
 
