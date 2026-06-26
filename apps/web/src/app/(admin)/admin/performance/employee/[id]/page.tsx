@@ -29,11 +29,6 @@ import {
   Label,
   type PerformanceRating,
   RATING_CONFIG,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Tabs,
   TabsContent,
   TabsList,
@@ -145,6 +140,26 @@ function computeWeightedMean(targets: IndividualPerformanceData['okrTargets']): 
   }
   const weighted = targets.reduce((sum, t) => sum + computeTargetProgress(t) * t.weight, 0);
   return Math.round(weighted / totalWeight);
+}
+
+function computeOverallWeightedMean(objectives: ObjectiveWithTargets[]): number {
+  if (objectives.length === 0) return 0;
+  const totalWeight = objectives.reduce((sum, o) => sum + (o.okr.weight || 0), 0);
+  if (totalWeight === 0) {
+    const avg = objectives.reduce((sum, o) => sum + o.mean, 0) / objectives.length;
+    return Math.round(avg);
+  }
+  const weighted = objectives.reduce((sum, o) => sum + o.mean * (o.okr.weight || 0), 0);
+  return Math.round(weighted / totalWeight);
+}
+
+function parseQuarterCycleName(name: string): { quarter: number; year: number } | null {
+  const match = /^Q([1-4])\s+(\d{4})$/i.exec(name.trim());
+  if (!match) return null;
+  return {
+    quarter: Number.parseInt(match[1], 10),
+    year: Number.parseInt(match[2], 10),
+  };
 }
 
 function getObjectiveDisplayStatus(status: string, progress: number): string {
@@ -597,17 +612,6 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   }, [data]);
 
   // Overall weighted mean across all objectives
-  const overallWeightedMean = useMemo(() => {
-    if (objectives.length === 0) return 0;
-    const totalWeight = objectives.reduce((sum, o) => sum + (o.okr.weight || 0), 0);
-    if (totalWeight === 0) {
-      const avg = objectives.reduce((sum, o) => sum + o.mean, 0) / objectives.length;
-      return Math.round(avg);
-    }
-    const weighted = objectives.reduce((sum, o) => sum + o.mean * (o.okr.weight || 0), 0);
-    return Math.round(weighted / totalWeight);
-  }, [objectives]);
-
   // All objectives stay evaluatable regardless of progress or current status.
   const evaluatableObjectives = useMemo(() => {
     return objectives.filter((objective) => {
@@ -615,6 +619,12 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
       return objective.okr.cycle_id === selectedCycleId;
     });
   }, [objectives, selectedCycleId]);
+
+  // Overall weighted mean for the selected quarter/cycle.
+  const overallWeightedMean = useMemo(
+    () => computeOverallWeightedMean(evaluatableObjectives),
+    [evaluatableObjectives]
+  );
 
   const cycleNamesById = useMemo(() => {
     if (!data) return new Map<string, string | null>();
@@ -648,6 +658,45 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
 
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
   const fallbackCycle = activeCycle || cycles[0] || null;
+
+  const selectedCycle = cycles.find((cycle) => cycle.id === selectedCycleId) || null;
+
+  const displayedQuarterYear = useMemo(() => {
+    const selectedParsed = selectedCycle ? parseQuarterCycleName(selectedCycle.name) : null;
+    if (selectedParsed) {
+      return selectedParsed.year;
+    }
+
+    const activeParsed = activeCycle ? parseQuarterCycleName(activeCycle.name) : null;
+    if (activeParsed) {
+      return activeParsed.year;
+    }
+
+    const firstParsed = cycles
+      .map((cycle) => parseQuarterCycleName(cycle.name))
+      .find((parsed): parsed is { quarter: number; year: number } => parsed !== null);
+    if (firstParsed) {
+      return firstParsed.year;
+    }
+
+    return new Date().getFullYear();
+  }, [activeCycle, cycles, selectedCycle]);
+
+  const quarterTabs = useMemo(() => {
+    return [1, 2, 3, 4].map((quarter) => {
+      const cycleForQuarter =
+        cycles.find((cycle) => {
+          const parsed = parseQuarterCycleName(cycle.name);
+          return parsed?.quarter === quarter && parsed.year === displayedQuarterYear;
+        }) || null;
+
+      return {
+        quarter,
+        label: `Q${quarter} ${displayedQuarterYear}`,
+        cycleId: cycleForQuarter?.id ?? null,
+      };
+    });
+  }, [cycles, displayedQuarterYear]);
 
   useEffect(() => {
     if (selectedCycleId) return;
@@ -895,7 +944,8 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
             />
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Weighted mean across {objectives.length} objective{objectives.length !== 1 ? 's' : ''}
+            Weighted mean across {evaluatableObjectives.length} objective
+            {evaluatableObjectives.length !== 1 ? 's' : ''}
           </p>
         </CardContent>
       </Card>
@@ -906,8 +956,8 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
         onValueChange={(v) => setActiveTab(v as 'view' | 'evaluate')}
         className="w-full"
       >
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList className="w-full sm:w-auto">
+        <div className="flex w-full flex-col gap-3">
+          <TabsList className="w-fit self-start">
             <TabsTrigger value="view" className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
               View OKRs & KPIs
@@ -917,22 +967,34 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               Evaluate ({evaluatableObjectives.length})
             </TabsTrigger>
           </TabsList>
-          <Select
-            value={selectedCycleId}
-            onValueChange={setSelectedCycleId}
-            disabled={cycles.length === 0}
-          >
-            <SelectTrigger className="w-full sm:w-[240px]">
-              <SelectValue placeholder="Filter cycle" />
-            </SelectTrigger>
-            <SelectContent>
-              {cycles.map((cycle) => (
-                <SelectItem key={cycle.id} value={cycle.id}>
-                  {cycle.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {quarterTabs.map((tab) => {
+              const isActive = tab.cycleId === selectedCycleId;
+              const isUnavailable = !tab.cycleId;
+
+              return (
+                <button
+                  key={tab.label}
+                  type="button"
+                  disabled={isUnavailable}
+                  onClick={() => {
+                    if (tab.cycleId) {
+                      setSelectedCycleId(tab.cycleId);
+                    }
+                  }}
+                  className={`rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                    isActive
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-muted text-muted-foreground hover:bg-muted/80'
+                  } ${isUnavailable ? 'cursor-not-allowed opacity-50' : ''}`}
+                  aria-pressed={isActive}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ═══════════════ VIEW TAB ═══════════════ */}
