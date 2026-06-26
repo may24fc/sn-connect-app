@@ -41,7 +41,7 @@ import {
 import { FolderKanban, Inbox, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent, useEffect } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
 
 export default function ProjectsListPage() {
