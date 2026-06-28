@@ -66,6 +66,11 @@ export function usePerformanceRealtime({
       queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
     };
 
+    const invalidateReviewQueries = (): void => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.reviews() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    };
+
     const channel = supabase
       .channel('performance:realtime')
       // OKR events --------------------------------------------------------
@@ -97,6 +102,16 @@ export function usePerformanceRealtime({
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'kpis' }, () => {
         invalidateKpiQueries();
+      })
+      // Performance review events -----------------------------------------
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'performance_reviews' }, () => {
+        invalidateReviewQueries();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'performance_reviews' }, () => {
+        invalidateReviewQueries();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'performance_reviews' }, () => {
+        invalidateReviewQueries();
       })
       .subscribe();
 

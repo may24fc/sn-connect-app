@@ -8,7 +8,7 @@ const ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
  * Returns aggregate counts for admin dashboard stat cards:
  * - totalEmployees (non-deleted employees)
  * - activeInterns (internships with status = 'active')
- * - reviewsDue (performance_reviews with status in pending/in_progress)
+ * - reviewsDue (performance_reviews with status in pending/self_review/manager_review)
  * - recentHires (employees created in last 30 days)
  */
 export async function GET(): Promise<NextResponse> {
@@ -59,11 +59,11 @@ export async function GET(): Promise<NextResponse> {
         .select('id', { count: 'exact', head: true })
         .eq('status', 'active'),
 
-      // Reviews due (pending or in_progress)
+      // Reviews due (pending flow states before completion)
       supabase
         .from('performance_reviews')
         .select('id', { count: 'exact', head: true })
-        .in('status', ['pending', 'in_progress'])
+        .in('status', ['pending', 'self_review', 'manager_review'])
         .is('deleted_at', null),
 
       // Recent hires (last 30 days, non-terminated)

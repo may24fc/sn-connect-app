@@ -100,6 +100,7 @@ export interface IndividualPerformanceData {
     self_rating: number | null;
     self_comments: string | null;
     manager_rating: number | null;
+    manager_comments: string | null;
     final_rating: number | null;
     submitted_at: string | null;
     completed_at: string | null;
@@ -129,7 +130,9 @@ export function useIndividualPerformance(employeeId: string | null) {
   return useQuery({
     queryKey: queryKeys.performance.individual(employeeId || ''),
     queryFn: async (): Promise<IndividualPerformanceData> => {
-      const response = await fetch(`/api/performance/individual/${employeeId}`);
+      const response = await fetch(`/api/performance/individual/${employeeId}`, {
+        cache: 'no-store',
+      });
 
       if (!response.ok) {
         const error = await response

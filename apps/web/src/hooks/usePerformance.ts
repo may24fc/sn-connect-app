@@ -106,7 +106,32 @@ interface ReviewRow {
   id: string;
   cycle_id: string;
   employee_id: string;
+  reviewer_id: string | null;
   status: 'pending' | 'self_review' | 'manager_review' | 'completed';
+  self_rating?: number | null;
+  self_comments?: string | null;
+  manager_rating?: number | null;
+  manager_comments?: string | null;
+  final_rating?: number | null;
+  goals_for_next_period?: string | null;
+  submitted_at?: string | null;
+  completed_at?: string | null;
+}
+
+export interface PerformanceReviewRecord {
+  id: string;
+  cycleId: string;
+  employeeId: string;
+  reviewerId: string | null;
+  status: ReviewStatus;
+  selfRating: number | null;
+  selfComments: string | null;
+  managerRating: number | null;
+  managerComments: string | null;
+  finalRating: number | null;
+  goalsForNextPeriod: string | null;
+  submittedAt: string | null;
+  completedAt: string | null;
 }
 
 function mapCycleStatus(status: ReviewCycleRow['status']): PerformanceCycle['status'] {
@@ -311,19 +336,106 @@ export function usePerformanceKPIs(cycleId?: string) {
   });
 }
 
-export function usePerformanceReviews(cycleId?: string) {
+export function usePerformanceReviews(cycleId?: string, employeeId?: string) {
   return useQuery({
-    queryKey: [...queryKeys.performance.reviews(), cycleId || 'all'],
-    queryFn: async (): Promise<Array<{ id: string; status: ReviewStatus }>> => {
+    queryKey: [...queryKeys.performance.reviews(), cycleId || 'all', employeeId || 'self'],
+    queryFn: async (): Promise<Array<PerformanceReviewRecord>> => {
       const params = new URLSearchParams();
       if (cycleId) params.set('cycleId', cycleId);
-      const response = await fetch(`/api/performance/reviews?${params.toString()}`);
+      if (employeeId) params.set('employeeId', employeeId);
+      const response = await fetch(`/api/performance/reviews?${params.toString()}`, {
+        cache: 'no-store',
+      });
       if (!response.ok) throw new Error('Failed to fetch reviews');
       const payload = (await response.json()) as { data: Array<ReviewRow> };
       return (payload.data || []).map((row) => ({
         id: row.id,
+        cycleId: row.cycle_id,
+        employeeId: row.employee_id,
+        reviewerId: row.reviewer_id,
         status: mapReviewStatus(row.status),
+        selfRating: row.self_rating ?? null,
+        selfComments: row.self_comments ?? null,
+        managerRating: row.manager_rating ?? null,
+        managerComments: row.manager_comments ?? null,
+        finalRating: row.final_rating ?? null,
+        goalsForNextPeriod: row.goals_for_next_period ?? null,
+        submittedAt: row.submitted_at ?? null,
+        completedAt: row.completed_at ?? null,
       }));
+    },
+  });
+}
+
+export function useCreatePerformanceReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      cycleId: string;
+      employeeId: string;
+      reviewerId?: string | null;
+      status?: 'pending' | 'self_review' | 'manager_review' | 'completed';
+      selfRating?: number | null;
+      selfComments?: string | null;
+      managerRating?: number | null;
+      managerComments?: string | null;
+      finalRating?: number | null;
+      goalsForNextPeriod?: string | null;
+    }) => {
+      const response = await fetch('/api/performance/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to create performance review');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.reviews() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
+    },
+  });
+}
+
+export function useUpdatePerformanceReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      status?: 'pending' | 'self_review' | 'manager_review' | 'completed';
+      reviewerId?: string | null;
+      selfRating?: number | null;
+      selfComments?: string | null;
+      managerRating?: number | null;
+      managerComments?: string | null;
+      finalRating?: number | null;
+      goalsForNextPeriod?: string | null;
+      submittedAt?: string | null;
+      completedAt?: string | null;
+    }) => {
+      const response = await fetch('/api/performance/reviews', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error || 'Failed to update performance review');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.reviews() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance.all });
     },
   });
 }

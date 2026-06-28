@@ -49,11 +49,13 @@ export async function GET(): Promise<NextResponse> {
       .order('created_at', { ascending: false })
       .limit(5);
 
-    // Pending performance reviews (status = 'pending' or 'in_progress')
+    // Pending performance reviews (status before completion)
     const { count: pendingReviewsCount, data: pendingReviews } = await supabaseAdmin
       .from('performance_reviews')
-      .select('id, employee_id, review_period, reviewer_id, created_at', { count: 'exact' })
-      .in('status', ['pending', 'in_progress'])
+      .select('id, employee_id, cycle_id, reviewer_id, status, submitted_at, created_at', {
+        count: 'exact',
+      })
+      .in('status', ['pending', 'self_review', 'manager_review'])
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5);

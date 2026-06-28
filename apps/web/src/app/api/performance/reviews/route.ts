@@ -17,11 +17,11 @@ import {
   updatePerformanceReviewSchema,
 } from '@/lib/schemas/performance.schema';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getAuthedPerformanceContext, isPerformanceAdmin, resolveEmployeeIdForUser } from '../_lib';
+import { canManagePerformance, getAuthedPerformanceContext, resolveEmployeeIdForUser } from '../_lib';
 
 export async function GET(request: NextRequest) {
   try {
-    const { supabase, user, role, error } = await getAuthedPerformanceContext();
+    const { supabaseAdmin, user, role, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -32,14 +32,15 @@ export async function GET(request: NextRequest) {
     const explicitEmployeeId = searchParams.get('employeeId') || undefined;
 
     let employeeId: string | null | undefined = explicitEmployeeId;
-    if (!employeeId && !isPerformanceAdmin(role)) {
-      employeeId = await resolveEmployeeIdForUser(supabase, user.id);
+    if (!employeeId && !canManagePerformance(role)) {
+      // Non-management roles (employees/interns) are scoped to their own record only
+      employeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
       if (!employeeId) {
         return NextResponse.json({ data: [] });
       }
     }
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('performance_reviews')
       .select(
         '*, review_cycles(id, name, start_date, end_date, status), employees(id, first_name, last_name, department, immediate_head)'
@@ -87,38 +88,58 @@ export async function POST(request: NextRequest) {
     }
 
     let employeeId = parsed.data.employeeId;
-    if (!isPerformanceAdmin(role)) {
-      const ownEmployeeId = await resolveEmployeeIdForUser(supabase, user.id);
+    if (!canManagePerformance(role)) {
+      // Non-management users (employees/interns) can only create/update their own review
+      const ownEmployeeId = await resolveEmployeeIdForUser(supabaseAdmin, user.id);
       if (!ownEmployeeId) {
         return NextResponse.json({ error: 'No employee profile found' }, { status: 400 });
       }
       employeeId = ownEmployeeId;
     }
 
-    const { data, error: insertError } = await supabaseAdmin
+    const shouldMarkCompleted =
+      parsed.data.status === 'completed' || parsed.data.managerRating !== undefined;
+    const completionTimestamp = shouldMarkCompleted ? new Date().toISOString() : null;
+
+    const { data, error: upsertError } = await supabaseAdmin
       .from('performance_reviews')
-      .insert({
-        cycle_id: parsed.data.cycleId,
-        employee_id: employeeId,
-        reviewer_id: parsed.data.reviewerId || null,
-        status: parsed.data.status,
-        self_rating: parsed.data.selfRating || null,
-        self_comments: parsed.data.selfComments || null,
-        manager_rating: parsed.data.managerRating || null,
-        manager_comments: parsed.data.managerComments || null,
-        final_rating: parsed.data.finalRating || null,
-        goals_for_next_period: parsed.data.goalsForNextPeriod || null,
-      })
+      .upsert(
+        {
+          cycle_id: parsed.data.cycleId,
+          employee_id: employeeId,
+          reviewer_id: parsed.data.reviewerId || null,
+          status: shouldMarkCompleted ? 'completed' : parsed.data.status,
+          self_rating: parsed.data.selfRating || null,
+          self_comments: parsed.data.selfComments || null,
+          manager_rating: parsed.data.managerRating || null,
+          manager_comments: parsed.data.managerComments || null,
+          final_rating: parsed.data.finalRating || null,
+          goals_for_next_period: parsed.data.goalsForNextPeriod || null,
+          submitted_at: completionTimestamp,
+          completed_at: completionTimestamp,
+        },
+        { onConflict: 'cycle_id,employee_id' }
+      )
       .select('*')
       .single();
 
-    if (insertError || !data) {
-      return NextResponse.json({ error: 'Failed to create review' }, { status: 500 });
+    if (upsertError || !data) {
+      const message = upsertError?.message || 'Failed to create review';
+      const code = upsertError?.code;
+
+      if (code === '23503') {
+        return NextResponse.json(
+          { error: 'Invalid reference for cycle, employee, or reviewer' },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json({ error: message }, { status: 500 });
     }
 
     logActivity(supabaseAdmin, {
       userId: user.id,
-      action: 'create_performance_review',
+      action: 'upsert_performance_review',
       tableName: 'performance_reviews',
       recordId: data.id,
       metadata: { employeeId: data.employee_id, cycleId: data.cycle_id },
@@ -200,7 +221,7 @@ export async function POST(request: NextRequest) {
         : []),
     ]);
 
-    return NextResponse.json({ data }, { status: 201 });
+    return NextResponse.json({ data }, { status: 200 });
   } catch (error) {
     console.error('POST /api/performance/reviews error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -209,7 +230,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { supabase, user, error } = await getAuthedPerformanceContext();
+    const { supabase, supabaseAdmin, user, error } = await getAuthedPerformanceContext();
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -224,7 +245,8 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const { data: existingReview, error: existingError } = await supabase
+    // Use supabaseAdmin to bypass RLS — app-level auth above already scoped access
+    const { data: existingReview, error: existingError } = await supabaseAdmin
       .from('performance_reviews')
       .select('id, employee_id, reviewer_id, status, cycle_id')
       .eq('id', parsed.data.id)
@@ -235,7 +257,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const payload: Record<string, unknown> = {};
-    if (parsed.data.status !== undefined) payload.status = parsed.data.status;
+    const shouldMarkCompleted =
+      parsed.data.status === 'completed' || parsed.data.managerRating !== undefined;
+
+    if (parsed.data.status !== undefined || shouldMarkCompleted) {
+      payload.status = shouldMarkCompleted ? 'completed' : parsed.data.status;
+    }
     if (parsed.data.reviewerId !== undefined) payload.reviewer_id = parsed.data.reviewerId;
     if (parsed.data.selfRating !== undefined) payload.self_rating = parsed.data.selfRating;
     if (parsed.data.selfComments !== undefined) payload.self_comments = parsed.data.selfComments;
@@ -248,7 +275,13 @@ export async function PATCH(request: NextRequest) {
     if (parsed.data.submittedAt !== undefined) payload.submitted_at = parsed.data.submittedAt;
     if (parsed.data.completedAt !== undefined) payload.completed_at = parsed.data.completedAt;
 
-    const { data, error: updateError } = await supabase
+    if (shouldMarkCompleted) {
+      const completedAt = new Date().toISOString();
+      payload.completed_at = payload.completed_at ?? completedAt;
+      payload.submitted_at = payload.submitted_at ?? completedAt;
+    }
+
+    const { data, error: updateError } = await supabaseAdmin
       .from('performance_reviews')
       .update(payload)
       .eq('id', parsed.data.id)
@@ -259,7 +292,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update review' }, { status: 500 });
     }
 
-    logActivity(supabase, {
+    logActivity(supabaseAdmin, {
       userId: user.id,
       action: 'update_performance_review',
       tableName: 'performance_reviews',

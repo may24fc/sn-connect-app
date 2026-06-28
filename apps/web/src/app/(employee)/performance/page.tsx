@@ -1,8 +1,19 @@
 ﻿'use client';
 
 import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
-import { useCreateOKR, usePerformanceCycles, usePerformanceOKRs } from '@/hooks/usePerformance';
+import {
+  useCreateOKR,
+  usePerformanceCycles,
+  usePerformanceOKRs,
+  usePerformanceReviews,
+} from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import {
+  computeFinalEvaluationScore,
+  fromPercentageToFivePoint,
+  MANAGER_ASSESSMENT_WEIGHT,
+  OKR_KPI_WEIGHT,
+} from '@/lib/performance/evaluation-score';
 import { getDisplayOKRStatus } from '@/lib/performance/okr-status';
 import {
   Badge,
@@ -40,7 +51,7 @@ import {
 } from '@hr-portal/ui';
 import { Calendar, ChevronRight, Plus, Target } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactNode, useState, useEffect } from 'react';
+import { type ReactNode, useState, useEffect, useMemo } from 'react';
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -90,7 +101,7 @@ export default function PerformancePage(): ReactNode {
   const { addToast } = useToast();
   const { data: cycles = [] } = usePerformanceCycles();
   const activeCycle = cycles.find((cycle) => cycle.status === 'active') || null;
-  const fallbackCycle = activeCycle;
+  const fallbackCycle = activeCycle || cycles[0] || null;
   const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
   const canCreateObjective = Boolean(activeCycle);
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
@@ -103,8 +114,10 @@ export default function PerformancePage(): ReactNode {
     }
   }, [fallbackCycle, selectedCycleId]);
   const selectedCycleFilterId = selectedCycleId || displayCycle?.id || '__no_active_cycle__';
+  const selectedReviewCycleId = selectedCycleId || displayCycle?.id || undefined;
   const { data: okrs = [] } = usePerformanceOKRs(selectedCycleFilterId);
   const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = usePerformanceOKRs();
+  const { data: reviews = [] } = usePerformanceReviews(selectedReviewCycleId);
   const createOKR = useCreateOKR();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -138,6 +151,20 @@ export default function PerformancePage(): ReactNode {
             totalWeight
         )
       : 0;
+
+  const selectedCycleReview = useMemo(() => {
+    if (!selectedReviewCycleId || reviews.length === 0) return null;
+    return reviews.find((review) => review.cycleId === selectedReviewCycleId) || null;
+  }, [reviews, selectedReviewCycleId]);
+
+  const finalEvaluation = useMemo(
+    () =>
+      computeFinalEvaluationScore({
+        okrKpiScore5: fromPercentageToFivePoint(overallProgress),
+        managerAssessmentScore5: selectedCycleReview?.managerRating ?? null,
+      }),
+    [overallProgress, selectedCycleReview?.managerRating]
+  );
 
   const stats = {
     total: okrs.length,
@@ -313,6 +340,47 @@ export default function PerformancePage(): ReactNode {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Final Overall Evaluation</CardTitle>
+          <CardDescription>
+            Selected-quarter final score with manager assessment contribution.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {finalEvaluation ? (
+            <>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Final Score</p>
+                  <p className="text-2xl font-semibold text-foreground">
+                    {finalEvaluation.finalScore5.toFixed(1)}/5
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-sm">
+                  {finalEvaluation.finalScorePercent}%
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Formula: {(OKR_KPI_WEIGHT * 100).toFixed(0)}% OKR/KPI ({finalEvaluation.okrKpiScore5.toFixed(1)}/5) + {(MANAGER_ASSESSMENT_WEIGHT * 100).toFixed(0)}% Manager Assessment ({finalEvaluation.managerAssessmentScore5.toFixed(1)}/5).
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Final evaluation is pending for this quarter. It appears once manager assessment is
+              submitted.
+            </p>
+          )}
+
+          {selectedCycleReview?.managerComments && (
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Manager Assessment Note</p>
+              <p className="mt-1 text-sm text-foreground">{selectedCycleReview.managerComments}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Objectives List */}
       <div>

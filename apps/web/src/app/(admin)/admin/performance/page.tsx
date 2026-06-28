@@ -5,9 +5,15 @@ import { type DirectoryEntry, useDirectory } from '@/hooks/useDirectory';
 import {
   usePerformanceCycles,
   usePerformanceOKRs,
+  usePerformanceReviews,
   useUpdatePerformanceCycle,
 } from '@/hooks/usePerformance';
 import { usePerformanceRealtime } from '@/hooks/usePerformanceRealtime';
+import {
+  computeFinalEvaluationScore,
+  MANAGER_ASSESSMENT_WEIGHT,
+  OKR_KPI_WEIGHT,
+} from '@/lib/performance/evaluation-score';
 import {
   Avatar,
   AvatarFallback,
@@ -87,9 +93,15 @@ interface EmployeePerformanceSummary {
   employeeId: string;
   okrCount: number;
   weightedMean: number;
-  evaluationState: 'pending_hr' | 'pending_calibration' | 'finalized' | 'no_objectives';
+  evaluationState:
+    | 'pending_hr'
+    | 'pending_calibration'
+    | 'pending_manager_assessment'
+    | 'finalized'
+    | 'no_objectives';
   evaluationLabel: string;
   evaluationScoreLabel: string | null;
+  evaluationScorePercentLabel: string | null;
   evaluationAudit: string;
   evaluationOutstandingCount: number;
 }
@@ -101,7 +113,7 @@ type EvaluationAwareOkr = Pick<
   OKR,
   'adminRating' | 'evaluatedBy' | 'evaluatorFirstName' | 'evaluatorRole'
 >;
-type OkrEvaluationStage = Exclude<EmployeePerformanceSummary['evaluationState'], 'no_objectives'>;
+type OkrEvaluationStage = 'pending_hr' | 'pending_calibration' | 'finalized';
 
 function formatNameList(names: Array<string>): string {
   if (names.length === 1) {
@@ -181,6 +193,8 @@ function getEvaluationBadgeVariant(
       return 'warning';
     case 'pending_calibration':
       return 'default';
+    case 'pending_manager_assessment':
+      return 'warning';
     case 'finalized':
       return 'success';
     default:
@@ -194,6 +208,8 @@ function getEvaluationBadgeLabel(state: EmployeePerformanceSummary['evaluationSt
       return 'Pending HR';
     case 'pending_calibration':
       return 'Pending Calibration';
+    case 'pending_manager_assessment':
+      return 'Pending Manager Assessment';
     case 'finalized':
       return 'Finalized';
     default:
@@ -244,6 +260,7 @@ export default function AdminPerformancePage(): ReactNode {
     cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
   const selectedCycleFilterId = selectedCycleId || selectedCycle?.id || '__no_active_cycle__';
   const { data: okrs = [] } = usePerformanceOKRs(selectedCycleFilterId);
+  const { data: reviewRecords = [] } = usePerformanceReviews(selectedCycle?.id || undefined);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -322,15 +339,20 @@ export default function AdminPerformancePage(): ReactNode {
         } as Record<'pending_hr' | 'pending_calibration' | 'finalized', number>
       );
 
+      const managerAssessmentScore =
+        reviewRecords.find((review) => review.employeeId === empId)?.managerRating ?? null;
+
       let evaluationState: EmployeePerformanceSummary['evaluationState'];
       if (empOkrs.length === 0) {
         evaluationState = 'no_objectives';
-      } else if (stageCounts.finalized === empOkrs.length) {
-        evaluationState = 'finalized';
       } else if (stageCounts.pending_hr > 0) {
         evaluationState = 'pending_hr';
-      } else {
+      } else if (stageCounts.pending_calibration > 0) {
         evaluationState = 'pending_calibration';
+      } else if (managerAssessmentScore === null) {
+        evaluationState = 'pending_manager_assessment';
+      } else {
+        evaluationState = 'finalized';
       }
 
       const ratedOkrs = empOkrs.filter((okr) => Boolean(okr.adminRating));
@@ -345,20 +367,39 @@ export default function AdminPerformancePage(): ReactNode {
               0
             ) / ratedWeight
           : 0;
-      const aggregateRating =
-        ratedOkrs.length > 0 ? RATING_CONFIG[getRatingFromAverage(ratingAverage)].label : null;
-      const aggregateScoreLabel = ratedOkrs.length > 0 ? `${ratingAverage.toFixed(1)}/5.0` : null;
+      const finalComposite = computeFinalEvaluationScore({
+        okrKpiScore5: ratedOkrs.length > 0 ? ratingAverage : null,
+        managerAssessmentScore5: managerAssessmentScore,
+      });
+
+      const aggregateRating = finalComposite
+        ? RATING_CONFIG[getRatingFromAverage(finalComposite.finalScore5)].label
+        : ratedOkrs.length > 0
+          ? RATING_CONFIG[getRatingFromAverage(ratingAverage)].label
+          : null;
+      const aggregateScoreLabel = finalComposite
+        ? `${finalComposite.finalScore5.toFixed(1)}/5.0`
+        : ratedOkrs.length > 0
+          ? `${ratingAverage.toFixed(1)}/5.0`
+          : null;
+      const aggregateScorePercentLabel = finalComposite
+        ? `${finalComposite.finalScorePercent}%`
+        : null;
 
       const evaluationLabel =
         evaluationState === 'no_objectives'
           ? 'No Objectives'
           : evaluationState === 'pending_hr'
             ? 'Pending HR Review'
+            : evaluationState === 'pending_manager_assessment'
+              ? 'Pending Manager Assessment'
             : aggregateRating || 'Pending Calibration';
 
       const outstandingCount =
         evaluationState === 'finalized'
           ? 0
+          : evaluationState === 'pending_manager_assessment'
+            ? 1
           : evaluationState === 'pending_calibration'
             ? stageCounts.pending_calibration
             : stageCounts.pending_hr;
@@ -367,7 +408,11 @@ export default function AdminPerformancePage(): ReactNode {
         evaluationState === 'no_objectives'
           ? 'No active objectives in this cycle.'
           : evaluationState === 'finalized'
-            ? getFinalizedEvaluationAudit(empOkrs)
+            ? finalComposite
+              ? `${getFinalizedEvaluationAudit(empOkrs)} Final score uses ${(OKR_KPI_WEIGHT * 100).toFixed(0)}% OKR/KPI + ${(MANAGER_ASSESSMENT_WEIGHT * 100).toFixed(0)}% Manager Assessment.`
+              : getFinalizedEvaluationAudit(empOkrs)
+            : evaluationState === 'pending_manager_assessment'
+              ? 'Objective calibration is complete. Submit manager assessment to compute the final percentage score.'
             : evaluationState === 'pending_calibration'
               ? `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} pending supervisor calibration.`
               : `${outstandingCount} objective${outstandingCount === 1 ? '' : 's'} awaiting HR baseline.`;
@@ -379,13 +424,14 @@ export default function AdminPerformancePage(): ReactNode {
         evaluationState,
         evaluationLabel,
         evaluationScoreLabel: aggregateScoreLabel,
+        evaluationScorePercentLabel: aggregateScorePercentLabel,
         evaluationAudit,
         evaluationOutstandingCount: outstandingCount,
       });
     }
 
     return map;
-  }, [okrs]);
+  }, [okrs, reviewRecords]);
 
   const handleRowClick = (entry: DirectoryEntry): void => {
     if (entry.employee_id) {
@@ -487,8 +533,9 @@ export default function AdminPerformancePage(): ReactNode {
         const stagePriority: Record<EmployeePerformanceSummary['evaluationState'], number> = {
           pending_hr: 0,
           pending_calibration: 1,
-          finalized: 2,
-          no_objectives: 3,
+          pending_manager_assessment: 2,
+          finalized: 3,
+          no_objectives: 4,
         };
         const aSummary = a.employee_id ? performanceSummaries.get(a.employee_id) : undefined;
         const bSummary = b.employee_id ? performanceSummaries.get(b.employee_id) : undefined;
@@ -844,6 +891,11 @@ export default function AdminPerformancePage(): ReactNode {
                                   <p className="text-3xl font-bold leading-none tabular-nums text-foreground">
                                     {perf.evaluationScoreLabel}
                                   </p>
+                                  {perf.evaluationScorePercentLabel && (
+                                    <p className="mt-1 text-xs font-semibold tabular-nums text-muted-foreground">
+                                      {perf.evaluationScorePercentLabel}
+                                    </p>
+                                  )}
                                 </div>
                               )}
                               <p className="mt-2 text-sm font-medium leading-tight text-muted-foreground">
@@ -996,6 +1048,11 @@ export default function AdminPerformancePage(): ReactNode {
                                       {perf.evaluationScoreLabel}
                                     </p>
                                   )}
+                                  {perf?.evaluationScorePercentLabel && (
+                                    <p className="mt-1 text-xs font-semibold tabular-nums text-muted-foreground">
+                                      {perf.evaluationScorePercentLabel}
+                                    </p>
+                                  )}
                                   <p className="mt-1 text-xs font-medium text-muted-foreground">
                                     {perf?.evaluationLabel || 'No Objectives'}
                                   </p>
@@ -1038,6 +1095,11 @@ export default function AdminPerformancePage(): ReactNode {
                                     {perf.evaluationScoreLabel && (
                                       <p className="text-sm font-bold leading-none tabular-nums text-foreground">
                                         {perf.evaluationScoreLabel}
+                                      </p>
+                                    )}
+                                    {perf.evaluationScorePercentLabel && (
+                                      <p className="mt-1 text-[11px] font-semibold tabular-nums text-muted-foreground">
+                                        {perf.evaluationScorePercentLabel}
                                       </p>
                                     )}
                                     <p className="mt-1 text-[11px] font-medium text-muted-foreground">

@@ -8,7 +8,21 @@ import {
 } from '@/hooks/useIndividualPerformance';
 import { type KPIEvidenceRow, useKPIEvidence } from '@/hooks/useKPIEvidence';
 import { type OKRTargetEvidenceRow, useOKRTargetEvidence } from '@/hooks/useOKRTargetEvidence';
-import { usePerformanceCycles, useUpdateOKR, useUpdateOKRTarget } from '@/hooks/usePerformance';
+import {
+  usePerformanceReviews,
+  useCreatePerformanceReview,
+  usePerformanceCycles,
+  useUpdateOKR,
+  useUpdateOKRTarget,
+  useUpdatePerformanceReview,
+} from '@/hooks/usePerformance';
+import {
+  computeFinalEvaluationScore,
+  fromPercentageToFivePoint,
+  MANAGER_ASSESSMENT_WEIGHT,
+  OKR_KPI_WEIGHT,
+  toFivePointScore,
+} from '@/lib/performance/evaluation-score';
 import {
   Avatar,
   AvatarFallback,
@@ -29,6 +43,11 @@ import {
   Label,
   type PerformanceRating,
   RATING_CONFIG,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsContent,
   TabsList,
@@ -211,6 +230,67 @@ const METRIC_ICONS: Record<string, typeof Hash> = {
   tasks: ListChecks,
 };
 
+const MANAGER_ASSESSMENT_RUBRIC: Array<{
+  rating: PerformanceRating;
+  stars: string;
+  title: string;
+  bullets: string[];
+}> = [
+  {
+    rating: 'unsatisfactory',
+    stars: '1',
+    title: 'Rarely',
+    bullets: [
+      'Waits for instructions.',
+      'Avoids responsibility.',
+      'Does the minimum required.',
+      'Often needs prompting or follow up.',
+    ],
+  },
+  {
+    rating: 'needs_improvement',
+    stars: '2',
+    title: 'Occasionally',
+    bullets: [
+      'Sometimes takes initiative, but usually reacts rather than leads.',
+      'Hesitant to take ownership outside assigned tasks.',
+    ],
+  },
+  {
+    rating: 'meets',
+    stars: '3',
+    title: 'Meets Expectations',
+    bullets: [
+      'Reliably owns assigned work.',
+      'Occasionally steps up when needed.',
+      'Can be counted on, but rarely exceeds expectations.',
+    ],
+  },
+  {
+    rating: 'exceeds',
+    stars: '4',
+    title: 'Frequently',
+    bullets: [
+      'Regularly identifies problems before others.',
+      'Volunteers for difficult work.',
+      'Takes ownership beyond their role.',
+      'Requires little supervision.',
+    ],
+  },
+  {
+    rating: 'exceptional',
+    stars: '5',
+    title: 'Exceptional',
+    bullets: [
+      'Consistently acts like an owner.',
+      'Proactively improves processes and helps others.',
+      'Steps into leadership without waiting for permission.',
+      'Raises the standard for the entire team.',
+      'Goes above and beyond in ways that create measurable impact.',
+    ],
+  },
+];
+
 // ─── Types ──────────────────────────────────────────────────────
 
 interface ObjectiveWithTargets {
@@ -228,6 +308,8 @@ interface EvaluationFormState {
   targetRatings: Record<string, TargetEvaluation>;
   overallRating: PerformanceRating | null;
   comments: string;
+  managerAssessmentRating: PerformanceRating | null;
+  managerAssessmentComments: string;
 }
 
 interface PerformanceItemDetail {
@@ -249,6 +331,8 @@ const emptyEvaluation: EvaluationFormState = {
   targetRatings: {},
   overallRating: null,
   comments: '',
+  managerAssessmentRating: null,
+  managerAssessmentComments: '',
 };
 
 function toPerformanceRating(value: string | null | undefined): PerformanceRating | null {
@@ -590,16 +674,20 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   const { data: cycles = [] } = usePerformanceCycles();
   const updateOKR = useUpdateOKR();
   const updateTarget = useUpdateOKRTarget();
+  const createReview = useCreatePerformanceReview();
+  const updateReview = useUpdatePerformanceReview();
   const isSupervisorReview = user?.role === 'super_admin';
 
   const [expandedOkrs, setExpandedOkrs] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'view' | 'evaluate'>('view');
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<string>('');
+  const { data: reviewRecords = [] } = usePerformanceReviews(selectedCycleId || undefined, employeeId);
 
   // Evaluation modal state
   const [evaluationDialogOpen, setEvaluationDialogOpen] = useState(false);
   const [selectedOKR, setSelectedOKR] = useState<ObjectiveWithTargets | null>(null);
-  const [modalStep, setModalStep] = useState<1 | 2>(1);
+  const [modalStep, setModalStep] = useState<1 | 2 | 3>(1);
   const [evalForm, setEvalForm] = useState<EvaluationFormState>(emptyEvaluation);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedPerformanceItem, setSelectedPerformanceItem] =
@@ -641,6 +729,20 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
     );
   }, [data]);
 
+  const selectedCycleReview = useMemo(() => {
+    if (!reviewRecords.length || !selectedCycleId) return null;
+    return reviewRecords.find((review) => review.cycleId === selectedCycleId) || null;
+  }, [reviewRecords, selectedCycleId]);
+
+  const finalEvaluation = useMemo(
+    () =>
+      computeFinalEvaluationScore({
+        okrKpiScore5: fromPercentageToFivePoint(overallWeightedMean),
+        managerAssessmentScore5: selectedCycleReview?.managerRating ?? null,
+      }),
+    [overallWeightedMean, selectedCycleReview?.managerRating]
+  );
+
   const standaloneKpis = useMemo(() => {
     if (!data) return [];
 
@@ -666,42 +768,42 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
 
   const selectedCycle = cycles.find((cycle) => cycle.id === selectedCycleId) || null;
 
-  const displayedQuarterYear = useMemo(() => {
-    const selectedParsed = selectedCycle ? parseQuarterCycleName(selectedCycle.name) : null;
-    if (selectedParsed) {
-      return selectedParsed.year;
+  const availableYears = useMemo(() => {
+    const yearSet = new Set<number>();
+
+    for (const cycle of cycles) {
+      const parsed = parseQuarterCycleName(cycle.name);
+      if (parsed) {
+        yearSet.add(parsed.year);
+      }
     }
 
-    const activeParsed = activeCycle ? parseQuarterCycleName(activeCycle.name) : null;
-    if (activeParsed) {
-      return activeParsed.year;
-    }
+    return [...yearSet].sort((a, b) => b - a);
+  }, [cycles]);
 
-    const firstParsed = cycles
-      .map((cycle) => parseQuarterCycleName(cycle.name))
-      .find((parsed): parsed is { quarter: number; year: number } => parsed !== null);
-    if (firstParsed) {
-      return firstParsed.year;
+  const selectedYearNumber = useMemo(() => {
+    const parsed = Number.parseInt(selectedYear, 10);
+    if (Number.isFinite(parsed)) {
+      return parsed;
     }
-
     return new Date().getFullYear();
-  }, [activeCycle, cycles, selectedCycle]);
+  }, [selectedYear]);
 
   const quarterTabs = useMemo(() => {
     return [1, 2, 3, 4].map((quarter) => {
       const cycleForQuarter =
         cycles.find((cycle) => {
           const parsed = parseQuarterCycleName(cycle.name);
-          return parsed?.quarter === quarter && parsed.year === displayedQuarterYear;
+          return parsed?.quarter === quarter && parsed.year === selectedYearNumber;
         }) || null;
 
       return {
         quarter,
-        label: `Q${quarter} ${displayedQuarterYear}`,
+        label: `Q${quarter} ${selectedYearNumber}`,
         cycleId: cycleForQuarter?.id ?? null,
       };
     });
-  }, [cycles, displayedQuarterYear]);
+  }, [cycles, selectedYearNumber]);
 
   useEffect(() => {
     if (selectedCycleId) return;
@@ -709,6 +811,65 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
       setSelectedCycleId(fallbackCycle.id);
     }
   }, [fallbackCycle, selectedCycleId]);
+
+  useEffect(() => {
+    if (selectedYear) return;
+
+    const selectedParsed = selectedCycle ? parseQuarterCycleName(selectedCycle.name) : null;
+    if (selectedParsed) {
+      setSelectedYear(String(selectedParsed.year));
+      return;
+    }
+
+    const activeParsed = activeCycle ? parseQuarterCycleName(activeCycle.name) : null;
+    if (activeParsed) {
+      setSelectedYear(String(activeParsed.year));
+      return;
+    }
+
+    if (availableYears.length > 0) {
+      setSelectedYear(String(availableYears[0]));
+      return;
+    }
+
+    setSelectedYear(String(new Date().getFullYear()));
+  }, [activeCycle, availableYears, selectedCycle, selectedYear]);
+
+  useEffect(() => {
+    if (!selectedYear) return;
+
+    const selectedCycleParsed = selectedCycle ? parseQuarterCycleName(selectedCycle.name) : null;
+    if (selectedCycleParsed?.year === selectedYearNumber) {
+      return;
+    }
+
+    const activeCycleInYear = cycles.find((cycle) => {
+      if (cycle.status !== 'active') return false;
+      const parsed = parseQuarterCycleName(cycle.name);
+      return parsed?.year === selectedYearNumber;
+    });
+
+    if (activeCycleInYear) {
+      setSelectedCycleId(activeCycleInYear.id);
+      return;
+    }
+
+    const firstCycleInYear = cycles
+      .filter((cycle) => {
+        const parsed = parseQuarterCycleName(cycle.name);
+        return parsed?.year === selectedYearNumber;
+      })
+      .sort((a, b) => {
+        const aParsed = parseQuarterCycleName(a.name);
+        const bParsed = parseQuarterCycleName(b.name);
+        if (!aParsed || !bParsed) return 0;
+        return aParsed.quarter - bParsed.quarter;
+      })[0];
+
+    if (firstCycleInYear) {
+      setSelectedCycleId(firstCycleInYear.id);
+    }
+  }, [cycles, selectedCycle, selectedYear, selectedYearNumber]);
 
   const { data: selectedTargetEvidenceResponse, isLoading: isTargetEvidenceLoading } =
     useOKRTargetEvidence(
@@ -750,10 +911,19 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
 
     setSelectedOKR(obj);
     setModalStep(1);
+    const managerAssessmentRating =
+      selectedCycleReview?.managerRating != null
+        ? ((Object.keys(RATING_CONFIG) as Array<PerformanceRating>).find(
+            (rating) => RATING_CONFIG[rating].score === selectedCycleReview.managerRating
+          ) ?? null)
+        : null;
+
     setEvalForm({
       targetRatings: initialTargetRatings,
       overallRating: toPerformanceRating(obj.okr.admin_rating),
       comments: isSupervisorReview ? '' : (obj.okr.admin_comments ?? ''),
+      managerAssessmentRating,
+      managerAssessmentComments: selectedCycleReview?.managerComments ?? '',
     });
     setEvaluationDialogOpen(true);
   };
@@ -792,6 +962,53 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
         evaluatedAt: now,
       });
 
+      const freshestReview =
+        reviewRecords.find((review) => review.cycleId === selectedCycleId) || null;
+      let reviewId = freshestReview?.id ?? selectedCycleReview?.id ?? null;
+      const managerAssessmentScore = toFivePointScore(evalForm.managerAssessmentRating);
+      const completionTimestamp = new Date().toISOString();
+
+      if (!reviewId && selectedCycleId) {
+        const created = (await createReview.mutateAsync({
+          cycleId: selectedCycleId,
+          employeeId,
+          reviewerId: user.id,
+          status: 'completed',
+          managerRating: managerAssessmentScore,
+          managerComments: evalForm.managerAssessmentComments || null,
+          finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
+        })) as { data?: { id?: string } };
+        reviewId = created?.data?.id ?? null;
+      } else if (reviewId && managerAssessmentScore !== null) {
+        try {
+          await updateReview.mutateAsync({
+            id: reviewId,
+            status: 'completed',
+            reviewerId: user.id,
+            managerRating: managerAssessmentScore,
+            managerComments: evalForm.managerAssessmentComments || null,
+            finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
+            submittedAt: completionTimestamp,
+            completedAt: completionTimestamp,
+          });
+        } catch (updateError) {
+          const message = updateError instanceof Error ? updateError.message : '';
+          if (!message.toLowerCase().includes('review not found') || !selectedCycleId) {
+            throw updateError;
+          }
+
+          await createReview.mutateAsync({
+            cycleId: selectedCycleId,
+            employeeId,
+            reviewerId: user.id,
+            status: 'completed',
+            managerRating: managerAssessmentScore,
+            managerComments: evalForm.managerAssessmentComments || null,
+            finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
+          });
+        }
+      }
+
       addToast({
         title: 'Evaluation submitted',
         description: `Evaluation for "${selectedOKR.okr.objective}" has been saved`,
@@ -805,9 +1022,10 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
       refetch();
     } catch (error) {
       console.error('Failed to submit evaluation:', error);
+      const message = error instanceof Error ? error.message : 'Failed to submit evaluation';
       addToast({
         title: 'Error',
-        description: 'Failed to submit evaluation',
+        description: message,
         variant: 'error',
       });
     } finally {
@@ -858,6 +1076,10 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
     }
 
     return Boolean(evalForm.comments.trim());
+  };
+
+  const isStep3Valid = (): boolean => {
+    return Boolean(evalForm.managerAssessmentRating);
   };
 
   if (isLoading) {
@@ -937,20 +1159,21 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               <h2 className="text-base font-semibold text-foreground">Overall Performance Score</h2>
             </div>
             <span
-              className={`text-3xl font-bold tabular-nums ${getProgressColor(overallWeightedMean)}`}
+              className={`text-3xl font-bold tabular-nums ${getProgressColor(finalEvaluation?.finalScorePercent ?? overallWeightedMean)}`}
             >
-              {overallWeightedMean}%
+              {finalEvaluation ? `${finalEvaluation.finalScorePercent}%` : `${overallWeightedMean}%`}
             </span>
           </div>
           <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(overallWeightedMean)}`}
-              style={{ width: `${overallWeightedMean}%` }}
+              className={`h-full rounded-full transition-all duration-500 ${getProgressBarColor(finalEvaluation?.finalScorePercent ?? overallWeightedMean)}`}
+              style={{ width: `${finalEvaluation?.finalScorePercent ?? overallWeightedMean}%` }}
             />
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Weighted mean across {evaluatableObjectives.length} objective
-            {evaluatableObjectives.length !== 1 ? 's' : ''}
+            {finalEvaluation
+              ? `Final score = ${(OKR_KPI_WEIGHT * 100).toFixed(0)}% OKR/KPI (${finalEvaluation.okrKpiScore5.toFixed(1)}/5) + ${(MANAGER_ASSESSMENT_WEIGHT * 100).toFixed(0)}% Manager Assessment (${finalEvaluation.managerAssessmentScore5.toFixed(1)}/5)`
+              : `Weighted mean across ${evaluatableObjectives.length} objective${evaluatableObjectives.length !== 1 ? 's' : ''}`}
           </p>
         </CardContent>
       </Card>
@@ -962,16 +1185,31 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
         className="w-full"
       >
         <div className="flex w-full flex-col gap-3">
-          <TabsList className="w-fit self-start">
-            <TabsTrigger value="view" className="flex items-center gap-2">
-              <Eye className="h-4 w-4" />
-              View OKRs & KPIs
-            </TabsTrigger>
-            <TabsTrigger value="evaluate" className="flex items-center gap-2">
-              <ClipboardCheck className="h-4 w-4" />
-              Evaluate ({evaluatableObjectives.length})
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList className="w-fit self-start">
+              <TabsTrigger value="view" className="flex items-center gap-2">
+                <Eye className="h-4 w-4" />
+                View OKRs & KPIs
+              </TabsTrigger>
+              <TabsTrigger value="evaluate" className="flex items-center gap-2">
+                <ClipboardCheck className="h-4 w-4" />
+                Evaluate ({evaluatableObjectives.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map((year) => (
+                  <SelectItem key={year} value={String(year)}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {quarterTabs.map((tab) => {
@@ -1570,16 +1808,18 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
             <DialogTitle className="flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5 text-primary" />
               {isSupervisorReview ? 'Review & Calibrate Objective' : 'Evaluate Objective'} — Step{' '}
-              {modalStep} of 2
+              {modalStep} of 3
             </DialogTitle>
             <DialogDescription>
               {modalStep === 1
                 ? isSupervisorReview
                   ? 'Review the HR manager baseline, keep matching scores, or calibrate any target that needs a different rating.'
                   : "Review each target and assign a rating based on the employee's performance"
-                : isSupervisorReview
-                  ? 'Confirm the final objective rating and add calibration-ready summary feedback.'
-                  : 'Provide your overall assessment and comprehensive feedback'}
+                : modalStep === 2
+                  ? isSupervisorReview
+                    ? 'Confirm the final objective rating and add calibration-ready summary feedback.'
+                    : 'Provide your overall assessment and comprehensive feedback'
+                  : 'To what extent does this person consistently demonstrate ownership by stepping up, taking initiative, solving problems proactively, and going beyond what is expected without being asked?'}
             </DialogDescription>
           </DialogHeader>
 
@@ -1603,6 +1843,16 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               />
               <span className="text-xs text-muted-foreground whitespace-nowrap">
                 {isSupervisorReview ? '2. Final Summary' : '2. Overall Rating'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-1">
+              <div
+                className={`h-2 flex-1 rounded-full transition-colors ${
+                  modalStep >= 3 ? 'bg-primary' : 'bg-muted'
+                }`}
+              />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                3. Manager Assessment
               </span>
             </div>
           </div>
@@ -1822,6 +2072,87 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                 )}
               </div>
             )}
+
+            {modalStep === 3 && selectedOKR && (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-primary/10 bg-primary/5 p-4">
+                  <Label className="text-sm font-semibold">
+                    To what extent does this person consistently demonstrate ownership by stepping
+                    up, taking initiative, solving problems proactively, and going beyond what is
+                    expected without being asked? <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Rate from 1 to 5 based on the ownership rubric.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {MANAGER_ASSESSMENT_RUBRIC.map((item) => {
+                    const isSelected = evalForm.managerAssessmentRating === item.rating;
+
+                    return (
+                      <button
+                        key={item.rating}
+                        type="button"
+                        onClick={() =>
+                          setEvalForm({
+                            ...evalForm,
+                            managerAssessmentRating: item.rating,
+                          })
+                        }
+                        className={`w-full rounded-lg border p-4 text-left transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-sm'
+                            : 'border-border hover:bg-muted/50 hover:border-muted-foreground/30'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-foreground">
+                              <span className="text-yellow-500">
+                                {'★'.repeat(Number.parseInt(item.stars, 10))}
+                              </span>{' '}
+                              {item.stars} - {item.title}
+                            </p>
+                            <ul className="mt-2 space-y-1">
+                              {item.bullets.map((bullet) => (
+                                <li
+                                  key={bullet}
+                                  className="text-xs text-muted-foreground leading-relaxed"
+                                >
+                                  {bullet}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <Badge variant="outline" className="shrink-0 tabular-nums">
+                            {RATING_CONFIG[item.rating].score}/5
+                          </Badge>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="manager-assessment-comments" className="text-sm font-semibold">
+                    Manager Assessment Notes (optional)
+                  </Label>
+                  <Textarea
+                    id="manager-assessment-comments"
+                    placeholder="Add concise evidence for this rating."
+                    value={evalForm.managerAssessmentComments}
+                    onChange={(e) =>
+                      setEvalForm({
+                        ...evalForm,
+                        managerAssessmentComments: e.target.value,
+                      })
+                    }
+                    className="min-h-[120px]"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="border-t border-border pt-4">
@@ -1835,14 +2166,24 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                   <ChevronRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </>
-            ) : (
+            ) : modalStep === 2 ? (
               <>
                 <Button variant="outline" onClick={() => setModalStep(1)}>
                   Back to Targets
                 </Button>
+                <Button onClick={() => setModalStep(3)} disabled={!isStep2Valid()}>
+                  Continue to Manager Assessment
+                  <ChevronRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setModalStep(2)}>
+                  Back to Summary
+                </Button>
                 <Button
                   onClick={() => void handleSubmitEvaluation()}
-                  disabled={isSubmitting || !isStep2Valid()}
+                  disabled={isSubmitting || !isStep3Valid()}
                 >
                   <ClipboardCheck className="mr-2 h-4 w-4" />
                   {isSubmitting ? 'Submitting...' : 'Submit Evaluation'}
