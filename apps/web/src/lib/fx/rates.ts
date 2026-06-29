@@ -20,6 +20,7 @@ export const SUPPORTED_CURRENCIES = [
 ] as const;
 
 export type SupportedCurrencyCode = (typeof SUPPORTED_CURRENCIES)[number]['code'];
+const PINNED_CURRENCIES: SupportedCurrencyCode[] = ['USD', 'AUD', 'PHP', 'EUR', 'GBP'];
 
 /**
  * Get the latest cached exchange rates from Supabase.
@@ -72,6 +73,19 @@ export async function convertAmount(amount: number, from: string, to: string): P
  */
 export function getSupportedCurrencies(): string[] {
   return SUPPORTED_CURRENCIES.map((c) => c.code);
+}
+
+export function getRankedSupportedCurrencies(): {
+  pinned: (typeof SUPPORTED_CURRENCIES)[number][];
+  others: (typeof SUPPORTED_CURRENCIES)[number][];
+} {
+  const pinned = SUPPORTED_CURRENCIES.filter((currency) => PINNED_CURRENCIES.includes(currency.code));
+
+  const others = SUPPORTED_CURRENCIES.filter((currency) => !PINNED_CURRENCIES.includes(currency.code))
+    .slice()
+    .sort((a, b) => a.code.localeCompare(b.code));
+
+  return { pinned, others };
 }
 
 /**

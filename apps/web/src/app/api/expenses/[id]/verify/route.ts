@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { CurrencyConversionService } from '@/lib/fx/currency-conversion-service';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
 import { type ExpenseVerifyInput, expenseVerifySchema } from '@/lib/schemas/expense.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
@@ -129,6 +130,27 @@ async function fetchAndEnforceUserRole(
     return userRole;
   }
 
+  // Accounting interns and accounting staff are allowed as non-admin reviewers.
+  if (userRole !== 'intern' && userRole !== 'employee') {
+    throw new Error('Forbidden: Only Accounting staff or interns can verify expenses');
+  }
+
+  // Prefer canonical database helper for department authorization.
+  const { data: isAccountingMember, error: accountingCheckError } = await adminClient.rpc(
+    'user_is_accounting_member',
+    {
+      target_user_id: userId,
+    }
+  );
+
+  if (!accountingCheckError) {
+    if (!isAccountingMember) {
+      throw new Error('Forbidden: Only Accounting department can verify expenses');
+    }
+
+    return userRole;
+  }
+
   // Resolve canonical department name from users.department_id.
   let canonicalDepartmentName: string | null = null;
   let canonicalDepartmentDescription: string | null = null;
@@ -148,6 +170,7 @@ async function fetchAndEnforceUserRole(
     }
   }
 
+  // Fallback path for environments where helper function is not yet migrated.
   // Canonical path: department comes from users.department_id -> departments.name.
   if (
     canonicalDepartmentName &&
@@ -260,8 +283,16 @@ async function notifySubmitterOfVerification(
 interface MinimalExpenseEntry {
   vendor_name: string;
   transaction_date: string;
+  currency: string;
+  exchange_rate_to_aud: number | null;
+  fx_rates_fetched_at?: string | null;
+  fx_source?: string | null;
   tax_amount: string | number | null;
   total_amount: string | number | null;
+}
+
+function roundToCents(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 async function executeVerificationTransaction(
@@ -271,12 +302,32 @@ async function executeVerificationTransaction(
   expenseEntry: MinimalExpenseEntry,
   parsedData: ExpenseVerifyInput
 ) {
+  const conversionService = new CurrencyConversionService(adminClient);
   const finalDebitAccount = parsedData.verifiedDebitAccount;
   const finalCreditAccount = parsedData.verifiedCreditAccount;
   const finalReviewerNotes = parsedData.reviewerNotes || null;
 
   const finalTaxAmount = parsedData.taxAmount ?? Number(expenseEntry.tax_amount);
   const finalTotalAmount = parsedData.totalAmount ?? Number(expenseEntry.total_amount);
+  const sourceCurrency = parsedData.sourceCurrency;
+  const normalizedTaxAmount = Number.isFinite(finalTaxAmount) ? finalTaxAmount : 0;
+
+  const resolvedRate = await conversionService.getRateToAud(sourceCurrency);
+  const fxRatesFetchedAt = resolvedRate.fxRatesFetchedAt ?? expenseEntry.fx_rates_fetched_at ?? null;
+  const fxSource = resolvedRate.fxSource ?? expenseEntry.fx_source ?? 'base_currency';
+
+  let finalExchangeRateToAud = resolvedRate.exchangeRateToAud;
+
+  if (sourceCurrency !== 'AUD') {
+    if (typeof parsedData.exchangeRateToAud === 'number' && parsedData.exchangeRateToAud > 0) {
+      finalExchangeRateToAud = parsedData.exchangeRateToAud;
+    }
+  } else {
+    finalExchangeRateToAud = 1;
+  }
+
+  const finalTotalAmountAud = roundToCents(finalTotalAmount * finalExchangeRateToAud);
+  const finalTaxAmountAud = roundToCents(normalizedTaxAmount * finalExchangeRateToAud);
 
   const routingResult = await computeRiskRouting(
     adminClient,
@@ -295,6 +346,12 @@ async function executeVerificationTransaction(
       reviewer_notes: finalReviewerNotes,
       tax_amount: finalTaxAmount,
       total_amount: finalTotalAmount,
+      currency: sourceCurrency,
+      exchange_rate_to_aud: finalExchangeRateToAud,
+      total_amount_aud: finalTotalAmountAud,
+      tax_amount_aud: finalTaxAmountAud,
+      fx_rates_fetched_at: fxRatesFetchedAt,
+      fx_source: fxSource,
       reviewed_by: userId,
       reviewed_at: now,
       risk_bucket: routingResult.riskBucket,
