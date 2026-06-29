@@ -11,6 +11,7 @@
 
 export type UserId = string & { readonly __brand: 'UserId' };
 export type EmployeeId = string & { readonly __brand: 'EmployeeId' };
+export type ExpenseId = string & { readonly __brand: 'ExpenseId' };
 export type DepartmentId = string & { readonly __brand: 'DepartmentId' };
 export type DocumentId = string & { readonly __brand: 'DocumentId' };
 export type TaskId = string & { readonly __brand: 'TaskId' };
@@ -42,6 +43,13 @@ export function brandUserId(id: string): UserId {
  */
 export function brandEmployeeId(id: string): EmployeeId {
   return id as EmployeeId;
+}
+
+/**
+ * Brands a string as an ExpenseId.
+ */
+export function brandExpenseId(id: string): ExpenseId {
+  return id as ExpenseId;
 }
 
 /**

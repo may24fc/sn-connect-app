@@ -200,3 +200,36 @@ export const ReviewStatus = {
 } as const;
 
 export const ReviewStatusValues = Object.values(ReviewStatus);
+
+// ============================================
+// Expense Type Enum
+// ============================================
+
+export const ExpenseType = {
+  OfficeSupplies: 'office_supplies',
+  Travel: 'travel',
+  Meals: 'meals',
+  Software: 'software',
+  Equipment: 'equipment',
+  Utilities: 'utilities',
+  Maintenance: 'maintenance',
+  Other: 'other',
+} as const;
+
+export const ExpenseTypeValues = Object.values(ExpenseType);
+
+// ============================================
+// Expense Processing Status Enum
+// ============================================
+
+export const ExpenseProcessingStatus = {
+  DraftExtracted: 'draft_extracted',
+  AwaitingInternReview: 'awaiting_intern_review',
+  Verified: 'verified',
+  AutoApproved: 'auto_approved',
+  LeadershipReviewRequired: 'leadership_review_required',
+  Approved: 'approved',
+  Rejected: 'rejected',
+} as const;
+
+export const ExpenseProcessingStatusValues = Object.values(ExpenseProcessingStatus);

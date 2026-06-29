@@ -161,6 +161,14 @@ export interface AnalyticsParams {
   metric?: string;
 }
 
+export interface DashboardAnalyticsParams {
+  period?: 'week' | 'month';
+  departmentId?: string;
+  processingStatus?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export interface OnboardingProfileFilters {
   search?: string;
   status?: 'completed' | 'in_progress';
@@ -341,6 +349,8 @@ export const queryKeys = {
     all: ['dashboard'] as const,
     stats: () => [...queryKeys.dashboard.all, 'stats'] as const,
     activity: () => [...queryKeys.dashboard.all, 'activity'] as const,
+    analytics: (params: DashboardAnalyticsParams) =>
+      [...queryKeys.dashboard.all, 'analytics', params] as const,
   },
 
   // Performance

@@ -45,6 +45,15 @@ type Events = {
       voiceMimeType?: string;
     };
   };
+  'expenses/receipt.uploaded': {
+    data: {
+      expenseEntryId: string;
+      receiptDocumentId: string;
+      filePath: string;
+      mimeType: string;
+      submittedBy: string;
+    };
+  };
 };
 
 export const inngest = new Inngest({

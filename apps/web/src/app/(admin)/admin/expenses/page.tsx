@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useDepartments } from '@/hooks/useDepartments';
 import { useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
+import { useRouter } from 'next/navigation';
 import {
   Button,
   Card,
@@ -9,7 +11,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -27,32 +35,112 @@ import { Badge } from '@hr-portal/ui';
 import {
   AlertCircle,
   CheckCircle,
+  Download,
   FileCheck2,
   FileX2,
   History,
   Info,
+  LineChart,
   Loader2,
+  Search,
   Sparkles,
+  X,
 } from 'lucide-react';
 
+const SETTLED_STATUSES = new Set(['auto_approved', 'approved', 'rejected']);
+const EXCEPTION_STATUS = 'leadership_review_required';
+
 export default function AdminExpensesDashboard() {
+  const router = useRouter();
   const { addToast } = useToast();
+  const [activeTab, setActiveTab] = useState<'exceptions' | 'settled'>('exceptions');
   const [decisionNotes, setDecisionNotes] = useState<{ [key: string]: string }>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [departmentIdFilter, setDepartmentIdFilter] = useState('all');
+  const [processingStatusFilter, setProcessingStatusFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  // Fetch items awaiting leadership approval
-  const { data: rawExceptions, isLoading: loadingExceptions } = useExpenses({
-    status: 'leadership_review_required',
-  });
+  const { data: departmentsData } = useDepartments({ page: 1, pageSize: 200 });
 
-  // Fetch settled items (auto_approved, approved, rejected)
-  const { data: rawSettled, isLoading: loadingSettled } = useExpenses({
-    status: 'auto_approved,approved,rejected',
-  });
+  const filters = useMemo(() => {
+    const value: {
+      search?: string;
+      departmentId?: string;
+      dateFrom?: string;
+      dateTo?: string;
+      status?: string;
+    } = {};
+
+    const trimmedSearch = searchTerm.trim();
+    if (trimmedSearch) {
+      value.search = trimmedSearch;
+    }
+    if (departmentIdFilter !== 'all') {
+      value.departmentId = departmentIdFilter;
+    }
+    if (dateFrom) {
+      value.dateFrom = dateFrom;
+    }
+    if (dateTo) {
+      value.dateTo = dateTo;
+    }
+    if (processingStatusFilter !== 'all') {
+      value.status = processingStatusFilter;
+    }
+
+    return value;
+  }, [searchTerm, departmentIdFilter, dateFrom, dateTo, processingStatusFilter]);
+
+  const { data: rawLedger, isLoading } = useExpenses(filters);
 
   const decideMutation = useLeadershipDecision();
 
-  const exceptions = rawExceptions?.data || [];
-  const settled = rawSettled?.data || [];
+  const filteredRows = rawLedger?.data || [];
+  const exceptions = filteredRows.filter((entry) => entry.processing_status === EXCEPTION_STATUS);
+  const settled = filteredRows.filter((entry) => SETTLED_STATUSES.has(entry.processing_status));
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setDepartmentIdFilter('all');
+    setProcessingStatusFilter('all');
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const buildExportUrl = (format: 'csv' | 'xlsx') => {
+    const params = new URLSearchParams();
+    params.set('format', format);
+
+    const scopedStatus =
+      processingStatusFilter !== 'all'
+        ? processingStatusFilter
+        : activeTab === 'exceptions'
+          ? EXCEPTION_STATUS
+          : 'auto_approved,approved,rejected';
+
+    if (scopedStatus) {
+      params.set('processingStatus', scopedStatus);
+    }
+    if (departmentIdFilter !== 'all') {
+      params.set('departmentId', departmentIdFilter);
+    }
+    if (searchTerm.trim()) {
+      params.set('search', searchTerm.trim());
+    }
+    if (dateFrom) {
+      params.set('dateFrom', dateFrom);
+    }
+    if (dateTo) {
+      params.set('dateTo', dateTo);
+    }
+
+    return `/api/expenses/export?${params.toString()}`;
+  };
+
+  const handleExport = (format: 'csv' | 'xlsx') => {
+    window.open(buildExportUrl(format), '_blank');
+  };
 
   const handleDecision = (id: string, action: 'approve' | 'reject') => {
     const notes = decisionNotes[id] || '';
@@ -118,9 +206,106 @@ export default function AdminExpensesDashboard() {
         <p className="text-sm text-muted-foreground mt-1">
           Review escalated price spikes (yellow flags) and non-recurring transactions (red flags) verified by the interns.
         </p>
+        <div className="mt-3">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => router.push('/admin/expenses/analytics')}
+          >
+            <LineChart className="h-4 w-4" />
+            Open Executive Analytics
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="exceptions" className="space-y-6">
+      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Ledger Filters</CardTitle>
+          <CardDescription>Search and narrow records by department, processing state, and date window.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="xl:col-span-2">
+              <Label htmlFor="expense-search" className="text-xs text-zinc-600 dark:text-zinc-400">Search vendor</Label>
+              <div className="relative mt-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+                <Input
+                  id="expense-search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search by vendor"
+                  className="pl-8"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs text-zinc-600 dark:text-zinc-400">Department</Label>
+              <Select value={departmentIdFilter} onValueChange={setDepartmentIdFilter}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="All departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All departments</SelectItem>
+                  {(departmentsData?.data || []).map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs text-zinc-600 dark:text-zinc-400">Processing state</Label>
+              <Select value={processingStatusFilter} onValueChange={setProcessingStatusFilter}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="All states" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All states</SelectItem>
+                  <SelectItem value="awaiting_intern_review">Awaiting intern review</SelectItem>
+                  <SelectItem value="leadership_review_required">Leadership review required</SelectItem>
+                  <SelectItem value="auto_approved">Auto-approved</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+          </div>
+
+          <div className="flex justify-between items-end gap-3 md:flex-row md:items-center md:gap-6 xl:gap-3 xl:grid xl:grid-cols-5">
+            <div className="flex gap-3">
+              <div>
+                <Label htmlFor="date-from" className="text-xs text-zinc-600 dark:text-zinc-400">Date from</Label>
+                <Input id="date-from" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label htmlFor="date-to" className="text-xs text-zinc-600 dark:text-zinc-400">Date to</Label>
+                <Input id="date-to" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="mt-1" />
+              </div>
+            </div>
+
+            <div className="flex items-end gap-2 xl:col-span-4 xl:justify-end">
+              <Button variant="outline" onClick={clearFilters} className="gap-2">
+                <X className="h-4 w-4" />
+                Clear filters
+              </Button>
+              <Button variant="outline" onClick={() => handleExport('csv')} className="gap-2">
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button variant="outline" onClick={() => handleExport('xlsx')} className="gap-2">
+                <Download className="h-4 w-4" />
+                Export XLSX
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'exceptions' | 'settled')} className="space-y-6">
         <TabsList className="bg-zinc-100 dark:bg-zinc-900 border p-1 rounded-lg">
           <TabsTrigger value="exceptions" className="rounded px-4 py-2 text-sm font-semibold flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
@@ -133,7 +318,7 @@ export default function AdminExpensesDashboard() {
         </TabsList>
 
         <TabsContent value="exceptions" className="space-y-4 outline-none">
-          {loadingExceptions ? (
+          {isLoading ? (
             <div className="p-12 flex items-center justify-center">
               <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
             </div>
@@ -249,7 +434,7 @@ export default function AdminExpensesDashboard() {
         </TabsContent>
 
         <TabsContent value="settled" className="space-y-4 outline-none">
-          {loadingSettled ? (
+          {isLoading ? (
             <div className="p-12 flex items-center justify-center">
               <Loader2 className="h-8 w-8 text-indigo-500 animate-spin" />
             </div>
@@ -286,8 +471,8 @@ export default function AdminExpensesDashboard() {
                         </TableCell>
                         <TableCell className="text-xs">
                           <div>
-                            <p><span className="text-zinc-400 mr-1 font-bold">DR:</span>{expense.verified_debit_account || expense.draft_debit_account}</p>
-                            <p><span className="text-zinc-400 mr-1 font-bold">CR:</span>{expense.verified_credit_account || expense.draft_credit_account}</p>
+                            <p><span className="text-zinc-400 mr-1 font-bold">DR:</span>{expense.verified_debit_account || expense.draft_debit_account || expense.ai_debit_account || <span className="italic text-zinc-400">Extracting...</span>}</p>
+                            <p><span className="text-zinc-400 mr-1 font-bold">CR:</span>{expense.verified_credit_account || expense.draft_credit_account || expense.ai_credit_account || <span className="italic text-zinc-400">Extracting...</span>}</p>
                           </div>
                         </TableCell>
                         <TableCell>

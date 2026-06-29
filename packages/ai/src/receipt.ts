@@ -5,6 +5,7 @@ export interface ReceiptExtractionFieldConfidence {
   transactionDate: number;
   totalAmount: number;
   taxAmount: number;
+  currency: number;
 }
 
 export interface ReceiptExtractionResult {
@@ -23,6 +24,24 @@ export interface ReceiptExtractionConfig {
 }
 
 const DEFAULT_RECEIPT_MODEL = 'gpt-4o-mini';
+const SUPPORTED_CURRENCY_CODES = ['PHP', 'USD', 'EUR', 'AUD', 'GBP', 'SGD', 'JPY'] as const;
+
+const CURRENCY_SYMBOL_TO_CODE: Record<string, (typeof SUPPORTED_CURRENCY_CODES)[number]> = {
+  '$': 'USD',
+  'A$': 'AUD',
+  'US$': 'USD',
+  'S$': 'SGD',
+  '£': 'GBP',
+  '€': 'EUR',
+  '¥': 'JPY',
+  PHP: 'PHP',
+  AUD: 'AUD',
+  USD: 'USD',
+  EUR: 'EUR',
+  GBP: 'GBP',
+  SGD: 'SGD',
+  JPY: 'JPY',
+};
 
 const RECEIPT_RESPONSE_JSON_SCHEMA = {
   name: 'receipt_extraction',
@@ -40,7 +59,7 @@ const RECEIPT_RESPONSE_JSON_SCHEMA = {
       taxAmount: { type: 'number' },
       currency: {
         type: 'string',
-        pattern: '^[A-Z]{3}$',
+        enum: SUPPORTED_CURRENCY_CODES,
       },
       fieldConfidence: {
         type: 'object',
@@ -50,8 +69,9 @@ const RECEIPT_RESPONSE_JSON_SCHEMA = {
           transactionDate: { type: 'number', minimum: 0, maximum: 1 },
           totalAmount: { type: 'number', minimum: 0, maximum: 1 },
           taxAmount: { type: 'number', minimum: 0, maximum: 1 },
+          currency: { type: 'number', minimum: 0, maximum: 1 },
         },
-        required: ['vendorName', 'transactionDate', 'totalAmount', 'taxAmount'],
+        required: ['vendorName', 'transactionDate', 'totalAmount', 'taxAmount', 'currency'],
       },
     },
     required: [
@@ -73,7 +93,8 @@ Extraction rules:
 - transactionDate: date in YYYY-MM-DD.
 - totalAmount: final total paid, numeric only.
 - taxAmount: explicit tax/VAT amount. If missing, use 0.
-- currency: ISO 4217 code in uppercase (e.g. USD, PHP, EUR).
+- Identify the currency symbol or text on the receipt and return its standard 3-letter ISO 4217 code.
+- currency: one of PHP, USD, EUR, AUD, GBP, SGD, JPY.
 - fieldConfidence values: between 0 and 1 and represent confidence per field.
 
 Do not add extra fields.`;
@@ -99,10 +120,40 @@ function parseReceiptResponse(content: string | null, model: string): ReceiptExt
     throw new Error(`Failed to parse receipt extraction JSON: ${(error as Error).message}`);
   }
 
+  const normalizedCurrency = normalizeExtractedCurrency(parsed.currency);
+
   return {
     ...parsed,
+    currency: normalizedCurrency,
     model,
   };
+}
+
+function normalizeExtractedCurrency(raw: string | null | undefined): string {
+  if (!raw) {
+    return 'AUD';
+  }
+
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return 'AUD';
+  }
+
+  const upper = trimmed.toUpperCase();
+
+  if (SUPPORTED_CURRENCY_CODES.includes(upper as (typeof SUPPORTED_CURRENCY_CODES)[number])) {
+    return upper;
+  }
+
+  if (CURRENCY_SYMBOL_TO_CODE[trimmed]) {
+    return CURRENCY_SYMBOL_TO_CODE[trimmed];
+  }
+
+  if (CURRENCY_SYMBOL_TO_CODE[upper]) {
+    return CURRENCY_SYMBOL_TO_CODE[upper];
+  }
+
+  return 'AUD';
 }
 
 export async function extractReceiptFromText(

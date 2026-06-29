@@ -18,6 +18,48 @@ type DraftAccountSuggestion = {
   source: 'historical_vendor_match' | 'fallback_default';
 };
 
+function inferExpenseType(vendorName: string):
+  | 'office_supplies'
+  | 'travel'
+  | 'meals'
+  | 'software'
+  | 'equipment'
+  | 'utilities'
+  | 'maintenance'
+  | 'other' {
+  const normalized = vendorName.trim().toLowerCase();
+
+  if (/microsoft|google|aws|openai|anthropic|figma|notion|slack|github/.test(normalized)) {
+    return 'software';
+  }
+
+  if (/uber|grab|lyft|airlines|hotel|booking|expedia|transport/.test(normalized)) {
+    return 'travel';
+  }
+
+  if (/starbucks|restaurant|cafe|coffee|food|meal/.test(normalized)) {
+    return 'meals';
+  }
+
+  if (/office|depot|staples|paper|stationery/.test(normalized)) {
+    return 'office_supplies';
+  }
+
+  if (/electric|water|internet|telecom|utility/.test(normalized)) {
+    return 'utilities';
+  }
+
+  if (/repair|maintenance|service center|mechanic/.test(normalized)) {
+    return 'maintenance';
+  }
+
+  if (/laptop|monitor|printer|hardware|device|equipment/.test(normalized)) {
+    return 'equipment';
+  }
+
+  return 'other';
+}
+
 function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
 }
@@ -158,24 +200,16 @@ async function resolveUserRole(
 }
 
 function isSubmitterRoleAllowed(role: string | null): boolean {
-  return (
-    role === 'employee' ||
-    role === 'intern' ||
-    role === 'admin' ||
-    role === 'super_admin' ||
-    role === 'hr' ||
-    role === 'cos' ||
-    role === 'ceo'
-  );
+  return role === 'employee' || role === 'intern';
 }
 
-async function resolveEmployeeId(
+async function resolveEmployeeProfile(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
   userId: string
-): Promise<string> {
+): Promise<{ employeeId: string; departmentId: string | null }> {
   const { data: employeeData, error: employeeError } = await adminClient
     .from('employees')
-    .select('id')
+    .select('id, user:users!employees_user_id_fkey(department_id)')
     .eq('user_id', userId)
     .is('deleted_at', null)
     .maybeSingle();
@@ -188,7 +222,12 @@ async function resolveEmployeeId(
     throw new Error('No employee profile found for current user');
   }
 
-  return employeeData.id;
+  const userRow = Array.isArray(employeeData.user) ? employeeData.user[0] : employeeData.user;
+
+  return {
+    employeeId: employeeData.id,
+    departmentId: userRow?.department_id ?? null,
+  };
 }
 
 async function suggestDraftAccounts(
@@ -257,6 +296,7 @@ async function extractFromPdf(fileBuffer: ArrayBuffer): Promise<{
     transactionDate: number;
     totalAmount: number;
     taxAmount: number;
+    currency: number;
   };
   model: string;
 }> {
@@ -264,11 +304,18 @@ async function extractFromPdf(fileBuffer: ArrayBuffer): Promise<{
   const { text } = await extractText(pdf, { mergePages: true });
   await pdf.destroy();
 
-  if (!text || text.trim().length < 20) {
-    throw new Error('PDF has no extractable text. Upload a text-based PDF or image receipt.');
+  if (text && text.trim().length >= 20) {
+    return extractReceiptFromText(text);
   }
 
-  return extractReceiptFromText(text);
+  // Fallback for scanned/image-based PDFs that do not expose selectable text.
+  try {
+    return await extractReceiptFromImage(Buffer.from(fileBuffer).toString('base64'), 'application/pdf');
+  } catch (imageFallbackError) {
+    const message =
+      imageFallbackError instanceof Error ? imageFallbackError.message : 'Unknown PDF image extraction error';
+    throw new Error(`PDF has no extractable text and image fallback failed: ${message}`);
+  }
 }
 
 /**
@@ -301,7 +348,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const { file, businessJustification } = parseExpenseUploadFormData(formData);
 
-    const employeeId = await resolveEmployeeId(adminClient, user.id);
+    const { employeeId, departmentId } = await resolveEmployeeProfile(adminClient, user.id);
     const fileBuffer = await file.arrayBuffer();
 
     // Store original receipt first so the review queue can render split-screen receipt + draft.
@@ -327,13 +374,16 @@ export async function POST(request: NextRequest) {
       (extraction.fieldConfidence.vendorName +
         extraction.fieldConfidence.transactionDate +
         extraction.fieldConfidence.totalAmount +
-        extraction.fieldConfidence.taxAmount) /
-      4;
+        extraction.fieldConfidence.taxAmount +
+        extraction.fieldConfidence.currency) /
+      5;
 
     const combinedAiConfidence = Math.min(
       0.99,
       (extractionConfidenceAverage + suggestion.confidence) / 2
     );
+
+    const inferredExpenseType = inferExpenseType(extraction.vendorName);
 
     const { data: expenseEntry, error: expenseError } = await adminClient
       .from('expense_entries')
@@ -346,12 +396,16 @@ export async function POST(request: NextRequest) {
         total_amount: extraction.totalAmount,
         tax_amount: extraction.taxAmount,
         currency: extraction.currency,
+        draft_debit_account: suggestion.debitAccount,
+        draft_credit_account: suggestion.creditAccount,
         ai_debit_account: suggestion.debitAccount,
         ai_credit_account: suggestion.creditAccount,
         ai_confidence: combinedAiConfidence,
         risk_bucket: 'pending',
         processing_status: 'awaiting_intern_review',
         business_justification: businessJustification,
+        expense_type: inferredExpenseType,
+        department_id: departmentId,
         created_by: user.id,
       })
       .select('*')

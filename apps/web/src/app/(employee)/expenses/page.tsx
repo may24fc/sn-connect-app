@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useExpenses, useUploadAndExtractExpense } from '@/hooks/useExpenses';
+import { useDeleteExpense, useExpenses, useQueueExpenseIngestion, type ExpenseEntry } from '@/hooks/useExpenses';
+import { validateReceiptImageQuality } from '@/lib/expenses/image-quality';
 import {
   Button,
   Card,
@@ -29,60 +30,143 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { Badge } from '@hr-portal/ui';
-import { FileText, Loader2, Plus, Receipt, Sparkles } from 'lucide-react';
+import { FileText, Loader2, Plus, Receipt, Sparkles, Trash2 } from 'lucide-react';
+
+const DELETABLE_STATUSES = new Set(['draft_extracted', 'awaiting_intern_review']);
 
 export default function EmployeeExpensesPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
   const [justification, setBusinessJustification] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [expensePendingDelete, setExpensePendingDelete] = useState<ExpenseEntry | null>(null);
 
   // Fetch only this user's submitted expenses
-  const { data: rawData, isLoading } = useExpenses(
+  const { data: rawData, isLoading, refetch } = useExpenses(
     user?.id ? { userId: user.id } : undefined
   );
 
-  const uploadMutation = useUploadAndExtractExpense();
+  const uploadMutation = useQueueExpenseIngestion();
+  const deleteMutation = useDeleteExpense();
   const expenses = rawData?.data || [];
 
-  const handleFileSelect = (files: File[]) => {
-    if (files && files.length > 0) {
-      setSelectedFile(files[0] as File);
+  const hasQueuedExpense = expenses.some((expense) => expense.processing_status === 'draft_extracted');
+
+  useEffect(() => {
+    if (!hasQueuedExpense) {
+      return;
     }
+
+    const intervalId = window.setInterval(() => {
+      void refetch();
+    }, 5000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [hasQueuedExpense, refetch]);
+
+  const handleFileSelect = (files: File[]) => {
+    setSelectedFiles((currentFiles) => {
+      const mergedFiles = [...currentFiles];
+
+      for (const file of files) {
+        const isDuplicate = mergedFiles.some(
+          (existingFile) =>
+            existingFile.name === file.name &&
+            existingFile.size === file.size &&
+            existingFile.type === file.type &&
+            existingFile.lastModified === file.lastModified
+        );
+
+        if (!isDuplicate && mergedFiles.length < 10) {
+          mergedFiles.push(file);
+        }
+      }
+
+      return mergedFiles.slice(0, 10);
+    });
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index));
   };
 
   const handleUploadSubmit = async () => {
-    if (!selectedFile) {
+    if (selectedFiles.length === 0) {
       addToast({
         title: 'File Required',
-        description: 'Please drag or select a receipt photo to continue.',
+        description: 'Please drag or select at least one receipt file to continue.',
         variant: 'error',
       });
       return;
     }
 
+    const qualityFailures: Array<{ fileName: string; reason: string }> = [];
+    const validatedFiles: File[] = [];
+
+    for (const file of selectedFiles) {
+      if (!file.type.startsWith('image/')) {
+        validatedFiles.push(file);
+        continue;
+      }
+
+      try {
+        const qualityReport = await validateReceiptImageQuality(file);
+        if (!qualityReport.isValid) {
+          qualityFailures.push({
+            fileName: file.name,
+            reason: qualityReport.issues[0] || 'Image quality validation failed.',
+          });
+          continue;
+        }
+
+        validatedFiles.push(file);
+      } catch {
+        qualityFailures.push({
+          fileName: file.name,
+          reason: 'Image quality could not be evaluated. Please retry with a clearer image.',
+        });
+      }
+    }
+
+    if (qualityFailures.length > 0) {
+      addToast({
+        title: 'Pre-OCR Quality Check Failed',
+        description: `${qualityFailures[0]?.fileName}: ${qualityFailures[0]?.reason}`,
+        variant: 'error',
+      });
+    }
+
+    if (validatedFiles.length === 0) {
+      return;
+    }
+
     uploadMutation.mutate(
       {
-        file: selectedFile,
+        files: validatedFiles,
         businessJustification: justification || undefined,
-      } as any,
+        concurrency: 3,
+      },
       {
-        onSuccess: (res) => {
+        onSuccess: (result) => {
           addToast({
-            title: 'OCR Ingestion Success',
-            description: `Successfully extracted draft entry: ${res.data.expenseEntry.vendor_name} for total ${res.data.expenseEntry.currency} ${res.data.expenseEntry.total_amount}.`,
-            variant: 'success',
+            title: 'Receipt Ingestion Queued',
+            description: `${result.summary.queued} of ${result.summary.total} file(s) queued for background OCR processing.${result.summary.failed > 0 ? ` ${result.summary.failed} file(s) failed.` : ''}`,
+            variant: result.summary.failed > 0 ? 'warning' : 'success',
           });
+
           setUploadOpen(false);
-          setSelectedFile(null);
+          setSelectedFiles([]);
           setBusinessJustification('');
         },
-        onError: (err: any) => {
-          console.error(err);
+        onError: (err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Failed to queue receipt ingestion.';
           addToast({
-            title: 'Extraction Failed',
-            description: err?.message || 'Failed to extract text or upload. Please retry.',
+            title: 'Upload Failed',
+            description: message,
             variant: 'error',
           });
         },
@@ -90,8 +174,43 @@ export default function EmployeeExpensesPage() {
     );
   };
 
+  const handleDeleteClick = (expense: ExpenseEntry) => {
+    setExpensePendingDelete(expense);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!expensePendingDelete) {
+      return;
+    }
+
+    const deletingExpense = expensePendingDelete;
+
+    deleteMutation.mutate(deletingExpense.id, {
+      onSuccess: () => {
+        addToast({
+          title: 'Expense Deleted',
+          description: `${deletingExpense.vendor_name} has been removed from your expenses list.`,
+          variant: 'success',
+        });
+        setDeleteConfirmOpen(false);
+        setExpensePendingDelete(null);
+      },
+      onError: (err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Failed to delete expense entry.';
+        addToast({
+          title: 'Delete Failed',
+          description: message,
+          variant: 'error',
+        });
+      },
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'draft_extracted':
+        return <Badge variant="outline" className="flex items-center gap-1 w-fit border-zinc-300 text-zinc-600">Queued for OCR</Badge>;
       case 'awaiting_intern_review':
         return <Badge variant="secondary" className="flex items-center gap-1 w-fit bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400 border-none">Awaiting Review</Badge>;
       case 'auto_approved':
@@ -139,67 +258,78 @@ export default function EmployeeExpensesPage() {
               Upload Receipt
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
-                Upload & AI-Extract Receipt
-              </DialogTitle>
-              <DialogDescription>
-                Upload receipt image (JPEG, PNG, WebP) up to 10MB. Our AI model extracts transaction fields & maps ledger accounts instantly.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Receipt Image</Label>
-                <div className="border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
-                  <FileDropZone
-                    onFilesSelected={handleFileSelect}
-                    accept="image/jpeg,image/png,image/webp"
-                    maxSizeMB={10} // 10MB
-                  />
-                </div>
-                {selectedFile && (
-                  <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 rounded-lg">
-                    <FileText className="h-4 w-4 text-indigo-500" />
-                    <span className="truncate flex-1 font-medium">{selectedFile.name}</span>
-                    <span className="text-xs text-zinc-400">({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)</span>
-                  </div>
-                )}
+          <DialogContent className="!flex !max-h-[calc(100dvh-2rem)] !w-[calc(100vw-2rem)] !max-w-[500px] !flex-col !overflow-hidden !p-0">
+            <div className="flex min-h-0 flex-1 flex-col">
+              <div className="shrink-0 px-6 pt-6">
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
+                    Bulk Upload Receipt Queue
+                  </DialogTitle>
+                  <DialogDescription>
+                    Upload up to 10 receipts per batch. Quality checks run in-browser first, then OCR extraction runs asynchronously in background workers.
+                  </DialogDescription>
+                </DialogHeader>
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="justification">Business Justification / Submitter Notes</Label>
-                <Textarea
-                  id="justification"
-                  placeholder="e.g. Monthly cloud subscription renewal, or client meeting dinner details."
-                  value={justification}
-                  onChange={(e) => setBusinessJustification(e.target.value)}
-                  className="min-h-[80px]"
-                />
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 pr-4">
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label>Receipt Files</Label>
+                    <div className="border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg p-2">
+                      <FileDropZone
+                        onFilesSelected={handleFileSelect}
+                        selectedFiles={selectedFiles}
+                        onRemoveFile={handleRemoveFile}
+                        accept="application/pdf,image/jpeg,image/png,image/webp"
+                        multiple
+                        maxFiles={10}
+                        maxSizeMB={10} // 10MB
+                      />
+                    </div>
+                    {selectedFiles.length > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 rounded-lg">
+                        <FileText className="h-4 w-4 text-indigo-500" />
+                        <span className="truncate flex-1 font-medium">{selectedFiles.length} file(s) selected</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="justification">Business Justification / Submitter Notes</Label>
+                    <Textarea
+                      id="justification"
+                      placeholder="e.g. Monthly cloud subscription renewal, or client meeting dinner details."
+                      value={justification}
+                      onChange={(e) => setBusinessJustification(e.target.value)}
+                      className="min-h-[80px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="shrink-0 border-t border-zinc-200/70 px-6 py-4 dark:border-zinc-800">
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setUploadOpen(false)} disabled={uploadMutation.isPending}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleUploadSubmit}
+                    disabled={uploadMutation.isPending || selectedFiles.length === 0}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    {uploadMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Queueing Batch...
+                      </>
+                    ) : (
+                      'Queue for OCR'
+                    )}
+                  </Button>
+                </DialogFooter>
               </div>
             </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setUploadOpen(false)} disabled={uploadMutation.isPending}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUploadSubmit}
-                disabled={uploadMutation.isPending || !selectedFile}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              >
-                {uploadMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Extracting Ledger...
-                  </>
-                ) : (
-                  'Run AI Extract'
-                )}
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -234,6 +364,7 @@ export default function EmployeeExpensesPage() {
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Accounts (DR/CR)</TableHead>
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Status</TableHead>
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Risk Assessment</TableHead>
+                      <TableHead className="w-14 text-right font-semibold text-zinc-600 dark:text-zinc-400">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -252,11 +383,11 @@ export default function EmployeeExpensesPage() {
                           <div className="flex flex-col text-xs space-y-0.5">
                             <span className="truncate">
                               <span className="text-muted-foreground mr-1">DR:</span>
-                              {expense.verified_debit_account || expense.draft_debit_account || <span className="italic text-zinc-400">Extracting...</span>}
+                              {expense.verified_debit_account || expense.draft_debit_account || expense.ai_debit_account || <span className="italic text-zinc-400">Extracting...</span>}
                             </span>
                             <span className="truncate">
                               <span className="text-muted-foreground mr-1">CR:</span>
-                              {expense.verified_credit_account || expense.draft_credit_account || <span className="italic text-zinc-400">Extracting...</span>}
+                              {expense.verified_credit_account || expense.draft_credit_account || expense.ai_credit_account || <span className="italic text-zinc-400">Extracting...</span>}
                             </span>
                           </div>
                         </TableCell>
@@ -276,6 +407,20 @@ export default function EmployeeExpensesPage() {
                             <span className="text-xs text-zinc-400 italic">Pending Verification</span>
                           )}
                         </TableCell>
+                        <TableCell className="text-right">
+                          {DELETABLE_STATUSES.has(expense.processing_status) ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40"
+                              onClick={() => handleDeleteClick(expense)}
+                              title="Delete expense"
+                              aria-label={`Delete expense from ${expense.vendor_name}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          ) : null}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -285,6 +430,44 @@ export default function EmployeeExpensesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Expense Entry</DialogTitle>
+            <DialogDescription>
+              This will remove the expense{expensePendingDelete ? ` from ${expensePendingDelete.vendor_name}` : ''} from your list.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setExpensePendingDelete(null);
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending || !expensePendingDelete}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
