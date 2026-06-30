@@ -145,7 +145,7 @@ export const processExpenseReceipt = inngest.createFunction(
     const adminClient = createSupabaseAdminClient();
 
     try {
-      const fileBuffer = await step.run('download-receipt', async () => {
+      const extraction = await step.run('extract-receipt', async () => {
         const { data, error } = await adminClient.storage
           .from(EXPENSE_RECEIPTS_BUCKET)
           .download(filePath);
@@ -154,11 +154,11 @@ export const processExpenseReceipt = inngest.createFunction(
           throw new Error(`Failed to download receipt: ${error?.message ?? 'No data'}`);
         }
 
-        return await data.arrayBuffer();
-      });
+        const receiptBuffer = await data.arrayBuffer();
 
-      const extraction = await step.run('extract-receipt', async () => {
-        const receiptBuffer = fileBuffer as ArrayBuffer;
+        if (receiptBuffer.byteLength === 0) {
+          throw new Error(`Downloaded receipt is empty (0 bytes) for path: ${filePath}`);
+        }
 
         if (mimeType === 'application/pdf') {
           return extractFromPdf(receiptBuffer);
@@ -195,8 +195,6 @@ export const processExpenseReceipt = inngest.createFunction(
             total_amount: extraction.totalAmount,
             tax_amount: extraction.taxAmount,
             currency: extraction.currency,
-            draft_debit_account: suggestion.debitAccount,
-            draft_credit_account: suggestion.creditAccount,
             ai_debit_account: suggestion.debitAccount,
             ai_credit_account: suggestion.creditAccount,
             ai_confidence: combinedAiConfidence,

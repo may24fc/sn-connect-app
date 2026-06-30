@@ -312,18 +312,26 @@ async function executeVerificationTransaction(
   const sourceCurrency = parsedData.sourceCurrency;
   const normalizedTaxAmount = Number.isFinite(finalTaxAmount) ? finalTaxAmount : 0;
 
-  const resolvedRate = await conversionService.getRateToAud(sourceCurrency);
-  const fxRatesFetchedAt = resolvedRate.fxRatesFetchedAt ?? expenseEntry.fx_rates_fetched_at ?? null;
-  const fxSource = resolvedRate.fxSource ?? expenseEntry.fx_source ?? 'base_currency';
+  let fxRatesFetchedAt = expenseEntry.fx_rates_fetched_at ?? null;
+  let fxSource = expenseEntry.fx_source ?? 'base_currency';
+  let finalExchangeRateToAud = 1;
 
-  let finalExchangeRateToAud = resolvedRate.exchangeRateToAud;
-
-  if (sourceCurrency !== 'AUD') {
-    if (typeof parsedData.exchangeRateToAud === 'number' && parsedData.exchangeRateToAud > 0) {
-      finalExchangeRateToAud = parsedData.exchangeRateToAud;
-    }
-  } else {
+  if (sourceCurrency === 'AUD') {
     finalExchangeRateToAud = 1;
+    fxSource = 'base_currency';
+    fxRatesFetchedAt = null;
+  } else if (typeof parsedData.exchangeRateToAud === 'number' && parsedData.exchangeRateToAud > 0) {
+    // Prefer reviewer-provided rate and skip FX cache dependency.
+    finalExchangeRateToAud = parsedData.exchangeRateToAud;
+    fxSource = 'base_currency';
+  } else if (typeof expenseEntry.exchange_rate_to_aud === 'number' && expenseEntry.exchange_rate_to_aud > 0) {
+    // Fallback to stored rate when present.
+    finalExchangeRateToAud = expenseEntry.exchange_rate_to_aud;
+  } else {
+    const resolvedRate = await conversionService.getRateToAud(sourceCurrency);
+    finalExchangeRateToAud = resolvedRate.exchangeRateToAud;
+    fxRatesFetchedAt = resolvedRate.fxRatesFetchedAt ?? fxRatesFetchedAt;
+    fxSource = resolvedRate.fxSource ?? fxSource;
   }
 
   const finalTotalAmountAud = roundToCents(finalTotalAmount * finalExchangeRateToAud);

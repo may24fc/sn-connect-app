@@ -67,6 +67,48 @@ function getRoleFromUser(user: { app_metadata?: Record<string, unknown> }): stri
   return typeof dbRole === 'string' ? dbRole : null;
 }
 
+async function isAccountingDeskUser(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  role: string | null
+): Promise<boolean> {
+  if (role !== 'employee' && role !== 'intern') {
+    return false;
+  }
+
+  const { data: isAccountingMember, error: accountingError } = await supabase.rpc(
+    'user_is_accounting_member',
+    {
+      target_user_id: userId,
+    }
+  );
+
+  if (!accountingError) {
+    return Boolean(isAccountingMember);
+  }
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('department_id')
+    .eq('id', userId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (!userData?.department_id) {
+    return false;
+  }
+
+  const { data: departmentData } = await supabase
+    .from('departments')
+    .select('name')
+    .eq('id', userData.department_id)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  const departmentName = departmentData?.name?.trim().toLowerCase();
+  return Boolean(departmentName && (departmentName.includes('accounting') || departmentName === 'finance'));
+}
+
 /**
  * GET /api/expenses
  * Lists expense entries with optional filtering by status and submission ownership.
@@ -89,6 +131,8 @@ export async function GET(request: NextRequest) {
 
     const role = await resolveDbRole(supabase, user.id, getRoleFromUser(user));
     const isLeadership = role === 'admin' || role === 'super_admin';
+    const hasAccountingDeskAccess = await isAccountingDeskUser(supabase, user.id, role);
+    const hasDeskScope = isLeadership || hasAccountingDeskAccess;
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -99,11 +143,11 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
 
-    if (userId && userId !== user.id && !isLeadership) {
+    if (userId && userId !== user.id && !hasDeskScope) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if ((departmentId || expenseType) && !isLeadership) {
+    if ((departmentId || expenseType) && !hasDeskScope) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

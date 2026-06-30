@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import {
   Button,
@@ -52,6 +53,7 @@ const EXCEPTION_STATUS = 'leadership_review_required';
 
 export default function AdminExpensesDashboard() {
   const router = useRouter();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'exceptions' | 'settled'>('exceptions');
   const [decisionNotes, setDecisionNotes] = useState<{ [key: string]: string }>({});
@@ -62,6 +64,8 @@ export default function AdminExpensesDashboard() {
   const [dateTo, setDateTo] = useState('');
 
   const { data: departmentsData } = useDepartments({ page: 1, pageSize: 200 });
+  const expensesDeskBasePath =
+    user?.role === 'admin' || user?.role === 'super_admin' ? '/admin/expenses' : '/expenses/desk';
 
   const filters = useMemo(() => {
     const value: {
@@ -210,7 +214,7 @@ export default function AdminExpensesDashboard() {
           <Button
             variant="outline"
             className="gap-2"
-            onClick={() => router.push('/admin/expenses/analytics')}
+            onClick={() => router.push(`${expensesDeskBasePath}/analytics`)}
           >
             <LineChart className="h-4 w-4" />
             Open Executive Analytics

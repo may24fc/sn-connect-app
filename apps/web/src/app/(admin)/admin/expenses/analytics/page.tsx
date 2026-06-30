@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useExpenseAnalytics } from '@/hooks/useExpenseAnalytics';
 import {
@@ -103,6 +104,7 @@ function renderPieLabel(props: {
 
 export default function ExpenseAnalyticsDashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [period, setPeriod] = useState<'week' | 'month'>('week');
   const [departmentId, setDepartmentId] = useState('all');
   const [processingStatus, setProcessingStatus] = useState('all');
@@ -110,6 +112,8 @@ export default function ExpenseAnalyticsDashboardPage() {
   const [endDate, setEndDate] = useState('');
 
   const { data: departmentsData } = useDepartments({ page: 1, pageSize: 200 });
+  const expensesDeskBasePath =
+    user?.role === 'admin' || user?.role === 'super_admin' ? '/admin/expenses' : '/expenses/desk';
 
   const analyticsFilters = useMemo(() => {
     const filters: {
@@ -152,7 +156,7 @@ export default function ExpenseAnalyticsDashboardPage() {
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-950">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <Button variant="outline" size="sm" className="mb-3 gap-2" onClick={() => router.push('/admin/expenses')}>
+          <Button variant="outline" size="sm" className="mb-3 gap-2" onClick={() => router.push(expensesDeskBasePath)}>
             <ArrowLeft className="h-4 w-4" />
             Back to Executive Expense Desk
           </Button>
