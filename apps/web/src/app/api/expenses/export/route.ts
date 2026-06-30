@@ -4,7 +4,8 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'intern']);
+const ALLOWED_ROLES = new Set(['admin', 'super_admin']);
+const ACCOUNTING_ELIGIBLE_ROLES = new Set(['employee', 'intern']);
 
 type ExpenseExportRow = {
   vendor_name: string;
@@ -80,7 +81,43 @@ export async function GET(request: NextRequest) {
     }
 
     const role = await resolveRole(user);
-    if (!role || !ALLOWED_ROLES.has(role)) {
+    let hasAccess = Boolean(role && ALLOWED_ROLES.has(role));
+
+    if (!hasAccess && role && ACCOUNTING_ELIGIBLE_ROLES.has(role)) {
+      const { data: isAccountingMember, error: accountingError } = await supabase.rpc(
+        'user_is_accounting_member',
+        {
+          target_user_id: user.id,
+        }
+      );
+
+      if (!accountingError) {
+        hasAccess = Boolean(isAccountingMember);
+      } else {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('department_id')
+          .eq('id', user.id)
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        if (userData?.department_id) {
+          const { data: departmentData } = await supabase
+            .from('departments')
+            .select('name')
+            .eq('id', userData.department_id)
+            .is('deleted_at', null)
+            .maybeSingle();
+
+          const departmentName = departmentData?.name?.trim().toLowerCase();
+          hasAccess = Boolean(
+            departmentName && (departmentName.includes('accounting') || departmentName === 'finance')
+          );
+        }
+      }
+    }
+
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

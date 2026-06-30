@@ -364,8 +364,6 @@ async function processReceiptInlineFallback(params: {
         total_amount: extraction.totalAmount,
         tax_amount: extraction.taxAmount,
         currency: extraction.currency,
-        draft_debit_account: suggestion.debitAccount,
-        draft_credit_account: suggestion.creditAccount,
         ai_debit_account: suggestion.debitAccount,
         ai_credit_account: suggestion.creditAccount,
         ai_confidence: combinedAiConfidence,
