@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const ADMIN_ROLES = new Set(['admin', 'super_admin', 'hr', 'cos', 'ceo']);
+const ACCOUNTING_ELIGIBLE_ROLES = new Set(['employee', 'intern']);
 
 type ExpenseAnalyticsRow = {
   transaction_date: string;
@@ -115,7 +116,44 @@ export async function GET(request: NextRequest) {
       role = roleData?.role ?? null;
     }
 
-    if (!role || !ADMIN_ROLES.has(role)) {
+    const hasAdminAccess = Boolean(role && ADMIN_ROLES.has(role));
+    let hasAccountingAccess = false;
+
+    if (!hasAdminAccess && role && ACCOUNTING_ELIGIBLE_ROLES.has(role)) {
+      const { data: isAccountingMember, error: accountingError } = await supabase.rpc(
+        'user_is_accounting_member',
+        {
+          target_user_id: user.id,
+        }
+      );
+
+      if (!accountingError) {
+        hasAccountingAccess = Boolean(isAccountingMember);
+      } else {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('department_id')
+          .eq('id', user.id)
+          .is('deleted_at', null)
+          .maybeSingle();
+
+        if (userData?.department_id) {
+          const { data: departmentData } = await supabase
+            .from('departments')
+            .select('name')
+            .eq('id', userData.department_id)
+            .is('deleted_at', null)
+            .maybeSingle();
+
+          const departmentName = departmentData?.name?.trim().toLowerCase();
+          hasAccountingAccess = Boolean(
+            departmentName && (departmentName.includes('accounting') || departmentName === 'finance')
+          );
+        }
+      }
+    }
+
+    if (!hasAdminAccess && !hasAccountingAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

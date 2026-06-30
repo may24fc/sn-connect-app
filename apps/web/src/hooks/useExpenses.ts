@@ -26,8 +26,8 @@ export interface ExpenseEntry {
   exchange_rate_to_aud: number | null;
   total_amount_aud: number | null;
   tax_amount_aud: number | null;
-  draft_debit_account: string | null;
-  draft_credit_account: string | null;
+  draft_debit_account?: string | null;
+  draft_credit_account?: string | null;
   ai_debit_account?: string | null;
   ai_credit_account?: string | null;
   verified_debit_account: string | null;

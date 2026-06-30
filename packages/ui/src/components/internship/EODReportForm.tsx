@@ -34,6 +34,9 @@ import type {
 } from '../../types/internship.types';
 import { cn } from '../../utils/cn';
 
+const tertiaryActionButtonClassName =
+  'flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50';
+
 interface StringListFieldProps {
   entries: string[];
   onChange: (entries: string[]) => void;
@@ -110,7 +113,7 @@ function StringListField({
       <button
         type="button"
         onClick={addEntry}
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
+        className={tertiaryActionButtonClassName}
       >
         <Plus className="h-3.5 w-3.5" />
         {addLabel}
@@ -638,7 +641,7 @@ export function EODReportForm({
             <button
               type="button"
               onClick={handleAddProjectEntry}
-              className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
+              className={tertiaryActionButtonClassName}
             >
               <Plus className="h-3.5 w-3.5" />
               Add another project / focus

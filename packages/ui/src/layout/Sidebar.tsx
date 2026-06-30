@@ -69,6 +69,7 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
+  { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
   { label: 'Verify Expenses', href: '/expenses/verify', icon: FileCheck },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
@@ -90,6 +91,7 @@ const internNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
+  { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
   { label: 'Verify Expenses', href: '/expenses/verify', icon: FileCheck },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
@@ -224,7 +226,7 @@ export function Sidebar({
     if (
       (variant === 'employee' || variant === 'intern') &&
       !showExpensesAccess &&
-      item.href === '/expenses/verify'
+      (item.href === '/expenses/verify' || item.href === '/expenses/desk')
     ) {
       return false;
     }

@@ -17,7 +17,7 @@ async function verifyLeadershipRole(
 ) {
   const { data: userData, error: userError } = await adminClient
     .from('users')
-    .select('role')
+    .select('role, department_id')
     .eq('id', userId)
     .is('deleted_at', null)
     .maybeSingle();
@@ -27,11 +27,47 @@ async function verifyLeadershipRole(
   }
 
   const leadershipRoles = ['admin', 'super_admin'];
-  if (!leadershipRoles.includes(userData.role)) {
+  if (leadershipRoles.includes(userData.role)) {
+    return userData.role;
+  }
+
+  if (userData.role !== 'employee' && userData.role !== 'intern') {
     throw new Error('Forbidden');
   }
 
-  return userData.role;
+  const { data: isAccountingMember, error: accountingCheckError } = await adminClient.rpc(
+    'user_is_accounting_member',
+    {
+      target_user_id: userId,
+    }
+  );
+
+  if (!accountingCheckError && isAccountingMember) {
+    return userData.role;
+  }
+
+  const departmentId = userData.department_id ?? null;
+  if (!departmentId) {
+    throw new Error('Forbidden');
+  }
+
+  const { data: departmentData, error: departmentError } = await adminClient
+    .from('departments')
+    .select('name')
+    .eq('id', departmentId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (departmentError || !departmentData?.name) {
+    throw new Error('Forbidden');
+  }
+
+  const normalizedDepartment = departmentData.name.trim().toLowerCase();
+  if (normalizedDepartment.includes('accounting') || normalizedDepartment === 'finance') {
+    return userData.role;
+  }
+
+  throw new Error('Forbidden');
 }
 
 /**
