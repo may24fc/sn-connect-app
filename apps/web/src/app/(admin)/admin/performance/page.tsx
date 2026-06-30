@@ -217,6 +217,40 @@ function getEvaluationBadgeLabel(state: EmployeePerformanceSummary['evaluationSt
   }
 }
 
+function getCycleBannerBadgeLabel(params: {
+  selectedCycleId: string;
+  selectedCycleStatus: 'active' | 'draft' | 'closed';
+  activeCycleId: string | null;
+  orderedCycleIds: string[];
+}): string {
+  const { selectedCycleId, selectedCycleStatus, activeCycleId, orderedCycleIds } = params;
+
+  if (selectedCycleStatus === 'active') {
+    return 'Active Cycle';
+  }
+
+  if (!activeCycleId) {
+    return 'Close Quarter Cycle';
+  }
+
+  const selectedIndex = orderedCycleIds.indexOf(selectedCycleId);
+  const activeIndex = orderedCycleIds.indexOf(activeCycleId);
+
+  if (selectedIndex < 0 || activeIndex < 0) {
+    return 'Close Quarter Cycle';
+  }
+
+  if (selectedIndex === activeIndex + 1) {
+    return 'Next Quarter Cycle';
+  }
+
+  if (selectedIndex === activeIndex - 1) {
+    return 'Closed Quarter Cycle';
+  }
+
+  return 'Close Quarter Cycle';
+}
+
 export default function AdminPerformancePage(): ReactNode {
   usePerformanceRealtime();
   const router = useRouter();
@@ -258,6 +292,15 @@ export default function AdminPerformancePage(): ReactNode {
   const fallbackCycle = activeCycle || nextUpcomingCycle || latestKnownCycle;
   const selectedCycle =
     cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
+  const orderedCycleIds = useMemo(() => orderedCycles.map((cycle) => cycle.id), [orderedCycles]);
+  const selectedCycleBadgeLabel = selectedCycle
+    ? getCycleBannerBadgeLabel({
+        selectedCycleId: selectedCycle.id,
+        selectedCycleStatus: selectedCycle.status,
+        activeCycleId: activeCycle?.id ?? null,
+        orderedCycleIds,
+      })
+    : 'Close Quarter Cycle';
   const selectedCycleFilterId = selectedCycleId || selectedCycle?.id || '__no_active_cycle__';
   const { data: okrs = [] } = usePerformanceOKRs(selectedCycleFilterId);
   const { data: reviewRecords = [] } = usePerformanceReviews(selectedCycle?.id || undefined);
@@ -601,7 +644,7 @@ export default function AdminPerformancePage(): ReactNode {
                   <div className="flex items-center gap-2">
                     <h2 className="font-semibold">{selectedCycle.name}</h2>
                     <Badge variant={selectedCycle.status === 'active' ? 'success' : 'secondary'}>
-                      {selectedCycle.status === 'active' ? 'Active Cycle' : 'Next Quarter Cycle'}
+                      {selectedCycleBadgeLabel}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -689,7 +732,12 @@ export default function AdminPerformancePage(): ReactNode {
           <SelectContent>
             {cycles.map((cycle) => (
               <SelectItem key={cycle.id} value={cycle.id}>
-                {cycle.name}
+                <div className="flex items-center gap-2">
+                  <span>{cycle.name}</span>
+                  {cycle.status === 'active' && (
+                    <span className="text-xs font-medium text-success">(Active)</span>
+                  )}
+                </div>
               </SelectItem>
             ))}
           </SelectContent>

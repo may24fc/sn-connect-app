@@ -677,6 +677,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   const createReview = useCreatePerformanceReview();
   const updateReview = useUpdatePerformanceReview();
   const isSupervisorReview = user?.role === 'super_admin';
+  const canAccessManagerAssessment = user?.role === 'super_admin';
 
   const [expandedOkrs, setExpandedOkrs] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'view' | 'evaluate'>('view');
@@ -962,42 +963,15 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
         evaluatedAt: now,
       });
 
-      const freshestReview =
-        reviewRecords.find((review) => review.cycleId === selectedCycleId) || null;
-      let reviewId = freshestReview?.id ?? selectedCycleReview?.id ?? null;
-      const managerAssessmentScore = toFivePointScore(evalForm.managerAssessmentRating);
-      const completionTimestamp = new Date().toISOString();
+      if (canAccessManagerAssessment) {
+        const freshestReview =
+          reviewRecords.find((review) => review.cycleId === selectedCycleId) || null;
+        let reviewId = freshestReview?.id ?? selectedCycleReview?.id ?? null;
+        const managerAssessmentScore = toFivePointScore(evalForm.managerAssessmentRating);
+        const completionTimestamp = new Date().toISOString();
 
-      if (!reviewId && selectedCycleId) {
-        const created = (await createReview.mutateAsync({
-          cycleId: selectedCycleId,
-          employeeId,
-          reviewerId: user.id,
-          status: 'completed',
-          managerRating: managerAssessmentScore,
-          managerComments: evalForm.managerAssessmentComments || null,
-          finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
-        })) as { data?: { id?: string } };
-        reviewId = created?.data?.id ?? null;
-      } else if (reviewId && managerAssessmentScore !== null) {
-        try {
-          await updateReview.mutateAsync({
-            id: reviewId,
-            status: 'completed',
-            reviewerId: user.id,
-            managerRating: managerAssessmentScore,
-            managerComments: evalForm.managerAssessmentComments || null,
-            finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
-            submittedAt: completionTimestamp,
-            completedAt: completionTimestamp,
-          });
-        } catch (updateError) {
-          const message = updateError instanceof Error ? updateError.message : '';
-          if (!message.toLowerCase().includes('review not found') || !selectedCycleId) {
-            throw updateError;
-          }
-
-          await createReview.mutateAsync({
+        if (!reviewId && selectedCycleId) {
+          const created = (await createReview.mutateAsync({
             cycleId: selectedCycleId,
             employeeId,
             reviewerId: user.id,
@@ -1005,7 +979,36 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
             managerRating: managerAssessmentScore,
             managerComments: evalForm.managerAssessmentComments || null,
             finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
-          });
+          })) as { data?: { id?: string } };
+          reviewId = created?.data?.id ?? null;
+        } else if (reviewId && managerAssessmentScore !== null) {
+          try {
+            await updateReview.mutateAsync({
+              id: reviewId,
+              status: 'completed',
+              reviewerId: user.id,
+              managerRating: managerAssessmentScore,
+              managerComments: evalForm.managerAssessmentComments || null,
+              finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
+              submittedAt: completionTimestamp,
+              completedAt: completionTimestamp,
+            });
+          } catch (updateError) {
+            const message = updateError instanceof Error ? updateError.message : '';
+            if (!message.toLowerCase().includes('review not found') || !selectedCycleId) {
+              throw updateError;
+            }
+
+            await createReview.mutateAsync({
+              cycleId: selectedCycleId,
+              employeeId,
+              reviewerId: user.id,
+              status: 'completed',
+              managerRating: managerAssessmentScore,
+              managerComments: evalForm.managerAssessmentComments || null,
+              finalRating: finalEvaluation ? Math.round(finalEvaluation.finalScore5) : null,
+            });
+          }
         }
       }
 
@@ -1079,6 +1082,10 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
   };
 
   const isStep3Valid = (): boolean => {
+    if (!canAccessManagerAssessment) {
+      return true;
+    }
+
     return Boolean(evalForm.managerAssessmentRating);
   };
 
@@ -1808,7 +1815,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
             <DialogTitle className="flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5 text-primary" />
               {isSupervisorReview ? 'Review & Calibrate Objective' : 'Evaluate Objective'} — Step{' '}
-              {modalStep} of 3
+              {modalStep} of {canAccessManagerAssessment ? 3 : 2}
             </DialogTitle>
             <DialogDescription>
               {modalStep === 1
@@ -1845,16 +1852,18 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                 {isSupervisorReview ? '2. Final Summary' : '2. Overall Rating'}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 flex-1">
-              <div
-                className={`h-2 flex-1 rounded-full transition-colors ${
-                  modalStep >= 3 ? 'bg-primary' : 'bg-muted'
-                }`}
-              />
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                3. Manager Assessment
-              </span>
-            </div>
+            {canAccessManagerAssessment && (
+              <div className="flex items-center gap-1.5 flex-1">
+                <div
+                  className={`h-2 flex-1 rounded-full transition-colors ${
+                    modalStep >= 3 ? 'bg-primary' : 'bg-muted'
+                  }`}
+                />
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  3. Manager Assessment
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto py-2 -mx-1 px-1">
@@ -2073,7 +2082,7 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
               </div>
             )}
 
-            {modalStep === 3 && selectedOKR && (
+            {canAccessManagerAssessment && modalStep === 3 && selectedOKR && (
               <div className="space-y-4">
                 <div className="rounded-lg border border-primary/10 bg-primary/5 p-4">
                   <Label className="text-sm font-semibold">
@@ -2171,10 +2180,20 @@ export default function EmployeePerformanceDetailPage(): ReactNode {
                 <Button variant="outline" onClick={() => setModalStep(1)}>
                   Back to Targets
                 </Button>
-                <Button onClick={() => setModalStep(3)} disabled={!isStep2Valid()}>
-                  Continue to Manager Assessment
-                  <ChevronRight className="ml-1.5 h-4 w-4" />
-                </Button>
+                {canAccessManagerAssessment ? (
+                  <Button onClick={() => setModalStep(3)} disabled={!isStep2Valid()}>
+                    Continue to Manager Assessment
+                    <ChevronRight className="ml-1.5 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => void handleSubmitEvaluation()}
+                    disabled={isSubmitting || !isStep2Valid()}
+                  >
+                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    {isSubmitting ? 'Submitting...' : 'Submit Evaluation'}
+                  </Button>
+                )}
               </>
             ) : (
               <>

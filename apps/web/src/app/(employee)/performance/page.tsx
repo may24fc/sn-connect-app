@@ -105,16 +105,17 @@ export default function PerformancePage(): ReactNode {
   const activeCycles = cycles.filter((cycle) => cycle.status === 'active');
   const canCreateObjective = Boolean(activeCycle);
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
-  const displayCycle =
+  const selectedCycle =
     cycles.find((cycle) => cycle.id === selectedCycleId) || fallbackCycle || null;
+  const bannerCycle = activeCycle;
   useEffect(() => {
     if (selectedCycleId) return;
     if (fallbackCycle) {
       setSelectedCycleId(fallbackCycle.id);
     }
   }, [fallbackCycle, selectedCycleId]);
-  const selectedCycleFilterId = selectedCycleId || displayCycle?.id || '__no_active_cycle__';
-  const selectedReviewCycleId = selectedCycleId || displayCycle?.id || undefined;
+  const selectedCycleFilterId = selectedCycleId || selectedCycle?.id || '__no_active_cycle__';
+  const selectedReviewCycleId = selectedCycleId || selectedCycle?.id || undefined;
   const { data: okrs = [] } = usePerformanceOKRs(selectedCycleFilterId);
   const { data: allOkrs = [], isLoading: isLoadingAllOkrs } = usePerformanceOKRs();
   const { data: reviews = [] } = usePerformanceReviews(selectedReviewCycleId);
@@ -256,17 +257,17 @@ export default function PerformancePage(): ReactNode {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-semibold">{displayCycle?.name || 'No Active Cycle'}</h2>
+                <h2 className="font-semibold">{bannerCycle?.name || 'No Active Cycle'}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {displayCycle
-                    ? `${formatDate(displayCycle.startDate)} - ${formatDate(displayCycle.endDate)}`
+                  {bannerCycle
+                    ? `${formatDate(bannerCycle.startDate)} - ${formatDate(bannerCycle.endDate)}`
                     : 'No performance cycle has been created yet'}
                 </p>
                 
               </div>
             </div>
-            <Badge variant={activeCycle ? 'success' : 'secondary'}>
-              {activeCycle ? 'Active Cycle' : displayCycle ? 'Cycle Not Active' : 'No Active Cycle'}
+            <Badge variant={bannerCycle ? 'success' : 'secondary'}>
+              {bannerCycle ? 'Active Cycle' : 'No Active Cycle'}
             </Badge>
           </div>
         </CardContent>
