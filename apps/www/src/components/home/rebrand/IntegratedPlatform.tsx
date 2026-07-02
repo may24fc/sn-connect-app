@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import OfferingsCarousel from './OfferingsCarousel';
 import SplitCTA from '../../ui/SplitCTA';
 
 const ease = [0.19, 1, 0.22, 1] as const;
@@ -91,18 +92,9 @@ export default function IntegratedPlatform() {
               viewport={{ once: true, margin: '-80px' }}
               className="flex flex-col gap-8 md:gap-10"
             >
-              <div className="overflow-hidden">
-                <motion.p
-                  variants={line}
-                  className="max-w-3xl text-base md:text-lg font-medium sm:font-normal text-[#0c1d2e]/65 tracking-[-0.04em]"
-                  style={{ lineHeight: '1.35' }}
-                >
-                  Every engagement starts with understanding your goals, systems, and workflow. We
-                  then match you with remote specialists who can integrate quickly and contribute
-                  immediately. AI-powered processes help streamline execution, but the focus remains
-                  the same: reliable people delivering meaningful work from day one.
-                </motion.p>
-              </div>
+              <motion.div variants={fade}>
+                <OfferingsCarousel />
+              </motion.div>
 
               <motion.div variants={fade}>
                 <SplitCTA title="REQUEST A BRIEF" href="/contact" />
