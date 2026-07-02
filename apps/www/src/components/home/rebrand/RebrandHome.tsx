@@ -19,7 +19,7 @@ export default function RebrandHome() {
   const whatWeDoRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: whatWeDoRef,
-    offset: ['start start', 'end end'],
+    offset: ['start end', 'start start'],
   });
 
   return (
@@ -111,13 +111,11 @@ export default function RebrandHome() {
 
           <section
             ref={whatWeDoRef}
-            className="relative w-full h-[320vh]"
+            className="relative w-full min-h-screen flex flex-col justify-center"
             id="what-we-do-scroll-root"
           >
-            <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
-              <div className="relative z-10 w-full h-full" id="what-we-do-contents-layer">
-                <WhatWeDo scrollYProgress={scrollYProgress} />
-              </div>
+            <div className="relative z-10 w-full" id="what-we-do-contents-layer">
+              <WhatWeDo scrollYProgress={scrollYProgress} />
             </div>
           </section>
         </div>

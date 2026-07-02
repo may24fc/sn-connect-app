@@ -118,32 +118,17 @@ export default function OurCompany() {
             viewport={{ once: true, margin: '-80px' }}
             id="company-body"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div className="overflow-hidden">
-                <motion.p
-                  variants={line}
-                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-medium sm:font-normal tracking-[-0.04em]"
-                  style={{ lineHeight: '1.6' }}
-                  id="company-text-col-1"
-                >
-                  We provide businesses with remote specialists who combine professional expertise
-                  with modern AI-powered workflows. The result is a team that can move faster,
-                  handle more complexity, and deliver higher-quality outcomes than traditional
-                  remote staffing models.
-                </motion.p>
-              </div>
-              <div className="overflow-hidden">
-                <motion.p
-                  variants={line}
-                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-medium sm:font-normal tracking-[-0.04em]"
-                  style={{ lineHeight: '1.6' }}
-                  id="company-text-col-2"
-                >
-                  Whether you're scaling operations, expanding marketing efforts, supporting
-                  customers, or building new capabilities, we help you access talent that's already
-                  prepared for how modern businesses work.
-                </motion.p>
-              </div>
+            <div className="overflow-hidden max-w-2xl">
+              <motion.p
+                variants={line}
+                className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-medium sm:font-normal tracking-[-0.04em]"
+                style={{ lineHeight: '1.6' }}
+                id="company-text"
+              >
+                We provide businesses with remote specialists who combine professional expertise
+                with AI-powered workflows—helping you scale operations, marketing, support, and
+                more with talent ready to perform from day one.
+              </motion.p>
             </div>
           </motion.div>
 
