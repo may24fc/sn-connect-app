@@ -92,7 +92,7 @@ export default function RebrandHome() {
                       id="hero-subtitle"
                     >
                       AI-enabled specialists across operations, marketing, support, and
-                      technology—embedded into your team and ready to help your business scale
+                      technology, embedded into your team and ready to help your business scale
                       faster.
                     </motion.p>
                   </div>

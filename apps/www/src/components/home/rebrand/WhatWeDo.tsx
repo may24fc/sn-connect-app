@@ -8,7 +8,7 @@ interface WhatWeDoProps {
 }
 
 const BODY_TEXT =
-  'AI-enabled specialists across operations, marketing, support, and technology—integrated into your workflow, with AU and US timezone coverage.';
+  'AI-enabled specialists across operations, marketing, support, and technology, integrated into your workflow, with AU and US timezone coverage.';
 
 // Reveal spans the full scroll range so the text finishes exactly as the progress bar completes.
 const WORD_REVEAL_RANGE: [number, number] = [0, 1];
