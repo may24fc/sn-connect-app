@@ -194,14 +194,17 @@ export default function Footer() {
               whileInView="visible"
               viewport={{ once: true, margin: '-60px' }}
             >
-              <div
-                style={
-                  { '--btn-main-bg': '#d6e4f0', '--btn-arrow-bg': '#3b86d2' } as React.CSSProperties
-                }
-                className="footer-cta"
-              >
-                <SplitCTA title="REQUEST A BRIEF" href="/contact" />
-              </div>
+              <SplitCTA
+                title="REQUEST A BRIEF"
+                href="/contact"
+                mainBg="#ffffff"
+                mainBgHover="#3b86d2"
+                arrowBg="#3b86d2"
+                arrowBgHover="#ffffff"
+                arrowColor="#ffffff"
+                arrowHoverColor="#0c1d2e"
+                labelColor="#0c1d2e"
+              />
             </motion.div>
           </div>
 
