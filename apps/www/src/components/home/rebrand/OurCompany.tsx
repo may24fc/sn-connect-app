@@ -65,8 +65,35 @@ export default function OurCompany() {
       className="relative w-full bg-[#d6e4f0] text-[#0c1d2e] overflow-hidden border-t border-[#0c1d2e]/10 rounded-b-[2rem]"
       id="our-company-section"
     >
+      {/* ── Background: dot matrix + concentric rings + soft glow ── */}
+      <div
+        className="absolute inset-0 pointer-events-none select-none"
+        aria-hidden
+        id="company-bg"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(rgba(12,29,46,0.09) 1px, transparent 1px)',
+            backgroundSize: '26px 26px',
+            maskImage:
+              'radial-gradient(ellipse 110% 100% at 70% 60%, black 30%, transparent 100%)',
+            WebkitMaskImage:
+              'radial-gradient(ellipse 110% 100% at 70% 60%, black 30%, transparent 100%)',
+          }}
+        />
+        {/* Concentric rings, cropped at the top-right corner */}
+        <div className="hidden md:block absolute top-[-340px] right-[-260px] w-[760px] h-[760px]">
+          <span className="absolute inset-0 rounded-full border border-[#0c1d2e]/[0.07]" />
+          <span className="absolute inset-[110px] rounded-full border border-[#0c1d2e]/[0.08]" />
+          <span className="absolute inset-[220px] rounded-full border border-[#0c1d2e]/[0.09]" />
+          <span className="absolute inset-[330px] rounded-full border border-[#3b86d2]/[0.14]" />
+        </div>
+        <div className="absolute bottom-[-25%] right-[-8%] w-[520px] h-[520px] rounded-full bg-[#a1c6e7]/40 blur-[130px]" />
+      </div>
+
       {/* Label strip */}
-      <aside className="w-full px-6 md:px-12 pt-12 pb-10" id="company-label-row">
+      <aside className="relative w-full px-6 md:px-12 pt-12 pb-10" id="company-label-row">
         <motion.div
           variants={stagger()}
           initial="hidden"
@@ -86,7 +113,7 @@ export default function OurCompany() {
       </aside>
 
       <div
-        className="w-full px-6 md:px-12 pt-0 pb-24 md:pb-[126px] grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8 md:gap-12 items-start"
+        className="relative w-full px-6 md:px-12 pt-0 pb-24 md:pb-[126px] grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8 md:gap-12 items-start"
         id="our-company-inner"
       >
         {/* CEO portrait */}
@@ -159,9 +186,21 @@ export default function OurCompany() {
           >
             <div
               ref={statsGridRef}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#0c1d2e]/10 rounded-2xl overflow-hidden border border-[#0c1d2e]/10 max-w-2xl"
+              className="relative grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#0c1d2e]/10 rounded-2xl overflow-hidden border border-[#0c1d2e]/10 max-w-2xl"
               id="company-stats-grid"
             >
+              {/* Data pulse traveling along the top edge */}
+              <motion.span
+                className="absolute top-0 z-10 h-[2px] w-32 bg-gradient-to-r from-transparent via-[#3b86d2] to-transparent pointer-events-none"
+                animate={{ left: ['-10%', '110%'] }}
+                transition={{
+                  duration: 3.4,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: 'linear',
+                  repeatDelay: 1.4,
+                }}
+                aria-hidden
+              />
               {stats.map((stat) => (
                 <div
                   key={stat.label}
