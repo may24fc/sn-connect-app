@@ -26,6 +26,10 @@ export interface ProjectRecord {
   progress_pct: number;
   points_total: number;
   earned_points?: number;
+  // v2: computed max XP potential (from milestone complexity tiers) and dominant
+  // domain-mastery track, returned by GET /api/projects for the projects list view.
+  max_points_available?: number;
+  primary_department?: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
@@ -80,6 +84,9 @@ export interface MilestoneRecord {
   approved_at: string | null;
   approved_by: string | null;
   position: number;
+  // v2 fields
+  complexity_tier: 'routine' | 'standard' | 'complex' | 'epic' | null;
+  department: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -336,6 +343,9 @@ export interface CreateMilestoneInput {
   periodEnd: string;
   dueDate: string;
   position?: number;
+  // v2: complexity tier (weekly only) and department for mastery routing
+  complexityTier?: 'routine' | 'standard' | 'complex' | 'epic' | null;
+  department?: string | null;
 }
 
 export function useCreateMilestone() {
@@ -365,6 +375,9 @@ export interface UpdateMilestoneInput {
   periodEnd?: string;
   dueDate?: string;
   position?: number;
+  // v2: complexity tier (weekly only) and department for mastery routing
+  complexityTier?: 'routine' | 'standard' | 'complex' | 'epic' | null;
+  department?: string | null;
 }
 
 export function useUpdateMilestone() {

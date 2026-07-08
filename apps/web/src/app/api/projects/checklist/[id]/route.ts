@@ -47,12 +47,15 @@ async function syncMilestoneCompletionFromProgress(
     .maybeSingle();
 
   if (milestoneError || !milestone) {
+    if (milestoneError) {
+      console.error('syncMilestoneCompletionFromProgress: failed to load milestone', milestoneId, milestoneError);
+    }
     return;
   }
 
   const progressPct = Number(milestone.progress_pct ?? 0);
   if (progressPct >= 100 && milestone.status !== 'approved') {
-    await supabaseAdmin
+    const { error: approveError } = await supabaseAdmin
       .from('project_milestones')
       .update({
         status: 'approved',
@@ -62,11 +65,14 @@ async function syncMilestoneCompletionFromProgress(
         approved_by: actorUserId,
       })
       .eq('id', milestoneId);
+    if (approveError) {
+      console.error('syncMilestoneCompletionFromProgress: failed to auto-approve milestone (XP not awarded)', milestoneId, approveError);
+    }
     return;
   }
 
   if (progressPct < 100 && milestone.status === 'approved') {
-    await supabaseAdmin
+    const { error: revertError } = await supabaseAdmin
       .from('project_milestones')
       .update({
         status: progressPct === 0 ? 'not_started' : 'in_progress',
@@ -76,6 +82,13 @@ async function syncMilestoneCompletionFromProgress(
         approved_by: null,
       })
       .eq('id', milestoneId);
+    if (revertError) {
+      console.error(
+        'syncMilestoneCompletionFromProgress: failed to revert milestone status',
+        milestoneId,
+        revertError
+      );
+    }
   }
 }
 

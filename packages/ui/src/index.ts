@@ -329,6 +329,25 @@ export {
   type LeaderboardTableProps,
   type LeaderboardTableRow,
 } from './components/leaderboard/LeaderboardTable';
+export {
+  BadgeIcon,
+  type BadgeIconProps,
+  type BadgeRarity,
+} from './components/leaderboard/BadgeIcon';
+export {
+  MasteryTrackCard,
+  type MasteryTrackCardProps,
+} from './components/leaderboard/MasteryTrackCard';
+export {
+  DOMAIN_BASE,
+  DOMAIN_ICON,
+  RARITY_LABEL,
+  getDomainRarityClasses,
+  getDomainAccentClasses,
+  getBadgeRowTone,
+  getRarityContainerClasses,
+  getRarityTagClasses,
+} from './components/leaderboard/badgeTheme';
 
 // Dashboard Components
 export {

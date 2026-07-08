@@ -93,6 +93,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (input.periodEnd !== undefined) update.period_end = input.periodEnd;
   if (input.dueDate !== undefined) update.due_date = input.dueDate;
   if (input.position !== undefined) update.position = input.position;
+  // v2: only persist complexity_tier on weekly milestones; always allow department edits
+  if (input.complexityTier !== undefined) update.complexity_tier = input.complexityTier;
+  if (input.department !== undefined) update.department = input.department;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
