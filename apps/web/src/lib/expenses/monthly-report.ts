@@ -184,16 +184,16 @@ export async function buildMonthlyExpenseReport(
       momPercentChange: momPercent(currentTotalSpend, previousTotalSpend),
     },
     {
-      metric: 'Total Ledger Entries',
-      currentMonth: currentEntryCount,
-      previousMonth: previousEntryCount,
-      momPercentChange: momPercent(currentEntryCount, previousEntryCount),
-    },
-    {
       metric: 'Average Spend Per Entry',
       currentMonth: round2(currentAverage),
       previousMonth: round2(previousAverage),
       momPercentChange: momPercent(currentAverage, previousAverage),
+    },
+    {
+      metric: 'Total Ledger Entries',
+      currentMonth: currentEntryCount,
+      previousMonth: previousEntryCount,
+      momPercentChange: momPercent(currentEntryCount, previousEntryCount),
     },
   ];
 

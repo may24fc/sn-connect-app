@@ -83,7 +83,7 @@ function sectionHeading(doc: PDFKit.PDFDocument, title: string, y?: number): voi
   // left accent bar
   doc.rect(M, headY, 3, 16).fill(C.accent);
 
-  fill(doc, C.navy).font('Helvetica-Bold').fontSize(10)
+  fill(doc, C.navy).font('Helvetica-Bold').fontSize(12)
     .text(title.toUpperCase(), M + 10, headY + 2, { characterSpacing: 0.8 });
 
   doc.y = headY + 24;
@@ -105,9 +105,9 @@ function drawKpiGrid(doc: PDFKit.PDFDocument, report: MonthlyExpenseReport): voi
   const rightX = M + colW + GAP;
   const colLabelY = doc.y;
 
-  fill(doc, C.muted).font('Helvetica-Bold').fontSize(8)
+  fill(doc, C.muted).font('Helvetica-Bold').fontSize(10)
     .text('PREVIOUS MONTH', leftX, colLabelY, { width: colW, align: 'center', characterSpacing: 0.6 });
-  fill(doc, C.navy).font('Helvetica-Bold').fontSize(8)
+  fill(doc, C.navy).font('Helvetica-Bold').fontSize(10)
     .text('CURRENT MONTH', rightX, colLabelY, { width: colW, align: 'center', characterSpacing: 0.6 });
 
   const gridStartY = colLabelY + 18;
@@ -430,9 +430,9 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
 
     // --- Column header row ---
     const distColHeaderY = doc.y;
-    fill(doc, C.muted).font('Helvetica-Bold').fontSize(8)
+    fill(doc, C.muted).font('Helvetica-Bold').fontSize(10)
       .text('PREVIOUS MONTH', leftX, distColHeaderY, { width: colW, align: 'center', characterSpacing: 0.6 });
-    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8)
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(10)
       .text('CURRENT MONTH', rightX, distColHeaderY, { width: colW, align: 'center', characterSpacing: 0.6 });
     doc.y = distColHeaderY + 16;
 
@@ -442,9 +442,9 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
 
     // --- Sub-section: Top Operational Units ---
     const deptSubY = doc.y;
-    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(9)
       .text('Top Operational Units', leftX, deptSubY);
-    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(9)
       .text('Top Operational Units', rightX, deptSubY);
     const deptDataY = deptSubY + 16;
 
@@ -481,9 +481,9 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
 
     // --- Sub-section: By Expense Category ---
     const catSubY = doc.y;
-    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(9)
       .text('By Expense Category', leftX, catSubY);
-    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(9)
       .text('By Expense Category', rightX, catSubY);
     const catDataY = catSubY + 16;
 
