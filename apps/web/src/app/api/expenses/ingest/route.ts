@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { resolveExpenseCapabilities } from '@/lib/expenses/capabilities';
 import { inngest } from '@/lib/inngest/client';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { extractReceiptFromImage, extractReceiptFromText } from '@hr-portal/ai';
@@ -13,38 +14,6 @@ const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image
 
 function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-}
-
-function getRoleFromUser(user: { app_metadata?: Record<string, unknown> }): string | null {
-  const dbRole = user.app_metadata?.db_role;
-  return typeof dbRole === 'string' ? dbRole : null;
-}
-
-async function resolveUserRole(
-  adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  userId: string,
-  appRole: string | null
-): Promise<string | null> {
-  if (appRole) {
-    return appRole;
-  }
-
-  const { data: roleData, error } = await adminClient
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to resolve user role: ${error.message}`);
-  }
-
-  return roleData?.role ?? null;
-}
-
-function isSubmitterRoleAllowed(role: string | null): boolean {
-  return role === 'employee' || role === 'intern';
 }
 
 function parseExpenseUploadFormData(formData: FormData): {
@@ -418,8 +387,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = await resolveUserRole(adminClient, user.id, getRoleFromUser(user));
-    if (!isSubmitterRoleAllowed(role)) {
+    const capabilities = await resolveExpenseCapabilities(adminClient, user.id);
+    if (!capabilities.canLogPayment) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -445,6 +414,8 @@ export async function POST(request: NextRequest) {
         employee_id: employeeId,
         submitted_by: user.id,
         receipt_document_id: documentId,
+        source_type: 'direct_payment',
+        match_status: 'unmatched',
         vendor_name: 'Processing receipt',
         transaction_date: new Date().toISOString().slice(0, 10),
         total_amount: 0,

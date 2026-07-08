@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
         ? '.next-build'
         : '.next',
   transpilePackages: ['@hr-portal/ui', '@hr-portal/database', '@hr-portal/auth', '@hr-portal/ai'],
-  serverExternalPackages: ['googleapis'],
+  serverExternalPackages: ['googleapis', 'pdfkit'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
   async redirects() {
     return [

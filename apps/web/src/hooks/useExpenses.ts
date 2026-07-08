@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ExpenseVerifyInput } from '@/lib/schemas/expense.schema';
+import type { ExpenseLogRequestInput, ExpenseMatchInput, ExpenseVerifyInput } from '@/lib/schemas/expense.schema';
 
 export interface ExpenseEntry {
   id: string;
@@ -42,6 +42,13 @@ export interface ExpenseEntry {
     | 'leadership_review_required'
     | 'approved'
     | 'rejected';
+  source_type: 'staff_request' | 'direct_payment';
+  match_status: 'unmatched' | 'matched' | 'variance_flagged' | 'resolved';
+  matched_entry_id: string | null;
+  matched_by: string | null;
+  matched_at: string | null;
+  matched_variance_amount: number | null;
+  matched_notes: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   submitted_by_user?: {
@@ -61,6 +68,8 @@ export const expenseKeys = {
     search?: string;
     dateFrom?: string;
     dateTo?: string;
+    sourceType?: string;
+    matchStatus?: string;
   }) => [...expenseKeys.lists(), filters] as const,
   details: () => [...expenseKeys.all, 'detail'] as const,
   detail: (id: string) => [...expenseKeys.details(), id] as const,
@@ -88,6 +97,8 @@ export function useExpenses(filters: {
   search?: string | null | undefined;
   dateFrom?: string | null | undefined;
   dateTo?: string | null | undefined;
+  sourceType?: string | null | undefined;
+  matchStatus?: string | null | undefined;
 } = {}) {
   // Allow safe optional assignment or fallback to undefined if exactOptionalPropertyTypes is strict
   const finalFilters: {
@@ -98,6 +109,8 @@ export function useExpenses(filters: {
     search?: string;
     dateFrom?: string;
     dateTo?: string;
+    sourceType?: string;
+    matchStatus?: string;
   } = {};
   if (filters.status !== undefined) finalFilters.status = filters.status;
   if (filters.userId !== undefined && filters.userId !== null) finalFilters.userId = filters.userId;
@@ -116,6 +129,12 @@ export function useExpenses(filters: {
   if (filters.dateTo !== undefined && filters.dateTo !== null) {
     finalFilters.dateTo = filters.dateTo;
   }
+  if (filters.sourceType !== undefined && filters.sourceType !== null) {
+    finalFilters.sourceType = filters.sourceType;
+  }
+  if (filters.matchStatus !== undefined && filters.matchStatus !== null) {
+    finalFilters.matchStatus = filters.matchStatus;
+  }
 
   return useQuery({
     queryKey: expenseKeys.list(finalFilters),
@@ -128,6 +147,8 @@ export function useExpenses(filters: {
       if (finalFilters.search) params.append('search', finalFilters.search);
       if (finalFilters.dateFrom) params.append('dateFrom', finalFilters.dateFrom);
       if (finalFilters.dateTo) params.append('dateTo', finalFilters.dateTo);
+      if (finalFilters.sourceType) params.append('sourceType', finalFilters.sourceType);
+      if (finalFilters.matchStatus) params.append('matchStatus', finalFilters.matchStatus);
 
       const res = await fetch(`/api/expenses?${params.toString()}`);
       if (!res.ok) {
@@ -312,6 +333,64 @@ export function useVerifyExpense() {
       if (!res.ok) {
         const errJson = await res.json().catch(() => null);
         throw new Error(errJson?.error || 'Failed to verify expense');
+      }
+
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: expenseKeys.all });
+      queryClient.invalidateQueries({ queryKey: expenseKeys.detail(variables.id) });
+    },
+  });
+}
+
+/**
+ * Hook for all staff/interns to manually log a spend REQUEST (no receipt required).
+ */
+export function useLogExpenseRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: ExpenseLogRequestInput) => {
+      const res = await fetch('/api/expenses/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || 'Failed to log expense request');
+      }
+
+      return res.json() as Promise<{ data: { expenseEntry: ExpenseEntry } }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: expenseKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook for Accounting/Admin reviewers to reconcile a REQUEST against its
+ * counterpart PAYMENT entry in the Matching Queue.
+ */
+export function useMatchExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { id: string; match: ExpenseMatchInput }) => {
+      const res = await fetch(`/api/expenses/${params.id}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params.match),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || 'Failed to reconcile match');
       }
 
       return res.json();

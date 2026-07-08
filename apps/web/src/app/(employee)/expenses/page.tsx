@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDeleteExpense, useExpenses, useQueueExpenseIngestion, type ExpenseEntry } from '@/hooks/useExpenses';
+import { useExpensesAccess } from '@/hooks/useExpensesAccess';
+import {
+  useDeleteExpense,
+  useExpenses,
+  useLogExpenseRequest,
+  useQueueExpenseIngestion,
+  type ExpenseEntry,
+} from '@/hooks/useExpenses';
 import { validateReceiptImageQuality } from '@/lib/expenses/image-quality';
 import {
   Button,
@@ -19,7 +26,13 @@ import {
   DialogTitle,
   DialogTrigger,
   FileDropZone,
+  Input,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -30,25 +43,56 @@ import {
   useToast,
 } from '@hr-portal/ui';
 import { Badge } from '@hr-portal/ui';
-import { FileText, Loader2, Plus, Receipt, Sparkles, Trash2 } from 'lucide-react';
+import { ClipboardList, FileText, Loader2, Plus, Receipt, Sparkles, Trash2 } from 'lucide-react';
 
 const DELETABLE_STATUSES = new Set(['draft_extracted', 'awaiting_intern_review']);
+
+const EXPENSE_TYPES = [
+  { value: 'software', label: 'Software' },
+  { value: 'office_supplies', label: 'Office Supplies' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'meals', label: 'Meals' },
+  { value: 'equipment', label: 'Equipment' },
+  { value: 'utilities', label: 'Utilities' },
+  { value: 'maintenance', label: 'Maintenance' },
+  { value: 'other', label: 'Other' },
+] as const;
+
+const CURRENCIES = ['AUD', 'USD', 'PHP', 'EUR', 'GBP', 'SGD', 'JPY'] as const;
 
 export default function EmployeeExpensesPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const { capabilities } = useExpensesAccess();
   const [justification, setBusinessJustification] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [logRequestOpen, setLogRequestOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [expensePendingDelete, setExpensePendingDelete] = useState<ExpenseEntry | null>(null);
 
-  // Fetch only this user's submitted expenses
+  // Manual request logging form state
+  const [requestVendor, setRequestVendor] = useState('');
+  const [requestDate, setRequestDate] = useState('');
+  const [requestExpenseType, setRequestExpenseType] = useState<(typeof EXPENSE_TYPES)[number]['value']>('software');
+  const [requestCurrency, setRequestCurrency] = useState<(typeof CURRENCIES)[number]>('AUD');
+  const [requestTotalAmount, setRequestTotalAmount] = useState('');
+  const [requestTaxAmount, setRequestTaxAmount] = useState('');
+  const [requestJustification, setRequestJustification] = useState('');
+  const isRequestOnlyView = !capabilities.canLogPayment;
+
+  // Fetch only this user's submitted expenses (requests + any direct payments they made)
   const { data: rawData, isLoading, refetch } = useExpenses(
-    user?.id ? { userId: user.id } : undefined
+    user?.id
+      ? {
+          userId: user.id,
+          sourceType: isRequestOnlyView ? 'staff_request' : undefined,
+        }
+      : undefined
   );
 
   const uploadMutation = useQueueExpenseIngestion();
+  const logRequestMutation = useLogExpenseRequest();
   const deleteMutation = useDeleteExpense();
   const expenses = rawData?.data || [];
 
@@ -179,6 +223,62 @@ export default function EmployeeExpensesPage() {
     setDeleteConfirmOpen(true);
   };
 
+  const resetRequestForm = () => {
+    setRequestVendor('');
+    setRequestDate('');
+    setRequestExpenseType('software');
+    setRequestCurrency('AUD');
+    setRequestTotalAmount('');
+    setRequestTaxAmount('');
+    setRequestJustification('');
+  };
+
+  const handleLogRequestSubmit = () => {
+    if (!requestVendor.trim()) {
+      addToast({ title: 'Validation Error', description: 'Vendor / service name is required.', variant: 'error' });
+      return;
+    }
+    if (!requestDate) {
+      addToast({ title: 'Validation Error', description: 'Transaction date is required.', variant: 'error' });
+      return;
+    }
+
+    const amount = Number.parseFloat(requestTotalAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      addToast({ title: 'Validation Error', description: 'Total amount must be greater than 0.', variant: 'error' });
+      return;
+    }
+
+    const tax = Number.parseFloat(requestTaxAmount);
+
+    logRequestMutation.mutate(
+      {
+        vendorName: requestVendor.trim(),
+        transactionDate: requestDate,
+        expenseType: requestExpenseType,
+        totalAmount: amount,
+        taxAmount: Number.isFinite(tax) ? tax : 0,
+        currency: requestCurrency,
+        businessJustification: requestJustification || undefined,
+      },
+      {
+        onSuccess: () => {
+          addToast({
+            title: 'Request Logged',
+            description: `${requestVendor.trim()} spend request added to the matching queue.`,
+            variant: 'success',
+          });
+          setLogRequestOpen(false);
+          resetRequestForm();
+        },
+        onError: (err: unknown) => {
+          const message = err instanceof Error ? err.message : 'Failed to log expense request.';
+          addToast({ title: 'Log Failed', description: message, variant: 'error' });
+        },
+      }
+    );
+  };
+
   const handleDeleteConfirm = () => {
     if (!expensePendingDelete) {
       return;
@@ -226,6 +326,24 @@ export default function EmployeeExpensesPage() {
     }
   };
 
+  const getMatchStatusBadge = (matchStatus: ExpenseEntry['match_status']) => {
+    switch (matchStatus) {
+      case 'matched':
+        return <Badge variant="success" className="w-fit bg-emerald-500/10 text-emerald-600 border-none">Matched</Badge>;
+      case 'variance_flagged':
+        return <Badge variant="destructive" className="w-fit border-none">Variance Flagged</Badge>;
+      case 'resolved':
+        return <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600">Resolved</Badge>;
+      default:
+        return <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-500">Unmatched</Badge>;
+    }
+  };
+
+  const getExpenseTypeLabel = (type: ExpenseEntry['expense_type']) => {
+    const mappedType = EXPENSE_TYPES.find((item) => item.value === type);
+    return mappedType?.label ?? type;
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleDateString('en-US', {
@@ -244,20 +362,133 @@ export default function EmployeeExpensesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Receipt className="h-6 w-6 text-indigo-500" />
-            My Expenses & Receipts
+            My Expenses & Payments
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Submit receipt photos for automated AI extraction, ledger analysis, and speedy approval.
+            Log spend requests to stay accountable, or record direct payments with receipt uploads for the matching queue.
           </p>
         </div>
 
-        <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 h-9 px-4">
-              <Plus className="h-4 w-4" />
-              Upload Receipt
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Dialog open={logRequestOpen} onOpenChange={setLogRequestOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 h-9 px-4">
+                <ClipboardList className="h-4 w-4" />
+                Log Request
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-lg font-bold">Log a Spend Request</DialogTitle>
+                <DialogDescription>
+                  Track what you're asking for. Accounting will reconcile this against the actual payment once it's made.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="request-vendor">Vendor / Service</Label>
+                  <Input
+                    id="request-vendor"
+                    value={requestVendor}
+                    onChange={(e) => setRequestVendor(e.target.value)}
+                    placeholder="e.g. OpenAI, Canva, Grab"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="request-date">Transaction Date</Label>
+                    <Input id="request-date" type="date" value={requestDate} onChange={(e) => setRequestDate(e.target.value)} />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Category</Label>
+                    <Select value={requestExpenseType} onValueChange={(value) => setRequestExpenseType(value as typeof requestExpenseType)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EXPENSE_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Currency</Label>
+                    <Select value={requestCurrency} onValueChange={(value) => setRequestCurrency(value as typeof requestCurrency)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CURRENCIES.map((code) => (
+                          <SelectItem key={code} value={code}>{code}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="request-total">Total Amount</Label>
+                    <Input
+                      id="request-total"
+                      type="number"
+                      value={requestTotalAmount}
+                      onChange={(e) => setRequestTotalAmount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="request-tax">Tax Amount</Label>
+                    <Input
+                      id="request-tax"
+                      type="number"
+                      value={requestTaxAmount}
+                      onChange={(e) => setRequestTaxAmount(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="request-justification">Notes (optional)</Label>
+                  <Textarea
+                    id="request-justification"
+                    value={requestJustification}
+                    onChange={(e) => setRequestJustification(e.target.value)}
+                    placeholder="What is this spend for?"
+                    className="min-h-[70px]"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setLogRequestOpen(false)} disabled={logRequestMutation.isPending}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleLogRequestSubmit}
+                  disabled={logRequestMutation.isPending}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                >
+                  {logRequestMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging...
+                    </>
+                  ) : (
+                    'Log Request'
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {capabilities.canLogPayment ? (
+            <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 h-9 px-4">
+                  <Plus className="h-4 w-4" />
+                  Upload Receipt
+                </Button>
+              </DialogTrigger>
           <DialogContent className="!flex !max-h-[calc(100dvh-2rem)] !w-[calc(100vw-2rem)] !max-w-[500px] !flex-col !overflow-hidden !p-0">
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="shrink-0 px-6 pt-6">
@@ -331,14 +562,22 @@ export default function EmployeeExpensesPage() {
               </div>
             </div>
           </DialogContent>
-        </Dialog>
+            </Dialog>
+          ) : null}
+        </div>
       </div>
 
       <div className="grid gap-6">
         <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
           <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-800">
-            <CardTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50">Ingestion Ledger history</CardTitle>
-            <CardDescription>Track state transitions from draft OCR, intern verification, to executive decisioning.</CardDescription>
+            <CardTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50">
+              {isRequestOnlyView ? 'My Logged Requests' : 'Ingestion Ledger History'}
+            </CardTitle>
+            <CardDescription>
+              {isRequestOnlyView
+                ? 'Review all spend requests you have logged for accounting reconciliation.'
+                : 'Track state transitions for direct payments and matching outcomes.'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
@@ -349,8 +588,14 @@ export default function EmployeeExpensesPage() {
               <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
                 <Receipt className="h-12 w-12 text-zinc-300 dark:text-zinc-700" />
                 <div>
-                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">No expenses found</h3>
-                  <p className="text-xs text-zinc-500 mt-1">Upload a receipt photo to trigger the automated ledger flow.</p>
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    {isRequestOnlyView ? 'No requests logged yet' : 'No expenses found'}
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {isRequestOnlyView
+                      ? 'Use Log Request to add your first spend request.'
+                      : 'Use Log Request or Upload Receipt to start tracking expenses.'}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -359,11 +604,17 @@ export default function EmployeeExpensesPage() {
                   <TableHeader className="bg-zinc-50 ddark:bg-zinc-900">
                     <TableRow className="border-b border-zinc-200 dark:border-zinc-800">
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Vendor</TableHead>
+                      {isRequestOnlyView ? (
+                        <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Category</TableHead>
+                      ) : (
+                        <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Type</TableHead>
+                      )}
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Date</TableHead>
                       <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Total Amount</TableHead>
-                      <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Accounts (DR/CR)</TableHead>
-                      <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Status</TableHead>
-                      <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Risk Assessment</TableHead>
+                      <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">
+                        {isRequestOnlyView ? 'Request Status' : 'Status'}
+                      </TableHead>
+                      <TableHead className="font-semibold text-zinc-600 dark:text-zinc-400">Match</TableHead>
                       <TableHead className="w-14 text-right font-semibold text-zinc-600 dark:text-zinc-400">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -373,39 +624,30 @@ export default function EmployeeExpensesPage() {
                         <TableCell className="font-medium text-zinc-900 dark:text-zinc-50">
                           {expense.vendor_name}
                         </TableCell>
+                        {isRequestOnlyView ? (
+                          <TableCell>
+                            <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600">
+                              {getExpenseTypeLabel(expense.expense_type)}
+                            </Badge>
+                          </TableCell>
+                        ) : (
+                          <TableCell>
+                            <Badge variant="outline" className="w-fit border-zinc-300 text-zinc-600 capitalize">
+                              {expense.source_type === 'staff_request' ? 'Request' : 'Payment'}
+                            </Badge>
+                          </TableCell>
+                        )}
                         <TableCell className="text-zinc-500 dark:text-zinc-400">
                           {formatDate(expense.transaction_date)}
                         </TableCell>
                         <TableCell className="text-zinc-900 dark:text-zinc-50 font-semibold">
                           {expense.currency} {Number(expense.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
-                        <TableCell className="text-zinc-600 dark:text-zinc-400">
-                          <div className="flex flex-col text-xs space-y-0.5">
-                            <span className="truncate">
-                              <span className="text-muted-foreground mr-1">DR:</span>
-                              {expense.verified_debit_account || expense.draft_debit_account || expense.ai_debit_account || <span className="italic text-zinc-400">Extracting...</span>}
-                            </span>
-                            <span className="truncate">
-                              <span className="text-muted-foreground mr-1">CR:</span>
-                              {expense.verified_credit_account || expense.draft_credit_account || expense.ai_credit_account || <span className="italic text-zinc-400">Extracting...</span>}
-                            </span>
-                          </div>
-                        </TableCell>
                         <TableCell>
                           {getStatusBadge(expense.processing_status)}
                         </TableCell>
                         <TableCell>
-                          {expense.risk_bucket ? (
-                            <span className="capitalize text-xs font-semibold flex items-center gap-1">
-                              <span className={`h-1.5 w-1.5 rounded-full ${
-                                expense.risk_bucket === 'standard_recurring' ? 'bg-emerald-500' :
-                                expense.risk_bucket === 'price_spike' ? 'bg-amber-500' : 'bg-rose-500'
-                              }`} />
-                              {expense.risk_bucket.replace('_', ' ')}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-zinc-400 italic">Pending Verification</span>
-                          )}
+                          {getMatchStatusBadge(expense.match_status)}
                         </TableCell>
                         <TableCell className="text-right">
                           {DELETABLE_STATUSES.has(expense.processing_status) ? (

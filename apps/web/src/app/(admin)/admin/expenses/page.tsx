@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import ExpenseMatchingQueuePage from '@/app/(employee)/expenses/verify/page';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,19 +44,21 @@ import {
   Info,
   LineChart,
   Loader2,
+  Scale,
   Search,
   Sparkles,
   X,
 } from 'lucide-react';
 
 const SETTLED_STATUSES = new Set(['auto_approved', 'approved', 'rejected']);
-const EXCEPTION_STATUS = 'leadership_review_required';
+const EXCEPTION_MATCH_STATUS = 'variance_flagged';
+const SETTLED_MATCH_STATUSES = new Set(['matched', 'resolved']);
 
 export default function AdminExpensesDashboard() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'exceptions' | 'settled'>('exceptions');
+  const [activeTab, setActiveTab] = useState<'matching' | 'exceptions' | 'settled'>('matching');
   const [decisionNotes, setDecisionNotes] = useState<{ [key: string]: string }>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentIdFilter, setDepartmentIdFilter] = useState('all');
@@ -101,8 +104,10 @@ export default function AdminExpensesDashboard() {
   const decideMutation = useLeadershipDecision();
 
   const filteredRows = rawLedger?.data || [];
-  const exceptions = filteredRows.filter((entry) => entry.processing_status === EXCEPTION_STATUS);
-  const settled = filteredRows.filter((entry) => SETTLED_STATUSES.has(entry.processing_status));
+  const exceptions = filteredRows.filter((entry) => entry.match_status === EXCEPTION_MATCH_STATUS);
+  const settled = filteredRows.filter(
+    (entry) => SETTLED_STATUSES.has(entry.processing_status) || SETTLED_MATCH_STATUSES.has(entry.match_status)
+  );
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -120,11 +125,14 @@ export default function AdminExpensesDashboard() {
       processingStatusFilter !== 'all'
         ? processingStatusFilter
         : activeTab === 'exceptions'
-          ? EXCEPTION_STATUS
+          ? undefined
           : 'auto_approved,approved,rejected';
 
     if (scopedStatus) {
       params.set('processingStatus', scopedStatus);
+    }
+    if (activeTab === 'exceptions' && processingStatusFilter === 'all') {
+      params.set('matchStatus', EXCEPTION_MATCH_STATUS);
     }
     if (departmentIdFilter !== 'all') {
       params.set('departmentId', departmentIdFilter);
@@ -202,124 +210,134 @@ export default function AdminExpensesDashboard() {
 
   return (
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-950">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <ShieldAlert className="h-6 w-6 text-indigo-500" />
-          Executive Expense Desk
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Review escalated price spikes (yellow flags) and non-recurring transactions (red flags) verified by the interns.
-        </p>
-        <div className="mt-3">
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => router.push(`${expensesDeskBasePath}/analytics`)}
-          >
-            <LineChart className="h-4 w-4" />
-            Open Executive Analytics
-          </Button>
+      <div className="flex md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <ShieldAlert className="h-6 w-6 text-indigo-500" />
+            Expense Desk
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Review requests vs payments flagged with a matching variance, and monitor the reconciled ledger.
+          </p>
         </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => router.push(`${expensesDeskBasePath}/analytics`)}
+        >
+          <LineChart className="h-4 w-4" />
+          Open Executive Analytics
+        </Button>
       </div>
 
-      <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Ledger Filters</CardTitle>
-          <CardDescription>Search and narrow records by department, processing state, and date window.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <div className="xl:col-span-2">
-              <Label htmlFor="expense-search" className="text-xs text-zinc-600 dark:text-zinc-400">Search vendor</Label>
-              <div className="relative mt-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-                <Input
-                  id="expense-search"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search by vendor"
-                  className="pl-8"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-xs text-zinc-600 dark:text-zinc-400">Department</Label>
-              <Select value={departmentIdFilter} onValueChange={setDepartmentIdFilter}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="All departments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All departments</SelectItem>
-                  {(departmentsData?.data || []).map((department) => (
-                    <SelectItem key={department.id} value={department.id}>
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-xs text-zinc-600 dark:text-zinc-400">Processing state</Label>
-              <Select value={processingStatusFilter} onValueChange={setProcessingStatusFilter}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="All states" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All states</SelectItem>
-                  <SelectItem value="awaiting_intern_review">Awaiting intern review</SelectItem>
-                  <SelectItem value="leadership_review_required">Leadership review required</SelectItem>
-                  <SelectItem value="auto_approved">Auto-approved</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-          </div>
-
-          <div className="flex justify-between items-end gap-3 md:flex-row md:items-center md:gap-6 xl:gap-3 xl:grid xl:grid-cols-5">
-            <div className="flex gap-3">
-              <div>
-                <Label htmlFor="date-from" className="text-xs text-zinc-600 dark:text-zinc-400">Date from</Label>
-                <Input id="date-from" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="mt-1" />
-              </div>
-              <div>
-                <Label htmlFor="date-to" className="text-xs text-zinc-600 dark:text-zinc-400">Date to</Label>
-                <Input id="date-to" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="mt-1" />
-              </div>
-            </div>
-
-            <div className="flex items-end gap-2 xl:col-span-4 xl:justify-end">
-              <Button variant="outline" onClick={clearFilters} className="gap-2">
-                <X className="h-4 w-4" />
-                Clear filters
-              </Button>
-              <Button variant="outline" onClick={() => handleExport('csv')} className="gap-2">
-                <Download className="h-4 w-4" />
-                Export CSV
-              </Button>
-              <Button variant="outline" onClick={() => handleExport('xlsx')} className="gap-2">
-                <Download className="h-4 w-4" />
-                Export XLSX
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'exceptions' | 'settled')} className="space-y-6">
-        <TabsList className="bg-zinc-100 dark:bg-zinc-900 border p-1 rounded-lg">
-          <TabsTrigger value="exceptions" className="rounded px-4 py-2 text-sm font-semibold flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            Exceptions Review Desk ({exceptions.length})
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'matching' | 'exceptions' | 'settled')} className="space-y-6">
+        <TabsList className="inline-flex w-fit overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 p-0">
+          <TabsTrigger value="matching" className="rounded-none border-0 px-4 py-2 text-sm font-semibold flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-zinc-950 dark:data-[state=active]:bg-zinc-950 dark:data-[state=active]:text-zinc-50">
+            <Scale className="h-4 w-4" />
+            Matching Queue
           </TabsTrigger>
-          <TabsTrigger value="settled" className="rounded px-4 py-2 text-sm font-semibold flex items-center gap-2">
+          <TabsTrigger value="exceptions" className="rounded-none border-0 px-4 py-2 text-sm font-semibold flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-zinc-950 dark:data-[state=active]:bg-zinc-950 dark:data-[state=active]:text-zinc-50">
+            <AlertCircle className="h-4 w-4" />
+            Variance Review ({exceptions.length})
+          </TabsTrigger>
+          <TabsTrigger value="settled" className="rounded-none border-0 px-4 py-2 text-sm font-semibold flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-zinc-950 dark:data-[state=active]:bg-zinc-950 dark:data-[state=active]:text-zinc-50">
             <History className="h-4 w-4" />
             Settled Ledger & History ({settled.length})
           </TabsTrigger>
         </TabsList>
+
+        {activeTab !== 'matching' ? (
+          <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Ledger Filters</CardTitle>
+              <CardDescription>Search and narrow records by department, processing state, and date window.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <div className="xl:col-span-2">
+                  <Label htmlFor="expense-search" className="text-xs text-zinc-600 dark:text-zinc-400">Search vendor</Label>
+                  <div className="relative mt-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+                    <Input
+                      id="expense-search"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Search by vendor"
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-zinc-600 dark:text-zinc-400">Department</Label>
+                  <Select value={departmentIdFilter} onValueChange={setDepartmentIdFilter}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="All departments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All departments</SelectItem>
+                      {(departmentsData?.data || []).map((department) => (
+                        <SelectItem key={department.id} value={department.id}>
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-zinc-600 dark:text-zinc-400">Processing state</Label>
+                  <Select value={processingStatusFilter} onValueChange={setProcessingStatusFilter}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="All states" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All states</SelectItem>
+                      <SelectItem value="awaiting_intern_review">Awaiting intern review</SelectItem>
+                      <SelectItem value="leadership_review_required">Leadership review required</SelectItem>
+                      <SelectItem value="auto_approved">Auto-approved</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+              </div>
+
+              <div className="flex justify-between items-end gap-3 md:flex-row md:items-center md:gap-6 xl:gap-3 xl:grid xl:grid-cols-5">
+                <div className="flex gap-3">
+                  <div>
+                    <Label htmlFor="date-from" className="text-xs text-zinc-600 dark:text-zinc-400">Date from</Label>
+                    <Input id="date-from" type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label htmlFor="date-to" className="text-xs text-zinc-600 dark:text-zinc-400">Date to</Label>
+                    <Input id="date-to" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} className="mt-1" />
+                  </div>
+                </div>
+
+                <div className="flex items-end gap-2 xl:col-span-4 xl:justify-end">
+                  <Button variant="outline" onClick={clearFilters} className="gap-2">
+                    <X className="h-4 w-4" />
+                    Clear filters
+                  </Button>
+                  <Button variant="outline" onClick={() => handleExport('csv')} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Export CSV
+                  </Button>
+                  <Button variant="outline" onClick={() => handleExport('xlsx')} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Export XLSX
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        <TabsContent value="matching" className="space-y-4 outline-none">
+          <ExpenseMatchingQueuePage />
+        </TabsContent>
 
         <TabsContent value="exceptions" className="space-y-4 outline-none">
           {isLoading ? (
@@ -337,12 +355,13 @@ export default function AdminExpensesDashboard() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
               {exceptions.map((expense) => {
-                const isRed = expense.risk_bucket === 'non_recurring';
+                const varianceAmount = expense.matched_variance_amount ?? 0;
+                const isLargeVariance = Math.abs(varianceAmount) >= expense.total_amount * 0.1;
                 return (
                   <Card
                     key={expense.id}
                     className={`border transition-all shadow-sm flex flex-col justify-between ${
-                      isRed
+                      isLargeVariance
                         ? 'border-rose-200 dark:border-rose-950/50 bg-rose-50/15'
                         : 'border-amber-200 dark:border-amber-950/50 bg-amber-50/10'
                     }`}
@@ -352,12 +371,12 @@ export default function AdminExpensesDashboard() {
                         <div>
                           <Badge
                             className={`mb-2 capitalize px-2 py-0.5 border-none ${
-                              isRed
+                              isLargeVariance
                                 ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                                 : 'bg-amber-500/10 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
                             }`}
                           >
-                            {isRed ? 'New Vendor (Red Flag)' : 'Price Spike (Yellow Flag)'}
+                            Variance {expense.currency} {Math.abs(varianceAmount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </Badge>
                           <CardTitle className="text-base font-bold text-zinc-900 dark:text-zinc-50">{expense.vendor_name}</CardTitle>
                           <CardDescription className="text-xs text-muted-foreground mt-0.5">
@@ -370,13 +389,12 @@ export default function AdminExpensesDashboard() {
                       </div>
                     </CardHeader>
                     <CardContent className="py-4 space-y-4 flex-1">
-                      {/* Submissions & Booking detail blocks */}
+                      {/* Match detail block */}
                       <div className="grid grid-cols-2 gap-4 text-xs">
                         <div className="space-y-1">
-                          <p className="font-bold text-zinc-500">MAPPED BOOKING ACCOUNTS:</p>
-                          <div className="bg-white/80 dark:bg-zinc-900 rounded p-2 border border-zinc-100 dark:border-zinc-800 font-medium">
-                            <p className="truncate"><span className="text-muted-foreground mr-1">DR:</span>{expense.verified_debit_account}</p>
-                            <p className="truncate"><span className="text-muted-foreground mr-1">CR:</span>{expense.verified_credit_account}</p>
+                          <p className="font-bold text-zinc-500">ENTRY TYPE:</p>
+                          <div className="bg-white/80 dark:bg-zinc-900 rounded p-2 border border-zinc-100 dark:border-zinc-800 font-medium capitalize">
+                            {expense.source_type === 'staff_request' ? 'Spend Request' : 'Direct Payment'}
                           </div>
                         </div>
                         <div className="space-y-1">
@@ -391,9 +409,9 @@ export default function AdminExpensesDashboard() {
                       <div className="flex gap-2 text-xs bg-white/60 dark:bg-zinc-900 rounded border border-zinc-100 dark:border-zinc-800 p-2.5">
                         <Info className="h-4 w-4 text-indigo-500 shrink-0" />
                         <div>
-                          <p className="font-bold text-zinc-700 dark:text-zinc-400">Intern Auditor Review Notes:</p>
+                          <p className="font-bold text-zinc-700 dark:text-zinc-400">Accounting Match Notes:</p>
                           <p className="italic text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            "{expense.reviewer_notes || 'Confirmed OCR data and accounts matched without custom correction remarks.'}"
+                            "{expense.matched_notes || 'No reconciliation remarks recorded.'}"
                           </p>
                         </div>
                       </div>
