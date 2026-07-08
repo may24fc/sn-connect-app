@@ -109,6 +109,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       period_end: input.periodEnd,
       due_date: input.dueDate,
       position: input.position ?? 0,
+      // v2: complexity tier and department for mastery tracking
+      complexity_tier: input.complexityTier ?? 'standard',
+      department: input.department ?? null,
     })
     .select('*')
     .single();

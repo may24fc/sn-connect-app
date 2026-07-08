@@ -620,6 +620,13 @@ export const queryKeys = {
     list: (scope: string, period: string) =>
       [...queryKeys.leaderboard.all, scope, period] as const,
   },
+
+  gamification: {
+    all: ['gamification'] as const,
+    mastery: (userId: string) => [...queryKeys.gamification.all, 'mastery', userId] as const,
+    badges: (userId: string)  => [...queryKeys.gamification.all, 'badges',  userId] as const,
+    featuredMastery: (userId: string) => [...queryKeys.gamification.all, 'featured-mastery', userId] as const,
+  },
 } as const;
 
 // Type helpers for query key extraction

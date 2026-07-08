@@ -88,10 +88,67 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // v2: total XP potential (sum of milestone complexity tiers + flat monthly bonus) and
+  // the project's dominant domain-mastery track (most common milestone department),
+  // so the list view can show "earned / max XP" and a department accent per card.
+  const COMPLEXITY_TIER_XP: Record<string, number> = {
+    routine: 50,
+    standard: 150,
+    complex: 300,
+    epic: 600,
+  };
+  const maxPointsByProject = new Map<string, number>();
+  const departmentCountsByProject = new Map<string, Map<string, number>>();
+
+  if (projectIds.length > 0) {
+    const { data: milestoneRows, error: milestonesError } = await supabaseAdmin
+      .from('project_milestones')
+      .select('project_id, period_type, complexity_tier, department')
+      .in('project_id', projectIds)
+      .is('deleted_at', null);
+
+    if (milestonesError) {
+      console.error('GET /api/projects milestone lookup failed:', milestonesError);
+      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
+    }
+
+    for (const m of milestoneRows ?? []) {
+      if (!m.project_id) continue;
+
+      const xp =
+        m.period_type === 'month'
+          ? 100
+          : (COMPLEXITY_TIER_XP[m.complexity_tier ?? 'standard'] ?? 150);
+      maxPointsByProject.set(m.project_id, (maxPointsByProject.get(m.project_id) ?? 0) + xp);
+
+      if (m.department) {
+        const counts = departmentCountsByProject.get(m.project_id) ?? new Map<string, number>();
+        counts.set(m.department, (counts.get(m.department) ?? 0) + 1);
+        departmentCountsByProject.set(m.project_id, counts);
+      }
+    }
+  }
+
+  function getPrimaryDepartment(projectId: string): string | null {
+    const counts = departmentCountsByProject.get(projectId);
+    if (!counts || counts.size === 0) return null;
+    let topDept: string | null = null;
+    let topCount = 0;
+    for (const [dept, count] of counts) {
+      if (count > topCount) {
+        topDept = dept;
+        topCount = count;
+      }
+    }
+    return topDept;
+  }
+
   return NextResponse.json({
     data: projects.map((project) => ({
       ...project,
       earned_points: earnedPointsByProject.get(project.id) ?? 0,
+      max_points_available: maxPointsByProject.get(project.id) ?? 0,
+      primary_department: getPrimaryDepartment(project.id),
     })),
     pagination: { page, pageSize, total: count ?? 0 },
   });

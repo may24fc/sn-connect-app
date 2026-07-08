@@ -1,386 +1,75 @@
 import { logActivity } from '@/lib/audit';
-import { CurrencyConversionService } from '@/lib/fx/currency-conversion-service';
+import { resolveExpenseCapabilities } from '@/lib/expenses/capabilities';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
-import { type ExpenseVerifyInput, expenseVerifySchema } from '@/lib/schemas/expense.schema';
+import { type ExpenseMatchInput, expenseMatchSchema } from '@/lib/schemas/expense.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-type RiskRoutingResult = {
-  riskBucket: 'standard_recurring' | 'price_spike' | 'non_recurring';
-  processingStatus: 'auto_approved' | 'leadership_review_required';
-  baselineAverage: number | null;
-  comparisonBasis: 'previous_month_average' | 'general_average' | 'no_history_unrecognized';
+type MinimalExpenseEntry = {
+  id: string;
+  vendor_name: string;
+  currency: string;
+  total_amount: number;
+  submitted_by: string;
+  source_type: 'staff_request' | 'direct_payment';
+  match_status: 'unmatched' | 'matched' | 'variance_flagged' | 'resolved';
+  matched_entry_id: string | null;
+  deleted_at: string | null;
 };
 
-function isAccountingDepartmentCandidate(name: string, description?: string | null): boolean {
-  const normalizedName = name.trim().toLowerCase();
-  const normalizedDescription = (description ?? '').trim().toLowerCase();
-
-  // Primary path: explicit accounting naming.
-  if (normalizedName.includes('accounting')) {
-    return true;
-  }
-
-  // Canonical fallback: finance departments explicitly scoped to accounting work.
-  return normalizedName === 'finance' && normalizedDescription.includes('accounting');
-}
-
-/**
- * Calculates risk bucket for verified expense entries based on vendor history.
- * - Standard Recurring: Known vendor + within 10% baseline average -> Auto-approved.
- * - Price Spike: Known vendor + amount exceeds baseline average by >10% -> Yellow flag.
- * - Non-Recurring: New / unrecognized vendor -> Red flag.
- */
-async function computeRiskRouting(
-  adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  vendorName: string,
-  transactionDate: string,
-  verifiedAmount: number
-): Promise<RiskRoutingResult> {
-  const { data: allHistory, error } = await adminClient
-    .from('expense_entries')
-    .select('total_amount, transaction_date')
-    .ilike('vendor_name', vendorName.trim())
-    .is('deleted_at', null)
-    .in('processing_status', ['verified', 'auto_approved', 'approved'])
-    .order('transaction_date', { ascending: false });
-
-  if (error || !allHistory || allHistory.length === 0) {
-    return {
-      riskBucket: 'non_recurring',
-      processingStatus: 'leadership_review_required',
-      baselineAverage: null,
-      comparisonBasis: 'no_history_unrecognized',
-    };
-  }
-
-  // Segment same-vendor history to calculate previous calendar month average.
-  const txDate = new Date(transactionDate);
-  const prevMonthYear = txDate.getMonth() === 0 ? txDate.getFullYear() - 1 : txDate.getFullYear();
-  const prevMonth = txDate.getMonth() === 0 ? 11 : txDate.getMonth() - 1;
-
-  const prevMonthStart = new Date(Date.UTC(prevMonthYear, prevMonth, 1))
-    .toISOString()
-    .split('T')[0] as string;
-  const prevMonthEnd = new Date(Date.UTC(prevMonthYear, prevMonth + 1, 0))
-    .toISOString()
-    .split('T')[0] as string;
-
-  const prevMonthEntries = allHistory.filter((entry) => {
-    return entry.transaction_date >= prevMonthStart && entry.transaction_date <= prevMonthEnd;
-  });
-
-  let average = 0;
-  let basis: 'previous_month_average' | 'general_average' = 'general_average';
-
-  if (prevMonthEntries.length > 0) {
-    const sum = prevMonthEntries.reduce((total, row) => total + Number(row.total_amount), 0);
-    average = sum / prevMonthEntries.length;
-    basis = 'previous_month_average';
-  } else {
-    // Fall back to general historical average (cap at last 10 entries for noise filter).
-    const recentEntries = allHistory.slice(0, 10);
-    const sum = recentEntries.reduce((total, row) => total + Number(row.total_amount), 0);
-    average = sum / recentEntries.length;
-    basis = 'general_average';
-  }
-
-  // 10% threshold buffer for standard recurring validation.
-  const priceSpikeThreshold = average * 1.1;
-
-  if (verifiedAmount > priceSpikeThreshold) {
-    return {
-      riskBucket: 'price_spike',
-      processingStatus: 'leadership_review_required',
-      baselineAverage: average,
-      comparisonBasis: basis,
-    };
-  }
-
-  return {
-    riskBucket: 'standard_recurring',
-    processingStatus: 'auto_approved',
-    baselineAverage: average,
-    comparisonBasis: basis,
-  };
-}
-
-async function fetchAndEnforceUserRole(
-  adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  userId: string
-): Promise<string> {
-  // Fetch app-level role and canonical department id first.
-  const { data: userData, error: userError } = await adminClient
-    .from('users')
-    .select('role, id, department_id')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (userError) {
-    throw new Error('Forbidden: Unable to resolve user profile');
-  }
-
-  const userRole = userData?.role ?? 'employee';
-
-  // System administrators and super administrators are always authorized
-  if (userRole === 'admin' || userRole === 'super_admin') {
-    return userRole;
-  }
-
-  // Accounting interns and accounting staff are allowed as non-admin reviewers.
-  if (userRole !== 'intern' && userRole !== 'employee') {
-    throw new Error('Forbidden: Only Accounting staff or interns can verify expenses');
-  }
-
-  // Prefer canonical database helper for department authorization.
-  const { data: isAccountingMember, error: accountingCheckError } = await adminClient.rpc(
-    'user_is_accounting_member',
-    {
-      target_user_id: userId,
-    }
-  );
-
-  if (!accountingCheckError) {
-    if (!isAccountingMember) {
-      throw new Error('Forbidden: Only Accounting department can verify expenses');
-    }
-
-    return userRole;
-  }
-
-  // Resolve canonical department name from users.department_id.
-  let canonicalDepartmentName: string | null = null;
-  let canonicalDepartmentDescription: string | null = null;
-  const departmentId =
-    (userData as { department_id?: string | null } | null)?.department_id ?? null;
-
-  if (departmentId) {
-    const { data: departmentData, error: departmentError } = await adminClient
-      .from('departments')
-      .select('name, description, deleted_at')
-      .eq('id', departmentId)
-      .maybeSingle();
-
-    if (!departmentError && departmentData?.name) {
-      canonicalDepartmentName = departmentData.name;
-      canonicalDepartmentDescription = departmentData.description ?? null;
-    }
-  }
-
-  // Fallback path for environments where helper function is not yet migrated.
-  // Canonical path: department comes from users.department_id -> departments.name.
-  if (
-    canonicalDepartmentName &&
-    isAccountingDepartmentCandidate(canonicalDepartmentName, canonicalDepartmentDescription)
-  ) {
-    return userRole;
-  }
-
-  // Check all active employee rows for this user to avoid false-negative auth
-  // when canonical department_id is missing but legacy employee text still exists.
-  const { data: activeEmployeeRows, error: activeEmployeeError } = await adminClient
-    .from('employees')
-    .select('department')
-    .eq('user_id', userId)
-    .is('deleted_at', null);
-
-  if (activeEmployeeError) {
-    throw new Error('Forbidden: Unable to resolve employee department');
-  }
-
-  let normalizedDepartments = (activeEmployeeRows ?? [])
-    .map((row) => (typeof row.department === 'string' ? row.department.trim().toLowerCase() : ''))
-    .filter(Boolean);
-
-  // Controlled fallback: some records drift where active linkage is missing but
-  // latest historical department still reflects the user's current assignment.
-  if (normalizedDepartments.length === 0) {
-    const { data: fallbackEmployeeRows, error: fallbackEmployeeError } = await adminClient
-      .from('employees')
-      .select('department, updated_at')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-      .limit(1);
-
-    if (fallbackEmployeeError) {
-      throw new Error('Forbidden: Unable to resolve employee department');
-    }
-
-    normalizedDepartments = (fallbackEmployeeRows ?? [])
-      .map((row) => (typeof row.department === 'string' ? row.department.trim().toLowerCase() : ''))
-      .filter(Boolean);
-  }
-
-  const isAccounting = normalizedDepartments.some((department) => {
-    return department.includes('accounting') || department === 'finance';
-  });
-
-  if (!isAccounting) {
-    throw new Error('Forbidden: Only Accounting department can verify expenses');
-  }
-
-  return userRole;
-}
-
-async function fetchAndEnforceExpenseState(
+async function fetchExpenseEntry(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
   id: string
-) {
-  const { data: expenseEntry, error: loadError } = await adminClient
+): Promise<MinimalExpenseEntry> {
+  const { data, error } = await adminClient
     .from('expense_entries')
-    .select('*')
+    .select(
+      'id, vendor_name, currency, total_amount, submitted_by, source_type, match_status, matched_entry_id, deleted_at'
+    )
     .eq('id', id)
     .is('deleted_at', null)
     .maybeSingle();
 
-  if (loadError || !expenseEntry) {
+  if (error || !data) {
     throw new Error('Expense entry not found');
   }
 
-  if (expenseEntry.processing_status !== 'awaiting_intern_review') {
-    throw new Error(`Cannot verify entry in processing state: ${expenseEntry.processing_status}`);
-  }
-
-  return expenseEntry;
+  return data as MinimalExpenseEntry;
 }
 
-async function notifySubmitterOfVerification(
-  ownerUserId: string,
-  expenseEntry: { vendor_name: string; currency: string },
-  finalTotalAmount: number,
-  reviewerDisplayName: string,
-  id: string,
-  routingResult: RiskRoutingResult
-) {
-  if (routingResult.processingStatus === 'auto_approved') {
+function notifyMatchResult(
+  entry: MinimalExpenseEntry,
+  counterpart: MinimalExpenseEntry,
+  matchStatus: ExpenseMatchInput['matchStatus'],
+  reviewerDisplayName: string
+): void {
+  const recipients = new Set([entry.submitted_by, counterpart.submitted_by]);
+
+  for (const recipientId of recipients) {
     createNotification({
-      userId: ownerUserId,
+      userId: recipientId,
       type: 'system',
-      title: 'Expense Auto-Approved',
-      message: `Your expense at ${expenseEntry.vendor_name} for ${expenseEntry.currency} ${finalTotalAmount} was verified by ${reviewerDisplayName} and auto-approved based on standard baseline matching.`,
-      link: '/employee/expenses',
-      metadata: { expenseId: id, totalAmount: finalTotalAmount, status: 'auto_approved' },
-    });
-  } else {
-    createNotification({
-      userId: ownerUserId,
-      type: 'system',
-      title: 'Expense Escalated to Leadership',
-      message: `Your expense at ${expenseEntry.vendor_name} for ${expenseEntry.currency} ${finalTotalAmount} was verified by ${reviewerDisplayName} and routed to Miss May and Steven for review (${
-        routingResult.riskBucket === 'price_spike'
-          ? 'Sudden price spike detected'
-          : 'Unrecognized vendor expense'
-      }).`,
-      link: '/employee/expenses',
-      metadata: { expenseId: id, riskBucket: routingResult.riskBucket },
+      title:
+        matchStatus === 'matched'
+          ? 'Expense Matched'
+          : matchStatus === 'variance_flagged'
+            ? 'Expense Variance Flagged'
+            : 'Expense Match Resolved',
+      message: `Your ${entry.vendor_name} entry (${entry.currency} ${entry.total_amount}) was reconciled by ${reviewerDisplayName} with status [${matchStatus.replace('_', ' ')}].`,
+      link: '/expenses',
+      metadata: { expenseId: entry.id, counterpartId: counterpart.id, matchStatus },
     });
   }
-}
-
-interface MinimalExpenseEntry {
-  vendor_name: string;
-  transaction_date: string;
-  currency: string;
-  exchange_rate_to_aud: number | null;
-  fx_rates_fetched_at?: string | null;
-  fx_source?: string | null;
-  tax_amount: string | number | null;
-  total_amount: string | number | null;
-}
-
-function roundToCents(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-async function executeVerificationTransaction(
-  adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  id: string,
-  userId: string,
-  expenseEntry: MinimalExpenseEntry,
-  parsedData: ExpenseVerifyInput
-) {
-  const conversionService = new CurrencyConversionService(adminClient);
-  const finalDebitAccount = parsedData.verifiedDebitAccount;
-  const finalCreditAccount = parsedData.verifiedCreditAccount;
-  const finalReviewerNotes = parsedData.reviewerNotes || null;
-
-  const finalTaxAmount = parsedData.taxAmount ?? Number(expenseEntry.tax_amount);
-  const finalTotalAmount = parsedData.totalAmount ?? Number(expenseEntry.total_amount);
-  const sourceCurrency = parsedData.sourceCurrency;
-  const normalizedTaxAmount = Number.isFinite(finalTaxAmount) ? finalTaxAmount : 0;
-
-  let fxRatesFetchedAt = expenseEntry.fx_rates_fetched_at ?? null;
-  let fxSource = expenseEntry.fx_source ?? 'base_currency';
-  let finalExchangeRateToAud = 1;
-
-  if (sourceCurrency === 'AUD') {
-    finalExchangeRateToAud = 1;
-    fxSource = 'base_currency';
-    fxRatesFetchedAt = null;
-  } else if (typeof parsedData.exchangeRateToAud === 'number' && parsedData.exchangeRateToAud > 0) {
-    // Prefer reviewer-provided rate and skip FX cache dependency.
-    finalExchangeRateToAud = parsedData.exchangeRateToAud;
-    fxSource = 'base_currency';
-  } else if (typeof expenseEntry.exchange_rate_to_aud === 'number' && expenseEntry.exchange_rate_to_aud > 0) {
-    // Fallback to stored rate when present.
-    finalExchangeRateToAud = expenseEntry.exchange_rate_to_aud;
-  } else {
-    const resolvedRate = await conversionService.getRateToAud(sourceCurrency);
-    finalExchangeRateToAud = resolvedRate.exchangeRateToAud;
-    fxRatesFetchedAt = resolvedRate.fxRatesFetchedAt ?? fxRatesFetchedAt;
-    fxSource = resolvedRate.fxSource ?? fxSource;
-  }
-
-  const finalTotalAmountAud = roundToCents(finalTotalAmount * finalExchangeRateToAud);
-  const finalTaxAmountAud = roundToCents(normalizedTaxAmount * finalExchangeRateToAud);
-
-  const routingResult = await computeRiskRouting(
-    adminClient,
-    expenseEntry.vendor_name,
-    expenseEntry.transaction_date,
-    finalTotalAmount
-  );
-
-  const now = new Date().toISOString();
-
-  const { data: updatedEntry, error: updateError } = await adminClient
-    .from('expense_entries')
-    .update({
-      verified_debit_account: finalDebitAccount,
-      verified_credit_account: finalCreditAccount,
-      reviewer_notes: finalReviewerNotes,
-      tax_amount: finalTaxAmount,
-      total_amount: finalTotalAmount,
-      currency: sourceCurrency,
-      exchange_rate_to_aud: finalExchangeRateToAud,
-      total_amount_aud: finalTotalAmountAud,
-      tax_amount_aud: finalTaxAmountAud,
-      fx_rates_fetched_at: fxRatesFetchedAt,
-      fx_source: fxSource,
-      reviewed_by: userId,
-      reviewed_at: now,
-      risk_bucket: routingResult.riskBucket,
-      processing_status: routingResult.processingStatus,
-    })
-    .eq('id', id)
-    .select('*')
-    .single();
-
-  if (updateError || !updatedEntry) {
-    throw new Error('Failed to save verification');
-  }
-
-  return { updatedEntry, routingResult, finalTotalAmount };
 }
 
 /**
  * POST /api/expenses/[id]/verify
- * Verification checkpoint endpoint for Accounting department reviewers.
- * Receives verifications, executes double-entry locks, runs post-review risk routing,
- * and notifies owners / escalates exception items immediately.
+ * Matching Queue reconciliation endpoint. Links a staff spend REQUEST with the
+ * direct PAYMENT that settled it (or flags a variance), per the Control Hub
+ * Expense Tracking & Matching System proposal. Restricted to Accounting
+ * staff/interns and Admin/Super Admin.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -388,7 +77,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabase = await createSupabaseServerClient();
     const adminClient = createSupabaseAdminClient();
 
-    // Verify authentication
     const {
       data: { user },
       error: authError,
@@ -398,87 +86,98 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Role enforcement
-    try {
-      await fetchAndEnforceUserRole(adminClient, user.id);
-    } catch (roleErr) {
-      const msg = roleErr instanceof Error ? roleErr.message : 'Forbidden';
-      return NextResponse.json({ error: msg }, { status: 403 });
+    const capabilities = await resolveExpenseCapabilities(adminClient, user.id);
+    if (!capabilities.canMatch) {
+      return NextResponse.json(
+        { error: 'Forbidden: Only Accounting staff or Admins can reconcile matches' },
+        { status: 403 }
+      );
     }
 
-    // Retrieve original entry and enforce state
-    let expenseEntry: Awaited<ReturnType<typeof fetchAndEnforceExpenseState>>;
-    try {
-      expenseEntry = await fetchAndEnforceExpenseState(adminClient, id);
-    } catch (stateErr) {
-      const msg = stateErr instanceof Error ? stateErr.message : 'Expense entry not found';
-      return NextResponse.json({ error: msg }, { status: msg.includes('state') ? 400 : 404 });
-    }
-
-    // Input validation
     const body = await request.json();
-    const parsed = expenseVerifySchema.safeParse(body);
+    const parsed = expenseMatchSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Invalid verification body', details: parsed.error.flatten() },
+        { error: 'Invalid match body', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
 
-    // Execute the database mutation and auto-routing scoring
-    let transactionRes: Awaited<ReturnType<typeof executeVerificationTransaction>>;
+    let entry: MinimalExpenseEntry;
+    let counterpart: MinimalExpenseEntry;
+
     try {
-      transactionRes = await executeVerificationTransaction(
-        adminClient,
-        id,
-        user.id,
-        expenseEntry,
-        parsed.data
-      );
-    } catch (txErr) {
-      console.error('Failed to commit verified expense:', txErr);
-      return NextResponse.json({ error: 'Failed to save verification' }, { status: 500 });
+      entry = await fetchExpenseEntry(adminClient, id);
+      counterpart = await fetchExpenseEntry(adminClient, parsed.data.counterpartEntryId);
+    } catch (loadErr) {
+      const msg = loadErr instanceof Error ? loadErr.message : 'Expense entry not found';
+      return NextResponse.json({ error: msg }, { status: 404 });
     }
 
-    const { updatedEntry, routingResult, finalTotalAmount } = transactionRes;
+    if (entry.source_type === counterpart.source_type) {
+      return NextResponse.json(
+        { error: 'A request can only be matched against a payment entry (and vice-versa).' },
+        { status: 400 }
+      );
+    }
 
-    // Audit trace Logging
+    const now = new Date().toISOString();
+    const varianceAmount = Number((entry.total_amount - counterpart.total_amount).toFixed(2));
+
+    const { error: updateEntryError } = await adminClient
+      .from('expense_entries')
+      .update({
+        match_status: parsed.data.matchStatus,
+        matched_entry_id: counterpart.id,
+        matched_by: user.id,
+        matched_at: now,
+        matched_variance_amount: varianceAmount,
+        matched_notes: parsed.data.matchedNotes || null,
+      })
+      .eq('id', entry.id);
+
+    const { error: updateCounterpartError } = await adminClient
+      .from('expense_entries')
+      .update({
+        match_status: parsed.data.matchStatus,
+        matched_entry_id: entry.id,
+        matched_by: user.id,
+        matched_at: now,
+        matched_variance_amount: Number((-varianceAmount).toFixed(2)),
+        matched_notes: parsed.data.matchedNotes || null,
+      })
+      .eq('id', counterpart.id);
+
+    if (updateEntryError || updateCounterpartError) {
+      return NextResponse.json({ error: 'Failed to save match result' }, { status: 500 });
+    }
+
     logActivity(supabase, {
       userId: user.id,
-      action: 'verify_expense_entry',
+      action: 'match_expense_entries',
       tableName: 'expense_entries',
-      recordId: id,
+      recordId: entry.id,
       metadata: {
-        vendorName: expenseEntry.vendor_name,
-        riskBucket: routingResult.riskBucket,
-        processingStatus: routingResult.processingStatus,
-        basis: routingResult.comparisonBasis,
-        baselineAverage: routingResult.baselineAverage,
+        counterpartEntryId: counterpart.id,
+        matchStatus: parsed.data.matchStatus,
+        varianceAmount,
       },
     });
 
-    // Notify submitter and route alerts
     const reviewerDisplayName = await getUserDisplayName(user.id);
-    const ownerUserId = expenseEntry.submitted_by;
-
-    await notifySubmitterOfVerification(
-      ownerUserId,
-      expenseEntry,
-      finalTotalAmount,
-      reviewerDisplayName,
-      id,
-      routingResult
-    );
+    notifyMatchResult(entry, counterpart, parsed.data.matchStatus, reviewerDisplayName);
 
     return NextResponse.json({
       data: {
-        expenseEntry: updatedEntry,
-        routingResult,
+        matchStatus: parsed.data.matchStatus,
+        varianceAmount,
+        entryId: entry.id,
+        counterpartEntryId: counterpart.id,
       },
     });
   } catch (error) {
-    console.error('Unexpected error in POST /api/expenses/[id]/verify:', error);
+    console.error('Unexpected error in POST /api/expenses/[id]/verify (match action):', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

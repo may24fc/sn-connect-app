@@ -140,7 +140,7 @@ export default function AdminProjectsPage() {
                     description={project.description}
                     progressPct={project.progress_pct}
                     health={project.health}
-                    pointsTotal={project.earned_points ?? 0}
+                    earnedPoints={project.earned_points ?? 0}
                     targetEndDate={project.target_end_date}
                   />
                 </Link>

@@ -1,4 +1,5 @@
 import { logActivity } from '@/lib/audit';
+import { resolveExpenseCapabilities } from '@/lib/expenses/capabilities';
 import { createNotification, getUserDisplayName } from '@/lib/notifications/create-notification';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -11,69 +12,11 @@ const expenseDecisionSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
-async function verifyLeadershipRole(
-  adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  userId: string
-) {
-  const { data: userData, error: userError } = await adminClient
-    .from('users')
-    .select('role, department_id')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (userError || !userData) {
-    throw new Error('User not found');
-  }
-
-  const leadershipRoles = ['admin', 'super_admin'];
-  if (leadershipRoles.includes(userData.role)) {
-    return userData.role;
-  }
-
-  if (userData.role !== 'employee' && userData.role !== 'intern') {
-    throw new Error('Forbidden');
-  }
-
-  const { data: isAccountingMember, error: accountingCheckError } = await adminClient.rpc(
-    'user_is_accounting_member',
-    {
-      target_user_id: userId,
-    }
-  );
-
-  if (!accountingCheckError && isAccountingMember) {
-    return userData.role;
-  }
-
-  const departmentId = userData.department_id ?? null;
-  if (!departmentId) {
-    throw new Error('Forbidden');
-  }
-
-  const { data: departmentData, error: departmentError } = await adminClient
-    .from('departments')
-    .select('name')
-    .eq('id', departmentId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (departmentError || !departmentData?.name) {
-    throw new Error('Forbidden');
-  }
-
-  const normalizedDepartment = departmentData.name.trim().toLowerCase();
-  if (normalizedDepartment.includes('accounting') || normalizedDepartment === 'finance') {
-    return userData.role;
-  }
-
-  throw new Error('Forbidden');
-}
-
 /**
  * POST /api/expenses/[id]/decide
- * Exception review endpoint for Executive Leadership (Miss May and Steven).
- * Enforces admin authority, transitions state, and dispatches employee notifications.
+ * Exception review endpoint for Executive Leadership / Accounting.
+ * Resolves a variance flagged by the Matching Queue (mismatched amounts
+ * between a logged request and its counterpart payment).
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -91,12 +34,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Role enforcement
-    try {
-      await verifyLeadershipRole(adminClient, user.id);
-    } catch (roleErr) {
-      const msg = roleErr instanceof Error ? roleErr.message : 'Forbidden';
-      return NextResponse.json({ error: msg }, { status: msg === 'User not found' ? 404 : 403 });
+    // Capability enforcement: only Accounting/Admin/Super Admin may resolve variances.
+    const capabilities = await resolveExpenseCapabilities(adminClient, user.id);
+    if (!capabilities.canMatch) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Retrieve original entry and check status
@@ -111,9 +52,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Expense entry not found' }, { status: 404 });
     }
 
-    if (expenseEntry.processing_status !== 'leadership_review_required') {
+    if (expenseEntry.match_status !== 'variance_flagged') {
       return NextResponse.json(
-        { error: `Cannot review entry in processing state: ${expenseEntry.processing_status}` },
+        { error: `Cannot review entry in match state: ${expenseEntry.match_status}` },
         { status: 400 }
       );
     }
@@ -138,9 +79,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .from('expense_entries')
       .update({
         processing_status: nextStatus,
-        reviewer_notes: notes || expenseEntry.reviewer_notes,
-        reviewed_by: user.id,
-        reviewed_at: now,
+        match_status: 'resolved',
+        matched_notes: notes || expenseEntry.matched_notes,
+        matched_by: user.id,
+        matched_at: now,
       })
       .eq('id', id)
       .select('*')

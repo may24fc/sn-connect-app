@@ -264,7 +264,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const grouped = $json;\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst output = [];\n\nfor (const dept of grouped.departments) {\n  for (const intern of dept.interns) {\n    const entries = Array.isArray(intern.projectEntries) ? intern.projectEntries : [];\n    const blockerText = intern.blockers?.length > 0 ? intern.blockers.join('; ') : 'None';\n    const nextText = intern.nextSteps?.length > 0 ? intern.nextSteps.join('; ') : 'TBD';\n\n    const lines = [\n      `<b>Control Hub | EOD Report</b>`,\n      ``,\n      `📅 <b>Date:</b> ${grouped.reportDate}`,\n      `🏢 <b>Department:</b> ${dept.department}`,\n      ``,\n      div,\n      ``,\n      `👤 <b>${intern.name}</b>`,\n      `⏱ <b>Hours Worked:</b> ${intern.hoursWorked ?? '—'}`,\n    ];\n\n    if (entries.length > 0) {\n      for (const entry of entries) {\n        lines.push(``);\n        lines.push(`📁 <b>${entry.projectFocus || 'Untitled'}</b>`);\n        lines.push(`🔧 <b>Action Taken:</b> ${entry.actionTaken || '—'}`);\n        lines.push(`✅ <b>Outcome:</b> ${entry.outcome || '—'}`);\n        lines.push(`⚠️ <b>Challenge:</b> ${entry.challenge || '—'}`);\n      }\n    } else {\n      lines.push(``);\n      lines.push(`📋 <b>Update:</b> ${intern.summary || 'No update provided.'}`);\n    }\n\n    lines.push(``);\n    lines.push(div);\n    lines.push(``);\n    lines.push(`🚧 <b>Blockers:</b> ${blockerText}`);\n    lines.push(`📌 <b>Next Steps:</b> ${nextText}`);\n    lines.push(``);\n    lines.push(div);\n\n    output.push({ json: { telegramText: lines.join('\\n') } });\n  }\n}\n\nreturn output;"
+        "jsCode": "const grouped = $json;\nconst div = '━━━━━━━━━━━━━━━━━━';\nconst output = [];\n\nfor (const dept of grouped.departments) {\n  for (const intern of dept.interns) {\n    const entries = Array.isArray(intern.projectEntries) ? intern.projectEntries : [];\n    const blockerText = intern.blockers?.length > 0 ? intern.blockers.join('; ') : 'None';\n    const nextText = intern.nextSteps?.length > 0 ? intern.nextSteps.map(escapeHtml).join('; ') : 'TBD';\n\n    const lines = [\n      `<b>Control Hub | EOD Report</b>`,\n      ``,\n      `📅 <b>Date:</b> ${escapeHtml(grouped.reportDate)}`,\n      `🏢 <b>Department:</b> ${escapeHtml(dept.department)}`,\n      ``,\n      div,\n      ``,\n      `👤 <b>${escapeHtml(intern.name)}</b>`,\n      `⏱ <b>Hours Worked:</b> ${escapeHtml(intern.hoursWorked) ?? '—'}`,\n    ];\n\n    if (entries.length > 0) {\n      for (const entry of entries) {\n        lines.push(``);\n        lines.push(`📁 <b>${escapeHtml(entry.projectFocus) || 'Untitled'}</b>`);\n        lines.push(`🔧 <b>Action Taken:</b> ${escapeHtml(entry.actionTaken) || '—'}`);\n        lines.push(`✅ <b>Outcome:</b> ${escapeHtml(entry.outcome) || '—'}`);\n        lines.push(`⚠️ <b>Challenge:</b> ${escapeHtml(entry.challenge) || '—'}`);\n      }\n    } else {\n      lines.push(``);\n      lines.push(`📋 <b>Update:</b> ${escapeHtml(intern.summary) || 'No update provided.'}`);\n    }\n\n    lines.push(``);\n    lines.push(div);\n    lines.push(``);\n    lines.push(`🚧 <b>Blockers:</b> ${blockerText}`);\n    lines.push(`📌 <b>Next Steps:</b> ${nextText}`);\n    lines.push(``);\n    lines.push(div);\n\n    output.push({ json: { telegramText: lines.join('\\n') } });\n  }\n}\n\nreturn output;"
       },
       "id": "build-individual-messages",
       "name": "Build Individual Messages",
@@ -287,6 +287,7 @@
       },
       "id": "send-individual-telegram",
       "name": "Send Individual Telegram",
+      "continueOnFail": true,
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
@@ -510,6 +511,36 @@
         1820,
         420
       ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-individual-messages",
+      "name": "Split Individual Messages",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2272,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "rate-limit-wait",
+      "name": "Rate Limit Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2700,
+        440
+      ],
+      "webhookId": "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"
     }
   ],
   "connections": {
@@ -630,6 +661,24 @@
       "main": [
         [
           {
+            "node": "Split Individual Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Individual Messages": {
+      "main": [
+        [
+          {
+            "node": "Collect After Sends",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Send Individual Telegram",
             "type": "main",
             "index": 0
@@ -641,7 +690,18 @@
       "main": [
         [
           {
-            "node": "Collect After Sends",
+            "node": "Rate Limit Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rate Limit Wait": {
+      "main": [
+        [
+          {
+            "node": "Split Individual Messages",
             "type": "main",
             "index": 0
           }
