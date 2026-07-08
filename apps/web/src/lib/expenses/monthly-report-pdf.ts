@@ -130,33 +130,49 @@ function drawKpiGrid(doc: PDFKit.PDFDocument, report: MonthlyExpenseReport): voi
         .roundedRect(cardX, cardY, colW, cardH, 6)
         .strokeColor(borderColor).lineWidth(1).stroke();
 
+      // Metric label — top-left
       fill(doc, C.muted).font('Helvetica').fontSize(7)
         .text(item.metric.toUpperCase(), cardX + 12, cardY + 10, {
           width: colW - 24,
           characterSpacing: 0.4,
         });
 
+      // Value — top-right aligned inside card
+      const valueText = isSpend ? formatMoneyShort(value) : String(value);
+      const valuePad = 14;
+
       if (isSpend) {
         fill(doc, C.muted).font('Helvetica').fontSize(8)
-          .text('AUD ', cardX + 12, cardY + 26, { continued: true });
+          .text('AUD', cardX + valuePad, cardY + 18, { width: colW - valuePad * 2, align: 'right', continued: false });
         fill(doc, isCurrent ? C.navy : C.slate).font('Helvetica-Bold').fontSize(16)
-          .text(formatMoneyShort(value), { continued: false });
+          .text(valueText, cardX + valuePad, cardY + 26, { width: colW - valuePad * 2, align: 'right' });
       } else {
         fill(doc, isCurrent ? C.navy : C.slate).font('Helvetica-Bold').fontSize(16)
-          .text(String(value), cardX + 12, cardY + 26);
+          .text(valueText, cardX + valuePad, cardY + 26, { width: colW - valuePad * 2, align: 'right' });
       }
 
+      // Bottom-left delta indicator — only on current month card
       if (isCurrent) {
         const momVal = item.momPercentChange;
-        const momLabel = formatPercent(momVal);
+        const deltaLabel = formatPercent(momVal);
+
+        // Determine direction: positive = green filled, negative = red filled, neutral = grey
         const momC = momColor(momVal);
-        const badgeW = 48;
-        const badgeX = cardX + colW - badgeW - 10;
-        const badgeBg = momC === C.rose ? '#FFF1F2' : momC === C.emerald ? '#ECFDF5' : C.divider;
-        doc.roundedRect(badgeX, cardY + cardH - 20, badgeW, 13, 3)
-          .fillColor(badgeBg).fill();
-        fill(doc, momC).font('Helvetica-Bold').fontSize(7.5)
-          .text(momLabel, badgeX, cardY + cardH - 18, { width: badgeW, align: 'center' });
+        const isPositive = momC === C.emerald;
+        const isNegative = momC === C.rose;
+        const indicatorBg = isPositive ? '#ECFDF5' : isNegative ? '#FFF1F2' : C.divider;
+        const indicatorText = momC;
+
+        const indH = 16;
+        const indW = 60;
+        const indX = cardX + 10;
+        const indY = cardY + cardH - indH - 8;
+
+        doc.roundedRect(indX, indY, indW, indH, 8)
+          .fillColor(indicatorBg).fill();
+
+        fill(doc, indicatorText).font('Helvetica-Bold').fontSize(8)
+          .text(deltaLabel, indX, indY + 3, { width: indW, align: 'center' });
       }
     };
 
@@ -361,7 +377,9 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
     drawKpiGrid(doc, report);
 
     // -----------------------------------------------------------------------
-    // SECTION 2 - Spend Distribution: Category + Department side by side
+    // SECTION 2 - Spend Distribution: Previous Month (left) vs Current Month (right)
+    // Each sub-section (Departments first, then Categories) is rendered as a
+    // paired prev/current table. Departments with no data in a month show '--'.
     // -----------------------------------------------------------------------
     sectionHeading(doc, 'Spend Distribution');
 
@@ -369,54 +387,141 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
     const leftX = M;
     const rightX = M + colW + 20;
 
-    const catRows = report.categoryBreakdown.map((r) => [
-      formatCategoryLabel(r.category),
-      formatMoney(r.spendAud),
-      r.percentOfTotal.toFixed(1) + '%',
-    ]);
+    // Helper: build a union of department names across both months, ordered by current spend desc
+    const allDeptNames = Array.from(new Set([
+      ...report.departmentBreakdown.map((r) => r.departmentName),
+      ...report.previousDepartmentBreakdown.map((r) => r.departmentName),
+    ]));
+    const prevDeptMap = new Map(report.previousDepartmentBreakdown.map((r) => [r.departmentName, r.spendAud]));
+    const curDeptMap = new Map(report.departmentBreakdown.map((r) => [r.departmentName, { spendAud: r.spendAud, mom: r.momVariationPercent }]));
 
-    const deptRows = report.departmentBreakdown.map((r) => [
-      r.departmentName,
-      formatMoney(r.spendAud),
-      formatPercent(r.momVariationPercent),
-    ]);
+    // Sort by current spend desc, departments only in prev go at the bottom
+    allDeptNames.sort((a, b) => (curDeptMap.get(b)?.spendAud ?? 0) - (curDeptMap.get(a)?.spendAud ?? 0));
 
-    const twoColStartY = doc.y;
+    const prevDeptRows = allDeptNames.map((name) => {
+      const spend = prevDeptMap.get(name);
+      return [name, spend !== undefined ? formatMoney(spend) : '--'];
+    });
 
+    const curDeptRows = allDeptNames.map((name) => {
+      const entry = curDeptMap.get(name);
+      return [name, entry ? formatMoney(entry.spendAud) : '--', entry ? formatPercent(entry.mom) : '--'];
+    });
+
+    // Helper: build a union of categories across both months, ordered by current spend desc
+    const allCategories = Array.from(new Set([
+      ...report.categoryBreakdown.map((r) => r.category),
+      ...report.previousCategoryBreakdown.map((r) => r.category),
+    ]));
+    const prevCatMap = new Map(report.previousCategoryBreakdown.map((r) => [r.category, r]));
+    const curCatMap = new Map(report.categoryBreakdown.map((r) => [r.category, r]));
+
+    allCategories.sort((a, b) => (curCatMap.get(b)?.spendAud ?? 0) - (curCatMap.get(a)?.spendAud ?? 0));
+
+    const prevCatRows = allCategories.map((cat) => {
+      const entry = prevCatMap.get(cat);
+      return [formatCategoryLabel(cat), entry ? formatMoney(entry.spendAud) : '--', entry ? entry.percentOfTotal.toFixed(1) + '%' : '--'];
+    });
+
+    const curCatRows = allCategories.map((cat) => {
+      const entry = curCatMap.get(cat);
+      return [formatCategoryLabel(cat), entry ? formatMoney(entry.spendAud) : '--', entry ? entry.percentOfTotal.toFixed(1) + '%' : '--'];
+    });
+
+    // --- Column header row ---
+    const distColHeaderY = doc.y;
+    fill(doc, C.muted).font('Helvetica-Bold').fontSize(8)
+      .text('PREVIOUS MONTH', leftX, distColHeaderY, { width: colW, align: 'center', characterSpacing: 0.6 });
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8)
+      .text('CURRENT MONTH', rightX, distColHeaderY, { width: colW, align: 'center', characterSpacing: 0.6 });
+    doc.y = distColHeaderY + 16;
+
+    // Vertical divider for entire section
+    const distDivX = M + colW + 10;
+    const distSectionStartY = doc.y;
+
+    // --- Sub-section: Top Operational Units ---
+    const deptSubY = doc.y;
     fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
-      .text('By Expense Category', leftX, twoColStartY);
+      .text('Top Operational Units', leftX, deptSubY);
     fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
-      .text('Top Operational Units', rightX, twoColStartY);
+      .text('Top Operational Units', rightX, deptSubY);
+    const deptDataY = deptSubY + 16;
 
-    const twoColDataY = twoColStartY + 18;
+    const deptPrevWidths = [Math.round(colW * 0.58), Math.round(colW * 0.42)];
+    const deptCurWidths = [Math.round(colW * 0.46), Math.round(colW * 0.31), Math.round(colW * 0.23)];
 
-    const leftEnd = catRows.length > 0
+    const deptLeftEnd = prevDeptRows.length > 0
       ? drawListColumn(doc, {
           title: '',
-          headers: ['Category', 'Amount', '%'],
-          rows: catRows,
-          widths: [Math.round(colW * 0.5), Math.round(colW * 0.33), Math.round(colW * 0.17)],
-          rightAlignColumns: [1, 2],
+          headers: ['Department', 'Spend'],
+          rows: prevDeptRows,
+          widths: deptPrevWidths,
+          rightAlignColumns: [1],
           startX: leftX,
-          startY: twoColDataY,
+          startY: deptDataY,
           availableWidth: colW,
         })
-      : twoColDataY;
+      : deptDataY + 20;
 
-    const rightEnd = deptRows.length > 0
+    const deptRightEnd = curDeptRows.length > 0
       ? drawListColumn(doc, {
           title: '',
           headers: ['Department', 'Spend', 'MoM'],
-          rows: deptRows,
-          widths: [Math.round(colW * 0.5), Math.round(colW * 0.33), Math.round(colW * 0.17)],
+          rows: curDeptRows,
+          widths: deptCurWidths,
           rightAlignColumns: [1, 2],
           startX: rightX,
-          startY: twoColDataY,
+          startY: deptDataY,
           availableWidth: colW,
         })
-      : twoColDataY;
+      : deptDataY + 20;
 
-    doc.y = Math.max(leftEnd, rightEnd) + 12;
+    doc.y = Math.max(deptLeftEnd, deptRightEnd) + 14;
+
+    // --- Sub-section: By Expense Category ---
+    const catSubY = doc.y;
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
+      .text('By Expense Category', leftX, catSubY);
+    fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
+      .text('By Expense Category', rightX, catSubY);
+    const catDataY = catSubY + 16;
+
+    const catWidths = [Math.round(colW * 0.46), Math.round(colW * 0.31), Math.round(colW * 0.23)];
+
+    const catLeftEnd = prevCatRows.length > 0
+      ? drawListColumn(doc, {
+          title: '',
+          headers: ['Category', 'Amount', '%'],
+          rows: prevCatRows,
+          widths: catWidths,
+          rightAlignColumns: [1, 2],
+          startX: leftX,
+          startY: catDataY,
+          availableWidth: colW,
+        })
+      : catDataY + 20;
+
+    const catRightEnd = curCatRows.length > 0
+      ? drawListColumn(doc, {
+          title: '',
+          headers: ['Category', 'Amount', '%'],
+          rows: curCatRows,
+          widths: catWidths,
+          rightAlignColumns: [1, 2],
+          startX: rightX,
+          startY: catDataY,
+          availableWidth: colW,
+        })
+      : catDataY + 20;
+
+    // Draw divider spanning the full section height
+    stroke(doc, C.border).lineWidth(1)
+      .moveTo(distDivX, distSectionStartY - 4)
+      .lineTo(distDivX, Math.max(catLeftEnd, catRightEnd) + 4)
+      .stroke();
+
+    doc.y = Math.max(catLeftEnd, catRightEnd) + 12;
 
     // -----------------------------------------------------------------------
     // SECTION 3 - Anomalies (conditional - only when variance/price-spike flags tripped)

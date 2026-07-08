@@ -43,7 +43,11 @@ export interface MonthlyExpenseReport {
   previousRangeEndInclusive: string;
   summary: MonthlyMetricComparison[];
   categoryBreakdown: CategorySpendRow[];
+  /** Previous month category spend — same shape, used for side-by-side comparison. */
+  previousCategoryBreakdown: CategorySpendRow[];
   departmentBreakdown: DepartmentSpendRow[];
+  /** Previous month department spend — no MoM field needed; used for left-column display. */
+  previousDepartmentBreakdown: Array<{ departmentName: string; spendAud: number }>;
   pipelineStatus: PipelineStatusCounts;
   anomalies: AnomalyRow[];
 }
@@ -207,6 +211,20 @@ export async function buildMonthlyExpenseReport(
     }))
     .sort((a, b) => b.spendAud - a.spendAud);
 
+  const prevCategoryTotals = new Map<string, number>();
+  for (const row of previousRows) {
+    const key = row.expense_type || 'other';
+    prevCategoryTotals.set(key, (prevCategoryTotals.get(key) ?? 0) + amountOf(row));
+  }
+
+  const previousCategoryBreakdown: CategorySpendRow[] = Array.from(prevCategoryTotals.entries())
+    .map(([category, spendAud]) => ({
+      category,
+      spendAud: round2(spendAud),
+      percentOfTotal: previousTotalSpend > 0 ? round2((spendAud / previousTotalSpend) * 100) : 0,
+    }))
+    .sort((a, b) => b.spendAud - a.spendAud);
+
   const currentDepartmentTotals = new Map<string, number>();
   for (const row of currentRows) {
     const key = resolveDepartmentName(row);
@@ -225,6 +243,10 @@ export async function buildMonthlyExpenseReport(
       spendAud: round2(spendAud),
       momVariationPercent: momPercent(spendAud, previousDepartmentTotals.get(departmentName) ?? 0),
     }))
+    .sort((a, b) => b.spendAud - a.spendAud);
+
+  const previousDepartmentBreakdown = Array.from(previousDepartmentTotals.entries())
+    .map(([departmentName, spendAud]) => ({ departmentName, spendAud: round2(spendAud) }))
     .sort((a, b) => b.spendAud - a.spendAud);
 
   const pipelineStatus: PipelineStatusCounts = {
@@ -254,7 +276,9 @@ export async function buildMonthlyExpenseReport(
     previousRangeEndInclusive: previousEndIso,
     summary,
     categoryBreakdown,
+    previousCategoryBreakdown,
     departmentBreakdown,
+    previousDepartmentBreakdown,
     pipelineStatus,
     anomalies,
   };
