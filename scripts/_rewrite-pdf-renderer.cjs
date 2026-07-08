@@ -1,94 +1,11 @@
-﻿import PDFDocument from 'pdfkit';
-import type { MonthlyExpenseReport } from './monthly-report';
+const fs = require('fs');
 
-// ---------------------------------------------------------------------------
-// Design tokens - corporate executive palette
-// ---------------------------------------------------------------------------
-const M = 48; // page margin
-const CONTENT_WIDTH = 595.28 - M * 2; // A4 width minus margins
+// Read the file and keep only lines 1-91 (0-indexed: 0-90) — the clean design tokens and helper functions
+const lines = fs.readFileSync('apps/web/src/lib/expenses/monthly-report-pdf.ts', 'utf8').split('\n');
+const cleanTop = lines.slice(0, 91).join('\n');
 
-const C = {
-  navy: '#1E293B',
-  slate: '#334155',
-  muted: '#64748B',
-  faint: '#94A3B8',
-  divider: '#F1F5F9',
-  border: '#E2E8F0',
-  cardBg: '#F8FAFC',
-  white: '#FFFFFF',
-  accent: '#3B82F6',
-  emerald: '#10B981',
-  amber: '#F59E0B',
-  rose: '#F43F5E',
-  pillDraft: '#F1F5F9',
-  pillDraftText: '#64748B',
-  pillBlue: '#EFF6FF',
-  pillBlueText: '#1D4ED8',
-  pillGreen: '#ECFDF5',
-  pillGreenText: '#065F46',
-};
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function fill(doc: PDFKit.PDFDocument, color: string): PDFKit.PDFDocument {
-  return doc.fillColor(color);
-}
-
-function stroke(doc: PDFKit.PDFDocument, color: string): PDFKit.PDFDocument {
-  return doc.strokeColor(color);
-}
-
-function ensureSpace(doc: PDFKit.PDFDocument, height: number): void {
-  if (doc.y + height > doc.page.height - doc.page.margins.bottom) {
-    doc.addPage();
-  }
-}
-
-function formatMoney(value: number): string {
-  return `AUD ${value.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function formatMoneyShort(value: number): string {
-  // Large primary figure inside KPI card
-  return value.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function formatPercent(value: number | null): string {
-  // Edge case: previous month was 0 -> neutral dash instead of "New"
-  if (value === null) return '--';
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value.toFixed(1)}%`;
-}
-
-function momColor(value: number | null): string {
-  if (value === null) return C.muted;
-  if (value > 0) return C.rose;
-  if (value < 0) return C.emerald;
-  return C.muted;
-}
-
-function formatCategoryLabel(category: string): string {
-  return category.split('_').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-}
-
-// ---------------------------------------------------------------------------
-// Section heading with navy accent bar
-// ---------------------------------------------------------------------------
-function sectionHeading(doc: PDFKit.PDFDocument, title: string, y?: number): void {
-  const headY = y ?? doc.y;
-  ensureSpace(doc, 32);
-
-  // left accent bar
-  doc.rect(M, headY, 3, 16).fill(C.accent);
-
-  fill(doc, C.navy).font('Helvetica-Bold').fontSize(10)
-    .text(title.toUpperCase(), M + 10, headY + 2, { characterSpacing: 0.8 });
-
-  doc.y = headY + 24;
-}
-
+// Write back: cleanTop + new functions
+const newContent = cleanTop + `
 // ---------------------------------------------------------------------------
 // KPI grid - two columns: Previous Month (left) vs Current Month (right)
 // ---------------------------------------------------------------------------
@@ -441,3 +358,7 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
     doc.end();
   });
 }
+`;
+
+fs.writeFileSync('apps/web/src/lib/expenses/monthly-report-pdf.ts', newContent, 'utf8');
+console.log('Written. Lines:', newContent.split('\n').length);
