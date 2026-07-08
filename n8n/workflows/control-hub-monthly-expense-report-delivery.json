@@ -1,0 +1,139 @@
+{
+  "name": "[Control Hub] [Prod] Monthly Expense Report Delivery",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 0],
+      "notes": "Fires every Monday at 08:00. Downstream Code+If nodes restrict actual execution to the first Monday of the month only.",
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * 1" }]
+        }
+      }
+    },
+    {
+      "id": "code1",
+      "name": "Compute Report Month",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "notes": "Reports always cover the PRIOR fully-completed calendar month, since the job runs at the start of the following month.",
+      "parameters": {
+        "language": "javaScript",
+        "mode": "runOnceForAllItems",
+        "jsCode": "const now = new Date();\nconst isFirstMonday = now.getUTCDate() <= 7;\nconst reportMonthDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));\nconst reportMonth = `${reportMonthDate.getUTCFullYear()}-${String(reportMonthDate.getUTCMonth() + 1).padStart(2, '0')}`;\nconst reportMonthLabel = reportMonthDate.toLocaleDateString('en-AU', { month: 'long', year: 'numeric', timeZone: 'UTC' });\nreturn [{ json: { isFirstMonday, reportMonth, reportMonthLabel, checkedAt: now.toISOString() } }];"
+      }
+    },
+    {
+      "id": "if1",
+      "name": "Is First Monday",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [440, 0],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.isFirstMonday }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http1",
+      "name": "Fetch Monthly PDF Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, -80],
+      "notes": "Reuses the existing Supabase Service Role Header Auth credential — matches the app's SUPABASE_SERVICE_ROLE_KEY, which /api/expenses/reports/monthly accepts as a Bearer token for service-to-service calls.",
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "method": "GET",
+        "url": "https://app.sngroup.com.au/api/expenses/reports/monthly",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "format", "value": "pdf" },
+            { "name": "month", "value": "={{ $json.reportMonth }}" }
+          ]
+        },
+        "options": { "response": { "response": { "responseFormat": "file" } } }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "Qtoo65GeBSupj5X6", "name": "[Prod] SN Connect Supabase Service Role" }
+      }
+    },
+    {
+      "id": "gmail1",
+      "name": "Email Miss May",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [880, -80],
+      "notes": "Needs manual credential wiring: select the Gmail OAuth2 credential in n8n UI before activating.",
+      "onError": "continueErrorOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "may@24fitclub.com.au",
+        "subject": "=Monthly Expense Analytics Report — {{ $('Compute Report Month').item.json.reportMonthLabel }}",
+        "emailType": "html",
+        "message": "=<p>Hi Miss May,</p><p>Please find attached the consolidated Monthly Expense Analytics Report for <strong>{{ $('Compute Report Month').item.json.reportMonthLabel }}</strong>.</p><p>This report was generated and delivered automatically by Control Hub.</p>",
+        "options": {
+          "attachmentsUi": { "attachmentsBinary": [{ "property": "data" }] }
+        }
+      }
+    },
+    {
+      "id": "telegram1",
+      "name": "Alert - Report Delivery Failed",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [880, 120],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "6708968435",
+        "text": "=⚠️ Monthly Expense Report delivery failed for {{ $('Compute Report Month').item.json.reportMonthLabel || 'unknown month' }}. Check the n8n execution logs for [Control Hub] [Prod] Monthly Expense Report Delivery."
+      },
+      "credentials": {
+        "telegramApi": { "id": "br7oYixc6HEh3DQc", "name": "SN Connect Notifications" }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": { "main": [[{ "node": "Compute Report Month", "type": "main", "index": 0 }]] },
+    "Compute Report Month": { "main": [[{ "node": "Is First Monday", "type": "main", "index": 0 }]] },
+    "Is First Monday": {
+      "main": [[{ "node": "Fetch Monthly PDF Report", "type": "main", "index": 0 }], []]
+    },
+    "Fetch Monthly PDF Report": {
+      "main": [
+        [{ "node": "Email Miss May", "type": "main", "index": 0 }],
+        [{ "node": "Alert - Report Delivery Failed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Email Miss May": {
+      "main": [[], [{ "node": "Alert - Report Delivery Failed", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Australia/Sydney"
+  }
+}

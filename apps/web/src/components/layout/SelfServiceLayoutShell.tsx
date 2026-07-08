@@ -154,7 +154,9 @@ function SelfServiceLayoutInner({
           showMarketingReports={marketingReportsAccess.canAccess}
           showAtsAccess={Boolean(atsAccess.data?.canAccess)}
           showCrmAccess={Boolean(crmAccess.data?.canAccess)}
-          showExpensesAccess={expensesAccess.canAccess}
+          showExpenseDeskAccess={
+            expensesAccess.capabilities.canViewDeskGlobal || expensesAccess.capabilities.canViewDeskDepartment
+          }
         />
       </div>
 
@@ -169,7 +171,9 @@ function SelfServiceLayoutInner({
               showMarketingReports={marketingReportsAccess.canAccess}
               showAtsAccess={Boolean(atsAccess.data?.canAccess)}
               showCrmAccess={Boolean(crmAccess.data?.canAccess)}
-              showExpensesAccess={expensesAccess.canAccess}
+              showExpenseDeskAccess={
+                expensesAccess.capabilities.canViewDeskGlobal || expensesAccess.capabilities.canViewDeskDepartment
+              }
             />
           </div>
         </div>

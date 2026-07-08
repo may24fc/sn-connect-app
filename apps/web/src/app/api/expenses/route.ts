@@ -1,3 +1,4 @@
+import { resolveExpenseCapabilities } from '@/lib/expenses/capabilities';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -37,78 +38,6 @@ function stripBucketPrefix(path: string, bucket: string): string {
   return normalized;
 }
 
-async function resolveDbRole(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  userId: string,
-  appRole: string | null
-): Promise<string | null> {
-  if (appRole) {
-    return appRole;
-  }
-
-  const { data, error } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (error) {
-    // Fail closed: treat as non-leadership if role lookup is temporarily unavailable.
-    console.warn('Role lookup failed in GET /api/expenses, defaulting to app role only:', error.message);
-    return null;
-  }
-
-  return data?.role ?? null;
-}
-
-function getRoleFromUser(user: { app_metadata?: Record<string, unknown> }): string | null {
-  const dbRole = user.app_metadata?.db_role;
-  return typeof dbRole === 'string' ? dbRole : null;
-}
-
-async function isAccountingDeskUser(
-  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  userId: string,
-  role: string | null
-): Promise<boolean> {
-  if (role !== 'employee' && role !== 'intern') {
-    return false;
-  }
-
-  const { data: isAccountingMember, error: accountingError } = await supabase.rpc(
-    'user_is_accounting_member',
-    {
-      target_user_id: userId,
-    }
-  );
-
-  if (!accountingError) {
-    return Boolean(isAccountingMember);
-  }
-
-  const { data: userData } = await supabase
-    .from('users')
-    .select('department_id')
-    .eq('id', userId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (!userData?.department_id) {
-    return false;
-  }
-
-  const { data: departmentData } = await supabase
-    .from('departments')
-    .select('name')
-    .eq('id', userData.department_id)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  const departmentName = departmentData?.name?.trim().toLowerCase();
-  return Boolean(departmentName && (departmentName.includes('accounting') || departmentName === 'finance'));
-}
-
 /**
  * GET /api/expenses
  * Lists expense entries with optional filtering by status and submission ownership.
@@ -129,10 +58,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = await resolveDbRole(supabase, user.id, getRoleFromUser(user));
-    const isLeadership = role === 'admin' || role === 'super_admin';
-    const hasAccountingDeskAccess = await isAccountingDeskUser(supabase, user.id, role);
-    const hasDeskScope = isLeadership || hasAccountingDeskAccess;
+    const capabilities = await resolveExpenseCapabilities(adminClient, user.id);
+    const hasDeskScope = capabilities.canViewDeskGlobal || capabilities.canViewDeskDepartment;
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -142,6 +69,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
+    const sourceType = searchParams.get('sourceType');
+    const matchStatus = searchParams.get('matchStatus');
 
     if (userId && userId !== user.id && !hasDeskScope) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -158,6 +87,11 @@ export async function GET(request: NextRequest) {
       )
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
+
+    // Marketing users without global desk scope only ever see their own department's ledger.
+    if (capabilities.canViewDeskDepartment && !capabilities.canViewDeskGlobal && capabilities.departmentId) {
+      query = query.eq('department_id', capabilities.departmentId);
+    }
 
     if (status) {
       // Split comma separated list if multiple statuses are requested (e.g. leadership review options)
@@ -179,6 +113,19 @@ export async function GET(request: NextRequest) {
 
     if (expenseType) {
       query = query.eq('expense_type', expenseType);
+    }
+
+    if (sourceType) {
+      query = query.eq('source_type', sourceType);
+    }
+
+    if (matchStatus) {
+      const statuses = matchStatus.split(',');
+      if (statuses.length > 1) {
+        query = query.in('match_status', statuses);
+      } else {
+        query = query.eq('match_status', matchStatus);
+      }
     }
 
     if (search) {

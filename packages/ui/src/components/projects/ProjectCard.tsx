@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, CircleHelp, Pencil, Trash2, Trophy } from 'lucide-react';
+import { Calendar, CircleHelp, Flame, Pencil, Trash2, Trophy } from 'lucide-react';
 import type * as React from 'react';
 import { useState } from 'react';
 import { HoverActionButtons } from '../HoverActionButtons';
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../primitives/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../primitives/tooltip';
 import { cn } from '../../utils/cn';
 import {
   ContributorAvatarStack,
@@ -20,13 +21,19 @@ import {
 } from './ContributorAvatarStack';
 import { HealthPill, type ProjectHealth } from './HealthPill';
 import { ProgressRing } from './ProgressRing';
+import { DOMAIN_ICON, getDomainAccentClasses } from '../leaderboard/badgeTheme';
 
 export interface ProjectCardProps {
   name: string;
   description?: string | null;
   progressPct: number;
   health: ProjectHealth;
-  pointsTotal: number;
+  /** XP earned so far on this project. */
+  earnedPoints: number;
+  /** Total XP this project can yield across all its milestones. When omitted or 0, falls back to a flat "Max XP" label. */
+  maxPoints?: number;
+  /** Dominant domain-mastery track this project counts toward (e.g. "AI & Automation"). */
+  department?: string | null;
   targetEndDate: string;
   contributors?: ContributorAvatar[];
   onClick?: () => void;
@@ -111,7 +118,9 @@ export function ProjectCard({
   description,
   progressPct,
   health,
-  pointsTotal,
+  earnedPoints,
+  maxPoints,
+  department,
   targetEndDate,
   contributors = [],
   onClick,
@@ -122,6 +131,9 @@ export function ProjectCard({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const parsedDescription = description ? parseDescriptionSections(description) : null;
   const showHealthPill = progressPct < 100;
+  const isOverdue = health === 'overdue';
+  const accent = getDomainAccentClasses(department);
+  const DepartmentIcon = department ? DOMAIN_ICON[department] : null;
 
   const hoverActions = [
     ...(onEdit
@@ -150,6 +162,7 @@ export function ProjectCard({
       <Card
         className={cn(
           'group relative cursor-pointer transition-all hover:border-indigo-500 hover:shadow-md',
+          accent?.border,
           className
         )}
         onClick={onClick}
@@ -159,10 +172,47 @@ export function ProjectCard({
           <ProgressRing value={progressPct} size={72} strokeWidth={6} />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="line-clamp-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                {name}
-              </h3>
-              {showHealthPill ? <HealthPill health={health} /> : null}
+              <div className="flex min-w-0 items-center gap-1.5">
+                {DepartmentIcon && accent ? (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className={cn(
+                            'flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
+                            accent.iconWrap
+                          )}
+                        >
+                          <DepartmentIcon className={cn('h-3 w-3', accent.icon)} />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{department} mastery track</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null}
+                <h3 className="line-clamp-1 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  {name}
+                </h3>
+              </div>
+              {showHealthPill ? (
+                isOverdue ? (
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="inline-flex shrink-0 items-center gap-1">
+                          <HealthPill health={health} />
+                          <Flame className="h-3.5 w-3.5 text-red-500" />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[200px]">
+                        Your active streak is frozen until an overdue milestone is resolved.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <HealthPill health={health} />
+                )
+              ) : null}
             </div>
             {description ? (
               <Button
@@ -188,9 +238,15 @@ export function ProjectCard({
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Trophy className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="tabular-nums font-medium text-zinc-700 dark:text-zinc-300">
-                    {pointsTotal}
-                  </span>
+                  {maxPoints && maxPoints > 0 ? (
+                    <span className="tabular-nums font-medium text-zinc-700 dark:text-zinc-300">
+                      {earnedPoints} / {maxPoints} XP
+                    </span>
+                  ) : (
+                    <span className="tabular-nums font-medium text-zinc-700 dark:text-zinc-300">
+                      {earnedPoints} Max XP
+                    </span>
+                  )}
                 </span>
               </div>
               {contributors.length > 0 ? (

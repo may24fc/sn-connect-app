@@ -9,8 +9,18 @@ import {
   parseProjectDescription,
 } from '@/lib/projects/descriptionSections';
 import {
+  COMPLEXITY_TIER_BADGE_CLASSES,
+  COMPLEXITY_TIER_DOT_CLASSES,
+  COMPLEXITY_TIER_LABEL,
+  COMPLEXITY_TIER_TEXT_CLASSES,
+  COMPLEXITY_TIER_XP,
+  type MilestoneComplexityTier,
+} from '@/lib/schemas/project.schema';
+import { useLeaderboard } from '@/hooks/useGamification';
+import {
   type ChecklistItemRecord,
   type MilestoneRecord,
+  type MilestoneStatus,
   useCreateChecklistItem,
   useCreateProjectDocumentation,
   useCreateMilestone,
@@ -52,6 +62,8 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
+  StreakChip,
+  cn,
   useToast,
   FileDropZone,
 } from '@hr-portal/ui';
@@ -65,6 +77,7 @@ import {
   ExternalLink,
   FileText,
   Link2,
+  Lock,
   Pencil,
   Plus,
   Upload,
@@ -72,7 +85,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import { WeeklyFocusCard } from '@/components/weekly-focus/WeeklyFocusCard';
 import { MondayCommitmentModal } from '@/components/modals/MondayCommitmentModal';
 import { useMyWeeklyCommitment } from '@/hooks/useWeeklyCommitments';
@@ -109,6 +122,151 @@ function getMilestoneDateWindowError(
 
   return null;
 }
+
+// ── Gamified XP badge ("pending loot") shown on milestone cards ──────────────
+// Three explicit states so it's never ambiguous whether XP has actually been
+// banked yet: locked (not started) → pending (in progress / awaiting approval,
+// same tier color but dimmer + a clock) → earned (approved, full glow + check).
+// This directly avoids the "badge looks lit but Project Yield didn't move"
+// confusion, since "lit" now only ever means "in progress", not "already paid out".
+function MilestoneXpBadge({
+  xp,
+  toneClasses,
+  status,
+  className,
+}: {
+  xp: number;
+  toneClasses: string;
+  status: MilestoneStatus;
+  className?: string;
+}) {
+  const isLocked = status === 'not_started';
+  const isEarned = status === 'approved';
+
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide transition-all duration-300',
+        toneClasses,
+        isLocked && 'opacity-40 grayscale',
+        !isLocked && !isEarned && 'opacity-70',
+        isEarned && 'ring-2 ring-white/50',
+        className
+      )}
+      title={
+        isLocked
+          ? `+${xp} XP — start this milestone to unlock`
+          : isEarned
+            ? `+${xp} XP earned`
+            : `+${xp} XP — pending approval`
+      }
+    >
+      {isLocked ? (
+        <Lock className="h-2.5 w-2.5" />
+      ) : isEarned ? (
+        <CheckCircle2 className="h-2.5 w-2.5" />
+      ) : null}
+      +{xp} XP
+    </span>
+  );
+}
+
+// Convenience wrapper for weekly milestones, whose XP is driven by complexity tier.
+function ComplexityXpBadge({
+  tier,
+  status,
+  className = '',
+}: {
+  tier: MilestoneComplexityTier;
+  status: MilestoneStatus;
+  className?: string;
+}) {
+  return (
+    <MilestoneXpBadge
+      xp={COMPLEXITY_TIER_XP[tier]}
+      toneClasses={COMPLEXITY_TIER_BADGE_CLASSES[tier]}
+      status={status}
+      className={className}
+    />
+  );
+}
+
+// Flat "chapter complete" bonus badge for monthly milestones (not complexity-tiered).
+function MonthlyBonusXpBadge({ status, className = '' }: { status: MilestoneStatus; className?: string }) {
+  return (
+    <MilestoneXpBadge
+      xp={100}
+      toneClasses={COMPLEXITY_TIER_BADGE_CLASSES.standard}
+      status={status}
+      className={className}
+    />
+  );
+}
+
+// ── Colored tier option (dot + tinted label) reused inside <Select> tiers ───
+// Radix mirrors an item's rendered content into the trigger's <SelectValue />,
+// so this also makes the trigger text "light up" once a tier is chosen.
+function ComplexityTierOption({ tier }: { tier: MilestoneComplexityTier }) {
+  return (
+    <span className="flex items-center gap-2">
+      <span className={cn('h-2 w-2 shrink-0 rounded-full', COMPLEXITY_TIER_DOT_CLASSES[tier])} />
+      <span className={COMPLEXITY_TIER_TEXT_CLASSES[tier]}>{COMPLEXITY_TIER_LABEL[tier]}</span>
+    </span>
+  );
+}
+
+// ── Delayed-gratification micro-interaction ──────────────────────────────────
+// Fires once, the first time a card is seen after its milestone flips to
+// "approved" — a floating "+XP!" burst plus a small confetti pop. Dependency-free
+// (pure CSS keyframes) and tracked in localStorage so it never repeats.
+const XP_CELEBRATION_COLORS = ['#f59e0b', '#ec4899', '#8b5cf6', '#22c55e', '#38bdf8'];
+
+function XpCelebration({ xp }: { xp: number }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 overflow-visible">
+      <span
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-xp-float whitespace-nowrap rounded-full bg-emerald-500 px-3 py-1 text-xs font-extrabold text-white shadow-lg shadow-emerald-500/40"
+      >
+        +{xp} XP!
+      </span>
+      {XP_CELEBRATION_COLORS.map((color, i) => (
+        <span
+          key={color}
+          className="absolute left-1/2 top-1/2 h-1.5 w-1.5 animate-confetti-pop rounded-full"
+          style={
+            {
+              backgroundColor: color,
+              '--confetti-x': `${(i - 2) * 18}px`,
+              '--confetti-y': `${-28 - i * 6}px`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Fires `onCelebrate` exactly once per milestone the first time it's seen as approved. */
+function useMilestoneApprovalCelebration(milestoneId: string, status: string) {
+  const [celebrating, setCelebrating] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || status !== 'approved') {
+      return;
+    }
+    const key = `xp-celebrated:${milestoneId}`;
+    if (localStorage.getItem(key)) {
+      return;
+    }
+    localStorage.setItem(key, '1');
+    setCelebrating(true);
+    const timer = setTimeout(() => setCelebrating(false), 1600);
+    return () => clearTimeout(timer);
+  }, [milestoneId, status]);
+
+  return celebrating;
+}
+
 
 function DescriptionSection({ title, items }: { title: string; items: string[] }) {
   const normalizedItems = items.map((item) => item.trim()).filter(Boolean);
@@ -252,6 +410,30 @@ export default function ProjectDetailPage() {
       });
     }
   }
+
+  // ── Dynamic progression header data ─────────────────────────────────────────
+  // Total XP this project can yield: weekly milestones by complexity tier, plus
+  // the flat 100 XP "chapter complete" bonus per monthly milestone (matches the
+  // points_events trigger logic in supabase/migrations/20260702000001_*.sql).
+  const totalXpAvailable = useMemo(() => {
+    return milestones.reduce((sum, m) => {
+      if (m.period_type === 'week') {
+        return sum + (COMPLEXITY_TIER_XP[(m.complexity_tier as MilestoneComplexityTier) ?? 'standard'] ?? 150);
+      }
+      if (m.period_type === 'month') {
+        return sum + 100;
+      }
+      return sum;
+    }, 0);
+  }, [milestones]);
+
+  // Only fetched for self-service (non-admin-viewing) so we don't imply "your streak"
+  // while an admin is browsing someone else's project.
+  const { data: leaderboardRows } = useLeaderboard('all', 'all');
+  const myLeaderboardEntry = useMemo(
+    () => leaderboardRows?.find((row) => row.user_id === user?.id) ?? null,
+    [leaderboardRows, user?.id]
+  );
 
   // Group milestones: monthly with their weekly children
   const grouped = useMemo(() => {
@@ -401,6 +583,9 @@ export default function ProjectDetailPage() {
               <Badge variant="outline" className="capitalize">
                 {project.status.replace('_', ' ')}
               </Badge>
+              {!isReadOnlyAdminView && myLeaderboardEntry ? (
+                <StreakChip weeks={myLeaderboardEntry.current_streak} />
+              ) : null}
             </div>
             {project.description ? (
               <Button
@@ -414,13 +599,25 @@ export default function ProjectDetailPage() {
                 View Full Details
               </Button>
             ) : null}
-            <div className="mt-2 flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
               <span>
                 {new Date(project.start_date).toLocaleDateString()} →{' '}
                 {new Date(project.target_end_date).toLocaleDateString()}
               </span>
-              <span className="font-medium text-amber-600">
-                {project.earned_points ?? 0} earned points
+              <span className="flex flex-col gap-0.5">
+                <span className="flex items-center gap-1.5 font-semibold text-amber-600 dark:text-amber-400">
+                  Project Yield:{' '}
+                  <span className="tabular-nums">{project.earned_points ?? 0}</span>
+                  <span className="text-zinc-400 dark:text-zinc-600">/</span>
+                  <span className="tabular-nums">{totalXpAvailable}</span> Total XP Available
+                </span>
+                {!isReadOnlyAdminView && myLeaderboardEntry?.rank ? (
+                  <span className="text-[11px] font-normal text-zinc-500 dark:text-zinc-400">
+                    {myLeaderboardEntry.rank <= 3
+                      ? `You're already in the Top ${myLeaderboardEntry.rank === 1 ? '1' : '3'} — keep it up!`
+                      : `Currently ranked #${myLeaderboardEntry.rank} — complete this project to climb the leaderboard!`}
+                  </span>
+                ) : null}
               </span>
               {project.contributors.length > 0 ? (
                 <ContributorAvatarStack
@@ -872,10 +1069,13 @@ function MonthColumn({
     }
   }, [month.status, weeks.length]);
 
+  const celebrating = useMilestoneApprovalCelebration(month.id, displayStatus);
+
   return (
     <>
       <div className="flex min-w-0 flex-col rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/50">
         <div className="group relative border-b border-zinc-200 p-3 dark:border-zinc-800">
+          {celebrating ? <XpCelebration xp={100} /> : null}
           {canManage ? (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
               <Button
@@ -899,9 +1099,12 @@ function MonthColumn({
             </div>
           ) : null}
           <div className="pr-16">
-            <h3 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-              {month.title}
-            </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                {month.title}
+              </h3>
+              <MonthlyBonusXpBadge status={displayStatus as MilestoneStatus} className="mt-0.5" />
+            </div>
             <p className="text-xs text-zinc-500">
               Due {new Date(month.due_date).toLocaleDateString()}
             </p>
@@ -1040,12 +1243,15 @@ function WeekCard({
   }
 
   const canManage = canEdit;
+  const tier = (week.complexity_tier as MilestoneComplexityTier) ?? 'standard';
+  const celebrating = useMilestoneApprovalCelebration(week.id, week.status);
 
   return (
     <>
       <Card className="border-zinc-200 dark:border-zinc-800">
         <CardContent className="p-3">
           <div className="group relative">
+            {celebrating ? <XpCelebration xp={COMPLEXITY_TIER_XP[tier]} /> : null}
             {canManage ? (
               <div className="absolute right-0 top-0 z-10 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                 <Button
@@ -1084,6 +1290,7 @@ function WeekCard({
                     {week.title}
                   </span>
                 </div>
+                <ComplexityXpBadge tier={tier} status={week.status} />
               </div>
               <div className="flex items-center gap-2 pl-5">
                 <Progress value={week.progress_pct} className="h-1.5 flex-1" />
@@ -1433,6 +1640,10 @@ function EditMilestoneDialog({
   const [periodStart, setPeriodStart] = useState(milestone.period_start);
   const [periodEnd, setPeriodEnd] = useState(milestone.period_end);
   const [dueDate, setDueDate] = useState(milestone.due_date);
+  const [complexityTier, setComplexityTier] = useState<MilestoneComplexityTier>(
+    (milestone.complexity_tier as MilestoneComplexityTier) ?? 'standard'
+  );
+  const [department, setDepartment] = useState(milestone.department ?? '');
 
   useEffect(() => {
     if (!open) {
@@ -1443,6 +1654,8 @@ function EditMilestoneDialog({
     setPeriodStart(milestone.period_start);
     setPeriodEnd(milestone.period_end);
     setDueDate(milestone.due_date);
+    setComplexityTier((milestone.complexity_tier as MilestoneComplexityTier) ?? 'standard');
+    setDepartment(milestone.department ?? '');
   }, [open, milestone]);
 
   useEffect(() => {
@@ -1477,6 +1690,8 @@ function EditMilestoneDialog({
         periodStart,
         periodEnd,
         dueDate,
+        complexityTier: complexityTier,
+        department: department.trim() || null,
       });
       addToast({ title: 'Milestone updated', variant: 'success' });
       onOpenChange(false);
@@ -1548,6 +1763,52 @@ function EditMilestoneDialog({
               />
             </div>
           </div>
+
+          {/* v2: Complexity Tier */}
+          {milestone.period_type === 'week' || milestone.period_type === 'month' ? (
+            <div className="space-y-2">
+              <Label htmlFor={`milestone-edit-complexity-${milestone.id}`}>Complexity Tier</Label>
+              <Select
+                value={complexityTier}
+                onValueChange={(v) => setComplexityTier(v as MilestoneComplexityTier)}
+              >
+                <SelectTrigger id={`milestone-edit-complexity-${milestone.id}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(COMPLEXITY_TIER_LABEL) as MilestoneComplexityTier[]).map((tier) => (
+                    <SelectItem key={tier} value={tier}>
+                      <ComplexityTierOption tier={tier} />
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                This milestone is worth{' '}
+                <span className="font-semibold">{COMPLEXITY_TIER_XP[complexityTier]} XP</span> on approval.
+              </p>
+            </div>
+          ) : null}
+
+          {/* v2: Department (mastery routing) */}
+          <div className="space-y-2">
+            <Label htmlFor={`milestone-edit-dept-${milestone.id}`}>Department</Label>
+            <Select value={department} onValueChange={setDepartment}>
+              <SelectTrigger id={`milestone-edit-dept-${milestone.id}`}>
+                <SelectValue placeholder="Select department…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="AI & Automation">AI & Automation</SelectItem>
+                <SelectItem value="Marketing">Marketing</SelectItem>
+                <SelectItem value="HR">HR</SelectItem>
+                <SelectItem value="Design">Design</SelectItem>
+                <SelectItem value="Graphic Design">Graphic Design</SelectItem>
+                <SelectItem value="Video">Video</SelectItem>
+                <SelectItem value="Accounting">Accounting</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -1673,6 +1934,8 @@ function CreateMilestoneDialog({
   const [periodStart, setPeriodStart] = useState(today);
   const [periodEnd, setPeriodEnd] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [complexityTier, setComplexityTier] = useState<MilestoneComplexityTier>('standard');
+  const [department, setDepartment] = useState('');
 
   useEffect(() => {
     if (!open) {
@@ -1683,6 +1946,8 @@ function CreateMilestoneDialog({
     setPeriodStart(today);
     setPeriodEnd('');
     setDueDate('');
+    setComplexityTier('standard');
+    setDepartment('');
   }, [open, today]);
 
   // Clamp dueDate to not exceed periodEnd or projectEndDate
@@ -1719,6 +1984,8 @@ function CreateMilestoneDialog({
         periodStart,
         periodEnd,
         dueDate,
+        complexityTier: periodType === 'week' ? complexityTier : null,
+        department: department.trim() || null,
       });
       setTitle('');
       setPeriodEnd('');
@@ -1795,6 +2062,53 @@ function CreateMilestoneDialog({
               />
             </div>
           </div>
+
+          {/* v2: Complexity Tier */}
+          <div className="space-y-2">
+            <Label htmlFor="ms-complexity">Complexity Tier</Label>
+            <Select
+              value={complexityTier}
+              onValueChange={(v) => setComplexityTier(v as MilestoneComplexityTier)}
+            >
+              <SelectTrigger id="ms-complexity">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(COMPLEXITY_TIER_LABEL) as MilestoneComplexityTier[]).map((tier) => (
+                  <SelectItem key={tier} value={tier}>
+                    <ComplexityTierOption tier={tier} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-indigo-600 dark:text-indigo-400">
+              This milestone is worth{' '}
+              <span className="font-semibold">{COMPLEXITY_TIER_XP[complexityTier]} XP</span> on approval.
+            </p>
+          </div>
+
+          {/* v2: Department (mastery routing) */}
+          <div className="space-y-2">
+            <Label htmlFor="ms-department">Department</Label>
+            <Select value={department} onValueChange={setDepartment}>
+              <SelectTrigger id="ms-department">
+                <SelectValue placeholder="Select department…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="AI & Automation">AI & Automation</SelectItem>
+                <SelectItem value="Marketing">Marketing</SelectItem>
+                <SelectItem value="HR">HR</SelectItem>
+                <SelectItem value="Design">Design</SelectItem>
+                <SelectItem value="Graphic Design">Graphic Design</SelectItem>
+                <SelectItem value="Video">Video</SelectItem>
+                <SelectItem value="Accounting">Accounting</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Used to track domain mastery on the leaderboard.
+            </p>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel

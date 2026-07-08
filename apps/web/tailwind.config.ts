@@ -138,6 +138,8 @@ const config: Config = {
         'overlay-out': 'overlay-out 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         skeleton: 'skeleton 1.5s ease-in-out infinite',
         shimmer: 'shimmer 2s infinite',
+        'xp-float': 'xp-float 1.6s ease-out forwards',
+        'confetti-pop': 'confetti-pop 0.9s ease-out forwards',
       },
 
       keyframes: {
@@ -176,6 +178,19 @@ const config: Config = {
         shimmer: {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
+        },
+        'xp-float': {
+          '0%': { transform: 'translateY(4px) scale(0.85)', opacity: '0' },
+          '15%': { transform: 'translateY(-6px) scale(1.08)', opacity: '1' },
+          '80%': { transform: 'translateY(-34px) scale(1)', opacity: '1' },
+          '100%': { transform: 'translateY(-46px) scale(1)', opacity: '0' },
+        },
+        'confetti-pop': {
+          '0%': { transform: 'translate(0, 0) rotate(0deg) scale(1)', opacity: '1' },
+          '100%': {
+            transform: 'translate(var(--confetti-x, 20px), var(--confetti-y, -40px)) rotate(180deg) scale(0.4)',
+            opacity: '0',
+          },
         },
       },
 

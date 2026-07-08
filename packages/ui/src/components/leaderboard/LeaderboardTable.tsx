@@ -17,6 +17,10 @@ export interface LeaderboardTableRow {
   current_streak: number;
   weeklyAchieved?: number;
   weeklyTotal?: number;
+  // v2 gamification
+  badge_count?: number | null;
+  top_badge_id?: string | null;
+  mastery_title?: string | null;
 }
 
 export interface LeaderboardTableProps {
@@ -52,10 +56,11 @@ export function LeaderboardTable({
           <tr>
             <th className="w-12 px-4 py-3">#</th>
             <th className="px-4 py-3">Member</th>
-            <th className="hidden px-4 py-3 md:table-cell">Tier</th>
+            <th className="hidden px-4 py-3 md:table-cell">League</th>
             <th className="hidden px-4 py-3 sm:table-cell">Streak</th>
+            <th className="hidden px-4 py-3 lg:table-cell">Badges</th>
             {showPeriodCol ? <th className="px-4 py-3 text-right">This month</th> : null}
-            <th className="px-4 py-3 text-right">Total points</th>
+            <th className="px-4 py-3 text-right">Total XP</th>
             <th className="px-4 py-3 text-right">Weekly</th>
           </tr>
         </thead>
@@ -81,7 +86,8 @@ export function LeaderboardTable({
                 }
                 className={cn(
                   'transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50',
-                  isMe && 'bg-emerald-50/60 dark:bg-emerald-950/30',
+                  isMe &&
+                    'relative z-10 border-l-4 border-l-indigo-500 bg-indigo-50/70 shadow-[0_4px_16px_-4px_rgba(79,70,229,0.35)] hover:bg-indigo-50/90 dark:bg-indigo-950/30 dark:hover:bg-indigo-950/40',
                   clickable && 'cursor-pointer'
                 )}
               >
@@ -95,7 +101,7 @@ export function LeaderboardTable({
                     <div className="min-w-0">
                       <p className="truncate font-medium text-zinc-900 dark:text-zinc-100">
                         {r.full_name ?? 'Unknown'}
-                        {isMe ? <span className="ml-2 text-xs font-normal text-emerald-700 dark:text-emerald-400">(You)</span> : null}
+                        {isMe ? <span className="ml-2 text-xs font-normal text-indigo-600 dark:text-indigo-400">(You)</span> : null}
                       </p>
                       {r.department ? (
                         <p className="truncate text-xs text-zinc-500">{r.department}</p>
@@ -108,6 +114,15 @@ export function LeaderboardTable({
                 </td>
                 <td className="hidden px-4 py-3 sm:table-cell">
                   <StreakChip weeks={r.current_streak} />
+                </td>
+                <td className="hidden px-4 py-3 lg:table-cell">
+                  {r.badge_count && r.badge_count > 0 ? (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      🏅 {r.badge_count}
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-zinc-400">—</span>
+                  )}
                 </td>
                 {showPeriodCol ? (
                   <td className="px-4 py-3 text-right font-semibold text-zinc-900 dark:text-zinc-100">
@@ -134,7 +149,7 @@ export function LeaderboardTable({
           })}
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={showPeriodCol ? 7 : 6} className="px-4 py-12 text-center text-sm text-zinc-500">
+              <td colSpan={showPeriodCol ? 8 : 7} className="px-4 py-12 text-center text-sm text-zinc-500">
                 No leaderboard entries yet. Approve a milestone to start the points clock.
               </td>
             </tr>

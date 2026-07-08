@@ -50,7 +50,7 @@ export interface SidebarProps {
   showMarketingReports?: boolean;
   showAtsAccess?: boolean;
   showCrmAccess?: boolean;
-  showExpensesAccess?: boolean;
+  showExpenseDeskAccess?: boolean;
 }
 
 const employeeAtsNavItems: Array<NavItem> = [
@@ -70,7 +70,6 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Invoice', href: '/invoice', icon: Receipt },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
-  { label: 'Verify Expenses', href: '/expenses/verify', icon: FileCheck },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
@@ -92,7 +91,6 @@ const internNavItems: Array<NavItem> = [
   { label: 'Evaluations', href: '/performance/self-evaluation', icon: FileText },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
   { label: 'Expenses Desk', href: '/expenses/desk', icon: Receipt },
-  { label: 'Verify Expenses', href: '/expenses/verify', icon: FileCheck },
   { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Tickets', href: '/tickets', icon: LifeBuoy },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
@@ -196,7 +194,7 @@ export function Sidebar({
   showMarketingReports = true,
   showAtsAccess = false,
   showCrmAccess = false,
-  showExpensesAccess = true,
+  showExpenseDeskAccess = true,
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
     variant === 'employee'
@@ -223,11 +221,7 @@ export function Sidebar({
       return false;
     }
 
-    if (
-      (variant === 'employee' || variant === 'intern') &&
-      !showExpensesAccess &&
-      (item.href === '/expenses/verify' || item.href === '/expenses/desk')
-    ) {
+    if ((variant === 'employee' || variant === 'intern') && !showExpenseDeskAccess && item.href === '/expenses/desk') {
       return false;
     }
 
