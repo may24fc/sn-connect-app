@@ -258,31 +258,45 @@ function drawListColumn(doc: PDFKit.PDFDocument, opts: ListColumnOptions): numbe
 function drawAnomalyTable(doc: PDFKit.PDFDocument, report: MonthlyExpenseReport): void {
   if (report.anomalies.length === 0) return;
 
-  sectionHeading(doc, 'Anomaly Detail - Flagged Entries Only');
-
   const COL = [180, 80, 110, 110, 90];
   const HEADERS = ['Vendor', 'Date', 'Amount (AUD)', 'Variance (AUD)', 'Flag Type'];
   const ROW_H = 22;
   const HEADER_H = 22;
   const startX = M;
 
-  let cx = startX;
-  fill(doc, C.muted).font('Helvetica-Bold').fontSize(7.5);
-  HEADERS.forEach((h, i) => {
-    const align = i >= 2 ? 'right' : 'left';
-    doc.text(h.toUpperCase(), cx, doc.y + 5, { width: COL[i]! - 4, align, characterSpacing: 0.4 });
-    cx += COL[i]!;
-  });
-  doc.y += HEADER_H;
+  // Keep heading, column headers, and at least one row together.
+  ensureSpace(doc, 24 + HEADER_H + ROW_H + 8);
+  sectionHeading(doc, 'Anomaly Detail - Flagged Entries Only');
 
-  stroke(doc, C.border).lineWidth(0.5)
-    .moveTo(startX, doc.y - 2)
-    .lineTo(startX + CONTENT_WIDTH, doc.y - 2)
-    .stroke();
+  const drawHeader = () => {
+    const headerY = doc.y;
+    let hx = startX;
+
+    fill(doc, C.muted).font('Helvetica-Bold').fontSize(7.5);
+    HEADERS.forEach((h, i) => {
+      const align = i >= 2 ? 'right' : 'left';
+      doc.text(h.toUpperCase(), hx, headerY + 5, { width: COL[i]! - 4, align, characterSpacing: 0.4 });
+      hx += COL[i]!;
+    });
+
+    doc.y = headerY + HEADER_H;
+
+    stroke(doc, C.border).lineWidth(0.5)
+      .moveTo(startX, doc.y - 2)
+      .lineTo(startX + CONTENT_WIDTH, doc.y - 2)
+      .stroke();
+  };
+
+  drawHeader();
 
   report.anomalies.forEach((row) => {
-    ensureSpace(doc, ROW_H);
-    cx = startX;
+    // Page-break with repeated headers for readability and stable layout.
+    if (doc.y + ROW_H > doc.page.height - doc.page.margins.bottom) {
+      doc.addPage();
+      drawHeader();
+    }
+
+    let cx = startX;
     const rowY = doc.y;
     const cells = [
       row.vendorName,
