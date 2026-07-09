@@ -16,6 +16,27 @@ const srk = env.SUPABASE_SERVICE_ROLE_KEY;
 
 // PostgREST requires all rows in a batch to have identical keys.
 // Rows with matched_variance_amount/matched_notes go in a separate batch.
+
+// ---------------------------------------------------------------------------
+// MAY 2026 — previous month baseline (gives non-zero comparison values)
+// ---------------------------------------------------------------------------
+const mayRows = [
+  { employee_id: '94d27799-d885-43ff-b255-133b035e7d31', submitted_by: 'b8b19810-e60a-4cfa-83b2-c653f80faf99', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Adobe Creative Cloud', transaction_date: '2026-05-02', expense_type: 'software', total_amount: 89.99, total_amount_aud: 89.99, currency: 'AUD', processing_status: 'approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
+  { employee_id: '6c40c2dd-dd91-42e8-923d-62ab691b85e6', submitted_by: '23e32872-2cc0-4f48-8745-1ffd39c69c66', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Xero Accounting', transaction_date: '2026-05-05', expense_type: 'software', total_amount: 129.0, total_amount_aud: 129.0, currency: 'AUD', processing_status: 'auto_approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
+  { employee_id: 'be4c5c4d-e6cb-43d5-9163-c8c97dc0b973', submitted_by: 'b00e0e1f-3b30-4643-9783-c25f2094e26f', department_id: '9d9bf53d-1ee3-4379-9dc8-3c72fb37c6e3', vendor_name: 'Canva Pro', transaction_date: '2026-05-06', expense_type: 'software', total_amount: 149.0, total_amount_aud: 149.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
+  { employee_id: '94d27799-d885-43ff-b255-133b035e7d31', submitted_by: 'b8b19810-e60a-4cfa-83b2-c653f80faf99', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Team Lunch Review', transaction_date: '2026-05-09', expense_type: 'meals', total_amount: 180.0, total_amount_aud: 180.0, currency: 'AUD', processing_status: 'auto_approved', risk_bucket: 'non_recurring', match_status: 'unmatched', source_type: 'staff_request' },
+  { employee_id: '6c40c2dd-dd91-42e8-923d-62ab691b85e6', submitted_by: '23e32872-2cc0-4f48-8745-1ffd39c69c66', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Sydney Coworking Space', transaction_date: '2026-05-12', expense_type: 'utilities', total_amount: 320.0, total_amount_aud: 320.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'standard_recurring', match_status: 'unmatched', source_type: 'staff_request' },
+  { employee_id: 'be4c5c4d-e6cb-43d5-9163-c8c97dc0b973', submitted_by: 'b00e0e1f-3b30-4643-9783-c25f2094e26f', department_id: '9d9bf53d-1ee3-4379-9dc8-3c72fb37c6e3', vendor_name: 'Standing Desk x2', transaction_date: '2026-05-14', expense_type: 'office_supplies', total_amount: 480.0, total_amount_aud: 480.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'non_recurring', match_status: 'resolved', source_type: 'direct_payment' },
+  { employee_id: '94d27799-d885-43ff-b255-133b035e7d31', submitted_by: 'b8b19810-e60a-4cfa-83b2-c653f80faf99', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Melbourne Conference Flight', transaction_date: '2026-05-19', expense_type: 'travel', total_amount: 540.0, total_amount_aud: 540.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'non_recurring', match_status: 'unmatched', source_type: 'staff_request' },
+  { employee_id: '6c40c2dd-dd91-42e8-923d-62ab691b85e6', submitted_by: '23e32872-2cc0-4f48-8745-1ffd39c69c66', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Google Workspace', transaction_date: '2026-05-21', expense_type: 'software', total_amount: 210.0, total_amount_aud: 210.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
+  { employee_id: 'be4c5c4d-e6cb-43d5-9163-c8c97dc0b973', submitted_by: 'b00e0e1f-3b30-4643-9783-c25f2094e26f', department_id: '9d9bf53d-1ee3-4379-9dc8-3c72fb37c6e3', vendor_name: 'Facebook Ads May', transaction_date: '2026-05-23', expense_type: 'other', total_amount: 1200.0, total_amount_aud: 1200.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
+  { employee_id: '94d27799-d885-43ff-b255-133b035e7d31', submitted_by: 'b8b19810-e60a-4cfa-83b2-c653f80faf99', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'AWS Cloud Services', transaction_date: '2026-05-27', expense_type: 'software', total_amount: 590.0, total_amount_aud: 590.0, currency: 'AUD', processing_status: 'auto_approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
+  { employee_id: '6c40c2dd-dd91-42e8-923d-62ab691b85e6', submitted_by: '23e32872-2cc0-4f48-8745-1ffd39c69c66', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Printer Maintenance', transaction_date: '2026-05-28', expense_type: 'maintenance', total_amount: 275.0, total_amount_aud: 275.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'non_recurring', match_status: 'resolved', source_type: 'direct_payment' },
+];
+
+// ---------------------------------------------------------------------------
+// JUNE 2026 — current month (rich data for comparison)
+// ---------------------------------------------------------------------------
 const normalRows = [
   { employee_id: '94d27799-d885-43ff-b255-133b035e7d31', submitted_by: 'b8b19810-e60a-4cfa-83b2-c653f80faf99', department_id: '4249aa39-6f68-40b3-8732-20823e3020e7', vendor_name: 'Adobe Creative Cloud', transaction_date: '2026-06-03', expense_type: 'software', total_amount: 89.99, total_amount_aud: 89.99, currency: 'AUD', processing_status: 'approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
   { employee_id: 'be4c5c4d-e6cb-43d5-9163-c8c97dc0b973', submitted_by: 'b00e0e1f-3b30-4643-9783-c25f2094e26f', department_id: '9d9bf53d-1ee3-4379-9dc8-3c72fb37c6e3', vendor_name: 'Canva Pro', transaction_date: '2026-06-05', expense_type: 'software', total_amount: 149.0, total_amount_aud: 149.0, currency: 'AUD', processing_status: 'approved', risk_bucket: 'standard_recurring', match_status: 'matched', source_type: 'direct_payment' },
@@ -52,6 +73,7 @@ async function insertBatch(label, rows) {
   }
 }
 
-await insertBatch('Normal rows', normalRows);
+await insertBatch('May 2026 (previous month baseline)', mayRows);
+await insertBatch('June/July 2026 normal rows', normalRows);
 await insertBatch('Anomaly rows', anomalyRows);
 console.log('Seeding complete.');

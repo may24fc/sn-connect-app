@@ -258,7 +258,6 @@ function drawListColumn(doc: PDFKit.PDFDocument, opts: ListColumnOptions): numbe
 function drawAnomalyTable(doc: PDFKit.PDFDocument, report: MonthlyExpenseReport): void {
   if (report.anomalies.length === 0) return;
 
-  ensureSpace(doc, 60);
   sectionHeading(doc, 'Anomaly Detail - Flagged Entries Only');
 
   const COL = [180, 80, 110, 110, 90];
@@ -434,7 +433,7 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
       .text('PREVIOUS MONTH', leftX, distColHeaderY, { width: colW, align: 'center', characterSpacing: 0.6 });
     fill(doc, C.navy).font('Helvetica-Bold').fontSize(10)
       .text('CURRENT MONTH', rightX, distColHeaderY, { width: colW, align: 'center', characterSpacing: 0.6 });
-    doc.y = distColHeaderY + 16;
+    doc.y = distColHeaderY + 24;
 
     // Vertical divider for entire section
     const distDivX = M + colW + 10;
@@ -530,8 +529,17 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
 
     // -----------------------------------------------------------------------
     // Footer - page numbers injected before end() while buffer still open
+    // Remove any trailing page that was created by ensureSpace but left empty.
     // -----------------------------------------------------------------------
-    const totalPages = doc.bufferedPageRange().count;
+    const range = doc.bufferedPageRange();
+    let lastContentPage = range.count - 1;
+    // Walk backwards: a page is empty when doc.y equals the top margin on it.
+    while (lastContentPage > 0) {
+      doc.switchToPage(lastContentPage);
+      if (doc.y > doc.page.margins.top) break;
+      lastContentPage--;
+    }
+    const totalPages = lastContentPage + 1;
     for (let i = 0; i < totalPages; i++) {
       doc.switchToPage(i);
       fill(doc, C.faint).font('Helvetica').fontSize(7.5)
