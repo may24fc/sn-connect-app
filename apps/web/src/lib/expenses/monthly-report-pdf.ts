@@ -77,8 +77,12 @@ function formatCategoryLabel(category: string): string {
 // Section heading with navy accent bar
 // ---------------------------------------------------------------------------
 function sectionHeading(doc: PDFKit.PDFDocument, title: string, y?: number): void {
+  // ensureSpace MUST run before capturing headY so that if a page break
+  // occurs the accent bar and title are positioned at the top of the new
+  // page rather than at the old near-bottom y (which would make the new
+  // page appear blank and push doc.y past the page boundary).
+  if (y === undefined) ensureSpace(doc, 32);
   const headY = y ?? doc.y;
-  ensureSpace(doc, 32);
 
   // left accent bar
   doc.rect(M, headY, 3, 16).fill(C.accent);
@@ -192,13 +196,15 @@ interface ListColumnOptions {
   rows: string[][];
   widths: number[];
   rightAlignColumns?: number[];
+  /** Column indices whose values are MoM percent strings (e.g. "+12.5%", "--") and should be tinted accordingly. */
+  momColumns?: number[];
   startX: number;
   startY: number;
   availableWidth: number;
 }
 
 function drawListColumn(doc: PDFKit.PDFDocument, opts: ListColumnOptions): number {
-  const { headers, rows, widths, rightAlignColumns = [], startX, availableWidth } = opts;
+  const { headers, rows, widths, rightAlignColumns = [], momColumns = [], startX, availableWidth } = opts;
   const ROW_H = 20;
   const HEADER_H = 22;
   let curY = opts.startY;
@@ -235,6 +241,14 @@ function drawListColumn(doc: PDFKit.PDFDocument, opts: ListColumnOptions): numbe
       } else if (ci === 0) {
         fill(doc, C.slate).font('Helvetica').fontSize(8.5)
           .text(cell, cx, curY + 4, { width: w - 4 });
+      } else if (momColumns.includes(ci)) {
+        // Derive sign from formatted string: "+" → positive spend increase → rose
+        // "-" → spend decrease → emerald; "--" or "0" → neutral muted.
+        const isMomPositive = cell.startsWith('+');
+        const isMomNegative = cell.startsWith('-') && cell !== '--';
+        const momTextColor = isMomPositive ? C.rose : isMomNegative ? C.emerald : C.muted;
+        fill(doc, momTextColor).font('Helvetica-Bold').fontSize(8.5)
+          .text(cell, cx, curY + 4, { width: w - 4, align });
       } else {
         fill(doc, C.muted).font('Helvetica').fontSize(8.5)
           .text(cell, cx, curY + 4, { width: w - 4, align });
@@ -258,7 +272,12 @@ function drawListColumn(doc: PDFKit.PDFDocument, opts: ListColumnOptions): numbe
 function drawAnomalyTable(doc: PDFKit.PDFDocument, report: MonthlyExpenseReport): void {
   if (report.anomalies.length === 0) return;
 
-  const COL = [180, 80, 110, 110, 90];
+  // Widths must sum to CONTENT_WIDTH (499) so nothing bleeds off the right edge.
+  const _c0 = Math.round(CONTENT_WIDTH * 0.30); // Vendor     ~150
+  const _c1 = Math.round(CONTENT_WIDTH * 0.14); // Date       ~70
+  const _c2 = Math.round(CONTENT_WIDTH * 0.20); // Amount     ~100
+  const _c3 = Math.round(CONTENT_WIDTH * 0.20); // Variance   ~100
+  const COL = [_c0, _c1, _c2, _c3, Math.round(CONTENT_WIDTH) - _c0 - _c1 - _c2 - _c3]; // Flag remainder ~79
   const HEADERS = ['Vendor', 'Date', 'Amount (AUD)', 'Variance (AUD)', 'Flag Type'];
   const ROW_H = 22;
   const HEADER_H = 22;
@@ -429,7 +448,7 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
     const prevCatMap = new Map(report.previousCategoryBreakdown.map((r) => [r.category, r]));
     const curCatMap = new Map(report.categoryBreakdown.map((r) => [r.category, r]));
 
-    allCategories.sort((a, b) => (curCatMap.get(b)?.spendAud ?? 0) - (curCatMap.get(a)?.spendAud ?? 0));
+    allCategories.sort((a, b) => (curCatMap.get(b)?.percentOfTotal ?? 0) - (curCatMap.get(a)?.percentOfTotal ?? 0));
 
     const prevCatRows = allCategories.map((cat) => {
       const entry = prevCatMap.get(cat);
@@ -484,6 +503,7 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
           rows: curDeptRows,
           widths: deptCurWidths,
           rightAlignColumns: [1, 2],
+          momColumns: [2],
           startX: rightX,
           startY: deptDataY,
           availableWidth: colW,

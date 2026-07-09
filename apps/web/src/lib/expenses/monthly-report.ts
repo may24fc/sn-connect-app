@@ -189,12 +189,6 @@ export async function buildMonthlyExpenseReport(
       previousMonth: round2(previousAverage),
       momPercentChange: momPercent(currentAverage, previousAverage),
     },
-    {
-      metric: 'Total Ledger Entries',
-      currentMonth: currentEntryCount,
-      previousMonth: previousEntryCount,
-      momPercentChange: momPercent(currentEntryCount, previousEntryCount),
-    },
   ];
 
   const categoryTotals = new Map<string, number>();
