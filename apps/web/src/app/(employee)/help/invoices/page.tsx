@@ -13,7 +13,7 @@ const faqs: FAQItem[] = [
   {
     question: 'How do I create a new invoice?',
     answer:
-      'Click the "Create Invoice" button at the top of the Invoice page. Fill in the pay period (start and end dates), hourly rate, hours worked, and any deductions. The gross and net amounts are calculated automatically. Add optional notes and click "Create" to save as a draft.',
+      'Click the "Create Invoice" button, upload your invoice file, and select the payout schedule. The system saves a draft and extracts the amount from the uploaded document.',
   },
   {
     question: 'What happens after I submit an invoice?',
@@ -33,12 +33,12 @@ const faqs: FAQItem[] = [
   {
     question: 'How does currency conversion work?',
     answer:
-      'When creating an invoice, you can select a source currency (your billing currency) and a target currency (payment currency). The system automatically fetches the latest exchange rate and calculates the converted amount. If rates are unavailable, you\'ll see a warning.',
+      'The system uses the extracted invoice amount as your base amount and applies currency conversion when source and target currencies differ.',
   },
   {
     question: 'What do the stat cards at the top mean?',
     answer:
-      'Total = all invoices you\'ve ever created. Pending Review = invoices submitted and awaiting admin approval. Approved/Paid = invoices that have been approved or paid. Total Approved = the combined net amount of all approved and paid invoices.',
+      'Total = all invoices you\'ve ever created. Pending Review = invoices submitted and awaiting admin approval. Approved/Paid = invoices that have been approved or paid. Total Approved = the combined approved invoice amounts.',
   },
   {
     question: 'How do I view details of a past invoice?',
@@ -175,12 +175,10 @@ export default function InvoicesHelpPage(): ReactNode {
           <ol className="space-y-3">
             {[
               'Click the "Create Invoice" button at the top of the Invoice page',
-              'Enter the pay period start and end dates',
-              'Fill in your hourly rate and hours worked — the gross amount calculates automatically',
-              'Enter any deductions (the net amount updates in real-time)',
-              'Select source and target currencies if applicable (exchange rates are fetched automatically)',
-              'Add any notes for the reviewer (optional)',
-              'Click "Create" to save the invoice as a draft',
+              'Upload your existing invoice file',
+              'Select the payout schedule for submission',
+              'Click "Upload & Save Draft" to create the draft invoice',
+              'The amount is extracted from your uploaded document',
               'When ready, click "Submit" on the draft row to send for approval',
             ].map((step, i) => (
               <li key={step} className="flex items-start gap-3">

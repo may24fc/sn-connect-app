@@ -1,9 +1,15 @@
 'use client';
 
-import { StatCard, StatCardGrid } from '@/components/data-display/StatCard';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUploadDocument } from '@/hooks/useDocuments';
 import type { InvoiceRecord } from '@/hooks/useInvoices';
 import { useCreateInvoice, useInvoices, useSubmitInvoice } from '@/hooks/useInvoices';
-import { convertAmount, getExchangeRateText } from '@/lib/fx/rates';
+import {
+  buildPayoutScheduleTag,
+  formatPayoutScheduleLabel,
+  getPayoutScheduleOptions,
+  parsePayoutScheduleTag,
+} from '@/lib/payroll/payoutSchedule';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateRange } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -17,11 +23,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  CurrencySelector,
   EmptyState,
-  Input,
+  FileDropZone,
   InvoiceStatusBadge,
-  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Separator,
   Table,
   TableBody,
@@ -29,15 +38,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Textarea,
   useToast,
   SectionTooltip,
   HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { AlertCircle, CheckCircle2, Clock, DollarSign, Download, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
 const MASKED_AMOUNT = '••••••';
@@ -120,7 +128,7 @@ function InvoiceDetailDialog({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">
-                Net Amount
+                Amount
               </p>
               <p className="text-3xl font-bold text-white tabular-nums leading-tight">
                 {amount(Number(invoice.net_amount || 0))}
@@ -144,7 +152,7 @@ function InvoiceDetailDialog({
           {/* Financial Summary Card */}
           <div className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 px-4 py-3 space-y-2">
             <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-1">
-              Financial Summary
+              Amount Summary
             </p>
             {invoice.hourly_rate && invoice.hours_worked && (
               <>
@@ -164,21 +172,7 @@ function InvoiceDetailDialog({
               </>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Gross Amount</span>
-              <span className="text-sm font-medium tabular-nums">
-                {amount(Number(invoice.gross_amount || 0), sourceCurrency)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Deductions</span>
-              <span className="text-sm font-medium tabular-nums text-red-600 dark:text-red-400">
-                {showAmounts
-                  ? `\u2212${formatCurrency(Number(invoice.deductions || 0), sourceCurrency)}`
-                  : MASKED_AMOUNT}
-              </span>
-            </div>
-            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-2 flex items-center justify-between">
-              <span className="text-sm font-semibold">Net Amount</span>
+              <span className="text-sm font-semibold">Amount</span>
               <span className="text-sm font-bold tabular-nums text-slate-700 dark:text-zinc-400">
                 {amount(Number(invoice.net_amount || 0), sourceCurrency)}
               </span>
@@ -320,16 +314,7 @@ function SubmitConfirmDialog({
             value={formatDateRange(invoice.period_start, invoice.period_end)}
           />
           <DetailRow
-            label="Gross Amount"
-            value={amount(Number(invoice.gross_amount || 0), sourceCurrency)}
-          />
-          <DetailRow
-            label="Deductions"
-            value={amount(Number(invoice.deductions || 0), sourceCurrency)}
-          />
-          <Separator className="my-2" />
-          <DetailRow
-            label="Net Amount"
+            label="Amount"
             value={amount(Number(invoice.net_amount || 0), sourceCurrency)}
           />
           {invoice.converted_amount && sourceCurrency !== targetCurrency && (
@@ -359,24 +344,15 @@ function SubmitConfirmDialog({
 /* ------------------------------------------------------------------ */
 export default function InvoicePage() {
   const { addToast } = useToast();
+  const { user } = useAuth();
 
   // Amount visibility toggle
   const [showAmounts, setShowAmounts] = useState(true);
 
   // Create invoice dialog
   const [createOpen, setCreateOpen] = useState(false);
-  const [periodStart, setPeriodStart] = useState('');
-  const [periodEnd, setPeriodEnd] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('');
-  const [hoursWorked, setHoursWorked] = useState('');
-  const [grossAmount, setGrossAmount] = useState('0');
-  const [deductions, setDeductions] = useState('0');
-  const [notes, setNotes] = useState('');
-  const [sourceCurrency, setSourceCurrency] = useState('PHP');
-  const [targetCurrency, setTargetCurrency] = useState('PHP');
-  const [exchangeRate, setExchangeRate] = useState<number | null>(1);
-  const [convertedAmount, setConvertedAmount] = useState<number | null>(0);
-  const [exchangeRateText, setExchangeRateText] = useState('');
+  const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
+  const [selectedPayoutSchedule, setSelectedPayoutSchedule] = useState<string>('');
 
   // Detail / View dialog
   const [detailInvoice, setDetailInvoice] = useState<InvoiceRecord | null>(null);
@@ -388,6 +364,7 @@ export default function InvoicePage() {
 
   const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 100 });
   const createInvoice = useCreateInvoice();
+  const uploadDocument = useUploadDocument();
   const submitInvoice = useSubmitInvoice();
 
   const invoices = data?.data || [];
@@ -398,134 +375,120 @@ export default function InvoicePage() {
 
   const sortedInvoices = sortItems(invoices, {
     invoice_number: (i) => i.invoice_number,
-    period: (i) => i.period_start ?? '',
-    gross: (i) => Number(i.gross_amount || 0),
-    net: (i) => Number(i.net_amount || 0),
+    payout_schedule: (i) => {
+      const parsed = parsePayoutScheduleTag(i.notes);
+      return parsed ? formatPayoutScheduleLabel(parsed.monthKey, parsed.sequence) : '';
+    },
+    amount: (i) => Number(i.net_amount || 0),
     status: (i) => invoiceStatusOrder[i.status] ?? 99,
     created_at: (i) => i.created_at ?? '',
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
 
-  const stats = useMemo(() => {
-    const approved = invoices.filter((invoice) => ['approved', 'paid'].includes(invoice.status));
+  const payoutScheduleOptions = useMemo(() => getPayoutScheduleOptions(new Date()), [createOpen]);
 
-    return {
-      total: invoices.length,
-      pending: invoices.filter((invoice) => invoice.status === 'submitted').length,
-      approved: approved.length,
-      totalApprovedAmount: approved.reduce(
-        (sum, invoice) => sum + Number(invoice.net_amount || 0),
-        0
-      ),
-    };
-  }, [invoices]);
+  const effectivePayoutSelection =
+    selectedPayoutSchedule && payoutScheduleOptions.some((option) => option.key === selectedPayoutSchedule)
+      ? selectedPayoutSchedule
+      : (payoutScheduleOptions.find((option) => !option.disabled)?.key ?? payoutScheduleOptions[0]?.key ?? '');
 
-  const resetForm = useCallback(() => {
-    setPeriodStart('');
-    setPeriodEnd('');
-    setHourlyRate('');
-    setHoursWorked('');
-    setGrossAmount('0');
-    setDeductions('0');
-    setNotes('');
-    setSourceCurrency('PHP');
-    setTargetCurrency('PHP');
-    setExchangeRate(1);
-    setConvertedAmount(0);
-    setExchangeRateText('');
-  }, []);
+  const resetCreateDialog = () => {
+    setSelectedInvoiceFiles([]);
+    setSelectedPayoutSchedule('');
+  };
 
-  // Auto-calculate gross amount from hourly rate × hours worked
-  useEffect(() => {
-    const rate = Number(hourlyRate || 0);
-    const hours = Number(hoursWorked || 0);
-    if (rate > 0 && hours > 0) {
-      setGrossAmount(String(Math.round(rate * hours * 100) / 100));
-    }
-  }, [hourlyRate, hoursWorked]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function updateFxPreview() {
-      const netAmount = Math.max(0, Number(grossAmount || 0) - Number(deductions || 0));
-
-      if (sourceCurrency === targetCurrency) {
-        if (!cancelled) {
-          setExchangeRate(1);
-          setConvertedAmount(netAmount);
-          setExchangeRateText(`1 ${sourceCurrency} = 1 ${targetCurrency}`);
-        }
-        return;
-      }
-
-      try {
-        const [text, amount] = await Promise.all([
-          getExchangeRateText(sourceCurrency, targetCurrency),
-          convertAmount(netAmount, sourceCurrency, targetCurrency),
-        ]);
-
-        if (cancelled) return;
-
-        setExchangeRateText(text);
-        setConvertedAmount(amount);
-
-        const rateMatch = text.match(/=\s*([\d.]+)/);
-        setExchangeRate(rateMatch ? Number(rateMatch[1]) : null);
-      } catch {
-        if (!cancelled) {
-          setExchangeRate(null);
-          setConvertedAmount(null);
-          setExchangeRateText('Exchange rates unavailable');
-        }
-      }
+  const resolveCurrentEmployeeId = async (): Promise<string> => {
+    if (!user?.id) {
+      throw new Error('Missing authenticated user session');
     }
 
-    void updateFxPreview();
+    const response = await fetch(`/api/employees?userId=${user.id}&page=1&pageSize=1`);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [deductions, grossAmount, sourceCurrency, targetCurrency]);
+    if (!response.ok) {
+      throw new Error('Failed to load your employee profile');
+    }
+
+    const payload = await response.json();
+    const employeeId = payload?.data?.[0]?.id as string | undefined;
+
+    if (!employeeId) {
+      throw new Error('No employee profile found for your account');
+    }
+
+    return employeeId;
+  };
 
   const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const gross = Number(grossAmount || 0);
-    const deductionValue = Number(deductions || 0);
-    const net = gross - deductionValue;
+    const file = selectedInvoiceFiles[0];
+    const payoutSelection = payoutScheduleOptions.find((option) => option.key === effectivePayoutSelection);
+
+    if (!file) {
+      addToast({
+        title: 'Invoice file required',
+        description: 'Please upload your existing invoice file first.',
+        variant: 'warning',
+      });
+      return;
+    }
+
+    if (!payoutSelection || payoutSelection.disabled) {
+      addToast({
+        title: 'Payout schedule required',
+        description: 'Please select an available payout schedule before creating your invoice.',
+        variant: 'warning',
+      });
+      return;
+    }
 
     try {
+      const employeeId = await resolveCurrentEmployeeId();
+
+      const uploaded = await uploadDocument.mutateAsync({
+        file,
+        employeeId,
+        documentType: 'other',
+        isConfidential: false,
+        notes: 'Uploaded from Invoice self-service flow',
+      });
+
+      const today = new Date().toISOString().slice(0, 10);
+      const draftAmount = 0;
+
+      const payoutTag = buildPayoutScheduleTag(payoutSelection.monthKey, payoutSelection.sequence);
+
       await createInvoice.mutateAsync({
-        periodStart,
-        periodEnd,
-        hourlyRate: hourlyRate ? Number(hourlyRate) : null,
-        hoursWorked: hoursWorked ? Number(hoursWorked) : null,
-        grossAmount: gross,
-        deductions: deductionValue,
-        netAmount: net,
+        documentId: uploaded.data.id,
+        periodStart: today,
+        periodEnd: today,
+        hourlyRate: null,
+        hoursWorked: null,
+        grossAmount: draftAmount,
+        deductions: 0,
+        netAmount: draftAmount,
         status: 'draft',
-        notes: notes || undefined,
+        notes: `${payoutTag}\nPayout Schedule: ${payoutSelection.label}\nInvoice file uploaded: ${file.name}`,
         lineItems: [],
-        sourceCurrency,
-        targetCurrency,
-        exchangeRate,
-        convertedAmount,
+        sourceCurrency: 'PHP',
+        targetCurrency: 'PHP',
+        exchangeRate: 1,
+        convertedAmount: 0,
       });
 
       addToast({
         title: 'Invoice created',
-        description: 'Invoice has been saved as draft with an auto-generated number.',
+        description: 'Invoice draft has been created from your uploaded file.',
         variant: 'success',
       });
 
       setCreateOpen(false);
-      resetForm();
-    } catch (_err) {
+      resetCreateDialog();
+    } catch (err) {
       addToast({
-        title: 'Error',
-        description: 'Failed to create invoice',
+        title: 'Failed to create invoice',
+        description: err instanceof Error ? err.message : 'Something went wrong while saving the invoice.',
         variant: 'error',
       });
     }
@@ -599,33 +562,6 @@ export default function InvoicePage() {
         </div>
       </div>
 
-      <StatCardGrid columns={4}>
-        <StatCard
-          label="Total"
-          value={stats.total}
-          icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}
-          tooltip={<SectionTooltip content="Total number of invoices you've created." />}
-        />
-        <StatCard
-          label="Pending Review"
-          value={stats.pending}
-          icon={<Clock className="h-4 w-4" strokeWidth={1.5} />}
-          tooltip={<SectionTooltip content="Invoices submitted and awaiting admin approval." />}
-        />
-        <StatCard
-          label="Approved/Paid"
-          value={stats.approved}
-          icon={<CheckCircle2 className="h-4 w-4" strokeWidth={1.5} />}
-          tooltip={<SectionTooltip content="Invoices that have been approved or already paid out." />}
-        />
-        <StatCard
-          label="Total Approved"
-          value={maskedCurrency(stats.totalApprovedAmount)}
-          icon={<DollarSign className="h-4 w-4" strokeWidth={1.5} />}
-          tooltip={<SectionTooltip content="The combined net amount of all approved and paid invoices." />}
-        />
-      </StatCardGrid>
-
       {isLoading ? (
         <Card>
           <CardContent className="p-6">
@@ -655,9 +591,8 @@ export default function InvoicePage() {
               <TableHeader>
                 <TableRow>
                   <SortableTableHead column="invoice_number" {...sortHeadProps}>Invoice #</SortableTableHead>
-                  <SortableTableHead column="period" {...sortHeadProps}>Period</SortableTableHead>
-                  <SortableTableHead column="gross" {...sortHeadProps}>Gross</SortableTableHead>
-                  <SortableTableHead column="net" {...sortHeadProps}>Net</SortableTableHead>
+                  <SortableTableHead column="payout_schedule" {...sortHeadProps}>Payout Schedule</SortableTableHead>
+                  <SortableTableHead column="amount" {...sortHeadProps}>Amount</SortableTableHead>
                   <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -665,7 +600,7 @@ export default function InvoicePage() {
               <TableBody>
                 {invoices.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-10">
+                    <TableCell colSpan={5} className="py-10">
                       <EmptyState
                         icon={FileText}
                         title="No invoices yet"
@@ -675,78 +610,79 @@ export default function InvoicePage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedInvoices.map((invoice) => (
-                    <TableRow
-                      key={invoice.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onDoubleClick={() => handleRowClick(invoice)}
-                    >
-                      <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDateRange(invoice.period_start, invoice.period_end)}
-                      </TableCell>
-                      <TableCell>
-                        {maskedCurrency(
-                          Number(invoice.gross_amount || 0),
-                          invoice.source_currency || 'PHP'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <span>
-                            {maskedCurrency(
-                              Number(invoice.net_amount || 0),
-                              invoice.source_currency || 'PHP'
+                  sortedInvoices.map((invoice) => {
+                    const payout = parsePayoutScheduleTag(invoice.notes);
+                    const payoutLabel = payout
+                      ? formatPayoutScheduleLabel(payout.monthKey, payout.sequence)
+                      : '-';
+
+                    return (
+                      <TableRow
+                        key={invoice.id}
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onDoubleClick={() => handleRowClick(invoice)}
+                      >
+                        <TableCell className="font-medium">{invoice.invoice_number}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {payoutLabel}
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <span>
+                              {maskedCurrency(
+                                Number(invoice.net_amount || 0),
+                                invoice.source_currency || 'PHP'
+                              )}
+                            </span>
+                            {invoice.converted_amount !== null &&
+                              invoice.converted_amount !== undefined &&
+                              invoice.source_currency &&
+                              invoice.target_currency &&
+                              invoice.source_currency !== invoice.target_currency && (
+                                <span className="block text-xs text-muted-foreground">
+                                  ≈ {maskedCurrency(Number(invoice.converted_amount || 0), invoice.target_currency)}
+                                </span>
+                              )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <InvoiceStatusBadge status={invoice.status as InvoiceStatus} size="sm" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {invoice.status === 'draft' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => handleViewClick(invoice, e)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => handleSubmitClick(invoice, e)}
+                                  disabled={submitInvoice.isPending}
+                                >
+                                  Submit
+                                </Button>
+                              </>
                             )}
-                          </span>
-                          {invoice.converted_amount !== null &&
-                            invoice.converted_amount !== undefined &&
-                            invoice.source_currency &&
-                            invoice.target_currency &&
-                            invoice.source_currency !== invoice.target_currency && (
-                              <span className="block text-xs text-muted-foreground">
-                                ≈ {maskedCurrency(Number(invoice.converted_amount || 0), invoice.target_currency)}
-                              </span>
-                            )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <InvoiceStatusBadge status={invoice.status as InvoiceStatus} size="sm" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {invoice.status === 'draft' && (
-                            <>
+                            {invoice.status !== 'draft' && (
                               <Button
                                 size="sm"
-                                variant="outline"
+                                variant="ghost"
                                 onClick={(e) => handleViewClick(invoice, e)}
                               >
-                                <Eye className="h-4 w-4 mr-1" />
-                                View
+                                <Eye className="h-4 w-4" />
                               </Button>
-                              <Button
-                                size="sm"
-                                onClick={(e) => handleSubmitClick(invoice, e)}
-                                disabled={submitInvoice.isPending}
-                              >
-                                Submit
-                              </Button>
-                            </>
-                          )}
-                          {invoice.status !== 'draft' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => handleViewClick(invoice, e)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -755,137 +691,72 @@ export default function InvoicePage() {
       )}
 
       {/* ---- Create Invoice Dialog ---- */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-xl">
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) {
+            resetCreateDialog();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
             <DialogDescription>
-              Fill in the details below. An invoice number will be assigned automatically.
+              Upload your existing invoice file. We will create a draft invoice for submission.
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-4" onSubmit={handleCreate}>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Source Currency</Label>
-                <CurrencySelector
-                  value={sourceCurrency}
-                  onChange={setSourceCurrency}
-                  {...(sourceCurrency !== targetCurrency && exchangeRateText
-                    ? { exchangeRateText }
-                    : {})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Base Currency</Label>
-                <CurrencySelector value={targetCurrency} onChange={setTargetCurrency} />
-              </div>
-              <div className="space-y-2">
-                <Label>Hourly Rate</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={hourlyRate}
-                  onChange={(event) => setHourlyRate(event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Hours Worked</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0"
-                  value={hoursWorked}
-                  onChange={(event) => setHoursWorked(event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Gross Amount</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={grossAmount}
-                  onChange={(event) => setGrossAmount(event.target.value)}
-                  required
-                />
-                {Number(hourlyRate || 0) > 0 && Number(hoursWorked || 0) > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Auto-calculated: {hourlyRate} × {hoursWorked} hrs
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>Deductions</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={deductions}
-                  onChange={(event) => setDeductions(event.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Period Start</Label>
-                <Input
-                  type="date"
-                  value={periodStart}
-                  onChange={(event) => setPeriodStart(event.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Period End</Label>
-                <Input
-                  type="date"
-                  value={periodEnd}
-                  onChange={(event) => setPeriodEnd(event.target.value)}
-                  required
-                />
-              </div>
-            </div>
+          <form className="space-y-4 max-h-[calc(85vh-11rem)] overflow-y-auto pr-1" onSubmit={handleCreate}>
+            <FileDropZone
+              onFilesSelected={(files) => setSelectedInvoiceFiles(files.slice(0, 1))}
+              selectedFiles={selectedInvoiceFiles}
+              onRemoveFile={(index) =>
+                setSelectedInvoiceFiles((prev) => prev.filter((_file, fileIndex) => fileIndex !== index))
+              }
+              multiple={false}
+              maxSizeMB={20}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain,image/jpeg,image/png,image/webp"
+              label="Upload Existing Invoice File"
+              hint="Drop your invoice file here or click to browse"
+              formatHint="Accepted: PDF, Word, Excel, CSV, TXT, JPG, PNG, WEBP (max 20MB)"
+              isUploading={uploadDocument.isPending}
+              className="w-full"
+            />
 
             <div className="space-y-2">
-              <Label>Notes</Label>
-              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
-            </div>
-
-            <div className="rounded-lg border border-border bg-muted/30 p-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Net Amount</span>
-                <span className="font-semibold text-base">
-                  {formatCurrency(
-                    Math.max(0, Number(grossAmount || 0) - Number(deductions || 0)),
-                    sourceCurrency
-                  )}
-                </span>
-              </div>
-              {sourceCurrency !== targetCurrency && (
-                <div className="mt-2 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Converted Amount</span>
-                  <span className="font-semibold text-base">
-                    {convertedAmount !== null
-                      ? formatCurrency(Number(convertedAmount || 0), targetCurrency)
-                      : '—'}
-                  </span>
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground">Select payout schedule</p>
+              <Select
+                value={effectivePayoutSelection}
+                onValueChange={(value) => setSelectedPayoutSchedule(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select payout schedule" />
+                </SelectTrigger>
+                <SelectContent>
+                  {payoutScheduleOptions.map((option) => (
+                    <SelectItem key={option.key} value={option.key} disabled={option.disabled}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createInvoice.isPending}>
-                {createInvoice.isPending ? (
+              <Button
+                type="submit"
+                disabled={createInvoice.isPending || uploadDocument.isPending || selectedInvoiceFiles.length === 0}
+              >
+                {createInvoice.isPending || uploadDocument.isPending ? (
                   'Saving...'
                 ) : (
                   <>
                     <FileText className="h-4 w-4" />
-                    Save Draft
+                    Upload & Save Draft
                   </>
                 )}
               </Button>
