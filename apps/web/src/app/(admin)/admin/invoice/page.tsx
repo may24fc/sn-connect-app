@@ -21,15 +21,21 @@ import {
   CardHeader,
   CardTitle,
   EmptyState,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   SectionTooltip,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
@@ -83,7 +89,10 @@ function getAvatarUrl(employee: unknown): string | undefined {
 
 export default function AdminInvoicePage() {
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<'matrix' | 'conversion'>('matrix');
   const pageSize = 10;
+  const [conversionCurrency, setConversionCurrency] = useState<'AUD'>('AUD');
+  const [conversionRateInput, setConversionRateInput] = useState<string>('1');
 
   const { data: invoicesData, isLoading: invoicesLoading, error: invoicesError } = useInvoices({
     page: 1,
@@ -198,6 +207,8 @@ export default function AdminInvoicePage() {
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
+  const conversionRate = Number.parseFloat(conversionRateInput);
+  const normalizedConversionRate = Number.isFinite(conversionRate) && conversionRate > 0 ? conversionRate : 1;
 
   const isLoading = employeesLoading || invoicesLoading;
   const hasError = !!employeesError || !!invoicesError;
@@ -246,6 +257,16 @@ export default function AdminInvoicePage() {
         </div>
       </div>
 
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'matrix' | 'conversion')}
+      >
+        <TabsList>
+          <TabsTrigger value="matrix">Submission Matrix</TabsTrigger>
+          <TabsTrigger value="conversion">Amount Conversion</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {isLoading ? (
         <Card>
           <CardContent className="p-6">
@@ -273,7 +294,7 @@ export default function AdminInvoicePage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
-                Invoice Submission Matrix
+                {activeTab === 'matrix' ? 'Invoice Submission Matrix' : 'Amount Conversion'}
                 {employeesData?.pagination && (
                   <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
                     ({employeesData.pagination.total} total)
@@ -314,74 +335,174 @@ export default function AdminInvoicePage() {
                 </div>
               )}
             </div>
+
+            {activeTab === 'conversion' && (
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="w-full sm:w-[180px]">
+                  <Select
+                    value={conversionCurrency}
+                    onValueChange={(value) => setConversionCurrency(value as 'AUD')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AUD">AUD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full sm:w-[200px]">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.0001"
+                    inputMode="decimal"
+                    value={conversionRateInput}
+                    onChange={(event) => setConversionRateInput(event.target.value)}
+                    placeholder="Conversion rate"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Converted amount = Amount x Rate
+                </p>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <SortableTableHead column="employee" {...sortHeadProps}>Employee</SortableTableHead>
-                  <SortableTableHead column="department" {...sortHeadProps}>Department</SortableTableHead>
-                  <SortableTableHead column="invoice_number" {...sortHeadProps}>Invoice #</SortableTableHead>
-                  <SortableTableHead column="amount" {...sortHeadProps}>Amount</SortableTableHead>
-                  <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedRows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-10">
-                      <EmptyState
-                        icon={FileText}
-                        title="No employees found"
-                        description="No employee records are available for invoice tracking."
-                        size="sm"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sortedRows.map((row) => {
-                    const employeeName = `${row.employee.first_name} ${row.employee.last_name}`;
-                    const avatarUrl = getAvatarUrl(row.employee);
-
-                    return (
-                      <TableRow
-                        key={row.employee.id}
-                        className={cn(
-                          row.hasSubmitted &&
-                            'bg-emerald-50/80 dark:bg-emerald-950/20 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/30'
-                        )}
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              {avatarUrl && <AvatarImage src={avatarUrl} alt={`${employeeName} avatar`} />}
-                              <AvatarFallback>{getInitials(row.employee.first_name, row.employee.last_name)}</AvatarFallback>
-                            </Avatar>
-                            <span>{employeeName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{row.employee.department || '-'}</TableCell>
-                        <TableCell>{row.matchedInvoice?.invoiceNumber ?? '-'}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {row.matchedInvoice
-                            ? row.matchedInvoice.amount > 0
-                              ? formatCurrency(row.matchedInvoice.amount, row.matchedInvoice.currency)
-                              : '-'
-                            : '-'}
-                        </TableCell>
-                        <TableCell>
-                          {row.hasSubmitted ? (
-                            <Badge variant="success">Submitted</Badge>
-                          ) : (
-                            <Badge variant="secondary">No submission</Badge>
-                          )}
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'matrix' | 'conversion')}>
+              <TabsContent value="matrix" className="mt-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <SortableTableHead column="employee" {...sortHeadProps}>Employee</SortableTableHead>
+                      <SortableTableHead column="department" {...sortHeadProps}>Department</SortableTableHead>
+                      <SortableTableHead column="invoice_number" {...sortHeadProps}>Invoice #</SortableTableHead>
+                      <SortableTableHead column="amount" {...sortHeadProps}>Amount</SortableTableHead>
+                      <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedRows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-10">
+                          <EmptyState
+                            icon={FileText}
+                            title="No employees found"
+                            description="No employee records are available for invoice tracking."
+                            size="sm"
+                          />
                         </TableCell>
                       </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+                    ) : (
+                      sortedRows.map((row) => {
+                        const employeeName = `${row.employee.first_name} ${row.employee.last_name}`;
+                        const avatarUrl = getAvatarUrl(row.employee);
+
+                        return (
+                          <TableRow
+                            key={row.employee.id}
+                            className={cn(
+                              row.hasSubmitted &&
+                                'bg-emerald-50/80 dark:bg-emerald-950/20 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/30'
+                            )}
+                          >
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  {avatarUrl && <AvatarImage src={avatarUrl} alt={`${employeeName} avatar`} />}
+                                  <AvatarFallback>{getInitials(row.employee.first_name, row.employee.last_name)}</AvatarFallback>
+                                </Avatar>
+                                <span>{employeeName}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{row.employee.department || '-'}</TableCell>
+                            <TableCell>{row.matchedInvoice?.invoiceNumber ?? '-'}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {row.matchedInvoice
+                                ? row.matchedInvoice.amount > 0
+                                  ? formatCurrency(row.matchedInvoice.amount, row.matchedInvoice.currency)
+                                  : '-'
+                                : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {row.hasSubmitted ? (
+                                <Badge variant="success">Submitted</Badge>
+                              ) : (
+                                <Badge variant="secondary">No submission</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+
+              <TabsContent value="conversion" className="mt-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Converted Amount ({conversionCurrency})</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedRows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="py-10">
+                          <EmptyState
+                            icon={FileText}
+                            title="No employees found"
+                            description="No employee records are available for amount conversion."
+                            size="sm"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      sortedRows.map((row) => {
+                        const employeeName = `${row.employee.first_name} ${row.employee.last_name}`;
+                        const avatarUrl = getAvatarUrl(row.employee);
+                        const originalAmount = row.matchedInvoice?.amount ?? 0;
+                        const hasAmount = !!row.matchedInvoice && originalAmount > 0;
+                        const convertedAmount = hasAmount ? originalAmount * normalizedConversionRate : 0;
+
+                        return (
+                          <TableRow
+                            key={`conversion-${row.employee.id}`}
+                            className={cn(
+                              row.hasSubmitted &&
+                                'bg-emerald-50/80 dark:bg-emerald-950/20 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/30'
+                            )}
+                          >
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  {avatarUrl && <AvatarImage src={avatarUrl} alt={`${employeeName} avatar`} />}
+                                  <AvatarFallback>{getInitials(row.employee.first_name, row.employee.last_name)}</AvatarFallback>
+                                </Avatar>
+                                <span>{employeeName}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {hasAmount
+                                ? formatCurrency(originalAmount, row.matchedInvoice?.currency || 'PHP')
+                                : '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {hasAmount
+                                ? formatCurrency(convertedAmount, conversionCurrency)
+                                : '-'}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       )}

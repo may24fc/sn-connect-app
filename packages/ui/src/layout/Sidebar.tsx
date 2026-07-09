@@ -21,6 +21,7 @@ import {
   Sparkles,
   Store,
   Target,
+  TrendingUp,
   Trophy,
   User,
   UserCog,
@@ -50,6 +51,7 @@ export interface SidebarProps {
   showMarketingReports?: boolean;
   showAtsAccess?: boolean;
   showCrmAccess?: boolean;
+  showRevenueForecastAccess?: boolean;
   showExpenseDeskAccess?: boolean;
 }
 
@@ -139,6 +141,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
   { label: 'OKRs & KPIs', href: '/admin/performance', icon: Target },
   { label: 'Marketing Reports', href: '/admin/reports', icon: FileText },
+  { label: 'Revenue Forecast', href: '/super-admin/revenue-forecast', icon: TrendingUp },
   { label: 'CRM Tracker', href: '/admin/crm', icon: Store },
   { label: 'Expenses Desk', href: '/admin/expenses', icon: Receipt },
   {
@@ -186,6 +189,7 @@ function getNavMatchLength(currentPath: string, href: string): number {
   return normalizedCurrentPath.startsWith(`${normalizedHref}/`) ? normalizedHref.length : -1;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Existing role-based navigation and conditional visibility logic is intentionally centralized.
 export function Sidebar({
   variant,
   currentPath,
@@ -196,6 +200,7 @@ export function Sidebar({
   showMarketingReports = true,
   showAtsAccess = false,
   showCrmAccess = false,
+  showRevenueForecastAccess = false,
   showExpenseDeskAccess = true,
 }: SidebarProps): React.ReactNode {
   const baseNavItems =
@@ -208,10 +213,7 @@ export function Sidebar({
           : adminNavItems;
 
   const filteredNavItems = baseNavItems.filter((item) => {
-    if (
-      variant === 'employee' &&
-      (item.href === '/projects' || item.href === '/leaderboard')
-    ) {
+    if (variant === 'employee' && (item.href === '/projects' || item.href === '/leaderboard')) {
       return false;
     }
 
@@ -223,7 +225,11 @@ export function Sidebar({
       return false;
     }
 
-    if ((variant === 'employee' || variant === 'intern') && !showExpenseDeskAccess && item.href === '/expenses/desk') {
+    if (
+      (variant === 'employee' || variant === 'intern') &&
+      !showExpenseDeskAccess &&
+      item.href === '/expenses/desk'
+    ) {
       return false;
     }
 
@@ -240,10 +246,32 @@ export function Sidebar({
     const crmItem: NavItem = { label: 'CRM Tracker', href: '/crm', icon: Store };
     const reportsIndex = navItems.findIndex((it) => it.href === '/reports');
     if (reportsIndex >= 0) {
-      navItems = [...navItems.slice(0, reportsIndex + 1), crmItem, ...navItems.slice(reportsIndex + 1)];
+      navItems = [
+        ...navItems.slice(0, reportsIndex + 1),
+        crmItem,
+        ...navItems.slice(reportsIndex + 1),
+      ];
     } else {
       // fallback to append if Reports is not present (edge case)
       navItems = [...navItems, crmItem];
+    }
+  }
+
+  if ((variant === 'employee' || variant === 'intern') && showRevenueForecastAccess) {
+    const revenueItem: NavItem = {
+      label: 'Revenue Forecast',
+      href: '/revenue-forecast',
+      icon: TrendingUp,
+    };
+    const reportsIndex = navItems.findIndex((it) => it.href === '/reports');
+    if (reportsIndex >= 0) {
+      navItems = [
+        ...navItems.slice(0, reportsIndex + 1),
+        revenueItem,
+        ...navItems.slice(reportsIndex + 1),
+      ];
+    } else {
+      navItems = [...navItems, revenueItem];
     }
   }
 
