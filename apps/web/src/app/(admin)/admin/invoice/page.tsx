@@ -92,6 +92,7 @@ export default function AdminInvoicePage() {
   const { data: employeesData, isLoading: employeesLoading, error: employeesError } = useEmployees({
     page,
     pageSize,
+    excludeInterns: true,
   });
 
   const [payoutFilter, setPayoutFilter] = useState<string>('all');

@@ -78,6 +78,11 @@ export async function GET(request: NextRequest) {
       query = query.neq('users.status', 'terminated');
     }
 
+    const excludeInterns = searchParams.get('excludeInterns') === 'true';
+    if (excludeInterns) {
+      query = query.neq('employment_type', 'intern');
+    }
+
     // Apply pagination
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;

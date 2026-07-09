@@ -19,6 +19,7 @@ export interface EmployeeFilters {
   userId?: string | undefined;
   department?: string | undefined;
   status?: 'active' | 'on_leave' | 'probation' | 'terminated' | undefined;
+  excludeInterns?: boolean | undefined;
   page?: number | undefined;
   pageSize?: number | undefined;
 }
