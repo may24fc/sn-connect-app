@@ -81,8 +81,8 @@ type ExchangeRateToAudResponse = {
     sourceCurrency: string;
     exchangeRateToAud: number;
     fxRatesFetchedAt: string | null;
-    fxSource: 'cached_fx_rates' | 'base_currency';
-    resolvedFrom: 'cache' | 'base_currency';
+    fxSource: 'cached_fx_rates' | 'base_currency' | 'wise_public';
+    resolvedFrom: 'cache' | 'base_currency' | 'wise_public';
   };
 };
 

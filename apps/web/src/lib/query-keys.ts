@@ -379,6 +379,7 @@ export const queryKeys = {
     all: ['payroll'] as const,
     lists: () => [...queryKeys.payroll.all, 'list'] as const,
     list: (filters: InvoiceFilters) => [...queryKeys.payroll.lists(), filters] as const,
+    fxRateToAud: (sourceCurrency: string) => [...queryKeys.payroll.all, 'fx-rate-to-aud', sourceCurrency] as const,
     details: () => [...queryKeys.payroll.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.payroll.details(), id] as const,
     approvals: () => [...queryKeys.payroll.all, 'approvals'] as const,

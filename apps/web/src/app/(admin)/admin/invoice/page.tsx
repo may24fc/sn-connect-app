@@ -2,7 +2,7 @@
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useEmployees } from '@/hooks/useEmployees';
-import { useInvoices } from '@/hooks/useInvoices';
+import { useInvoiceExchangeRateToAud, useInvoices } from '@/hooks/useInvoices';
 import { useInvoicesRealtime } from '@/hooks/useInvoicesRealtime';
 import {
   formatPayoutScheduleLabel,
@@ -42,7 +42,9 @@ import {
 } from '@hr-portal/ui';
 import { AlertCircle, ChevronLeft, ChevronRight, FileText, Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+const MANUAL_PHP_TO_AUD_RATE_STORAGE_KEY = 'admin-invoice-manual-php-to-aud-rate';
 
 type SubmittedInvoiceWithPayout = {
   invoiceId: string;
@@ -93,7 +95,24 @@ export default function AdminInvoicePage() {
   const [activeTab, setActiveTab] = useState<'matrix' | 'conversion'>('matrix');
   const pageSize = 10;
   const [conversionCurrency, setConversionCurrency] = useState<'AUD'>('AUD');
-  const [conversionRateInput, setConversionRateInput] = useState<string>('1');
+  const [manualConversionRateInput, setManualConversionRateInput] = useState<string>('');
+
+  useEffect(() => {
+    const storedRate = window.localStorage.getItem(MANUAL_PHP_TO_AUD_RATE_STORAGE_KEY);
+
+    if (storedRate) {
+      setManualConversionRateInput(storedRate);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!manualConversionRateInput.trim()) {
+      window.localStorage.removeItem(MANUAL_PHP_TO_AUD_RATE_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(MANUAL_PHP_TO_AUD_RATE_STORAGE_KEY, manualConversionRateInput);
+  }, [manualConversionRateInput]);
 
   useInvoicesRealtime();
 
@@ -211,8 +230,20 @@ export default function AdminInvoicePage() {
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
-  const conversionRate = Number.parseFloat(conversionRateInput);
-  const normalizedConversionRate = Number.isFinite(conversionRate) && conversionRate > 0 ? conversionRate : 1;
+  const {
+    data: audRateData,
+    isLoading: audRateLoading,
+    error: audRateError,
+  } = useInvoiceExchangeRateToAud('PHP', activeTab === 'conversion');
+  const liveConversionRate = audRateData?.data.exchangeRateToAud;
+  const hasLiveConversionRate = typeof liveConversionRate === 'number' && liveConversionRate > 0;
+  const parsedManualConversionRate = Number.parseFloat(manualConversionRateInput);
+  const manualConversionRate =
+    Number.isFinite(parsedManualConversionRate) && parsedManualConversionRate > 0
+      ? parsedManualConversionRate
+      : null;
+  const effectivePhpToAudRate = hasLiveConversionRate ? liveConversionRate : manualConversionRate;
+  const usingManualOverride = !hasLiveConversionRate && manualConversionRate !== null;
 
   const isLoading = employeesLoading || invoicesLoading;
   const hasError = !!employeesError || !!invoicesError;
@@ -298,6 +329,11 @@ export default function AdminInvoicePage() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 {activeTab === 'matrix' ? 'Invoice Submission Matrix' : 'Amount Conversion'}
+                {activeTab === 'conversion' && usingManualOverride && (
+                  <Badge variant="secondary" className="ml-2 align-middle">
+                    Manual override
+                  </Badge>
+                )}
                 {employeesData?.pagination && (
                   <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400 ml-2">
                     ({employeesData.pagination.total} total)
@@ -356,18 +392,49 @@ export default function AdminInvoicePage() {
                 </div>
                 <div className="w-full sm:w-[200px]">
                   <Input
-                    type="number"
-                    min="0"
-                    step="0.0001"
-                    inputMode="decimal"
-                    value={conversionRateInput}
-                    onChange={(event) => setConversionRateInput(event.target.value)}
-                    placeholder="Conversion rate"
+                    type={hasLiveConversionRate || audRateLoading ? 'text' : 'number'}
+                    min={hasLiveConversionRate || audRateLoading ? undefined : '0'}
+                    step={hasLiveConversionRate || audRateLoading ? undefined : '0.0001'}
+                    inputMode={hasLiveConversionRate || audRateLoading ? undefined : 'decimal'}
+                    value={
+                      audRateLoading
+                        ? 'Loading...'
+                        : hasLiveConversionRate
+                          ? liveConversionRate.toFixed(4)
+                          : manualConversionRateInput
+                    }
+                    onChange={(event) => setManualConversionRateInput(event.target.value)}
+                    readOnly={audRateLoading || hasLiveConversionRate}
+                    placeholder={hasLiveConversionRate ? 'Live PHP to AUD rate' : 'Enter manual rate'}
+                    aria-label="PHP to AUD conversion rate"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Converted amount = Amount x Rate
-                </p>
+                <div className="text-xs text-muted-foreground">
+                  <p>
+                    {hasLiveConversionRate
+                      ? 'Converted amount uses the live PHP to AUD mid-market rate from Wise.'
+                      : usingManualOverride
+                        ? 'Manual override is active. Converted amounts use the saved PHP to AUD rate you entered.'
+                        : 'Wise is unavailable. Enter a manual PHP to AUD rate to continue converting amounts.'}
+                  </p>
+                  {audRateData?.data.fxRatesFetchedAt && (
+                    <p>
+                      Source: {audRateData.data.fxSource} · Updated {new Date(audRateData.data.fxRatesFetchedAt).toLocaleString()}
+                    </p>
+                  )}
+                  {!hasLiveConversionRate && manualConversionRateInput.trim() && (
+                    <p>
+                      Saved fallback rate: {manualConversionRate !== null ? manualConversionRate.toFixed(4) : manualConversionRateInput}
+                    </p>
+                  )}
+                  {audRateError && (
+                    <p className="text-red-600 dark:text-red-400">
+                      {audRateError instanceof Error
+                        ? `${audRateError.message} Enter the rate manually below.`
+                        : 'Failed to load live conversion rate. Enter the rate manually below.'}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </CardHeader>
@@ -469,7 +536,12 @@ export default function AdminInvoicePage() {
                         const avatarUrl = getAvatarUrl(row.employee);
                         const originalAmount = row.matchedInvoice?.amount ?? 0;
                         const hasAmount = !!row.matchedInvoice && originalAmount > 0;
-                        const convertedAmount = hasAmount ? originalAmount * normalizedConversionRate : 0;
+                        const sourceCurrency = row.matchedInvoice?.currency || 'PHP';
+                        const isPhpSource = sourceCurrency === 'PHP';
+                        const isAudSource = sourceCurrency === 'AUD';
+                        const canConvert = hasAmount && (isAudSource || (isPhpSource && effectivePhpToAudRate !== null));
+                        const appliedRate = isAudSource ? 1 : (effectivePhpToAudRate ?? 0);
+                        const convertedAmount = canConvert ? originalAmount * appliedRate : 0;
 
                         return (
                           <TableRow
@@ -494,7 +566,7 @@ export default function AdminInvoicePage() {
                                 : '-'}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {hasAmount
+                              {canConvert
                                 ? formatCurrency(convertedAmount, conversionCurrency)
                                 : '-'}
                             </TableCell>

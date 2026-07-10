@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import ExpenseMatchingQueuePage from '@/app/(employee)/expenses/verify/page';
 import { useDepartments } from '@/hooks/useDepartments';
-import { useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
+import { useDeleteExpense, useExpenses, useLeadershipDecision } from '@/hooks/useExpenses';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import {
@@ -47,6 +47,7 @@ import {
   Scale,
   Search,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react';
 
@@ -102,6 +103,27 @@ export default function AdminExpensesDashboard() {
   const { data: rawLedger, isLoading } = useExpenses(filters);
 
   const decideMutation = useLeadershipDecision();
+  const deleteMutation = useDeleteExpense();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = (id: string) => {
+    if (deletingId === id) {
+      // Second click — confirmed
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          addToast({ title: 'Entry deleted', description: 'Ledger entry has been removed.', variant: 'default' });
+          setDeletingId(null);
+        },
+        onError: (err) => {
+          addToast({ title: 'Delete failed', description: (err as Error).message, variant: 'destructive' });
+          setDeletingId(null);
+        },
+      });
+    } else {
+      // First click — arm confirmation
+      setDeletingId(id);
+    }
+  };
 
   const filteredRows = rawLedger?.data || [];
   const exceptions = filteredRows.filter((entry) => entry.match_status === EXCEPTION_MATCH_STATUS);
@@ -477,6 +499,7 @@ export default function AdminExpensesDashboard() {
                       <TableHead className="font-semibold text-zinc-650 dark:text-zinc-400">Status</TableHead>
                       <TableHead className="font-semibold text-zinc-650 dark:text-zinc-400">Assessment</TableHead>
                       <TableHead className="font-semibold text-zinc-650 dark:text-zinc-400">Review Notes</TableHead>
+                      <TableHead className="w-[80px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -521,6 +544,39 @@ export default function AdminExpensesDashboard() {
                         </TableCell>
                         <TableCell className="text-xs italic text-zinc-500 dark:text-zinc-400 max-w-[180px] truncate">
                           {expense.reviewer_notes || 'No remarks recorded.'}
+                        </TableCell>
+                        <TableCell className="text-right pr-4">
+                          {deletingId === expense.id ? (
+                            <div className="flex items-center gap-1 justify-end">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => handleDelete(expense.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                {deleteMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Confirm'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => setDeletingId(null)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                              onClick={() => handleDelete(expense.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
