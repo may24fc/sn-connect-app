@@ -115,7 +115,7 @@ export default function AdminExpensesDashboard() {
           setDeletingId(null);
         },
         onError: (err) => {
-          addToast({ title: 'Delete failed', description: (err as Error).message, variant: 'destructive' });
+          addToast({ title: 'Delete failed', description: (err as Error).message, variant: 'error' });
           setDeletingId(null);
         },
       });
