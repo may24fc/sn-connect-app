@@ -3,6 +3,7 @@
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useInvoices } from '@/hooks/useInvoices';
+import { useInvoicesRealtime } from '@/hooks/useInvoicesRealtime';
 import {
   formatPayoutScheduleLabel,
   getPayoutScheduleOptions,
@@ -94,6 +95,8 @@ export default function AdminInvoicePage() {
   const [conversionCurrency, setConversionCurrency] = useState<'AUD'>('AUD');
   const [conversionRateInput, setConversionRateInput] = useState<string>('1');
 
+  useInvoicesRealtime();
+
   const { data: invoicesData, isLoading: invoicesLoading, error: invoicesError } = useInvoices({
     page: 1,
     pageSize: 1000,
@@ -104,7 +107,7 @@ export default function AdminInvoicePage() {
     excludeInterns: true,
   });
 
-  const [payoutFilter, setPayoutFilter] = useState<string>('all');
+  const [payoutFilter, setPayoutFilter] = useState<string>('');
 
   const submittedInvoicesWithPayout = useMemo<Array<SubmittedInvoiceWithPayout>>(() => {
     const invoices = invoicesData?.data || [];
@@ -121,10 +124,10 @@ export default function AdminInvoicePage() {
           submittedAt: invoice.submitted_at,
           amount: Number(invoice.net_amount || 0),
           currency: (invoice.source_currency || invoice.target_currency || 'PHP').toUpperCase(),
-          payoutKey: parsed?.key ?? 'unassigned',
+          payoutKey: parsed?.key ?? '',
           payoutLabel: parsed
             ? formatPayoutScheduleLabel(parsed.monthKey, parsed.sequence)
-            : 'Unassigned Schedule',
+            : '',
         };
       });
   }, [invoicesData?.data]);
@@ -145,7 +148,9 @@ export default function AdminInvoicePage() {
     }
 
     for (const row of submittedInvoicesWithPayout) {
-      map.set(row.payoutKey, row.payoutLabel);
+      if (row.payoutKey && row.payoutLabel) {
+        map.set(row.payoutKey, row.payoutLabel);
+      }
     }
 
     return Array.from(map.entries())
@@ -154,15 +159,14 @@ export default function AdminInvoicePage() {
   }, [submittedInvoicesWithPayout]);
 
   const effectivePayoutFilter =
-    payoutFilter === 'all' || payoutFilterOptions.some((option) => option.value === payoutFilter)
+    payoutFilterOptions.some((option) => option.value === payoutFilter)
       ? payoutFilter
-      : 'all';
+      : (payoutFilterOptions[0]?.value ?? '');
 
   const submittedByEmployeeForFilter = useMemo(() => {
-    const scoped =
-      effectivePayoutFilter === 'all'
-        ? submittedInvoicesWithPayout
-        : submittedInvoicesWithPayout.filter((row) => row.payoutKey === effectivePayoutFilter);
+    const scoped = effectivePayoutFilter
+      ? submittedInvoicesWithPayout.filter((row) => row.payoutKey === effectivePayoutFilter)
+      : submittedInvoicesWithPayout;
 
     // Keep latest submission per employee.
     const byEmployee = new Map<string, SubmittedInvoiceWithPayout>();
@@ -239,7 +243,6 @@ export default function AdminInvoicePage() {
                 <SelectValue placeholder="Filter payout schedule" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All payout schedules</SelectItem>
                 {payoutFilterOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}

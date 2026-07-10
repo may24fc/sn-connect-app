@@ -6,6 +6,11 @@ import type {
 } from '@/lib/schemas/invoice.schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+interface UseInvoicesOptions {
+  refetchInterval?: number | false;
+  refetchOnWindowFocus?: boolean;
+}
+
 export interface InvoiceRecord {
   id: string;
   employee_id: string;
@@ -66,7 +71,7 @@ interface ApproveInvoiceResponse {
   };
 }
 
-export function useInvoices(filters: InvoiceFilters = {}) {
+export function useInvoices(filters: InvoiceFilters = {}, options: UseInvoicesOptions = {}) {
   return useQuery({
     queryKey: queryKeys.payroll.list(filters),
     queryFn: async (): Promise<InvoiceListResponse> => {
@@ -85,6 +90,12 @@ export function useInvoices(filters: InvoiceFilters = {}) {
 
       return response.json();
     },
+    ...(options.refetchInterval !== undefined
+      ? { refetchInterval: options.refetchInterval }
+      : {}),
+    ...(options.refetchOnWindowFocus !== undefined
+      ? { refetchOnWindowFocus: options.refetchOnWindowFocus }
+      : {}),
   });
 }
 
