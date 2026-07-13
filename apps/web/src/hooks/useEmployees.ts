@@ -33,6 +33,7 @@ export function useEmployees(
       if (filters.userId) params.append('userId', filters.userId);
       if (filters.department) params.append('department', filters.department);
       if (filters.status) params.append('status', filters.status);
+      if (filters.excludeInterns) params.append('excludeInterns', 'true');
       if (filters.page) params.append('page', filters.page.toString());
       if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
 

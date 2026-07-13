@@ -3,78 +3,77 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 
-interface EmployeeListResponse {
-  data: Array<{
-    id: string;
-    department: string | null;
-    users?: {
-      department_id: string | null;
-    } | null;
-  }>;
-}
-
-interface EmployeePerformanceDetailResponse {
-  employee?: {
-    department: string | null;
+interface ExpenseCapabilitiesResponse {
+  data: {
+    role: string | null;
+    isLeadership: boolean;
+    isAccounting: boolean;
+    isMarketing: boolean;
+    canLogRequest: boolean;
+    canLogPayment: boolean;
+    canMatch: boolean;
+    canViewDeskGlobal: boolean;
+    canViewDeskDepartment: boolean;
+    departmentId: string | null;
   };
 }
 
-function isAccountingDepartment(department: string | null | undefined): boolean {
-  if (typeof department !== 'string') {
-    return false;
-  }
-
-  const normalizedDepartment = department.trim().toLowerCase();
-  return normalizedDepartment.includes('accounting') || normalizedDepartment === 'finance';
+export interface ExpenseAccessCapabilities {
+  /** Every authenticated staff member/intern can log a manual spend request. */
+  canLogRequest: boolean;
+  /** Only Admin/Super Admin/Accounting can log direct payments (receipt upload). */
+  canLogPayment: boolean;
+  /** Only Accounting/Admin/Super Admin can reconcile the matching queue. */
+  canMatch: boolean;
+  /** Admin/Super Admin/Accounting see the full desk; Marketing sees their department only. */
+  canViewDeskGlobal: boolean;
+  canViewDeskDepartment: boolean;
+  isAccounting: boolean;
+  isMarketing: boolean;
 }
 
 export function useExpensesAccess(): {
+  /** @deprecated use the capability flags instead; kept for legacy call sites. */
   canAccess: boolean;
   isLoading: boolean;
   department: string | null;
+  capabilities: ExpenseAccessCapabilities;
 } {
   const { user, isLoading: isAuthLoading } = useAuth();
-
-  const shouldFetchEmployee = user?.role === 'employee' || user?.role === 'intern';
-
-  const employeeQuery = useQuery({
+  const capabilitiesQuery = useQuery({
     queryKey: ['expenses-access', user?.id],
-    enabled: shouldFetchEmployee,
-    queryFn: async (): Promise<EmployeePerformanceDetailResponse> => {
-      const response = await fetch(`/api/employees?userId=${user?.id}&page=1&pageSize=1`);
+    enabled: Boolean(user),
+    queryFn: async (): Promise<ExpenseCapabilitiesResponse['data']> => {
+      const response = await fetch('/api/expenses/capabilities');
 
       if (!response.ok) {
-        throw new Error('Failed to load employee department');
+        throw new Error('Failed to load expense capabilities');
       }
 
-      const employeeList = (await response.json()) as EmployeeListResponse;
-      const employee = employeeList.data[0];
-
-      if (!employee) {
-        return { employee: { department: null } };
-      }
-
-      const detailResponse = await fetch(`/api/performance/individual/${employee.id}`);
-
-      if (detailResponse.ok) {
-        return detailResponse.json() as Promise<EmployeePerformanceDetailResponse>;
-      }
-
-      return {
-        employee: {
-          department: employee.department,
-        },
-      };
+      const payload = (await response.json()) as ExpenseCapabilitiesResponse;
+      return payload.data;
     },
   });
 
-  const department = employeeQuery.data?.employee?.department ?? null;
+  const isLoading = isAuthLoading || capabilitiesQuery.isLoading;
+  const department = capabilitiesQuery.data?.departmentId ?? null;
 
-  if (isAuthLoading || employeeQuery.isLoading) {
+  const capabilities: ExpenseAccessCapabilities = {
+    canLogRequest: Boolean(capabilitiesQuery.data?.canLogRequest),
+    canLogPayment: Boolean(capabilitiesQuery.data?.canLogPayment),
+    canMatch: Boolean(capabilitiesQuery.data?.canMatch),
+    canViewDeskGlobal: Boolean(capabilitiesQuery.data?.canViewDeskGlobal),
+    canViewDeskDepartment: Boolean(capabilitiesQuery.data?.canViewDeskDepartment),
+    isAccounting: Boolean(capabilitiesQuery.data?.isAccounting),
+    isMarketing: Boolean(capabilitiesQuery.data?.isMarketing),
+  };
+
+  if (isLoading) {
     return {
       canAccess: false,
       isLoading: true,
       department,
+      capabilities,
     };
   }
 
@@ -83,20 +82,16 @@ export function useExpensesAccess(): {
       canAccess: false,
       isLoading: false,
       department,
-    };
-  }
-
-  if (user.role === 'admin' || user.role === 'super_admin') {
-    return {
-      canAccess: true,
-      isLoading: false,
-      department,
+      capabilities,
     };
   }
 
   return {
-    canAccess: isAccountingDepartment(department),
+    canAccess:
+      capabilities.canMatch || capabilities.canViewDeskGlobal || capabilities.canViewDeskDepartment,
     isLoading: false,
     department,
+    capabilities,
   };
 }
+

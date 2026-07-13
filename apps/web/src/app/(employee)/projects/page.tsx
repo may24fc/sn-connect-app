@@ -38,7 +38,7 @@ import {
   Skeleton,
   useToast,
 } from '@hr-portal/ui';
-import { FolderKanban, Inbox, Plus } from 'lucide-react';
+import { FolderKanban, Inbox, Plus, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, type FormEvent, useEffect } from 'react';
@@ -110,6 +110,10 @@ export default function ProjectsListPage() {
                 {poolCount}
               </Badge>
             ) : null}
+          </Button>
+          <Button variant="outline" onClick={() => router.push('/leaderboard/achievements')}>
+            <Trophy className="mr-2 h-4 w-4" />
+            Achievements
           </Button>
           <Button onClick={() => router.push('/projects/new')}>
             <Plus className="mr-2 h-4 w-4" />
@@ -188,7 +192,9 @@ export default function ProjectsListPage() {
                     description={p.description}
                     progressPct={p.progress_pct}
                     health={p.health}
-                    pointsTotal={p.earned_points ?? 0}
+                    earnedPoints={p.earned_points ?? 0}
+                    maxPoints={p.max_points_available ?? 0}
+                    department={p.primary_department ?? null}
                     targetEndDate={p.target_end_date}
                     {...(canEdit
                       ? {

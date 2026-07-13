@@ -6,6 +6,21 @@ import type {
 } from '@/lib/schemas/invoice.schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+interface UseInvoicesOptions {
+  refetchInterval?: number | false;
+  refetchOnWindowFocus?: boolean;
+}
+
+type ExchangeRateToAudResponse = {
+  data: {
+    sourceCurrency: string;
+    exchangeRateToAud: number;
+    fxRatesFetchedAt: string | null;
+    fxSource: 'cached_fx_rates' | 'base_currency' | 'wise_public';
+    resolvedFrom: 'cache' | 'base_currency' | 'wise_public';
+  };
+};
+
 export interface InvoiceRecord {
   id: string;
   employee_id: string;
@@ -66,7 +81,7 @@ interface ApproveInvoiceResponse {
   };
 }
 
-export function useInvoices(filters: InvoiceFilters = {}) {
+export function useInvoices(filters: InvoiceFilters = {}, options: UseInvoicesOptions = {}) {
   return useQuery({
     queryKey: queryKeys.payroll.list(filters),
     queryFn: async (): Promise<InvoiceListResponse> => {
@@ -85,6 +100,12 @@ export function useInvoices(filters: InvoiceFilters = {}) {
 
       return response.json();
     },
+    ...(options.refetchInterval !== undefined
+      ? { refetchInterval: options.refetchInterval }
+      : {}),
+    ...(options.refetchOnWindowFocus !== undefined
+      ? { refetchOnWindowFocus: options.refetchOnWindowFocus }
+      : {}),
   });
 }
 
@@ -206,5 +227,26 @@ export function useApproveInvoice() {
       queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.payroll.detail(variables.id) });
     },
+  });
+}
+
+export function useInvoiceExchangeRateToAud(sourceCurrency: string, enabled = true) {
+  const normalizedCurrency = sourceCurrency.trim().toUpperCase();
+
+  return useQuery({
+    queryKey: queryKeys.payroll.fxRateToAud(normalizedCurrency || 'AUD'),
+    enabled,
+    queryFn: async (): Promise<ExchangeRateToAudResponse> => {
+      const params = new URLSearchParams({ sourceCurrency: normalizedCurrency || 'AUD' });
+      const response = await fetch(`/api/expenses/fx-rate?${params.toString()}`);
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => null);
+        throw new Error(errJson?.error || 'Failed to fetch exchange rate to AUD');
+      }
+
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 15,
   });
 }

@@ -1,7 +1,14 @@
 import { logActivity } from '@/lib/audit';
 import { invoiceCreateSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
+import { extractReceiptFromImage, extractReceiptFromText } from '@hr-portal/ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import { extractText, getDocumentProxy } from 'unpdf';
+
+export const runtime = 'nodejs';
+
+const EMPLOYEE_DOCUMENTS_BUCKET = 'employee-documents';
+const OCR_SUPPORTED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
 
 function computeExchangeRate(rates: Record<string, number>, from: string, to: string): number {
   if (from === to) return 1;
@@ -14,6 +21,97 @@ function computeExchangeRate(rates: Record<string, number>, from: string, to: st
   }
 
   return toRate / fromRate;
+}
+
+async function extractFromPdf(fileBuffer: ArrayBuffer): Promise<{
+  totalAmount: number;
+  currency: string;
+}> {
+  const pdf = await getDocumentProxy(new Uint8Array(fileBuffer));
+  const { text } = await extractText(pdf, { mergePages: true });
+  await pdf.destroy();
+
+  if (text && text.trim().length >= 20) {
+    const extracted = await extractReceiptFromText(text);
+    return {
+      totalAmount: extracted.totalAmount,
+      currency: extracted.currency,
+    };
+  }
+
+  const extracted = await extractReceiptFromImage(
+    Buffer.from(fileBuffer).toString('base64'),
+    'application/pdf'
+  );
+  return {
+    totalAmount: extracted.totalAmount,
+    currency: extracted.currency,
+  };
+}
+
+async function extractAmountFromInvoiceDocument(params: {
+  adminClient: ReturnType<typeof createSupabaseAdminClient>;
+  documentId: string;
+  employeeId: string;
+}): Promise<{ amount: number | null; currency: string | null; reason?: string }> {
+  const { adminClient, documentId, employeeId } = params;
+
+  const { data: document, error: documentError } = await adminClient
+    .from('documents')
+    .select('id, employee_id, file_path, mime_type')
+    .eq('id', documentId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (documentError || !document) {
+    return { amount: null, currency: null, reason: 'Document not found for OCR extraction' };
+  }
+
+  if (document.employee_id !== employeeId) {
+    return { amount: null, currency: null, reason: 'Document does not belong to invoice employee' };
+  }
+
+  if (!document.mime_type || !OCR_SUPPORTED_MIME_TYPES.has(document.mime_type)) {
+    return { amount: null, currency: null, reason: 'Unsupported file type for OCR extraction' };
+  }
+
+  const { data: fileBlob, error: downloadError } = await adminClient.storage
+    .from(EMPLOYEE_DOCUMENTS_BUCKET)
+    .download(document.file_path);
+
+  if (downloadError || !fileBlob) {
+    return { amount: null, currency: null, reason: 'Failed to download invoice document for OCR' };
+  }
+
+  const fileBuffer = await fileBlob.arrayBuffer();
+  if (fileBuffer.byteLength === 0) {
+    return { amount: null, currency: null, reason: 'Invoice document is empty' };
+  }
+
+  try {
+    const extracted =
+      document.mime_type === 'application/pdf'
+        ? await extractFromPdf(fileBuffer)
+        : await extractReceiptFromImage(Buffer.from(fileBuffer).toString('base64'), document.mime_type);
+
+    const parsedAmount = Number(extracted.totalAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return { amount: null, currency: null, reason: 'OCR amount could not be determined' };
+    }
+
+    const normalizedCurrency =
+      typeof extracted.currency === 'string' && extracted.currency.trim().length === 3
+        ? extracted.currency.trim().toUpperCase()
+        : null;
+
+    return {
+      amount: Math.round(parsedAmount * 100) / 100,
+      currency: normalizedCurrency,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown OCR extraction error';
+    return { amount: null, currency: null, reason: `OCR extraction failed: ${message}` };
+  }
 }
 
 /**
@@ -137,7 +235,48 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const parsed = invoiceCreateSchema.safeParse(body);
+    const toOptionalNumber = (value: unknown): number | null => {
+      if (value === null || value === undefined || value === '') return null;
+      const parsedNumber = typeof value === 'number' ? value : Number(value);
+      return Number.isFinite(parsedNumber) ? parsedNumber : null;
+    };
+
+    const today = new Date().toISOString().slice(0, 10);
+    const normalizedBaseAmount = toOptionalNumber(body?.grossAmount) ?? 0;
+    const normalizedDeductions = toOptionalNumber(body?.deductions) ?? 0;
+    const normalizedPayableAmount =
+      toOptionalNumber(body?.netAmount) ??
+      Math.max(0, Math.round((normalizedBaseAmount - normalizedDeductions) * 100) / 100);
+
+    const normalizedBody = {
+      ...body,
+      periodStart:
+        typeof body?.periodStart === 'string' && body.periodStart.length > 0 ? body.periodStart : today,
+      periodEnd:
+        typeof body?.periodEnd === 'string' && body.periodEnd.length > 0 ? body.periodEnd : today,
+      grossAmount: normalizedBaseAmount,
+      deductions: normalizedDeductions,
+      netAmount: normalizedPayableAmount,
+      hourlyRate: toOptionalNumber(body?.hourlyRate),
+      hoursWorked: toOptionalNumber(body?.hoursWorked),
+      lineItems: Array.isArray(body?.lineItems) ? body.lineItems : [],
+      status:
+        typeof body?.status === 'string' && body.status.length > 0 ? body.status : 'draft',
+      sourceCurrency:
+        typeof body?.sourceCurrency === 'string' && body.sourceCurrency.length === 3
+          ? body.sourceCurrency.toUpperCase()
+          : 'PHP',
+      targetCurrency:
+        typeof body?.targetCurrency === 'string' && body.targetCurrency.length === 3
+          ? body.targetCurrency.toUpperCase()
+          : typeof body?.sourceCurrency === 'string' && body.sourceCurrency.length === 3
+            ? body.sourceCurrency.toUpperCase()
+            : 'PHP',
+      exchangeRate: toOptionalNumber(body?.exchangeRate),
+      convertedAmount: toOptionalNumber(body?.convertedAmount),
+    };
+
+    const parsed = invoiceCreateSchema.safeParse(normalizedBody);
 
     if (!parsed.success) {
       console.error('POST /api/invoices validation error:', JSON.stringify(parsed.error.flatten()));
@@ -200,8 +339,33 @@ export async function POST(request: NextRequest) {
 
     let exchangeRate = parsed.data.exchangeRate ?? null;
     let convertedAmount = parsed.data.convertedAmount ?? null;
+    let baseAmount = parsed.data.grossAmount;
+    const deductions = parsed.data.deductions;
+    let payableAmount = parsed.data.netAmount;
+    let sourceCurrency = parsed.data.sourceCurrency;
+    let targetCurrency = parsed.data.targetCurrency;
 
-    if (parsed.data.sourceCurrency !== parsed.data.targetCurrency) {
+    if (parsed.data.documentId) {
+      const extraction = await extractAmountFromInvoiceDocument({
+        adminClient: supabaseAdmin,
+        documentId: parsed.data.documentId,
+        employeeId: resolvedEmployeeId,
+      });
+
+      if (typeof extraction.amount === 'number') {
+        baseAmount = extraction.amount;
+        payableAmount = Math.max(0, Math.round((baseAmount - deductions) * 100) / 100);
+      }
+
+      if (extraction.currency) {
+        sourceCurrency = extraction.currency;
+        if (parsed.data.targetCurrency === parsed.data.sourceCurrency) {
+          targetCurrency = extraction.currency;
+        }
+      }
+    }
+
+    if (sourceCurrency !== targetCurrency) {
       if (exchangeRate === null || convertedAmount === null) {
         const { data: latestRates, error: ratesError } = await supabaseAdmin
           .from('fx_rates')
@@ -219,14 +383,14 @@ export async function POST(request: NextRequest) {
 
         exchangeRate = computeExchangeRate(
           latestRates.rates as Record<string, number>,
-          parsed.data.sourceCurrency,
-          parsed.data.targetCurrency
+          sourceCurrency,
+          targetCurrency
         );
-        convertedAmount = Math.round(parsed.data.netAmount * exchangeRate * 100) / 100;
+        convertedAmount = Math.round(payableAmount * exchangeRate * 100) / 100;
       }
     } else {
       exchangeRate = 1;
-      convertedAmount = parsed.data.netAmount;
+      convertedAmount = payableAmount;
     }
 
     // Use the same admin client for the insert to bypass RLS. Security is enforced
@@ -243,11 +407,11 @@ export async function POST(request: NextRequest) {
         period_end: parsed.data.periodEnd,
         hourly_rate: parsed.data.hourlyRate ?? null,
         hours_worked: parsed.data.hoursWorked ?? null,
-        gross_amount: parsed.data.grossAmount,
-        deductions: parsed.data.deductions,
-        net_amount: parsed.data.netAmount,
-        source_currency: parsed.data.sourceCurrency,
-        target_currency: parsed.data.targetCurrency,
+        gross_amount: baseAmount,
+        deductions,
+        net_amount: payableAmount,
+        source_currency: sourceCurrency,
+        target_currency: targetCurrency,
         exchange_rate: exchangeRate,
         converted_amount: convertedAmount,
         status: parsed.data.status,

@@ -19,6 +19,7 @@ export interface EmployeeFilters {
   userId?: string | undefined;
   department?: string | undefined;
   status?: 'active' | 'on_leave' | 'probation' | 'terminated' | undefined;
+  excludeInterns?: boolean | undefined;
   page?: number | undefined;
   pageSize?: number | undefined;
 }
@@ -378,6 +379,7 @@ export const queryKeys = {
     all: ['payroll'] as const,
     lists: () => [...queryKeys.payroll.all, 'list'] as const,
     list: (filters: InvoiceFilters) => [...queryKeys.payroll.lists(), filters] as const,
+    fxRateToAud: (sourceCurrency: string) => [...queryKeys.payroll.all, 'fx-rate-to-aud', sourceCurrency] as const,
     details: () => [...queryKeys.payroll.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.payroll.details(), id] as const,
     approvals: () => [...queryKeys.payroll.all, 'approvals'] as const,
@@ -576,6 +578,15 @@ export const queryKeys = {
     },
   },
 
+  revenueForecast: {
+    all: ['revenue-forecast'] as const,
+    access: () => [...queryKeys.revenueForecast.all, 'access'] as const,
+    accessGrants: () => [...queryKeys.revenueForecast.all, 'access-grants'] as const,
+    entries: (year?: number) =>
+      [...queryKeys.revenueForecast.all, 'entries', year ?? 'all'] as const,
+    goals: (year?: number) => [...queryKeys.revenueForecast.all, 'goals', year ?? 'all'] as const,
+  },
+
   // Ticket Handlers
   ticketHandlers: {
     all: ['ticket-handlers'] as const,
@@ -617,8 +628,15 @@ export const queryKeys = {
 
   leaderboard: {
     all: ['leaderboard'] as const,
-    list: (scope: string, period: string) =>
-      [...queryKeys.leaderboard.all, scope, period] as const,
+    list: (scope: string, period: string) => [...queryKeys.leaderboard.all, scope, period] as const,
+  },
+
+  gamification: {
+    all: ['gamification'] as const,
+    mastery: (userId: string) => [...queryKeys.gamification.all, 'mastery', userId] as const,
+    badges: (userId: string) => [...queryKeys.gamification.all, 'badges', userId] as const,
+    featuredMastery: (userId: string) =>
+      [...queryKeys.gamification.all, 'featured-mastery', userId] as const,
   },
 } as const;
 

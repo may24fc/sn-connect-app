@@ -152,6 +152,29 @@ export default function ExpenseAnalyticsDashboardPage() {
     [data?.categoryBreakdown]
   );
 
+  const monthOverMonth = useMemo(() => {
+    if (period !== 'month') return null;
+
+    const trend = data?.trend || [];
+    if (trend.length < 2) return null;
+
+    const current = trend[trend.length - 1];
+    const previous = trend[trend.length - 2];
+    if (!current || !previous) return null;
+
+    const deltaAmount = current.totalSpendAud - previous.totalSpendAud;
+    const deltaPercent = previous.totalSpendAud !== 0 ? (deltaAmount / previous.totalSpendAud) * 100 : null;
+
+    return {
+      currentLabel: current.label,
+      previousLabel: previous.label,
+      currentTotal: current.totalSpendAud,
+      previousTotal: previous.totalSpendAud,
+      deltaAmount,
+      deltaPercent,
+    };
+  }, [data?.trend, period]);
+
   return (
     <div className="flex-1 space-y-6 p-8 overflow-y-auto max-h-[calc(100vh-4rem)] bg-zinc-50 dark:bg-zinc-950">
       <div className="flex items-center justify-between gap-4">
@@ -247,6 +270,46 @@ export default function ExpenseAnalyticsDashboardPage() {
         </Card>
       ) : (
         <>
+          {monthOverMonth ? (
+            <Card className="border border-indigo-200 dark:border-indigo-900 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <LineChartIcon className="h-4 w-4 text-indigo-500" />
+                  Month-over-Month Spend
+                </CardTitle>
+                <CardDescription>
+                  {monthOverMonth.currentLabel} vs {monthOverMonth.previousLabel}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center gap-6">
+                <div>
+                  <p className="text-xs text-zinc-500">This month</p>
+                  <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50">{formatCurrencyAud(monthOverMonth.currentTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Last month</p>
+                  <p className="text-xl font-bold text-zinc-900 dark:text-zinc-50">{formatCurrencyAud(monthOverMonth.previousTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Change</p>
+                  <p
+                    className={`text-xl font-bold ${
+                      monthOverMonth.deltaAmount > 0
+                        ? 'text-rose-600'
+                        : monthOverMonth.deltaAmount < 0
+                          ? 'text-emerald-600'
+                          : 'text-zinc-500'
+                    }`}
+                  >
+                    {monthOverMonth.deltaAmount >= 0 ? '+' : ''}
+                    {formatCurrencyAud(monthOverMonth.deltaAmount)}
+                    {monthOverMonth.deltaPercent !== null ? ` (${monthOverMonth.deltaPercent.toFixed(1)}%)` : ''}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
               <CardHeader className="pb-2">

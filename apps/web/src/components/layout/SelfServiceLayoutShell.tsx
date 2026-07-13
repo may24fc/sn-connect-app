@@ -2,17 +2,19 @@
 
 import { ApplicationUpdateHeaderAction } from '@/components/ApplicationUpdateProvider';
 import { TourProvider, useTour } from '@/components/TourProvider';
-import {
-  type UserRoleType,
-  useAuth,
-  useRequireAuth,
-} from '@/contexts/AuthContext';
+import { type UserRoleType, useAuth, useRequireAuth } from '@/contexts/AuthContext';
 import { useAIChat } from '@/hooks/useAIChat';
 import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
 import { useAtsAccess } from '@/hooks/useAtsAccess';
+import {
+  useConversations,
+  useCreateConversation,
+  useDeleteConversation,
+  useRenameConversation,
+} from '@/hooks/useConversations';
 import { useCrmAccess } from '@/hooks/useCrmAccess';
 import { useExpensesAccess } from '@/hooks/useExpensesAccess';
-import { useConversations, useCreateConversation, useDeleteConversation, useRenameConversation } from '@/hooks/useConversations';
+import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
 import {
   useDeleteNotification,
   useMarkAllRead,
@@ -20,7 +22,7 @@ import {
   useNotifications,
   useUnreadCount,
 } from '@/hooks/useNotifications';
-import { useMarketingReportsAccess } from '@/hooks/useMarketingReportsAccess';
+import { useRevenueForecastAccess } from '@/hooks/useRevenueForecastAccess';
 import { Header, NotificationBell, Sidebar, ToastProvider } from '@hr-portal/ui';
 import type { ChatMessage, ConversationItem } from '@hr-portal/ui';
 import { useTheme } from 'next-themes';
@@ -28,16 +30,22 @@ import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
-const AIChatbot = dynamic(() => import('@hr-portal/ui').then((module_) => ({ default: module_.AIChatbot })), {
-  ssr: false,
-});
+const AIChatbot = dynamic(
+  () => import('@hr-portal/ui').then((module_) => ({ default: module_.AIChatbot })),
+  {
+    ssr: false,
+  }
+);
 
 export interface SelfServiceLayoutShellProps {
   children: ReactNode;
   allowedRoles: Array<UserRoleType>;
 }
 
-export function SelfServiceLayoutShell({ children, allowedRoles }: SelfServiceLayoutShellProps): ReactNode {
+export function SelfServiceLayoutShell({
+  children,
+  allowedRoles,
+}: SelfServiceLayoutShellProps): ReactNode {
   const user = useRequireAuth(allowedRoles);
   const { logout } = useAuth();
   const pathname = usePathname();
@@ -133,6 +141,9 @@ function SelfServiceLayoutInner({
   const marketingReportsAccess = useMarketingReportsAccess();
   const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'intern');
   const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'intern');
+  const revenueForecastAccess = useRevenueForecastAccess(
+    user.role === 'employee' || user.role === 'intern'
+  );
   const expensesAccess = useExpensesAccess();
   const sidebarVariant =
     user.role === 'intern'
@@ -154,13 +165,28 @@ function SelfServiceLayoutInner({
           showMarketingReports={marketingReportsAccess.canAccess}
           showAtsAccess={Boolean(atsAccess.data?.canAccess)}
           showCrmAccess={Boolean(crmAccess.data?.canAccess)}
-          showExpensesAccess={expensesAccess.canAccess}
+          showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
+          showExpenseDeskAccess={
+            expensesAccess.capabilities.canViewDeskGlobal ||
+            expensesAccess.capabilities.canViewDeskDepartment
+          }
         />
       </div>
 
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMobileMenuOpen(false)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
+                setMobileMenuOpen(false);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Close menu overlay"
+          />
           <div className="relative z-10 flex-shrink-0">
             <Sidebar
               variant={sidebarVariant}
@@ -169,7 +195,11 @@ function SelfServiceLayoutInner({
               showMarketingReports={marketingReportsAccess.canAccess}
               showAtsAccess={Boolean(atsAccess.data?.canAccess)}
               showCrmAccess={Boolean(crmAccess.data?.canAccess)}
-              showExpensesAccess={expensesAccess.canAccess}
+              showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
+              showExpenseDeskAccess={
+                expensesAccess.capabilities.canViewDeskGlobal ||
+                expensesAccess.capabilities.canViewDeskDepartment
+              }
             />
           </div>
         </div>
@@ -251,12 +281,14 @@ function SelfServiceAIChatbot(): ReactNode {
     activeConversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
 
-  const conversations: Array<ConversationItem> = (conversationsData?.data ?? []).map((conversation) => ({
-    id: conversation.id,
-    title: conversation.title,
-    createdAt: new Date(conversation.created_at),
-    updatedAt: new Date(conversation.updated_at),
-  }));
+  const conversations: Array<ConversationItem> = (conversationsData?.data ?? []).map(
+    (conversation) => ({
+      id: conversation.id,
+      title: conversation.title,
+      createdAt: new Date(conversation.created_at),
+      updatedAt: new Date(conversation.updated_at),
+    })
+  );
 
   const handleCreate = (): void => {
     createConversation.mutate(undefined, {

@@ -13,6 +13,7 @@ export const invoiceLineItemSchema = z.object({
 
 export const invoiceCreateSchema = z.object({
   employeeId: z.string().uuid().optional(),
+  documentId: z.string().uuid().optional(),
   invoiceNumber: z.string().optional(),
   periodStart: dateSchema,
   periodEnd: dateSchema,

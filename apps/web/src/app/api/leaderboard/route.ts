@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { formatMasteryTitle } from '@hr-portal/ui/constants/mastery';
 
 export const dynamic = 'force-dynamic';
 
@@ -225,7 +226,116 @@ export async function GET(request: Request) {
       return vb - va;
     });
 
-    const ranked = rows.slice(0, limit).map((r, idx) => ({ ...r, rank: idx + 1 }));
+    // ── Enrich with badge count + top badge ──────────────────────────────────
+    const badgeCountMap = new Map<string, number>();
+    const topBadgeMap = new Map<string, string | null>();
+    try {
+      const { data: userBadges } = await supabaseAdmin
+        .from('user_badges')
+        .select('user_id, badge_id, earned_at')
+        .in('user_id', userIds)
+        .order('earned_at', { ascending: false });
+
+      // Badge rarity order for picking the "best" badge to surface
+      const RARITY_RANK: Record<string, number> = {
+        legendary: 4, rare: 3, uncommon: 2, common: 1,
+      };
+
+      const { data: badgeDefs } = await supabaseAdmin
+        .from('badge_definitions')
+        .select('id, rarity');
+
+      const rarityMap = new Map<string, number>();
+      for (const d of badgeDefs ?? []) {
+        rarityMap.set(d.id, RARITY_RANK[d.rarity] ?? 1);
+      }
+
+      const bestBadge = new Map<string, { id: string; rank: number }>();
+      for (const b of userBadges ?? []) {
+        badgeCountMap.set(b.user_id, (badgeCountMap.get(b.user_id) ?? 0) + 1);
+        const rank = rarityMap.get(b.badge_id) ?? 1;
+        const current = bestBadge.get(b.user_id);
+        if (!current || rank > current.rank) {
+          bestBadge.set(b.user_id, { id: b.badge_id, rank });
+        }
+      }
+      for (const [uid, best] of bestBadge) {
+        topBadgeMap.set(uid, best.id);
+      }
+    } catch {
+      // Non-critical — don't block leaderboard if badges fail
+    }
+
+    // ── Enrich with top mastery title ────────────────────────────────────────
+    const masteryTitleMap = new Map<string, string | null>();
+    try {
+      const featuredDomainPrefMap = new Map<string, string>();
+      const { data: prefRows } = await supabaseAdmin
+        .from('user_role_metadata')
+        .select('user_id, metadata')
+        .in('user_id', userIds)
+        .eq('role_type', 'leaderboard_preferences');
+
+      for (const pref of prefRows ?? []) {
+        const metadata = (pref.metadata ?? {}) as Record<string, unknown>;
+        const featuredDepartment =
+          typeof metadata.featured_department === 'string' ? metadata.featured_department.trim() : '';
+        if (featuredDepartment) {
+          featuredDomainPrefMap.set(pref.user_id, featuredDepartment);
+        }
+      }
+
+      const { data: masteryRows } = await supabaseAdmin
+        .from('user_domain_mastery')
+        .select('user_id, department, mastery_level, mastery_points')
+        .in('user_id', userIds)
+        .order('mastery_level', { ascending: false })
+        .order('mastery_points', { ascending: false })
+        .order('department', { ascending: true });
+
+      const masteryByUser = new Map<string, Array<{ department: string; mastery_level: number; mastery_points: number }>>();
+      for (const m of masteryRows ?? []) {
+        const current = masteryByUser.get(m.user_id) ?? [];
+        current.push({
+          department: m.department,
+          mastery_level: m.mastery_level,
+          mastery_points: m.mastery_points ?? 0,
+        });
+        masteryByUser.set(m.user_id, current);
+      }
+
+      for (const uid of userIds) {
+        const userMasteryRows = masteryByUser.get(uid) ?? [];
+        if (userMasteryRows.length === 0) continue;
+
+        const featuredDepartment = featuredDomainPrefMap.get(uid);
+        if (featuredDepartment) {
+          const featuredRow = userMasteryRows.find((row) => row.department === featuredDepartment);
+          if (featuredRow) {
+            masteryTitleMap.set(
+              uid,
+              formatMasteryTitle(featuredRow.department, featuredRow.mastery_level)
+            );
+            continue;
+          }
+        }
+
+        const top = userMasteryRows[0];
+        if (top) {
+          masteryTitleMap.set(uid, formatMasteryTitle(top.department, top.mastery_level));
+        }
+      }
+    } catch {
+      // Non-critical
+    }
+
+    const ranked = rows.slice(0, limit).map((r, idx) => ({
+      ...r,
+      rank: idx + 1,
+      badge_count: badgeCountMap.get(r.user_id) ?? 0,
+      top_badge_id: topBadgeMap.get(r.user_id) ?? null,
+      mastery_title: masteryTitleMap.get(r.user_id) ?? null,
+    }));
     return NextResponse.json({ data: ranked });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to load leaderboard';
