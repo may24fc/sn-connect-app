@@ -39,22 +39,28 @@ export default function VisionSection() {
       className="relative w-full bg-[#d6e4f0] text-[#0c1d2e] overflow-hidden rounded-b-[2rem]"
       id="vision-section"
     >
-      {/* ── Background: faint dots + soft glow ── */}
+      {/* ── Background: blueprint grid + glow + tick marks ── */}
       <div className="absolute inset-0 pointer-events-none select-none" aria-hidden id="vision-bg">
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: 'radial-gradient(rgba(12,29,46,0.08) 1px, transparent 1px)',
-            backgroundSize: '26px 26px',
-            maskImage:
-              'radial-gradient(ellipse 100% 100% at 72% 55%, black 32%, transparent 100%)',
+            backgroundImage:
+              'linear-gradient(rgba(12,29,46,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(12,29,46,0.035) 1px, transparent 1px)',
+            backgroundSize: '56px 56px',
+            maskImage: 'radial-gradient(ellipse 60% 70% at 18% 30%, black 25%, transparent 100%)',
             WebkitMaskImage:
-              'radial-gradient(ellipse 100% 100% at 72% 55%, black 32%, transparent 100%)',
+              'radial-gradient(ellipse 60% 70% at 18% 30%, black 25%, transparent 100%)',
           }}
         />
         <div className="absolute -top-32 right-[-6%] w-[460px] h-[460px] rounded-full bg-[#3b86d2]/[0.12] blur-[125px]" />
         <div className="absolute bottom-[-25%] left-[-8%] w-[400px] h-[400px] rounded-full bg-white/40 blur-[115px]" />
-        <span className="hidden md:block absolute top-[14%] left-[40%] button-mono text-lg text-[#0c1d2e]/15">
+        <span className="hidden md:block absolute top-[10%] left-[6%] button-mono text-lg text-[#0c1d2e]/20">
+          +
+        </span>
+        <span className="hidden md:block absolute top-[50%] left-[3%] button-mono text-lg text-[#0c1d2e]/20">
+          +
+        </span>
+        <span className="hidden md:block absolute bottom-[10%] left-[16%] button-mono text-lg text-[#0c1d2e]/20">
           +
         </span>
       </div>
@@ -81,11 +87,13 @@ export default function VisionSection() {
               </motion.div>
 
               {/* Supporting notes — grounds the left column and balances the layout */}
-              <motion.ul variants={fade} className="hidden md:flex flex-col gap-4 max-w-[260px]">
+              <motion.ul variants={fade} className="hidden md:flex mt-2 w-full max-w-[260px] flex-col gap-3.5">
                 {visionNotes.map((note) => (
-                  <li key={note} className="flex gap-3 text-[#0c1d2e]/60">
-                    <span className="mt-[7px] w-[6px] h-[6px] rounded-full bg-[#3b86d2] flex-shrink-0" />
-                    <span className="text-[15px] leading-relaxed">{note}</span>
+                  <li key={note} className="flex items-start gap-3">
+                    <span className="mt-[3px] w-[6px] h-[6px] bg-[#3b86d2] flex-shrink-0" />
+                    <span className="button-mono text-xs uppercase tracking-[0.18em] text-[#0c1d2e]/60">
+                      {note}
+                    </span>
                   </li>
                 ))}
               </motion.ul>
@@ -186,11 +194,10 @@ export default function VisionSection() {
                         strokeLinecap="round"
                         vectorEffect="non-scaling-stroke"
                         variants={{
-                          hidden: { pathLength: 0, opacity: 0 },
+                          hidden: { opacity: 0 },
                           visible: {
-                            pathLength: 1,
                             opacity: 1,
-                            transition: { duration: 0.8, delay: 0.15 + idx * 0.12, ease },
+                            transition: { duration: 0.6, delay: 0.15 + idx * 0.12, ease },
                           },
                         }}
                       />
@@ -294,11 +301,13 @@ export default function VisionSection() {
                 </div>
 
                 {/* Vision notes on mobile */}
-                <ul className="flex flex-col gap-3 mt-8">
+                <ul className="flex flex-col gap-3.5 mt-8">
                   {visionNotes.map((note) => (
-                    <li key={note} className="flex gap-3 text-[#0c1d2e]/60">
-                      <span className="mt-[7px] w-[6px] h-[6px] rounded-full bg-[#3b86d2] flex-shrink-0" />
-                      <span className="text-[14px] leading-relaxed">{note}</span>
+                    <li key={note} className="flex items-start gap-3">
+                      <span className="mt-[3px] w-[6px] h-[6px] bg-[#3b86d2] flex-shrink-0" />
+                      <span className="button-mono text-xs uppercase tracking-[0.18em] text-[#0c1d2e]/60">
+                        {note}
+                      </span>
                     </li>
                   ))}
                 </ul>
