@@ -342,12 +342,12 @@ const hrStaff: StaffMember[] = [
   {
     name: 'Ariana Ricardo',
     title: 'Personal Assistant to CEO',
-    image: '/staff-images/Ariana Ricardo.jpg',
+    image: '/staff-images/Ariana Ricardo.png',
   },
   {
     name: 'Camille Buquir',
     title: 'HR Manager',
-    image: '/staff-images/Cams Buquir.jpeg',
+    image: '/staff-images/Cams Buquir.png',
   },
   {
     name: 'Hannah Amsal El-Banna',
@@ -356,18 +356,13 @@ const hrStaff: StaffMember[] = [
   },
   {
     name: 'Tina Olavia',
-    title: 'Admin Assistant Associate',
-    image: '/associate-images/Tina Olavia.jpeg',
-  },
-  {
-    name: 'Arisha Bablani',
-    title: 'HR SOP & Policy Development Associate',
-    image: '/associate-images/Arisha Bablani.jpeg',
+    title: 'Property and Administration Officer',
+    image: '/staff-images/Tina Olavia.jpg',
   },
   {
     name: 'Hazel Joyce Valerozo',
     title: 'Accounting Associate',
-    image: '/associate-images/Hazel Joyce Valerozo.jpg',
+    image: '/associate-images/Hazel Joyce Valerozo.png',
   },
 ];
 
@@ -375,17 +370,17 @@ const devStaff: StaffMember[] = [
   {
     name: 'Ceferino Jumao-as V',
     title: 'Senior AI Specialist',
-    image: '/associate-images/Ceferino Jumao-as V.jpg',
+    image: '/associate-images/Ceferino Jumao-as V.png',
   },
   {
     name: 'Kazz Virtudez',
     title: 'AI Specialist',
-    image: '/associate-images/Kazz Virtudez.jpeg',
+    image: '/associate-images/Kazz Virtudez.jpg',
   },
   {
     name: 'Naima Tasnia',
     title: 'AI Specialist',
-    image: '/associate-images/Naima Tasnia.jpg',
+    image: '/associate-images/Naima Tasnia.png',
   },
   {
     name: 'Franz Ivan De Villa',
@@ -395,7 +390,7 @@ const devStaff: StaffMember[] = [
   {
     name: 'Immaculate Fallaria',
     title: 'AI Specialist',
-    image: '/associate-images/Imma Fallaria.jpg',
+    image: '/associate-images/Imma Fallaria.png',
   },
 ];
 
@@ -403,12 +398,12 @@ const marketingStaff: StaffMember[] = [
   {
     name: 'Lolita Jonquil Cruz',
     title: 'Meta Ads Specialist',
-    image: '/staff-images/LJ Cruz.jpg',
+    image: '/staff-images/LJ Cruz.png',
   },
   {
     name: 'Bianca Marie Ragadio',
     title: 'Google Ads Specialist',
-    image: '/staff-images/Bianca Marie Ragadio.jpeg',
+    image: '/staff-images/Bianca Marie Ragadio.png',
   },
   {
     name: 'John Christian Tulio',
@@ -418,12 +413,22 @@ const marketingStaff: StaffMember[] = [
   {
     name: 'Scvenska Vion Galla',
     title: 'Video Editor Associate',
-    image: '/associate-images/Schvenska Vion.jpg',
+    image: '/associate-images/Schvenska Vion.png',
   },
   {
     name: 'Francine Nastassja Jara',
     title: 'Web Developer Associate',
-    image: '/associate-images/Francine Jara.jpg',
+    image: '/associate-images/Francine Jara.png',
+  },
+  {
+    name: 'John Mirko Velasquez',
+    title: 'Digital Marketing Associate',
+    image: '/associate-images/John Mirko Velasquez.png',
+  },
+  {
+    name: 'Thea Patricia Arellano',
+    title: 'Graphic Design Associate',
+    image: '/associate-images/Thea Patricia Arellano.png',
   },
 ];
 
