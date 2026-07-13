@@ -7,7 +7,7 @@ import { HIDE_EXPANSION_SECTIONS } from '@/lib/site-config';
 export const metadata: Metadata = {
   title: 'Our Businesses',
   description:
-    'Explore the diversified portfolio of SN International Group — spanning food services, healthcare products, fitness, and construction.',
+    'Explore the diversified portfolio of SN International Group, spanning food services, healthcare products, fitness, and construction.',
 };
 
 export default function BusinessesPage() {

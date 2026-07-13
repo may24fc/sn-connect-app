@@ -134,7 +134,7 @@ export default function ContactHero() {
           transition={{ duration: 0.9, delay: 0.62, ease }}
         >
           Tell us what you need to delegate. We&apos;ll help shape the right
-          remote support setup for your team — fast.
+          remote support setup for your team. Fast.
         </motion.p>
       </div>
     </section>

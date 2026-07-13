@@ -127,7 +127,7 @@ export default function ServicesHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.62, ease }}
         >
-          Dependable offshore support — built around your workflow and your team.
+          Dependable offshore support, built around your workflow and your team.
         </motion.p>
       </div>
     </section>

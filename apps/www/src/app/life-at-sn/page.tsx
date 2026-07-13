@@ -28,7 +28,7 @@ export default function LifeAtSNPage() {
             Life at <span className="text-amber-600">{COMPANY.name}</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-500">
-            More than a workplace — a community of passionate professionals building something meaningful together.
+            More than a workplace, a community of passionate professionals building something meaningful together.
           </p>
         </div>
       </section>

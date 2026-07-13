@@ -244,7 +244,7 @@ function StaffCarousel({ title, description, members }: { title: string; descrip
         </motion.p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr]">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
       {/* Left: section header + description (desktop only) */}
       <motion.div
         className="hidden md:flex flex-col gap-4 md:pr-8 pt-0 md:pt-3"
@@ -479,7 +479,7 @@ export default function StaffSection() {
         {/* ── HR carousel ── */}
         <StaffCarousel
           title={'HR, Executive\nSupport and Admin'}
-          description="The people keeping the organization running — managing people operations, executive coordination, administration, and the internal processes that hold everything together."
+          description="The people keeping the organization running, managing people operations, executive coordination, administration, and the internal processes that hold everything together."
           members={hrStaff}
         />
 
@@ -489,7 +489,7 @@ export default function StaffSection() {
         {/* ── Marketing carousel ── */}
         <StaffCarousel
           title="Marketing Team"
-          description="A team of digital specialists and creatives driving brand visibility, audience growth, and content across every channel — from paid media to design and video."
+          description="A team of digital specialists and creatives driving brand visibility, audience growth, and content across every channel, from paid media to design and video."
           members={marketingStaff}
         />
 

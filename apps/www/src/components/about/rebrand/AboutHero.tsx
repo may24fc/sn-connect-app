@@ -130,7 +130,7 @@ export default function AboutHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.62, ease }}
         >
-          The operating partner behind dependable remote support — built for founders, operators, and modern teams.
+          The operating partner behind dependable remote support, built for founders, operators, and modern teams.
         </motion.p>
       </div>
     </section>

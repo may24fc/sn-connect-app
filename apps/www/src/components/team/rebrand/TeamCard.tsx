@@ -88,7 +88,7 @@ export default function TeamCard() {
             initial="hidden"
             animate={inView ? 'visible' : 'hidden'}
           >
-            A cross-functional group of remote specialists, creatives, and operators — each placed with intent, supported with structure, and focused on delivering dependable work.
+            A cross-functional group of remote specialists, creatives, and operators, each placed with intent, supported with structure, and focused on delivering dependable work.
           </motion.p>
         </div>
       </motion.div>

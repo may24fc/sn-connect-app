@@ -130,7 +130,7 @@ export default function TeamHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.62, ease }}
         >
-          The specialists, creatives, and operators behind every engagement — brought together with purpose and built to deliver.
+          The specialists, creatives, and operators behind every engagement, brought together with purpose and built to deliver.
         </motion.p>
       </div>
     </section>
