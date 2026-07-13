@@ -153,7 +153,7 @@ export default function ScrollMarquee() {
   return (
     <div
       ref={sectionRef}
-      className="relative w-full overflow-hidden bg-[#d6e4f0] py-10 sm:py-14 md:py-40 select-none border-t border-b border-[#0c1d2e]/10"
+      className="relative w-full overflow-hidden bg-[#d6e4f0] py-10 sm:py-14 md:py-20 select-none border-t border-b border-[#0c1d2e]/10"
       id="scroll-marquee-section"
     >
       {/* will-change on track AND each copy — compositor layers created at mount, not on first scroll */}
@@ -170,10 +170,10 @@ export default function ScrollMarquee() {
               className="inline-flex items-center shrink-0 gap-6 md:gap-10 pr-10 md:pr-16"
               style={{ willChange: 'transform' }}
             >
-              <span className="whitespace-nowrap text-5xl sm:text-6xl md:text-[clamp(48px,11.1vw,160px)] font-sans font-normal tracking-tight text-[#0c1d2e]">
-                Smarter talent. Faster execution. Better outcomes.
+              <span className="whitespace-nowrap text-5xl sm:text-6xl md:text-[clamp(40px,8vw,120px)] font-sans font-normal tracking-tight text-[#0c1d2e]">
+                Smarter talent. Better outcomes.
               </span>
-              <span className="whitespace-nowrap text-5xl sm:text-6xl md:text-[clamp(48px,11.1vw,160px)] font-sans font-light text-[#0c1d2e]/25 leading-none">
+              <span className="whitespace-nowrap text-5xl sm:text-6xl md:text-[clamp(40px,8vw,120px)] font-sans font-light text-[#0c1d2e]/25 leading-none">
                 &ndash;
               </span>
             </span>

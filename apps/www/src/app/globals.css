@@ -404,14 +404,6 @@
     box-shadow: 0 6px 18px rgba(12,29,46,0.08);
   }
 
-  /* Footer variant — white text, keep hover as dark */
-  .footer-cta .u-btn--1.button_el .btn_label {
-    color: #ffffff;
-  }
-  .footer-cta .u-btn--1.button_el:hover .btn_label {
-    color: var(--split-cta-dark);
-  }
-
   .u-btn--1.button_el:hover .btn_icon {
     color: #ffffff;
     box-shadow: 0 6px 18px rgba(12,29,46,0.08);

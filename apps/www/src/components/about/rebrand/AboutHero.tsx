@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { getLenis } from '../../../hooks/useSmoothScroll';
+import HeroBackdrop from '../../shared/HeroBackdrop';
 
 const ease = [0.19, 1, 0.22, 1] as const;
 
@@ -35,6 +36,8 @@ export default function AboutHero() {
                  pt-32 sm:pt-36 md:pt-16 pb-10 md:pb-12"
       id="about-hero"
     >
+      <HeroBackdrop variant="rings" />
+
       {/* ── Top: Heading + divider ── */}
       <div>
         <h1
