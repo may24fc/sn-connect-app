@@ -133,12 +133,13 @@ export default function OurCompany() {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent pointer-events-none md:hidden" />
             <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between pointer-events-none">
               <div className="flex flex-col gap-0.5">
-                <span className="text-white font-sans font-normal text-lg leading-tight">
+                <span className="text-white md:text-zinc-900 font-sans font-normal text-lg leading-tight">
                   Steven Nhan
                 </span>
-                <span className="button-mono text-xs text-white/60 uppercase tracking-[0.15em]">
+                <span className="button-mono text-xs text-white/60 md:text-zinc-900/60 uppercase tracking-[0.15em]">
                   Founder &amp; CEO
                 </span>
               </div>
@@ -150,7 +151,7 @@ export default function OurCompany() {
         <div className="flex flex-col gap-10" id="company-main-content">
           {/* Heading */}
           <motion.h2
-            className="text-[1.75rem] sm:text-4xl md:text-[42px] font-normal leading-tight tracking-tight text-[#0c1d2e] font-sans text-left select-none max-w-3xl"
+            className="text-[1.75rem] sm:text-4xl md:text-[42px] font-normal leading-[1.06] md:leading-tight tracking-tight text-[#0c1d2e] font-sans text-left select-none max-w-3xl"
             variants={stagger()}
             initial="hidden"
             whileInView="visible"
@@ -160,7 +161,7 @@ export default function OurCompany() {
             {/* Mobile: single flowing block */}
             <div className="overflow-visible pb-[0.04em] md:hidden">
               <motion.span className="block" variants={line}>
-                Built for modern teams and <span className="text-[#0c1d2e]/30">the next generation of remote work.</span>
+                Built for modern teams and the next generation of remote work.
               </motion.span>
             </div>
             {/* Desktop: two separately masked lines */}
