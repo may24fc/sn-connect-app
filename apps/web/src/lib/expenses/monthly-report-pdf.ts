@@ -664,11 +664,14 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
       .text('CURRENT MONTH', rightX, distColHeaderY, { width: colW, align: 'center', characterSpacing: 0.6 });
     doc.y = distColHeaderY + 24;
 
-    // Vertical divider for entire section
     const distDivX = M + colW + 10;
-    const distSectionStartY = doc.y;
 
     // --- Sub-section: Top Operational Units ---
+    // Guard: ensure enough vertical space for BOTH columns (pie + table) before
+    // starting the sub-section so left and right always share the same page.
+    const maxDeptRowCount = Math.max(prevDeptRows.length, curDeptRows.length);
+    ensureSpace(doc, 16 + 96 + 22 + maxDeptRowCount * 20 + 14);
+
     const deptSubY = doc.y;
     fill(doc, C.navy).font('Helvetica-Bold').fontSize(9)
       .text('Top Operational Units', leftX, deptSubY);
@@ -718,9 +721,19 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
         })
       : deptPieEndY + 20;
 
-    doc.y = Math.max(deptLeftEnd, deptRightEnd) + 14;
+    // Dept sub-section divider (drawn immediately while still on the same page)
+    const deptSectionEndY = Math.max(deptLeftEnd, deptRightEnd) + 8;
+    stroke(doc, C.border).lineWidth(1)
+      .moveTo(distDivX, deptSubY - 4)
+      .lineTo(distDivX, deptSectionEndY)
+      .stroke();
+    doc.y = deptSectionEndY + 14;
 
     // --- Sub-section: By Expense Category ---
+    // Same guard: keep both columns on the same page.
+    const maxCatRowCount = Math.max(prevCatRows.length, curCatRows.length);
+    ensureSpace(doc, 16 + 96 + 22 + maxCatRowCount * 20 + 14);
+
     const catSubY = doc.y;
     fill(doc, C.navy).font('Helvetica-Bold').fontSize(9)
       .text('By Expense Category', leftX, catSubY);
@@ -768,13 +781,14 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
         })
       : catPieEndY + 20;
 
-    // Draw divider spanning the full section height
+    // Category sub-section divider
+    const catSectionEndY = Math.max(catLeftEnd, catRightEnd) + 8;
     stroke(doc, C.border).lineWidth(1)
-      .moveTo(distDivX, distSectionStartY - 4)
-      .lineTo(distDivX, Math.max(catLeftEnd, catRightEnd) + 4)
+      .moveTo(distDivX, catSubY - 4)
+      .lineTo(distDivX, catSectionEndY)
       .stroke();
 
-    doc.y = Math.max(catLeftEnd, catRightEnd) + 12;
+    doc.y = catSectionEndY + 12;
 
     // -----------------------------------------------------------------------
     // SECTION 3 - Key Insights card
@@ -792,10 +806,12 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
     // -----------------------------------------------------------------------
     const range = doc.bufferedPageRange();
     let lastContentPage = range.count - 1;
-    // Walk backwards: a page is empty when doc.y equals the top margin on it.
+    // A page is empty when doc.y is at (or very near) the top margin — use a
+    // 20px threshold to catch pages where a page-break was triggered but only
+    // a single divider line or cursor move was left behind.
     while (lastContentPage > 0) {
       doc.switchToPage(lastContentPage);
-      if (doc.y > doc.page.margins.top) break;
+      if (doc.y > doc.page.margins.top + 20) break;
       lastContentPage--;
     }
     const totalPages = lastContentPage + 1;
