@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('POST /api/users/assign-intern error:', error);
+    console.error('POST /api/users/assign-associate error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

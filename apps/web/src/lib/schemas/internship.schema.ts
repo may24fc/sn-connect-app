@@ -108,8 +108,8 @@ export type CreateInternDailyLogInput = z.infer<typeof createInternDailyLogSchem
 export type UpdateInternDailyLogInput = z.infer<typeof updateInternDailyLogSchema>;
 
 /**
- * Schema for intern self-initialization.
- * Validates the payload sent by an intern to create their own internship record.
+ * Schema for associate self-initialization.
+ * Validates the payload sent by an associate to create their own internship record.
  */
 export const initializeInternshipSchema = z.object({
   startDate: isoDateSchema,

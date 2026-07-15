@@ -2,7 +2,7 @@ import { type InternshipFilters, queryKeys } from '@/lib/query-keys';
 import type { DailyLogAttachment, ProjectFocusEntry } from '@hr-portal/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-// ── Intern self-initialization types ──
+// ── Associate self-initialization types ──
 
 export interface InitializeInternshipPayload {
   startDate: string;
@@ -333,7 +333,7 @@ export function useCreateInternDailyLog() {
   });
 }
 
-/** Update an intern's own draft log (edit content or submit). */
+/** Update an associate's own draft log (edit content or submit). */
 export function useUpdateInternDraftLog() {
   const queryClient = useQueryClient();
 
@@ -502,8 +502,8 @@ export function useHireInternAsEmployee() {
       if (!response.ok) {
         const error = await response
           .json()
-          .catch(() => ({ error: 'Failed to hire intern as employee' }));
-        throw new Error(error.error || 'Failed to hire intern as employee');
+          .catch(() => ({ error: 'Failed to hire associate as employee' }));
+        throw new Error(error.error || 'Failed to hire associate as employee');
       }
 
       return response.json();
@@ -518,8 +518,8 @@ export function useHireInternAsEmployee() {
 }
 
 /**
- * Mutation hook for intern self-initialization.
- * Creates an internship record for the authenticated intern user
+ * Mutation hook for associate self-initialization.
+ * Creates an internship record for the authenticated associate user
  * who does not yet have one.
  */
 export function useInitializeInternship() {

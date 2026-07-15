@@ -14,7 +14,7 @@ You will be redirected to your role's dashboard:
 | Role | Landing Page |
 |------|-------------|
 | Employee | `/dashboard` |
-| Intern | `/intern/dashboard` |
+| Associate | `/associate/dashboard` |
 
 ### Forgot Password
 
@@ -64,9 +64,9 @@ After submission you'll see an **"Onboarding Complete"** confirmation page and g
 
 > **Tip:** You can navigate between steps freely. Your progress is saved automatically, so you can return later if needed.
 
-## Intern Setup
+## Associate Setup
 
-Interns go through a separate setup flow at `/intern/setup` before accessing the portal. This collects:
+Interns go through a separate setup flow at `/associate/setup` before accessing the portal. This collects:
 
 - School and program information
 - Start/end dates

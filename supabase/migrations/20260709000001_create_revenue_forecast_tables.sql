@@ -241,7 +241,7 @@ CREATE POLICY revenue_forecast_access_grants_delete_super_admin_policy
 
 COMMENT ON TABLE public.sfo_revenue_entries IS 'SFO monthly revenue actuals in AUD used for projection and year-over-year forecasting.';
 COMMENT ON TABLE public.sfo_revenue_goals IS 'Configurable annual SFO revenue goals used for progress bars in the forecast UI.';
-COMMENT ON TABLE public.revenue_forecast_access_grants IS 'Feature-level Revenue Forecast access grants for employee and intern users.';
+COMMENT ON TABLE public.revenue_forecast_access_grants IS 'Feature-level Revenue Forecast access grants for employee and associate users.';
 COMMENT ON FUNCTION public.user_has_revenue_forecast_access(uuid) IS 'Returns true for super_admin users and users with an active Revenue Forecast access grant.';
 
 COMMIT;

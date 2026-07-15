@@ -173,7 +173,7 @@ export interface DashboardAnalyticsParams {
 export interface OnboardingProfileFilters {
   search?: string;
   status?: 'completed' | 'in_progress';
-  role?: 'employee' | 'intern';
+  role?: 'employee' | 'associate';
   departmentId?: string;
   startDate?: string;
   endDate?: string;
@@ -394,10 +394,10 @@ export const queryKeys = {
     tasks: () => [...queryKeys.onboarding.all, 'tasks'] as const,
     checklist: (employeeId: string) =>
       [...queryKeys.onboarding.all, 'checklist', employeeId] as const,
-    template: (scope: 'employee' | 'intern') =>
+    template: (scope: 'employee' | 'associate') =>
       [...queryKeys.onboarding.all, 'template', scope] as const,
     profile: () => [...queryKeys.onboarding.all, 'profile'] as const,
-    pendingApprovals: (role?: 'employee' | 'intern') =>
+    pendingApprovals: (role?: 'employee' | 'associate') =>
       [...queryKeys.onboarding.all, 'pending-approvals', role ?? 'all'] as const,
     profiles: {
       all: () => [...queryKeys.onboarding.all, 'profiles'] as const,
@@ -601,7 +601,7 @@ export const queryKeys = {
       [...queryKeys.companyPulse.all, 'events', filters] as const,
   },
 
-  // Projects (Intern Project Tracker)
+  // Projects (Associate Project Tracker)
   projects: {
     all: ['projects'] as const,
     lists: () => [...queryKeys.projects.all, 'list'] as const,

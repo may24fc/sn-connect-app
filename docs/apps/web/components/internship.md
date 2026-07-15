@@ -2,7 +2,7 @@
 
 > Audience: Developers
 
-Internship tracking UI — intern cards, hours progress, daily report forms, and summary dashboards.
+Internship tracking UI — associate cards, hours progress, daily report forms, and summary dashboards.
 
 **Location:** `packages/ui/src/components/internship/`  
 **Import:** `import { InternCard, HoursProgressCard, EODReportForm, ... } from '@hr-portal/ui';`  
@@ -67,7 +67,7 @@ Status badges for internship lifecycle, daily report approval, and hours complet
 
 ## InternCard / InternList / InternRow
 
-Intern profile card showing name, department, hours progress, status, and supervisor.
+Associate profile card showing name, department, hours progress, status, and supervisor.
 
 - `InternCard` — Grid card layout
 - `InternList` — Vertical list of cards
@@ -86,7 +86,7 @@ Visual progress display for completed vs required hours.
 
 ## InternHoursProgressBar
 
-Styled progress bar for intern hours with color thresholds.
+Styled progress bar for associate hours with color thresholds.
 
 ```typescript
 interface InternHoursProgressBarProps {
@@ -127,7 +127,7 @@ End-of-day report submission form. Fields: date, hours worked, progress and impa
 Dashboard summary cards.
 
 - `InternshipSummaryCards` — Admin view: active interns, total hours, completion rate
-- `InternPersonalStats` — Intern's personal view: hours, days remaining, progress
+- `InternPersonalStats` — Associate's personal view: hours, days remaining, progress
 
 ---
 

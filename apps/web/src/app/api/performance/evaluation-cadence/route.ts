@@ -9,7 +9,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!role || !['employee', 'intern'].includes(role)) {
+    if (!role || !['employee', 'associate'].includes(role)) {
       return NextResponse.json(
         buildEvaluationCadenceSummary({ monthlySubmitted: false, quarterlySubmitted: false })
       );

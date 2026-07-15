@@ -21,7 +21,7 @@ export interface DepartmentSpendRow {
 
 export interface PipelineStatusCounts {
   autoApproved: number;
-  awaitingInternReview: number;
+  awaitingAssociateReview: number;
   approved: number;
   draftExtracted: number;
 }
@@ -245,7 +245,7 @@ export async function buildMonthlyExpenseReport(
 
   const pipelineStatus: PipelineStatusCounts = {
     autoApproved: currentRows.filter((row) => row.processing_status === 'auto_approved').length,
-    awaitingInternReview: currentRows.filter((row) => row.processing_status === 'awaiting_intern_review').length,
+    awaitingAssociateReview: currentRows.filter((row) => row.processing_status === 'awaiting_associate_review').length,
     approved: currentRows.filter((row) => row.processing_status === 'approved').length,
     draftExtracted: currentRows.filter((row) => row.processing_status === 'draft_extracted').length,
   };

@@ -1,6 +1,6 @@
--- Migration: Intern EOD digest source and run tracking
+-- Migration: Associate EOD digest source and run tracking
 -- Created: 2026-05-07
--- Description: Adds a normalized RPC for prior-day intern EOD digests plus
+-- Description: Adds a normalized RPC for prior-day associate EOD digests plus
 --              a durable run-log table used by n8n for idempotency and history.
 
 BEGIN;
@@ -70,7 +70,7 @@ CREATE TRIGGER trigger_intern_eod_digest_runs_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_updated_at();
 
-COMMENT ON TABLE public.intern_eod_digest_runs IS 'Durable run log for the intern next-day EOD Telegram digest workflow.';
+COMMENT ON TABLE public.intern_eod_digest_runs IS 'Durable run log for the associate next-day EOD Telegram digest workflow.';
 
 CREATE OR REPLACE FUNCTION public.intern_log_text_to_jsonb_array(p_value text)
 RETURNS jsonb
@@ -181,7 +181,7 @@ DECLARE
   caller_role text := auth.role();
 BEGIN
   IF caller_role IS DISTINCT FROM 'service_role' AND NOT user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[]) THEN
-    RAISE EXCEPTION 'Only admins or service-role callers can access the intern EOD digest source'
+    RAISE EXCEPTION 'Only admins or service-role callers can access the associate EOD digest source'
       USING ERRCODE = '42501';
   END IF;
 
@@ -192,7 +192,7 @@ BEGIN
     i.id AS internship_id,
     i.employee_id AS intern_employee_id,
     intern_directory.user_id AS intern_user_id,
-    COALESCE(NULLIF(BTRIM(intern_directory.full_name), ''), 'Unnamed Intern') AS intern_name,
+    COALESCE(NULLIF(BTRIM(intern_directory.full_name), ''), 'Unnamed Associate') AS intern_name,
     intern_directory.email AS intern_email,
     i.supervisor_id AS supervisor_user_id,
     NULLIF(BTRIM(supervisor_directory.full_name), '') AS supervisor_name,
@@ -232,7 +232,7 @@ BEGIN
     AND logs.status = 'submitted'
   ORDER BY
     COALESCE(NULLIF(BTRIM(intern_directory.department_name), ''), NULLIF(BTRIM(i.department), ''), 'Unassigned'),
-    COALESCE(NULLIF(BTRIM(intern_directory.full_name), ''), 'Unnamed Intern'),
+    COALESCE(NULLIF(BTRIM(intern_directory.full_name), ''), 'Unnamed Associate'),
     logs.created_at,
     logs.id;
 END;
@@ -240,6 +240,6 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_intern_eod_digest_source(date) TO authenticated, service_role;
 
-COMMENT ON FUNCTION public.get_intern_eod_digest_source(date) IS 'Returns normalized prior-day intern EOD rows for n8n department digest workflows.';
+COMMENT ON FUNCTION public.get_intern_eod_digest_source(date) IS 'Returns normalized prior-day associate EOD rows for n8n department digest workflows.';
 
 COMMIT;

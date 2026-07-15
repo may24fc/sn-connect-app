@@ -18,7 +18,7 @@ import { POST } from '@/app/api/expenses/[id]/verify/route';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 type MatchMockOptions = {
-  actorRole: 'employee' | 'intern' | 'admin' | 'super_admin';
+  actorRole: 'employee' | 'associate' | 'admin' | 'super_admin';
   isAccountingMember: boolean;
 };
 

@@ -28,7 +28,7 @@ export function useMarketingReportsAccess(): {
   reason: MarketingReportsAccessReason;
 } {
   const { user, isLoading: isAuthLoading } = useAuth();
-  const shouldFetchEmployee = user?.role === 'employee' || user?.role === 'intern';
+  const shouldFetchEmployee = user?.role === 'employee' || user?.role === 'associate';
 
   const employeeQuery = useQuery({
     queryKey: ['marketing-reports-access', user?.id],
@@ -76,7 +76,7 @@ export function useMarketingReportsAccess(): {
     };
   }
 
-  if (user.role !== 'employee' && user.role !== 'intern') {
+  if (user.role !== 'employee' && user.role !== 'associate') {
     return {
       user,
       employeeDepartment,

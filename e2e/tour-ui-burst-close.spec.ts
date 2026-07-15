@@ -33,7 +33,7 @@ async function loginAsAdmin(page: Parameters<typeof test>[0]['page']): Promise<v
     await page.getByRole('button', { name: /sign in/i }).click();
 
     const landedOnApp = await page
-      .waitForURL(/\/(dashboard|admin|super-admin|intern|onboarding)/, { timeout: 6000 })
+      .waitForURL(/\/(dashboard|admin|super-admin|associate|onboarding)/, { timeout: 6000 })
       .then(() => true)
       .catch(() => false);
 

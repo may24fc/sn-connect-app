@@ -281,12 +281,12 @@ describe('Resource Feed - Security Tests', () => {
   });
 
   it('does not expose resources targeted to other roles', async () => {
-    // Intern user should not see admin-only resources
+    // Associate user should not see admin-only resources
     const internFeedResponse = {
       data: [
         {
           ...mockEmployeeFeedResponse.data[0],
-          target_roles: ['intern'],
+          target_roles: ['associate'],
         },
       ],
       pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },

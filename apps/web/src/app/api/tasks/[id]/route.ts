@@ -194,7 +194,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       };
       const statusLabel = statusLabels[parsed.data.status] ?? parsed.data.status;
 
-      // If an employee/intern updated the status, notify the assigner (admin)
+      // If an employee/associate updated the status, notify the assigner (admin)
       if (role !== TASK_ASSIGNER_ROLE && data.assigned_by) {
         createNotification({
           userId: data.assigned_by,

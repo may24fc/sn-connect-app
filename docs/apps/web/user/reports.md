@@ -2,7 +2,7 @@
 
 The Reports page (`/reports`) lets you submit weekly activity reports and track your submission history.
 
-> **Note:** This feature is available to employees only. Interns use Daily EOD Reports instead — see the [Intern Guide](intern-guide.md).
+> **Note:** This feature is available to employees only. Interns use Daily EOD Reports instead — see the [Associate Guide](associate-guide.md).
 
 ## Report Overview
 

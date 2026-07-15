@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
 
     // Determine which knowledge source access levels this user may see.
     // admin / super_admin / hr / cos / ceo → all sources
-    // employee / intern → only sources marked access_level = 'all'
+    // employee / associate → only sources marked access_level = 'all'
     const allowedAccessLevels = getAllowedKnowledgeAccessLevels(role);
     const isAdminRole = allowedAccessLevels.includes('admin');
 

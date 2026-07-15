@@ -12,7 +12,7 @@ export const onboardingProfileViewSchema = z.object({
   userId: z.string().uuid(),
   fullName: z.string(),
   emailAddress: z.string().email().nullable(),
-  role: z.enum(['employee', 'intern']).nullable(),
+  role: z.enum(['employee', 'associate']).nullable(),
   departmentId: z.string().uuid().nullable(),
   departmentName: z.string().nullable(),
   status: z.enum(['completed', 'in_progress']),
@@ -41,7 +41,7 @@ export const onboardingDocumentViewSchema = z.object({
 export const onboardingProfileFiltersSchema = z.object({
   search: z.string().optional(),
   status: z.enum(['completed', 'in_progress']).optional(),
-  role: z.enum(['employee', 'intern']).optional(),
+  role: z.enum(['employee', 'associate']).optional(),
   departmentId: z.string().uuid().optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),

@@ -26,7 +26,7 @@ This PR implements the complete Phase 1 backend foundation for the SN HR Portal,
 
 ### Authentication & Authorization (RBAC)
 - ✅ Implemented mock authentication system with AuthContext
-- ✅ Created 4 user roles: employee, intern, admin, super_admin
+- ✅ Created 4 user roles: employee, associate, admin, super_admin
 - ✅ Added role-based route guards and navigation
 - ✅ Implemented localStorage session persistence
 - ✅ Created test accounts for all roles
@@ -82,9 +82,9 @@ This PR implements the complete Phase 1 backend foundation for the SN HR Portal,
 - `audit_logs` - Tracks sensitive operations
 
 ### New Enums
-- `user_role` - 6 roles (admin, hr, cos, ceo, employee, intern)
+- `user_role` - 6 roles (admin, hr, cos, ceo, employee, associate)
 - `user_status` - active, on_leave, terminated
-- `employment_type` - regular, probationary, intern, project_based
+- `employment_type` - regular, probationary, associate, project_based
 - `work_arrangement` - part_time, full_time
 - `document_type` - 10 document categories
 
@@ -135,7 +135,7 @@ This PR implements the complete Phase 1 backend foundation for the SN HR Portal,
 | Email | Password | Role |
 |-------|----------|------|
 | employee@test.com | password | employee |
-| intern@test.com | password | intern |
+| associate@test.com | password | associate |
 | admin@test.com | password | admin |
 | superadmin@test.com | password | super_admin |
 

@@ -322,7 +322,7 @@ function ItHandlersManagementTab(): ReactNode {
         .filter(
           (employee) =>
             employee.user_id &&
-            employee.employment_type !== 'intern' &&
+            employee.employment_type !== 'associate' &&
             !activeHandlerIds.has(employee.user_id)
         )
         .sort((left, right) => {
@@ -523,7 +523,7 @@ export default function EmployeeManagementPage(): ReactNode {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
   const [assignmentModalMode, setAssignmentModalMode] = useState<
-    'employee-assignment' | 'employee-probation' | 'intern-assignment'
+    'employee-assignment' | 'employee-probation' | 'associate-assignment'
   >('employee-assignment');
 
   // Appraisal dialog state
@@ -807,7 +807,7 @@ export default function EmployeeManagementPage(): ReactNode {
 
   const openAssignmentModal = (
     data: any,
-    mode: 'employee-assignment' | 'employee-probation' | 'intern-assignment'
+    mode: 'employee-assignment' | 'employee-probation' | 'associate-assignment'
   ): void => {
     setAssignmentData(data);
     setAssignmentModalMode(mode);
@@ -1733,7 +1733,7 @@ export default function EmployeeManagementPage(): ReactNode {
           addToast({
             title: 'Assignment completed',
             description: completedName
-              ? result.role === 'intern'
+              ? result.role === 'associate'
                 ? `${completedName} has been assigned to the internship tracker.`
                 : result.employmentStatus === 'confirmed'
                   ? `${completedName} has been assigned as confirmed.`

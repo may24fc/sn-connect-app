@@ -97,7 +97,7 @@ BEGIN
   END IF;
 
   RETURN lower(trim(legacy_department)) LIKE '%accounting%'
-    OR lower(trim(legacy_department)) IN ('finance', 'accounting intern');
+    OR lower(trim(legacy_department)) IN ('finance', 'accounting associate');
 END;
 $$;
 
@@ -112,7 +112,7 @@ CREATE POLICY expense_entries_select_reviewer_policy ON public.expense_entries
     AND (
       user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
       OR (
-        user_has_any_role(auth.uid(), ARRAY['intern', 'employee']::user_role[])
+        user_has_any_role(auth.uid(), ARRAY['associate', 'employee']::user_role[])
         AND public.user_is_accounting_member(auth.uid())
       )
     )
@@ -127,7 +127,7 @@ CREATE POLICY expense_entries_update_reviewer_policy ON public.expense_entries
     AND (
       user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
       OR (
-        user_has_any_role(auth.uid(), ARRAY['intern', 'employee']::user_role[])
+        user_has_any_role(auth.uid(), ARRAY['associate', 'employee']::user_role[])
         AND public.user_is_accounting_member(auth.uid())
       )
     )
@@ -135,7 +135,7 @@ CREATE POLICY expense_entries_update_reviewer_policy ON public.expense_entries
   WITH CHECK (
     user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
     OR (
-      user_has_any_role(auth.uid(), ARRAY['intern', 'employee']::user_role[])
+      user_has_any_role(auth.uid(), ARRAY['associate', 'employee']::user_role[])
       AND public.user_is_accounting_member(auth.uid())
     )
   );

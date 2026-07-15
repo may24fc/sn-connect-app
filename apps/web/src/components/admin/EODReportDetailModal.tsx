@@ -72,7 +72,7 @@ export function EODReportDetailModal({
 
   const internName = log.internship?.employee
     ? `${log.internship.employee.first_name} ${log.internship.employee.last_name}`
-    : 'Unknown Intern';
+    : 'Unknown Associate';
 
   const initials = internName
     .split(' ')
@@ -133,7 +133,7 @@ export function EODReportDetailModal({
           <DialogDescription>Submitted on {formatDate(log.log_date)}</DialogDescription>
         </DialogHeader>
 
-        {/* Intern Info */}
+        {/* Associate Info */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
@@ -324,7 +324,7 @@ export function EODReportDetailModal({
               </div>
               <Textarea
                 id="supervisor-notes"
-                placeholder="Add feedback or notes for this intern's report..."
+                placeholder="Add feedback or notes for this associate's report..."
                 value={supervisorNotes}
                 onChange={(e) => setSupervisorNotes(e.target.value)}
                 className="min-h-[80px] text-sm resize-none"

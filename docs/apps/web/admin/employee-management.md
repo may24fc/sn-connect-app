@@ -87,7 +87,7 @@ Use `POST /api/users/assign-employee` to link a user account to a full employee 
 - Employee ID
 - Department assignment
 - Position
-- Employment type (regular, probationary, intern, project-based)
+- Employment type (regular, probationary, associate, project-based)
 - Work arrangement (full-time, part-time)
 - Start date
 
@@ -110,7 +110,7 @@ Available roles:
 | Role | Access Level |
 |------|-------------|
 | `employee` | Standard employee features |
-| `intern` | Limited features (no invoices, no weekly reports) |
+| `associate` | Limited features (no invoices, no weekly reports) |
 | `admin` | HR administration features |
 | `super_admin` | Full system access |
 
@@ -169,4 +169,4 @@ Updating the hire date triggers a **milestone recalculation** — any anniversar
 
 *Last updated: 2026-04-10*
 
-Next: [Intern Management](intern-management.md) · Previous: [Getting Started](getting-started.md)
+Next: [Associate Management](associate-management.md) · Previous: [Getting Started](getting-started.md)

@@ -67,7 +67,7 @@ Requires `admin` or `super_admin` role.
     "auditLogsCount": 120,
     "userRoleDistribution": [
       { "role": "employee", "count": 35, "percentage": 70 },
-      { "role": "intern", "count": 8, "percentage": 16 },
+      { "role": "associate", "count": 8, "percentage": 16 },
       { "role": "admin", "count": 5, "percentage": 10 },
       { "role": "super_admin", "count": 2, "percentage": 4 }
     ],
@@ -96,7 +96,7 @@ Requires `admin` or `super_admin` role.
 
 ## GET /api/dashboard/pending
 
-Returns counts and latest items for pending approvals across reports, invoices, reviews, and intern EOD reports.
+Returns counts and latest items for pending approvals across reports, invoices, reviews, and associate EOD reports.
 
 ### Authentication
 

@@ -4,8 +4,8 @@
 Accepted
 
 ## Context
-The database currently supports roles: admin, hr, cos, ceo, employee, intern.
-The UI currently supports roles: super_admin, admin, employee, intern.
+The database currently supports roles: admin, hr, cos, ceo, employee, associate.
+The UI currently supports roles: super_admin, admin, employee, associate.
 We need to align these to prevent authorization drift while keeping the UI role surface area small.
 
 ## Decision
@@ -16,7 +16,7 @@ Default mapping (Option A):
 - admin, hr, cos, ceo -> admin
 - super_admin -> super_admin
 - employee -> employee
-- intern -> intern
+- associate -> associate
 
 Alternate mapping (Option B, via `NEXT_PUBLIC_ROLE_MAPPING_MODE=option-b`):
 - hr, ceo -> admin
@@ -24,7 +24,7 @@ Alternate mapping (Option B, via `NEXT_PUBLIC_ROLE_MAPPING_MODE=option-b`):
 - admin -> admin
 - super_admin -> super_admin
 - employee -> employee
-- intern -> intern
+- associate -> associate
 
 ## Consequences
 - Database role enum is extended with `super_admin`.

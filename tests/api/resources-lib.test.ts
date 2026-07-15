@@ -56,8 +56,8 @@ describe('isResourceAdmin', () => {
     expect(isResourceAdmin('employee')).toBe(false);
   });
 
-  it('returns false for intern role', () => {
-    expect(isResourceAdmin('intern')).toBe(false);
+  it('returns false for associate role', () => {
+    expect(isResourceAdmin('associate')).toBe(false);
   });
 
   it('returns false for null role', () => {

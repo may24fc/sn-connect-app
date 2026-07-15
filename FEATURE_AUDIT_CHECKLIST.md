@@ -56,7 +56,7 @@
 ### C2. InternDashboard Component Uses 100% Mock Data
 **File:** `apps/web/src/components/dashboards/InternDashboard.tsx`  
 **Lines:** 35-67  
-**Status Update (2026-03-29):** Retired. This legacy component was deleted after confirming the real implementation already lives at `apps/web/src/app/(employee)/intern/dashboard/page.tsx`.
+**Status Update (2026-03-29):** Retired. This legacy component was deleted after confirming the real implementation already lives at `apps/web/src/app/(employee)/associate/dashboard/page.tsx`.
 
 **Problem:** The `InternDashboard` *component* (not the *page*) uses fully mock data:
 - `mockInternProfile` = all dashes and zeros
@@ -64,7 +64,7 @@
 - `mockTasks = []` (empty)
 - `handleSubmitReport` = empty function (`// TODO: Implement API call`)
 
-**Note:** The actual page at `apps/web/src/app/(employee)/intern/dashboard/page.tsx` DOES use real hooks (`useInternships`, `useCreateInternDailyLog`). The component file appears to be a legacy/unused version.
+**Note:** The actual page at `apps/web/src/app/(employee)/associate/dashboard/page.tsx` DOES use real hooks (`useInternships`, `useCreateInternDailyLog`). The component file appears to be a legacy/unused version.
 
 **Fix Required:**
 - [ ] Determine if `InternDashboard` component is used anywhere

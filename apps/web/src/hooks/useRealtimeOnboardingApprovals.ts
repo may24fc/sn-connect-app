@@ -10,7 +10,7 @@ export interface PendingOnboarding {
   full_name: string;
   avatar_url?: string | null;
   email_address: string;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
   position: string | null;
   department_id: string | null;
   completed_at: string;
@@ -36,7 +36,7 @@ export interface PendingOnboarding {
   payment_zipcode?: string | null;
 }
 
-async function fetchPendingApprovals(role?: 'employee' | 'intern'): Promise<PendingOnboarding[]> {
+async function fetchPendingApprovals(role?: 'employee' | 'associate'): Promise<PendingOnboarding[]> {
   const params = new URLSearchParams({
     status: 'completed',
     page: '1',
@@ -88,8 +88,8 @@ async function fetchPendingApprovals(role?: 'employee' | 'intern'): Promise<Pend
       payment_province?: string | null;
       payment_zipcode?: string | null;
       users?:
-        | { role?: 'employee' | 'intern' | null; avatar_url?: string | null }
-        | Array<{ role?: 'employee' | 'intern' | null; avatar_url?: string | null }>;
+        | { role?: 'employee' | 'associate' | null; avatar_url?: string | null }
+        | Array<{ role?: 'employee' | 'associate' | null; avatar_url?: string | null }>;
     }>;
   };
 
@@ -132,7 +132,7 @@ async function fetchPendingApprovals(role?: 'employee' | 'intern'): Promise<Pend
   return mapped.filter((profile) => profile.review_state === 'awaiting_review');
 }
 
-export function useRealtimeOnboardingApprovals(role?: 'employee' | 'intern') {
+export function useRealtimeOnboardingApprovals(role?: 'employee' | 'associate') {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const queryClient = useQueryClient();
   const pendingApprovalsQuery = useQuery({

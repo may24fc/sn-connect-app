@@ -2,7 +2,7 @@ import {
   normalizeAttachmentRecords,
   normalizeProjectEntries,
   normalizeStringList,
-} from '@/lib/intern-daily-log';
+} from '@/lib/associate-daily-log';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { updateInternshipSchema } from '@/lib/schemas/internship.schema';
@@ -32,7 +32,7 @@ interface DailyLogRow {
   status?: string;
 }
 
-const DAILY_LOG_ATTACHMENT_BUCKET = 'intern-daily-log-attachments';
+const DAILY_LOG_ATTACHMENT_BUCKET = 'associate-daily-log-attachments';
 const DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 10;
 
 async function signDailyLogAttachments(attachments: unknown) {
@@ -127,7 +127,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       ]);
 
     if (!internEmployee) {
-      return NextResponse.json({ error: 'Intern profile not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Associate profile not found' }, { status: 404 });
     }
 
     const reportRows = await Promise.all(

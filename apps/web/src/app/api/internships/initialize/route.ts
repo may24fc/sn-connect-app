@@ -5,8 +5,8 @@ import { getAuthedInternshipContext } from '../_lib';
 /**
  * POST /api/internships/initialize
  *
- * Creates an internship record for the authenticated intern user.
- * - Validates the user has role `intern`
+ * Creates an internship record for the authenticated associate user.
+ * - Validates the user has role `associate`
  * - Prevents duplicate records (only one active internship per employee)
  * - Links the internship to the user's employee record
  */
@@ -19,9 +19,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Keep validation for backwards compatibility with older clients, but
     // self-initialization is no longer an allowed product flow.
-    if (role !== 'intern') {
+    if (role !== 'associate') {
       return NextResponse.json(
-        { error: 'Only users with the intern role can initialize an internship' },
+        { error: 'Only users with the associate role can initialize an internship' },
         { status: 403 }
       );
     }
@@ -47,11 +47,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         record_id: user.id,
         user_id: user.id,
         new_values: {
-          reason: 'Intern self-initialization disabled',
+          reason: 'Associate self-initialization disabled',
         },
       });
     } catch (auditError) {
-      console.warn('Failed to write audit log for intern initialization:', auditError);
+      console.warn('Failed to write audit log for associate initialization:', auditError);
     }
 
     return NextResponse.json(

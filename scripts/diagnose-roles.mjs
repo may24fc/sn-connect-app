@@ -38,7 +38,7 @@ async function main() {
   // 2. For each sample account, sign in and query using the access token (like browser)
   const emails = [
     'employee@example.com',
-    'intern@example.com',
+    'associate@example.com',
     'admin@example.com',
     'super-admin@example.com',
   ];

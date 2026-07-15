@@ -158,7 +158,7 @@ export default function InternDashboardPage(): ReactNode {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight">
-            Intern Dashboard
+            Associate Dashboard
           </h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-500 dark:text-zinc-400 mt-1">
             Track your internship progress and submit daily reports.
@@ -409,7 +409,7 @@ export default function InternDashboardPage(): ReactNode {
           <BentoCardTitle icon={<FileText className="h-4 w-4" strokeWidth={1.5} />}>
             Recent Reports
           </BentoCardTitle>
-          <Link href="/intern/reports">
+          <Link href="/associate/reports">
             <Button variant="ghost" size="xs">
               View All
               <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
@@ -447,7 +447,7 @@ function InternshipAssignmentPendingState(): ReactNode {
           that assignment is in place.
         </p>
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link href="/intern/profile">
+          <Link href="/associate/profile">
             <Button>View Profile</Button>
           </Link>
           <Link href="/onboarding/awaiting-approval">

@@ -45,7 +45,7 @@ import {
 import { Badge } from '@hr-portal/ui';
 import { ClipboardList, FileText, Loader2, Plus, Receipt, Sparkles, Trash2 } from 'lucide-react';
 
-const DELETABLE_STATUSES = new Set(['draft_extracted', 'awaiting_intern_review']);
+const DELETABLE_STATUSES = new Set(['draft_extracted', 'awaiting_associate_review']);
 
 const EXPENSE_TYPES = [
   { value: 'software', label: 'Software' },
@@ -311,7 +311,7 @@ export default function EmployeeExpensesPage() {
     switch (status) {
       case 'draft_extracted':
         return <Badge variant="outline" className="flex items-center gap-1 w-fit border-zinc-300 text-zinc-600">Queued for OCR</Badge>;
-      case 'awaiting_intern_review':
+      case 'awaiting_associate_review':
         return <Badge variant="secondary" className="flex items-center gap-1 w-fit bg-yellow-500/10 text-yellow-600 dark:bg-yellow-500/10 dark:text-yellow-400 border-none">Awaiting Review</Badge>;
       case 'auto_approved':
         return <Badge variant="success" className="flex items-center gap-1 w-fit bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-450 border-none">Auto-Approved</Badge>;

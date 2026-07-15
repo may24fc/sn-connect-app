@@ -4,7 +4,7 @@
 --   Adds two enum values used by the Telegram intake pipeline:
 --     * project_claimable  -> broadcast to interns when a new pool item lands
 --     * project_assigned   -> direct notification when a project is auto-assigned
---                             to a specific intern (by CEO name hint) or self-claimed
+--                             to a specific associate (by CEO name hint) or self-claimed
 --
 -- Note: Postgres requires ALTER TYPE ... ADD VALUE to run outside a transaction
 -- in some versions. We use IF NOT EXISTS to keep this idempotent and safe to

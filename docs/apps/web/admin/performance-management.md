@@ -227,4 +227,4 @@ When creating or editing a cycle, the deadline picker appears below the cycle en
 
 *Last updated: 2026-04-10*
 
-Next: [Probation Tracking](probation.md) · Previous: [Intern Management](intern-management.md)
+Next: [Probation Tracking](probation.md) · Previous: [Associate Management](associate-management.md)

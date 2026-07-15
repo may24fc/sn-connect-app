@@ -19,7 +19,7 @@ interface InternRow {
 
 /**
  * GET /api/admin/projects/overview
- * Aggregated cross-intern project + gamification stats for the admin Projects dashboard.
+ * Aggregated cross-associate project + gamification stats for the admin Projects dashboard.
  */
 export async function GET() {
   const auth = await getProjectAuthedContext();
@@ -33,7 +33,7 @@ export async function GET() {
   const { data: interns, error: internsErr } = await supabaseAdmin
     .from('employee_directory')
     .select('user_id, full_name, department_name, role')
-    .eq('role', 'intern')
+    .eq('role', 'associate')
     .neq('status', 'terminated')
     .not('user_id', 'is', null);
   if (internsErr) {
@@ -41,7 +41,7 @@ export async function GET() {
   }
 
   const internIds = (interns ?? [])
-    .map((intern: { user_id: string | null }) => intern.user_id)
+    .map((associate: { user_id: string | null }) => associate.user_id)
     .filter((userId): userId is string => !!userId);
 
   const [{ data: projects, error: projectsErr }, { data: gamification, error: gamificationErr }] =
@@ -78,13 +78,13 @@ export async function GET() {
   }
 
   const rows: InternRow[] = (interns ?? []).flatMap(
-    (intern: { user_id: string | null; full_name: string | null; department_name: string | null }) => {
-      if (!intern.user_id) {
+    (associate: { user_id: string | null; full_name: string | null; department_name: string | null }) => {
+      if (!associate.user_id) {
         return [];
       }
 
       const myProjects = (projects ?? []).filter(
-        (project: { lead_user_id: string }) => project.lead_user_id === intern.user_id
+        (project: { lead_user_id: string }) => project.lead_user_id === associate.user_id
       );
       const total = myProjects.length;
       const sumPct = myProjects.reduce(
@@ -100,12 +100,12 @@ export async function GET() {
         else if (project.health === 'overdue') overdue++;
       }
 
-      const gamificationRow = gamMap.get(intern.user_id);
+      const gamificationRow = gamMap.get(associate.user_id);
       return [
         {
-          user_id: intern.user_id,
-          full_name: intern.full_name,
-          department: intern.department_name,
+          user_id: associate.user_id,
+          full_name: associate.full_name,
+          department: associate.department_name,
           project_count: total,
           avg_progress: total ? Math.round(sumPct / total) : 0,
           on_track,

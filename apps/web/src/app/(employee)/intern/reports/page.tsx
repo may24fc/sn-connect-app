@@ -325,7 +325,7 @@ export default function InternReportsPage(): ReactNode {
               icon={FileText}
               title="Reports unlock after internship assignment"
               description="An administrator still needs to assign your internship details before you can submit or save EOD reports. Once your assignment is active, your reporting history and draft tools will appear here."
-              action={{ label: 'View profile', onClick: () => router.push('/intern/profile') }}
+              action={{ label: 'View profile', onClick: () => router.push('/associate/profile') }}
             />
           </CardContent>
         </Card>

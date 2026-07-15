@@ -12,11 +12,11 @@
 //   - admin: Admin + HR management (was: admin, hr)
 //   - super_admin: Executive/COS/CEO functions (was: cos, ceo, super_admin)
 //   - employee: Regular employee
-//   - intern: Intern-level access
+//   - associate: Associate-level access
 
 export const UserRole = {
   Employee: 'employee',
-  Intern: 'intern',
+  Associate: 'associate',
   Admin: 'admin',
   SuperAdmin: 'super_admin',
 } as const;
@@ -43,7 +43,7 @@ export const UserStatusValues = Object.values(UserStatus);
 export const EmploymentType = {
   Regular: 'regular',
   Probationary: 'probationary',
-  Intern: 'intern',
+  Associate: 'associate',
   ProjectBased: 'project_based',
 } as const;
 
@@ -224,7 +224,7 @@ export const ExpenseTypeValues = Object.values(ExpenseType);
 
 export const ExpenseProcessingStatus = {
   DraftExtracted: 'draft_extracted',
-  AwaitingInternReview: 'awaiting_intern_review',
+  AwaitingAssociateReview: 'awaiting_associate_review',
   Verified: 'verified',
   AutoApproved: 'auto_approved',
   LeadershipReviewRequired: 'leadership_review_required',

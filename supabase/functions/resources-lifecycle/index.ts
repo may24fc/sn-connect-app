@@ -148,7 +148,7 @@ async function notifyResourcePublished(
       admin: ['admin', 'super_admin'],
       hr: ['hr', 'admin', 'super_admin'],
       management: ['hr', 'cos', 'ceo', 'admin', 'super_admin'],
-      employee: ['employee', 'intern', 'hr', 'cos', 'ceo', 'admin', 'super_admin'],
+      employee: ['employee', 'associate', 'hr', 'cos', 'ceo', 'admin', 'super_admin'],
     };
     const roles = roleMap[resource.access_level];
     if (roles) {

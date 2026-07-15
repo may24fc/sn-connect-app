@@ -31,7 +31,7 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
     (approval) => approval.role === 'employee'
   ).length;
   const internOnboardingCount = pendingApprovals.filter(
-    (approval) => approval.role === 'intern'
+    (approval) => approval.role === 'associate'
   ).length;
 
   const probationRecords = probationData?.data ?? [];
@@ -61,8 +61,8 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
 
   if ((pendingData?.lateEodReports.count ?? 0) > 0) {
     items.push({
-      id: 'late-intern-eods',
-      title: 'Late Intern EODs',
+      id: 'late-associate-eods',
+      title: 'Late Associate EODs',
       description: 'Active interns still need yesterday\'s end-of-day report reviewed or chased.',
       count: pendingData?.lateEodReports.count ?? 0,
       href: '/admin/interns',
@@ -88,9 +88,9 @@ export function useDashboardAttentionItems(role: DashboardAttentionRole) {
 
   if (internOnboardingCount > 0) {
     items.push({
-      id: 'intern-onboarding-approvals',
-      title: 'Intern Onboarding Approvals',
-      description: 'Intern onboarding submissions are awaiting approval before activation.',
+      id: 'associate-onboarding-approvals',
+      title: 'Associate Onboarding Approvals',
+      description: 'Associate onboarding submissions are awaiting approval before activation.',
       count: internOnboardingCount,
       href: '/admin/interns',
       icon: GraduationCap,

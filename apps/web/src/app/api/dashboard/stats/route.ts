@@ -51,7 +51,7 @@ export async function GET(): Promise<NextResponse> {
         .from('employee_directory')
         .select('id', { count: 'exact', head: true })
         .neq('status', 'terminated')
-        .not('role', 'eq', 'intern'),
+        .not('role', 'eq', 'associate'),
 
       // Active interns
       supabase
@@ -71,7 +71,7 @@ export async function GET(): Promise<NextResponse> {
         .from('employee_directory')
         .select('id', { count: 'exact', head: true })
         .neq('status', 'terminated')
-        .not('role', 'eq', 'intern')
+        .not('role', 'eq', 'associate')
         .gte('created_at', new Date(Date.now() - 30 * 86_400_000).toISOString()),
     ]);
 

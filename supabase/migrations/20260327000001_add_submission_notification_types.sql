@@ -1,6 +1,6 @@
--- Migration: Add submission notification types for invoices, intern logs, and approvals
+-- Migration: Add submission notification types for invoices, associate logs, and approvals
 -- Date: 2026-03-27
--- Purpose: Extend notification_type enum with invoice/intern log and approval notification types
+-- Purpose: Extend notification_type enum with invoice/associate log and approval notification types
 
 BEGIN;
 

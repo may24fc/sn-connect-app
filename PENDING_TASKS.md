@@ -587,7 +587,7 @@ ADD COLUMN reviewed_at timestamptz;
 - [x] User invitation API (`/api/users/invite`)
 - [x] Onboarding approval API (`/api/users/approve-onboarding`)
 - [x] Employee assignment API (`/api/users/assign-employee`)
-- [x] Intern assignment API (`/api/users/assign-intern`)
+- [x] Associate assignment API (`/api/users/assign-associate`)
 - [x] Admin modal components (InviteUserModal, ApproveOnboardingModal, AssignEmployeeModal)
 - [x] User management hooks (`useUserManagement.ts`)
 - [x] Awaiting approval page
@@ -595,7 +595,7 @@ ADD COLUMN reviewed_at timestamptz;
 
 ### Realtime Subscriptions
 - [x] Realtime internship hooks
-- [x] Realtime intern daily logs hooks
+- [x] Realtime associate daily logs hooks
 - [x] Realtime onboarding approvals hooks
 - [x] Realtime probation employees hooks
 - [x] Realtime reports hooks
@@ -608,7 +608,7 @@ ADD COLUMN reviewed_at timestamptz;
 - [x] Probation API routes and hooks
 - [x] Internship API routes (list, detail, daily logs)
 - [x] Internship hooks with realtime
-- [x] Intern dashboard component
+- [x] Associate dashboard component
 
 ---
 
@@ -704,7 +704,7 @@ Implemented a comprehensive onboarding system with three major features:
 
 - [ ] **E2E Tests for Admin Onboarding Viewer**
   - File: `e2e/admin-onboarding-viewer.spec.ts`
-  - Tests: admin can view list, filters work, detail page renders all tabs, document preview loads, employee/intern get 403 forbidden
+  - Tests: admin can view list, filters work, detail page renders all tabs, document preview loads, employee/associate get 403 forbidden
   - Estimated Effort: 2-3 hours
   - Priority: High
 
@@ -787,7 +787,7 @@ Implemented a comprehensive onboarding system with three major features:
 2. **THIS WEEK** - Fix profile emergency contact tab
 3. **THIS WEEK** - Create environment variable documentation
 4. **THIS WEEK** - Write E2E tests for onboarding wizard and admin viewer
-5. **NEXT SPRINT** - Begin V2 P0 Blockers (~~Intern dead-end fix~~ ✅ DONE, Auth redirect fix, Ghost Success bug)
+5. **NEXT SPRINT** - Begin V2 P0 Blockers (~~Associate dead-end fix~~ ✅ DONE, Auth redirect fix, Ghost Success bug)
 6. **NEXT SPRINT** - Write unit tests for all hooks (80%+ coverage)
 7. **NEXT SPRINT** - Write E2E tests for employee and document API routes
 8. **SPRINT 3** - Implement V2 P1 (Phone validation, multi-currency, bank selection)
@@ -807,7 +807,7 @@ Implemented a comprehensive onboarding system with three major features:
 - **NEW:** Onboarding system uses sessionStorage for wizard draft persistence
 - **NEW:** Payment account numbers are masked in admin list views (last 4 digits only)
 - **NEW:** Document uploads support 4 required types: valid_id, profile_photo, cv, birth_certificate
-- **NEW:** Middleware enforces onboarding completion before portal access for employee/intern roles
+- **NEW:** Middleware enforces onboarding completion before portal access for employee/associate roles
 - **NEW:** AI Policy Assistant with RAG-based chat using pgvector embeddings
 - **NEW:** Stand-up call recording storage with Whisper transcription + Claude summarization
 - **NEW:** Credential-first onboarding flow (admin invites → user onboards → admin approves)

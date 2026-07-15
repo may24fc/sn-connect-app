@@ -124,7 +124,7 @@ export async function listPerformanceAudience(
   const { data, error } = await supabaseAdmin
     .from('employee_directory')
     .select('user_id, employee_id, full_name, department_name, position, avatar_url, role')
-    .in('role', [...EMPLOYEE_EQUIVALENT_ROLES, 'intern'])
+    .in('role', [...EMPLOYEE_EQUIVALENT_ROLES, 'associate'])
     .neq('status', 'terminated')
     .not('user_id', 'is', null)
     .order('full_name', { ascending: true });

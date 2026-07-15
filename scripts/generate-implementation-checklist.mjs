@@ -335,18 +335,18 @@ const week1Section = [
   new Paragraph({ children: [new PageBreak()] }),
 ];
 
-// WEEK 2 — EOD Intern Automation
+// WEEK 2 — EOD Associate Automation
 const week2Tasks = [
-  ["2.1", "Add idempotency guard to intern-eod-reminder", "supabase/functions/intern-eod-reminder/index.ts has no deduplication check. Before sending a reminder, query audit_logs for an existing intern_eod_reminder_sent entry keyed on (intern_id, date). Skip and log a skip_reason if the record exists."],
+  ["2.1", "Add idempotency guard to associate-eod-reminder", "supabase/functions/associate-eod-reminder/index.ts has no deduplication check. Before sending a reminder, query audit_logs for an existing intern_eod_reminder_sent entry keyed on (intern_id, date). Skip and log a skip_reason if the record exists."],
   ["2.2", "Harden n8n Schedule Trigger with retry logic", "In the n8n Schedule → HTTP POST workflow, add an Error Handler node that retries the Supabase Edge Function call up to 3 times with a 30-second delay. If all retries fail, post an alert to the designated Telegram PA Ops Hub group."],
-  ["2.3", "Enforce minimum log quality checks", "In intern-weekly-summary/index.ts, before dispatching the supervisor email, validate that each internship_daily_logs entry contains hours_worked > 0 and a non-empty accomplishments field. Surface any incomplete entries as a flagged table row in the email body."],
-  ["2.4", "Upgrade supervisor email to structured HTML template", "Replace the inline-string HTML in intern-weekly-summary/index.ts with a proper template: header section, metrics table (intern name, period, total hours, days logged, avg hours/day), a conditional amber warning banner when days_logged < 3, and a direct link to /admin/interns/{employee_id}."],
+  ["2.3", "Enforce minimum log quality checks", "In associate-weekly-summary/index.ts, before dispatching the supervisor email, validate that each internship_daily_logs entry contains hours_worked > 0 and a non-empty accomplishments field. Surface any incomplete entries as a flagged table row in the email body."],
+  ["2.4", "Upgrade supervisor email to structured HTML template", "Replace the inline-string HTML in associate-weekly-summary/index.ts with a proper template: header section, metrics table (associate name, period, total hours, days logged, avg hours/day), a conditional amber warning banner when days_logged < 3, and a direct link to /admin/interns/{employee_id}."],
   ["2.5", "Add timezone-aware date calculations", "All date comparisons in both edge functions currently use UTC. Introduce a toPhilippineDate() utility that converts timestamps to Asia/Manila timezone (UTC+8) before performing same-day comparisons to prevent off-by-one errors at day boundaries."],
-  ["2.6", "Write integration test for reminder deduplication", "Add a Vitest test in tests/ that seeds two active internships (one with today's log, one without), invokes the intern-eod-reminder logic directly, and asserts that exactly one notification was created and one audit_log row was written."],
+  ["2.6", "Write integration test for reminder deduplication", "Add a Vitest test in tests/ that seeds two active internships (one with today's log, one without), invokes the associate-eod-reminder logic directly, and asserts that exactly one notification was created and one audit_log row was written."],
 ];
 
 const week2DoD = [
-  "Triggering intern-eod-reminder twice on the same day results in exactly one intern_eod_reminder_sent audit entry per intern.",
+  "Triggering associate-eod-reminder twice on the same day results in exactly one intern_eod_reminder_sent audit entry per associate.",
   "n8n workflow shows retry node configured (3 retries, 30 s delay) and Telegram alert channel connected.",
   "Supervisor email renders correctly in Gmail and Outlook preview — screenshot attached to PR.",
   "Incomplete log entries (missing hours or accomplishments) appear as a flagged row in the weekly summary email.",
@@ -355,7 +355,7 @@ const week2DoD = [
 ];
 
 const week2Section = [
-  weekHeader("WEEK 2", "EOD Intern Automation"),
+  weekHeader("WEEK 2", "EOD Associate Automation"),
   phaseGoalBlock(
     "Eliminate reliability gaps in the scheduled n8n → Edge Function pipeline, enforce log submission quality, and produce high-signal supervisor emails that require zero manual interpretation."
   ),

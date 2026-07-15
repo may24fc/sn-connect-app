@@ -3,9 +3,9 @@
 -- Description: Simplifies the role system from 7 roles to 4 roles
 --              hr + admin -> admin
 --              cos + ceo -> super_admin
---              Keeps: employee, intern
+--              Keeps: employee, associate
 --
--- Final roles: employee, intern, admin, super_admin
+-- Final roles: employee, associate, admin, super_admin
 --
 -- IMPORTANT: This migration does NOT use BEGIN/COMMIT because Supabase's
 -- migration runner handles transactions automatically. Adding explicit
@@ -82,7 +82,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role_new') THEN
         CREATE TYPE user_role_new AS ENUM (
           'employee',
-          'intern',
+          'associate',
           'admin',
           'super_admin'
         );
@@ -105,7 +105,7 @@ ALTER TABLE public.users ADD COLUMN role_new user_role_new;
 --   admin -> admin (unchanged)
 --   super_admin -> super_admin (unchanged)
 --   employee -> employee (unchanged)
---   intern -> intern (unchanged)
+--   associate -> associate (unchanged)
 UPDATE public.users
 SET role_new = (
   CASE role::text
@@ -289,7 +289,7 @@ TO authenticated
 -- Verification
 -- ============================================
 -- This migration consolidates 7 roles into 4:
---   employee, intern, admin (was admin+hr), super_admin (was cos+ceo+super_admin)
+--   employee, associate, admin (was admin+hr), super_admin (was cos+ceo+super_admin)
 --
 -- The user_role enum has been successfully changed.
 -- The helper functions have been recreated with the new enum type.

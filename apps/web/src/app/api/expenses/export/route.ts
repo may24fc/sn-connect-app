@@ -5,7 +5,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 const ALLOWED_ROLES = new Set(['admin', 'super_admin']);
-const ACCOUNTING_ELIGIBLE_ROLES = new Set(['employee', 'intern']);
+const ACCOUNTING_ELIGIBLE_ROLES = new Set(['employee', 'associate']);
 
 type ExpenseExportRow = {
   vendor_name: string;

@@ -5,7 +5,7 @@ import { z } from 'zod';
 const adminRoles = ['admin', 'super_admin'] as const;
 
 const flowTypeSchema = z.enum(['onboarding', 'offboarding']);
-const scopeSchema = z.enum(['employee', 'intern', 'default']);
+const scopeSchema = z.enum(['employee', 'associate', 'default']);
 
 const onboardingTemplateTaskSchema = z.object({
   id: z.string().uuid(),
@@ -51,7 +51,7 @@ function isMissingChecklistTemplatesTableError(error: unknown): boolean {
 
 function isValidScope(flowType: z.infer<typeof flowTypeSchema>, scope: z.infer<typeof scopeSchema>): boolean {
   if (flowType === 'onboarding') {
-    return scope === 'employee' || scope === 'intern';
+    return scope === 'employee' || scope === 'associate';
   }
 
   return scope === 'default';

@@ -81,7 +81,7 @@ export async function canAccessInternship(
 
   let internship = internshipById;
 
-  // Projects Tracker currently links intern user IDs. Resolve the latest active
+  // Projects Tracker currently links associate user IDs. Resolve the latest active
   // internship for that user as a compatibility fallback.
   if (!internship) {
     const { data: internshipByUserId, error: userLookupError } = await adminClient

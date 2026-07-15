@@ -113,7 +113,7 @@ function formatDate(dateStr: string | null): string {
 }
 
 function isManageableDirectoryEntry(entry: DirectoryEntry): boolean {
-  return entry.role === 'employee' || entry.role === 'intern';
+  return entry.role === 'employee' || entry.role === 'associate';
 }
 
 export default function AdminDirectoryPage(): ReactNode {
@@ -632,7 +632,7 @@ export default function AdminDirectoryPage(): ReactNode {
                 <SelectItem value="all">Employment Type</SelectItem>
                 <SelectItem value="regular">Regular</SelectItem>
                 <SelectItem value="probationary">Probationary</SelectItem>
-                <SelectItem value="intern">Intern</SelectItem>
+                <SelectItem value="associate">Associate</SelectItem>
                 <SelectItem value="project_based">Project Based</SelectItem>
               </SelectContent>
             </Select>
@@ -908,7 +908,7 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
               <UserMinus className="h-5 w-5" />
-              Terminate Employee / Intern
+              Terminate Employee / Associate
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to terminate{' '}
@@ -950,7 +950,7 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <RotateCcw className="h-5 w-5" />
-              Restore Employee / Intern
+              Restore Employee / Associate
             </DialogTitle>
             <DialogDescription>
               This will restore{' '}
@@ -990,7 +990,7 @@ export default function AdminDirectoryPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserX className="h-5 w-5" />
-              Deactivate Employee/Intern
+              Deactivate Employee/Associate
             </DialogTitle>
             <DialogDescription>
               This will set{' '}

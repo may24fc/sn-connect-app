@@ -23,7 +23,7 @@ SELECT 'safe_baseline_seed' AS status;
 -- We'll assume the following employees exist from the initial seed:
 -- Employee 1: 'Steven Tey' (super_admin)
 -- Employee 2: 'Maydelyn Paz' (admin)
--- Employee 3: 'Cef Jumao-as' (intern)
+-- Employee 3: 'Cef Jumao-as' (associate)
 
 DO $$
 DECLARE
@@ -179,7 +179,7 @@ BEGIN
             '2026-06-02T16:00:00Z'
         ),
         
-        -- #4: Awaiting intern review (this will show up in the queue)
+        -- #4: Awaiting associate review (this will show up in the queue)
         (
             steven_user_id,
             'expense-receipts/seed/vercel_jun.png',
@@ -194,7 +194,7 @@ BEGIN
             'Pro plan for main app and preview deployments.',
             NULL, -- No reviewer notes yet
             NULL, -- No risk bucket yet
-            'awaiting_intern_review',
+            'awaiting_associate_review',
             NULL, NULL, -- Not yet reviewed
             '2026-06-15T17:00:00Z',
             '2026-06-15T17:00:00Z'

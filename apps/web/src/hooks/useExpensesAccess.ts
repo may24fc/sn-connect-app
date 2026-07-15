@@ -19,7 +19,7 @@ interface ExpenseCapabilitiesResponse {
 }
 
 export interface ExpenseAccessCapabilities {
-  /** Every authenticated staff member/intern can log a manual spend request. */
+  /** Every authenticated staff member/associate can log a manual spend request. */
   canLogRequest: boolean;
   /** Only Admin/Super Admin/Accounting can log direct payments (receipt upload). */
   canLogPayment: boolean;

@@ -97,7 +97,7 @@ Look for:
         return publicRoutes;
       case 'employee':
         return [...publicRoutes, ...employeeRoutes];
-      case 'intern':
+      case 'associate':
         return [...publicRoutes, ...internRoutes];
       case 'admin':
         return [...publicRoutes, ...adminRoutes];

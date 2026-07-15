@@ -38,7 +38,7 @@ function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'success' 
       return 'default';
     case 'employee':
       return 'secondary';
-    case 'intern':
+    case 'associate':
       return 'warning';
     default:
       return 'secondary';
@@ -93,7 +93,7 @@ export default function IndividualPerformancePage(): ReactNode {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Individual OKRs &amp; KPIs</h1>
             <p className="text-muted-foreground">
-              Select an employee or intern to review their OKRs, targets, and KPI details
+              Select an employee or associate to review their OKRs, targets, and KPI details
             </p>
           </div>
         </div>
@@ -128,7 +128,7 @@ export default function IndividualPerformancePage(): ReactNode {
               <SelectContent>
                 <SelectItem value="all">Roles</SelectItem>
                 <SelectItem value="employee">Employee</SelectItem>
-                <SelectItem value="intern">Intern</SelectItem>
+                <SelectItem value="associate">Associate</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
             </Select>

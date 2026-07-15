@@ -13,7 +13,7 @@ type ExpenseDeleteCandidate = {
   currency: string | null;
 };
 
-const NON_ADMIN_DELETABLE_STATUSES = ['draft_extracted', 'awaiting_intern_review'];
+const NON_ADMIN_DELETABLE_STATUSES = ['draft_extracted', 'awaiting_associate_review'];
 
 async function resolveUserRole(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,

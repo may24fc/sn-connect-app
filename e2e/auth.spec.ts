@@ -15,7 +15,7 @@ test.describe('Authentication', () => {
     await page.locator('#password').fill(authPassword!);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|intern|onboarding)/);
+    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|associate|onboarding)/);
   });
 
   test('login failure shows error', async ({ page }) => {
@@ -39,12 +39,12 @@ test.describe('Authentication', () => {
     await page.locator('#password').fill(authPassword!);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|intern|onboarding)/);
+    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|associate|onboarding)/);
 
     const userMenuTrigger = page
       .locator('header')
       .getByRole('button')
-      .filter({ hasText: /employee|intern|admin|super_admin|super admin/i })
+      .filter({ hasText: /employee|associate|admin|super_admin|super admin/i })
       .last();
     await userMenuTrigger.click();
     await page.getByRole('menuitem', { name: 'Log out' }).click();
@@ -63,9 +63,9 @@ test.describe('Authentication', () => {
     await page.locator('#password').fill(authPassword!);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|intern|onboarding)/);
+    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|associate|onboarding)/);
 
     await page.reload();
-    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|intern|onboarding)/);
+    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|associate|onboarding)/);
   });
 });

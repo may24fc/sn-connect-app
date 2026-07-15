@@ -28,7 +28,7 @@
 -- - admin UI role → admin, hr DB roles
 -- - super_admin UI role → ceo, cos DB roles (inherits admin privileges)
 -- - employee UI role → employee DB role
--- - intern UI role → intern DB role
+-- - associate UI role → associate DB role
 -- ============================================
 
 -- ============================================

@@ -87,7 +87,7 @@ interface OnboardingData {
   user_id: string;
   full_name: string;
   email_address: string;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
   position: string | null;
   department_id: string | null;
   completed_at: string;
@@ -133,7 +133,7 @@ interface ApproverModalProps {
     userId: string;
     fullName: string;
     email: string;
-    role: 'employee' | 'intern';
+    role: 'employee' | 'associate';
     position: string | null;
     inviteProbationMode?: 'under_probation' | 'no_probation';
     inviteProbationAuto90?: boolean;
@@ -271,12 +271,12 @@ export function ApproveOnboardingModal({
               <div className="flex flex-col items-end gap-2">
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    onboarding.role === 'intern'
+                    onboarding.role === 'associate'
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
                       : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
                   }`}
                 >
-                  {onboarding.role === 'intern' ? 'Intern' : 'Employee'}
+                  {onboarding.role === 'associate' ? 'Associate' : 'Employee'}
                 </span>
                 {hasRejectionHistory && onboarding.review_state === 'awaiting_review' && (
                   <Badge variant="secondary">Resubmission</Badge>

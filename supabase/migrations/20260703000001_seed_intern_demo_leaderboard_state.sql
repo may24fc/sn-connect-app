@@ -1,4 +1,4 @@
--- Seed demo leaderboard state for intern@example.com
+-- Seed demo leaderboard state for associate@example.com
 -- Goal:
 -- 1) Show all possible badges in UI
 -- 2) Set minimum top-league threshold points (4000)
@@ -12,12 +12,12 @@ BEGIN
     INTO v_user_id
     FROM auth.users au
     JOIN public.users u ON u.id = au.id
-   WHERE lower(au.email) = 'intern@example.com'
+   WHERE lower(au.email) = 'associate@example.com'
      AND u.deleted_at IS NULL
    LIMIT 1;
 
   IF v_user_id IS NULL THEN
-    RAISE NOTICE 'Seed skipped: user intern@example.com not found';
+    RAISE NOTICE 'Seed skipped: user associate@example.com not found';
     RETURN;
   END IF;
 

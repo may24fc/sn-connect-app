@@ -396,7 +396,7 @@ export async function POST(request: NextRequest) {
     // Use the same admin client for the insert to bypass RLS. Security is enforced
     // at the application layer above (auth check + employee ownership check).
     // This matches the established pattern used in other API routes (invite,
-    // assign-intern, approve-onboarding, resources/upload).
+    // assign-associate, approve-onboarding, resources/upload).
 
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')

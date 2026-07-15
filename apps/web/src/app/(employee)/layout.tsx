@@ -8,5 +8,5 @@ export default function EmployeeLayout({
 }: {
   children: ReactNode;
 }): ReactNode {
-  return <SelfServiceLayoutShell allowedRoles={['employee', 'intern']}>{children}</SelfServiceLayoutShell>;
+  return <SelfServiceLayoutShell allowedRoles={['employee', 'associate']}>{children}</SelfServiceLayoutShell>;
 }

@@ -78,13 +78,13 @@ AI Layer            --> Anthropic Claude SDK (packages/ai/)
 - `cos` - Chief of Staff access
 - `ceo` - Executive access
 - `employee` - Regular employee access
-- `intern` - Intern limited access
+- `associate` - Associate limited access
 
 ### UI Roles (4 roles in AuthContext)
 - `super_admin` - Maps to admin + elevated privileges
 - `admin` - Maps to hr/cos/ceo
 - `employee` - Regular employee
-- `intern` - Intern
+- `associate` - Associate
 
 **Note:** Role consolidation completed in ADR-001. `super_admin` added to DB enum.
 
@@ -438,7 +438,7 @@ test(reports): add E2E tests for submission flow
 | Email | Password | Role |
 |-------|----------|------|
 | employee@test.com | password | employee |
-| intern@test.com | password | intern |
+| associate@test.com | password | associate |
 | admin@test.com | password | admin |
 | superadmin@test.com | password | super_admin |
 

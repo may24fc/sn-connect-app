@@ -136,7 +136,7 @@ CREATE POLICY job_requisitions_admin_all_policy
   USING (public.user_has_ats_access(auth.uid()))
   WITH CHECK (public.user_has_ats_access(auth.uid()));
 
-COMMENT ON TABLE public.ats_access_grants IS 'Feature-level ATS access grants for employee and intern users.';
+COMMENT ON TABLE public.ats_access_grants IS 'Feature-level ATS access grants for employee and associate users.';
 COMMENT ON FUNCTION public.user_has_ats_access(uuid) IS 'Returns true for admin/super_admin users and users with an active ATS access grant.';
 
 COMMIT;

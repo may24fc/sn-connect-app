@@ -112,7 +112,7 @@ FROM public.business_units bu WHERE bu.slug = 'construction';
 
 INSERT INTO public.job_postings (title, business_unit_id, department, location, employment_type, description, requirements, benefits, is_active)
 SELECT
-  'Marketing Intern',
+  'Marketing Associate',
   bu.id,
   'Marketing',
   'BGC, Taguig',

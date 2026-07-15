@@ -39,7 +39,7 @@ export interface NavItem {
   badge?: string | number;
 }
 
-export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 
 export interface SidebarProps {
   variant: UserRole;
@@ -81,11 +81,11 @@ const employeeNavItems: Array<NavItem> = [
   { label: 'Resources', href: '/information-hub', icon: Library },
 ];
 
-// Intern navigation - same as employee except different dashboard and no payroll
+// Associate navigation - same as employee except different dashboard and no payroll
 const internNavItems: Array<NavItem> = [
-  { label: 'Profile', href: '/intern/profile', icon: User },
-  { label: 'Dashboard', href: '/intern/dashboard', icon: Home },
-  { label: 'EOD Reports', href: '/intern/reports', icon: FileText },
+  { label: 'Profile', href: '/associate/profile', icon: User },
+  { label: 'Dashboard', href: '/associate/dashboard', icon: Home },
+  { label: 'EOD Reports', href: '/associate/reports', icon: FileText },
   { label: 'Marketing Reports', href: '/reports', icon: FileText },
   { label: 'OKRs & KPIs', href: '/performance', icon: Target },
   { label: 'Projects', href: '/projects', icon: FolderKanban },
@@ -107,7 +107,7 @@ const adminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
   { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
-  { label: 'Intern Management', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Associate Management', href: '/admin/interns', icon: GraduationCap },
   { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
   { label: 'Projects Tracker', href: '/admin/war-room', icon: FolderKanban },
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
@@ -135,7 +135,7 @@ const superAdminNavItems: Array<NavItem> = [
   { label: 'Dashboard', href: '/super-admin/dashboard', icon: Home },
   { label: 'Directory', href: '/admin/directory', icon: Users },
   { label: 'Employee Management', href: '/admin/employee-management', icon: UserCog },
-  { label: 'Intern Management', href: '/admin/interns', icon: GraduationCap },
+  { label: 'Associate Management', href: '/admin/interns', icon: GraduationCap },
   { label: 'Invoice', href: '/admin/invoice', icon: Receipt },
   { label: 'Projects Tracker', href: '/admin/war-room', icon: FolderKanban },
   { label: 'Company Leaderboard', href: '/leaderboard', icon: Trophy },
@@ -160,7 +160,7 @@ const superAdminNavItems: Array<NavItem> = [
 
 const exactOnlyNavHrefs = new Set([
   '/dashboard',
-  '/intern/dashboard',
+  '/associate/dashboard',
   '/admin/dashboard',
   '/super-admin/dashboard',
   '/',
@@ -206,7 +206,7 @@ export function Sidebar({
   const baseNavItems =
     variant === 'employee'
       ? employeeNavItems
-      : variant === 'intern'
+      : variant === 'associate'
         ? internNavItems
         : variant === 'super_admin'
           ? superAdminNavItems
@@ -218,7 +218,7 @@ export function Sidebar({
     }
 
     if (
-      (variant === 'employee' || variant === 'intern') &&
+      (variant === 'employee' || variant === 'associate') &&
       !showMarketingReports &&
       item.href === '/reports'
     ) {
@@ -226,7 +226,7 @@ export function Sidebar({
     }
 
     if (
-      (variant === 'employee' || variant === 'intern') &&
+      (variant === 'employee' || variant === 'associate') &&
       !showExpenseDeskAccess &&
       item.href === '/expenses/desk'
     ) {
@@ -237,12 +237,12 @@ export function Sidebar({
   });
 
   let navItems =
-    (variant === 'employee' || variant === 'intern') && showAtsAccess
+    (variant === 'employee' || variant === 'associate') && showAtsAccess
       ? [...filteredNavItems, ...employeeAtsNavItems]
       : filteredNavItems;
 
   // Insert CRM nav item for granted non-admin users directly below Marketing Reports
-  if ((variant === 'employee' || variant === 'intern') && showCrmAccess) {
+  if ((variant === 'employee' || variant === 'associate') && showCrmAccess) {
     const crmItem: NavItem = { label: 'CRM Tracker', href: '/crm', icon: Store };
     const reportsIndex = navItems.findIndex((it) => it.href === '/reports');
     if (reportsIndex >= 0) {
@@ -257,7 +257,7 @@ export function Sidebar({
     }
   }
 
-  if ((variant === 'employee' || variant === 'intern') && showRevenueForecastAccess) {
+  if ((variant === 'employee' || variant === 'associate') && showRevenueForecastAccess) {
     const revenueItem: NavItem = {
       label: 'Revenue Forecast',
       href: '/revenue-forecast',

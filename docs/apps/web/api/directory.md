@@ -33,7 +33,7 @@ Requires `admin` or `super_admin` role.
 | Param | Type | Default | Description |
 |-------|------|---------|-------------|
 | `search` | string | — | Case-insensitive search across name, email, position |
-| `role` | string | — | Filter by role (e.g. `employee`, `intern`) |
+| `role` | string | — | Filter by role (e.g. `employee`, `associate`) |
 | `department` | string | — | Filter by department name |
 | `status` | string | — | Comma-separated statuses (e.g. `active,on_leave,probation`) |
 | `employment_type` | string | — | Filter by employment type |

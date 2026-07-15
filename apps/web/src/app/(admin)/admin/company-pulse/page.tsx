@@ -97,7 +97,7 @@ export default function AdminCompanyPulsePage() {
                     How it works
                   </div>
                   <p className="text-zinc-600 dark:text-zinc-400">
-                    Admins create and edit events directly in the shared Google Calendar. Company Calendar then shows the next upcoming items across employee, admin, intern, and super-admin dashboards.
+                    Admins create and edit events directly in the shared Google Calendar. Company Calendar then shows the next upcoming items across employee, admin, associate, and super-admin dashboards.
                   </p>
                 </div>
 

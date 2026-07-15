@@ -1,4 +1,4 @@
-﻿$devFile = "C:\Users\Ceferino Jumao-as V\Programming\Internship\sn-hr-portal\n8n\workflows\marketing-monday-deliverables-reminder.json"
+$devFile = "C:\Users\Ceferino Jumao-as V\Programming\Internship\sn-hr-portal\n8n\workflows\marketing-monday-deliverables-reminder.json"
 $prodFile = "C:\Users\Ceferino Jumao-as V\Programming\Internship\sn-hr-portal\n8n\workflows\marketing-monday-deliverables-reminder-prod.json"
 
 $newParseJsCode = @"
@@ -6,8 +6,8 @@ const body = `$json.body;
 const all = Array.isArray(body) ? body : (typeof body === 'string' ? JSON.parse(body) : []);
 const ctx = `$(`'Set Week Context`').first().json;
 
-const employees = all.filter(e => e.employment_type !== 'intern').sort((a, b) => a.last_name.localeCompare(b.last_name));
-const interns = all.filter(e => e.employment_type === 'intern').sort((a, b) => a.last_name.localeCompare(b.last_name));
+const employees = all.filter(e => e.employment_type !== 'associate').sort((a, b) => a.last_name.localeCompare(b.last_name));
+const interns = all.filter(e => e.employment_type === 'associate').sort((a, b) => a.last_name.localeCompare(b.last_name));
 const combined = [...employees, ...interns];
 
 return [{ json: { employees, interns, combined, employeeCount: combined.length, weekStart: ctx.weekStart, weekLabel: ctx.weekLabel } }];
@@ -16,8 +16,8 @@ return [{ json: { employees, interns, combined, employeeCount: combined.length, 
 $newBuildJsCode = @"
 const { employees, interns, weekLabel } = `$json;
 
-const empLines = employees.map(e => `• \${e.first_name} \${e.last_name}`).join('\n');
-const internLines = interns.map(e => `• \${e.first_name} \${e.last_name}`).join('\n');
+const empLines = employees.map(e => `� \${e.first_name} \${e.last_name}`).join('\n');
+const internLines = interns.map(e => `� \${e.first_name} \${e.last_name}`).join('\n');
 
 let teamSection;
 if (employees.length > 0 && interns.length > 0) {
@@ -29,10 +29,10 @@ if (employees.length > 0 && interns.length > 0) {
 }
 
 const text = [
-  '📢 <b>Weekly Deliverables Reminder</b>',
-  \`📅 <b>Week:</b> \${weekLabel}\`,
+  '?? <b>Weekly Deliverables Reminder</b>',
+  \`?? <b>Week:</b> \${weekLabel}\`,
   '',
-  'Hi Marketing Team! 👋',
+  'Hi Marketing Team! ??',
   '',
   'This is your weekly reminder to complete and submit your deliverables by <b>today EOD</b>.',
   '',
@@ -40,11 +40,11 @@ const text = [
   teamSection,
   '',
   'Please ensure the following are submitted:',
-  '✅ Weekly Marketing Report',
-  '✅ Campaign Progress Update',
-  '✅ Marketing Metrics Summary',
+  '? Weekly Marketing Report',
+  '? Campaign Progress Update',
+  '? Marketing Metrics Summary',
   '',
-  '🔗 <a href="https://app.sngroup.com.au">Open HR Portal</a>'
+  '?? <a href="https://app.sngroup.com.au">Open HR Portal</a>'
 ].join('\n');
 return [{ json: { telegramText: text } }];
 "@

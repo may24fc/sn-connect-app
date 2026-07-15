@@ -22,7 +22,7 @@ interface EmployeeNotificationIdentityRow {
 const ADMIN_NOTIFICATION_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'] as const;
 
 export function getProfilePathForRole(role: string | null): string {
-  return role === 'intern' ? '/intern/profile' : '/profile';
+  return role === 'associate' ? '/associate/profile' : '/profile';
 }
 
 export function getAdminNotificationsPathForRole(role: string | null): string {

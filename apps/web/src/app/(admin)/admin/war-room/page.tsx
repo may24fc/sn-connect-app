@@ -48,7 +48,7 @@ export default function AdminProjectsPage() {
   const myProjects = myProjectsData?.data ?? [];
   const allProjects = allProjectsData?.data ?? [];
   const internNameByUserId = useMemo(
-    () => new Map(interns.map((intern) => [intern.user_id, intern.full_name ?? 'Unassigned'])),
+    () => new Map(interns.map((associate) => [associate.user_id, associate.full_name ?? 'Unassigned'])),
     [interns]
   );
 
@@ -247,7 +247,7 @@ export default function AdminProjectsPage() {
                   </div>
                 </section>
 
-                {/* Bento grid of intern cards */}
+                {/* Bento grid of associate cards */}
                 <section>
                   <div className="mb-3 flex items-center justify-between">
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
@@ -281,7 +281,7 @@ export default function AdminProjectsPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
-                                {i.full_name ?? 'Unnamed intern'}
+                                {i.full_name ?? 'Unnamed associate'}
                               </p>
                               {i.department ? (
                                 <p className="truncate text-xs text-zinc-500">{i.department}</p>

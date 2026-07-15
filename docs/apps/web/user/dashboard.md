@@ -45,9 +45,9 @@ Celebrates employee milestones (birthdays, work anniversaries) with a dismissabl
 - Timestamps
 - **"View All"** link to the Information Hub
 
-## Intern Dashboard (`/intern/dashboard`)
+## Associate Dashboard (`/associate/dashboard`)
 
-Interns have a specialized dashboard focused on hours tracking and daily reports. See the [Intern Guide](intern-guide.md) for details.
+Interns have a specialized dashboard focused on hours tracking and daily reports. See the [Associate Guide](associate-guide.md) for details.
 
 ---
 

@@ -8,13 +8,13 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveDepartmentById, resolveDivisionById } from '../_organization';
 
-const inviteableRoles = ['employee', 'intern', 'admin', 'super_admin'] as const;
+const inviteableRoles = ['employee', 'associate', 'admin', 'super_admin'] as const;
 const privilegedInviteRoles = ['admin', 'super_admin'] as const;
 
 const inviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   role: z.enum(inviteableRoles, {
-    required_error: 'Role must be employee, intern, admin, or super_admin',
+    required_error: 'Role must be employee, associate, admin, or super_admin',
   }),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -395,8 +395,8 @@ function getInviteNotificationLink(
     return '/admin/dashboard';
   }
 
-  if (role === 'intern') {
-    return '/intern/dashboard';
+  if (role === 'associate') {
+    return '/associate/dashboard';
   }
 
   return '/dashboard';

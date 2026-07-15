@@ -108,7 +108,7 @@ CREATE POLICY crm_access_grants_delete_admin_policy
     )
   );
 
-COMMENT ON TABLE public.crm_access_grants IS 'Tracker-specific CRM access grants for employee and intern users.';
+COMMENT ON TABLE public.crm_access_grants IS 'Tracker-specific CRM access grants for employee and associate users.';
 COMMENT ON FUNCTION public.user_has_crm_tracker_access(uuid, text) IS 'Returns true for admin/super_admin users and users with an active CRM grant for the requested tracker.';
 
 COMMIT;

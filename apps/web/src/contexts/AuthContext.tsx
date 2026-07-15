@@ -10,7 +10,7 @@ import { resolveUserDisplayName } from '@/lib/user-display';
 import { useQueryClient } from '@tanstack/react-query';
 
 // Type definitions
-export type UserRoleType = 'employee' | 'intern' | 'admin' | 'super_admin';
+export type UserRoleType = 'employee' | 'associate' | 'admin' | 'super_admin';
 export type UserStatusType =
   | 'active'
   | 'inactive'
@@ -39,8 +39,8 @@ interface AuthContextValue {
 }
 
 // Role mapping is now 1:1 since we simplified the DB roles
-// DB roles: employee, intern, admin, super_admin
-// UI roles: employee, intern, admin, super_admin
+// DB roles: employee, associate, admin, super_admin
+// UI roles: employee, associate, admin, super_admin
 const resolveUiRole = (role: string | null | undefined): UserRoleType => {
   switch (role) {
     case 'super_admin':
@@ -50,8 +50,8 @@ const resolveUiRole = (role: string | null | undefined): UserRoleType => {
     case 'cos':
     case 'ceo':
       return 'admin';
-    case 'intern':
-      return 'intern';
+    case 'associate':
+      return 'associate';
     case 'employee':
     default:
       return 'employee';
@@ -71,8 +71,8 @@ function getHomeRedirectPath(user: Pick<User, 'role' | 'status'>): string {
   switch (user.role) {
     case 'employee':
       return '/dashboard';
-    case 'intern':
-      return '/intern/dashboard';
+    case 'associate':
+      return '/associate/dashboard';
     case 'admin':
       return '/admin/dashboard';
     case 'super_admin':
@@ -134,23 +134,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
           isOnboardingComplete: true,
         },
       },
-      'intern@test.com': {
+      'associate@test.com': {
         password: 'password',
         user: {
           id: 'int-1',
-          name: 'Sample Intern',
-          email: 'intern@test.com',
-          role: 'intern',
+          name: 'Sample Associate',
+          email: 'associate@test.com',
+          role: 'associate',
           isOnboardingComplete: true,
         },
       },
-      'intern@example.com': {
+      'associate@example.com': {
         password: 'password',
         user: {
           id: 'int-1',
-          name: 'Sample Intern',
-          email: 'intern@example.com',
-          role: 'intern',
+          name: 'Sample Associate',
+          email: 'associate@example.com',
+          role: 'associate',
           isOnboardingComplete: true,
         },
       },
@@ -301,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         | null = null;
       let isOnboardingComplete = true;
 
-      if (resolvedRole === 'employee' || resolvedRole === 'intern') {
+      if (resolvedRole === 'employee' || resolvedRole === 'associate') {
         const { data: onboardingData, error: onboardingError } = await supabase
           .from('onboarding_profiles')
           .select('is_completed, first_name, last_name')
@@ -718,8 +718,8 @@ export function useRequireAuth(allowedRoles?: Array<UserRoleType>): User | null 
         case 'employee':
           router.replace('/dashboard');
           break;
-        case 'intern':
-          router.replace('/intern/dashboard');
+        case 'associate':
+          router.replace('/associate/dashboard');
           break;
         case 'admin':
           router.replace('/admin/dashboard');

@@ -5,7 +5,7 @@ import * as path from 'path';
 const BASE_URL = process.env.E2E_BASE_URL ?? 'http://localhost:3001';
 const AUTH_FILE = path.join(process.cwd(), 'playwright-auth.json');
 const LOGIN_URL = `${BASE_URL}/login`;
-const AUTHENTICATED_URL_PATTERN = /\/(dashboard|admin\/dashboard|super-admin\/dashboard|intern\/dashboard|onboarding)/;
+const AUTHENTICATED_URL_PATTERN = /\/(dashboard|admin\/dashboard|super-admin\/dashboard|associate\/dashboard|onboarding)/;
 
 const TEST_CREDENTIALS = {
   email: process.env.E2E_AUTH_EMAIL ?? 'admin@test.com',

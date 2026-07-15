@@ -30,13 +30,13 @@ import { HoursProgressMini } from './HoursProgressCard';
 import { InternshipStatusBadge } from './InternStatusBadge';
 
 interface InternCardProps {
-  intern: InternSummary;
+  associate: InternSummary;
   hoursMode?: 'weekly' | 'entire';
-  onView?: (intern: InternSummary) => void;
-  onEditDetails?: (intern: InternSummary) => void;
-  onViewReports?: (intern: InternSummary) => void;
-  onContact?: (intern: InternSummary) => void;
-  onDelete?: (intern: InternSummary) => void;
+  onView?: (associate: InternSummary) => void;
+  onEditDetails?: (associate: InternSummary) => void;
+  onViewReports?: (associate: InternSummary) => void;
+  onContact?: (associate: InternSummary) => void;
+  onDelete?: (associate: InternSummary) => void;
   className?: string;
 }
 
@@ -50,7 +50,7 @@ function getInitials(name: string): string {
 }
 
 export function InternCard({
-  intern,
+  associate,
   hoursMode = 'weekly',
   onView,
   onEditDetails,
@@ -59,7 +59,7 @@ export function InternCard({
   onDelete,
   className,
 }: InternCardProps): React.ReactNode {
-  const daysRemaining = getDaysRemaining(intern.endDate);
+  const daysRemaining = getDaysRemaining(associate.endDate);
 
   return (
     <Card className={cn('transition-shadow hover:shadow-md', className)}>
@@ -67,16 +67,16 @@ export function InternCard({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
-              {intern.avatarUrl && <AvatarImage src={intern.avatarUrl} />}
-              <AvatarFallback className="text-sm">{getInitials(intern.name)}</AvatarFallback>
+              {associate.avatarUrl && <AvatarImage src={associate.avatarUrl} />}
+              <AvatarFallback className="text-sm">{getInitials(associate.name)}</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-base">{intern.name}</CardTitle>
-              <p className="text-sm text-muted-foreground">{intern.program}</p>
+              <CardTitle className="text-base">{associate.name}</CardTitle>
+              <p className="text-sm text-muted-foreground">{associate.program}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <InternshipStatusBadge status={intern.status} />
+            <InternshipStatusBadge status={associate.status} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -85,36 +85,36 @@ export function InternCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {onView && (
-                  <DropdownMenuItem onClick={() => onView(intern)}>
+                  <DropdownMenuItem onClick={() => onView(associate)}>
                     <Eye className="mr-2 h-4 w-4" />
                     View Details
                   </DropdownMenuItem>
                 )}
                 {onEditDetails && (
-                  <DropdownMenuItem onClick={() => onEditDetails(intern)}>
+                  <DropdownMenuItem onClick={() => onEditDetails(associate)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Details
                   </DropdownMenuItem>
                 )}
                 {onViewReports && (
-                  <DropdownMenuItem onClick={() => onViewReports(intern)}>
+                  <DropdownMenuItem onClick={() => onViewReports(associate)}>
                     <FileText className="mr-2 h-4 w-4" />
                     View Reports
                   </DropdownMenuItem>
                 )}
                 {onContact && (
-                  <DropdownMenuItem onClick={() => onContact(intern)}>
+                  <DropdownMenuItem onClick={() => onContact(associate)}>
                     <Mail className="mr-2 h-4 w-4" />
-                    Contact Intern
+                    Contact Associate
                   </DropdownMenuItem>
                 )}
                 {onDelete && (
                   <DropdownMenuItem
-                    onClick={() => onDelete(intern)}
+                    onClick={() => onDelete(associate)}
                     className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Remove Intern
+                    Remove Associate
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -127,15 +127,15 @@ export function InternCard({
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <GraduationCap className="h-4 w-4" />
-            <span className="truncate">{intern.school}</span>
+            <span className="truncate">{associate.school}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Building2 className="h-4 w-4" />
-            <span className="truncate">{intern.department}</span>
+            <span className="truncate">{associate.department}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-4 w-4" />
-            <span className="truncate">{intern.supervisor}</span>
+            <span className="truncate">{associate.supervisor}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-4 w-4" />
@@ -147,30 +147,30 @@ export function InternCard({
         <HoursProgressMini
           completedHours={
             hoursMode === 'weekly'
-              ? (intern.weeklyCompletedHours ?? intern.completedHours)
-              : intern.completedHours
+              ? (associate.weeklyCompletedHours ?? associate.completedHours)
+              : associate.completedHours
           }
           requiredHours={
             hoursMode === 'weekly'
-              ? (intern.weeklyRequiredHours ?? intern.requiredHours)
-              : intern.requiredHours
+              ? (associate.weeklyRequiredHours ?? associate.requiredHours)
+              : associate.requiredHours
           }
-          startDate={intern.startDate}
-          endDate={intern.endDate}
+          startDate={associate.startDate}
+          endDate={associate.endDate}
         />
 
         {/* Last Report */}
-        {intern.lastReportDate && (
+        {associate.lastReportDate && (
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
-            <span>Last report: {new Date(intern.lastReportDate).toLocaleDateString()}</span>
-            {intern.pendingReports > 0 && (
-              <span className="text-warning">{intern.pendingReports} pending review</span>
+            <span>Last report: {new Date(associate.lastReportDate).toLocaleDateString()}</span>
+            {associate.pendingReports > 0 && (
+              <span className="text-warning">{associate.pendingReports} pending review</span>
             )}
           </div>
         )}
 
         {onView && (
-          <Button variant="outline" className="w-full" onClick={() => onView(intern)}>
+          <Button variant="outline" className="w-full" onClick={() => onView(associate)}>
             View Profile
             <ChevronRight className="ml-2 h-4 w-4" />
           </Button>
@@ -183,11 +183,11 @@ export function InternCard({
 interface InternListProps {
   interns: Array<InternSummary>;
   hoursMode?: 'weekly' | 'entire';
-  onView?: (intern: InternSummary) => void;
-  onEditDetails?: (intern: InternSummary) => void;
-  onViewReports?: (intern: InternSummary) => void;
-  onContact?: (intern: InternSummary) => void;
-  onDelete?: (intern: InternSummary) => void;
+  onView?: (associate: InternSummary) => void;
+  onEditDetails?: (associate: InternSummary) => void;
+  onViewReports?: (associate: InternSummary) => void;
+  onContact?: (associate: InternSummary) => void;
+  onDelete?: (associate: InternSummary) => void;
   emptyMessage?: string;
   layout?: 'grid' | 'list';
   className?: string;
@@ -223,10 +223,10 @@ export function InternList({
         className
       )}
     >
-      {interns.map((intern) => (
+      {interns.map((associate) => (
         <InternCard
-          key={intern.id}
-          intern={intern}
+          key={associate.id}
+          associate={associate}
           hoursMode={hoursMode}
           {...(onView && { onView })}
           {...(onEditDetails && { onEditDetails })}
@@ -240,15 +240,15 @@ export function InternList({
 }
 
 interface InternRowProps {
-  intern: InternSummary;
+  associate: InternSummary;
   hoursMode?: 'weekly' | 'entire';
-  onView?: (intern: InternSummary) => void;
-  onDelete?: (intern: InternSummary) => void;
+  onView?: (associate: InternSummary) => void;
+  onDelete?: (associate: InternSummary) => void;
   className?: string;
 }
 
-export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, className }: InternRowProps): React.ReactNode {
-  const daysRemaining = getDaysRemaining(intern.endDate);
+export function InternRow({ associate, hoursMode = 'weekly', onView, onDelete, className }: InternRowProps): React.ReactNode {
+  const daysRemaining = getDaysRemaining(associate.endDate);
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
     if (!onView) {
       return;
@@ -256,7 +256,7 @@ export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, clas
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onView(intern);
+      onView(associate);
     }
   };
 
@@ -267,20 +267,20 @@ export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, clas
         onView && 'cursor-pointer',
         className
       )}
-      onClick={() => onView?.(intern)}
+      onClick={() => onView?.(associate)}
       onKeyDown={handleKeyDown}
       role={onView ? 'button' : undefined}
       tabIndex={onView ? 0 : undefined}
     >
       <div className="flex items-center gap-4">
         <Avatar className="h-10 w-10">
-          {intern.avatarUrl && <AvatarImage src={intern.avatarUrl} />}
-          <AvatarFallback className="text-xs">{getInitials(intern.name)}</AvatarFallback>
+          {associate.avatarUrl && <AvatarImage src={associate.avatarUrl} />}
+          <AvatarFallback className="text-xs">{getInitials(associate.name)}</AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-medium">{intern.name}</p>
+          <p className="font-medium">{associate.name}</p>
           <p className="text-sm text-muted-foreground">
-            {intern.school} - {intern.program}
+            {associate.school} - {associate.program}
           </p>
         </div>
       </div>
@@ -289,32 +289,32 @@ export function InternRow({ intern, hoursMode = 'weekly', onView, onDelete, clas
           <HoursProgressMini
             completedHours={
               hoursMode === 'weekly'
-                ? (intern.weeklyCompletedHours ?? intern.completedHours)
-                : intern.completedHours
+                ? (associate.weeklyCompletedHours ?? associate.completedHours)
+                : associate.completedHours
             }
             requiredHours={
               hoursMode === 'weekly'
-                ? (intern.weeklyRequiredHours ?? intern.requiredHours)
-                : intern.requiredHours
+                ? (associate.weeklyRequiredHours ?? associate.requiredHours)
+                : associate.requiredHours
             }
-            startDate={intern.startDate}
-            endDate={intern.endDate}
+            startDate={associate.startDate}
+            endDate={associate.endDate}
           />
         </div>
         <div className="text-right hidden sm:block">
-          <p className="text-sm text-muted-foreground">{intern.supervisor}</p>
+          <p className="text-sm text-muted-foreground">{associate.supervisor}</p>
           <p className="text-xs text-muted-foreground">{daysRemaining} days left</p>
         </div>
-        <InternshipStatusBadge status={intern.status} />
+        <InternshipStatusBadge status={associate.status} />
         {onDelete && (
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-            title="Remove Intern"
+            title="Remove Associate"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(intern);
+              onDelete(associate);
             }}
           >
             <Trash2 className="h-4 w-4" />

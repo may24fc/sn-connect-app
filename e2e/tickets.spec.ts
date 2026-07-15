@@ -74,8 +74,8 @@ function getExpectedLandingPath(email: string): string {
     return '/admin/dashboard';
   }
 
-  if (normalizedEmail.startsWith('intern')) {
-    return '/intern/dashboard';
+  if (normalizedEmail.startsWith('associate')) {
+    return '/associate/dashboard';
   }
 
   return '/dashboard';
@@ -90,7 +90,7 @@ async function loginAs(page: Parameters<typeof test>[0]['page'], email: string, 
 
   try {
     await page.waitForFunction(
-      () => /\/(dashboard|admin\/dashboard|super-admin\/dashboard|intern\/dashboard|onboarding)/.test(window.location.pathname),
+      () => /\/(dashboard|admin\/dashboard|super-admin\/dashboard|associate\/dashboard|onboarding)/.test(window.location.pathname),
       { timeout: 15000 }
     );
   } catch (error) {

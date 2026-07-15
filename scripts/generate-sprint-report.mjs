@@ -300,7 +300,7 @@ const coverBlock = [
   metaLine("Report Date", "May 5, 2026"),
   metaLine("Project", "Control Hub — HR Portal Feature Refinements"),
   metaLine("Sprint Period", "May 5 – May 30, 2026 (4 Weeks)"),
-  metaLine("Developer", "Ceferino, Senior AI Intern"),
+  metaLine("Developer", "Ceferino, Senior AI Associate"),
   hr(),
   spacer(),
 ];
@@ -314,7 +314,7 @@ const execSummary = [
   ),
   body("Here is what each week covers:"),
   bullet("**Week 1 (May 5–9):** Making the Marketing Reports dashboard more accurate, secure, and visually polished."),
-  bullet("**Week 2 (May 12–16):** Making the automated intern end-of-day reminder and weekly supervisor email more reliable."),
+  bullet("**Week 2 (May 12–16):** Making the automated associate end-of-day reminder and weekly supervisor email more reliable."),
   bullet("**Week 3 (May 19–23):** Improving the AI chatbot's accuracy, adding safety guardrails, and cleaning up the chat interface."),
   bullet("**Week 4 (May 26–30):** Building a proper multi-step approval workflow for requests that need sign-off from multiple people before anything is actioned."),
   body(
@@ -356,7 +356,7 @@ const week1 = [
 
 // ─── WEEK 2 ────────────────────────────────────────────────────────────────────
 const week2 = [
-  weekBanner("WEEK 2", "May 12–16, 2026", "EOD Intern Automation"),
+  weekBanner("WEEK 2", "May 12–16, 2026", "EOD Associate Automation"),
 
   subLabel("What we're working on this week:"),
   body(
@@ -366,15 +366,15 @@ const week2 = [
   ),
 
   subLabel("What will be done:"),
-  bullet("**Preventing duplicate reminders.** If the automated reminder runs more than once on the same day (due to a timing glitch), it currently sends the same message to the intern twice. We're adding a check so each intern only gets one reminder per day, no matter what."),
+  bullet("**Preventing duplicate reminders.** If the automated reminder runs more than once on the same day (due to a timing glitch), it currently sends the same message to the associate twice. We're adding a check so each associate only gets one reminder per day, no matter what."),
   bullet("**Adding a retry safety net.** If the automated reminder fails to send, the system will now automatically try again — up to three times. If it still fails after that, the team gets an alert in the PA Ops Hub Telegram group so no one is left uninformed."),
   bullet("**Adding a quality check before the supervisor email sends.** Before the weekly summary email goes out every Friday, the system will now review all submitted daily logs for that week. If any log was submitted with missing hours or blank accomplishment notes, those entries will be flagged inside the email so the supervisor knows immediately."),
-  bullet("**Upgrading the supervisor email layout.** The current supervisor email is plain text. We're replacing it with a clean, structured format: a header, a metrics table showing the intern's name, total hours, number of days logged, and average hours per day. If an intern logged fewer than three days that week, a clear amber warning banner will appear at the top of the email."),
+  bullet("**Upgrading the supervisor email layout.** The current supervisor email is plain text. We're replacing it with a clean, structured format: a header, a metrics table showing the associate's name, total hours, number of days logged, and average hours per day. If an associate logged fewer than three days that week, a clear amber warning banner will appear at the top of the email."),
   bullet("**Fixing a timezone issue.** The system currently compares dates in international UTC time, which can make it think it's still \"yesterday\" for interns in the Philippines when the local day has already changed. We're adding a Philippine time zone conversion to fix this."),
   bullet("**Writing a duplicate-check test.** We'll write an automated check that simulates sending the reminder twice on the same day and confirms that only one notification is created."),
 
   doDLabel(),
-  check("Triggering the reminder twice on the same day results in only one notification reaching the intern — confirmed by automated test."),
+  check("Triggering the reminder twice on the same day results in only one notification reaching the associate — confirmed by automated test."),
   check("The retry mechanism is set up and the Telegram alert is connected — tested by simulating a failure."),
   check("The supervisor email shows a clean table with all metrics and a warning banner when fewer than 3 days were logged."),
   check("Incomplete daily logs (missing hours or notes) are flagged clearly inside the weekly email."),
@@ -480,7 +480,7 @@ const sprintSummary = [
   spacer(),
   summaryTable([
     ["Week 1\nMay 5–9", "Marketing Reports & Admin Dashboard", "Data accuracy & security tightening", "Fixed charts, security layer, category validation, forecast band", "Planned"],
-    ["Week 2\nMay 12–16", "EOD Intern Automation", "Reliable automation & better emails", "Dedup guard, retry logic, upgraded HTML supervisor email", "Planned"],
+    ["Week 2\nMay 12–16", "EOD Associate Automation", "Reliable automation & better emails", "Dedup guard, retry logic, upgraded HTML supervisor email", "Planned"],
     ["Week 3\nMay 19–23", "AI SOP Chatbot", "Smarter answers & safer responses", "Hybrid search, fallback response, PII filters, chat UI polish", "Planned"],
     ["Week 4\nMay 26–30", "Standardized Approval Workflow", "Multi-step chain with full audit trail", "6-stage state machine, history log, ref numbers, dashboards", "Planned"],
   ]),
@@ -490,7 +490,7 @@ const sprintSummary = [
     { label: "Total Sprints",       value: "4 — one per week, each focused on one feature" },
     { label: "Total Tasks",         value: "22 improvement items across all four features" },
     { label: "Sprint Period",       value: "May 5 – May 30, 2026" },
-    { label: "Developer",           value: "Ceferino, Senior AI Intern" },
+    { label: "Developer",           value: "Ceferino, Senior AI Associate" },
     { label: "Type of Work",        value: "Refinement — improving existing features, not building new ones" },
     { label: "Testing Approach",    value: "Automated checks run after every change; manual verification per sprint" },
     { label: "Definition of Done",  value: "Each week has a checklist of specific pass/fail criteria before it is considered complete" },
@@ -507,7 +507,7 @@ const sprintSummary = [
 
 // ─── Assemble Document ──────────────────────────────────────────────────────────
 const doc = new Document({
-  creator: "Ceferino, Senior AI Intern — Control Hub",
+  creator: "Ceferino, Senior AI Associate — Control Hub",
   title: "Control Hub Feature Refinement — 4-Week Sprint Plan",
   description: "Non-technical sprint plan for the four Control Hub feature refinements (May 2026)",
   styles: {

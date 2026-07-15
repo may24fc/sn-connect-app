@@ -67,8 +67,8 @@ export function SelfServiceLayoutShell({
   };
 
   const handleProfileClick = (): void => {
-    if (user.role === 'intern') {
-      router.push('/intern/profile');
+    if (user.role === 'associate') {
+      router.push('/associate/profile');
       return;
     }
 
@@ -81,8 +81,8 @@ export function SelfServiceLayoutShell({
   };
 
   const handleSettingsClick = (): void => {
-    if (user.role === 'intern') {
-      router.push('/intern/settings');
+    if (user.role === 'associate') {
+      router.push('/associate/settings');
       return;
     }
 
@@ -139,15 +139,15 @@ function SelfServiceLayoutInner({
   const { startTour, currentGroup } = useTour();
   const { theme, setTheme } = useTheme();
   const marketingReportsAccess = useMarketingReportsAccess();
-  const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'intern');
-  const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'intern');
+  const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'associate');
+  const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'associate');
   const revenueForecastAccess = useRevenueForecastAccess(
-    user.role === 'employee' || user.role === 'intern'
+    user.role === 'employee' || user.role === 'associate'
   );
   const expensesAccess = useExpensesAccess();
   const sidebarVariant =
-    user.role === 'intern'
-      ? 'intern'
+    user.role === 'associate'
+      ? 'associate'
       : user.role === 'admin' || user.role === 'super_admin'
         ? user.role
         : 'employee';

@@ -25,8 +25,8 @@ const testCredentials = {
     email: process.env.E2E_EMPLOYEE_EMAIL ?? 'employee@test.com',
     password: process.env.E2E_EMPLOYEE_PASSWORD ?? 'password',
   },
-  intern: {
-    email: process.env.E2E_INTERN_EMAIL ?? 'intern@test.com',
+  associate: {
+    email: process.env.E2E_INTERN_EMAIL ?? 'associate@test.com',
     password: process.env.E2E_INTERN_PASSWORD ?? 'password',
   },
   superAdmin: {
@@ -51,7 +51,7 @@ async function screenshot(page: Page, name: string) {
 
 async function login(
   page: Page,
-  role: 'admin' | 'employee' | 'intern' | 'superAdmin'
+  role: 'admin' | 'employee' | 'associate' | 'superAdmin'
 ) {
   const creds = testCredentials[role];
   await page.goto(`${BASE_URL}/login`);
@@ -62,7 +62,7 @@ async function login(
     await page.locator('#password').fill(creds.password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await page.waitForURL(
-      /\/(dashboard|admin|super-admin|intern|onboarding|awaiting)/,
+      /\/(dashboard|admin|super-admin|associate|onboarding|awaiting)/,
       { timeout: 15000 }
     );
   }
@@ -120,28 +120,28 @@ test.describe('Dashboard Mock Data Audit', () => {
     }
   });
 
-  test('Intern dashboard component vs page - data source check', async ({
+  test('Associate dashboard component vs page - data source check', async ({
     page,
   }) => {
-    await login(page, 'intern');
+    await login(page, 'associate');
     await page.waitForLoadState('networkidle');
 
     const url = page.url();
-    console.log(`[AUDIT] Intern logged in, landed on: ${url}`);
+    console.log(`[AUDIT] Associate logged in, landed on: ${url}`);
 
-    // Navigate to intern dashboard if not already there
-    if (!url.includes('/intern/dashboard')) {
-      await page.goto(`${BASE_URL}/intern/dashboard`);
+    // Navigate to associate dashboard if not already there
+    if (!url.includes('/associate/dashboard')) {
+      await page.goto(`${BASE_URL}/associate/dashboard`);
       await page.waitForLoadState('networkidle');
     }
     await page.waitForTimeout(2000);
-    await screenshot(page, 'intern-dashboard');
+    await screenshot(page, 'associate-dashboard');
 
-    // Check if the page uses real API data (intern/dashboard/page.tsx uses hooks)
+    // Check if the page uses real API data (associate/dashboard/page.tsx uses hooks)
     // vs the InternDashboard component which uses mock data
     const content = await page.textContent('body');
 
-    // Check for mock intern profile indicators (all dashes)
+    // Check for mock associate profile indicators (all dashes)
     const mockIndicators = [
       '—', // dash placeholders from mockInternProfile
     ];
@@ -152,7 +152,7 @@ test.describe('Dashboard Mock Data Audit', () => {
       mockCount += count;
     }
 
-    console.log(`[AUDIT] Intern dashboard mock data indicators: ${mockCount}`);
+    console.log(`[AUDIT] Associate dashboard mock data indicators: ${mockCount}`);
 
     if (mockCount > 5) {
       console.warn(

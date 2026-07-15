@@ -1,7 +1,7 @@
 /**
  * Shared logic for persisting an extracted project intake into the
  * `project_backlog` table (and optionally auto-creating a formal `projects`
- * row when the CEO assigned the work to a specific intern).
+ * row when the CEO assigned the work to a specific associate).
  *
  * Used by both the Inngest job (Telegram intake) and the internal
  * /api/projects/intake REST endpoint.

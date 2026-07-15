@@ -1,10 +1,10 @@
 # Control Hub HR Portal - V2 Implementation Checklist
 
-This document provides the Phase 2 (V2) implementation plan for Control Hub, derived from the **1st User Testing Feedback** conducted on the V1 build. Feedback was collected from four user roles: HR/Admin, Intern, Admin Assistant, Chief of Staff (CoS), and Google Ads Specialist. Tasks are organized by priority tier, with P0 (Blockers) addressed first.
+This document provides the Phase 2 (V2) implementation plan for Control Hub, derived from the **1st User Testing Feedback** conducted on the V1 build. Feedback was collected from four user roles: HR/Admin, Associate, Admin Assistant, Chief of Staff (CoS), and Google Ads Specialist. Tasks are organized by priority tier, with P0 (Blockers) addressed first.
 
 **Feedback Sources:**
-- Set 1: HR/Admin, Intern, Admin Assistant
-- Set 2: Google Ads Specialist, Admin Assistant (extended), Intern (extended)
+- Set 1: HR/Admin, Associate, Admin Assistant
+- Set 2: Google Ads Specialist, Admin Assistant (extended), Associate (extended)
 - Set 3: Chief of Staff, Technical Debt / Regression Bugs
 
 ---
@@ -13,7 +13,7 @@ This document provides the Phase 2 (V2) implementation plan for Control Hub, der
 
 | Tier | Label | Scope |
 |------|-------|-------|
-| **P0** | Blockers | Intern "No Active Record" dead-end, Supabase Auth redirect failures, "Ghost Success" button bug |
+| **P0** | Blockers | Associate "No Active Record" dead-end, Supabase Auth redirect failures, "Ghost Success" button bug |
 | **P1** | Compliance & Validation | International phone validation, EUR/multi-currency support, Bank selection dropdown |
 | **P2** | Admin Utility & Data Granularity | Individual KPI/OKR views, Master Employee Directory, Birthdays/Anniversaries on tabs, Section renaming |
 | **P3** | Automation & UX Polish | Auto-reminders, FX auto-updates, Announcement view counts, Guided onboarding UX, Notification bell activation |
@@ -22,49 +22,49 @@ This document provides the Phase 2 (V2) implementation plan for Control Hub, der
 
 ## >>>>>>> RESUME HERE: V2 Phase 0 - P0 Blockers (CRITICAL) <<<<<<<
 
-### V2-0.1 Intern "No Active Record" Dead-End Fix (CRITICAL)
+### V2-0.1 Associate "No Active Record" Dead-End Fix (CRITICAL)
 
 **Problem:** Interns are locked out of all functionality (Profile, Dashboard, Performance, Documents) because the UI expects a 1-to-1 relationship between `User` and `Internship_Record` that hasn't been initialized. This is a schema strictness issue.
 
 **Industry Standard:** Implement Optional Chaining on the frontend and a "Self-Onboarding" fallback flow.
 
-- [x] **Audit all intern-facing pages for required internship record dependency**
+- [x] **Audit all associate-facing pages for required internship record dependency**
   - Files audited:
-    - `apps/web/src/app/(employee)/intern/dashboard/page.tsx` — **AFFECTED**: showed dead-end placeholder, now redirects to setup
+    - `apps/web/src/app/(employee)/associate/dashboard/page.tsx` — **AFFECTED**: showed dead-end placeholder, now redirects to setup
     - `apps/web/src/app/(employee)/profile/page.tsx` — NOT affected (handles missing employee gracefully)
     - `apps/web/src/app/(employee)/performance/page.tsx` — NOT affected (no internship dependency)
     - `apps/web/src/app/(employee)/files/page.tsx` — NOT affected (no internship dependency)
 
-- [x] **Implement optional chaining and null-safe guards across intern UI**
+- [x] **Implement optional chaining and null-safe guards across associate UI**
   - File: `apps/web/src/hooks/useInternships.ts`
   - Hook already returned `{ data: null, isLoading, isError }` — no throwing behavior
   - Added `useInitializeInternship()` mutation hook for the self-initialization flow
-  - Dashboard now redirects to `/intern/setup` instead of showing dead-end
+  - Dashboard now redirects to `/associate/setup` instead of showing dead-end
 
 - [x] **Create "Complete Profile Setup" fallback flow**
-  - File: `apps/web/src/app/(employee)/intern/setup/page.tsx`
+  - File: `apps/web/src/app/(employee)/associate/setup/page.tsx`
   - Guided form with: start date, end date, department (dropdown), school, program, required hours
   - Client-side validation with clear error messages
-  - On success: redirects to `/intern/dashboard`
+  - On success: redirects to `/associate/dashboard`
 
-- [x] **Create API route for intern self-initialization**
+- [x] **Create API route for associate self-initialization**
   - File: `apps/web/src/app/api/internships/initialize/route.ts`
-  - POST: Creates internship record for authenticated intern
-  - Validates role is `intern`, prevents duplicate active records (409 Conflict)
+  - POST: Creates internship record for authenticated associate
+  - Validates role is `associate`, prevents duplicate active records (409 Conflict)
   - Zod schema: `initializeInternshipSchema` in `internship.schema.ts`
   - Audit log entry written on successful initialization
 
 - [x] **Update middleware to detect uninitialized interns**
   - File: `apps/web/src/middleware.ts`
-  - After onboarding gate, checks if intern has active internship record
-  - Redirects to `/intern/setup` if no active record found
-  - Exempt paths: `/intern/setup`, `/api/internships/initialize`, `/onboarding/*`
+  - After onboarding gate, checks if associate has active internship record
+  - Redirects to `/associate/setup` if no active record found
+  - Exempt paths: `/associate/setup`, `/api/internships/initialize`, `/onboarding/*`
 
-- [x] **Add E2E test for intern first-login experience**
-  - File: `e2e/intern-first-login.spec.ts`
-  - Tests: New intern → sees setup flow, validates form fields, rejects invalid dates
+- [x] **Add E2E test for associate first-login experience**
+  - File: `e2e/associate-first-login.spec.ts`
+  - Tests: New associate → sees setup flow, validates form fields, rejects invalid dates
   - Tests: Dashboard no longer shows dead-end "Contact your supervisor" message
-  - Tests: Intern with expired record sees appropriate messaging
+  - Tests: Associate with expired record sees appropriate messaging
 
 ### V2-0.2 Supabase Auth Redirect Fix (CRITICAL)
 
@@ -268,7 +268,7 @@ This serves as the **Source of Truth** for all other features.
   - File: `apps/web/src/app/(admin)/admin/directory/page.tsx`
   - Full list of all employees AND interns in a single, searchable, filterable table
   - Columns: Photo, Full Name, Role, Department, Position, Status, Start Date, Email, Phone
-  - Filters: Role (Employee/Intern), Department, Status (Active/Probation/Inactive), Employment Type
+  - Filters: Role (Employee/Associate), Department, Status (Active/Probation/Inactive), Employment Type
   - Search: By name, email, position
   - Sort: By name, department, start date, status
   - Export: CSV / Excel download
@@ -278,7 +278,7 @@ This serves as the **Source of Truth** for all other features.
   - File: `apps/web/src/app/api/directory/route.ts`
   - GET: Returns unified list from `employees` table joined with `users` and `internships`
   - Supports pagination, search, filters, sort
-  - Includes aggregated metadata (total count, active count, intern count)
+  - Includes aggregated metadata (total count, active count, associate count)
 
 - [x] **Create directory hooks**
   - File: `apps/web/src/hooks/useDirectory.ts`
@@ -432,9 +432,9 @@ This serves as the **Source of Truth** for all other features.
     ) STORED;
   ```
 
-### V2-2.4 Birthdays & Work Anniversaries on Employee/Intern Tabs
+### V2-2.4 Birthdays & Work Anniversaries on Employee/Associate Tabs
 
-**Source:** HR/Admin + CoS feedback — "Integrate Birthdays and Work Anniversaries into the Recent Activity feed" and "Birthdays/Anniversaries on Intern/Employee tabs."
+**Source:** HR/Admin + CoS feedback — "Integrate Birthdays and Work Anniversaries into the Recent Activity feed" and "Birthdays/Anniversaries on Associate/Employee tabs."
 
 - [x] **Create milestones API route**
   - File: `apps/web/src/app/api/milestones/route.ts`
@@ -451,7 +451,7 @@ This serves as the **Source of Truth** for all other features.
   - File: `apps/web/src/app/(admin)/admin/dashboard/page.tsx`
   - Add as a card/section in the dashboard layout
 
-- [ ] **Add MilestoneFeed to Employee/Intern tabs**
+- [ ] **Add MilestoneFeed to Employee/Associate tabs**
   - File: `apps/web/src/app/(admin)/admin/interns/page.tsx`
   - File: `apps/web/src/app/(admin)/admin/probation/page.tsx` (renamed, see V2-2.5)
   - Show relevant milestones for interns or employees in that view
@@ -477,11 +477,11 @@ This serves as the **Source of Truth** for all other features.
   - Rename "Probation" → "Employee Management"
   - Icon: `UserCog` from lucide-react
 
-### V2-2.6 Intern Management: Edit End Dates & Hours Progress Bar
+### V2-2.6 Associate Management: Edit End Dates & Hours Progress Bar
 
 **Source:** HR/Admin feedback — "Enable editing of internship End Dates for extensions" + Admin Assistant — "Implement a visual Progress Bar for required vs. completed internship hours."
 
-- [x] **Enable intern end date editing**
+- [x] **Enable associate end date editing**
   - File: `apps/web/src/app/(admin)/admin/interns/[id]/page.tsx`
   - Add "Extend Internship" action button
   - Opens modal with new end date picker and reason field
@@ -500,9 +500,9 @@ This serves as the **Source of Truth** for all other features.
   - Shows: "X of Y hours completed (Z%)"
   - Estimated completion date based on daily average
 
-- [x] **Add progress bar to intern list and detail pages**
+- [x] **Add progress bar to associate list and detail pages**
   - File: `apps/web/src/app/(admin)/admin/interns/[id]/page.tsx` — prominent display + extend modal
-  - File: `apps/web/src/app/(employee)/intern/dashboard/page.tsx` — intern self-view (uses existing HoursProgressCard)
+  - File: `apps/web/src/app/(employee)/associate/dashboard/page.tsx` — associate self-view (uses existing HoursProgressCard)
 
 ---
 
@@ -510,7 +510,7 @@ This serves as the **Source of Truth** for all other features.
 
 ### V2-3.1 Activate Notification Bell
 
-**Source:** Intern feedback — "Activate the Notification Bell (currently a dead link)."
+**Source:** Associate feedback — "Activate the Notification Bell (currently a dead link)."
 
 - [x] **Create notifications database table** (already existed in migration 20260227000001)
   - File: `supabase/migrations/20260220000007_create_notifications_table.sql`
@@ -617,7 +617,7 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
     - Pending report submissions
     - Pending invoice approvals
     - Pending performance reviews
-    - Late intern EOD reports
+    - Late associate EOD reports
 
 - [x] **Create PendingApprovalsCard component**
   - File: `packages/ui/src/components/dashboard/PendingApprovalsCard.tsx`
@@ -631,7 +631,7 @@ Note: Audience targeting was already built in V1 (Section 2.4). This extends it 
 
 - [x] **Evolve into shared Needs Attention carousel**
   - Files: `packages/ui/src/components/dashboard/DashboardAttentionCarousel.tsx`, `apps/web/src/hooks/useDashboardAttentionItems.ts`
-  - Normalizes pending approvals, onboarding approvals, probation concerns, and late intern EOD follow-ups into a role-aware banner carousel
+  - Normalizes pending approvals, onboarding approvals, probation concerns, and late associate EOD follow-ups into a role-aware banner carousel
   - Shared by both admin and super-admin dashboards, with payroll approvals reserved for super-admin
 
 ### V2-3.4 Auto-Reminder System (Late Reports & Compliance)
@@ -1012,8 +1012,8 @@ NEXT_PUBLIC_ENABLE_TOURS=true
 
 | Feedback Item | Source | V2 Section |
 |---|---|---|
-| Intern "No active record" dead-end | Intern (Set 2) | V2-0.1 |
-| Supabase Auth redirect failures | Intern (Set 1) | V2-0.2 |
+| Associate "No active record" dead-end | Associate (Set 2) | V2-0.1 |
+| Supabase Auth redirect failures | Associate (Set 1) | V2-0.2 |
 | "Ghost Success" button bug | CoS (Set 3) | V2-0.3 |
 | Phone number validation (Italian) | CoS (Set 3) | V2-1.1 |
 | Currency hardcoded to PHP | CoS (Set 3) | V2-1.2 |
@@ -1023,18 +1023,18 @@ NEXT_PUBLIC_ENABLE_TOURS=true
 | Automated OKR/KPI calculation | HR/Admin (Set 1) | V2-2.3 |
 | Birthdays/Anniversaries feed | HR/Admin (Set 1), CoS (Set 3) | V2-2.4 |
 | Rename "Probation" → "Employee Management" | HR/Admin (Set 1) | V2-2.5 |
-| Edit intern end dates + Hours progress bar | HR/Admin (Set 1), Admin Asst (Set 2) | V2-2.6 |
-| Activate Notification Bell | Intern (Set 1) | V2-3.1 |
+| Edit associate end dates + Hours progress bar | HR/Admin (Set 1), Admin Asst (Set 2) | V2-2.6 |
+| Activate Notification Bell | Associate (Set 1) | V2-3.1 |
 | Announcement view counts & bulk reminders | Admin Asst (Set 1, Set 2) | V2-3.2 |
 | Dashboard pending approvals | Admin Asst (Set 1) | V2-3.3 |
 | Auto-reminders for late reports | Admin Asst (Set 1) | V2-3.4 |
 | Extensible user profiles (JSONB) | Google Ads Specialist (Set 2) | V2-4.1 |
 | Role-specific dashboard KPIs | Google Ads Specialist (Set 2) | V2-4.2 |
 | Task categorization (Launch vs. Optimization) | Google Ads Specialist (Set 2) | V2-4.3 |
-| Navbar hint text overlay fix | Intern (Set 1) | V2-5.1 |
-| Add Favicon | Intern (Set 1) | V2-5.1 |
-| Remove Exit button from mandatory onboarding | Intern (Set 1) | V2-5.1 |
-| Fix transparent backgrounds | Intern (Set 1) | V2-5.1 |
+| Navbar hint text overlay fix | Associate (Set 1) | V2-5.1 |
+| Add Favicon | Associate (Set 1) | V2-5.1 |
+| Remove Exit button from mandatory onboarding | Associate (Set 1) | V2-5.1 |
+| Fix transparent backgrounds | Associate (Set 1) | V2-5.1 |
 | Guided UX / Tooltips / Walkthrough | CoS (Set 3) | V2-5.2 |
 | Page load performance optimization | CoS (Set 3) | V2-5.3 |
 | Hierarchical report grouping | Google Ads Specialist (Set 2) | V2-6.1 |

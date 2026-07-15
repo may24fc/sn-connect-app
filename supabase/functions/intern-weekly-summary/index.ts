@@ -27,8 +27,8 @@ interface InternSummary {
 // ---------------------------------------------------------------------------
 // Main handler
 // Runs Fridays at 5 PM PHT (0 9 * * 5 UTC).
-// Aggregates the past 7 days of intern daily logs and sends a summary
-// notification to each intern and their supervisor.
+// Aggregates the past 7 days of associate daily logs and sends a summary
+// notification to each associate and their supervisor.
 // ---------------------------------------------------------------------------
 
 serve(async (req: Request): Promise<Response> => {
@@ -65,7 +65,7 @@ serve(async (req: Request): Promise<Response> => {
       .is('deleted_at', null);
 
     if (internError) {
-      console.error('[intern-weekly-summary] Internship query error:', internError.message);
+      console.error('[associate-weekly-summary] Internship query error:', internError.message);
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to query internships' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -89,7 +89,7 @@ serve(async (req: Request): Promise<Response> => {
       .lte('log_date', weekEnd);
 
     if (logError) {
-      console.error('[intern-weekly-summary] Log query error:', logError.message);
+      console.error('[associate-weekly-summary] Log query error:', logError.message);
     }
 
     // Aggregate hours per internship
@@ -157,14 +157,14 @@ serve(async (req: Request): Promise<Response> => {
 
       summaries.push(summary);
 
-      // Notify the intern
+      // Notify the associate
       await createInAppNotification(supabase, {
         userId: emp.user_id,
         type: 'system',
         title: 'Weekly Hours Summary',
         message: `Week of ${weekStartStr} to ${weekEnd}: You logged ${hours.total.toFixed(1)} hours across ${hours.count} day(s). Average: ${summary.avgHoursPerDay} hrs/day.`,
-        link: '/intern/daily-log',
-        dedupeKey: `intern-weekly-summary:${internship.employee_id}:${weekStartStr}:${weekEnd}`,
+        link: '/associate/daily-log',
+        dedupeKey: `associate-weekly-summary:${internship.employee_id}:${weekStartStr}:${weekEnd}`,
         metadata: {
           weekStart: weekStartStr,
           weekEnd,
@@ -177,16 +177,16 @@ serve(async (req: Request): Promise<Response> => {
       if (summary.supervisorEmail && summary.supervisorId) {
         await sendEmail({
           to: summary.supervisorEmail,
-          subject: `Weekly Intern Summary: ${emp.first_name} ${emp.last_name} (${weekStartStr} – ${weekEnd})`,
+          subject: `Weekly Associate Summary: ${emp.first_name} ${emp.last_name} (${weekStartStr} – ${weekEnd})`,
           html: `
-            <h3>Intern Weekly Summary</h3>
-            <p><strong>Intern:</strong> ${emp.first_name} ${emp.last_name}</p>
+            <h3>Associate Weekly Summary</h3>
+            <p><strong>Associate:</strong> ${emp.first_name} ${emp.last_name}</p>
             <p><strong>Period:</strong> ${weekStartStr} to ${weekEnd}</p>
             <p><strong>Total Hours:</strong> ${hours.total.toFixed(1)}</p>
             <p><strong>Days Logged:</strong> ${hours.count} / 5</p>
             <p><strong>Avg Hours/Day:</strong> ${summary.avgHoursPerDay}</p>
             ${hours.count < 3 ? '<p style="color: #E74C3C;"><strong>⚠️ Less than 3 days logged this week.</strong></p>' : ''}
-            <p><a href="${Deno.env.get('APP_URL') ?? 'https://app.snconnect.com'}/admin/interns/${internship.employee_id}">View Intern Profile →</a></p>
+            <p><a href="${Deno.env.get('APP_URL') ?? 'https://app.snconnect.com'}/admin/interns/${internship.employee_id}">View Associate Profile →</a></p>
           `,
         });
 
@@ -197,7 +197,7 @@ serve(async (req: Request): Promise<Response> => {
           title: `Weekly Summary: ${emp.first_name} ${emp.last_name}`,
           message: `${emp.first_name} logged ${hours.total.toFixed(1)} hours across ${hours.count} day(s) this week.`,
           link: `/admin/interns/${internship.employee_id}`,
-          dedupeKey: `intern-weekly-summary-supervisor:${internship.employee_id}:${weekStartStr}:${weekEnd}`,
+          dedupeKey: `associate-weekly-summary-supervisor:${internship.employee_id}:${weekStartStr}:${weekEnd}`,
           sendEmail: false,
           metadata: {
             internshipId: internship.id,
@@ -242,7 +242,7 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[intern-weekly-summary] Error:', message);
+    console.error('[associate-weekly-summary] Error:', message);
     return new Response(
       JSON.stringify({ success: false, error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

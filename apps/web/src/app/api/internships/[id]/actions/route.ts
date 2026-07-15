@@ -170,12 +170,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ]);
 
     if (convertError || userRoleError || employmentTypeError) {
-      console.error('Failed to convert intern to employee:', {
+      console.error('Failed to convert associate to employee:', {
         convertError,
         userRoleError,
         employmentTypeError,
       });
-      return NextResponse.json({ error: 'Failed to hire intern as employee' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to hire associate as employee' }, { status: 500 });
     }
 
     const { data: existingOtherMetadata } = await adminClient
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const mergedMetadata = {
       ...(existingOtherMetadata?.metadata ?? {}),
       role: 'employee',
-      converted_from: 'intern',
+      converted_from: 'associate',
       internship_id: id,
       employment_type: 'probationary',
       converted_at: nowIso(),
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       action: 'hire_as_employee',
       old_values: {
         internship_status: internship.status,
-        user_role: 'intern',
+        user_role: 'associate',
         employment_type: typedEmployee.employment_type,
       },
       new_values: {

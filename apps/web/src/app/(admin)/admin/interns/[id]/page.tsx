@@ -102,68 +102,68 @@ export default function InternDetailPage({
   const extendMutation = useExtendInternship();
   const { addToast } = useToast();
 
-  const intern = internshipQuery.data?.data;
-  const reports = intern?.recentReports || [];
+  const associate = internshipQuery.data?.data;
+  const reports = associate?.recentReports || [];
   const uiReports: Array<DailyReport> = reports.map((report) => ({
     ...report,
     id: report.id as DailyReportId,
     internId: report.internId as InternId,
     internshipPeriodId: report.internshipPeriodId as InternshipPeriodId,
   }));
-  const weeklyHours = intern?.weeklyHours || [];
+  const weeklyHours = associate?.weeklyHours || [];
 
   const handleExportReport = useCallback((): void => {
-    if (!intern) return;
+    if (!associate) return;
 
     const profileData = [
       {
         field: 'Name',
-        value: intern.name,
+        value: associate.name,
       },
-      { field: 'Email', value: intern.email },
-      { field: 'Phone', value: intern.phone || 'N/A' },
-      { field: 'School', value: intern.school },
-      { field: 'Program', value: intern.program },
-      { field: 'Department', value: intern.department },
-      { field: 'Supervisor', value: intern.supervisor },
-      { field: 'Start Date', value: formatDateForCsv(intern.startDate) },
-      { field: 'End Date', value: formatDateForCsv(intern.endDate) },
-      { field: 'Required Hours', value: String(intern.requiredHours) },
-      { field: 'Completed Hours', value: String(intern.completedHours) },
+      { field: 'Email', value: associate.email },
+      { field: 'Phone', value: associate.phone || 'N/A' },
+      { field: 'School', value: associate.school },
+      { field: 'Program', value: associate.program },
+      { field: 'Department', value: associate.department },
+      { field: 'Supervisor', value: associate.supervisor },
+      { field: 'Start Date', value: formatDateForCsv(associate.startDate) },
+      { field: 'End Date', value: formatDateForCsv(associate.endDate) },
+      { field: 'Required Hours', value: String(associate.requiredHours) },
+      { field: 'Completed Hours', value: String(associate.completedHours) },
       {
         field: 'Progress',
         value: formatPercentageForCsv(
-          calculateHoursProgress(intern.completedHours, intern.requiredHours)
+          calculateHoursProgress(associate.completedHours, associate.requiredHours)
         ),
       },
-      { field: 'Status', value: intern.status },
+      { field: 'Status', value: associate.status },
     ];
 
     exportToCsv(profileData, {
-      filename: `intern-${intern.name.replace(/\s+/g, '-').toLowerCase()}`,
+      filename: `associate-${associate.name.replace(/\s+/g, '-').toLowerCase()}`,
       headers: ['Field', 'Value'],
       rowMapper: (item) => [item.field, item.value],
     });
-  }, [intern]);
+  }, [associate]);
 
   if (internshipQuery.isLoading) {
     return (
       <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-        Loading intern profile...
+        Loading associate profile...
       </div>
     );
   }
 
-  if (internshipQuery.error || !intern) {
+  if (internshipQuery.error || !associate) {
     return (
       <div className="h-full flex items-center justify-center text-sm text-destructive">
-        Failed to load intern profile.
+        Failed to load associate profile.
       </div>
     );
   }
 
-  const daysRemaining = getDaysRemaining(intern.endDate);
-  const progressPercentage = calculateHoursProgress(intern.completedHours, intern.requiredHours);
+  const daysRemaining = getDaysRemaining(associate.endDate);
+  const progressPercentage = calculateHoursProgress(associate.completedHours, associate.requiredHours);
   const pendingReports = uiReports.filter((r) => r.status === 'submitted').length;
 
   const handleProvideFeedback = (report: DailyReport): void => {
@@ -239,18 +239,18 @@ export default function InternDetailPage({
       await hireInternMutation.mutateAsync({ internshipId: id });
       setReviewDialogOpen(false);
       addToast({
-        title: 'Intern hired as employee',
+        title: 'Associate hired as employee',
         description: 'Role set to employee and employment type set to probationary.',
         variant: 'success',
       });
     } catch {
-      addToast({ title: 'Failed to hire intern as employee', variant: 'error' });
+      addToast({ title: 'Failed to hire associate as employee', variant: 'error' });
     }
   };
 
-  const isActiveIntern = intern.status === 'active';
+  const isActiveIntern = associate.status === 'active';
   const canCompleteInternship = isActiveIntern && progressPercentage >= 100;
-  const canHireAsEmployee = isActiveIntern || intern.status === 'completed';
+  const canHireAsEmployee = isActiveIntern || associate.status === 'completed';
   const isActionPending =
     extendMutation.isPending ||
     updateInternshipMutation.isPending ||
@@ -268,8 +268,8 @@ export default function InternDetailPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Intern Profile</h1>
-            <p className="text-muted-foreground">View and manage intern details</p>
+            <h1 className="text-2xl font-bold text-foreground">Associate Profile</h1>
+            <p className="text-muted-foreground">View and manage associate details</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -308,22 +308,22 @@ export default function InternDetailPage({
             {/* Avatar and Basic Info */}
             <div className="flex items-start gap-4">
               <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl">{getInitials(intern.name)}</AvatarFallback>
+                <AvatarFallback className="text-2xl">{getInitials(associate.name)}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-bold">{intern.name}</h2>
-                  <InternshipStatusBadge status={intern.status} />
+                  <h2 className="text-xl font-bold">{associate.name}</h2>
+                  <InternshipStatusBadge status={associate.status} />
                 </div>
-                <p className="text-muted-foreground">{intern.program}</p>
+                <p className="text-muted-foreground">{associate.program}</p>
                 <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Mail className="h-4 w-4" />
-                    {intern.email}
+                    {associate.email}
                   </span>
                   <span className="flex items-center gap-1">
                     <Phone className="h-4 w-4" />
-                    {intern.phone || 'N/A'}
+                    {associate.phone || 'N/A'}
                   </span>
                 </div>
               </div>
@@ -336,21 +336,21 @@ export default function InternDetailPage({
                   <GraduationCap className="h-4 w-4" />
                   <span className="text-xs">School</span>
                 </div>
-                <p className="font-medium text-sm">{intern.school}</p>
+                <p className="font-medium text-sm">{associate.school}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <Building2 className="h-4 w-4" />
                   <span className="text-xs">Department</span>
                 </div>
-                <p className="font-medium text-sm">{intern.department}</p>
+                <p className="font-medium text-sm">{associate.department}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
                   <User className="h-4 w-4" />
                   <span className="text-xs">Supervisor</span>
                 </div>
-                <p className="font-medium text-sm">{intern.supervisor}</p>
+                <p className="font-medium text-sm">{associate.supervisor}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
                 <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -384,18 +384,18 @@ export default function InternDetailPage({
         <TabsContent value="overview" className="space-y-6">
           {/* Hours Progress Bar - V2-2.6 */}
           <InternHoursProgressBar
-            completedHours={intern.completedHours}
-            requiredHours={intern.requiredHours}
-            startDate={intern.startDate}
-            endDate={intern.endDate}
+            completedHours={associate.completedHours}
+            requiredHours={associate.requiredHours}
+            startDate={associate.startDate}
+            endDate={associate.endDate}
           />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <HoursProgressCard
-              completedHours={intern.completedHours}
-              requiredHours={intern.requiredHours}
-              startDate={intern.startDate}
-              endDate={intern.endDate}
+              completedHours={associate.completedHours}
+              requiredHours={associate.requiredHours}
+              startDate={associate.startDate}
+              endDate={associate.endDate}
             />
 
             {/* Internship Period Card */}
@@ -411,7 +411,7 @@ export default function InternDetailPage({
                   <div>
                     <p className="text-sm text-muted-foreground">Start Date</p>
                     <p className="font-medium">
-                      {new Date(intern.startDate).toLocaleDateString('en-US', {
+                      {new Date(associate.startDate).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric',
@@ -421,7 +421,7 @@ export default function InternDetailPage({
                   <div>
                     <p className="text-sm text-muted-foreground">End Date</p>
                     <p className="font-medium">
-                      {new Date(intern.endDate).toLocaleDateString('en-US', {
+                      {new Date(associate.endDate).toLocaleDateString('en-US', {
                         month: 'long',
                         day: 'numeric',
                         year: 'numeric',
@@ -441,9 +441,9 @@ export default function InternDetailPage({
                         className="h-full bg-primary rounded-full"
                         style={{
                           width: `${Math.min(
-                            ((new Date().getTime() - new Date(intern.startDate).getTime()) /
-                              (new Date(intern.endDate).getTime() -
-                                new Date(intern.startDate).getTime())) *
+                            ((new Date().getTime() - new Date(associate.startDate).getTime()) /
+                              (new Date(associate.endDate).getTime() -
+                                new Date(associate.startDate).getTime())) *
                               100,
                             100
                           )}%`,
@@ -460,13 +460,13 @@ export default function InternDetailPage({
           <Card>
             <CardHeader>
               <CardTitle>HR Notes</CardTitle>
-              <CardDescription>Internal notes about this intern</CardDescription>
+              <CardDescription>Internal notes about this associate</CardDescription>
             </CardHeader>
             <CardContent>
               <EmptyState
                 icon={MessageSquare}
                 title="No notes added yet"
-                description="Internal HR notes for this intern will appear here once they are recorded."
+                description="Internal HR notes for this associate will appear here once they are recorded."
                 size="sm"
               />
             </CardContent>
@@ -493,7 +493,7 @@ export default function InternDetailPage({
                       {pendingReports} Report{pendingReports > 1 ? 's' : ''} Pending Review
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Provide feedback to help the intern improve
+                      Provide feedback to help the associate improve
                     </p>
                   </div>
                 </div>
@@ -557,8 +557,8 @@ export default function InternDetailPage({
 
         {/* Projects Tab */}
         <TabsContent value="projects" className="space-y-4">
-          {intern?.userId ? (
-            <InternProjectsPanel userId={intern.userId} />
+          {associate?.userId ? (
+            <InternProjectsPanel userId={associate.userId} />
           ) : (
             <p className="text-sm text-zinc-500">No linked user.</p>
           )}
@@ -580,7 +580,7 @@ export default function InternDetailPage({
           </DialogHeader>
           <div className="py-4">
             <Textarea
-              placeholder="Enter your feedback for the intern..."
+              placeholder="Enter your feedback for the associate..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               className="min-h-[150px]"
@@ -607,7 +607,7 @@ export default function InternDetailPage({
           <DialogHeader>
             <DialogTitle>Review & Evaluate</DialogTitle>
             <DialogDescription>
-              Run internship decisions for {intern.name}. Extend and complete use the current
+              Run internship decisions for {associate.name}. Extend and complete use the current
               review flow, while end and hire trigger lifecycle updates.
             </DialogDescription>
           </DialogHeader>
@@ -618,7 +618,7 @@ export default function InternDetailPage({
               className="w-full justify-start"
               disabled={!isActiveIntern || isActionPending}
               onClick={() => {
-                setNewEndDate(intern.endDate);
+                setNewEndDate(associate.endDate);
                 setExtendDialogOpen(true);
                 setReviewDialogOpen(false);
               }}
@@ -677,8 +677,8 @@ export default function InternDetailPage({
               Extend Internship
             </DialogTitle>
             <DialogDescription>
-              Extend {intern.name}'s internship end date. Current end date:{' '}
-              {new Date(intern.endDate).toLocaleDateString()}
+              Extend {associate.name}'s internship end date. Current end date:{' '}
+              {new Date(associate.endDate).toLocaleDateString()}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -689,7 +689,7 @@ export default function InternDetailPage({
                 type="date"
                 value={newEndDate}
                 onChange={(e) => setNewEndDate(e.target.value)}
-                min={intern.endDate}
+                min={associate.endDate}
               />
             </div>
             <div className="space-y-2">
@@ -727,11 +727,11 @@ export default function InternDetailPage({
               Complete Internship
             </DialogTitle>
             <DialogDescription>
-              Mark {intern.name}'s internship as complete. This will:
+              Mark {associate.name}'s internship as complete. This will:
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Change the intern's status to "Completed"</li>
+                <li>Change the associate's status to "Completed"</li>
                 <li>Generate a completion certificate</li>
-                <li>Notify the intern and supervisor</li>
+                <li>Notify the associate and supervisor</li>
               </ul>
             </DialogDescription>
           </DialogHeader>
@@ -765,7 +765,7 @@ function InternProjectsPanel({ userId }: { userId: string }): ReactNode {
     return (
       <Card>
         <CardContent className="p-6 text-center text-sm text-zinc-500">
-          This intern has no projects yet.
+          This associate has no projects yet.
         </CardContent>
       </Card>
     );

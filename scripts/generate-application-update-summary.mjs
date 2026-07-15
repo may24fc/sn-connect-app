@@ -43,7 +43,7 @@ const SUMMARY_RULES = [
   {
     key: 'workflow',
     priority: 92,
-    matcher: /checklist templates|admin onboarding detail|onboarding task submissions|probation state machine|internship end\/hire actions|offboarding api|applications hire|task proofs|kpi evidence attachments|intern daily log/i,
+    matcher: /checklist templates|admin onboarding detail|onboarding task submissions|probation state machine|internship end\/hire actions|offboarding api|applications hire|task proofs|kpi evidence attachments|associate daily log/i,
     text: 'Checklist, onboarding, and follow-through workflows are easier to manage with clearer review steps and submission tools.',
   },
   {

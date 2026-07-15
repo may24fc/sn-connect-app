@@ -5,7 +5,7 @@ const ADMIN_ROLES = ['admin', 'super_admin'];
 
 /**
  * GET /api/directory/[userId]
- * Get full employee/intern details from the directory view + employee table
+ * Get full employee/associate details from the directory view + employee table
  * Permissions: admin/super_admin only
  */
 export async function GET(

@@ -192,7 +192,7 @@ export async function POST(request: NextRequest) {
         let employeeId = existingEmployee?.id ?? null;
 
         if (!employeeId) {
-          const employmentType = targetUser.role === 'intern' ? 'intern' : 'regular';
+          const employmentType = targetUser.role === 'associate' ? 'associate' : 'regular';
 
           const { data: createdEmployee, error: employeeError } = await supabaseAdmin
             .from('employees')

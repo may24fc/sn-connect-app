@@ -8,21 +8,21 @@
 
 The bidirectional notification system has been fully implemented across the HR Portal. This enables:
 
-1. **Employee/Intern Submissions → Admin Notifications** (Phase 1)
-2. **Admin Actions → Employee/Intern Notifications** (Phase 2)
+1. **Employee/Associate Submissions → Admin Notifications** (Phase 1)
+2. **Admin Actions → Employee/Associate Notifications** (Phase 2)
 
 This creates a complete feedback loop where employees/interns get acknowledgment when admins act on their submissions, and admins get notified of new submissions requiring action.
 
 ---
 
-## Phase 1: Employee/Intern Submissions → Admin Notifications ✅
+## Phase 1: Employee/Associate Submissions → Admin Notifications ✅
 
 ### Endpoints with Submission Notifications
 
 | Feature | Endpoint | Method | Notification Type |
 |---------|----------|--------|-------------------|
 | Invoice Submission | `/api/invoices/[id]/submit` | POST | `invoice_submitted` |
-| Intern Daily Log | `/api/internships/[id]/logs` | POST | `intern_log_submitted` |
+| Associate Daily Log | `/api/internships/[id]/logs` | POST | `intern_log_submitted` |
 | Onboarding Completion | `/api/(employee)/onboarding/submit` | POST | `onboarding_step` |
 | Report Submission | `/api/reports/[id]/submit` | POST | `report_submitted` |
 
@@ -30,7 +30,7 @@ This creates a complete feedback loop where employees/interns get acknowledgment
 
 ---
 
-## Phase 2: Admin Actions → Employee/Intern Notifications ✅
+## Phase 2: Admin Actions → Employee/Associate Notifications ✅
 
 ### Endpoints with Admin Action Notifications
 
@@ -70,7 +70,7 @@ This creates a complete feedback loop where employees/interns get acknowledgment
 
 ---
 
-#### 3. Intern Daily Log Approval/Review
+#### 3. Associate Daily Log Approval/Review
 **Endpoint:** `PATCH /api/internships/[id]/logs` (with status='approved_by_supervisor')  
 **Notification Types:**
 - `intern_log_approved` - When log is formally approved
@@ -80,7 +80,7 @@ This creates a complete feedback loop where employees/interns get acknowledgment
 - ✅ Approved: "Your daily log for March 27, 2025 was approved by Jane Doe"
 - 📝 Reviewed: "Your daily log for March 27, 2025 has feedback: Great work! Please add more details next time."
 
-**Recipients:** Intern who submitted the daily log
+**Recipients:** Associate who submitted the daily log
 
 **Metadata Tracked:**
 - `logId` - The daily log ID
@@ -193,7 +193,7 @@ createNotification({
 
 ### Internship Management
 - ✅ `POST /api/internships/[id]/logs` - Notifies admins of submission
-- ✅ `PATCH /api/internships/[id]/logs` - Notifies intern of approval with metadata
+- ✅ `PATCH /api/internships/[id]/logs` - Notifies associate of approval with metadata
 
 ### User Management
 - ✅ `POST /api/users/approve-onboarding` - Notifies user of approval/rejection
@@ -231,10 +231,10 @@ createNotification({
 - [ ] Rejected user can re-submit
 - [ ] Audit log tracks approval/rejection
 
-### Intern Daily Log Flow
-- [ ] Intern submits daily log → Supervisor/Admin receives `intern_log_submitted`
-- [ ] Supervisor approves → Intern receives `intern_log_approved` notification
-- [ ] Supervisor reviews with notes → Intern receives feedback notification
+### Associate Daily Log Flow
+- [ ] Associate submits daily log → Supervisor/Admin receives `intern_log_submitted`
+- [ ] Supervisor approves → Associate receives `intern_log_approved` notification
+- [ ] Supervisor reviews with notes → Associate receives feedback notification
 - [ ] Log date is correctly included in metadata
 - [ ] Audit log shows action type (approve vs review)
 
@@ -257,13 +257,13 @@ createNotification({
 // Retrieved via getAdminUserIds() helper
 ```
 
-**Employee/Intern Notifications Sent To:**
+**Employee/Associate Notifications Sent To:**
 ```typescript
 // Specific user ID based on submission owner or relationship
 // Examples:
 // - data.employee_id for invoices
 // - data.user_id for onboarding
-// - intern user ID for daily logs
+// - associate user ID for daily logs
 ```
 
 ### Notification Delivery

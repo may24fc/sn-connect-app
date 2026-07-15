@@ -74,7 +74,7 @@ Think of this like a security clearance process:
 
 3. **Real-Time Subscriptions**:
    - ✅ **RLS Gated:** Subscriptions respect RLS policies on `onboarding_profiles` and `users` tables
-   - ✅ **Filtered by Role:** Admin can only see submissions for their tier (`intern` or `employee`)
+   - ✅ **Filtered by Role:** Admin can only see submissions for their tier (`associate` or `employee`)
 
 ### Attack Vectors Mitigated
 
@@ -188,7 +188,7 @@ Central location ensures all login paths (including refreshes) respect status ro
 Both `Interns` and `Employee Probation` pages now have:
 - **Onboarding Tab** with real-time monitoring
 - **Pending Approvals Card** (highlighted when >0 submissions)
-- **Invite Employee/Intern Button** (opens modal)
+- **Invite Employee/Associate Button** (opens modal)
 - **Real-time connection indicator** (pulsing green dot)
 
 ## ⚠️ Pitfalls (Common Mistakes to Avoid)
@@ -220,7 +220,7 @@ Both `Interns` and `Employee Probation` pages now have:
 ```bash
 # As admin@test.com:
 1. Navigate to /admin/interns or /admin/probation
-2. Click "Invite Intern/Employee"
+2. Click "Invite Associate/Employee"
 3. Fill form, submit
 4. Verify credentials shown with copy buttons
 5. Check Supabase Dashboard:
@@ -304,7 +304,7 @@ Expected: Tab 1 shows new pending approval WITHOUT page refresh
    - Supabase real-time subscription hook for pending approvals
 
 7. **apps/web/src/components/admin/InviteUserModal.tsx**  
-   - Modal for admin to invite employee/intern
+   - Modal for admin to invite employee/associate
 
 8. **apps/web/src/components/admin/ApproveOnboardingModal.tsx**  
    - Modal for admin to review and approve onboarding submissions
@@ -324,7 +324,7 @@ Expected: Tab 1 shows new pending approval WITHOUT page refresh
 
 3. **apps/web/src/app/(admin)/admin/interns/page.tsx**  
    - Integrated real-time monitoring
-   - Added Invite Intern button
+   - Added Invite Associate button
    - Redesigned Onboarding tab with pending approvals
 
 4. **apps/web/src/app/(admin)/admin/probation/page.tsx**  
@@ -500,7 +500,7 @@ The **Credentials-First Onboarding Flow** is now fully implemented with:
 **Demo Flow:**
 1. Login as admin
 2. Navigate to Interns page
-3. Click "Invite Intern"
+3. Click "Invite Associate"
 4. Create test user
 5. Logout, login as new user with temp password
 6. Complete onboarding

@@ -72,7 +72,7 @@ async function resolveEmployeeProfile(
 /**
  * POST /api/expenses/log
  * Manual spend REQUEST logging (no receipt required). Available to every
- * authenticated staff member/intern per the Control Hub matching proposal:
+ * authenticated staff member/associate per the Control Hub matching proposal:
  * "type it into the tracker manually" to stay accountable for requested spend.
  */
 export async function POST(request: NextRequest) {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         expense_type: parsed.data.expenseType,
         business_justification: parsed.data.businessJustification || null,
         risk_bucket: 'pending',
-        processing_status: 'awaiting_intern_review',
+        processing_status: 'awaiting_associate_review',
         department_id: departmentId,
         created_by: user.id,
       })

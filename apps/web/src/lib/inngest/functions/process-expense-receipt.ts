@@ -199,7 +199,7 @@ export const processExpenseReceipt = inngest.createFunction(
             ai_credit_account: suggestion.creditAccount,
             ai_confidence: combinedAiConfidence,
             expense_type: inferredExpenseType,
-            processing_status: 'awaiting_intern_review',
+            processing_status: 'awaiting_associate_review',
           })
           .eq('id', expenseEntryId)
           .is('deleted_at', null);
@@ -217,7 +217,7 @@ export const processExpenseReceipt = inngest.createFunction(
         await adminClient
           .from('expense_entries')
           .update({
-            processing_status: 'awaiting_intern_review',
+            processing_status: 'awaiting_associate_review',
             reviewer_notes: `Receipt extraction failed: ${message}`,
           })
           .eq('id', expenseEntryId)

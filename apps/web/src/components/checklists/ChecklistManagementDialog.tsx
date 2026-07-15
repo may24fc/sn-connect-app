@@ -45,7 +45,7 @@ export function ChecklistManagementDialog({
         <DialogHeader>
           <DialogTitle>Manage Checklists</DialogTitle>
           <DialogDescription>
-            Manage employee onboarding, intern onboarding, and offboarding tasks from one workspace.
+            Manage employee onboarding, associate onboarding, and offboarding tasks from one workspace.
           </DialogDescription>
         </DialogHeader>
 
@@ -74,7 +74,7 @@ export function ChecklistManagementDialog({
               active={open && activeTab === 'interns'}
               closeDialog={() => onOpenChange(false)}
               profiles={internProfiles}
-              roleLabel="intern"
+              roleLabel="associate"
             />
           </TabsContent>
 

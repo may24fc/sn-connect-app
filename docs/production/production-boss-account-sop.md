@@ -9,7 +9,7 @@ The preferred path is now the in-app privileged invite flow. Manual Supabase-adm
 Use the in-app privileged invite flow.
 
 Current production-safe behaviour:
-- `admin` users can still invite `employee` and `intern`
+- `admin` users can still invite `employee` and `associate`
 - only `super_admin` users can invite `admin` and `super_admin`
 - privileged invites are created as immediately active accounts
 - privileged invites do not go through onboarding
@@ -174,7 +174,7 @@ Outside the codebase, document:
 
 Do not:
 
-- Use the standard employee or intern invite flow for boss accounts
+- Use the standard employee or associate invite flow for boss accounts
 - Reuse test-account passwords such as `password`
 - Leave the account in `pending_onboarding`
 - Assign `super_admin` broadly

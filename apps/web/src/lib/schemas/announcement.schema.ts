@@ -20,7 +20,7 @@ export const announcementCategorySchema = z.enum([
 ]);
 
 // Valid consolidated role names
-const validRoles = ['employee', 'intern', 'admin', 'super_admin'] as const;
+const validRoles = ['employee', 'associate', 'admin', 'super_admin'] as const;
 
 // Accepts ISO 8601 datetime strings or null/undefined
 const optionalDatetime = z.string().datetime({ offset: true }).nullable().optional();

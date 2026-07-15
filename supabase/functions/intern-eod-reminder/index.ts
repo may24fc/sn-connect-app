@@ -56,7 +56,7 @@ serve(async (req: Request): Promise<Response> => {
       .is('deleted_at', null);
 
     if (internError) {
-      console.error('[intern-eod-reminder] Internship query error:', internError.message);
+      console.error('[associate-eod-reminder] Internship query error:', internError.message);
       return new Response(
         JSON.stringify({ success: false, error: 'Failed to query internships' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -79,7 +79,7 @@ serve(async (req: Request): Promise<Response> => {
       .eq('log_date', today);
 
     if (logError) {
-      console.error('[intern-eod-reminder] Log query error:', logError.message);
+      console.error('[associate-eod-reminder] Log query error:', logError.message);
     }
 
     const submittedIds = new Set(
@@ -112,15 +112,15 @@ serve(async (req: Request): Promise<Response> => {
 
     let remindedCount = 0;
 
-    for (const intern of missingInterns) {
+    for (const associate of missingInterns) {
       await createInAppNotification(supabase, {
-        userId: intern.user_id,
+        userId: associate.user_id,
         type: 'reminder',
         title: 'EOD Log Reminder',
-        message: `Hi ${intern.first_name}, please submit your daily log for ${today} before end of day.`,
-        link: '/intern/daily-log',
-        dedupeKey: `intern-eod-reminder:${intern.employee_id}:${today}`,
-        metadata: { internshipId: intern.id, logDate: today },
+        message: `Hi ${associate.first_name}, please submit your daily log for ${today} before end of day.`,
+        link: '/associate/daily-log',
+        dedupeKey: `associate-eod-reminder:${associate.employee_id}:${today}`,
+        metadata: { internshipId: associate.id, logDate: today },
       });
       remindedCount++;
     }
@@ -152,7 +152,7 @@ serve(async (req: Request): Promise<Response> => {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[intern-eod-reminder] Error:', message);
+    console.error('[associate-eod-reminder] Error:', message);
     return new Response(
       JSON.stringify({ success: false, error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

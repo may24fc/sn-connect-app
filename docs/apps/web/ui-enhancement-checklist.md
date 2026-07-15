@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The HR Portal (`apps/web`) is a feature-rich application with ~65 pages across employee, admin, super-admin, and intern routes. The Playwright audit identified several areas for improvement, with **SlidePanel sizing** being the primary concern highlighted by stakeholders.
+The HR Portal (`apps/web`) is a feature-rich application with ~65 pages across employee, admin, super-admin, and associate routes. The Playwright audit identified several areas for improvement, with **SlidePanel sizing** being the primary concern highlighted by stakeholders.
 
 ### Key Findings
 
@@ -84,7 +84,7 @@ interface SlidePanelContentProps
 | Admin Jobs - Create Job | `lg` (512px) | `2xl` (672px) | 8+ fields, 2-column grids |
 | Admin Jobs - Applications Detail | `lg` (512px) | `2xl` (672px) | Resume viewer, interview notes |
 | Performance - Create OKR | `lg` (512px) | `xl` (576px) | Form is manageable |
-| Intern Dashboard - EOD Report | `xl` (576px) | `2xl` (672px) | Multi-section form |
+| Associate Dashboard - EOD Report | `xl` (576px) | `2xl` (672px) | Multi-section form |
 | OKRs Detail - Add Key Result | `xl` (576px) | `2xl` (672px) | Complex form with targets |
 
 **Implementation Tasks:**
@@ -92,7 +92,7 @@ interface SlidePanelContentProps
 - [ ] **1.2.1** Update `packages/ui/src/primitives/slide-panel.tsx` - Add new sizes
 - [ ] **1.2.2** Update `apps/web/src/app/(admin)/admin/jobs/page.tsx` - Change to `size="2xl"`
 - [ ] **1.2.3** Update `apps/web/src/app/(admin)/admin/jobs/applications/page.tsx` - Change to `size="2xl"`
-- [ ] **1.2.4** Update `apps/web/src/app/(employee)/intern/dashboard/page.tsx` - Change to `size="2xl"`
+- [ ] **1.2.4** Update `apps/web/src/app/(employee)/associate/dashboard/page.tsx` - Change to `size="2xl"`
 - [ ] **1.2.5** Update `apps/web/src/app/(employee)/performance/okrs/[id]/page.tsx` - Change to `size="2xl"`
 
 ---
@@ -286,7 +286,7 @@ grep -r "SlidePanelContent size=" apps/web/src --include="*.tsx"
 # jobs/page.tsx:421:        <SlidePanelContent size="lg">
 # applications/page.tsx:468:        <SlidePanelContent size="lg">
 # performance/page.tsx:405:        <SlidePanelContent size="lg">
-# intern/dashboard/page.tsx:329:        <SlidePanelContent size="xl">
+# associate/dashboard/page.tsx:329:        <SlidePanelContent size="xl">
 # okrs/[id]/page.tsx:493:        <SlidePanelContent size="xl">
 # okrs/page.tsx:371:        <SlidePanelContent size="xl">
 ```
@@ -326,6 +326,6 @@ Focus on:
 | 🔴 High | `packages/ui/src/primitives/slide-panel.tsx` | Add new sizes |
 | 🔴 High | `apps/web/src/app/(admin)/admin/jobs/page.tsx` | `size="2xl"` |
 | 🔴 High | `apps/web/src/app/(admin)/admin/jobs/applications/page.tsx` | `size="2xl"` |
-| 🟡 Med | `apps/web/src/app/(employee)/intern/dashboard/page.tsx` | `size="2xl"` |
+| 🟡 Med | `apps/web/src/app/(employee)/associate/dashboard/page.tsx` | `size="2xl"` |
 | 🟡 Med | `apps/web/src/app/(employee)/performance/okrs/[id]/page.tsx` | `size="2xl"` |
 | 🟢 Low | All form pages | Responsive grid updates |

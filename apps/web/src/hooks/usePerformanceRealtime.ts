@@ -11,7 +11,7 @@ import { useEffect } from 'react';
  * in sync without a manual refetch.
  *
  * Data flow:
- *   Tier 1 (employee/intern) updates OKR progress or KPI value
+ *   Tier 1 (employee/associate) updates OKR progress or KPI value
  *     -> Supabase CDC broadcasts the row change
  *       -> This hook receives the event and invalidates the query cache
  *         -> TanStack Query refetches, Tier 2/3 admin sees the update immediately

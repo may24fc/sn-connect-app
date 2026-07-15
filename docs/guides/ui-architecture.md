@@ -27,7 +27,7 @@ sn-hr-portal/
 │       └── src/
 │           └── app/            # App router pages
 │               ├── (auth)/     # Authentication routes
-│               ├── (employee)/ # Employee & Intern portal routes
+│               ├── (employee)/ # Employee & Associate portal routes
 │               └── (admin)/    # Admin & Super Admin routes
 │                   └── super-admin/ # Super Admin-only routes (passthrough layout)
 ├── packages/
@@ -52,7 +52,7 @@ Next.js route groups organize pages by user role:
 | Route Group | Path Prefix | Layout | User Roles |
 |-------------|-------------|--------|------------|
 | `(auth)` | `/` | Auth layout | Unauthenticated |
-| `(employee)` | `/` | Employee layout | Employee, Intern |
+| `(employee)` | `/` | Employee layout | Employee, Associate |
 | `(admin)` | `/` | Admin layout | Admin, Super Admin |
 
 ### Complete Route Map
@@ -100,13 +100,13 @@ Next.js route groups organize pages by user role:
 /manager/team-performance  # (employee) Team performance view [MANAGER]
 
 # ═══════════════════════════════════════════════════════════════════
-# INTERN ROUTES (variant="intern")
+# INTERN ROUTES (variant="associate")
 # Similar to employee but NO /invoice, different dashboard
 # ═══════════════════════════════════════════════════════════════════
-/intern/dashboard          # (employee) Intern-specific dashboard
-/intern/profile            # (employee) Intern profile
-/intern/setup              # (employee) Intern onboarding setup
-/intern/reports            # (employee) Daily EOD reports
+/associate/dashboard          # (employee) Associate-specific dashboard
+/associate/profile            # (employee) Associate profile
+/associate/setup              # (employee) Associate onboarding setup
+/associate/reports            # (employee) Daily EOD reports
 # Interns also access: /onboarding, /files, /performance,
 # /announcements, /announcements/starred, /tasks, /tasks/[id],
 # /tickets, /tickets/[id], /information-hub, /help
@@ -120,8 +120,8 @@ Next.js route groups organize pages by user role:
 /admin/directory           # (admin) Employee directory
 /admin/directory/[userId]  # (admin) Employee detail view
 /admin/employee-management # (admin) Employee management
-/admin/interns             # (admin) Intern management
-/admin/interns/[id]        # (admin) Intern detail
+/admin/interns             # (admin) Associate management
+/admin/interns/[id]        # (admin) Associate detail
 /admin/checklists          # (admin) Onboarding/offboarding checklist templates
 /admin/onboarding/[id]     # (admin) Onboarding profile detail
 /admin/performance         # (admin) Performance admin
@@ -195,8 +195,8 @@ Each route group has a corresponding layout component that provides:
 
 ```typescript
 export default function EmployeeLayout({ children }: { children: ReactNode }) {
-  const user = useRequireAuth(['employee', 'intern']);
-  const sidebarVariant = user?.role === 'intern' ? 'intern' : 'employee';
+  const user = useRequireAuth(['employee', 'associate']);
+  const sidebarVariant = user?.role === 'associate' ? 'associate' : 'employee';
 
   return (
     <div className="flex h-screen bg-muted/30">
@@ -236,12 +236,12 @@ The `Sidebar` component accepts a `variant` prop that determines navigation item
 | Variant | Navigation Items |
 |---------|-----------------|
 | `employee` | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, Marketing Reports (conditional), Invoice, Documents, Announcements, Resources |
-| `intern` | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, EOD Reports, Documents, Announcements, Resources |
-| `admin` | Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Recruitment, Jobs, Company Pulse, Announcements, AI Knowledge, Resources, Tickets |
-| `super_admin` | Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Task Management, Payroll Approvals, Company Pulse, Announcements, AI Knowledge, Resources |
+| `associate` | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, EOD Reports, Documents, Announcements, Resources |
+| `admin` | Dashboard, Directory, Employee Management, Associate Management, Checklists, Performance, Marketing Reports, Recruitment, Jobs, Company Pulse, Announcements, AI Knowledge, Resources, Tickets |
+| `super_admin` | Dashboard, Directory, Employee Management, Associate Management, Checklists, Performance, Marketing Reports, Task Management, Payroll Approvals, Company Pulse, Announcements, AI Knowledge, Resources |
 
 ```typescript
-export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 ```
 
 **Note:** Admin and Super Admin share the same `(admin)` layout. The layout dynamically selects the sidebar variant based on user role. Super Admin has additional routes for Task Management and Payroll Approvals.
@@ -309,7 +309,7 @@ Organized by domain:
 | `dashboard/` | Dashboard-specific components |
 | `documents/` | File list, upload components |
 | `forms/` | Reusable form components |
-| `internship/` | Intern cards, EOD report form, hours tracking |
+| `internship/` | Associate cards, EOD report form, hours tracking |
 | `notifications/` | Notification UI |
 | `performance/` | OKR/KPI cards, performance charts, summary cards |
 | `profile/` | Profile-related UI |
@@ -505,7 +505,7 @@ Each component exports its props interface:
 
 ```typescript
 export interface SidebarProps {
-  variant: UserRole;                    // 'employee' | 'intern' | 'admin' | 'super_admin'
+  variant: UserRole;                    // 'employee' | 'associate' | 'admin' | 'super_admin'
   currentPath: string;
   onNavigate: (href: string) => void;
   logoUrl?: string;

@@ -45,8 +45,8 @@ You are a Senior AI Software Engineer and Lead Architect specializing in serverl
 | 10 | `probation-tracking.json` | Cron | Daily 8 AM | Employee Lifecycle |
 | 11 | `onboarding-new-employee.json` | Webhook POST | On-demand | Employee Lifecycle |
 | 12 | `offboarding-exit-process.json` | Webhook POST | On-demand | Employee Lifecycle |
-| 13 | `intern-eod-reminder.json` | Cron | Daily 4 PM | Intern Management |
-| 14 | `intern-weekly-summary.json` | Cron | Friday 5 PM | Intern Management |
+| 13 | `associate-eod-reminder.json` | Cron | Daily 4 PM | Associate Management |
+| 14 | `associate-weekly-summary.json` | Cron | Friday 5 PM | Associate Management |
 
 ### Target Environment
 
@@ -518,12 +518,12 @@ After critical path is validated, migrate in batches using the same patterns:
 | `notifications-payroll-reminder` | `payroll-reminder` | `0 0 * * *` |
 | `resources-new-notification` | `resource-published-notify` | Webhook (no cron) |
 
-### Batch 4: Intern Management (2 workflows → 2 Edge Functions)
+### Batch 4: Associate Management (2 workflows → 2 Edge Functions)
 
 | n8n Workflow | Edge Function | Vercel Cron |
 |---|---|---|
-| `intern-eod-reminder` | `intern-eod-reminder` | `0 8 * * *` (4 PM PHT) |
-| `intern-weekly-summary` | `intern-weekly-summary` | `0 9 * * 5` (5 PM PHT Friday) |
+| `associate-eod-reminder` | `associate-eod-reminder` | `0 8 * * *` (4 PM PHT) |
+| `associate-weekly-summary` | `associate-weekly-summary` | `0 9 * * 5` (5 PM PHT Friday) |
 
 ---
 

@@ -338,7 +338,7 @@ curl -X DELETE https://your-app.com/api/employees/550e8400-e29b-41d4-a716-446655
 | `employee_number` | `text` | Yes | Unique employee identifier |
 | `department` | `text` | Yes | Department name |
 | `position` | `text` | Yes | Job title |
-| `employment_type` | `employment_type` | No | `regular`, `probationary`, `intern`, `project_based` |
+| `employment_type` | `employment_type` | No | `regular`, `probationary`, `associate`, `project_based` |
 | `work_arrangement` | `work_arrangement` | No | `full_time`, `part_time` |
 | `date_hired` | `date` | Yes | Employment start date |
 | `immediate_head` | `uuid` | Yes | FK → `auth.users(id)` (manager) |

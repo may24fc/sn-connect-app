@@ -315,7 +315,7 @@ export default function AdminExpensesDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All states</SelectItem>
-                      <SelectItem value="awaiting_intern_review">Awaiting intern review</SelectItem>
+                      <SelectItem value="awaiting_associate_review">Awaiting associate review</SelectItem>
                       <SelectItem value="leadership_review_required">Leadership review required</SelectItem>
                       <SelectItem value="auto_approved">Auto-approved</SelectItem>
                       <SelectItem value="approved">Approved</SelectItem>

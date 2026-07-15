@@ -9,7 +9,7 @@ This comprehensive guide covers all user workflows available in the SN HR Portal
 3. [Authentication](#authentication)
 4. [Employee Workflows](#employee-workflows)
 5. [Manager Workflows](#manager-workflows)
-6. [Intern Workflows](#intern-workflows)
+6. [Associate Workflows](#associate-workflows)
 7. [Admin (HR) Workflows](#admin-hr-workflows)
 8. [Super Admin Workflows](#super-admin-workflows)
 9. [AI Assistant](#ai-assistant)
@@ -44,8 +44,8 @@ The portal supports four distinct user roles, each with specific navigation and 
 | Role | Primary Functions | Navigation Items |
 |------|-------------------|------------------|
 | **Employee** | Self-service HR tasks, document management, performance tracking, reports | Dashboard, Profile, Tasks, Performance Reviews, Reports, Invoice, Documents, Information Hub |
-| **Intern** | Task tracking, document management, performance | Dashboard, Profile, Tasks, Performance Reviews, Documents, Information Hub |
-| **Admin (HR)** | HR administration, performance management, intern oversight, reporting analytics | Dashboard, Directory, Employee Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources |
+| **Associate** | Task tracking, document management, performance | Dashboard, Profile, Tasks, Performance Reviews, Documents, Information Hub |
+| **Admin (HR)** | HR administration, performance management, associate oversight, reporting analytics | Dashboard, Directory, Employee Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources |
 | **Super Admin** | Full system control, task management, payroll approvals, system monitoring | Dashboard, Directory, Employee Management, Task Management, Interns, Performance, Reports, Jobs, Announcements, AI Knowledge, Resources, Payroll Approvals |
 
 ### Manager Access
@@ -79,7 +79,7 @@ The login page provides secure access to the portal.
 | Role | Redirect Path |
 |------|---------------|
 | Employee | `/dashboard` |
-| Intern | `/intern/dashboard` |
+| Associate | `/associate/dashboard` |
 | Admin | `/admin/dashboard` |
 | Super Admin | `/super-admin/dashboard` |
 
@@ -478,13 +478,13 @@ Queue of team members awaiting manager review.
 
 ---
 
-## Intern Workflows
+## Associate Workflows
 
 Interns have a specialized interface focused on task completion and development.
 
-### Intern Dashboard (`/intern/dashboard`)
+### Associate Dashboard (`/associate/dashboard`)
 
-Central hub for intern activities.
+Central hub for associate activities.
 
 **Features:**
 
@@ -524,19 +524,19 @@ Central hub for intern activities.
    - Preview of your progress update
    - "View All" link to full reports
 
-### Intern Navigation
+### Associate Navigation
 
 Interns have access to:
 - Profile (`/profile`)
-- Dashboard (`/intern/dashboard`)
+- Dashboard (`/associate/dashboard`)
 - My Tasks (`/tasks`)
 - Performance Reviews (`/performance`)
 - My 201 Files (`/files`)
 - Information Hub (`/information-hub`)
 
-**Intern-specific routes:**
-- Daily Reports (`/intern/reports`)
-- Intern Profile (`/intern/profile`)
+**Associate-specific routes:**
+- Daily Reports (`/associate/reports`)
+- Associate Profile (`/associate/profile`)
 
 Note: Interns do not have access to Invoice or Reports features.
 
@@ -564,7 +564,7 @@ HR overview for approvals, recent activity, and company-wide updates.
 
 3. **Needs Attention Carousel**
    - Rotating action banners for live operational concerns
-   - Role-aware items such as overdue intern EODs, onboarding approvals, probation follow-ups, pending reports, and pending reviews
+   - Role-aware items such as overdue associate EODs, onboarding approvals, probation follow-ups, pending reports, and pending reviews
    - Click-through actions open the exact admin work area for the current concern
    - Falls back to an "All caught up!" state when nothing needs attention
 
@@ -763,7 +763,7 @@ Monitor and manage employee probation periods.
      - Feedback text area
    - Cancel/Submit Appraisal buttons
 
-### Intern Management (`/admin/interns`)
+### Associate Management (`/admin/interns`)
 
 Oversee all interns across the organization.
 
@@ -771,7 +771,7 @@ Oversee all interns across the organization.
 
 1. **Header Actions**
    - "Export Report" button
-   - "Add Intern" button
+   - "Add Associate" button
 
 2. **Summary Cards**
    - Total Interns
@@ -792,8 +792,8 @@ Oversee all interns across the organization.
    - Grid view (card layout)
    - List view (row layout)
 
-5. **Intern Display**
-   Each intern card/row shows:
+5. **Associate Display**
+   Each associate card/row shows:
    - Name, school, program
    - Department, supervisor
    - Hours progress bar
@@ -806,12 +806,12 @@ Oversee all interns across the organization.
    - Warning card when reports need review
    - Guidance message for timely feedback
 
-### Intern Detail (`/admin/interns/[id]`)
+### Associate Detail (`/admin/interns/[id]`)
 
-View detailed information for a specific intern.
+View detailed information for a specific associate.
 
 **Features:**
-- Complete intern profile
+- Complete associate profile
 - Full report history
 - Hour tracking details
 - Supervisor feedback

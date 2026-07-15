@@ -15,14 +15,14 @@ Personalized greeting with a **"Manage Employees"** shortcut button.
 | Card | Description |
 |------|-------------|
 | **Total Employees** | Company-wide headcount (from `/api/dashboard/stats`) |
-| **Active Interns** | Currently active intern count |
+| **Active Interns** | Currently active associate count |
 | **Reviews Due** | Performance reviews needing attention |
 
 ### Needs Attention Carousel
 
 Role-aware action banners at the top of the dashboard combine live operational concerns from the dashboard API, onboarding approvals, and probation monitoring.
 
-- Admin sees live banners for reports, late intern EODs, onboarding approvals, probation follow-ups, and pending reviews
+- Admin sees live banners for reports, late associate EODs, onboarding approvals, probation follow-ups, and pending reviews
 - Super Admin sees the same operational items plus payroll approvals when present
 - Each slide links directly to the relevant work area
 - Empty state falls back to **"All caught up!"** when no concerns are active
@@ -71,7 +71,7 @@ Additional sections:
 | Create a job posting | Jobs → Create New |
 | Review applications | Jobs → Applications |
 | Create a performance cycle | Performance → Manage Cycles |
-| Review intern reports | Interns → Select intern → Reports |
+| Review associate reports | Interns → Select associate → Reports |
 | Publish an announcement | Announcements → Create New |
 | Upload AI knowledge | AI Knowledge → Upload |
 | Manage resource categories | Resources → Categories |

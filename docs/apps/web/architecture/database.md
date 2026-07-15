@@ -15,7 +15,7 @@ Extends `auth.users` with HR-specific fields. Every authenticated user has a row
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | uuid PK | References `auth.users(id)` |
-| `role` | user_role | employee, intern, admin, super_admin |
+| `role` | user_role | employee, associate, admin, super_admin |
 | `department_id` | FK departments | |
 | `manager_id` | FK users (self) | Direct manager |
 | `status` | user_status | active, on_leave, terminated |
@@ -198,9 +198,9 @@ Tracks sensitive operations. Insert-only (no update/delete).
 
 | Enum | Values |
 |------|--------|
-| `user_role` | admin, hr, cos, ceo, employee, intern |
+| `user_role` | admin, hr, cos, ceo, employee, associate |
 | `user_status` | active, on_leave, terminated |
-| `employment_type` | regular, probationary, intern, project_based |
+| `employment_type` | regular, probationary, associate, project_based |
 | `work_arrangement` | part_time, full_time |
 | `document_type` | contract, id, certificate, performance_review, tax, medical, training, disciplinary, leave, other |
 | `task_status` | todo, in_progress, completed, on_hold, cancelled |
@@ -264,7 +264,7 @@ Examples:
 4. **20260216-20260217** — Schema repairs, RLS fixes, role consolidation, super_admin support
 5. **20260218** — Storage buckets and storage RLS policies
 6. **20260221-20260222** — AI knowledge tables (pgvector), standup tables
-7. **20260227** — Notifications, audit log normalization, phone country codes, FX rates, bank registry, report hierarchy, knowledge versioning, resource categories, intern self-init policies
+7. **20260227** — Notifications, audit log normalization, phone country codes, FX rates, bank registry, report hierarchy, knowledge versioning, resource categories, associate self-init policies
 8. **20260228** — Directory view, performance summary view, OKR/KPI automation, user role metadata, task tags, resource access levels
 
 ### Running Migrations

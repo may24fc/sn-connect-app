@@ -16,7 +16,7 @@ Crucially, the system routes all automated entries to an **Internal Reviewer Che
 
 ▼ 
 
-[Accounting Intern Review Queue] (Double-Entry Verification) 
+[Accounting Associate Review Queue] (Double-Entry Verification) 
 
 ▼ 
 
@@ -32,9 +32,9 @@ Crucially, the system routes all automated entries to an **Internal Reviewer Che
 
 - **Intelligent Smart-Suggestions:** Using historical ledger memory, the AI automatically drafts a preliminary double-entry mapping. For example, if it recognizes "AWS," it automatically pre-fills a suggested Debit account ( _Software Subscriptions_ ) and Credit account ( _Company Credit Card_ ). 
 
-## **Step 2: The Accounting Intern Verification Checkpoint (Data Gatekeeper)** 
+## **Step 2: The Accounting Associate Verification Checkpoint (Data Gatekeeper)** 
 
-- **How it works:** Staff submissions do not hit the master database or executive dashboard directly. They are held in a secure **Review Queue** for the Accounting Intern. 
+- **How it works:** Staff submissions do not hit the master database or executive dashboard directly. They are held in a secure **Review Queue** for the Accounting Associate. 
 
 - **The Interface:** A fast, split-screen dashboard displaying the original receipt image on one side and the AI's drafted accounting entry on the other. 
 
@@ -62,16 +62,16 @@ Once you commit the verified transaction, the system runs a background script to
 
 Instead of reviewing every single transaction, leadership manages strictly by exception. Because you have already verified the structural data and accounting entry accuracy in Step 2, Steven and Miss May only see three clean, high-level action buckets: 
 
-|**Expense**<br>**Bucket**|**System & Intern Acton**|**Leadership View**|
+|**Expense**<br>**Bucket**|**System & Associate Acton**|**Leadership View**|
 |---|---|---|
-|**Standard**<br>**Recurring**|Verifed by Intern; auto-matched to<br>historical budget baselines.|Archived and logged automatcally.|
-|**Price Spikes**|Verifed by Intern; system detected a<br>sudden month-over-month increase.|**Highlighted in Yellow**for quick executve<br>trend review.|
+|**Standard**<br>**Recurring**|Verifed by Associate; auto-matched to<br>historical budget baselines.|Archived and logged automatcally.|
+|**Price Spikes**|Verifed by Associate; system detected a<br>sudden month-over-month increase.|**Highlighted in Yellow**for quick executve<br>trend review.|
 
 
 
-|**Expense**<br>**Bucket**|**System & Intern Acton**|**Leadership View**|
+|**Expense**<br>**Bucket**|**System & Associate Acton**|**Leadership View**|
 |---|---|---|
-|**Non-**|Verifed by Intern; marked as an|**Locked in Red.**Requires an actve|
+|**Non-**|Verifed by Associate; marked as an|**Locked in Red.**Requires an actve|
 |**Recurring**|unexpected or one-of cost.|"Approve/Reject" click to release funds.|
 
 

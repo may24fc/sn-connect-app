@@ -90,7 +90,7 @@ Before loading `supabase/seed/01_sample_data.sql`, you need to create correspond
 | a3333333-3333-3333-3333-333333333333 | hr@company.com | HR |
 | a4444444-4444-4444-4444-444444444444 | eng.head@company.com | Employee |
 | a7777777-7777-7777-7777-777777777777 | miguel.ramos@company.com | Employee |
-| a9999999-9999-9999-9999-999999999999 | isabella.mendoza@company.com | Intern |
+| a9999999-9999-9999-9999-999999999999 | isabella.mendoza@company.com | Associate |
 | aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa | admin@company.com | Admin |
 
 ### Step 4: Configure Environment Variables

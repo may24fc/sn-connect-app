@@ -96,7 +96,7 @@ test.describe('Auth Callback — Full Flow (requires credentials)', () => {
     await page.locator('#password').fill(authPassword!);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|intern|onboarding)/, {
+    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|associate|onboarding)/, {
       timeout: 15000,
     });
 
@@ -119,7 +119,7 @@ test.describe('Auth Callback — Full Flow (requires credentials)', () => {
     await page.locator('#password').fill(authPassword!);
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|intern|onboarding)/, {
+    await expect(page).toHaveURL(/\/(dashboard|admin|super-admin|associate|onboarding)/, {
       timeout: 15000,
     });
 

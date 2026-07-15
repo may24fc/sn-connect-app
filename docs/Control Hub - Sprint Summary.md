@@ -12,7 +12,7 @@
 
 **Sprint Period:** May 5 - June 27, 2026 (8 Sprints)
 
-**Developer:** Ceferino, Senior AI Intern
+**Developer:** Ceferino, Senior AI Associate
 
 ## **Executive Summary**
 
@@ -21,7 +21,7 @@ This document is now the working implementation checklist for the current Contro
 Current sprint order:
 
 - **Week 1 (May 5-9):** Marketing Reports & Admin Dashboard closeout and usability verification.
-- **Week 2 (May 12-16):** EOD Intern Automation completion review plus follow-up reminder and formatting improvements.
+- **Week 2 (May 12-16):** EOD Associate Automation completion review plus follow-up reminder and formatting improvements.
 - **Week 3 (May 19-23):** Automated Monthly Self-Evaluation Form rollout plus Multi-Evaluator Feedback Form.
 - **Week 4 (May 26-30):** New Evaluation Forms — 5% Reflection and Quarterly Temperature Check.
 - **Week 5 (June 2-6):** Dual-Pipeline CRM Tracker for SFO retail orders and SN Tech B2B software inquiries.
@@ -58,7 +58,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 - [x] Admin dashboard clarity and user-friendliness are verified through a focused walkthrough.
 - [x] No new errors were introduced during the Marketing sprint changes.
 
-## **WEEK 2 · May 12-16, 2026 - EOD Intern Automation**
+## **WEEK 2 · May 12-16, 2026 - EOD Associate Automation**
 
 **Sprint status:** Dual-channel reminders implemented; project-based leadership summary follow-up added
 
@@ -66,19 +66,19 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 
 **Implementation checklist**
 
-- [x] Prevent duplicate intern reminders when the automation runs more than once on the same day.
+- [x] Prevent duplicate associate reminders when the automation runs more than once on the same day.
 - [x] Add retry handling and a Telegram alert when reminder delivery fails repeatedly.
 - [x] Review weekly daily logs before the supervisor summary email sends.
 - [x] Upgrade the supervisor summary into a clean structured email layout with metrics and warning banner logic.
 - [x] Fix the timezone handling so date checks use Philippines time.
 - [x] Add an automated duplicate-check test for reminder creation.
 - [x] Add reminder delivery through Gmail and linked Telegram preferences so interns can receive follow-ups in both channels.
-- [x] Send each intern weekly summary as its own dedicated message instead of grouping multiple interns into one cramped block.
-- [ ] Add a weekly intern project summary automation for leadership that highlights intern project progress.
+- [x] Send each associate weekly summary as its own dedicated message instead of grouping multiple interns into one cramped block.
+- [ ] Add a weekly associate project summary automation for leadership that highlights associate project progress.
 - [ ] Pull weekly project data from the Control Hub Projects and Leaderboard pages as the source of truth for the summary.
-- [ ] Show weekly progress percentages per intern and per project.
+- [ ] Show weekly progress percentages per associate and per project.
 - [ ] Include project health and project lead health in the weekly summary.
-- [ ] Show overall weekly project movement so leadership can see how much progress each intern made week over week.
+- [ ] Show overall weekly project movement so leadership can see how much progress each associate made week over week.
 - [ ] Format the weekly summary in a clean review-friendly layout for leadership consumption.
 - [x] Keep enhanced reminders idempotent through notification dedupe before Gmail and Telegram fan-out.
 
@@ -91,10 +91,10 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 - [x] The Philippines timezone fix is confirmed.
 - [ ] Telegram reminder delivery is verified end to end.
 - [ ] Gmail reminder delivery is verified end to end.
-- [x] Each intern appears in a distinct readable summary output instead of a grouped block.
-- [ ] The weekly intern project summary reflects the same percentages shown on the Projects and Leaderboard pages.
+- [x] Each associate appears in a distinct readable summary output instead of a grouped block.
+- [ ] The weekly associate project summary reflects the same percentages shown on the Projects and Leaderboard pages.
 - [ ] Project health and project lead health appear clearly in the weekly summary.
-- [ ] Leadership can quickly identify overall weekly progress per intern from the summary without opening the app.
+- [ ] Leadership can quickly identify overall weekly progress per associate from the summary without opening the app.
 
 ## **WEEK 3 · May 19-23, 2026 - Monthly Self-Evaluation Form Automation**
 
@@ -105,7 +105,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 **Implementation checklist**
 
 - [x] Run the monthly self-evaluation cadence automatically with month-end launch, reminder, and deadline notifications.
-- [x] Send the self-evaluation cadence to the active employee and intern audience, with in-app launch plus email and Telegram reminder stages.
+- [x] Send the self-evaluation cadence to the active employee and associate audience, with in-app launch plus email and Telegram reminder stages.
 - [x] Send reminder emails to anyone who has not yet submitted the form.
 - [x] Send Telegram reminders to anyone who has not yet submitted the form.
 - [x] Enforce one submission per person per month and block duplicate responses.
@@ -146,7 +146,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 **Verification checklist**
 
 - [x] The monthly self-evaluation cadence runs automatically during the month-end launch, reminder, and deadline window.
-- [x] Reminder email delivery is wired for the pending employee and intern audience.
+- [x] Reminder email delivery is wired for the pending employee and associate audience.
 - [x] Reminder emails only target non-respondents.
 - [x] Telegram reminders only target non-respondents.
 - [x] Duplicate submissions are blocked to one response per person per month.
@@ -185,7 +185,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 - [x] Trigger the 5% Reflection form automatically at the end of each month alongside the self-evaluation cadence.
 - [x] Trigger the Quarterly Temperature Check form automatically at the end of Q1, Q2, Q3, and Q4.
 - [x] Send email and Telegram reminders to non-respondents for both forms following the same deduplication pattern established in Week 3.
-- [x] Display both forms in the employee and intern portal under a unified Feedback & Evaluations section.
+- [x] Display both forms in the employee and associate portal under a unified Feedback & Evaluations section.
 
 **Verification checklist**
 
@@ -194,7 +194,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 - [x] Duplicate submissions are blocked per person per period for both forms.
 - [x] Reminders only target non-respondents for both forms.
 - [x] Leadership can view aggregated temperature check scores and 5% reflection highlights per quarter.
-- [x] Both forms are accessible from the employee and intern portal.
+- [x] Both forms are accessible from the employee and associate portal.
 - [x] No new errors were introduced during the evaluation form rollout.
 
 
@@ -250,7 +250,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 - [ ] Switching between `[SFO Dashboard]` and `[SN Tech Pipeline]` updates the view instantly without any page navigation.
 - [ ] SFO Mode renders all transactional fields with the A$ symbol correctly aligned inside row cards.
 - [ ] TECH Mode renders the multi-step profile review grid with no SFO-specific fields visible.
-- [ ] CRM records are restricted to `admin` and `super_admin`; `employee` and `intern` roles cannot access or create CRM records.
+- [ ] CRM records are restricted to `admin` and `super_admin`; `employee` and `associate` roles cannot access or create CRM records.
 - [ ] All create, update, and status change actions are logged to `audit_logs`.
 - [ ] Amount fields in SFO mode display A$ aligned with the Inter font stack at current app font sizes.
 - [ ] No new errors are introduced during the CRM tracker rollout.
@@ -355,7 +355,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 
 **Verification checklist**
 
-- [ ] Admin and super admin can add, edit, and archive expense entries; employee and intern roles cannot access the tracker.
+- [ ] Admin and super admin can add, edit, and archive expense entries; employee and associate roles cannot access the tracker.
 - [ ] The cost summary dashboard shows correct totals and per-category breakdowns.
 - [ ] Renewal alerts fire correctly for expenses within 14 days of their renewal date.
 - [ ] Multi-currency entries display correctly normalized to PHP.
@@ -369,7 +369,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 | Sprint | Focus | Goal | Key Deliverable | Status |
 | :---- | :---- | :---- | :---- | :---- |
 | Week 1 - May 5-9 | Marketing Reports & Admin Dashboard | Final closeout and usability verification | Completed feature work plus final admin dashboard clarity walkthrough | Completed |
-| Week 2 - May 12-16 | EOD Intern Automation | Preserve completed automation and add delivery improvements | Dual-channel reminders and per-intern weekly summaries are live; the project-based leadership summary is still pending | Completed with follow-up |
+| Week 2 - May 12-16 | EOD Associate Automation | Preserve completed automation and add delivery improvements | Dual-channel reminders and per-associate weekly summaries are live; the project-based leadership summary is still pending | Completed with follow-up |
 | Week 3 - May 19-23 | Monthly Self-Evaluation | Launch recurring monthly self and peer feedback collection | Monthly self-evaluation flow is live with reminders and admin review; multi-evaluator feedback remains pending | In progress |
 | Week 4 - May 26-30 | New Evaluation Forms | Launch 5% Reflection and Quarterly Temperature Check with automated distribution | Both forms live with deduplication, reminders, and leadership summary views | Completed |
 | Week 5 - June 2-6 | Dual-Pipeline CRM Tracker | Unified workspace for SFO retail orders and SN Tech B2B inquiries | State-driven form morphing, shared tab switcher, ₱ precision in SFO cards | Planned |
@@ -381,7 +381,7 @@ At the end of these eight sprints, the portal should have cleaner admin workflow
 | :---- | :---- |
 | **Total Sprints** | 8 - one focused sprint per delivery area |
 | **Sprint Period** | May 5 - June 27, 2026 |
-| **Developer** | Ceferino, Senior AI Intern |
+| **Developer** | Ceferino, Senior AI Associate |
 | **Type of Work** | Refinement plus dual-pipeline CRM tracker, two new recurring feedback forms, full knowledge base ingestion, and a new operational spend tracker |
 | **Tracking Method** | Checklist-driven implementation and verification per sprint |
 | **Definition of Done** | Each sprint is only complete when all required implementation and verification checkboxes are satisfied |

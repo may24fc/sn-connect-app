@@ -120,7 +120,7 @@ This document captures the repo audit for the requested user stories and lists o
    - `StepPaymentInfo` bank reset on country change;
    - `OTHER` manual-entry flow persistence.
 
-## 4. Unified Employee + Intern Directory
+## 4. Unified Employee + Associate Directory
 
 ### Audit
 

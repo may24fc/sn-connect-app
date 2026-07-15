@@ -55,7 +55,7 @@ export function RevenueForecastAccessManagerDialog({
 
   const directoryQuery = useDirectory({
     search,
-    roles: ['employee', 'intern'],
+    roles: ['employee', 'associate'],
     sortBy: 'full_name',
     sortOrder: 'asc',
     page: 1,
@@ -118,7 +118,7 @@ export function RevenueForecastAccessManagerDialog({
         <DialogHeader>
           <DialogTitle>Manage Revenue Forecast access</DialogTitle>
           <DialogDescription>
-            Grant Marketing or Finance employee/intern accounts access to the SFO Revenue Forecast
+            Grant Marketing or Finance employee/associate accounts access to the SFO Revenue Forecast
             page.
           </DialogDescription>
         </DialogHeader>
@@ -196,7 +196,7 @@ export function RevenueForecastAccessManagerDialog({
                 Grant access
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Search existing employee and intern accounts in Marketing and Finance departments.
+                Search existing employee and associate accounts in Marketing and Finance departments.
               </p>
             </div>
 
@@ -225,7 +225,7 @@ export function RevenueForecastAccessManagerDialog({
             ) : candidates.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border px-4 py-6 text-sm text-zinc-500 dark:text-zinc-400">
                 {search
-                  ? 'No matching Marketing/Finance employee or intern accounts found.'
+                  ? 'No matching Marketing/Finance employee or associate accounts found.'
                   : 'Everyone in the current result set already has access.'}
               </div>
             ) : (
@@ -280,7 +280,7 @@ export function RevenueForecastAccessManagerDialog({
             <div className="flex items-start gap-2">
               <Users className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <p>
-                Revenue Forecast delegates keep their existing employee or intern role. This grant
+                Revenue Forecast delegates keep their existing employee or associate role. This grant
                 only unlocks the SFO Revenue Forecast feature.
               </p>
             </div>

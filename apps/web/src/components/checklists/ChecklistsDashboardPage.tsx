@@ -260,11 +260,11 @@ function ChecklistRoleSection({
 export function ChecklistsDashboardPage(): ReactNode {
   const [managementDialogOpen, setManagementDialogOpen] = useState(false);
   const [managementTab, setManagementTab] = useState<ChecklistManagementTab>('employees');
-  const [overviewRoleFilter, setOverviewRoleFilter] = useState<'employee' | 'intern'>('employee');
+  const [overviewRoleFilter, setOverviewRoleFilter] = useState<'employee' | 'associate'>('employee');
   const [selectedOffboardingId, setSelectedOffboardingId] = useState<string | null>(null);
 
   const employeeProfilesQuery = useOnboardingProfiles({ role: 'employee', pageSize: 100 });
-  const internProfilesQuery = useOnboardingProfiles({ role: 'intern', pageSize: 100 });
+  const internProfilesQuery = useOnboardingProfiles({ role: 'associate', pageSize: 100 });
 
   const employeeProfiles = employeeProfilesQuery.data?.data ?? [];
   const internProfiles = internProfilesQuery.data?.data ?? [];
@@ -315,14 +315,14 @@ export function ChecklistsDashboardPage(): ReactNode {
     const role = Array.isArray(row.profile.users)
       ? row.profile.users[0]?.role
       : row.profile.users?.role;
-    return role !== 'intern';
+    return role !== 'associate';
   });
 
   const internRows = rows.filter((row) => {
     const role = Array.isArray(row.profile.users)
       ? row.profile.users[0]?.role
       : row.profile.users?.role;
-    return role === 'intern';
+    return role === 'associate';
   });
 
   const activeProfilesCount = rows.length;
@@ -350,11 +350,11 @@ export function ChecklistsDashboardPage(): ReactNode {
   const offboardingCompleted = offboardingRows.filter((record) => record.status === 'completed').length;
 
   const overviewConfig =
-    overviewRoleFilter === 'intern'
+    overviewRoleFilter === 'associate'
       ? {
-          title: 'Full Intern Overview',
+          title: 'Full Associate Overview',
           description:
-            'See onboarding wizard progress and custom checklist items for all intern accounts.',
+            'See onboarding wizard progress and custom checklist items for all associate accounts.',
           rows: internRows,
           isLoadingProfiles: internProfilesQuery.isLoading,
         }
@@ -437,7 +437,7 @@ export function ChecklistsDashboardPage(): ReactNode {
               <Select
                 value={overviewRoleFilter}
                 onValueChange={(value) =>
-                  setOverviewRoleFilter(value as 'employee' | 'intern')
+                  setOverviewRoleFilter(value as 'employee' | 'associate')
                 }
               >
                 <SelectTrigger aria-label="Choose overview role">
@@ -445,7 +445,7 @@ export function ChecklistsDashboardPage(): ReactNode {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="employee">Employees</SelectItem>
-                  <SelectItem value="intern">Interns</SelectItem>
+                  <SelectItem value="associate">Interns</SelectItem>
                 </SelectContent>
               </Select>
             }

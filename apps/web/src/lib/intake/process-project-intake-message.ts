@@ -84,7 +84,7 @@ export async function notifyProjectIntakeAudience({
     return;
   }
 
-  const recipientIds = await getUserIdsByRoles(['intern', 'employee']);
+  const recipientIds = await getUserIdsByRoles(['associate', 'employee']);
   if (recipientIds.length === 0) {
     return;
   }

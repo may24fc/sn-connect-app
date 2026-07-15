@@ -68,7 +68,7 @@ function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'success' 
       return 'default';
     case 'employee':
       return 'secondary';
-    case 'intern':
+    case 'associate':
       return 'warning';
     default:
       return 'secondary';

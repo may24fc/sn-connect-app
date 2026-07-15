@@ -11,9 +11,9 @@ const sampleUsers = [
     fullName: 'Sample Employee',
   },
   {
-    role: 'intern',
-    emailLocalPart: 'intern',
-    fullName: 'Sample Intern',
+    role: 'associate',
+    emailLocalPart: 'associate',
+    fullName: 'Sample Associate',
   },
   {
     role: 'admin',
@@ -200,7 +200,7 @@ async function createEmployeeForUser(baseUrl, headers, { userId, email, fullName
   const url = new URL('/rest/v1/employees', baseUrl);
   const names = (fullName || '').split(' ');
   const firstName = names.shift() || 'Sample';
-  const lastName = names.join(' ') || (role === 'intern' ? 'Intern' : 'Employee');
+  const lastName = names.join(' ') || (role === 'associate' ? 'Associate' : 'Employee');
   const empNum = `EMP-DEV-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const payload = {
     user_id: userId,
@@ -208,10 +208,10 @@ async function createEmployeeForUser(baseUrl, headers, { userId, email, fullName
     first_name: firstName,
     last_name: lastName,
     date_hired: new Date().toISOString().slice(0, 10),
-    employment_type: role === 'intern' ? 'intern' : 'regular',
-    work_arrangement: role === 'intern' ? 'part_time' : 'full_time',
-    position: role === 'intern' ? 'Intern' : 'Employee',
-    department: role === 'intern' ? 'Marketing' : 'Engineering',
+    employment_type: role === 'associate' ? 'associate' : 'regular',
+    work_arrangement: role === 'associate' ? 'part_time' : 'full_time',
+    position: role === 'associate' ? 'Associate' : 'Employee',
+    department: role === 'associate' ? 'Marketing' : 'Engineering',
     company_email: email,
   };
 
@@ -331,8 +331,8 @@ async function main() {
       status: 'active',
     });
 
-    // Ensure a minimal public.employees row exists for employee/intern accounts
-    if (user.role === 'employee' || user.role === 'intern') {
+    // Ensure a minimal public.employees row exists for employee/associate accounts
+    if (user.role === 'employee' || user.role === 'associate') {
       const existingEmp = await getEmployeeByUserId(baseUrl, adminHeaders, created.id);
       if (!existingEmp) {
         try {

@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Checklist templates** — `checklist_templates` table; `checklist_template_flow`, `checklist_template_scope` enums; `GET/PUT /api/checklist-templates`; `ChecklistsDashboardPage`, `ChecklistManagementDialog` components; `/admin/checklists`, `/super-admin/checklists` pages (`20260329000005`)
 - **AI conversation history** — `GET/POST /api/ai/conversations`, `PATCH/DELETE /api/ai/conversations/[id]`, `GET /api/ai/conversations/[id]/messages`; users can save, name, and revisit AI chat sessions
 - **AI chatbot suggestions** — `GET /api/ai/suggestions`, `POST /api/ai/suggestions/click`; surfaced prompt suggestions with Google Docs live sync
-- **Internship end/hire actions** — `POST /api/internships/[id]/actions`; admins can end an internship or convert intern to employee via hire action (`20260329000001`, `20260329000002`)
+- **Internship end/hire actions** — `POST /api/internships/[id]/actions`; admins can end an internship or convert associate to employee via hire action (`20260329000001`, `20260329000002`)
 - **Admin banking tools** — `GET /api/admin/banking-info-status` to check payment info completion across employees; `POST /api/admin/backfill-wise-recipients` for Super Admins to backfill missing Wise recipient IDs
 - **Company Pulse pages** — `/admin/company-pulse` and `/super-admin/company-pulse` pages with live company activity feed and health metrics
 - **Recruitment pipeline** — `/admin/recruitment` page for job requisitions and candidate pipeline tracking (`20260329000001`, `20260329000002`)
@@ -50,12 +50,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Jobs archive/restore** — `GET /api/jobs/archived`; `POST /api/jobs/[id]/restore`; archived jobs page at `/admin/jobs/archived`
 - **Resources archive/restore** — `POST /api/resources/[id]/restore`; archived resources page at `/admin/resources/archived`
 - **CompanyPulse widget** — Dashboard widget showing live company activity feed for all users
-- **Milestone banner** — `MilestoneBanner` component on employee/intern dashboards highlighting tenure and work anniversaries; `GET /api/milestones`
+- **Milestone banner** — `MilestoneBanner` component on employee/associate dashboards highlighting tenure and work anniversaries; `GET /api/milestones`
 - **Help Center** — `/help`, `/help/invoices`, `/help/reports`, `/help/performance-reviews` pages; `HelpLink` + `SectionTooltip` components for contextual guidance throughout the app
 - **Team performance view** — `/admin/performance/team` with multi-select dept/role/status filters; `GET /api/performance/team`
 - **Activity/audit log** — `/super-admin/activity` page showing paginated audit trail; `GET /api/audit-logs` (super_admin only)
 - **AI chat citations** — `CitationBadge`, `CitationPanel`, `CitedContent`, `TextShimmer` components; RAG responses now cite knowledge source titles; `return_source_title_from_embeddings` function (`20260319000001`)
-- **Intern daily log draft/submit** — `status` column on `internship_daily_logs` (`draft`/`submitted`); interns can save drafts before submitting (`20260317000001`)
+- **Associate daily log draft/submit** — `status` column on `internship_daily_logs` (`draft`/`submitted`); interns can save drafts before submitting (`20260317000001`)
 - **Forgot password flow** — `/forgot-password` page; `POST /api/auth/forgot-password`
 - **Google Drive webhook** — `GET /api/webhooks/drive` receiver for real-time document sync events
 - **Edge Function security hardening** — Auth validation and CORS enforcement on all 3 Supabase Edge Functions
@@ -79,7 +79,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Report hierarchy** — `parent_report_id`, `report_group`, `hierarchy_path` columns on `reports`; `get_report_children()`, `get_report_tree()` functions; `root_reports` view (`20260227000010`)
 - **Knowledge versioning** — `knowledge_source_versions` table with auto-snapshot trigger on update; `get_knowledge_source_versions()`, `restore_knowledge_source_version()` functions (`20260227000011`)
 - **Resource categories table** — `resource_categories` table replacing static enum; hierarchical with `parent_id`, seed data for 10 categories; `get_resource_category_tree()` function (`20260227000012`)
-- **Intern self-init policies** — `internships_insert_self_policy` and `internships_update_self_policy` RLS policies allowing interns to create/update their own internship record (`20260227000013`)
+- **Associate self-init policies** — `internships_insert_self_policy` and `internships_update_self_policy` RLS policies allowing interns to create/update their own internship record (`20260227000013`)
 - **Notifications system** — `notifications` table with `notification_type` enum (11 types), 5 RLS policies, deep-link support (`20260227000001`)
 - **User role metadata** — `user_role_metadata` and `role_kpi_entries` tables for role-specific KPI tracking with self-management + admin-read RLS (`20260228000004`)
 - **Task tags & categories** — `category` (text) and `tags` (text[]) columns on `tasks` with GIN index (`20260228000005`)
@@ -118,8 +118,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Standup Recordings** — `POST /api/standups/upload` with storage and transcription trigger
 - **AI Policy Assistant** — RAG-powered chat with Claude, knowledge source CRUD, embedding generation
-- **Realtime subscriptions** — 7 hooks for live updates (onboarding approvals, intern logs, tasks, reports, performance, probation, internships)
-- **User Management** — invite flow, onboarding approval, employee/intern record assignment
+- **Realtime subscriptions** — 7 hooks for live updates (onboarding approvals, associate logs, tasks, reports, performance, probation, internships)
+- **User Management** — invite flow, onboarding approval, employee/associate record assignment
 - **Webhook receiver** — `POST /api/webhooks/n8n` with HMAC/Bearer/secret auth
 
 ### Changed
@@ -211,7 +211,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **UI component library** — 19 Radix primitives + 80 composite components across 9 domains
 - Titanium & Indigo design system (Indigo-600 primary, Zinc palette, Inter font)
 - TanStack Query infrastructure with query key factory pattern
-- Mock authentication with 4 test accounts (employee, intern, admin, super_admin)
+- Mock authentication with 4 test accounts (employee, associate, admin, super_admin)
 - All 65 UI pages built as frontend shell
 
 ---

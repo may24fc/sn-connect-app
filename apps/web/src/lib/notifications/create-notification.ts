@@ -351,13 +351,13 @@ export async function getUserIdsByRoles(roles?: string[]): Promise<string[]> {
 
 const ANNOUNCEMENT_LINKS: Record<string, string> = {
   employee: '/announcements',
-  intern: '/announcements',
+  associate: '/announcements',
   admin: '/admin/announcements',
   super_admin: '/super-admin/announcements',
 };
 
 const ROLE_GROUPS = [
-  { roles: ['employee', 'intern'], key: 'employee' },
+  { roles: ['employee', 'associate'], key: 'employee' },
   { roles: ['admin'], key: 'admin' },
   { roles: ['super_admin'], key: 'super_admin' },
 ] as const;

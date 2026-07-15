@@ -3,7 +3,7 @@
  * Types for the automated UI consistency checking agent
  */
 
-export type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+export type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 
 export interface RouteConfig {
   path: string;

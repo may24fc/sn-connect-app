@@ -115,7 +115,7 @@ describe('buildMonthlyExpenseReport', () => {
 
     expect(report.pipelineStatus).toEqual({
       autoApproved: 0,
-      awaitingInternReview: 0,
+      awaitingAssociateReview: 0,
       approved: 1,
       draftExtracted: 1,
     });

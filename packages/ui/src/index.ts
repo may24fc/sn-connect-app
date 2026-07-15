@@ -519,7 +519,7 @@ export type {
   InternshipPeriod,
   DailyReport,
   ProjectFocusEntry,
-  Intern,
+  Associate,
   InternSummary,
   InternDashboardStats,
   WeeklyHoursSummary,

@@ -106,7 +106,7 @@ Requires `super_admin` role (`TASK_ASSIGNER_ROLE`).
 |-------|------|----------|---------|-------------|
 | `title` | `string` | Yes | — | Min 1 character |
 | `description` | `string` | No | `null` | Task description |
-| `assignedTo` | `uuid` | No | `null` | Assignee user ID (validated as employee/intern) |
+| `assignedTo` | `uuid` | No | `null` | Assignee user ID (validated as employee/associate) |
 | `priority` | `enum` | No | `"medium"` | `low`, `medium`, `high`, `urgent` |
 | `status` | `enum` | No | `"pending"` | `pending`, `in_progress`, `completed`, `cancelled` |
 | `dueDate` | `string` | No | `null` | Due date (any string format) |

@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
     const excludeInterns = searchParams.get('excludeInterns') === 'true';
     if (excludeInterns) {
-      query = query.neq('employment_type', 'intern');
+      query = query.neq('employment_type', 'associate');
     }
 
     // Apply pagination

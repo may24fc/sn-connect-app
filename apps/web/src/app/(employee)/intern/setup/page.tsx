@@ -21,10 +21,10 @@ export default function InternSetupPage(): ReactNode {
   const { user } = useAuth();
   const router = useRouter();
   const isPendingOnboarding = user?.status === 'pending_onboarding';
-  const primaryActionHref = isPendingOnboarding ? '/onboarding/setup' : '/intern/dashboard';
+  const primaryActionHref = isPendingOnboarding ? '/onboarding/setup' : '/associate/dashboard';
   const primaryActionLabel = isPendingOnboarding ? 'Continue Onboarding' : 'Go to Dashboard';
   const secondaryActionHref = isPendingOnboarding
-    ? '/intern/profile'
+    ? '/associate/profile'
     : '/onboarding/awaiting-approval';
   const secondaryActionLabel = isPendingOnboarding ? 'View Profile' : 'View Onboarding Status';
 

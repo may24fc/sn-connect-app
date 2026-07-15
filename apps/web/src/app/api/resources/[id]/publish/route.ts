@@ -43,8 +43,8 @@ export async function POST(_: NextRequest, context: RouteContext) {
     // Notify users about the new resource with role-appropriate links
     const publisherName = await getUserDisplayName(user.id);
 
-    // Employee + intern users → /information-hub/resources/{id}
-    const employeeUserIds = await getUserIdsByRoles(['employee', 'intern']);
+    // Employee + associate users → /information-hub/resources/{id}
+    const employeeUserIds = await getUserIdsByRoles(['employee', 'associate']);
     const employeeRecipients = employeeUserIds.filter((uid) => uid !== user.id);
     if (employeeRecipients.length > 0) {
       createNotificationsForUsers(employeeRecipients, {

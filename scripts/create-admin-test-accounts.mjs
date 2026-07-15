@@ -6,7 +6,7 @@
  * the reports management and other admin features.
  *
  * After role consolidation, the available roles are:
- * - employee, intern, admin, super_admin
+ * - employee, associate, admin, super_admin
  *
  * Usage:
  *   node scripts/create-admin-test-accounts.mjs

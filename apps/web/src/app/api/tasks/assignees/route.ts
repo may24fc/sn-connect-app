@@ -76,8 +76,8 @@ export async function GET() {
         const profile = profileByUserId.get(entry.id);
         const name = profile
           ? `${profile.first_name} ${profile.last_name}`
-          : entry.role === 'intern'
-            ? 'Intern User'
+          : entry.role === 'associate'
+            ? 'Associate User'
             : 'Employee User';
 
         return {

@@ -244,14 +244,14 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Notify late interns
-    for (const intern of lateInterns) {
+    for (const associate of lateInterns) {
       await createInAppNotification(supabase, {
-        userId: intern.user_id,
+        userId: associate.user_id,
         type: 'reminder',
         title: 'EOD Report Missing',
-        message: `${intern.first_name}, you did not submit your End-of-Day report for ${yesterdayStr}. Please submit it.`,
-        link: '/intern/dashboard',
-        dedupeKey: `intern-eod-missing:${intern.employee_id}:${yesterdayStr}`,
+        message: `${associate.first_name}, you did not submit your End-of-Day report for ${yesterdayStr}. Please submit it.`,
+        link: '/associate/dashboard',
+        dedupeKey: `associate-eod-missing:${associate.employee_id}:${yesterdayStr}`,
         metadata: {
           missingDate: yesterdayStr,
           type: 'intern_eod',
@@ -259,16 +259,16 @@ serve(async (req: Request): Promise<Response> => {
       });
       notificationsSent++;
 
-      if (intern.supervisor_id) {
+      if (associate.supervisor_id) {
         await createInAppNotification(supabase, {
-          userId: intern.supervisor_id,
+          userId: associate.supervisor_id,
           type: 'system',
-          title: 'Intern EOD Missing',
-          message: `${intern.first_name} ${intern.last_name} did not submit an EOD report for ${yesterdayStr}.`,
+          title: 'Associate EOD Missing',
+          message: `${associate.first_name} ${associate.last_name} did not submit an EOD report for ${yesterdayStr}.`,
           link: '/admin/interns?tab=eod-reports',
-          dedupeKey: `intern-eod-supervisor:${intern.employee_id}:${yesterdayStr}`,
+          dedupeKey: `associate-eod-supervisor:${associate.employee_id}:${yesterdayStr}`,
           metadata: {
-            employeeId: intern.employee_id,
+            employeeId: associate.employee_id,
             missingDate: yesterdayStr,
             escalationLevel: 'supervisor',
           },
@@ -294,7 +294,7 @@ serve(async (req: Request): Promise<Response> => {
         await createBulkInAppNotifications(supabase, adminIds, {
           type: 'system',
           title: 'Late Reports Summary',
-          message: `${lateEmployees.length} employee(s) and ${lateInterns.length} intern(s) have late report submissions.`,
+          message: `${lateEmployees.length} employee(s) and ${lateInterns.length} associate(s) have late report submissions.`,
           link: '/admin/reports?tab=submissions',
           dedupeKey: `late-reports-summary:${today}`,
           metadata: {

@@ -44,7 +44,7 @@ const mockResourceResponse = {
       file_path: null,
       external_url: 'https://youtube.com/watch?v=abc123',
       is_public: false,
-      target_roles: ['employee', 'intern'],
+      target_roles: ['employee', 'associate'],
       downloads_count: 10,
       created_at: '2026-01-16T10:00:00Z',
       updated_at: '2026-01-16T10:00:00Z',

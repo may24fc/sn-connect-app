@@ -233,7 +233,7 @@ async function resolveActiveEvaluationAudience(supabase: ReturnType<typeof getSu
   const { data, error } = await supabase
     .from('users')
     .select('id, role')
-    .in('role', ['employee', 'intern'])
+    .in('role', ['employee', 'associate'])
     .is('deleted_at', null);
 
   if (error) {
@@ -550,7 +550,7 @@ async function ensureQuarterlyLaunchAnnouncement(
       status: 'published',
       published_at: now,
       expires_at: expiresAt,
-      target_roles: ['employee', 'intern'],
+      target_roles: ['employee', 'associate'],
       target_departments: [],
       target_employees: [],
       is_pinned: true,

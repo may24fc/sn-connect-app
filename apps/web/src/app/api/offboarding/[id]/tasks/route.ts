@@ -306,7 +306,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ]);
 
       if (assigneeContact?.userId && assigneeContact.userId !== user.id) {
-        const isEmployeeAssignee = assigneeContact.role === 'employee' || assigneeContact.role === 'intern';
+        const isEmployeeAssignee = assigneeContact.role === 'employee' || assigneeContact.role === 'associate';
         const destination = isEmployeeAssignee ? '/onboarding' : '/admin/employee-management';
 
         createNotification({

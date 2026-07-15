@@ -44,7 +44,7 @@ You will be redirected to your role-specific dashboard automatically.
 2. Complete pending manager reviews
 3. Monitor OKR/KPI progress across team
 
-### Intern
+### Associate
 
 **Your Navigation:**
 - Profile (Personal info)
@@ -65,7 +65,7 @@ You will be redirected to your role-specific dashboard automatically.
 - Dashboard (HR overview)
 - Directory (Employee directory)
 - Employee Management (Manage records)
-- Interns (Intern management)
+- Interns (Associate management)
 - Performance (Organization metrics & cycles)
 - Reports (Staff submission tracking & analytics)
 - Jobs (Recruitment pipeline)
@@ -76,7 +76,7 @@ You will be redirected to your role-specific dashboard automatically.
 **Key Tasks:**
 1. Monitor employees on probation
 2. Conduct performance appraisals
-3. Oversee intern progress
+3. Oversee associate progress
 4. Manage announcements and resources
 
 ### Super Admin
@@ -86,7 +86,7 @@ You will be redirected to your role-specific dashboard automatically.
 - Directory (Employee directory)
 - Employee Management (Manage records)
 - Task Management (Create & assign tasks)
-- Interns (Intern management)
+- Interns (Associate management)
 - Performance (Organization metrics & cycles)
 - Reports (Staff submission tracking & analytics)
 - Jobs (Recruitment pipeline)

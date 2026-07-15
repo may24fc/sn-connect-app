@@ -56,7 +56,7 @@ export function CrmAccessManagerDialog({
 
   const directoryQuery = useDirectory({
     search,
-    roles: ['employee', 'intern'],
+    roles: ['employee', 'associate'],
     sortBy: 'full_name',
     sortOrder: 'asc',
     page: 1,
@@ -118,7 +118,7 @@ export function CrmAccessManagerDialog({
         <DialogHeader>
           <DialogTitle>Manage {label} access</DialogTitle>
           <DialogDescription>
-            Grant Marketing employee or intern accounts access to this specific CRM tracker without changing their primary role.
+            Grant Marketing employee or associate accounts access to this specific CRM tracker without changing their primary role.
           </DialogDescription>
         </DialogHeader>
 
@@ -190,7 +190,7 @@ export function CrmAccessManagerDialog({
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Grant access</h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Search existing Marketing employee and intern accounts, then grant access to {label}.
+                Search existing Marketing employee and associate accounts, then grant access to {label}.
               </p>
             </div>
 
@@ -219,7 +219,7 @@ export function CrmAccessManagerDialog({
             ) : candidates.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border px-4 py-6 text-sm text-zinc-500 dark:text-zinc-400">
                 {search
-                  ? 'No matching Marketing employee or intern accounts found.'
+                  ? 'No matching Marketing employee or associate accounts found.'
                   : 'Everyone in the current Marketing result set already has access to this tracker.'}
               </div>
             ) : (
@@ -274,7 +274,7 @@ export function CrmAccessManagerDialog({
             <div className="flex items-start gap-2">
               <Users className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <p>
-                CRM delegates keep their existing employee or intern role outside this tracker. This grant only unlocks the selected CRM workflow.
+                CRM delegates keep their existing employee or associate role outside this tracker. This grant only unlocks the selected CRM workflow.
               </p>
             </div>
           </div>

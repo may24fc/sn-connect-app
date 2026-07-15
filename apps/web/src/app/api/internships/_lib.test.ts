@@ -73,7 +73,7 @@ describe('isInternshipAdmin', () => {
 
   it('rejects non-privileged roles', () => {
     expect(isInternshipAdmin('employee')).toBe(false);
-    expect(isInternshipAdmin('intern')).toBe(false);
+    expect(isInternshipAdmin('associate')).toBe(false);
     expect(isInternshipAdmin(null)).toBe(false);
   });
 
@@ -96,7 +96,7 @@ describe('isInternshipAdmin', () => {
     });
   });
 
-  it('authorizes the owning intern via employee lookup', async () => {
+  it('authorizes the owning associate via employee lookup', async () => {
     vi.mocked(createSupabaseAdminClient).mockReturnValue(
       createMockAdminClient({
         internship: {
@@ -106,20 +106,20 @@ describe('isInternshipAdmin', () => {
         },
         employee: {
           id: 'employee-1',
-          user_id: 'intern-user',
+          user_id: 'associate-user',
         },
       }) as never
     );
 
     await expect(
-      canAccessInternship({} as never, 'internship-1', 'intern-user', 'intern')
+      canAccessInternship({} as never, 'internship-1', 'associate-user', 'associate')
     ).resolves.toMatchObject({
       allowed: true,
       employeeId: 'employee-1',
     });
   });
 
-  it('resolves internship by intern user id when route param is not an internship id', async () => {
+  it('resolves internship by associate user id when route param is not an internship id', async () => {
     vi.mocked(createSupabaseAdminClient).mockReturnValue(
       createMockAdminClient({
         internship: null,
@@ -132,7 +132,7 @@ describe('isInternshipAdmin', () => {
     );
 
     await expect(
-      canAccessInternship({} as never, 'intern-user-id', 'admin-user', 'admin')
+      canAccessInternship({} as never, 'associate-user-id', 'admin-user', 'admin')
     ).resolves.toMatchObject({
       allowed: true,
       employeeId: 'employee-2',

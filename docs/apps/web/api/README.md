@@ -135,7 +135,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/users/invite` | admin, super_admin | Invite user with email, role, temp password |
 | `POST` | `/api/users/approve-onboarding` | admin, super_admin | Approve or reject onboarding |
 | `POST` | `/api/users/assign-employee` | admin, super_admin | Assign probation details to employee |
-| `POST` | `/api/users/assign-intern` | admin, super_admin | Assign internship details + create record |
+| `POST` | `/api/users/assign-associate` | admin, super_admin | Assign internship details + create record |
 | `GET` | `/api/users/[id]/kpi-entries` | admin, super_admin | List KPI entries for user |
 | `POST` | `/api/users/[id]/kpi-entries` | admin, super_admin | Create KPI entry for user |
 | `GET` | `/api/users/[id]/metadata` | Any authenticated | Get user role metadata |
@@ -329,15 +329,15 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 |--------|------|------|-------------|
 | `GET` | `/api/internships` | Any (scoped) | List internships with filters |
 | `POST` | `/api/internships` | admin, super_admin | Create an internship record |
-| `POST` | `/api/internships/initialize` | intern | Self-initialize internship |
+| `POST` | `/api/internships/initialize` | associate | Self-initialize internship |
 | `GET` | `/api/internships/[id]` | Owner, supervisor, admin | Get internship detail with logs |
 | `PATCH` | `/api/internships/[id]` | Admin or supervisor | Update internship fields |
 | `DELETE` | `/api/internships/[id]` | admin, super_admin | Soft-delete an internship record |
 | `PATCH` | `/api/internships/[id]/extend` | admin, super_admin | Extend internship end date |
 | `GET` | `/api/internships/[id]/logs` | Owner, supervisor, admin | List daily logs |
-| `POST` | `/api/internships/[id]/logs` | Intern (self) or admin | Create daily log entry |
+| `POST` | `/api/internships/[id]/logs` | Associate (self) or admin | Create daily log entry |
 | `PATCH` | `/api/internships/[id]/logs` | Admin or supervisor | Approve/review daily log |
-| `POST` | `/api/internships/[id]/actions` | admin, super_admin | End internship or hire intern as employee |
+| `POST` | `/api/internships/[id]/actions` | admin, super_admin | End internship or hire associate as employee |
 
 → [Full reference](internships.md)
 

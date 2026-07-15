@@ -2,7 +2,7 @@
  * Resource Targeting Schema - Audience targeting rules validation
  *
  * Controls which users can see a resource based on:
- * - Roles (admin, hr, cos, ceo, employee, intern)
+ * - Roles (admin, hr, cos, ceo, employee, associate)
  * - Departments (by UUID)
  * - Specific employees (by UUID)
  *
@@ -16,7 +16,7 @@ import { z } from 'zod';
 // ============================================
 
 /** Valid roles for resource targeting (matches user_role enum) */
-export const targetRoleSchema = z.enum(['admin', 'hr', 'cos', 'ceo', 'employee', 'intern']);
+export const targetRoleSchema = z.enum(['admin', 'hr', 'cos', 'ceo', 'employee', 'associate']);
 
 // ============================================
 // Targeting Schema

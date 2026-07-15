@@ -259,7 +259,7 @@ export default function InternProfilePage() {
   const employeeName = buildDisplayName(employee?.first_name, employee?.last_name);
   const displayName = employeeName || user?.name || 'User';
   const initials = getDisplayNameInitials(displayName, 'U');
-  const position = employee?.position ?? 'Intern';
+  const position = employee?.position ?? 'Associate';
   const department = employee?.department ?? 'Department not assigned';
   const employeeNumber = employee?.employee_number ?? 'N/A';
 
@@ -474,7 +474,7 @@ export default function InternProfilePage() {
                 <Badge variant="secondary">{department}</Badge>
                 <Badge variant="outline">{employeeNumber}</Badge>
                 <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800">
-                  Intern
+                  Associate
                 </Badge>
               </div>
               {!employee && (

@@ -12,7 +12,7 @@ const ALLOWED_TYPES = new Set([
   'text/csv',
   'application/csv',
 ]);
-const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'intern']);
+const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'associate']);
 
 async function resolveRole(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
@@ -203,7 +203,7 @@ export async function POST(request: NextRequest) {
           ai_credit_account: currentRow.aiCreditAccount || null,
           ai_confidence: 0,
           risk_bucket: 'pending',
-          processing_status: 'awaiting_intern_review',
+          processing_status: 'awaiting_associate_review',
           business_justification: currentRow.businessJustification || null,
           exchange_rate_to_aud: normalized.exchangeRateToAud,
           total_amount_aud: normalized.totalAmountAud,

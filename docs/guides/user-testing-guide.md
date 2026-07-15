@@ -19,9 +19,9 @@ Welcome! This guide helps you explore and test the Control Hub HR Portal. No tec
 | Employee | `newtest@gmail.com` | `2hUDz9S#jpg3` |
 | Employee | `employee@example.com` | `SamplePass!234` |
 | Employee | `testing@gmail.com` | `RB&c3JJkw2tt` |
-| Intern | `newintern@gmail.com` | `#5rb4AZYv466` |
-| Intern | `intern@example.com` | `SamplePass!234` |
-| Intern | `meme@gmail.com` | `T#cFwAydC4q#` |
+| Associate | `newintern@gmail.com` | `#5rb4AZYv466` |
+| Associate | `associate@example.com` | `SamplePass!234` |
+| Associate | `meme@gmail.com` | `T#cFwAydC4q#` |
 | Admin (HR) | `admin@example.com` | `SamplePass!234` |
 | Super Admin (COS/CEO) | `super-admin@example.com` | `SamplePass!234` |
 
@@ -87,12 +87,12 @@ Welcome! This guide helps you explore and test the Control Hub HR Portal. No tec
 
 ---
 
-## Role 2: Intern
+## Role 2: Associate
 
 Interns have a simplified experience focused on daily reporting and task tracking.
 
-### Intern Dashboard (`/intern/dashboard`)
-1. After login you land on the **Intern Dashboard**
+### Associate Dashboard (`/associate/dashboard`)
+1. After login you land on the **Associate Dashboard**
 2. Review your hours progress, days remaining, and whether today's EOD report is submitted
 3. If no report yet, click **Submit Now** and fill in the date, hours logged, your progress and impact update, and any next steps or blockers
 4. Click **Submit**
@@ -124,12 +124,12 @@ Interns have a simplified experience focused on daily reporting and task trackin
 1. Click **Employee Management** in the sidebar
 2. View and manage employee records
 
-### Intern Management (`/admin/interns`)
+### Associate Management (`/admin/interns`)
 1. Click **Interns** in the sidebar
 2. Search or filter by status, school, or supervisor
 3. Toggle between **Grid** and **List** views using the icons top-right
-4. Click an intern card/row to open their detail page (`/admin/interns/[id]`) with reports, hours, and status
-5. Click **Add Intern** to create a new intern record
+4. Click an associate card/row to open their detail page (`/admin/interns/[id]`) with reports, hours, and status
+5. Click **Add Associate** to create a new associate record
 
 ### Performance (`/admin/performance`)
 1. Click **Performance** in the sidebar

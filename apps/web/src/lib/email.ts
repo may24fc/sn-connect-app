@@ -253,7 +253,7 @@ export async function sendUserInviteEmail({
 }: {
   to: string;
   firstName: string;
-  role: 'employee' | 'intern' | 'admin' | 'super_admin';
+  role: 'employee' | 'associate' | 'admin' | 'super_admin';
   temporaryPassword: string;
   loginUrl: string;
   requiresOnboarding: boolean;
@@ -340,7 +340,7 @@ export async function sendOnboardingDecisionEmail({
 }: {
   to: string;
   firstName: string;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
   decision: 'approved' | 'rejected';
   notes?: string;
   loginUrl: string;

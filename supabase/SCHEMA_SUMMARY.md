@@ -31,7 +31,7 @@ Complete database schema for Control Hub HR Portal. 62 migration files across 8 
 | 4 — Repairs | `20260216-20260217` | 11 | Schema repairs, RLS fixes, role consolidation |
 | 5 — Storage | `20260218` | 4 | Storage buckets and storage RLS policies |
 | 6 — AI & Standups | `20260221-20260222` | 2 | Knowledge tables (pgvector), standup recordings |
-| 7 — Edge Functions | `20260227` | 6 | Notifications, phone codes, FX rates, bank registry, report hierarchy, knowledge versioning, resource categories, intern self-init |
+| 7 — Edge Functions | `20260227` | 6 | Notifications, phone codes, FX rates, bank registry, report hierarchy, knowledge versioning, resource categories, associate self-init |
 | 8 — Views & Metadata | `20260228` | 6 | Directory view, performance view, OKR/KPI automation, user role metadata, task tags, resource access levels |
 
 ---
@@ -45,7 +45,7 @@ Extends `auth.users` with HR-specific fields.
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | uuid PK | References `auth.users(id)` |
-| `role` | user_role | employee, intern, admin, super_admin, hr, cos, ceo |
+| `role` | user_role | employee, associate, admin, super_admin, hr, cos, ceo |
 | `department_id` | FK departments | |
 | `manager_id` | FK users (self) | Direct manager |
 | `status` | user_status | active, on_leave, terminated |
@@ -189,7 +189,7 @@ In-app notification system with deep-link support.
 | Table | Description |
 |-------|-------------|
 | `internships` | Internship records with hours tracking. Interns can INSERT/UPDATE their own records |
-| `internship_daily_logs` | Daily log entries (intern EOD reports) |
+| `internship_daily_logs` | Daily log entries (associate EOD reports) |
 
 ### Standups
 
@@ -238,9 +238,9 @@ In-app notification system with deep-link support.
 
 | Enum | Values |
 |------|--------|
-| `user_role` | `admin`, `hr`, `cos`, `ceo`, `employee`, `intern`, `super_admin` |
+| `user_role` | `admin`, `hr`, `cos`, `ceo`, `employee`, `associate`, `super_admin` |
 | `user_status` | `active`, `on_leave`, `terminated` |
-| `employment_type` | `regular`, `probationary`, `intern`, `project_based` |
+| `employment_type` | `regular`, `probationary`, `associate`, `project_based` |
 | `work_arrangement` | `part_time`, `full_time` |
 | `document_type` | `contract`, `id`, `certificate`, `performance_review`, `tax`, `medical`, `training`, `disciplinary`, `leave`, `other` |
 
@@ -321,7 +321,7 @@ In-app notification system with deep-link support.
 | Role | Own Data | Team Data | All Data | Edit Employees | Edit Users | Confidential Docs | Audit Logs | Admin Features |
 |------|----------|-----------|----------|----------------|------------|--------------------|------------|----------------|
 | employee | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| intern | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| associate | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | Manager | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | ceo | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | cos | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ |

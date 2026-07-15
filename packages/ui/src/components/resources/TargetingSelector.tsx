@@ -21,7 +21,7 @@ export function ResourceTargetingSelector({ value, onChange }: ResourceTargeting
           Target Roles (comma-separated)
         </Label>
         <Input
-          placeholder="employee, intern, hr"
+          placeholder="employee, associate, hr"
           value={value.rolesCsv}
           onChange={(event) => onChange({ ...value, rolesCsv: event.target.value })}
         />

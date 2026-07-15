@@ -31,7 +31,7 @@ async function getUserRole(
  * GET /api/profile-change-requests
  * List profile change requests
  * - admin/super_admin: see all (optionally filtered by employee_id or status)
- * - employee/intern: see only their own
+ * - employee/associate: see only their own
  */
 export async function GET(request: NextRequest) {
   try {

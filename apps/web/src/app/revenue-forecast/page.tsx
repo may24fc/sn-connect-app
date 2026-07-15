@@ -11,7 +11,7 @@ export default async function RevenueForecastPage() {
   }
 
   return (
-    <SelfServiceLayoutShell allowedRoles={['employee', 'intern', 'admin', 'super_admin']}>
+    <SelfServiceLayoutShell allowedRoles={['employee', 'associate', 'admin', 'super_admin']}>
       <RevenueForecastPageContent canManage={auth.context.role === 'super_admin'} />
     </SelfServiceLayoutShell>
   );

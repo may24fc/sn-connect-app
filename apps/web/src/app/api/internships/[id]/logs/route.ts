@@ -5,7 +5,7 @@ import {
   normalizeAttachmentRecords,
   normalizeProjectEntries,
   normalizeStringList,
-} from '@/lib/intern-daily-log';
+} from '@/lib/associate-daily-log';
 import {
   createNotificationsForUsers,
   getAdminUserIds,
@@ -22,7 +22,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import type { z } from 'zod';
 import { canAccessInternship, getAuthedInternshipContext, isInternshipAdmin } from '../../_lib';
 
-const DAILY_LOG_ATTACHMENT_BUCKET = 'intern-daily-log-attachments';
+const DAILY_LOG_ATTACHMENT_BUCKET = 'associate-daily-log-attachments';
 const DAILY_LOG_ATTACHMENT_SIGNED_URL_TTL_SECONDS = 60 * 10;
 const DAILY_LOG_ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024;
 const DAILY_LOG_LINK_ATTACHMENT_MIME_TYPE = 'text/uri-list';
@@ -256,7 +256,7 @@ export async function GET(
       .order('log_date', { ascending: false });
 
     if (queryError) {
-      console.error('Error fetching intern daily logs:', queryError);
+      console.error('Error fetching associate daily logs:', queryError);
       return NextResponse.json({ error: 'Failed to fetch daily logs' }, { status: 500 });
     }
 
@@ -354,7 +354,7 @@ export async function POST(
           { status: 409 }
         );
       }
-      console.error('Error creating intern daily log:', insertError);
+      console.error('Error creating associate daily log:', insertError);
       return NextResponse.json({ error: 'Failed to create daily log' }, { status: 500 });
     }
 
@@ -376,7 +376,7 @@ export async function POST(
 
       createNotificationsForUsers(adminRecipients, {
         type: 'intern_log_submitted',
-        title: 'Intern Daily Log Submitted',
+        title: 'Associate Daily Log Submitted',
         message: `${submitterName} submitted a daily log for ${payload.logDate}`,
         link: `/admin/interns/${id}`,
         metadata: { internshipId: id, logDate: payload.logDate, submittedBy: user.id },
@@ -610,7 +610,7 @@ export async function PATCH(
           type: 'intern_log_approved',
           title: 'Daily Log Approved',
           message: `${approverName} approved your daily log for ${data.log_date}`,
-          link: `/intern/dashboard`,
+          link: `/associate/dashboard`,
           metadata: { internshipId: id, logDate: data.log_date, approvedBy: user.id },
         });
       } else {
@@ -618,7 +618,7 @@ export async function PATCH(
           type: 'system',
           title: 'Daily Log Review',
           message: `${approverName} reviewed your daily log for ${data.log_date}${data.supervisor_notes ? `: ${data.supervisor_notes}` : ''}`,
-          link: `/intern/dashboard`,
+          link: `/associate/dashboard`,
           metadata: { internshipId: id, logDate: data.log_date, reviewedBy: user.id },
         });
       }

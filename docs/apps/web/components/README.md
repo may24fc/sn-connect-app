@@ -136,8 +136,8 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | `DailyReportCard` | Single daily log display |
 | `EODReportForm` | End-of-day report submission form |
 | `HoursProgressCard` | Hours completed vs required progress bar |
-| `InternCard` | Intern profile summary card |
-| `InternHoursProgressBar` | Visual progress bar for intern hours tracking |
+| `InternCard` | Associate profile summary card |
+| `InternHoursProgressBar` | Visual progress bar for associate hours tracking |
 | `InternshipSummaryCards` | Aggregate metrics (active, completed, hours) |
 | `InternStatusBadge` | Internship status badge (active, completed, etc.) |
 
@@ -267,7 +267,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 |-----------|-------------|
 | `ApproveOnboardingModal` | Approve/reject onboarding dialog |
 | `AssignEmployeeModal` | Assign employee record with probation details |
-| `EODReportDetailModal` | View intern's EOD report in detail |
+| `EODReportDetailModal` | View associate's EOD report in detail |
 | `InviteUserModal` | Invite new user form dialog |
 | `OffboardingChecklistDialog` | Admin dialog for managing offboarding checklists |
 | `OnboardingChecklistDialog` | Admin dialog for managing onboarding checklists |
@@ -277,7 +277,7 @@ Radix-based building blocks. All support `className` override via `cn()` utility
 | Component | Description |
 |-----------|-------------|
 | `EmployeeDashboard` | Employee dashboard layout with stats, events, announcements |
-| `InternDashboard` | Intern dashboard with hours progress, EOD form |
+| `InternDashboard` | Associate dashboard with hours progress, EOD form |
 
 ### Data Display (4)
 

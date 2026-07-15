@@ -37,7 +37,7 @@ import {
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All processing states' },
-  { value: 'awaiting_intern_review', label: 'Awaiting intern review' },
+  { value: 'awaiting_associate_review', label: 'Awaiting associate review' },
   { value: 'leadership_review_required', label: 'Leadership review required' },
   { value: 'auto_approved', label: 'Auto-approved' },
   { value: 'approved', label: 'Approved' },

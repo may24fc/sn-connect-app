@@ -40,9 +40,9 @@ export async function GET(request: Request) {
       .neq('status', 'terminated');
 
     if (scope === 'interns') {
-      usersQuery = usersQuery.eq('role', 'intern');
+      usersQuery = usersQuery.eq('role', 'associate');
     } else if (scope === 'employees') {
-      usersQuery = usersQuery.neq('role', 'intern');
+      usersQuery = usersQuery.neq('role', 'associate');
     }
 
     const { data: users, error: usersErr } = await usersQuery;

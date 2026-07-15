@@ -20,7 +20,7 @@ src/
 │   ├── announcements/ # Announcement CRUD & analytics (9)
 │   ├── dashboard/     # Dashboard cards (1)
 │   ├── forms/         # React Hook Form wrappers (8)
-│   ├── internship/    # Intern tracking & daily logs (8)
+│   ├── internship/    # Associate tracking & daily logs (8)
 │   ├── performance/   # OKR, KPI, review components (6)
 │   ├── reports/       # Weekly reports & analytics (14+)
 │   ├── resources/     # Resource library UI (12)

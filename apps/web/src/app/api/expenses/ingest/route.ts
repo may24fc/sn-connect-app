@@ -337,7 +337,7 @@ async function processReceiptInlineFallback(params: {
         ai_credit_account: suggestion.creditAccount,
         ai_confidence: combinedAiConfidence,
         expense_type: inferredExpenseType,
-        processing_status: 'awaiting_intern_review',
+        processing_status: 'awaiting_associate_review',
       })
       .eq('id', expenseEntryId)
       .is('deleted_at', null)
@@ -354,7 +354,7 @@ async function processReceiptInlineFallback(params: {
     await adminClient
       .from('expense_entries')
       .update({
-        processing_status: 'awaiting_intern_review',
+        processing_status: 'awaiting_associate_review',
         reviewer_notes: `Receipt extraction failed: ${message}`,
       })
       .eq('id', expenseEntryId)
@@ -477,7 +477,7 @@ export async function POST(request: NextRequest) {
       await adminClient
         .from('expense_entries')
         .update({
-          processing_status: 'awaiting_intern_review',
+          processing_status: 'awaiting_associate_review',
           reviewer_notes: `OCR queue dispatch failed: ${queueDispatchErrorMessage}. Proceeding with manual review path.`,
         })
         .eq('id', expenseEntry.id)

@@ -18,7 +18,7 @@ Welcome to the Control Hub HR Portal user documentation. These guides help emplo
 | [Notifications](notifications.md) | Viewing and managing notifications | All users |
 | [AI Assistant](ai-assistant.md) | Getting help from the HR AI chatbot | All users |
 | [Tickets](tickets.md) | Submitting and tracking IT/HR support tickets | All users |
-| [Intern Guide](intern-guide.md) | Intern-specific features and daily reports | Interns |
+| [Associate Guide](associate-guide.md) | Associate-specific features and daily reports | Interns |
 | [Help Center](help.md) | Step-by-step guides for invoices, reports, and performance reviews | All users |
 
 ## Role Overview
@@ -26,7 +26,7 @@ Welcome to the Control Hub HR Portal user documentation. These guides help emplo
 | Role | Sidebar Items |
 |------|---------------|
 | **Employee** | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, Marketing Reports (conditional), Invoice, Documents, Announcements, Resources |
-| **Intern** | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, EOD Reports, Documents, Announcements, Resources |
+| **Associate** | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, EOD Reports, Documents, Announcements, Resources |
 
 > Interns do **not** have access to Invoice or Marketing Reports.
 

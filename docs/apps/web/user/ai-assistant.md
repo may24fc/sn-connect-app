@@ -61,4 +61,4 @@ The assistant uses **Retrieval-Augmented Generation (RAG)**:
 
 ---
 
-Next: [Intern Guide](intern-guide.md) · Previous: [Information Hub](information-hub.md)
+Next: [Associate Guide](associate-guide.md) · Previous: [Information Hub](information-hub.md)

@@ -22,8 +22,8 @@ Edge Functions are deployed automatically via GitHub Actions on every push that 
 
 | Function | Description |
 |----------|-------------|
-| `intern-eod-reminder` | Weekday 4 PM PHT — reminds interns who haven't submitted daily log |
-| `intern-weekly-summary` | Weekly summary of intern activity |
+| `associate-eod-reminder` | Weekday 4 PM PHT — reminds interns who haven't submitted daily log |
+| `associate-weekly-summary` | Weekly summary of associate activity |
 | `milestone-announcements` | Publishes milestone-based announcements |
 | `probation-check` | Checks and updates employee probation status |
 | `update-fx-rates` | Fetches and stores latest FX rates |

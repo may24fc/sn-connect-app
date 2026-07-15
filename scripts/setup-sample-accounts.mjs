@@ -4,7 +4,7 @@
  *
  * Creates the 4 standard test accounts matching the simplified role system:
  * - employee@example.com → employee role
- * - intern@example.com → intern role
+ * - associate@example.com → associate role
  * - admin@example.com → admin role (covers admin + hr functions)
  * - super-admin@example.com → super_admin role (covers cos + ceo + super_admin functions)
  *
@@ -30,13 +30,13 @@ const SAMPLE_ACCOUNTS = [
     isItHandler: true,
   },
   {
-    email: 'intern@example.com',
+    email: 'associate@example.com',
     password: 'password',
-    fullName: 'Sample Intern',
-    role: 'intern',
-    position: 'Marketing Intern',
+    fullName: 'Sample Associate',
+    role: 'associate',
+    position: 'Marketing Associate',
     department: 'Marketing',
-    employmentType: 'intern',
+    employmentType: 'associate',
     workArrangement: 'part_time',
     isItHandler: false,
   },
@@ -117,7 +117,7 @@ async function main() {
   console.log('==========================================\n');
   console.log('Creating 4 test accounts with simplified role system:');
   console.log('  • employee → standard employee access');
-  console.log('  • intern → intern-level access');
+  console.log('  • associate → associate-level access');
   console.log('  • admin → admin + HR management access');
   console.log('  • super_admin → executive/COS/CEO access\n');
 
@@ -375,7 +375,7 @@ async function main() {
 
   const roleDescriptions = {
     employee: 'Standard employee - can create reports, view own data',
-    intern: 'Intern access - limited permissions, onboarding workflow',
+    associate: 'Associate access - limited permissions, onboarding workflow',
     admin: 'Admin + HR - manage employees, approve reports, handle admin tasks',
     super_admin: 'Executive access - full system control, CEO/COS functions',
   };
@@ -389,7 +389,7 @@ async function main() {
   console.log('\n🔑 Password for all accounts: password');
   console.log('\n💡 Role System (Simplified):');
   console.log('  • employee     → Regular employee access');
-  console.log('  • intern       → Intern-level access with onboarding');
+  console.log('  • associate       → Associate-level access with onboarding');
   console.log('  • admin        → Combines admin + HR management (was: admin + hr)');
   console.log('  • super_admin  → Executive level (was: cos + ceo + super_admin)');
   console.log('\n🎯 Next Steps:');

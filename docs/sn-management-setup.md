@@ -50,7 +50,7 @@ This document provides a comprehensive, actionable checklist for implementing th
 - [x] Employee: /onboarding, /payroll, /tasks, /tasks/[id]
 - [x] Employee: /reports, /reports/new, /reports/[id]
 - [x] Employee: /performance, /performance/kpis, /performance/okrs, /performance/review
-- [x] Intern: /intern/dashboard
+- [x] Associate: /associate/dashboard
 - [x] Manager: /manager/reviews, /manager/team-performance
 - [x] Admin: /admin/dashboard, /admin/interns, /admin/interns/[id]
 - [x] Admin: /admin/performance, /admin/performance/cycles
@@ -72,7 +72,7 @@ This document provides a comprehensive, actionable checklist for implementing th
 
 ### Mock Authentication
 - [x] Create AuthContext with localStorage persistence
-- [x] Implement 4 test accounts (employee, intern, admin, super_admin)
+- [x] Implement 4 test accounts (employee, associate, admin, super_admin)
 - [x] Create useRequireAuth hook for route protection
 - [x] Implement role-based redirects after login
 
@@ -96,7 +96,7 @@ This document provides a comprehensive, actionable checklist for implementing th
 
 ### 1.1 Role System Alignment (CRITICAL - Do First)
 
-**Problem:** Database has 6 roles (admin, hr, cos, ceo, employee, intern) but UI uses 4 roles (super_admin, admin, employee, intern). This mismatch will cause authorization bugs.
+**Problem:** Database has 6 roles (admin, hr, cos, ceo, employee, associate) but UI uses 4 roles (super_admin, admin, employee, associate). This mismatch will cause authorization bugs.
 
 **Decision Required:** Choose one approach:
 - Option A: Add `super_admin` to database enum, keep 4 UI roles
@@ -735,7 +735,7 @@ This feature provides a comprehensive announcement management system for HR/Admi
 - View analytics (read counts, engagement metrics)
 - Preview announcements before publishing
 
-**Employee/Intern Experience:**
+**Employee/Associate Experience:**
 - View announcements filtered by relevance (role, department)
 - Filter by category and read/unread status
 - Search announcements
@@ -1003,7 +1003,7 @@ CREATE POLICY resources_admin_all_policy ON public.resources
   - File: `apps/web/src/app/api/announcements/[id]/attachments/[attachmentId]/route.ts` (DELETE)
   - File: `apps/web/src/app/api/announcements/[id]/analytics/route.ts` (GET read counts, engagement)
 
- - [x] **Create announcements API routes (Employee/Intern)**
+ - [x] **Create announcements API routes (Employee/Associate)**
   - File: `apps/web/src/app/api/announcements/feed/route.ts` (GET targeted announcements for current user)
   - File: `apps/web/src/app/api/announcements/[id]/read/route.ts` (POST mark as read)
   - File: `apps/web/src/app/api/announcements/[id]/comments/route.ts` (GET, POST comments if enabled)
@@ -1234,7 +1234,7 @@ The Information Hub unifies both Announcements (Section 2.4) and Resources under
 - Bulk upload and import
 - Version control for document updates
 
-**Employee/Intern Experience:**
+**Employee/Associate Experience:**
 - Browse resources by category
 - Search by title, description, tags, or content
 - Filter by resource type, category, department, role
@@ -1596,7 +1596,7 @@ CREATE TRIGGER resource_bookmark_count_trigger
   - File: `apps/web/src/app/api/resources/[id]/analytics/route.ts` (GET view counts, downloads, engagement)
   - File: `apps/web/src/app/api/resources/bulk-upload/route.ts` (POST bulk upload multiple files)
 
-- [x] **Create resources API routes (Employee/Intern)**
+- [x] **Create resources API routes (Employee/Associate)**
   - File: `apps/web/src/app/api/resources/feed/route.ts` (GET targeted resources for current user)
   - File: `apps/web/src/app/api/resources/search/route.ts` (GET full-text search)
   - File: `apps/web/src/app/api/resources/[id]/view/route.ts` (POST track view)
@@ -1733,11 +1733,11 @@ CREATE TRIGGER resource_bookmark_count_trigger
 
 - [x] **Update Sidebar navigation**
   - File: `packages/ui/src/layout/Sidebar.tsx`
-  - Rename "Announcements" to "Information Hub" for employee/intern roles
+  - Rename "Announcements" to "Information Hub" for employee/associate roles
   - Add "Resources" item to `adminNavItems` and `superAdminNavItems`
-  - Icon for employee/intern: `Info` from lucide-react for Information Hub
+  - Icon for employee/associate: `Info` from lucide-react for Information Hub
   - Icon for admin: `Library` from lucide-react for Resources
-  - Path: `/information-hub` for employee/intern, `/admin/resources` for admin, `/super-admin/resources` for super_admin
+  - Path: `/information-hub` for employee/associate, `/admin/resources` for admin, `/super-admin/resources` for super_admin
 
 **Testing:**
 
@@ -1956,7 +1956,7 @@ className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
 #### Integration Points
 
 **Unified Information Hub Navigation:**
-- The employee/intern sidebar shows a single "Information Hub" menu item that routes to `/information-hub`
+- The employee/associate sidebar shows a single "Information Hub" menu item that routes to `/information-hub`
 - The Information Hub page has three tabs: Announcements (from Section 2.4), Resources (this section), and My Growth (existing learning/development)
 - Admins have separate menu items: "Announcements" (`/admin/announcements`) and "Resources" (`/admin/resources`)
 
@@ -2074,7 +2074,7 @@ CREATE TABLE public.onboarding_tasks (
 - [x] **Connect onboarding page to real data**
   - Update `apps/web/src/app/(employee)/onboarding/page.tsx`
 
-### 3.3.1 Post-Signin Onboarding Setup (First-Time Employee/Intern Wizard)
+### 3.3.1 Post-Signin Onboarding Setup (First-Time Employee/Associate Wizard)
 
 A mandatory multi-step onboarding wizard triggered after first signin. Blocks portal access until completed.
 
@@ -2270,7 +2270,7 @@ A read-only database viewer for HR and admins to see all onboarding submissions 
 **Features:**
 - List page with grid/card view of all onboarding submissions
 - Search by name or email
-- Filter by status (completed/in_progress), role (employee/intern), department, date range
+- Filter by status (completed/in_progress), role (employee/associate), department, date range
 - Summary stat cards (total, completed, in-progress counts)
 - Detail page with tabbed view: Personal Info, Payment Info, Documents
 - Document preview/download via Supabase Storage signed URLs
@@ -2330,7 +2330,7 @@ A read-only database viewer for HR and admins to see all onboarding submissions 
 - [ ] **Write E2E tests for onboarding data viewer**
   - File: `e2e/admin-onboarding-viewer.spec.ts`
   - Tests: admin can view list, filters work, detail page renders all tabs, document preview loads
-  - Tests: employee/intern roles get 403 forbidden
+  - Tests: employee/associate roles get 403 forbidden
 
 ### 3.4 Offboarding/Exit Automation
 
@@ -2539,22 +2539,22 @@ CREATE TABLE public.intern_daily_logs (
   - File: `apps/web/src/app/api/internships/[id]/logs/route.ts`
 
 - [x] **Connect internship pages to real data**
-  - Update `apps/web/src/app/(employee)/intern/dashboard/page.tsx`
+  - Update `apps/web/src/app/(employee)/associate/dashboard/page.tsx`
   - Update `apps/web/src/app/(admin)/admin/interns/page.tsx`
   - Update `apps/web/src/app/(admin)/admin/interns/[id]/page.tsx`
 
 ### 5.2 EOD Report System
 
 - [x] **Create EOD reminder workflow**
-  - File: `n8n/workflows/intern-eod-reminder.json`
+  - File: `n8n/workflows/associate-eod-reminder.json`
   - Trigger: Daily at 4 PM
   - Logic: Check active interns without today's log
   - Action: Send Slack/email reminder
 
 - [x] **Create weekly hours summary workflow**
-  - File: `n8n/workflows/intern-weekly-summary.json`
+  - File: `n8n/workflows/associate-weekly-summary.json`
   - Trigger: Every Friday at 5 PM
-  - Logic: Calculate weekly hours for each intern
+  - Logic: Calculate weekly hours for each associate
   - Action: Send summary to supervisor
 
 ---
@@ -2696,7 +2696,7 @@ These features were implemented after the initial V1 checklist was written and a
 
 ### 7.5.1 Credential-First Onboarding Flow
 
-Admin-initiated onboarding: Admin invites user → user receives credentials → user completes onboarding wizard → admin approves → employee/intern record created.
+Admin-initiated onboarding: Admin invites user → user receives credentials → user completes onboarding wizard → admin approves → employee/associate record created.
 
 - [x] **Create user invitation API route**
   - File: `apps/web/src/app/api/users/invite/route.ts`
@@ -2710,8 +2710,8 @@ Admin-initiated onboarding: Admin invites user → user receives credentials →
   - File: `apps/web/src/app/api/users/assign-employee/route.ts`
   - POST: Creates employee record from approved onboarding profile data
 
-- [x] **Create intern assignment API route**
-  - File: `apps/web/src/app/api/users/assign-intern/route.ts`
+- [x] **Create associate assignment API route**
+  - File: `apps/web/src/app/api/users/assign-associate/route.ts`
   - POST: Creates internship record from approved onboarding profile data
 
 - [x] **Create admin modal components**
@@ -2761,8 +2761,8 @@ Supabase Realtime hooks for live data updates across the portal.
 - [x] **Create probation hooks**
   - File: `apps/web/src/hooks/useProbation.ts`
 
-- [x] **Create intern dashboard experience**
-  - Historical note: the temporary `apps/web/src/components/dashboards/InternDashboard.tsx` component was retired on 2026-03-29 after the real route implementation at `apps/web/src/app/(employee)/intern/dashboard/page.tsx` became the canonical surface.
+- [x] **Create associate dashboard experience**
+  - Historical note: the temporary `apps/web/src/components/dashboards/InternDashboard.tsx` component was retired on 2026-03-29 after the real route implementation at `apps/web/src/app/(employee)/associate/dashboard/page.tsx` became the canonical surface.
 
 ---
 

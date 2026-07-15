@@ -8,7 +8,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'intern']);
+const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'associate']);
 
 async function resolveRole(user: { id: string; app_metadata?: Record<string, unknown> }): Promise<string | null> {
   const roleFromMetadata = user.app_metadata?.db_role;

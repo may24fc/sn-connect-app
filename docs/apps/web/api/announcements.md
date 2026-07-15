@@ -78,7 +78,7 @@ List all announcements with filters and pagination. Sorted by pinned first, then
       "has_attachments": false,
       "read_count": 42,
       "author_id": "uuid",
-      "target_roles": ["employee", "intern"],
+      "target_roles": ["employee", "associate"],
       "target_departments": [],
       "target_employees": [],
       "published_at": "2026-02-27T10:00:00Z",
@@ -108,7 +108,7 @@ Create a new announcement.
   "status": "draft",
   "publishedAt": null,
   "expiresAt": null,
-  "targetRoles": ["employee", "intern"],
+  "targetRoles": ["employee", "associate"],
   "targetDepartments": [],
   "targetEmployees": [],
   "isPinned": false,
@@ -126,7 +126,7 @@ Create a new announcement.
 | `status` | `enum` | No | `draft` | `draft`, `scheduled`, `published`, `expired`, `archived` |
 | `publishedAt` | `datetime` | No | `null` | ISO 8601 with offset |
 | `expiresAt` | `datetime` | No | `null` | Must be after `publishedAt` |
-| `targetRoles` | `string[]` | No | `[]` | `employee`, `intern`, `admin`, `super_admin` |
+| `targetRoles` | `string[]` | No | `[]` | `employee`, `associate`, `admin`, `super_admin` |
 | `targetDepartments` | `string[]` | No | `[]` | Department IDs |
 | `targetEmployees` | `string[]` | No | `[]` | Employee IDs |
 | `isPinned` | `boolean` | No | `false` | Pin to top of feed |

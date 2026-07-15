@@ -1,12 +1,12 @@
-# Intern Guide
+# Associate Guide
 
 This guide covers features specific to interns. Interns share most features with employees but have a specialized dashboard and daily reporting workflow.
 
 ## What's Different for Interns
 
-| Feature | Employee | Intern |
+| Feature | Employee | Associate |
 |---------|----------|--------|
-| Dashboard | Employee dashboard | Intern dashboard with hours tracking |
+| Dashboard | Employee dashboard | Associate dashboard with hours tracking |
 | Tasks | ✅ | ✅ |
 | Profile | ✅ | ✅ |
 | 201 Files | ✅ | ✅ |
@@ -17,9 +17,9 @@ This guide covers features specific to interns. Interns share most features with
 | Information Hub | ✅ | ✅ |
 | AI Assistant | ✅ | ✅ |
 
-## Intern Setup
+## Associate Setup
 
-When you first log in, the system redirects you to the **Intern Setup** page (`/intern/setup`) to collect:
+When you first log in, the system redirects you to the **Associate Setup** page (`/associate/setup`) to collect:
 
 - School and program
 - Start and end dates
@@ -28,7 +28,7 @@ When you first log in, the system redirects you to the **Intern Setup** page (`/
 
 Complete this before accessing the rest of the portal.
 
-## Intern Dashboard (`/intern/dashboard`)
+## Associate Dashboard (`/associate/dashboard`)
 
 Your dashboard is focused on internship progress and daily reporting.
 

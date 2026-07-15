@@ -13,9 +13,9 @@ This directory contains the database schema migrations for the HR Portal Phase 1
 - `pgcrypto`: Cryptographic functions
 
 **Enums**:
-- `user_role`: admin, hr, cos, ceo, employee, intern
+- `user_role`: admin, hr, cos, ceo, employee, associate
 - `user_status`: active, on_leave, terminated
-- `employment_type`: regular, probationary, intern, project_based
+- `employment_type`: regular, probationary, associate, project_based
 - `work_arrangement`: part_time, full_time
 - `document_type`: contract, id, certificate, performance_review, etc.
 

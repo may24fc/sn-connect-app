@@ -137,7 +137,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (task) {
       const commenterName = await getUserDisplayName(user.id);
 
-      // Notify the assignee (employee/intern) with employee task link
+      // Notify the assignee (employee/associate) with employee task link
       if (task.assigned_to && task.assigned_to !== user.id) {
         createNotification({
           userId: task.assigned_to,

@@ -267,6 +267,190 @@ function drawListColumn(doc: PDFKit.PDFDocument, opts: ListColumnOptions): numbe
 }
 
 // ---------------------------------------------------------------------------
+// Pie chart - compact circle + side legend, drawn at explicit coordinates
+// ---------------------------------------------------------------------------
+const PIE_PALETTE = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#14B8A6', '#F43F5E', '#94A3B8'];
+
+function drawPieChart(
+  doc: PDFKit.PDFDocument,
+  slices: { label: string; value: number }[],
+  startX: number,
+  startY: number,
+  availableWidth: number,
+): number {
+  const nonZero = slices.filter((s) => s.value > 0);
+  if (nonZero.length === 0) return startY;
+
+  const RADIUS = 42;
+  const cx = startX + RADIUS + 6;
+  const cy = startY + RADIUS + 6;
+  const total = nonZero.reduce((sum, s) => sum + s.value, 0);
+
+  // Draw slices using SVG arc paths (reliable in PDFKit across all versions).
+  // sweep-flag=1 in A command = clockwise in screen coords (y-axis down).
+  let angle = -Math.PI / 2; // start from 12 o'clock
+  nonZero.forEach((slice, i) => {
+    const sweep = (slice.value / total) * 2 * Math.PI;
+    const endAngle = angle + sweep;
+    const color = PIE_PALETTE[i % PIE_PALETTE.length]!;
+
+    if (sweep >= 2 * Math.PI - 0.001) {
+      // Full circle — single draw avoids degenerate arc
+      doc.circle(cx, cy, RADIUS).fillColor(color).fill();
+    } else {
+      const x1 = cx + RADIUS * Math.cos(angle);
+      const y1 = cy + RADIUS * Math.sin(angle);
+      const x2 = cx + RADIUS * Math.cos(endAngle);
+      const y2 = cy + RADIUS * Math.sin(endAngle);
+      const largeArc = sweep > Math.PI ? 1 : 0;
+      doc
+        .path(`M ${cx.toFixed(2)} ${cy.toFixed(2)} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${RADIUS} ${RADIUS} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`)
+        .fillColor(color)
+        .fill();
+    }
+    angle = endAngle;
+  });
+
+  // Subtle ring outline for polish
+  stroke(doc, C.border).lineWidth(0.5).circle(cx, cy, RADIUS).stroke();
+
+  // Legend to the right of the circle
+  const legendX = startX + RADIUS * 2 + 16;
+  const legendW = availableWidth - RADIUS * 2 - 20;
+  const labelW = Math.round(legendW * 0.68);
+  const pctW = legendW - labelW - 4;
+  const pctX = legendX + 11 + labelW + 4;
+  const ITEM_H = 13;
+  const SWATCH = 7;
+  let legendY = startY + 6;
+
+  nonZero.forEach((slice, i) => {
+    const color = PIE_PALETTE[i % PIE_PALETTE.length]!;
+    const pct = ((slice.value / total) * 100).toFixed(1) + '%';
+
+    doc.roundedRect(legendX, legendY + 2, SWATCH, SWATCH, 1).fillColor(color).fill();
+    fill(doc, C.slate).font('Helvetica').fontSize(7)
+      .text(slice.label, legendX + SWATCH + 4, legendY, { width: labelW, lineBreak: false });
+    fill(doc, C.muted).font('Helvetica').fontSize(7)
+      .text(pct, pctX, legendY, { width: pctW, align: 'right', lineBreak: false });
+    legendY += ITEM_H;
+  });
+
+  return Math.max(cy + RADIUS + 12, legendY + 4);
+}
+
+// ---------------------------------------------------------------------------
+// Key insights card - derives natural-language bullets from report data
+// ---------------------------------------------------------------------------
+function generateInsights(report: MonthlyExpenseReport): string[] {
+  const bullets: string[] = [];
+
+  // 1. Overall MoM spend direction
+  const totalItem = report.summary.find((s) => s.metric.toLowerCase().includes('total spend'));
+  if (totalItem && totalItem.momPercentChange !== null) {
+    const mom = totalItem.momPercentChange;
+    const dir = mom > 0 ? 'increased' : 'decreased';
+    bullets.push(
+      `Total spend ${dir} by ${Math.abs(mom).toFixed(1)}% MoM ` +
+      `(${formatMoney(totalItem.previousMonth)} \u2192 ${formatMoney(totalItem.currentMonth)}).`,
+    );
+  }
+
+  // 2. Department with largest spend increase
+  const topUp = [...report.departmentBreakdown]
+    .filter((d) => (d.momVariationPercent ?? 0) > 0)
+    .sort((a, b) => (b.momVariationPercent ?? 0) - (a.momVariationPercent ?? 0))[0];
+  if (topUp) {
+    bullets.push(
+      `${topUp.departmentName} had the largest uplift at +${topUp.momVariationPercent!.toFixed(1)}% MoM ` +
+      `(${formatMoney(topUp.spendAud)}).`,
+    );
+  }
+
+  // 3. Department with largest spend reduction
+  const topDown = [...report.departmentBreakdown]
+    .filter((d) => (d.momVariationPercent ?? 0) < 0)
+    .sort((a, b) => (a.momVariationPercent ?? 0) - (b.momVariationPercent ?? 0))[0];
+  if (topDown) {
+    bullets.push(
+      `${topDown.departmentName} reduced spend by ${Math.abs(topDown.momVariationPercent!).toFixed(1)}% MoM ` +
+      `(${formatMoney(topDown.spendAud)}), indicating improved cost discipline.`,
+    );
+  }
+
+  // 4. Leading expense category by share
+  const topCat = report.categoryBreakdown[0];
+  if (topCat) {
+    bullets.push(
+      `${formatCategoryLabel(topCat.category)} was the largest expense category, ` +
+      `representing ${topCat.percentOfTotal.toFixed(1)}% of total spend (${formatMoney(topCat.spendAud)}).`,
+    );
+  }
+
+  // 5. Anomaly summary
+  if (report.anomalies.length > 0) {
+    const vCount = report.anomalies.filter((a) => a.reason === 'variance_flagged').length;
+    const sCount = report.anomalies.filter((a) => a.reason === 'price_spike').length;
+    const parts: string[] = [];
+    if (vCount) parts.push(`${vCount} variance discrepanc${vCount === 1 ? 'y' : 'ies'}`);
+    if (sCount) parts.push(`${sCount} price spike${sCount === 1 ? '' : 's'}`);
+    bullets.push(
+      `${report.anomalies.length} flagged entr${report.anomalies.length === 1 ? 'y' : 'ies'} detected ` +
+      `(${parts.join(' and ')}) — see Anomaly Detail section below.`,
+    );
+  } else {
+    bullets.push('No anomalies flagged this period; all entries are within acceptable variance thresholds.');
+  }
+
+  return bullets;
+}
+
+function drawInsightsCard(doc: PDFKit.PDFDocument, report: MonthlyExpenseReport): void {
+  const bullets = generateInsights(report);
+  if (bullets.length === 0) return;
+
+  const PAD_X = 16;
+  const PAD_Y = 12;
+  const TITLE_H = 20;
+  const BULLET_H = 18;
+  const estimatedH = PAD_Y + TITLE_H + bullets.length * BULLET_H + PAD_Y;
+
+  ensureSpace(doc, estimatedH + 16);
+
+  const cardX = M;
+  const cardY = doc.y;
+  const cardW = CONTENT_WIDTH;
+
+  // Card background
+  doc.roundedRect(cardX, cardY, cardW, estimatedH, 6).fillColor('#EFF6FF').fill();
+  doc.roundedRect(cardX, cardY, cardW, estimatedH, 6).strokeColor('#BFDBFE').lineWidth(0.5).stroke();
+  // Left accent bar
+  doc.rect(cardX, cardY, 3, estimatedH).fillColor(C.accent).fill();
+
+  // Title
+  fill(doc, C.navy).font('Helvetica-Bold').fontSize(8.5)
+    .text('KEY SPENDING INSIGHTS', cardX + PAD_X + 4, cardY + PAD_Y, {
+      characterSpacing: 0.5,
+      width: cardW - PAD_X * 2,
+    });
+
+  // Bullet rows
+  const dotX = cardX + PAD_X + 4 + 3;
+  const textX = cardX + PAD_X + 4 + 12;
+  const textW = cardW - PAD_X * 2 - 16;
+  let bulletY = cardY + PAD_Y + TITLE_H;
+
+  bullets.forEach((line) => {
+    doc.circle(dotX, bulletY + 4.5, 2.5).fillColor(C.accent).fill();
+    fill(doc, C.slate).font('Helvetica').fontSize(8)
+      .text(line, textX, bulletY, { width: textW, lineBreak: false });
+    bulletY += BULLET_H;
+  });
+
+  doc.y = cardY + estimatedH + 14;
+}
+
+// ---------------------------------------------------------------------------
 // Anomaly table - compact with flag badge
 // ---------------------------------------------------------------------------
 function drawAnomalyTable(doc: PDFKit.PDFDocument, report: MonthlyExpenseReport): void {
@@ -496,6 +680,12 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
         })
       : deptDataY + 20;
 
+    // Dept pie chart for current month (right column only)
+    const deptPieSlices = allDeptNames
+      .map((name) => ({ label: name, value: curDeptMap.get(name)?.spendAud ?? 0 }))
+      .filter((s) => s.value > 0);
+    const deptPieEndY = deptPieSlices.length > 0 ? drawPieChart(doc, deptPieSlices, rightX, deptDataY, colW) : deptDataY;
+
     const deptRightEnd = curDeptRows.length > 0
       ? drawListColumn(doc, {
           title: '',
@@ -505,10 +695,10 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
           rightAlignColumns: [1, 2],
           momColumns: [2],
           startX: rightX,
-          startY: deptDataY,
+          startY: deptPieEndY,
           availableWidth: colW,
         })
-      : deptDataY + 20;
+      : deptPieEndY + 20;
 
     doc.y = Math.max(deptLeftEnd, deptRightEnd) + 14;
 
@@ -535,6 +725,12 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
         })
       : catDataY + 20;
 
+    // Category pie chart for current month (right column only)
+    const catPieSlices = allCategories
+      .map((cat) => ({ label: formatCategoryLabel(cat), value: curCatMap.get(cat)?.spendAud ?? 0 }))
+      .filter((s) => s.value > 0);
+    const catPieEndY = catPieSlices.length > 0 ? drawPieChart(doc, catPieSlices, rightX, catDataY, colW) : catDataY;
+
     const catRightEnd = curCatRows.length > 0
       ? drawListColumn(doc, {
           title: '',
@@ -543,10 +739,10 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
           widths: catWidths,
           rightAlignColumns: [1, 2],
           startX: rightX,
-          startY: catDataY,
+          startY: catPieEndY,
           availableWidth: colW,
         })
-      : catDataY + 20;
+      : catPieEndY + 20;
 
     // Draw divider spanning the full section height
     stroke(doc, C.border).lineWidth(1)
@@ -557,7 +753,12 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
     doc.y = Math.max(catLeftEnd, catRightEnd) + 12;
 
     // -----------------------------------------------------------------------
-    // SECTION 3 - Anomalies (conditional - only when variance/price-spike flags tripped)
+    // SECTION 3 - Key Insights card
+    // -----------------------------------------------------------------------
+    drawInsightsCard(doc, report);
+
+    // -----------------------------------------------------------------------
+    // SECTION 4 - Anomalies (conditional - only when variance/price-spike flags tripped)
     // -----------------------------------------------------------------------
     drawAnomalyTable(doc, report);
 

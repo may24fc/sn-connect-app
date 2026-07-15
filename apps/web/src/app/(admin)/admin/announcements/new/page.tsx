@@ -133,7 +133,7 @@ export default function NewAnnouncementPage() {
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
         targetRoles: parseCsvList(targeting.rolesCsv) as (
           | 'employee'
-          | 'intern'
+          | 'associate'
           | 'admin'
           | 'super_admin'
         )[],
@@ -190,7 +190,7 @@ export default function NewAnnouncementPage() {
         expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
         targetRoles: parseCsvList(targeting.rolesCsv) as (
           | 'employee'
-          | 'intern'
+          | 'associate'
           | 'admin'
           | 'super_admin'
         )[],

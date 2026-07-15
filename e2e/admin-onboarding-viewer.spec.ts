@@ -107,7 +107,7 @@ test.describe('Admin Onboarding Data Viewer', () => {
     await expect(page.getByRole('button', { name: /Preview/i })).toBeVisible();
   });
 
-  test('employee/intern roles get 403 forbidden from admin onboarding API', async ({ page }) => {
+  test('employee/associate roles get 403 forbidden from admin onboarding API', async ({ page }) => {
     await page.goto('/login');
     await page.fill('[name="email"]', 'employee@test.com');
     await page.fill('[name="password"]', 'password');
@@ -117,7 +117,7 @@ test.describe('Admin Onboarding Data Viewer', () => {
     expect(employeeResponse.status()).toBe(403);
 
     await page.goto('/login');
-    await page.fill('[name="email"]', 'intern@test.com');
+    await page.fill('[name="email"]', 'associate@test.com');
     await page.fill('[name="password"]', 'password');
     await page.click('button[type="submit"]');
 

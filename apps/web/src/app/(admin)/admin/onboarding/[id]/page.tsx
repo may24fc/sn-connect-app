@@ -127,7 +127,7 @@ export default function OnboardingDetailPage(): ReactNode {
   const role = Array.isArray(profile.users)
     ? profile.users[0]?.role
     : profile.users?.role;
-  const normalizedRole = role === 'intern' ? 'intern' : 'employee';
+  const normalizedRole = role === 'associate' ? 'associate' : 'employee';
   const department = Array.isArray(profile.departments)
     ? profile.departments[0]?.name
     : profile.departments?.name;
@@ -429,7 +429,7 @@ export default function OnboardingDetailPage(): ReactNode {
           addToast({
             title: 'Assignment completed',
             description: completedName
-              ? result.role === 'intern'
+              ? result.role === 'associate'
                 ? `${completedName} has been assigned to the internship tracker.`
                 : result.employmentStatus === 'confirmed'
                   ? `${completedName} has been assigned as confirmed.`

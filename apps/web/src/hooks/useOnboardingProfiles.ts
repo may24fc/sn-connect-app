@@ -15,8 +15,8 @@ export interface OnboardingProfileListItem {
   completed_at?: string | null;
   payment_account_masked: string | null;
   users?:
-    | { role?: 'employee' | 'intern' | null; avatar_url?: string | null }
-    | Array<{ role?: 'employee' | 'intern' | null; avatar_url?: string | null }>;
+    | { role?: 'employee' | 'associate' | null; avatar_url?: string | null }
+    | Array<{ role?: 'employee' | 'associate' | null; avatar_url?: string | null }>;
   departments?: { id: string; name: string } | Array<{ id: string; name: string }> | null;
   review_state?: OnboardingReviewState;
   rejection_notes?: string | null;

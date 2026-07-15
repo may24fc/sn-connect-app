@@ -33,7 +33,7 @@ This hub maps each application and audience to its documentation entry point.
 | [apps/web/user/performance.md](apps/web/user/performance.md) | OKRs, KPIs, and self-assessments |
 | [apps/web/user/information-hub.md](apps/web/user/information-hub.md) | Announcements, resources, and My Growth |
 | [apps/web/user/ai-assistant.md](apps/web/user/ai-assistant.md) | Using the AI HR chatbot |
-| [apps/web/user/intern-guide.md](apps/web/user/intern-guide.md) | Intern-specific features: hours tracking, EOD reports |
+| [apps/web/user/associate-guide.md](apps/web/user/associate-guide.md) | Associate-specific features: hours tracking, EOD reports |
 | [apps/web/user/notifications.md](apps/web/user/notifications.md) | In-app notifications |
 | [apps/web/user/profile.md](apps/web/user/profile.md) | Profile, payment details, and avatar |
 
@@ -45,7 +45,7 @@ This hub maps each application and audience to its documentation entry point.
 |----------|-------------|
 | [apps/web/admin/getting-started.md](apps/web/admin/getting-started.md) | Admin/Super Admin dashboard orientation |
 | [apps/web/admin/employee-management.md](apps/web/admin/employee-management.md) | Inviting, approving, and managing employees |
-| [apps/web/admin/intern-management.md](apps/web/admin/intern-management.md) | Overseeing interns and reviewing daily reports |
+| [apps/web/admin/associate-management.md](apps/web/admin/associate-management.md) | Overseeing interns and reviewing daily reports |
 | [apps/web/admin/performance-management.md](apps/web/admin/performance-management.md) | Review cycles, OKRs, KPIs, appraisals |
 | [apps/web/admin/probation.md](apps/web/admin/probation.md) | Monitoring and evaluating probationary employees |
 | [apps/web/admin/reports.md](apps/web/admin/reports.md) | Tracking staff submissions and analytics |

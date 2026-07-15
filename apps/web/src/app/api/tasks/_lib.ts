@@ -1,7 +1,7 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const TASK_ASSIGNER_ROLE = 'super_admin';
-export const TASK_ASSIGNABLE_ROLES = ['employee', 'intern'] as const;
+export const TASK_ASSIGNABLE_ROLES = ['employee', 'associate'] as const;
 
 type TaskAssignableRole = (typeof TASK_ASSIGNABLE_ROLES)[number];
 
@@ -79,7 +79,7 @@ export async function validateTaskAssignee(
     return {
       ok: false,
       status: 400,
-      error: 'Tasks can only be assigned to employee or intern accounts',
+      error: 'Tasks can only be assigned to employee or associate accounts',
     };
   }
 

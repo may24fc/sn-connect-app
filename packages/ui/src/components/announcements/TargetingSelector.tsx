@@ -19,7 +19,7 @@ export function TargetingSelector({ value, onChange }: TargetingSelectorProps) {
       <div className="space-y-2">
         <Label>Target Roles (comma-separated)</Label>
         <Input
-          placeholder="employee, intern"
+          placeholder="employee, associate"
           value={value.rolesCsv}
           onChange={(event) => onChange({ ...value, rolesCsv: event.target.value })}
         />

@@ -64,8 +64,8 @@ export interface DailyReport {
   updatedAt: string;
 }
 
-// Intern Profile
-export interface Intern {
+// Associate Profile
+export interface Associate {
   id: InternId;
   name: string;
   email: string;
@@ -79,7 +79,7 @@ export interface Intern {
   recentReports: Array<DailyReport>;
 }
 
-// Intern Summary for Lists
+// Associate Summary for Lists
 export interface InternSummary {
   id: InternId;
   name: string;
@@ -180,7 +180,7 @@ export function getDaysRemaining(endDate: string): number {
   return Math.max(0, diffDays);
 }
 
-// Helper function to check if intern is on track
+// Helper function to check if associate is on track
 export function isOnTrack(
   completedHours: number,
   requiredHours: number,

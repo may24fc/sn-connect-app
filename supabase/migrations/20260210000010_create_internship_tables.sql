@@ -1,6 +1,6 @@
 -- Migration: Create Internship Management Tables
 -- Created: 2026-02-16
--- Description: Adds internships and intern daily logs with RLS policies
+-- Description: Adds internships and associate daily logs with RLS policies
 
 BEGIN;
 
@@ -167,7 +167,7 @@ CREATE TRIGGER trigger_intern_daily_logs_audit
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_audit_log();
 
-COMMENT ON TABLE public.internships IS 'Internship period tracking for intern employees';
+COMMENT ON TABLE public.internships IS 'Internship period tracking for associate employees';
 COMMENT ON TABLE public.intern_daily_logs IS 'Daily logs submitted by interns for EOD reporting';
 
 COMMIT;

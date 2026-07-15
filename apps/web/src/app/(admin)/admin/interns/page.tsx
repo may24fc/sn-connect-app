@@ -122,11 +122,11 @@ export default function AdminInternsPage(): ReactNode {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any | null>(null);
   const [assignmentModalMode, setAssignmentModalMode] = useState<
-    'employee-assignment' | 'employee-probation' | 'intern-assignment'
-  >('intern-assignment');
+    'employee-assignment' | 'employee-probation' | 'associate-assignment'
+  >('associate-assignment');
   const [selectedEodLog, setSelectedEodLog] = useState<(typeof dailyLogs)[number] | null>(null);
 
-  // Delete intern state
+  // Delete associate state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [internToDelete, setInternToDelete] = useState<InternSummary | null>(null);
   const { addToast } = useToast();
@@ -137,8 +137,8 @@ export default function AdminInternsPage(): ReactNode {
         method: 'DELETE',
       });
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to delete intern' }));
-        throw new Error(error.error || 'Failed to delete intern');
+        const error = await response.json().catch(() => ({ error: 'Failed to delete associate' }));
+        throw new Error(error.error || 'Failed to delete associate');
       }
       return response.json();
     },
@@ -148,20 +148,20 @@ export default function AdminInternsPage(): ReactNode {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       setDeleteDialogOpen(false);
       setInternToDelete(null);
-      addToast({ title: 'Intern deleted', variant: 'success' });
+      addToast({ title: 'Associate deleted', variant: 'success' });
     },
     onError: () => {
-      addToast({ title: 'Failed to delete intern', variant: 'error' });
+      addToast({ title: 'Failed to delete associate', variant: 'error' });
     },
   });
 
-  const handleDeleteIntern = (intern: InternSummary) => {
-    setInternToDelete(intern);
+  const handleDeleteIntern = (associate: InternSummary) => {
+    setInternToDelete(associate);
     setDeleteDialogOpen(true);
   };
 
   // Real-time approvals hook
-  const { pendingApprovals } = useRealtimeOnboardingApprovals('intern');
+  const { pendingApprovals } = useRealtimeOnboardingApprovals('associate');
   const pendingApprovalById = useMemo(
     () => new Set(pendingApprovals.map((approval) => approval.id)),
     [pendingApprovals]
@@ -177,7 +177,7 @@ export default function AdminInternsPage(): ReactNode {
   // Sort state for Pending Approvals table
   const pendingSort = useTableSort({ initialColumn: 'submitted', initialDirection: 'desc' });
   const sortedPending = pendingSort.sortItems(pendingApprovals, {
-    intern: (a) => a.full_name?.toLowerCase() ?? '',
+    associate: (a) => a.full_name?.toLowerCase() ?? '',
     email: (a) => a.email_address?.toLowerCase() ?? '',
     position: (a) => a.position?.toLowerCase() ?? '',
     submitted: (a) => a.completed_at ?? '',
@@ -187,7 +187,7 @@ export default function AdminInternsPage(): ReactNode {
   // Sort state for EOD Reports table
   const eodSort = useTableSort({ initialColumn: 'date', initialDirection: 'desc' });
   const sortedDailyLogs = eodSort.sortItems(dailyLogs, {
-    intern: (l) => {
+    associate: (l) => {
       const emp = l.internship?.employee;
       return emp ? `${emp.first_name} ${emp.last_name}`.toLowerCase() : '';
     },
@@ -222,9 +222,9 @@ export default function AdminInternsPage(): ReactNode {
   const internshipsForOnboardingQuery = useInternships({ page: 1, pageSize: 500 });
   const { data: employeeRecordsData } = useEmployees({ page: 1, pageSize: 500, status: 'active' });
 
-  // Fetch intern onboarding profiles
+  // Fetch associate onboarding profiles
   const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingProfiles({
-    role: 'intern',
+    role: 'associate',
     page: 1,
     pageSize: 50,
   });
@@ -311,18 +311,18 @@ export default function AdminInternsPage(): ReactNode {
   const schools = [...new Set(interns.map((i) => i.school))];
   const supervisors = [...new Set(interns.map((i) => i.supervisor))];
 
-  const filteredInterns = interns.filter((intern) => {
+  const filteredInterns = interns.filter((associate) => {
     const matchesSearch =
-      intern.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      intern.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      intern.program.toLowerCase().includes(searchQuery.toLowerCase());
+      associate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      associate.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      associate.program.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'converted'
-        ? intern.status === 'completed'
-        : intern.status === statusFilter);
-    const matchesSchool = schoolFilter === 'all' || intern.school === schoolFilter;
-    const matchesSupervisor = supervisorFilter === 'all' || intern.supervisor === supervisorFilter;
+        ? associate.status === 'completed'
+        : associate.status === statusFilter);
+    const matchesSchool = schoolFilter === 'all' || associate.school === schoolFilter;
+    const matchesSupervisor = supervisorFilter === 'all' || associate.supervisor === supervisorFilter;
     return matchesSearch && matchesStatus && matchesSchool && matchesSupervisor;
   });
 
@@ -347,19 +347,19 @@ export default function AdminInternsPage(): ReactNode {
           'Progress',
           'Status',
         ],
-        rowMapper: (intern) => [
-          intern.name,
-          intern.email,
-          intern.school,
-          intern.program,
-          intern.department,
-          intern.supervisor,
-          formatDateForCsv(intern.startDate),
-          formatDateForCsv(intern.endDate),
-          intern.requiredHours,
-          intern.completedHours,
-          formatPercentageForCsv(intern.progressPercentage),
-          intern.status,
+        rowMapper: (associate) => [
+          associate.name,
+          associate.email,
+          associate.school,
+          associate.program,
+          associate.department,
+          associate.supervisor,
+          formatDateForCsv(associate.startDate),
+          formatDateForCsv(associate.endDate),
+          associate.requiredHours,
+          associate.completedHours,
+          formatPercentageForCsv(associate.progressPercentage),
+          associate.status,
         ],
       });
     } finally {
@@ -367,8 +367,8 @@ export default function AdminInternsPage(): ReactNode {
     }
   }, [filteredInterns]);
 
-  const handleViewIntern = (intern: InternSummary): void => {
-    router.push(`/admin/interns/${intern.id}`);
+  const handleViewIntern = (associate: InternSummary): void => {
+    router.push(`/admin/interns/${associate.id}`);
   };
 
   const currentPathWithSearch = useMemo(() => {
@@ -383,7 +383,7 @@ export default function AdminInternsPage(): ReactNode {
 
   const openAssignmentModal = (data: any): void => {
     setAssignmentData(data);
-    setAssignmentModalMode('intern-assignment');
+    setAssignmentModalMode('associate-assignment');
     setAssignmentModalOpen(true);
   };
 
@@ -391,7 +391,7 @@ export default function AdminInternsPage(): ReactNode {
     setAssignmentModalOpen(open);
     if (!open) {
       setAssignmentData(null);
-      setAssignmentModalMode('intern-assignment');
+      setAssignmentModalMode('associate-assignment');
     }
   };
 
@@ -412,7 +412,7 @@ export default function AdminInternsPage(): ReactNode {
       userId: profile.user_id,
       fullName: profile.full_name || 'Unnamed',
       email: profile.email_address || employeeRecord?.company_email || employeeRecord?.personal_email || '',
-      role: 'intern',
+      role: 'associate',
       position: profile.position || employeeRecord?.position || null,
       departmentName: employeeRecord?.department || assignedDepartment || onboardingDepartment || null,
       divisionName: employeeRecord?.division || null,
@@ -425,9 +425,9 @@ export default function AdminInternsPage(): ReactNode {
     });
   };
 
-  const openInternAssignmentFromIntern = (intern: InternSummary): void => {
+  const openInternAssignmentFromIntern = (associate: InternSummary): void => {
     const internshipRecord = (internshipsQuery.data?.data || []).find(
-      (record) => record.id === intern.id
+      (record) => record.id === associate.id
     );
 
     if (!internshipRecord) {
@@ -446,7 +446,7 @@ export default function AdminInternsPage(): ReactNode {
       userId: internshipRecord.userId,
       fullName: internshipRecord.name,
       email: internshipRecord.email,
-      role: 'intern',
+      role: 'associate',
       position: employeeRecord?.position || null,
       divisionId: internshipRecord.divisionId || undefined,
       departmentName: internshipRecord.department || employeeRecord?.department || null,
@@ -465,7 +465,7 @@ export default function AdminInternsPage(): ReactNode {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Intern Management</h1>
+          <h1 className="text-2xl font-bold text-foreground">Associate Management</h1>
           <p className="text-muted-foreground">
             Monitor interns and view their onboarding submissions
           </p>
@@ -477,7 +477,7 @@ export default function AdminInternsPage(): ReactNode {
           </Button>
           <Button onClick={() => setInviteModalOpen(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
-            Invite Intern
+            Invite Associate
           </Button>
         </div>
       </div>
@@ -707,8 +707,8 @@ export default function AdminInternsPage(): ReactNode {
             <Card>
               <CardContent className="p-4 space-y-2">
                 {filteredInterns.length > 0 ? (
-                  filteredInterns.map((intern) => (
-                    <InternRow key={intern.id} intern={intern} hoursMode={hoursMode} onView={handleViewIntern} {...(isSuperAdmin && { onDelete: handleDeleteIntern })} />
+                  filteredInterns.map((associate) => (
+                    <InternRow key={associate.id} associate={associate} hoursMode={hoursMode} onView={handleViewIntern} {...(isSuperAdmin && { onDelete: handleDeleteIntern })} />
                   ))
                 ) : (
                   <EmptyState
@@ -726,8 +726,8 @@ export default function AdminInternsPage(): ReactNode {
                       statusFilter !== 'all' ||
                       schoolFilter !== 'all' ||
                       supervisorFilter !== 'all'
-                        ? 'Adjust the filters to widen the intern list.'
-                        : 'Intern records will appear here once accounts and internships are created.'
+                        ? 'Adjust the filters to widen the associate list.'
+                        : 'Associate records will appear here once accounts and internships are created.'
                     }
                     size="sm"
                   />
@@ -792,7 +792,7 @@ export default function AdminInternsPage(): ReactNode {
                       {pendingApprovals.length !== 1 ? 's' : ''} Awaiting Review
                     </h3>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                      Review and approve intern onboarding submissions to activate their accounts.
+                      Review and approve associate onboarding submissions to activate their accounts.
                     </p>
                   </div>
                 </div>
@@ -812,7 +812,7 @@ export default function AdminInternsPage(): ReactNode {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <SortableTableHead column="intern" {...pendingSortHeadProps}>Intern</SortableTableHead>
+                    <SortableTableHead column="associate" {...pendingSortHeadProps}>Associate</SortableTableHead>
                     <SortableTableHead column="email" {...pendingSortHeadProps}>Email</SortableTableHead>
                     <SortableTableHead column="position" {...pendingSortHeadProps}>Position</SortableTableHead>
                     <SortableTableHead column="submitted" {...pendingSortHeadProps}>Submitted</SortableTableHead>
@@ -894,14 +894,14 @@ export default function AdminInternsPage(): ReactNode {
             <CardHeader>
               <CardTitle className="text-base">Rejected Submissions</CardTitle>
               <CardDescription>
-                Completed intern onboarding submissions that were rejected and are waiting on updates.
+                Completed associate onboarding submissions that were rejected and are waiting on updates.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Intern</TableHead>
+                    <TableHead>Associate</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Position</TableHead>
                     <TableHead>Rejected</TableHead>
@@ -959,8 +959,8 @@ export default function AdminInternsPage(): ReactNode {
                             </Button>
                             <RejectedOnboardingDeleteButton
                               profileId={profile.id}
-                              fullName={profile.full_name || 'This intern'}
-                              subjectLabel="intern"
+                              fullName={profile.full_name || 'This associate'}
+                              subjectLabel="associate"
                             />
                           </div>
                         </TableCell>
@@ -972,7 +972,7 @@ export default function AdminInternsPage(): ReactNode {
                         <EmptyState
                           icon={XCircle}
                           title="No rejected submissions"
-                          description="Rejected intern onboarding submissions will appear here with their latest review notes."
+                          description="Rejected associate onboarding submissions will appear here with their latest review notes."
                           size="sm"
                         />
                       </TableCell>
@@ -986,13 +986,13 @@ export default function AdminInternsPage(): ReactNode {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">All Onboarding Submissions</CardTitle>
-              <CardDescription>Complete history of intern onboarding data</CardDescription>
+              <CardDescription>Complete history of associate onboarding data</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <SortableTableHead column="intern" {...onboardSortHeadProps}>Intern</SortableTableHead>
+                    <SortableTableHead column="associate" {...onboardSortHeadProps}>Associate</SortableTableHead>
                     <SortableTableHead column="email" {...onboardSortHeadProps}>Email</SortableTableHead>
                     <SortableTableHead column="department" {...onboardSortHeadProps}>Department</SortableTableHead>
                     <SortableTableHead column="status" {...onboardSortHeadProps}>Status</SortableTableHead>
@@ -1004,7 +1004,7 @@ export default function AdminInternsPage(): ReactNode {
                 <TableBody>
                   {onboardingData?.data && onboardingData.data.length > 0 ? (
                     onboardSort.sortItems([...onboardingData.data], {
-                      intern: (p: any) => p.full_name?.toLowerCase() ?? '',
+                      associate: (p: any) => p.full_name?.toLowerCase() ?? '',
                       email: (p: any) => p.email_address?.toLowerCase() ?? '',
                       department: (p: any) => {
                         const dept = Array.isArray(p.departments) ? p.departments[0]?.name : p.departments?.name;
@@ -1073,7 +1073,7 @@ export default function AdminInternsPage(): ReactNode {
                                 onClick={() =>
                                   setSelectedApproval({
                                     ...profile,
-                                    role: 'intern',
+                                    role: 'associate',
                                     user_id: profile.user_id,
                                     completed_at: profile.completed_at ?? profile.updated_at ?? profile.created_at,
                                   })
@@ -1121,12 +1121,12 @@ export default function AdminInternsPage(): ReactNode {
                           title={
                             onboardingLoading
                               ? 'Loading onboarding data'
-                              : 'No intern onboarding submissions found'
+                              : 'No associate onboarding submissions found'
                           }
                           description={
                             onboardingLoading
-                              ? 'Intern onboarding submissions are still loading.'
-                              : 'Completed and in-progress intern onboarding records will appear here.'
+                              ? 'Associate onboarding submissions are still loading.'
+                              : 'Completed and in-progress associate onboarding records will appear here.'
                           }
                           size="sm"
                         />
@@ -1178,7 +1178,7 @@ export default function AdminInternsPage(): ReactNode {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <SortableTableHead column="intern" {...eodSortHeadProps}>Intern</SortableTableHead>
+                      <SortableTableHead column="associate" {...eodSortHeadProps}>Associate</SortableTableHead>
                       <SortableTableHead column="date" {...eodSortHeadProps}>Date</SortableTableHead>
                       <SortableTableHead column="school" {...eodSortHeadProps}>School</SortableTableHead>
                       <SortableTableHead column="department" {...eodSortHeadProps}>Department</SortableTableHead>
@@ -1192,7 +1192,7 @@ export default function AdminInternsPage(): ReactNode {
                       sortedDailyLogs.map((log) => {
                         const internName = log.internship?.employee
                           ? `${log.internship.employee.first_name} ${log.internship.employee.last_name}`
-                          : 'Unknown Intern';
+                          : 'Unknown Associate';
 
                         return (
                           <TableRow key={log.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onDoubleClick={() => setSelectedEodLog(log)}>
@@ -1287,7 +1287,7 @@ export default function AdminInternsPage(): ReactNode {
       <InviteUserModal
         open={inviteModalOpen}
         onOpenChange={setInviteModalOpen}
-        defaultRole="intern"
+        defaultRole="associate"
       />
 
       <ApproveOnboardingModal
@@ -1315,7 +1315,7 @@ export default function AdminInternsPage(): ReactNode {
           queryClient.invalidateQueries({ queryKey: ['users'] });
           setAssignmentData(null);
           setAssignmentModalOpen(false);
-          setAssignmentModalMode('intern-assignment');
+          setAssignmentModalMode('associate-assignment');
         }}
       />
 
@@ -1323,7 +1323,7 @@ export default function AdminInternsPage(): ReactNode {
         open={checklistDialogOpen}
         onOpenChange={setChecklistDialogOpen}
         profiles={onboardingData?.data ?? []}
-        roleLabel="intern"
+        roleLabel="associate"
       />
 
       <EODReportDetailModal
@@ -1340,7 +1340,7 @@ export default function AdminInternsPage(): ReactNode {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
               <Trash2 className="h-5 w-5" />
-              Remove Intern
+              Remove Associate
             </DialogTitle>
             <DialogDescription>
               Are you sure you want to remove{' '}
@@ -1370,7 +1370,7 @@ export default function AdminInternsPage(): ReactNode {
               }}
               disabled={deleteInternMutation.isPending}
             >
-              {deleteInternMutation.isPending ? 'Removing...' : 'Remove Intern'}
+              {deleteInternMutation.isPending ? 'Removing...' : 'Remove Associate'}
             </Button>
           </DialogFooter>
         </DialogContent>

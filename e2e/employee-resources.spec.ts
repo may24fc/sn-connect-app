@@ -29,7 +29,7 @@ test.describe('Employee Resources Experience', () => {
     // 3. Resources targeted to their department
     // 4. Resources specifically targeted to them
 
-    // Should NOT see resources targeted only to other roles (e.g., admin-only, intern-only)
+    // Should NOT see resources targeted only to other roles (e.g., admin-only, associate-only)
     // This is enforced by RLS policies
 
     const resourceCards = page.locator('.resource-card');
@@ -326,38 +326,38 @@ test.describe('Employee Resources - Security Tests', () => {
   });
 });
 
-test.describe('Intern Resources Experience', () => {
+test.describe('Associate Resources Experience', () => {
   test.beforeEach(async ({ page }) => {
-    // Login as intern
+    // Login as associate
     await page.goto('/login');
-    await page.fill('[name="email"]', 'intern@test.com');
+    await page.fill('[name="email"]', 'associate@test.com');
     await page.fill('[name="password"]', 'password');
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL('/dashboard');
   });
 
-  test('intern can view resources feed', async ({ page }) => {
+  test('associate can view resources feed', async ({ page }) => {
     await page.goto('/resources');
     await expect(page.getByRole('heading', { name: /Information Hub/i })).toBeVisible();
   });
 
-  test('intern sees intern-targeted resources', async ({ page }) => {
+  test('associate sees associate-targeted resources', async ({ page }) => {
     await page.goto('/resources');
 
-    // Intern should see:
+    // Associate should see:
     // 1. Public resources
-    // 2. Resources targeted to 'intern' role
+    // 2. Resources targeted to 'associate' role
     // 3. Resources targeted to their department
 
-    // Search for intern onboarding
-    await page.fill('[name="search"]', 'intern onboarding');
+    // Search for associate onboarding
+    await page.fill('[name="search"]', 'associate onboarding');
     await page.press('[name="search"]', 'Enter');
 
-    // Should show intern-specific resources
+    // Should show associate-specific resources
     await expect(page.locator('.resource-card')).toBeVisible();
   });
 
-  test('intern does NOT see employee-only resources', async ({ page }) => {
+  test('associate does NOT see employee-only resources', async ({ page }) => {
     await page.goto('/resources');
 
     // Resources targeted only to 'employee' role should not appear for interns
@@ -365,10 +365,10 @@ test.describe('Intern Resources Experience', () => {
     await page.press('[name="search"]', 'Enter');
 
     // Should show no results if resource is employee-only
-    // (Or show it if it's public/targeted to both employee and intern)
+    // (Or show it if it's public/targeted to both employee and associate)
   });
 
-  test('intern can bookmark and access resources like employees', async ({ page }) => {
+  test('associate can bookmark and access resources like employees', async ({ page }) => {
     await page.goto('/resources');
 
     // Bookmark functionality should work the same

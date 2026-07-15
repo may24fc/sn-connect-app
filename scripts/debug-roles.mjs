@@ -98,7 +98,7 @@ async function main() {
 
   const sampleEmails = [
     'employee@example.com',
-    'intern@example.com',
+    'associate@example.com',
     'admin@example.com',
     'super-admin@example.com',
   ];
@@ -146,8 +146,8 @@ async function main() {
     console.log();
   }
 
-  const assignableUsers = users.filter((u) => u.role === 'employee' || u.role === 'intern');
-  console.log(`Assignable users (employee/intern): ${assignableUsers.length}`);
+  const assignableUsers = users.filter((u) => u.role === 'employee' || u.role === 'associate');
+  console.log(`Assignable users (employee/associate): ${assignableUsers.length}`);
   assignableUsers.forEach((u) => {
     const authUser = authUsers.find((au) => au.id === u.id);
     const emp = employeeByUserId.get(u.id);

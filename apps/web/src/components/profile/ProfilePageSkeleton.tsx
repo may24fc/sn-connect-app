@@ -2,7 +2,7 @@ import { Skeleton } from '@hr-portal/ui';
 import type { ReactNode } from 'react';
 
 /**
- * Shared skeleton for all profile pages (employee, admin, intern, super-admin).
+ * Shared skeleton for all profile pages (employee, admin, associate, super-admin).
  * Mirrors the profile layout: header card → personal info bento grid → role details.
  */
 export function ProfilePageSkeleton(): ReactNode {

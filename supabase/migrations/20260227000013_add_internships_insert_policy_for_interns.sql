@@ -1,7 +1,7 @@
 -- Migration: 20260227000013_add_internships_insert_policy_for_interns.sql
 -- Description: Add INSERT policy allowing interns to self-initialize their internship record.
 --   The existing RLS policies only grant SELECT to interns and ALL to admin roles,
---   so intern self-initialization via POST /api/internships/initialize was blocked
+--   so associate self-initialization via POST /api/internships/initialize was blocked
 --   with error 42501 (row-level security policy violation).
 -- Dependencies: 20260216000020_repair_internship_tables.sql
 
@@ -21,7 +21,7 @@ CREATE POLICY internships_insert_self_policy ON public.internships
         AND e.user_id = auth.uid()
         AND e.deleted_at IS NULL
     )
-    AND user_has_role(auth.uid(), 'intern')
+    AND user_has_role(auth.uid(), 'associate')
   );
 
 -- 3. Also add UPDATE policy so interns can update their own internship
@@ -39,7 +39,7 @@ CREATE POLICY internships_update_self_policy ON public.internships
         AND e.user_id = auth.uid()
         AND e.deleted_at IS NULL
     )
-    AND user_has_role(auth.uid(), 'intern')
+    AND user_has_role(auth.uid(), 'associate')
   )
   WITH CHECK (
     EXISTS (
@@ -49,7 +49,7 @@ CREATE POLICY internships_update_self_policy ON public.internships
         AND e.user_id = auth.uid()
         AND e.deleted_at IS NULL
     )
-    AND user_has_role(auth.uid(), 'intern')
+    AND user_has_role(auth.uid(), 'associate')
   );
 
 -- Validation (uncomment to verify):

@@ -186,7 +186,7 @@ const TABLE_CATEGORIES: Record<string, { label: string; category: string }> = {
   kpis: { label: 'OKRs & KPIs', category: 'performance' },
   role_kpi_entries: { label: 'OKRs & KPIs', category: 'performance' },
   internships: { label: 'Internships', category: 'internships' },
-  internship_daily_logs: { label: 'Intern Daily Logs', category: 'internships' },
+  internship_daily_logs: { label: 'Associate Daily Logs', category: 'internships' },
   onboarding_profiles: { label: 'Onboarding', category: 'onboarding' },
   onboarding_documents: { label: 'Onboarding', category: 'onboarding' },
   onboarding_checklists: { label: 'Onboarding', category: 'onboarding' },

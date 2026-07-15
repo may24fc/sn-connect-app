@@ -12,7 +12,7 @@ export default async function CrmPage() {
   }
 
   return (
-    <SelfServiceLayoutShell allowedRoles={['employee', 'intern', 'admin', 'super_admin']}>
+    <SelfServiceLayoutShell allowedRoles={['employee', 'associate', 'admin', 'super_admin']}>
       <AdminCrmPage allowedTrackers={auth.context.grantedTrackers} />
     </SelfServiceLayoutShell>
   );

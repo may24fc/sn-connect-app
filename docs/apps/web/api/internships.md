@@ -19,7 +19,7 @@ Internship lifecycle management — create, track, log daily hours, extend, and 
 | `GET` | `/api/internships/[id]` | Admin/Supervisor/Self | Get internship detail |
 | `PATCH` | `/api/internships/[id]` | Admin/Supervisor | Update internship |
 | `DELETE` | `/api/internships/[id]` | Admin | Soft-delete internship |
-| `POST` | `/api/internships/initialize` | Intern | Self-initialize internship |
+| `POST` | `/api/internships/initialize` | Associate | Self-initialize internship |
 | `PATCH` | `/api/internships/[id]/extend` | Admin | Extend internship |
 | `GET` | `/api/internships/[id]/logs` | Admin/Supervisor/Self | List daily logs |
 | `POST` | `/api/internships/[id]/logs` | Any | Create daily log |
@@ -37,7 +37,7 @@ List internships with enriched data. Any authenticated user can list, but return
 |-----------|------|---------|-------------|
 | `status` | `string` | — | Filter: `active`, `completed`, `terminated`, `converted` |
 | `supervisorId` | `uuid` | — | Filter by supervisor |
-| `search` | `string` | — | Search intern's first/last name |
+| `search` | `string` | — | Search associate's first/last name |
 | `sortBy` | `string` | `start_date` | Sort column |
 | `sortOrder` | `asc\|desc` | `desc` | |
 | `page` | `number` | `1` | |
@@ -66,7 +66,7 @@ Each internship record includes:
       "required_hours": 500,
       "completed_hours": 240,
       "department": "Engineering",
-      "position": "Software Engineering Intern",
+      "position": "Software Engineering Associate",
       "intern_name": "Ana Reyes",
       "intern_avatar": "https://...",
       "supervisor_name": "Maria Santos",
@@ -95,7 +95,7 @@ Create an internship record for an employee.
   "endDate": "2026-07-15",
   "requiredHours": 500,
   "department": "Engineering",
-  "position": "Software Engineering Intern"
+  "position": "Software Engineering Associate"
 }
 ```
 
@@ -103,13 +103,13 @@ Create an internship record for an employee.
 
 ---
 
-## POST /api/internships/initialize (Intern Only)
+## POST /api/internships/initialize (Associate Only)
 
-Self-service internship initialization. The intern's employee record is resolved from their auth user.
+Self-service internship initialization. The associate's employee record is resolved from their auth user.
 
 ### Rules
 
-- Only users with `intern` role can call this endpoint
+- Only users with `associate` role can call this endpoint
 - Prevents duplicates: if an `active` internship exists → **409 Conflict**
 - Action is audit-logged
 
@@ -119,7 +119,7 @@ Self-service internship initialization. The intern's employee record is resolved
   "endDate": "2026-07-15",
   "requiredHours": 500,
   "department": "Engineering",
-  "position": "Software Engineering Intern"
+  "position": "Software Engineering Associate"
 }
 ```
 
@@ -164,7 +164,7 @@ Extend an active internship's end date.
 ```json
 {
   "newEndDate": "2026-09-15",
-  "reason": "Intern requested extension to complete capstone project"
+  "reason": "Associate requested extension to complete capstone project"
 }
 ```
 
@@ -251,7 +251,7 @@ Requires `admin` or `super_admin` role.
 | `active` | Currently ongoing |
 | `completed` | Successfully finished required hours |
 | `terminated` | Ended early |
-| `converted` | Intern converted to regular employee |
+| `converted` | Associate converted to regular employee |
 
 ---
 

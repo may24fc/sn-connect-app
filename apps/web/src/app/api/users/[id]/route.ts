@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const ADMIN_ROLES = ['admin', 'super_admin'] as const;
-const MANAGEABLE_DIRECTORY_ROLES = ['employee', 'intern'] as const;
+const MANAGEABLE_DIRECTORY_ROLES = ['employee', 'associate'] as const;
 
 const patchUserSchema = z.object({
   status: z.enum(['inactive', 'active']),
@@ -51,7 +51,7 @@ async function getManagedTargetUser(
 
 /**
  * PATCH /api/users/[id]
- * Deactivate (status=inactive) or restore (status=active) an employee/intern account.
+ * Deactivate (status=inactive) or restore (status=active) an employee/associate account.
  * Restoring also clears the date_terminated field on the linked employee record.
  * Permissions: Admin and Super Admin only
  */
@@ -104,7 +104,7 @@ export async function PATCH(
 
     if (!isManageableDirectoryRole(targetUser.role)) {
       return NextResponse.json(
-        { error: 'Only employee and intern accounts can be modified here' },
+        { error: 'Only employee and associate accounts can be modified here' },
         { status: 403 }
       );
     }
@@ -154,7 +154,7 @@ export async function PATCH(
 
 /**
  * DELETE /api/users/[id]
- * Terminate an employee or intern account.
+ * Terminate an employee or associate account.
  * Sets users.status = 'terminated' and records employees.date_terminated.
  * Records are preserved in the directory (visible in the Former Employees tab).
  * Permissions: Admin and Super Admin only
@@ -198,7 +198,7 @@ export async function DELETE(
 
     if (!isManageableDirectoryRole(targetUser.role)) {
       return NextResponse.json(
-        { error: 'Only employee and intern accounts can be terminated here' },
+        { error: 'Only employee and associate accounts can be terminated here' },
         { status: 403 }
       );
     }

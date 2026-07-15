@@ -149,7 +149,7 @@ export default function ReportDetailPage({
     return (
       <MarketingReportsAccessState
         reason={marketingAccess.reason}
-        fallbackHref={marketingAccess.user?.role === 'intern' ? '/intern/dashboard' : '/dashboard'}
+        fallbackHref={marketingAccess.user?.role === 'associate' ? '/associate/dashboard' : '/dashboard'}
       />
     );
   }

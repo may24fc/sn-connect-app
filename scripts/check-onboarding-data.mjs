@@ -2,7 +2,7 @@
 
 /**
  * Script: Check onboarding data for test accounts
- * Purpose: Verify if employee@example.com and intern@example.com have onboarding profiles
+ * Purpose: Verify if employee@example.com and associate@example.com have onboarding profiles
  */
 
 import { readFileSync } from 'fs';
@@ -63,11 +63,11 @@ const authUsersData = await authUsersResponse.json();
 const authUsers = authUsersData.users || [];
 
 const testUsers = authUsers.filter(
-  (u) => u.email === 'employee@example.com' || u.email === 'intern@example.com'
+  (u) => u.email === 'employee@example.com' || u.email === 'associate@example.com'
 );
 
 if (testUsers.length === 0) {
-  console.error('❌ No auth users found for employee@example.com or intern@example.com');
+  console.error('❌ No auth users found for employee@example.com or associate@example.com');
   process.exit(1);
 }
 
@@ -113,7 +113,7 @@ console.log('ONBOARDING PROFILES FOR TEST ACCOUNTS');
 console.log('═'.repeat(80));
 
 if (!Array.isArray(profiles) || profiles.length === 0) {
-  console.log('\n❌ No onboarding profiles found for employee@example.com or intern@example.com');
+  console.log('\n❌ No onboarding profiles found for employee@example.com or associate@example.com');
   console.log('\nℹ️  Test accounts need to complete the onboarding wizard first.');
   if (!Array.isArray(profiles)) {
     console.log('\n⚠️  Unexpected response format:', profiles);

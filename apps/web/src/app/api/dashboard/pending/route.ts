@@ -7,7 +7,7 @@ import { getAuthedSupabase, isNotificationAdmin } from '../../notifications/_lib
  * - Pending report submissions
  * - Pending invoice approvals
  * - Pending performance reviews
- * - Late intern EOD reports
+ * - Late associate EOD reports
  */
 export async function GET(): Promise<NextResponse> {
   try {
@@ -60,7 +60,7 @@ export async function GET(): Promise<NextResponse> {
       .order('created_at', { ascending: false })
       .limit(5);
 
-    // Late intern standups (interns who didn't submit yesterday's standup)
+    // Late associate standups (interns who didn't submit yesterday's standup)
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().slice(0, 10);

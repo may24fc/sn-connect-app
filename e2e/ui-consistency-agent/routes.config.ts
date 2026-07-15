@@ -41,7 +41,7 @@ export const employeeRoutes: Array<RouteConfig> = [
 ];
 
 export const internRoutes: Array<RouteConfig> = [
-  { path: '/intern/dashboard', name: 'Intern Dashboard', requiresAuth: true, authRole: 'intern' },
+  { path: '/associate/dashboard', name: 'Associate Dashboard', requiresAuth: true, authRole: 'associate' },
 ];
 
 export const adminRoutes: Array<RouteConfig> = [

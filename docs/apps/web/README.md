@@ -24,7 +24,7 @@ Start here: **[User Guides](user/README.md)**
 | [user/performance.md](user/performance.md) | OKRs, KPIs, and self-assessments |
 | [user/information-hub.md](user/information-hub.md) | Announcements, resources, and My Growth |
 | [user/ai-assistant.md](user/ai-assistant.md) | Using the AI HR chatbot |
-| [user/intern-guide.md](user/intern-guide.md) | Intern-specific features: hours tracking, EOD reports |
+| [user/associate-guide.md](user/associate-guide.md) | Associate-specific features: hours tracking, EOD reports |
 | [user/notifications.md](user/notifications.md) | In-app notifications |
 | [user/profile.md](user/profile.md) | Updating profile, payment details, and avatar |
 
@@ -36,7 +36,7 @@ Start here: **[Admin Guides](admin/README.md)**
 |----------|-------------|
 | [admin/getting-started.md](admin/getting-started.md) | Admin/Super Admin dashboard orientation |
 | [admin/employee-management.md](admin/employee-management.md) | Inviting, approving, and managing employees |
-| [admin/intern-management.md](admin/intern-management.md) | Overseeing interns and reviewing daily reports |
+| [admin/associate-management.md](admin/associate-management.md) | Overseeing interns and reviewing daily reports |
 | [admin/performance-management.md](admin/performance-management.md) | Review cycles, OKRs, KPIs, appraisals |
 | [admin/probation.md](admin/probation.md) | Monitoring and evaluating probationary employees |
 | [admin/reports.md](admin/reports.md) | Tracking staff submissions and analytics |

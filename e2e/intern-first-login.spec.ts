@@ -1,39 +1,39 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * E2E tests for the intern first-login experience.
+ * E2E tests for the associate first-login experience.
  *
  * Covers the V2-0.1 fix: interns without an active internship record
  * are redirected to the setup flow instead of hitting a dead-end page.
  *
  * Requirements:
  * - Set E2E_INTERN_EMAIL and E2E_INTERN_PASSWORD env vars, OR
- * - Enable mock auth (NEXT_PUBLIC_ENABLE_MOCK_AUTH=true) with intern@example.com/password
+ * - Enable mock auth (NEXT_PUBLIC_ENABLE_MOCK_AUTH=true) with associate@example.com/password
  */
 
-const internEmail = process.env.E2E_INTERN_EMAIL ?? 'intern@example.com';
+const internEmail = process.env.E2E_INTERN_EMAIL ?? 'associate@example.com';
 const internPassword = process.env.E2E_INTERN_PASSWORD ?? 'password';
 const useMockAuth = process.env.NEXT_PUBLIC_ENABLE_MOCK_AUTH === 'true';
 
-test.describe('Intern First-Login Experience', () => {
+test.describe('Associate First-Login Experience', () => {
   test.describe('Setup Flow', () => {
-    test('new intern sees setup page when no internship record exists', async ({ page }) => {
-      // Login as intern
+    test('new associate sees setup page when no internship record exists', async ({ page }) => {
+      // Login as associate
       await page.goto('/login');
       await page.getByLabel('Email').fill(internEmail);
       await page.locator('#password').fill(internPassword);
       await page.getByRole('button', { name: 'Sign in' }).click();
 
-      // After login, if the intern has no active internship record,
+      // After login, if the associate has no active internship record,
       // they should be redirected to the setup page (either by middleware
       // or by the client-side redirect in the dashboard).
       // Wait for navigation to settle.
-      await page.waitForURL(/\/(intern\/(setup|dashboard)|onboarding)/, { timeout: 15000 });
+      await page.waitForURL(/\/(associate\/(setup|dashboard)|onboarding)/, { timeout: 15000 });
 
       const url = page.url();
 
-      // If they land on intern/setup, the redirect is working correctly
-      if (url.includes('/intern/setup')) {
+      // If they land on associate/setup, the redirect is working correctly
+      if (url.includes('/associate/setup')) {
         // Verify setup page content
         await expect(
           page.getByRole('heading', { name: /complete your internship setup/i })
@@ -49,8 +49,8 @@ test.describe('Intern First-Login Experience', () => {
 
         // Verify the submit button
         await expect(page.getByRole('button', { name: /complete setup/i })).toBeVisible();
-      } else if (url.includes('/intern/dashboard')) {
-        // Intern already has an active internship record — verify
+      } else if (url.includes('/associate/dashboard')) {
+        // Associate already has an active internship record — verify
         // the dashboard loads correctly (no dead-end message)
         await expect(page.getByText(/no active internship record found/i)).not.toBeVisible();
       }
@@ -58,7 +58,7 @@ test.describe('Intern First-Login Experience', () => {
     });
 
     test('setup form validates required fields', async ({ page }) => {
-      await page.goto('/intern/setup');
+      await page.goto('/associate/setup');
 
       // Wait for page to load
       await page.waitForLoadState('networkidle');
@@ -78,7 +78,7 @@ test.describe('Intern First-Login Experience', () => {
     });
 
     test('setup form rejects end date before start date', async ({ page }) => {
-      await page.goto('/intern/setup');
+      await page.goto('/associate/setup');
       await page.waitForLoadState('networkidle');
 
       const startDateInput = page.getByLabel(/start date/i);
@@ -107,8 +107,8 @@ test.describe('Intern First-Login Experience', () => {
   });
 
   test.describe('Dashboard Access', () => {
-    test('intern dashboard does not show dead-end "No Active Record" message', async ({ page }) => {
-      await page.goto('/intern/dashboard');
+    test('associate dashboard does not show dead-end "No Active Record" message', async ({ page }) => {
+      await page.goto('/associate/dashboard');
       await page.waitForLoadState('networkidle');
 
       // Wait for the page to settle (either redirect or load dashboard)
@@ -116,13 +116,13 @@ test.describe('Intern First-Login Experience', () => {
 
       const url = page.url();
 
-      if (url.includes('/intern/dashboard')) {
+      if (url.includes('/associate/dashboard')) {
         // If we're still on the dashboard, verify there's no dead-end message
         // (the old bug showed a warning banner telling users to "Contact your supervisor")
         await expect(
           page.getByText(/contact your supervisor to set up your internship profile/i)
         ).not.toBeVisible();
-      } else if (url.includes('/intern/setup')) {
+      } else if (url.includes('/associate/setup')) {
         // Redirect to setup is the correct behavior for uninitialized interns
         await expect(
           page.getByRole('heading', { name: /complete your internship setup/i })
@@ -130,10 +130,10 @@ test.describe('Intern First-Login Experience', () => {
       }
     });
 
-    test('intern with expired record sees appropriate messaging', async ({ page }) => {
-      // Navigate to dashboard — if the intern has a completed/terminated internship
+    test('associate with expired record sees appropriate messaging', async ({ page }) => {
+      // Navigate to dashboard — if the associate has a completed/terminated internship
       // but no active one, they should still be guided to setup or see an appropriate message
-      await page.goto('/intern/dashboard');
+      await page.goto('/associate/dashboard');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(3000);
 
@@ -145,7 +145,7 @@ test.describe('Intern First-Login Experience', () => {
       ).not.toBeVisible();
 
       // Either shows real dashboard content or redirects to setup
-      if (url.includes('/intern/setup')) {
+      if (url.includes('/associate/setup')) {
         await expect(
           page.getByRole('heading', { name: /complete your internship setup/i })
         ).toBeVisible();

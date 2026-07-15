@@ -53,8 +53,8 @@ export interface OnboardingProfileRecord {
   rejection_count?: number;
   payment_account_masked?: string | null;
   users?:
-    | { role?: 'employee' | 'intern' | null; status?: string | null }
-    | Array<{ role?: 'employee' | 'intern' | null; status?: string | null }>;
+    | { role?: 'employee' | 'associate' | null; status?: string | null }
+    | Array<{ role?: 'employee' | 'associate' | null; status?: string | null }>;
   departments?: { id: string; name: string } | Array<{ id: string; name: string }> | null;
 }
 

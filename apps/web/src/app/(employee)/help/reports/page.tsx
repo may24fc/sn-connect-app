@@ -66,7 +66,7 @@ const internFaqs: FAQItem[] = [
   {
     question: 'Where do I submit my daily report?',
     answer:
-      'From your Intern Dashboard, click the "Submit Now" button on the Today\'s Status Card. You can also view all past reports on the Reports page (/intern/reports).',
+      'From your Associate Dashboard, click the "Submit Now" button on the Today\'s Status Card. You can also view all past reports on the Reports page (/associate/reports).',
   },
   {
     question: 'How do hours from daily reports count toward my internship?',
@@ -144,7 +144,7 @@ export default function ReportsHelpPage(): ReactNode {
         </CardContent>
       </Card>
 
-      {/* Intern Daily Reports */}
+      {/* Associate Daily Reports */}
       <Card className="border-amber-200 dark:border-amber-700/40">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
@@ -187,11 +187,11 @@ export default function ReportsHelpPage(): ReactNode {
         </div>
       </div>
 
-      {/* Intern FAQ */}
+      {/* Associate FAQ */}
       <div>
         <div className="flex items-center gap-2 mb-4">
           <GraduationCap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-          <h3 className="text-lg font-semibold">Intern Report FAQ</h3>
+          <h3 className="text-lg font-semibold">Associate Report FAQ</h3>
         </div>
         <div className="space-y-3">
           {internFaqs.map((faq) => (

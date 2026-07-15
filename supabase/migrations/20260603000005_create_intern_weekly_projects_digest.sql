@@ -1,8 +1,8 @@
 -- ============================================================
 -- Migration: get_intern_weekly_projects_digest RPC
--- Purpose  : Returns active intern project snapshots for the
+-- Purpose  : Returns active associate project snapshots for the
 --            weekly n8n projects digest workflow.
--- Called by: intern-weekly-projects-digest n8n workflow
+-- Called by: associate-weekly-projects-digest n8n workflow
 --            (service_role key via PostgREST /rpc)
 -- ============================================================
 
@@ -38,7 +38,7 @@ BEGIN
   IF caller_role IS DISTINCT FROM 'service_role'
      AND NOT user_has_any_role(auth.uid(), ARRAY['admin', 'super_admin']::user_role[])
   THEN
-    RAISE EXCEPTION 'Only admins or service-role callers can access the intern weekly projects digest'
+    RAISE EXCEPTION 'Only admins or service-role callers can access the associate weekly projects digest'
       USING ERRCODE = '42501';
   END IF;
 
@@ -49,7 +49,7 @@ BEGIN
       i.id                                                          AS internship_id,
       i.employee_id                                                 AS intern_employee_id,
       ed.user_id                                                    AS intern_user_id,
-      COALESCE(NULLIF(BTRIM(ed.full_name),        ''), 'Unnamed Intern') AS intern_name,
+      COALESCE(NULLIF(BTRIM(ed.full_name),        ''), 'Unnamed Associate') AS intern_name,
       ed.email                                                      AS intern_email,
       COALESCE(
         NULLIF(BTRIM(ed.department_name), ''),
@@ -62,7 +62,7 @@ BEGIN
       AND i.deleted_at IS NULL
   ),
   intern_projects AS (
-    -- Active/planning projects where the intern is the lead
+    -- Active/planning projects where the associate is the lead
     SELECT
       ai.internship_id,
       ai.intern_employee_id,
@@ -144,6 +144,6 @@ GRANT EXECUTE ON FUNCTION public.get_intern_weekly_projects_digest(date)
   TO authenticated, service_role;
 
 COMMENT ON FUNCTION public.get_intern_weekly_projects_digest(date) IS
-  'Returns one row per active intern (who has at least one active/planning project) '
+  'Returns one row per active associate (who has at least one active/planning project) '
   'for the weekly n8n Telegram projects digest. Each row includes project details '
   'and the latest monthly milestone overview per project.';

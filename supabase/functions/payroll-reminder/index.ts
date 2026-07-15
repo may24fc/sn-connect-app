@@ -50,7 +50,7 @@ serve(async (req: Request): Promise<Response> => {
     const { data: allEmployees, error: empError } = await supabase
       .from('users')
       .select('id, first_name, last_name')
-      .in('role', ['employee', 'intern'])
+      .in('role', ['employee', 'associate'])
       .eq('status', 'active')
       .is('deleted_at', null);
 

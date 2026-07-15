@@ -116,18 +116,18 @@ describe('useCreateResource', () => {
 
   it('creates resource with role targeting', async () => {
     const newResource = {
-      title: 'Intern Onboarding Guide',
+      title: 'Associate Onboarding Guide',
       description: 'Guide for new interns',
       category: 'onboarding',
-      filePath: 'onboarding/intern-guide.pdf',
+      filePath: 'onboarding/associate-guide.pdf',
       externalUrl: null,
       isPublic: false,
-      targetRoles: ['intern'],
+      targetRoles: ['associate'],
     };
 
     const mockResponse = {
       data: {
-        id: 'res-intern',
+        id: 'res-associate',
         ...newResource,
         file_path: newResource.filePath,
         external_url: newResource.externalUrl,
@@ -153,7 +153,7 @@ describe('useCreateResource', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.data?.data.target_roles).toEqual(['intern']);
+    expect(result.current.data?.data.target_roles).toEqual(['associate']);
     expect(result.current.data?.data.is_public).toBe(false);
   });
 
@@ -165,7 +165,7 @@ describe('useCreateResource', () => {
       filePath: 'training/collaboration.pdf',
       externalUrl: null,
       isPublic: false,
-      targetRoles: ['employee', 'intern', 'hr'],
+      targetRoles: ['employee', 'associate', 'hr'],
     };
 
     const mockResponse = {

@@ -16,7 +16,7 @@ CREATE TYPE user_role AS ENUM (
   'cos',
   'ceo',
   'employee',
-  'intern'
+  'associate'
 );
 
 CREATE TYPE user_status AS ENUM (
@@ -28,7 +28,7 @@ CREATE TYPE user_status AS ENUM (
 CREATE TYPE employment_type AS ENUM (
   'regular',
   'probationary',
-  'intern',
+  'associate',
   'project_based'
 );
 

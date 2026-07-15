@@ -11,7 +11,7 @@ This document describes all environment variables required by the HR Portal appl
 2. Fill in all required values (see variable descriptions below)
 3. The application validates environment variables at startup using Zod
 
-**For local development:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to use mock authentication without needing a real Supabase project. Test accounts: employee@test.com, intern@test.com, admin@test.com, superadmin@test.com (all with password: `password`)
+**For local development:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to use mock authentication without needing a real Supabase project. Test accounts: employee@test.com, associate@test.com, admin@test.com, superadmin@test.com (all with password: `password`)
 
 **For production:** Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=false` and provide real Supabase credentials.
 
@@ -50,13 +50,13 @@ This document describes all environment variables required by the HR Portal appl
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `SUPABASE_URL` | Base Supabase project URL used by n8n REST calls. For the intern EOD Telegram digest workflow, this should match `NEXT_PUBLIC_SUPABASE_URL` without any path suffix. | For n8n workflows |
+| `SUPABASE_URL` | Base Supabase project URL used by n8n REST calls. For the associate EOD Telegram digest workflow, this should match `NEXT_PUBLIC_SUPABASE_URL` without any path suffix. | For n8n workflows |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key used by n8n to call `get_intern_eod_digest_source` and upsert into `intern_eod_digest_runs`. This is the same secret documented in the Supabase section and must only be stored in server-side tooling such as n8n. | For n8n workflows |
-| `ANTHROPIC_API_KEY` | Anthropic API key used by the `intern-eod-telegram-department-digest` workflow to summarize prior-day logs by department before delivery. | For AI-backed n8n workflows |
+| `ANTHROPIC_API_KEY` | Anthropic API key used by the `associate-eod-telegram-department-digest` workflow to summarize prior-day logs by department before delivery. | For AI-backed n8n workflows |
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token used by n8n to deliver the department digest message. Obtain this from BotFather. | For Telegram workflows |
 | `TELEGRAM_CHAT_ID` | Target Telegram chat or group ID that should receive the department digest. Use the numeric chat ID for the destination boss or group channel. | For Telegram workflows |
 
-The workflow file `n8n/workflows/intern-eod-telegram-department-digest.json` expects all five variables above to be configured in the n8n runtime before import or activation.
+The workflow file `n8n/workflows/associate-eod-telegram-department-digest.json` expects all five variables above to be configured in the n8n runtime before import or activation.
 
 ### Wise (TransferWise) Payment Gateway
 
@@ -88,7 +88,7 @@ For local development without a Supabase project:
 2. You can skip setting Supabase keys (they won't be used)
 3. Use these test accounts:
    - `employee@test.com` / `password` (Employee role)
-   - `intern@test.com` / `password` (Intern role)
+   - `associate@test.com` / `password` (Associate role)
    - `admin@test.com` / `password` (Admin role - maps to hr/cos/ceo)
    - `superadmin@test.com` / `password` (Super Admin role)
 

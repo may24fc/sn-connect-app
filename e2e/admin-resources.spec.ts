@@ -162,15 +162,15 @@ test.describe('Admin Resources Management', () => {
     await page.goto('/admin/resources');
     await page.click('button:has-text("Create Resource")');
 
-    await page.fill('[name="title"]', 'Intern Onboarding Guide');
+    await page.fill('[name="title"]', 'Associate Onboarding Guide');
     await page.fill('[name="description"]', 'Guide for new interns only');
     await page.selectOption('[name="category"]', 'onboarding');
-    await page.fill('[name="externalUrl"]', 'https://example.com/intern-guide');
+    await page.fill('[name="externalUrl"]', 'https://example.com/associate-guide');
 
     // Set targeting to interns only
     await page.click('text=Targeting');
     await page.uncheck('[name="isPublic"]');
-    await page.check('[name="targetRole-intern"]');
+    await page.check('[name="targetRole-associate"]');
 
     await page.click('button:has-text("Save Draft")');
 
@@ -178,8 +178,8 @@ test.describe('Admin Resources Management', () => {
 
     // Verify targeting is set
     await page.goto('/admin/resources');
-    await page.click('text=Intern Onboarding Guide');
-    await expect(page.getByText(/target.*intern/i)).toBeVisible();
+    await page.click('text=Associate Onboarding Guide');
+    await expect(page.getByText(/target.*associate/i)).toBeVisible();
   });
 
   test('admin can target resource to specific departments', async ({ page }) => {

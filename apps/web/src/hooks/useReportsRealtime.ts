@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef } from 'react';
  * caches so the admin UI stays in sync without a manual refetch.
  *
  * Data flow:
- *   Tier 1 (employee/intern) submits a report or saves a draft
+ *   Tier 1 (employee/associate) submits a report or saves a draft
  *     -> Supabase CDC (Change Data Capture) broadcasts the row change
  *       -> This hook receives the event and invalidates the query cache
  *         -> TanStack Query refetches, Tier 2/3 admin sees the update immediately

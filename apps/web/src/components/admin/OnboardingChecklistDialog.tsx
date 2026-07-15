@@ -187,7 +187,7 @@ export function OnboardingChecklistDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   profiles: Array<OnboardingProfileListItem>;
-  roleLabel: 'employee' | 'intern';
+  roleLabel: 'employee' | 'associate';
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -220,7 +220,7 @@ export function OnboardingChecklistManager({
   active?: boolean;
   closeDialog?: () => void;
   profiles: Array<OnboardingProfileListItem>;
-  roleLabel: 'employee' | 'intern';
+  roleLabel: 'employee' | 'associate';
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();

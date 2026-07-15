@@ -259,8 +259,8 @@ Schedule Trigger (cron expression, UTC timezone)
 | `resources-lifecycle` | Cron | `[Control Hub] Cron: Content Lifecycle` | `*/15 * * * *` | Every 15m | Every 15m | Every 15m |
 | `cleanup-soft-deleted` | Cron | `[Control Hub] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
 | `cleanup-old-notifications` | Cron | `[Control Hub] Cron: Data Maintenance` | `0 2 * * 0` | 10 AM Sun | 3 AM Sun | 12 PM Sun |
-| `intern-eod-reminder` | Cron | `[Control Hub] Cron: Intern EOD Reminder` | `0 8 * * 1-5` | 4 PM | 9 AM | 6 PM |
-| `intern-weekly-summary` | Cron | `[Control Hub] Cron: Intern Weekly Summary` | `0 9 * * 5` | 5 PM Fri | 10 AM Fri | 7 PM Fri |
+| `associate-eod-reminder` | Cron | `[Control Hub] Cron: Associate EOD Reminder` | `0 8 * * 1-5` | 4 PM | 9 AM | 6 PM |
+| `associate-weekly-summary` | Cron | `[Control Hub] Cron: Associate Weekly Summary` | `0 9 * * 5` | 5 PM Fri | 10 AM Fri | 7 PM Fri |
 | `evaluation-cadence-reminders` | Cron | `.github/workflows/evaluation-cadence-reminders.yml` | `0 8 * * *` | 4 PM | 9 AM | 6 PM |
 | `payroll-reminder` | Cron | `[Control Hub] Cron: Payroll Reminder` | `0 0 25-31 * *` | 8 AM | 1 AM | 10 AM |
 | `check-late-reports` | Cron | `compliance-late-report-escalation` (n8n) | `30 0 * * *` | 8:30 AM | 1:30 AM | 10:30 AM |

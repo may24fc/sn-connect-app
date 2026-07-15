@@ -1,7 +1,7 @@
 import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-export type InviteUserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+export type InviteUserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 
 interface InviteUserPayload {
   email: string;

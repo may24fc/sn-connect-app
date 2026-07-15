@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 
 export interface TaskAssigneeOption {
   id: string;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
   name: string;
   email: string | null;
 }

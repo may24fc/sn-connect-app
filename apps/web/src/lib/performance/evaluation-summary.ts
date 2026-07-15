@@ -160,7 +160,7 @@ function getDepartmentRoleLabel(record: Record<string, unknown>): string {
 }
 
 function getSummaryCohort(record: Record<string, unknown>): SummaryCohort {
-  return /intern/i.test(getDepartmentRoleLabel(record)) ? 'interns' : 'employees';
+  return /associate/i.test(getDepartmentRoleLabel(record)) ? 'interns' : 'employees';
 }
 
 function buildRoleDistribution(records: Array<Record<string, unknown>>): Record<string, number> {
@@ -314,7 +314,7 @@ function buildSummaryPrompt(
     '* **Volume & Representation:** Explain how many employee submissions were analyzed and what role mix stands out.',
     '* **Most Material Signals:** Summarize the strongest recurring themes, wins, or blockers for employees.',
     '#### Interns',
-    '* **Volume & Representation:** Explain how many intern submissions were analyzed and what role mix stands out.',
+    '* **Volume & Representation:** Explain how many associate submissions were analyzed and what role mix stands out.',
     '* **Most Material Signals:** Summarize the strongest recurring themes, wins, or blockers for interns.',
     '',
     '### 2. Key Takeaways & Recurring Themes',
@@ -323,7 +323,7 @@ function buildSummaryPrompt(
     '* **[Theme 2 Title]:** Brief explanation of the second most common employee pattern.',
     '#### Interns',
     '* **[Theme 1 Title]:** Brief explanation of what interns are saying, backed by a generalized synthesis of quotes or data.',
-    '* **[Theme 2 Title]:** Brief explanation of the second most common intern pattern.',
+    '* **[Theme 2 Title]:** Brief explanation of the second most common associate pattern.',
     '#### Cross-Cohort Alignment',
     '* **Shared Signal:** Call out the most important overlap or divergence between employees and interns.',
     '',
@@ -333,9 +333,9 @@ function buildSummaryPrompt(
     '* 🟡 **Neutral (Y%):** Summary of passive or neutral employee feedback.',
     '* 🔴 **Negative (Z%):** Critical employee issues or blockers raised.',
     '#### Interns',
-    '* 🟢 **Positive (X%):** Summary of positive intern feedback highlights.',
-    '* 🟡 **Neutral (Y%):** Summary of passive or neutral intern feedback.',
-    '* 🔴 **Negative (Z%):** Critical intern issues or blockers raised.',
+    '* 🟢 **Positive (X%):** Summary of positive associate feedback highlights.',
+    '* 🟡 **Neutral (Y%):** Summary of passive or neutral associate feedback.',
+    '* 🔴 **Negative (Z%):** Critical associate issues or blockers raised.',
     '#### Overall',
     '* 🟢 **Positive (X%):** Summary of positive feedback highlights.',
     '* 🟡 **Neutral (Y%):** Summary of passive or neutral feedback.',
@@ -345,12 +345,12 @@ function buildSummaryPrompt(
     '#### Employees',
     '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact employee signal]" — *Context/Impact*',
     '#### Interns',
-    '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact intern signal]" — *Context/Impact*',
+    '> **Notable Feedback:** "[Insert a synthesized or directly quoted high-impact associate signal]" — *Context/Impact*',
     '',
     '### 5. Recommended Actions',
     '1. **Immediate Fix:** [Action item derived from high-frequency complaints]',
     '2. **Employee Follow-through:** [Action item grounded in employee evidence]',
-    '3. **Intern Follow-through:** [Action item grounded in intern evidence]',
+    '3. **Associate Follow-through:** [Action item grounded in associate evidence]',
     '4. **Strategic Adjustments:** [Long-term roadmap suggestion based on combined signals]',
     '',
     'Guardrails:',

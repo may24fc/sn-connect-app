@@ -65,7 +65,7 @@ describe('/api/directory route', () => {
           department_name: null,
         },
         {
-          role: 'intern',
+          role: 'associate',
           status: 'on_leave',
           internship_status: 'active',
           employment_type: 'probationary',
@@ -117,7 +117,7 @@ describe('/api/directory route', () => {
         interns: 1,
         onLeave: 1,
         probation: 1,
-        availableRoles: ['admin', 'intern'],
+        availableRoles: ['admin', 'associate'],
       },
       pagination: {
         page: 1,

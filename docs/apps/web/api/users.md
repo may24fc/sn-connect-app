@@ -15,7 +15,7 @@ User lifecycle management — inviting new users, approving completed onboarding
 | `POST` | `/api/users/invite` | admin, super_admin | Invite a new user |
 | `POST` | `/api/users/approve-onboarding` | admin, super_admin | Approve or reject onboarding |
 | `POST` | `/api/users/assign-employee` | admin, super_admin | Assign employee to probation |
-| `POST` | `/api/users/assign-intern` | admin, super_admin | Assign intern with details |
+| `POST` | `/api/users/assign-associate` | admin, super_admin | Assign associate with details |
 
 ---
 
@@ -39,7 +39,7 @@ Create a new auth user with temporary credentials and an initial onboarding prof
 | Field | Type | Required | Validation |
 |-------|------|----------|------------|
 | `email` | `string` | Yes | Valid email |
-| `role` | `enum` | Yes | `employee` or `intern` |
+| `role` | `enum` | Yes | `employee` or `associate` |
 | `firstName` | `string` | Yes | Min 1 char |
 | `lastName` | `string` | Yes | Min 1 char |
 | `departmentId` | `uuid` | No | |
@@ -116,7 +116,7 @@ When `approved: true`:
 3. Creates an `employees` record (if not exists) with:
    - Generated employee number (`EMP-YYYYMMDD-NNNN`)
    - Personal info from onboarding profile
-   - `employment_type` based on role (`intern` → `'intern'`, others → `'regular'`)
+   - `employment_type` based on role (`associate` → `'associate'`, others → `'regular'`)
    - `work_arrangement: 'full_time'`
    - Payment info (account name/number)
    - Emergency contact info
@@ -197,9 +197,9 @@ Assign an approved employee to the probation tracker with stage details.
 
 ---
 
-## POST /api/users/assign-intern
+## POST /api/users/assign-associate
 
-Assign an approved intern with program details. Creates or updates an internship record.
+Assign an approved associate with program details. Creates or updates an internship record.
 
 ### Request Body
 

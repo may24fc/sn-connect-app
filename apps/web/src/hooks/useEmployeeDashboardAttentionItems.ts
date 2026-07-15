@@ -9,7 +9,7 @@ import { ClipboardCheck, ClipboardList, Target } from 'lucide-react';
 
 export function useEmployeeDashboardAttentionItems() {
   const { user } = useAuth();
-  const isEvaluationAudience = user?.role === 'employee' || user?.role === 'intern';
+  const isEvaluationAudience = user?.role === 'employee' || user?.role === 'associate';
 
   const {
     profile: onboardingProfile,

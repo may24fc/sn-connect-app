@@ -113,7 +113,7 @@ export function TaskList({
     );
   }
 
-  // Cards variant (for employee/intern view)
+  // Cards variant (for employee/associate view)
   if (variant === 'cards') {
     return (
       <div className={cn('space-y-4', className)}>

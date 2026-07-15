@@ -7,7 +7,7 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'checklist_template_scope') THEN
-    CREATE TYPE public.checklist_template_scope AS ENUM ('employee', 'intern', 'default');
+    CREATE TYPE public.checklist_template_scope AS ENUM ('employee', 'associate', 'default');
   END IF;
 END
 $$;
@@ -58,7 +58,7 @@ CREATE TRIGGER trigger_checklist_templates_updated_at
 
 COMMENT ON TABLE public.checklist_templates IS 'Admin-managed default onboarding and offboarding checklist templates.';
 COMMENT ON COLUMN public.checklist_templates.flow_type IS 'Whether this template is used for onboarding or offboarding.';
-COMMENT ON COLUMN public.checklist_templates.scope IS 'Template scope: employee, intern, or default offboarding.';
+COMMENT ON COLUMN public.checklist_templates.scope IS 'Template scope: employee, associate, or default offboarding.';
 COMMENT ON COLUMN public.checklist_templates.tasks IS 'Serialized checklist task definitions used before concrete records exist.';
 
 COMMIT;

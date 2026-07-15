@@ -10,7 +10,7 @@ Launch assumptions for this model:
 
 - Internal HR portal is the primary live surface
 - Real admin and super-admin access is required
-- Employee and intern invite flow is active
+- Employee and associate invite flow is active
 - Transactional email is active
 - AI assistant is intended to be active
 - Wise payroll-related integration is intended to be active

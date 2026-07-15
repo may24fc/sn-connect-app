@@ -390,7 +390,7 @@ export default function DirectoryDetailPage({
     .join(', ');
 
   const hasInternshipDetails =
-    entry.role === 'intern' ||
+    entry.role === 'associate' ||
     !!entry.internship_id ||
     !!entry.school ||
     !!entry.program ||

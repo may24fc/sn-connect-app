@@ -151,7 +151,7 @@ DROP POLICY IF EXISTS intern_daily_logs_select_policy ON public.intern_daily_log
 DROP POLICY IF EXISTS intern_daily_logs_insert_policy ON public.intern_daily_logs;
 DROP POLICY IF EXISTS intern_daily_logs_update_policy ON public.intern_daily_logs;
 
--- SELECT: intern (own logs), supervisor, or admin roles
+-- SELECT: associate (own logs), supervisor, or admin roles
 CREATE POLICY intern_daily_logs_select_policy ON public.intern_daily_logs
   FOR SELECT
   TO authenticated
@@ -170,7 +170,7 @@ CREATE POLICY intern_daily_logs_select_policy ON public.intern_daily_logs
     )
   );
 
--- INSERT: intern (own logs) or admin roles
+-- INSERT: associate (own logs) or admin roles
 CREATE POLICY intern_daily_logs_insert_policy ON public.intern_daily_logs
   FOR INSERT
   TO authenticated
@@ -250,7 +250,7 @@ CREATE TRIGGER trigger_intern_daily_logs_audit
 -- 9. Table comments
 -- ============================================
 
-COMMENT ON TABLE public.internships IS 'Internship period tracking for intern employees';
+COMMENT ON TABLE public.internships IS 'Internship period tracking for associate employees';
 COMMENT ON TABLE public.intern_daily_logs IS 'Daily logs submitted by interns for EOD reporting';
 
 COMMIT;

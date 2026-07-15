@@ -4,7 +4,7 @@
 > **Project:** Control Hub HR Portal — Internal HR & Employee Management System
 > **Development Period:** January 31 – March 26, 2026 (~8 weeks)
 > **Tagline:** "Where Policy Meets Productivity"
-> **Developer:** Ceferino, Senior AI Intern
+> **Developer:** Ceferino, Senior AI Associate
 
 ---
 
@@ -40,7 +40,7 @@ The largest user group. After logging in, employees can:
 
 ### Interns
 A streamlined experience focused on onboarding:
-- **Intern dashboard** with status and progress
+- **Associate dashboard** with status and progress
 - **Daily log** entries (save as draft, then submit)
 - **Task list** with ability to pick up available tasks
 - **Profile** management
@@ -51,7 +51,7 @@ A streamlined experience focused on onboarding:
 Full management capabilities on top of the employee view:
 - **Admin dashboard** with company-wide metrics
 - **Employee management** — view, edit, and manage all employee records
-- **Intern management** — track intern progress and daily logs
+- **Associate management** — track associate progress and daily logs
 - **Onboarding viewer** — monitor new employee onboarding status
 - **Task management** — assign and track tasks across the organization
 - **Report management** — review, approve, or return submitted reports
@@ -284,7 +284,7 @@ A detailed record of every significant action in the system:
 - **Secured all data endpoints** — every request is now verified for proper authentication and permissions
 - Added **help links** and **tooltip explanations** throughout the portal to guide users
 - Set up the **email delivery system** for transactional emails
-- Added intern **draft/submit workflow** — interns can save daily log entries as drafts before formally submitting
+- Added associate **draft/submit workflow** — interns can save daily log entries as drafts before formally submitting
 
 ---
 
@@ -350,7 +350,7 @@ The portal includes **8 automated tasks** that run without human intervention:
 
 | Feature | What It Means |
 |---------|---------------|
-| **Role-based access** | Each user role (employee, intern, admin, super admin) can only see and do what they're authorized for |
+| **Role-based access** | Each user role (employee, associate, admin, super admin) can only see and do what they're authorized for |
 | **Secure login** | Industry-standard authentication with encrypted sessions stored in secure cookies |
 | **Page protection** | Users are automatically redirected to the login page if they try to access pages they shouldn't see |
 | **Data-level security** | Even at the database level, each user can only query their own authorized data (70+ security rules) |
@@ -397,7 +397,7 @@ Based on a quality review conducted March 7, 2026:
 |------|--------|
 | **Total Screens** | 90 — all built and functional |
 | **Feature Areas** | 23 — tasks, reports, performance, announcements, resources, notifications, invoices, onboarding, AI chat, calendar, leave, directory, milestones, payroll, jobs, documents, probation, internships, activity logs, audit trail, dashboard, profile, settings |
-| **User Roles** | 4 — Employee, Intern, Admin, Super Admin |
+| **User Roles** | 4 — Employee, Associate, Admin, Super Admin |
 | **Automated Background Tasks** | 8 — running on daily/weekly schedules or triggered by events |
 | **Database Tables** | 30+ — with 70+ security rules ensuring proper data access |
 | **Visual Identity** | Navy & Gold — consistent across all pages with dark mode support |

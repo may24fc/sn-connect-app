@@ -418,7 +418,7 @@ export default function AdminProjectPoolPage() {
           <DialogHeader>
             <DialogTitle>Edit project pool item</DialogTitle>
             <DialogDescription>
-              Update the intake details before an intern claims the project.
+              Update the intake details before an associate claims the project.
             </DialogDescription>
           </DialogHeader>
 

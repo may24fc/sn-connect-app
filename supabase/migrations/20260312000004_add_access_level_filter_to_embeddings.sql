@@ -5,7 +5,7 @@
 --
 --   Callers should pass:
 --     allowed_access_levels => ARRAY['all', 'admin']  (admin-level roles)
---     allowed_access_levels => ARRAY['all']            (employee / intern)
+--     allowed_access_levels => ARRAY['all']            (employee / associate)
 --
 --   Default is ARRAY['all', 'admin'] for full backward compatibility —
 --   existing callers that omit the parameter continue to receive all sources.

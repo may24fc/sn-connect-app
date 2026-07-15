@@ -28,7 +28,7 @@ Set `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true` to bypass Supabase Auth. Test accounts:
 | Email | Role |
 |-------|------|
 | `employee@test.com` | employee |
-| `intern@test.com` | intern |
+| `associate@test.com` | associate |
 | `admin@test.com` | admin |
 | `superadmin@test.com` | super_admin |
 
@@ -48,22 +48,22 @@ Creates a Supabase middleware client, calls `auth.getSession()` to refresh token
 |-----------|----------|
 | Public (`/login`, `/forgot-password`) | Allow without session |
 | Public API (`/api/auth/*`) | Allow without session |
-| Protected (`/dashboard`, `/admin`, `/intern`, etc.) | Require valid session → redirect to `/login?redirect=` |
+| Protected (`/dashboard`, `/admin`, `/associate`, etc.) | Require valid session → redirect to `/login?redirect=` |
 
 ### 3. Onboarding Gate
 
-For `employee` and `intern` roles accessing `/dashboard` or `/intern/dashboard`:
+For `employee` and `associate` roles accessing `/dashboard` or `/associate/dashboard`:
 
 1. Check `onboarding_profiles.is_completed` for the user
 2. If not complete → redirect to `/onboarding/setup`
 
-### 4. Intern Setup Gate
+### 4. Associate Setup Gate
 
-For `intern` role with completed onboarding accessing `/intern/dashboard`:
+For `associate` role with completed onboarding accessing `/associate/dashboard`:
 
 1. Look up employee record
 2. Check for active internship record
-3. If none exists → redirect to `/intern/setup`
+3. If none exists → redirect to `/associate/setup`
 
 ### 5. Security Headers
 
@@ -78,7 +78,7 @@ Non-public paths get `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
 | Role | Description | Access Level |
 |------|-------------|-------------|
 | `employee` | Regular employee | Own data, team resources |
-| `intern` | Intern | Own data, limited features |
+| `associate` | Associate | Own data, limited features |
 | `admin` | HR administrator | All employee data, management features |
 | `super_admin` | Executive / COS | Full system access, payroll, AI config |
 

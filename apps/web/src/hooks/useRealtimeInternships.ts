@@ -47,7 +47,7 @@ const internshipPayloadSchema = z.object({
  * RLS policies ensure only admins can subscribe to this channel.
  *
  * Events monitored:
- * - INSERT: New internship created (e.g., from intern assignment)
+ * - INSERT: New internship created (e.g., from associate assignment)
  * - UPDATE: Internship modified (e.g., hours logged, supervisor assigned)
  * - DELETE: Internship deleted
  */

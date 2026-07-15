@@ -44,7 +44,7 @@ const inviteSchema = z.object({
   email: z.string().email('Invalid email address'),
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  role: z.enum(['employee', 'intern', 'admin', 'super_admin'], {
+  role: z.enum(['employee', 'associate', 'admin', 'super_admin'], {
     required_error: 'Role is required',
   }),
   probationMode: z.enum(['under_probation', 'no_probation']).optional(),
@@ -67,7 +67,7 @@ function formatDateOnly(date: Date): string {
 
 const roleLabels: Record<InviteUserRole, string> = {
   employee: 'Employee',
-  intern: 'Intern',
+  associate: 'Associate',
   admin: 'Admin',
   super_admin: 'Super Admin',
 };
@@ -116,7 +116,7 @@ export function InviteUserModal({
   const { addToast } = useToast();
   const departmentsQuery = useDepartments({ page: 1, pageSize: 200 });
   const divisionsQuery = useDivisions({ page: 1, pageSize: 200 });
-  const availableRoles = allowedRoles ?? (defaultRole ? [defaultRole] : ['employee', 'intern']);
+  const availableRoles = allowedRoles ?? (defaultRole ? [defaultRole] : ['employee', 'associate']);
   const departmentOptions = departments.length > 0 ? departments : departmentsQuery.data?.data ?? [];
   const divisionOptions = divisions.length > 0 ? divisions : divisionsQuery.data?.data ?? [];
 
@@ -170,7 +170,7 @@ export function InviteUserModal({
       } else {
         const invitedRoleLabel = roleLabels[data.role];
         const nextStepDescription =
-          data.role === 'employee' || data.role === 'intern'
+          data.role === 'employee' || data.role === 'associate'
             ? `${data.firstName} ${data.lastName} can now sign in and complete onboarding.`
             : `${data.firstName} ${data.lastName} can now sign in with ${invitedRoleLabel.toLowerCase()} access.`;
         addToast({

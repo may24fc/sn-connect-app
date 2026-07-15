@@ -106,7 +106,7 @@ export function PendingApprovalsCard({
       href: '/admin/performance',
     },
     {
-      label: 'Late Intern EODs',
+      label: 'Late Associate EODs',
       count: data.lateEodReports.count,
       overdue: data.lateEodReports.count, // All late EODs are overdue by definition
       icon: Users,

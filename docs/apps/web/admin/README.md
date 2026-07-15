@@ -8,7 +8,7 @@ Documentation for HR Administrators and Super Administrators managing the Contro
 |-------|-------------|-------|
 | [Getting Started](getting-started.md) | Admin overview and navigation | Admin, Super Admin |
 | [Employee Management](employee-management.md) | Inviting, approving, and managing employees | Admin, Super Admin |
-| [Intern Management](intern-management.md) | Overseeing interns, reviewing daily reports | Admin, Super Admin |
+| [Associate Management](associate-management.md) | Overseeing interns, reviewing daily reports | Admin, Super Admin |
 | [Jobs Management](jobs-management.md) | Job postings and application tracking | Admin, Super Admin |
 | [Performance Management](performance-management.md) | Review cycles, OKRs, KPIs, appraisals | Admin, Super Admin |
 | [Probation Tracking](probation.md) | Monitoring and evaluating probationary employees | Admin, Super Admin |
@@ -28,7 +28,7 @@ Documentation for HR Administrators and Super Administrators managing the Contro
 |------------|-------|-------------|
 | Employee management | ✅ | ✅ |
 | Employee directory | ✅ | ✅ |
-| Intern management | ✅ | ✅ |
+| Associate management | ✅ | ✅ |
 | Jobs & applications | ✅ | ✅ |
 | Performance cycles | ✅ | ✅ |
 | Probation tracking | ✅ | ✅ |
@@ -51,9 +51,9 @@ Documentation for HR Administrators and Super Administrators managing the Contro
 
 Admin and Super Admin each have their own sidebar layout:
 
-**Admin sidebar (14 items):** Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Recruitment, Jobs, Company Pulse, Announcements, AI Knowledge, Resources, Tickets
+**Admin sidebar (14 items):** Dashboard, Directory, Employee Management, Associate Management, Checklists, Performance, Marketing Reports, Recruitment, Jobs, Company Pulse, Announcements, AI Knowledge, Resources, Tickets
 
-**Super Admin sidebar (13 items):** Dashboard, Directory, Employee Management, Intern Management, Checklists, Performance, Marketing Reports, Task Management, Payroll Approvals, Company Pulse, Announcements, AI Knowledge, Resources
+**Super Admin sidebar (13 items):** Dashboard, Directory, Employee Management, Associate Management, Checklists, Performance, Marketing Reports, Task Management, Payroll Approvals, Company Pulse, Announcements, AI Knowledge, Resources
 
 > **Note:** Some features like Probation, Notifications, and Activity Log are accessible via direct URL but are not sidebar navigation items.
 

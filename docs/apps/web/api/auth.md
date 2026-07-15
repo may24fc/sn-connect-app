@@ -161,7 +161,7 @@ When `NEXT_PUBLIC_ENABLE_MOCK_AUTH=true`, authentication bypasses Supabase entir
 | Email | Password | UI Role |
 |-------|----------|---------|
 | `employee@test.com` | `password` | employee |
-| `intern@test.com` | `password` | intern |
+| `associate@test.com` | `password` | associate |
 | `admin@test.com` | `password` | admin |
 | `superadmin@test.com` | `password` | super_admin |
 

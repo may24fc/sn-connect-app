@@ -48,7 +48,7 @@ List collections with pagination and search.
       "description": "Complete guide for new employees",
       "thumbnail_path": "collections/handbook-thumb.png",
       "is_public": true,
-      "target_roles": ["employee", "intern"],
+      "target_roles": ["employee", "associate"],
       "target_departments": [],
       "author_id": "uuid",
       "created_by": "uuid",
@@ -72,7 +72,7 @@ Create a collection.
   "description": "Complete guide for new employees",
   "thumbnailPath": "collections/handbook-thumb.png",
   "isPublic": true,
-  "targetRoles": ["employee", "intern"],
+  "targetRoles": ["employee", "associate"],
   "targetDepartments": []
 }
 ```

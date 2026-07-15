@@ -106,9 +106,9 @@ Runtime-safe enum values:
 
 | Enum | Values |
 |------|--------|
-| `UserRole` | `Employee`, `Intern`, `Admin`, `SuperAdmin` |
+| `UserRole` | `Employee`, `Associate`, `Admin`, `SuperAdmin` |
 | `UserStatus` | `Active`, `OnLeave`, `Terminated` |
-| `EmploymentType` | `Regular`, `Probationary`, `Intern`, `ProjectBased` |
+| `EmploymentType` | `Regular`, `Probationary`, `Associate`, `ProjectBased` |
 | `WorkArrangement` | `PartTime`, `FullTime` |
 | `DocumentType` | 10 categories |
 | `TaskStatus` | `Todo`, `InProgress`, `Completed`, `OnHold`, `Cancelled` |

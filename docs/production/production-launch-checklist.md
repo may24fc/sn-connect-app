@@ -5,7 +5,7 @@ This document is the operational runbook for launching the Control Hub HR Portal
 Scope for this checklist:
 - Internal HR portal first
 - Real leadership access for `admin` and `super_admin`
-- Real employee and intern invites
+- Real employee and associate invites
 - Transactional email enabled
 - AI assistant enabled only if the final provider decision is complete
 - Wise credentials and webhook path prepared before live payroll activity

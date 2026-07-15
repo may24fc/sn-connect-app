@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
     // Build query on the employee_directory view
     let query = supabase.from('employee_directory').select('*', { count: 'exact' });
 
-    // Role filter — "employee" expands to all non-intern roles so admins/leadership
+    // Role filter — "employee" expands to all non-associate roles so admins/leadership
     // appear in the directory when HR filters by Employee.
     if (roleFilter) {
       const expanded = expandEmployeeEquivalentRoles([roleFilter]);
@@ -224,8 +224,8 @@ export async function GET(request: NextRequest) {
         (allData || [])
           .map((entry: { role: string | null }) => entry.role)
           .filter((value: string | null): value is string => Boolean(value))
-          // Collapse all non-intern staff roles into "employee" so the filter
-          // dropdown shows only "Employee" and "Intern".
+          // Collapse all non-associate staff roles into "employee" so the filter
+          // dropdown shows only "Employee" and "Associate".
           .map((r: string) => collapseEmployeeEquivalentRole(r))
       )
     ).sort();
@@ -233,7 +233,7 @@ export async function GET(request: NextRequest) {
     const metadata = {
       total: count || 0,
       active: allData?.filter((e: { status: string | null }) => e.status === 'active').length || 0,
-      interns: allData?.filter((e: { role: string | null }) => e.role === 'intern').length || 0,
+      interns: allData?.filter((e: { role: string | null }) => e.role === 'associate').length || 0,
       onLeave: allData?.filter((e: { status: string | null }) => e.status === 'on_leave').length || 0,
       probation: allData?.filter((e: { employment_type: string | null }) => e.employment_type === 'probationary').length || 0,
       terminated: allData?.filter((e: { status: string | null }) => e.status === 'terminated').length || 0,

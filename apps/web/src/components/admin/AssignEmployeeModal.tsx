@@ -101,7 +101,7 @@ interface AssignmentData {
   userId: string;
   fullName: string;
   email: string;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
   position: string | null;
   inviteProbationMode?: 'under_probation' | 'no_probation';
   inviteProbationAuto90?: boolean;
@@ -123,14 +123,14 @@ interface AssignmentData {
 }
 
 interface AssignmentSuccessPayload {
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
   employmentStatus?: EmploymentStatus;
 }
 
 type AssignmentModalMode =
   | 'employee-assignment'
   | 'employee-probation'
-  | 'intern-assignment';
+  | 'associate-assignment';
 
 interface AssignEmployeeModalProps {
   open: boolean;
@@ -356,7 +356,7 @@ export function AssignEmployeeModal({
   const { addToast } = useToast();
 
   const isEmployee = assignmentData?.role === 'employee';
-  const isIntern = assignmentData?.role === 'intern';
+  const isIntern = assignmentData?.role === 'associate';
 
   const {
     register: registerEmployee,
@@ -403,7 +403,7 @@ export function AssignEmployeeModal({
   const departmentList = getOptionsFromQueryData(departmentsQuery.data);
   const divisionList = getOptionsFromQueryData(divisionsQuery.data);
   const resolvedMode: AssignmentModalMode =
-    mode ?? (isIntern ? 'intern-assignment' : 'employee-assignment');
+    mode ?? (isIntern ? 'associate-assignment' : 'employee-assignment');
   const isEmployeeProbationMode = resolvedMode === 'employee-probation';
 
   useEffect(() => {
@@ -435,7 +435,7 @@ export function AssignEmployeeModal({
   }, [assignmentData, isEmployeeProbationMode, open, resetEmployee]);
 
   useEffect(() => {
-    if (!open || !assignmentData || assignmentData.role !== 'intern') {
+    if (!open || !assignmentData || assignmentData.role !== 'associate') {
       return;
     }
 
@@ -480,7 +480,7 @@ export function AssignEmployeeModal({
   }, [assignmentData, departmentList, divisionList, getEmployeeValues, open, setEmployeeValue]);
 
   useEffect(() => {
-    if (!open || !assignmentData || assignmentData.role !== 'intern') {
+    if (!open || !assignmentData || assignmentData.role !== 'associate') {
       return;
     }
 
@@ -512,11 +512,11 @@ export function AssignEmployeeModal({
       return 'Manage Employee Probation';
     }
 
-    if (resolvedMode === 'intern-assignment') {
-      return 'Assign Intern Details';
+    if (resolvedMode === 'associate-assignment') {
+      return 'Assign Associate Details';
     }
 
-    return isEmployee ? 'Assign Employee Details' : 'Assign Intern Details';
+    return isEmployee ? 'Assign Employee Details' : 'Assign Associate Details';
   })();
 
   const dialogDescription = (() => {
@@ -524,19 +524,19 @@ export function AssignEmployeeModal({
       return 'Set or update the probation status, milestone, and end date for this employee.';
     }
 
-    if (resolvedMode === 'intern-assignment') {
+    if (resolvedMode === 'associate-assignment') {
       return 'Configure or update the internship placement, dates, and required hours.';
     }
 
     return isEmployee
       ? 'Set the organizational placement and employment status for this employee.'
-      : 'Configure the internship period and requirements for this new intern.';
+      : 'Configure the internship period and requirements for this new associate.';
   })();
 
   const submitLabel =
     resolvedMode === 'employee-probation'
       ? 'Save Probation'
-      : resolvedMode === 'intern-assignment'
+      : resolvedMode === 'associate-assignment'
         ? 'Save Assignment'
         : 'Save Assignment';
 
@@ -699,7 +699,7 @@ export function AssignEmployeeModal({
     setError(null);
 
     try {
-      const response = await fetch('/api/users/assign-intern', {
+      const response = await fetch('/api/users/assign-associate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -717,19 +717,19 @@ export function AssignEmployeeModal({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Assignment failed' }));
-        throw new Error(errorData.error || 'Failed to assign intern');
+        throw new Error(errorData.error || 'Failed to assign associate');
       }
 
       addToast({
         title: 'Assignment completed',
-        description: `${assignmentData.fullName} has been added as an intern assignment.`,
+        description: `${assignmentData.fullName} has been added as an associate assignment.`,
         variant: 'success',
       });
 
       handleClose();
-      onSuccess?.({ role: 'intern' });
+      onSuccess?.({ role: 'associate' });
     } catch (err) {
-      console.error('Intern assignment error:', err);
+      console.error('Associate assignment error:', err);
       setError(err instanceof Error ? err.message : 'Assignment failed');
       addToast({
         title: 'Failed to complete assignment',
@@ -773,7 +773,7 @@ export function AssignEmployeeModal({
                     : 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
                 }`}
               >
-                {isIntern ? 'Intern' : 'Employee'}
+                {isIntern ? 'Associate' : 'Employee'}
               </span>
             </div>
           </div>
@@ -1037,8 +1037,8 @@ export function AssignEmployeeModal({
             <form onSubmit={handleSubmitIntern(onSubmitIntern)} className="space-y-4">
               <OrganizationSelectField
                 label="Department"
-                fieldId="intern-department"
-                createId="intern-new-department-name"
+                fieldId="associate-department"
+                createId="associate-new-department-name"
                 value={watchIntern('departmentId') ?? ''}
                 onValueChange={(value) =>
                   setInternValue('departmentId', value, {
@@ -1074,8 +1074,8 @@ export function AssignEmployeeModal({
 
               <OrganizationSelectField
                 label="Division"
-                fieldId="intern-division"
-                createId="intern-new-division-name"
+                fieldId="associate-division"
+                createId="associate-new-division-name"
                 value={watchIntern('divisionId') ?? ''}
                 onValueChange={(value) =>
                   setInternValue('divisionId', value, {

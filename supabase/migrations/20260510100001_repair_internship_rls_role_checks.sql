@@ -1,5 +1,5 @@
 -- Migration: Repair internship RLS role checks after role consolidation drift
--- Description: Rewrites internship and intern daily log admin-role policies to compare
+-- Description: Rewrites internship and associate daily log admin-role policies to compare
 -- roles via text instead of casting enum arrays. This keeps the policies valid whether
 -- the environment still has the legacy hr/cos/ceo roles or has already consolidated to
 -- admin/super_admin.

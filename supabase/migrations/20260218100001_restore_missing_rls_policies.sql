@@ -11,7 +11,7 @@
 --     employees, departments, documents, audit_logs, internships, intern_daily_logs
 --   Also fixes user_is_admin() and drops stale storage policies.
 --
--- Consolidated roles: employee, intern, admin, super_admin
+-- Consolidated roles: employee, associate, admin, super_admin
 -- ============================================
 
 BEGIN;
@@ -313,7 +313,7 @@ BEGIN
           )
         );
 
-      -- Admin/super_admin can do everything with intern logs
+      -- Admin/super_admin can do everything with associate logs
       CREATE POLICY "intern_daily_logs_admin_policy" ON public.intern_daily_logs
         FOR ALL TO authenticated
         USING (

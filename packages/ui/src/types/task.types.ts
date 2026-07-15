@@ -44,7 +44,7 @@ export interface TaskAssignee {
   id: string;
   name: string;
   email: string;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
   department: string;
   avatarUrl?: string;
   assignedAt: string;

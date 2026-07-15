@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (!['employee', 'intern'].includes(targetUser.role)) {
+    if (!['employee', 'associate'].includes(targetUser.role)) {
       return NextResponse.json(
-        { error: 'Only employee or intern users can receive Revenue Forecast grants' },
+        { error: 'Only employee or associate users can receive Revenue Forecast grants' },
         { status: 400 }
       );
     }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Only Marketing or Finance employee/intern users can receive Revenue Forecast access',
+            'Only Marketing or Finance employee/associate users can receive Revenue Forecast access',
         },
         { status: 400 }
       );

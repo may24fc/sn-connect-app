@@ -19,7 +19,7 @@ Click any of the quick login buttons or manually enter:
 | Role | Email | Password |
 |------|-------|----------|
 | Employee | employee@example.com | SamplePass!234 |
-| Intern | intern@example.com | SamplePass!234 |
+| Associate | associate@example.com | SamplePass!234 |
 | Admin | admin@example.com | SamplePass!234 |
 | Super Admin | super-admin@example.com | SamplePass!234 |
 
@@ -41,8 +41,8 @@ Click any of the quick login buttons or manually enter:
 - Documents
 - Information Hub
 
-#### Intern Role
-- Dashboard: `/intern/dashboard`
+#### Associate Role
+- Dashboard: `/associate/dashboard`
 - Submit daily reports (EOD reports)
 - Track internship hours
 - Access documents and performance reviews
@@ -116,7 +116,7 @@ import { useRequireAuth } from '@/contexts/AuthContext';
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   // Only allow employees and interns
-  const user = useRequireAuth(['employee', 'intern']);
+  const user = useRequireAuth(['employee', 'associate']);
 
   // Or allow admin roles
   const user = useRequireAuth(['admin', 'super_admin']);
@@ -176,12 +176,12 @@ import type { UserRoleType } from '@/contexts/AuthContext';
 import { Sidebar, Header } from '@hr-portal/ui';
 
 export default function MyRoleLayout({ children }: { children: React.ReactNode }) {
-  const user = useRequireAuth(['employee', 'intern']);
+  const user = useRequireAuth(['employee', 'associate']);
   const { logout } = useAuth();
 
   if (!user) return null;
 
-  const sidebarVariant: UserRoleType = user.role === 'intern' ? 'intern' : 'employee';
+  const sidebarVariant: UserRoleType = user.role === 'associate' ? 'associate' : 'employee';
 
   return (
     <div className="flex h-screen bg-muted/30">
@@ -206,7 +206,7 @@ export default function MyRoleLayout({ children }: { children: React.ReactNode }
 
 **Sidebar variant types:**
 ```typescript
-type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 ```
 
 ## Common Patterns

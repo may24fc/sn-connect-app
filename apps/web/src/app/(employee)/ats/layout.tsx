@@ -12,7 +12,7 @@ export default function AtsLayout({ children }: { children: ReactNode }): ReactN
   const router = useRouter();
   const { user } = useAuth();
   const { data, isLoading } = useAtsAccess(true);
-  const fallbackPath = user?.role === 'intern' ? '/intern/dashboard' : '/dashboard';
+  const fallbackPath = user?.role === 'associate' ? '/associate/dashboard' : '/dashboard';
 
   useEffect(() => {
     if (!isLoading && !data?.canAccess) {

@@ -63,7 +63,7 @@ INSERT INTO public.users (id, role, department_id, manager_id, status, created_b
 VALUES
   ('a7777777-7777-7777-7777-777777777777', 'employee', 'd1111111-1111-1111-1111-111111111111', 'a4444444-4444-4444-4444-444444444444', 'active', NULL),
   ('a8888888-8888-8888-8888-888888888888', 'employee', 'd1111111-1111-1111-1111-111111111111', 'a4444444-4444-4444-4444-444444444444', 'active', NULL),
-  ('a9999999-9999-9999-9999-999999999999', 'intern', 'd3333333-3333-3333-3333-333333333333', 'a5555555-5555-5555-5555-555555555555', 'active', NULL);
+  ('a9999999-9999-9999-9999-999999999999', 'associate', 'd3333333-3333-3333-3333-333333333333', 'a5555555-5555-5555-5555-555555555555', 'active', NULL);
 
 -- Admin
 INSERT INTO public.users (id, role, department_id, manager_id, status, created_by)
@@ -270,7 +270,7 @@ VALUES
     NULL
   );
 
--- Marketing Intern
+-- Marketing Associate
 INSERT INTO public.employees (
   id, user_id, employee_number, immediate_head,
   first_name, middle_name, last_name, birthday,
@@ -292,9 +292,9 @@ VALUES
     'Mendoza',
     '2003-02-28',
     '2025-11-01',
-    'intern',
+    'associate',
     'part_time',
-    'Marketing Intern',
+    'Marketing Associate',
     'Marketing',
     '2026-05-01',
     '+63-917-678-9012',
@@ -364,7 +364,7 @@ VALUES
     'Initial probationary review'
   );
 
--- Intern's resume
+-- Associate's resume
 INSERT INTO public.documents (
   id, employee_id, document_type, file_path, file_name,
   is_confidential, uploaded_by, notes

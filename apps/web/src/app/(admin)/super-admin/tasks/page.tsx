@@ -258,7 +258,7 @@ export default function TaskManagementPage() {
     return employees
       .map((employee) => ({
         id: employee.user_id,
-        role: employee.employment_type === 'intern' ? ('intern' as const) : ('employee' as const),
+        role: employee.employment_type === 'associate' ? ('associate' as const) : ('employee' as const),
         name: `${employee.first_name} ${employee.last_name}`,
         email: employee.company_email || employee.personal_email || null,
       }))
@@ -706,7 +706,7 @@ interface AssigneeInfo {
   id: string;
   name: string;
   email: string | null;
-  role: 'employee' | 'intern';
+  role: 'employee' | 'associate';
 }
 
 function TasksLoadingSkeleton({ viewMode }: { viewMode: ViewMode }) {

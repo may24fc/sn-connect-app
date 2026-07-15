@@ -19,11 +19,11 @@ export const monthlySelfEvaluationDepartmentRoleOptions = [
   'Personal Assistant',
   'Sales',
   'HR',
-  'HR Intern',
+  'HR Associate',
   'Admin Assistant',
-  'AI Intern',
+  'AI Associate',
   'Accounting',
-  'Accounting Intern',
+  'Accounting Associate',
   'Other',
 ] as const;
 

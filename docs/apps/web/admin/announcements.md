@@ -47,7 +47,7 @@ Each announcement entry shows:
 The **Targeting Selector** lets you control who sees the announcement:
 
 - **All Users** — Visible to everyone
-- **By Role** — Select specific roles (employee, intern, admin, super_admin)
+- **By Role** — Select specific roles (employee, associate, admin, super_admin)
 - **By Department** — Select specific departments
 
 ### Attachments

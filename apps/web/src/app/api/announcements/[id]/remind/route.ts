@@ -12,7 +12,7 @@ import {
 
 const ANNOUNCEMENT_LINKS: Record<string, string> = {
   employee: '/announcements',
-  intern: '/announcements',
+  associate: '/announcements',
   admin: '/admin/announcements',
   super_admin: '/super-admin/announcements',
 };

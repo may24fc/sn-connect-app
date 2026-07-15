@@ -410,7 +410,7 @@ export const PLACEHOLDER_JOBS: JobPosting[] = [
   },
   {
     id: '5',
-    title: 'Marketing Intern',
+    title: 'Marketing Associate',
     business_unit_slug: 'sfo',
     business_unit_name: 'SFO (SeaFood Outlet)',
     location: 'BGC, Taguig',

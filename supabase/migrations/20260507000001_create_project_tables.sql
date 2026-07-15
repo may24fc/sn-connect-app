@@ -1,4 +1,4 @@
--- Migration: Create Project Tracker Tables (Phase 1 of Intern Project + Gamified Leaderboard)
+-- Migration: Create Project Tracker Tables (Phase 1 of Associate Project + Gamified Leaderboard)
 -- Created: 2026-05-07
 -- Description: Project shells, contributors, milestones (month/week hierarchy), and checklist items.
 --              Mirrors RLS patterns from internships and onboarding tables.
@@ -162,7 +162,7 @@ CREATE TRIGGER trigger_project_contributors_audit
   AFTER INSERT OR UPDATE OR DELETE ON public.project_contributors
   FOR EACH ROW EXECUTE FUNCTION public.handle_audit_log();
 
-COMMENT ON TABLE public.projects IS 'Project shells owned by an intern lead, with optional contributors and supervisor.';
+COMMENT ON TABLE public.projects IS 'Project shells owned by an associate lead, with optional contributors and supervisor.';
 COMMENT ON TABLE public.project_contributors IS 'Multi-owner join: one lead + many contributors per project.';
 COMMENT ON TABLE public.project_milestones IS 'Two-tier hierarchy: monthly milestones (parent NULL) and weekly sub-milestones (parent set). Progress auto-calculated from checklist items.';
 COMMENT ON TABLE public.project_checklist_items IS 'Granular tasks within a milestone; flipping to done auto-recalculates milestone and project progress.';

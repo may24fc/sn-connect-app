@@ -548,7 +548,7 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 #### Subtask 1: Audit and fix all navigation routes
 
-- [ ] Test every navbar link for every user role (admin, manager, intern, marketing)
+- [ ] Test every navbar link for every user role (admin, manager, associate, marketing)
 - [ ] Verify role-based nav hiding (interns cannot see admin links)
 - [ ] Fix hardcoded routes referencing non-existent pages
 - [ ] Ensure active state highlighting on current page
@@ -565,7 +565,7 @@ rule_7: Commit after each completed subtask. Commit message format → "V3-X.Y: 
 
 > These V2 items remain active. V3 takes priority only where items conflict.
 
-- [ ] **V2-0.1** Intern "No Active Record" dead-end → expanded in V3-0.1
+- [ ] **V2-0.1** Associate "No Active Record" dead-end → expanded in V3-0.1
 - [ ] **V2-0.2** Supabase Auth redirect fix → expanded in V3-0.2, V3-0.3
 - [ ] **V2-0.3** Ghost Success button → covered by V3-0.1 error audit
 - [ ] **V2-1.x** International phone, EUR, bank dropdown → STILL ACTIVE

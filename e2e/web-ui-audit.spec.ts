@@ -42,7 +42,7 @@ async function loginAsAdmin(page: Page) {
     await emailInput.fill(authEmail);
     await page.locator('#password').fill(authPassword);
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await page.waitForURL(/\/(dashboard|admin|super-admin|intern|onboarding)/, { timeout: 15000 });
+    await page.waitForURL(/\/(dashboard|admin|super-admin|associate|onboarding)/, { timeout: 15000 });
   }
 }
 
@@ -302,7 +302,7 @@ test.describe('Admin Pages Audit', () => {
     await captureScreenshot(page, '32-admin-employee-management');
   });
 
-  test('Admin Interns - intern management', async ({ page }) => {
+  test('Admin Interns - associate management', async ({ page }) => {
     await page.goto(`${BASE_URL}/admin/interns`);
     await page.waitForLoadState('domcontentloaded');
 
@@ -434,39 +434,39 @@ test.describe('Super Admin Pages Audit', () => {
 // SECTION 6: INTERN PAGES
 // ═══════════════════════════════════════════════════════════════════════════
 
-test.describe('Intern Pages Audit', () => {
+test.describe('Associate Pages Audit', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
   });
 
-  test('Intern Dashboard - daily log slide panel', async ({ page }) => {
-    await page.goto(`${BASE_URL}/intern/dashboard`);
+  test('Associate Dashboard - daily log slide panel', async ({ page }) => {
+    await page.goto(`${BASE_URL}/associate/dashboard`);
     await page.waitForLoadState('domcontentloaded');
 
-    await captureScreenshot(page, '60-intern-dashboard');
+    await captureScreenshot(page, '60-associate-dashboard');
 
     // Test daily log creation slide panel
     const createBtn = page.getByRole('button', { name: /add.*log|create.*log|new.*entry/i });
     if (await createBtn.isVisible()) {
       await createBtn.click();
       await page.waitForTimeout(500);
-      await captureScreenshot(page, '60-intern-daily-log-slide-panel');
+      await captureScreenshot(page, '60-associate-daily-log-slide-panel');
 
       const slidePanel = page.locator('[role="dialog"]').first();
       if (await slidePanel.isVisible()) {
         const box = await slidePanel.boundingBox();
         if (box) {
-          console.log(`Intern Daily Log SlidePanel width: ${box.width}px`);
+          console.log(`Associate Daily Log SlidePanel width: ${box.width}px`);
         }
       }
     }
   });
 
-  test('Intern Reports', async ({ page }) => {
-    await page.goto(`${BASE_URL}/intern/reports`);
+  test('Associate Reports', async ({ page }) => {
+    await page.goto(`${BASE_URL}/associate/reports`);
     await page.waitForLoadState('domcontentloaded');
 
-    await captureScreenshot(page, '61-intern-reports');
+    await captureScreenshot(page, '61-associate-reports');
   });
 });
 
@@ -644,7 +644,7 @@ test.describe('SlidePanel Sizing Deep Analysis', () => {
       { url: '/performance', trigger: /create|add|new/i },
       { url: '/performance/okrs', trigger: /create|add|new/i },
       { url: '/admin/jobs', trigger: /create|add|new|post/i },
-      { url: '/intern/dashboard', trigger: /add.*log|create|new/i },
+      { url: '/associate/dashboard', trigger: /add.*log|create|new/i },
     ];
 
     for (const { url, trigger } of pagesWithPanels) {

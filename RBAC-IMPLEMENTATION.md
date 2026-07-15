@@ -7,7 +7,7 @@ This document describes the implementation of role-based access control with moc
 The system now supports four distinct user roles:
 
 1. **employee** - Regular employees
-2. **intern** - Interns/trainees
+2. **associate** - Interns/trainees
 3. **admin** - HR administrators
 4. **super_admin** - System administrators
 
@@ -20,7 +20,7 @@ For testing purposes, use these credentials:
 | Email | Password | Role |
 |-------|----------|------|
 | employee@test.com | password | employee |
-| intern@test.com | password | intern |
+| associate@test.com | password | associate |
 | admin@test.com | password | admin |
 | superadmin@test.com | password | super_admin |
 
@@ -34,9 +34,9 @@ For testing purposes, use these credentials:
    - Role-based route guards
    - LocalStorage session persistence
 
-2. **apps/web/src/app/(employee)/intern/layout.tsx**
-   - Layout for intern routes
-   - Intern-specific sidebar navigation
+2. **apps/web/src/app/(employee)/associate/layout.tsx**
+   - Layout for associate routes
+   - Associate-specific sidebar navigation
 
 3. **apps/web/src/app/(admin)/super-admin/layout.tsx**
    - Layout for super admin routes
@@ -57,11 +57,11 @@ For testing purposes, use these credentials:
 ### Modified Files
 
 1. **packages/ui/src/layout/Sidebar.tsx**
-   - Updated role type from 'employee' | 'admin' | 'cos' | 'manager' | 'intern' to 'employee' | 'intern' | 'admin' | 'super_admin'
+   - Updated role type from 'employee' | 'admin' | 'cos' | 'manager' | 'associate' to 'employee' | 'associate' | 'admin' | 'super_admin'
    - Removed manager navigation items
    - Updated navigation items for all roles:
      - **Employee**: Dashboard, Profile, Files, Documents, Performance Reviews, Announcements
-     - **Intern**: Dashboard, Tasks, Learning Resources, Timesheet, Mentor Connect, Documents, Profile
+     - **Associate**: Dashboard, Tasks, Learning Resources, Timesheet, Mentor Connect, Documents, Profile
      - **Admin**: Dashboard, Employee Management, Team Management, Reports, Performance Management, Recruitment
      - **Super Admin**: Dashboard, User Management, System Settings, Audit Logs, Role Management, plus admin features
 
@@ -97,16 +97,16 @@ For testing purposes, use these credentials:
   - `/performance` - Performance reviews
   - `/announcements` - Company announcements
 
-### Intern Routes
-- Base path: `/intern`
-- Layout: `(employee)/intern/layout.tsx`
-- Protected by: `useRequireAuth(['intern'])`
+### Associate Routes
+- Base path: `/associate`
+- Layout: `(employee)/associate/layout.tsx`
+- Protected by: `useRequireAuth(['associate'])`
 - Routes:
-  - `/intern/dashboard` - Intern dashboard (already exists)
-  - `/intern/tasks` - Tasks list
-  - `/intern/learning` - Learning resources
-  - `/intern/timesheet` - Timesheet submission
-  - `/intern/mentor` - Mentor connection
+  - `/associate/dashboard` - Associate dashboard (already exists)
+  - `/associate/tasks` - Tasks list
+  - `/associate/learning` - Learning resources
+  - `/associate/timesheet` - Timesheet submission
+  - `/associate/mentor` - Mentor connection
   - `/documents` - Documents
   - `/profile` - User profile
 
@@ -142,7 +142,7 @@ For testing purposes, use these credentials:
 4. AuthContext validates credentials against mock user database
 5. On success, user is redirected based on role:
    - employee → `/dashboard`
-   - intern → `/intern/dashboard`
+   - associate → `/associate/dashboard`
    - admin → `/admin/dashboard`
    - super_admin → `/super-admin/dashboard`
 6. Session stored in localStorage for persistence
@@ -155,8 +155,8 @@ Each layout uses `useRequireAuth()` hook with allowed roles:
 // Employee layout - only employees
 const user = useRequireAuth(['employee']);
 
-// Intern layout - only interns
-const user = useRequireAuth(['intern']);
+// Associate layout - only interns
+const user = useRequireAuth(['associate']);
 
 // Admin layout - admins and super admins
 const user = useRequireAuth(['admin', 'super_admin']);
@@ -181,7 +181,7 @@ If a user tries to access a route they're not authorized for, they're automatica
 - Clean separation of concerns
 
 ### Type Safety
-- UserRole type: `'employee' | 'intern' | 'admin' | 'super_admin'`
+- UserRole type: `'employee' | 'associate' | 'admin' | 'super_admin'`
 - TypeScript strict mode enforced
 - Explicit return types on all functions
 
@@ -231,7 +231,7 @@ To move to production:
 
 ```typescript
 // User role enum
-type UserRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+type UserRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 
 // User interface
 interface User {

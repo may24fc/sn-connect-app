@@ -1,6 +1,6 @@
 -- Migration: Create Expense Entries table for Custom Intelligent Expense System
 -- Created: 2026-06-18
--- Description: Adds staff receipt ingestion, AI draft extraction, intern verification,
+-- Description: Adds staff receipt ingestion, AI draft extraction, associate verification,
 -- and exception routing buckets (standard/yellow/red) without introducing full ERP scope.
 
 BEGIN;
@@ -25,7 +25,7 @@ CREATE TABLE public.expense_entries (
   ai_credit_account text,
   ai_confidence numeric(5,4) CHECK (ai_confidence >= 0 AND ai_confidence <= 1),
 
-  -- Intern-verified double-entry mapping
+  -- Associate-verified double-entry mapping
   verified_debit_account text,
   verified_credit_account text,
   reviewer_notes text,
@@ -39,7 +39,7 @@ CREATE TABLE public.expense_entries (
   processing_status text NOT NULL DEFAULT 'draft_extracted' CHECK (
     processing_status IN (
       'draft_extracted',
-      'awaiting_intern_review',
+      'awaiting_associate_review',
       'verified',
       'auto_approved',
       'leadership_review_required',
@@ -110,25 +110,25 @@ CREATE POLICY expense_entries_select_own_policy ON public.expense_entries
     AND expense_entries.deleted_at IS NULL
   );
 
--- Intern reviewer and leadership roles can access queue items.
+-- Associate reviewer and leadership roles can access queue items.
 CREATE POLICY expense_entries_select_reviewer_policy ON public.expense_entries
   FOR SELECT
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['intern', 'admin', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['associate', 'admin', 'super_admin']::user_role[])
     AND expense_entries.deleted_at IS NULL
   );
 
--- Intern reviewer verifies entries and updates accounting fields.
+-- Associate reviewer verifies entries and updates accounting fields.
 CREATE POLICY expense_entries_update_reviewer_policy ON public.expense_entries
   FOR UPDATE
   TO authenticated
   USING (
-    user_has_any_role(auth.uid(), ARRAY['intern', 'admin', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['associate', 'admin', 'super_admin']::user_role[])
     AND expense_entries.deleted_at IS NULL
   )
   WITH CHECK (
-    user_has_any_role(auth.uid(), ARRAY['intern', 'admin', 'super_admin']::user_role[])
+    user_has_any_role(auth.uid(), ARRAY['associate', 'admin', 'super_admin']::user_role[])
   );
 
 -- Leadership can make final decision for exception items.
@@ -153,7 +153,7 @@ CREATE TRIGGER trigger_expense_entries_audit
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_audit_log();
 
-COMMENT ON TABLE public.expense_entries IS 'Receipt-driven expense entries with AI draft and intern verification workflow';
+COMMENT ON TABLE public.expense_entries IS 'Receipt-driven expense entries with AI draft and associate verification workflow';
 COMMENT ON COLUMN public.expense_entries.risk_bucket IS 'Routing result: standard recurring, price spike, or non-recurring';
 COMMENT ON COLUMN public.expense_entries.processing_status IS 'Workflow state from extraction to leadership decision';
 

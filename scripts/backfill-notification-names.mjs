@@ -433,7 +433,7 @@ function buildReplacement(notification, context) {
           : null;
       }
 
-      if (notification.title === 'Intern EOD Missing' && metadata.employeeId && metadata.missingDate) {
+      if (notification.title === 'Associate EOD Missing' && metadata.employeeId && metadata.missingDate) {
         const employeeName = context.getEmployeeName(metadata.employeeId);
         return employeeName
           ? `${employeeName} did not submit an EOD report for ${metadata.missingDate}.`

@@ -35,7 +35,7 @@ export function TaskAssigneeSelect({
   className,
 }: TaskAssigneeSelectProps): React.ReactNode {
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [roleFilter, setRoleFilter] = React.useState<'all' | 'employee' | 'intern'>('all');
+  const [roleFilter, setRoleFilter] = React.useState<'all' | 'employee' | 'associate'>('all');
   const [departmentFilter, setDepartmentFilter] = React.useState<string>('all');
 
   // Get unique departments
@@ -113,7 +113,7 @@ export function TaskAssigneeSelect({
               </Label>
               <Select
                 value={roleFilter}
-                onValueChange={(value: 'all' | 'employee' | 'intern') => setRoleFilter(value)}
+                onValueChange={(value: 'all' | 'employee' | 'associate') => setRoleFilter(value)}
               >
                 <SelectTrigger id="roleFilter">
                   <SelectValue />
@@ -121,7 +121,7 @@ export function TaskAssigneeSelect({
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
                   <SelectItem value="employee">Employees</SelectItem>
-                  <SelectItem value="intern">Interns</SelectItem>
+                  <SelectItem value="associate">Interns</SelectItem>
                 </SelectContent>
               </Select>
             </div>

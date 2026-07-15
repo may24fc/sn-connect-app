@@ -37,7 +37,7 @@ export interface ExpenseEntry {
   risk_bucket: 'standard_recurring' | 'price_spike' | 'non_recurring' | null;
   processing_status:
     | 'draft_extracted'
-    | 'awaiting_intern_review'
+    | 'awaiting_associate_review'
     | 'auto_approved'
     | 'leadership_review_required'
     | 'approved'

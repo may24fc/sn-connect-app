@@ -45,7 +45,7 @@ export function AtsAccessManagerDialog({
 
   const directoryQuery = useDirectory({
     search,
-    roles: ['employee', 'intern'],
+    roles: ['employee', 'associate'],
     sortBy: 'full_name',
     sortOrder: 'asc',
     page: 1,
@@ -104,7 +104,7 @@ export function AtsAccessManagerDialog({
         <DialogHeader>
           <DialogTitle>Manage ATS access</DialogTitle>
           <DialogDescription>
-            Grant employee or intern accounts full ATS permissions without changing their primary role.
+            Grant employee or associate accounts full ATS permissions without changing their primary role.
           </DialogDescription>
         </DialogHeader>
 
@@ -176,7 +176,7 @@ export function AtsAccessManagerDialog({
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Grant access</h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Search existing employee and intern accounts, then grant ATS permissions.
+                Search existing employee and associate accounts, then grant ATS permissions.
               </p>
             </div>
 
@@ -204,7 +204,7 @@ export function AtsAccessManagerDialog({
               </div>
             ) : candidates.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border px-4 py-6 text-sm text-zinc-500 dark:text-zinc-400">
-                {search ? 'No matching employee or intern accounts found.' : 'Everyone in the current result set already has ATS access.'}
+                {search ? 'No matching employee or associate accounts found.' : 'Everyone in the current result set already has ATS access.'}
               </div>
             ) : (
               <div className="space-y-2">
@@ -258,7 +258,7 @@ export function AtsAccessManagerDialog({
             <div className="flex items-start gap-2">
               <Users className="mt-0.5 h-4 w-4 flex-shrink-0" />
               <p>
-                ATS delegates keep their existing employee or intern role outside the ATS. This grant only unlocks the ATS feature set.
+                ATS delegates keep their existing employee or associate role outside the ATS. This grant only unlocks the ATS feature set.
               </p>
             </div>
           </div>

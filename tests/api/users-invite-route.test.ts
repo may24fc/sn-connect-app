@@ -30,7 +30,7 @@ import {
   createSupabaseServerClient,
 } from '@/lib/supabase/server';
 
-type InviteRole = 'employee' | 'intern' | 'admin' | 'super_admin';
+type InviteRole = 'employee' | 'associate' | 'admin' | 'super_admin';
 
 type ExistingUserMode = 'none' | 'pending';
 

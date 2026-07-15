@@ -1153,7 +1153,7 @@ export function MarketingReportEditor({ mode, reportId }: MarketingReportEditorP
     return (
       <MarketingReportsAccessState
         reason={marketingAccess.reason}
-        fallbackHref={marketingAccess.user?.role === 'intern' ? '/intern/dashboard' : '/dashboard'}
+        fallbackHref={marketingAccess.user?.role === 'associate' ? '/associate/dashboard' : '/dashboard'}
       />
     );
   }

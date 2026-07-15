@@ -290,7 +290,7 @@ async function extractFromPdf(fileBuffer: ArrayBuffer): Promise<{
 /**
  * POST /api/expenses/extract
  * Uploads a receipt, extracts key fields with AI, suggests draft debit/credit accounts,
- * and creates an expense queue entry for intern verification.
+ * and creates an expense queue entry for associate verification.
  */
 export async function POST(request: NextRequest) {
   let uploadedFilePath: string | null = null;
@@ -371,7 +371,7 @@ export async function POST(request: NextRequest) {
         ai_credit_account: suggestion.creditAccount,
         ai_confidence: combinedAiConfidence,
         risk_bucket: 'pending',
-        processing_status: 'awaiting_intern_review',
+        processing_status: 'awaiting_associate_review',
         business_justification: businessJustification,
         expense_type: inferredExpenseType,
         department_id: departmentId,

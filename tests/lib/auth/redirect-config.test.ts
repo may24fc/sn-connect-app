@@ -1,4 +1,4 @@
-﻿import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('redirect-config', () => {
   const originalEnv = { ...process.env };
@@ -158,7 +158,7 @@ describe('redirect-config', () => {
       const { getPostLoginRedirect } = await loadModule();
       expect(getPostLoginRedirect('super_admin')).toBe('/super-admin/dashboard');
       expect(getPostLoginRedirect('admin')).toBe('/admin/dashboard');
-      expect(getPostLoginRedirect('intern')).toBe('/intern/dashboard');
+      expect(getPostLoginRedirect('associate')).toBe('/associate/dashboard');
       expect(getPostLoginRedirect('employee')).toBe('/dashboard');
     });
 

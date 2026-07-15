@@ -17,7 +17,7 @@ import { type ReactNode, useState } from 'react';
 interface RejectedOnboardingDeleteButtonProps {
   profileId: string;
   fullName: string;
-  subjectLabel: 'employee' | 'intern';
+  subjectLabel: 'employee' | 'associate';
 }
 
 export function RejectedOnboardingDeleteButton({
