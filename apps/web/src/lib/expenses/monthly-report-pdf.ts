@@ -228,7 +228,13 @@ function drawListColumn(doc: PDFKit.PDFDocument, opts: ListColumnOptions): numbe
   fill(doc, C.slate).font('Helvetica').fontSize(8.5);
 
   rows.forEach((row) => {
+    // Sync PDFKit's cursor to our tracked position before the page-break
+    // check. Without this, ensureSpace sees stale doc.y (left by previous
+    // text calls) and either mis-fires or misses the break, causing curY to
+    // drift off-page and create a cascade of empty pages.
+    doc.y = curY;
     ensureSpace(doc, ROW_H);
+    curY = doc.y; // capture top-of-new-page reset if a break just occurred
     cx = startX;
     row.forEach((cell, ci) => {
       const w = widths[ci] ?? 0;
@@ -280,6 +286,10 @@ function drawPieChart(
 ): number {
   const nonZero = slices.filter((s) => s.value > 0);
   if (nonZero.length === 0) return startY;
+
+  // Isolate doc.y side-effects: legend doc.text() calls would move the shared
+  // cursor and cause ensureSpace in subsequent drawListColumn calls to mis-fire.
+  const savedDocY = doc.y;
 
   const RADIUS = 42;
   const cx = startX + RADIUS + 6;
@@ -336,7 +346,9 @@ function drawPieChart(
     legendY += ITEM_H;
   });
 
-  return Math.max(cy + RADIUS + 12, legendY + 4);
+  const endY = Math.max(cy + RADIUS + 12, legendY + 4);
+  doc.y = savedDocY; // restore before returning
+  return endY;
 }
 
 // ---------------------------------------------------------------------------
@@ -667,6 +679,12 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
     const deptPrevWidths = [Math.round(colW * 0.58), Math.round(colW * 0.42)];
     const deptCurWidths = [Math.round(colW * 0.46), Math.round(colW * 0.31), Math.round(colW * 0.23)];
 
+    // Dept pie chart for previous month (left column)
+    const prevDeptPieSlices = allDeptNames
+      .map((name) => ({ label: name, value: prevDeptMap.get(name) ?? 0 }))
+      .filter((s) => s.value > 0);
+    const prevDeptPieEndY = prevDeptPieSlices.length > 0 ? drawPieChart(doc, prevDeptPieSlices, leftX, deptDataY, colW) : deptDataY;
+
     const deptLeftEnd = prevDeptRows.length > 0
       ? drawListColumn(doc, {
           title: '',
@@ -675,10 +693,10 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
           widths: deptPrevWidths,
           rightAlignColumns: [1],
           startX: leftX,
-          startY: deptDataY,
+          startY: prevDeptPieEndY,
           availableWidth: colW,
         })
-      : deptDataY + 20;
+      : prevDeptPieEndY + 20;
 
     // Dept pie chart for current month (right column only)
     const deptPieSlices = allDeptNames
@@ -712,6 +730,12 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
 
     const catWidths = [Math.round(colW * 0.46), Math.round(colW * 0.31), Math.round(colW * 0.23)];
 
+    // Category pie chart for previous month (left column)
+    const prevCatPieSlices = allCategories
+      .map((cat) => ({ label: formatCategoryLabel(cat), value: prevCatMap.get(cat)?.spendAud ?? 0 }))
+      .filter((s) => s.value > 0);
+    const prevCatPieEndY = prevCatPieSlices.length > 0 ? drawPieChart(doc, prevCatPieSlices, leftX, catDataY, colW) : catDataY;
+
     const catLeftEnd = prevCatRows.length > 0
       ? drawListColumn(doc, {
           title: '',
@@ -720,10 +744,10 @@ export function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Pro
           widths: catWidths,
           rightAlignColumns: [1, 2],
           startX: leftX,
-          startY: catDataY,
+          startY: prevCatPieEndY,
           availableWidth: colW,
         })
-      : catDataY + 20;
+      : prevCatPieEndY + 20;
 
     // Category pie chart for current month (right column only)
     const catPieSlices = allCategories
