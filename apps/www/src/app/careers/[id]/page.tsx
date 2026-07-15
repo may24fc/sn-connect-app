@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const dbJob = await fetchJob(id);
   if (dbJob) {
     return {
-      title: `${dbJob.title} — Careers at SN International Group`,
+      title: `${dbJob.title}, Careers at SN International Group`,
       description: dbJob.description ?? '',
     };
   }
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const job = PLACEHOLDER_JOBS.find((j) => j.id === id);
   if (!job) return { title: 'Job Not Found' };
   return {
-    title: `${job.title} — Careers at SN International Group`,
+    title: `${job.title}, Careers at SN International Group`,
     description: job.description,
   };
 }

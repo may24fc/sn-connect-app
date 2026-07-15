@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!service) return { title: 'Not Found' };
 
   return {
-    title: `${service.title} — ${unit.name}`,
+    title: `${service.title}, ${unit.name}`,
     description: service.description,
   };
 }

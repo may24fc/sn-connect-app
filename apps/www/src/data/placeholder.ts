@@ -210,7 +210,7 @@ export const LIFE_PHOTOS = [
     category: 'Team Building',
     slug: 'annual-team-building-2025',
     description:
-      'Our annual team building event brought together 200+ employees for a full day of collaboration, friendly competitions, and camaraderie at Tagaytay Highlands — strengthening bonds that carry back into the workplace.',
+      'Our annual team building event brought together 200+ employees for a full day of collaboration, friendly competitions, and camaraderie at Tagaytay Highlands, strengthening bonds that carry back into the workplace.',
   },
   {
     src: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80&auto=format&fit=crop',
@@ -219,7 +219,7 @@ export const LIFE_PHOTOS = [
     category: 'Office Life',
     slug: 'bgc-headquarters',
     description:
-      'Take a tour of our modern headquarters in Bonifacio Global City — an open, bright workspace designed for collaboration, creativity, and focus where great ideas come to life every day.',
+      'Take a tour of our modern headquarters in Bonifacio Global City, an open, bright workspace designed for collaboration, creativity, and focus where great ideas come to life every day.',
   },
   {
     src: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&q=80&auto=format&fit=crop',
@@ -228,16 +228,16 @@ export const LIFE_PHOTOS = [
     category: 'Events',
     slug: 'best-employer-awards-2025',
     description:
-      'SN International Group was recognized as a Best Employer of 2025 at the Philippine Business Excellence Awards — a landmark achievement that reflects our unwavering commitment to our people and workplace culture.',
+      'SN International Group was recognized as a Best Employer of 2025 at the Philippine Business Excellence Awards, a landmark achievement that reflects our unwavering commitment to our people and workplace culture.',
   },
   {
     src: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1200&q=80&auto=format&fit=crop',
     alt: 'Volunteers from SN distributing goods in underserved communities',
-    caption: 'CSR — Community Outreach',
+    caption: 'CSR, Community Outreach',
     category: 'Events',
     slug: 'community-outreach',
     description:
-      'Our CSR team mobilized over 150 employee volunteers to distribute food packs and essential goods to underserved communities in Taguig — because giving back is part of who we are at SN International Group.',
+      'Our CSR team mobilized over 150 employee volunteers to distribute food packs and essential goods to underserved communities in Taguig, because giving back is part of who we are at SN International Group.',
   },
   {
     src: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80&auto=format&fit=crop',
@@ -246,7 +246,7 @@ export const LIFE_PHOTOS = [
     category: 'Office Life',
     slug: 'wellness-wednesday',
     description:
-      'Every Wednesday, employees across all business units enjoy free fitness classes, guided meditation, and wellness check-ins — part of our commitment to nurturing a healthy and balanced work environment.',
+      'Every Wednesday, employees across all business units enjoy free fitness classes, guided meditation, and wellness check-ins, part of our commitment to nurturing a healthy and balanced work environment.',
   },
   {
     src: 'https://images.unsplash.com/photo-1529543544282-ea669407fca3?w=1200&q=80&auto=format&fit=crop',
@@ -255,7 +255,7 @@ export const LIFE_PHOTOS = [
     category: 'Events',
     slug: 'year-end-celebration',
     description:
-      'We closed out the year in grand style with our annual Year-End Bash — a memorable evening of awards, live entertainment, heartfelt speeches, and genuine gratitude for the incredible people who make SN what it is.',
+      'We closed out the year in grand style with our annual Year-End Bash, a memorable evening of awards, live entertainment, heartfelt speeches, and genuine gratitude for the incredible people who make SN what it is.',
   },
   {
     src: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=1200&q=80&auto=format&fit=crop',
@@ -264,7 +264,7 @@ export const LIFE_PHOTOS = [
     category: 'Team Building',
     slug: 'leadership-development-program',
     description:
-      "Our Leadership Development Program empowers high-potential employees with executive coaching, cross-functional mentorship, and hands-on challenges — building tomorrow's leaders from within our own ranks.",
+      "Our Leadership Development Program empowers high-potential employees with executive coaching, cross-functional mentorship, and hands-on challenges, building tomorrow's leaders from within our own ranks.",
   },
   {
     src: 'https://images.unsplash.com/photo-1543269865-cbf427effbad?w=1200&q=80&auto=format&fit=crop',
@@ -273,7 +273,7 @@ export const LIFE_PHOTOS = [
     category: 'Team Building',
     slug: 'team-friday-lunch',
     description:
-      'Every Friday, teams across the company gather for a shared lunch — a simple but meaningful tradition that keeps our culture warm, connected, and rooted in genuine human relationships.',
+      'Every Friday, teams across the company gather for a shared lunch, a simple but meaningful tradition that keeps our culture warm, connected, and rooted in genuine human relationships.',
   },
 ];
 

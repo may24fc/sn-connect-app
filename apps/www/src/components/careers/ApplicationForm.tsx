@@ -305,7 +305,7 @@ export function ApplicationForm({ preselectedJobId }: ApplicationFormProps): Rea
                 className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-200 px-4 py-6 text-sm text-zinc-500 transition-colors hover:border-slate-900 hover:bg-amber-50"
               >
                 <Upload className="h-5 w-5" />
-                Click to upload (PDF, DOC, DOCX — max 5MB)
+                Click to upload (PDF, DOC, DOCX, max 5MB)
               </label>
             )}
             <input

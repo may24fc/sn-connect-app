@@ -19,12 +19,13 @@ export default function RebrandHome() {
   const whatWeDoRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: whatWeDoRef,
-    offset: ['start start', 'end end'],
+    offset: ['start end', 'start start'],
   });
 
   return (
     <div className="rebrand-home w-full bg-[#d6e4f0]" id="app-wrapper">
       <IntroReveal />
+      <Navbar withSpacer={false} />
       <section className="relative w-full bg-[#f0f0f0]" id="hero-what-we-do-section">
         <div
           className="sticky top-0 left-0 w-full h-screen overflow-hidden bg-[#d6e4f0]"
@@ -36,10 +37,6 @@ export default function RebrandHome() {
         <div className="relative z-10 -mt-[100vh]">
           <section className="w-full min-h-screen" id="hero-section">
             <div className="w-full h-screen relative" id="hero-contents-layer">
-              <div className="absolute top-0 left-0 right-0 z-20">
-                <Navbar />
-              </div>
-
               <div className="h-full flex flex-col justify-between px-6 sm:px-10 md:px-12 lg:px-12 pt-28 sm:pt-28 md:pt-28 lg:pt-[148px] pb-8 md:pb-11">
                 <div id="hero-title-block">
                   <h1
@@ -92,7 +89,7 @@ export default function RebrandHome() {
                       id="hero-subtitle"
                     >
                       AI-enabled specialists across operations, marketing, support, and
-                      technology—embedded into your team and ready to help your business scale
+                      technology, embedded into your team and ready to help your business scale
                       faster.
                     </motion.p>
                   </div>
@@ -111,13 +108,11 @@ export default function RebrandHome() {
 
           <section
             ref={whatWeDoRef}
-            className="relative w-full h-[320vh]"
+            className="relative w-full min-h-screen flex flex-col justify-center"
             id="what-we-do-scroll-root"
           >
-            <div className="sticky top-0 left-0 w-full h-screen overflow-hidden">
-              <div className="relative z-10 w-full h-full" id="what-we-do-contents-layer">
-                <WhatWeDo scrollYProgress={scrollYProgress} />
-              </div>
+            <div className="relative z-10 w-full" id="what-we-do-contents-layer">
+              <WhatWeDo scrollYProgress={scrollYProgress} />
             </div>
           </section>
         </div>

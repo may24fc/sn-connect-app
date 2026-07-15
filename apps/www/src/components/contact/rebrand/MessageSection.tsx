@@ -64,7 +64,7 @@ export default function MessageSection() {
             initial="hidden"
             animate={inView ? 'visible' : 'hidden'}
           >
-            We&apos;d love to hear from you — send us a message and
+            We&apos;d love to hear from you, send us a message and
             we&apos;ll be in touch within one business day.
           </motion.p>
 

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { getLenis } from '../../../hooks/useSmoothScroll';
+import HeroBackdrop from '../../shared/HeroBackdrop';
 
 const ease = [0.19, 1, 0.22, 1] as const;
 
@@ -35,6 +36,8 @@ export default function ServicesHero() {
                  pt-32 sm:pt-36 md:pt-16 pb-10 md:pb-12"
       id="services-hero"
     >
+      <HeroBackdrop variant="grid" />
+
       {/* ── Top: Heading + divider ── */}
       <div>
         <h1
@@ -124,7 +127,7 @@ export default function ServicesHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.62, ease }}
         >
-          Dependable offshore support — built around your workflow and your team.
+          Dependable offshore support, built around your workflow and your team.
         </motion.p>
       </div>
     </section>

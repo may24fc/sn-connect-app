@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { animate, motion, useInView } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
 import SplitCTA from '../../ui/SplitCTA';
 
 const ease = [0.19, 1, 0.22, 1] as const;
@@ -20,14 +21,79 @@ const stagger = (delay = 0) => ({
   visible: { transition: { staggerChildren: 0.13, delayChildren: delay } },
 });
 
+interface Stat {
+  value: number | null;
+  suffix: string;
+  display?: string;
+  label: string;
+}
+
+const stats: Stat[] = [
+  { value: 100, suffix: '%', label: 'AI-Powered' },
+  { value: null, suffix: '', display: 'Expert', label: 'Remote Specialists' },
+  { value: null, suffix: '', display: 'Global', label: 'Seamless Timezone Alignment' },
+];
+
+function CountUp({ value, suffix, inView }: { value: number; suffix: string; inView: boolean }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const controls = animate(0, value, {
+      duration: 1.4,
+      delay: 0.3,
+      ease,
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [inView, value]);
+
+  return (
+    <span>
+      {display}
+      {suffix}
+    </span>
+  );
+}
+
 export default function OurCompany() {
+  const statsGridRef = useRef<HTMLDivElement>(null);
+  const statsInView = useInView(statsGridRef, { once: true, margin: '-80px' });
+
   return (
     <section
       className="relative w-full bg-[#d6e4f0] text-[#0c1d2e] overflow-hidden border-t border-[#0c1d2e]/10 rounded-b-[2rem]"
       id="our-company-section"
     >
+      {/* ── Background: dot matrix + concentric rings + soft glow ── */}
+      <div
+        className="absolute inset-0 pointer-events-none select-none"
+        aria-hidden
+        id="company-bg"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(rgba(12,29,46,0.09) 1px, transparent 1px)',
+            backgroundSize: '26px 26px',
+            maskImage:
+              'radial-gradient(ellipse 110% 100% at 70% 60%, black 30%, transparent 100%)',
+            WebkitMaskImage:
+              'radial-gradient(ellipse 110% 100% at 70% 60%, black 30%, transparent 100%)',
+          }}
+        />
+        {/* Concentric rings, cropped at the top-right corner */}
+        <div className="hidden md:block absolute top-[-340px] right-[-260px] w-[760px] h-[760px]">
+          <span className="absolute inset-0 rounded-full border border-[#0c1d2e]/[0.07]" />
+          <span className="absolute inset-[110px] rounded-full border border-[#0c1d2e]/[0.08]" />
+          <span className="absolute inset-[220px] rounded-full border border-[#0c1d2e]/[0.09]" />
+          <span className="absolute inset-[330px] rounded-full border border-[#3b86d2]/[0.14]" />
+        </div>
+        <div className="absolute bottom-[-25%] right-[-8%] w-[520px] h-[520px] rounded-full bg-[#a1c6e7]/40 blur-[130px]" />
+      </div>
+
       {/* Label strip */}
-      <aside className="w-full px-6 md:px-12 pt-12 pb-10" id="company-label-row">
+      <aside className="relative w-full px-6 md:px-12 pt-12 pb-10" id="company-label-row">
         <motion.div
           variants={stagger()}
           initial="hidden"
@@ -47,7 +113,7 @@ export default function OurCompany() {
       </aside>
 
       <div
-        className="w-full px-6 md:px-12 pt-0 pb-24 md:pb-[126px] grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8 md:gap-12 items-start"
+        className="relative w-full px-6 md:px-12 pt-0 pb-24 md:pb-[126px] grid grid-cols-1 md:grid-cols-[2fr_2fr] gap-8 md:gap-12 items-start"
         id="our-company-inner"
       >
         {/* CEO portrait */}
@@ -67,12 +133,13 @@ export default function OurCompany() {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/40 to-transparent pointer-events-none md:hidden" />
             <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between pointer-events-none">
               <div className="flex flex-col gap-0.5">
-                <span className="text-white font-sans font-normal text-lg leading-tight">
+                <span className="text-white md:text-zinc-900 font-sans font-normal text-lg leading-tight">
                   Steven Nhan
                 </span>
-                <span className="button-mono text-xs text-white/60 uppercase tracking-[0.15em]">
+                <span className="button-mono text-xs text-white/60 md:text-zinc-900/60 uppercase tracking-[0.15em]">
                   Founder &amp; CEO
                 </span>
               </div>
@@ -84,7 +151,7 @@ export default function OurCompany() {
         <div className="flex flex-col gap-10" id="company-main-content">
           {/* Heading */}
           <motion.h2
-            className="text-[1.75rem] sm:text-4xl md:text-[42px] font-normal leading-tight tracking-tight text-[#0c1d2e] font-sans text-left select-none max-w-3xl"
+            className="text-[1.75rem] sm:text-4xl md:text-[42px] font-normal leading-[1.06] md:leading-tight tracking-tight text-[#0c1d2e] font-sans text-left select-none max-w-3xl"
             variants={stagger()}
             initial="hidden"
             whileInView="visible"
@@ -94,7 +161,7 @@ export default function OurCompany() {
             {/* Mobile: single flowing block */}
             <div className="overflow-visible pb-[0.04em] md:hidden">
               <motion.span className="block" variants={line}>
-                Built for modern teams and <span className="text-[#0c1d2e]/30">the next generation of remote work.</span>
+                Built for modern teams and the next generation of remote work.
               </motion.span>
             </div>
             {/* Desktop: two separately masked lines */}
@@ -110,7 +177,7 @@ export default function OurCompany() {
             </div>
           </motion.h2>
 
-          {/* Body text — single column */}
+          {/* Stat cards — replaces body copy */}
           <motion.div
             variants={stagger(0.1)}
             initial="hidden"
@@ -118,32 +185,54 @@ export default function OurCompany() {
             viewport={{ once: true, margin: '-80px' }}
             id="company-body"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div className="overflow-hidden">
-                <motion.p
-                  variants={line}
-                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-medium sm:font-normal tracking-[-0.04em]"
-                  style={{ lineHeight: '1.6' }}
-                  id="company-text-col-1"
+            <div
+              ref={statsGridRef}
+              className="relative grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#0c1d2e]/10 rounded-2xl overflow-hidden border border-[#0c1d2e]/10 max-w-2xl"
+              id="company-stats-grid"
+            >
+              {/* Data pulse traveling along the top edge */}
+              <motion.span
+                className="absolute top-0 z-10 h-[2px] w-32 bg-gradient-to-r from-transparent via-[#3b86d2] to-transparent pointer-events-none"
+                animate={{ left: ['-10%', '110%'] }}
+                transition={{
+                  duration: 3.4,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: 'linear',
+                  repeatDelay: 1.4,
+                }}
+                aria-hidden
+              />
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="group relative bg-[#d6e4f0] sm:hover:bg-white/70 transition-colors duration-300 px-4 py-3.5 sm:px-6 sm:py-8 flex flex-row sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-2 sm:gap-2 overflow-hidden"
                 >
-                  We provide businesses with remote specialists who combine professional expertise
-                  with modern AI-powered workflows. The result is a team that can move faster,
-                  handle more complexity, and deliver higher-quality outcomes than traditional
-                  remote staffing models.
-                </motion.p>
-              </div>
-              <div className="overflow-hidden">
-                <motion.p
-                  variants={line}
-                  className="text-[#0c1d2e]/65 text-[15px] sm:text-base font-medium sm:font-normal tracking-[-0.04em]"
-                  style={{ lineHeight: '1.6' }}
-                  id="company-text-col-2"
-                >
-                  Whether you're scaling operations, expanding marketing efforts, supporting
-                  customers, or building new capabilities, we help you access talent that's already
-                  prepared for how modern businesses work.
-                </motion.p>
-              </div>
+                  <span
+                    className="absolute left-0 top-0 h-[2px] w-0 bg-[#3b86d2] sm:group-hover:w-full transition-all duration-500 ease-out"
+                    aria-hidden
+                  />
+                  <div className="overflow-hidden pb-[0.04em]">
+                    <motion.span
+                      variants={line}
+                      className="block text-xl sm:text-4xl md:text-[44px] font-normal tracking-tight text-[#0c1d2e] tabular-nums"
+                    >
+                      {stat.value !== null ? (
+                        <CountUp value={stat.value} suffix={stat.suffix} inView={statsInView} />
+                      ) : (
+                        stat.display
+                      )}
+                    </motion.span>
+                  </div>
+                  <div className="overflow-hidden">
+                    <motion.p
+                      variants={line}
+                      className="button-mono text-xs text-[#0c1d2e]/55 uppercase tracking-[0.08em] leading-snug text-right sm:text-left"
+                    >
+                      {stat.label}
+                    </motion.p>
+                  </div>
+                </div>
+              ))}
             </div>
           </motion.div>
 

@@ -194,14 +194,17 @@ export default function Footer() {
               whileInView="visible"
               viewport={{ once: true, margin: '-60px' }}
             >
-              <div
-                style={
-                  { '--btn-main-bg': '#d6e4f0', '--btn-arrow-bg': '#3b86d2' } as React.CSSProperties
-                }
-                className="footer-cta"
-              >
-                <SplitCTA title="REQUEST A BRIEF" href="/contact" />
-              </div>
+              <SplitCTA
+                title="REQUEST A BRIEF"
+                href="/contact"
+                mainBg="#ffffff"
+                mainBgHover="#3b86d2"
+                arrowBg="#3b86d2"
+                arrowBgHover="#ffffff"
+                arrowColor="#ffffff"
+                arrowHoverColor="#0c1d2e"
+                labelColor="#0c1d2e"
+              />
             </motion.div>
           </div>
 
@@ -288,7 +291,7 @@ export default function Footer() {
         >
           <motion.p
             className="w-full font-sans font-medium text-white leading-none tracking-tight select-none md:whitespace-nowrap text-right md:text-left"
-            style={{ fontSize: 'clamp(32px, 14vw, 190px)' }}
+            style={{ fontSize: 'clamp(28px, 8.45vw, 220px)' }}
             variants={{
               hidden: { y: '100%' },
               visible: {
@@ -298,13 +301,13 @@ export default function Footer() {
             }}
             aria-hidden
           >
-            SN International
+            SN International Group
           </motion.p>
         </motion.div>
 
         {/* ── Copyright ── */}
-        <div className="pb-8 md:pb-6" id="footer-bottom">
-          <p className="md:hidden text-right button-mono text-xs text-white tracking-[0.05em]">
+        <div className="pt-6 pb-8 md:pt-0 md:pb-6" id="footer-bottom">
+          <p className="md:hidden text-center button-mono text-xs text-white tracking-[0.05em]">
             &copy; 2026 SN INTERNATIONAL GROUP.<br />All rights reserved.
           </p>
           <span className="hidden md:block button-mono text-xs text-white tracking-[0.05em]">

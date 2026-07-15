@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { getLenis } from '../../../hooks/useSmoothScroll';
+import HeroBackdrop from '../../shared/HeroBackdrop';
 
 const ease = [0.19, 1, 0.22, 1] as const;
 
@@ -35,6 +36,8 @@ export default function TeamHero() {
                  pt-32 sm:pt-36 md:pt-16 pb-10 md:pb-12"
       id="team-hero"
     >
+      <HeroBackdrop variant="dots" />
+
       {/* ── Top: Heading + divider ── */}
       <div>
         <h1
@@ -127,7 +130,7 @@ export default function TeamHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.62, ease }}
         >
-          The specialists, creatives, and operators behind every engagement — brought together with purpose and built to deliver.
+          The specialists, creatives, and operators behind every engagement, brought together with purpose and built to deliver.
         </motion.p>
       </div>
     </section>

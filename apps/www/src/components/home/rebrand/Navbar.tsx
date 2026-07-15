@@ -13,6 +13,7 @@ interface MenuItem {
 
 interface NavbarProps {
   alwaysLogoPill?: boolean;
+  withSpacer?: boolean;
 }
 
 const menuItems: MenuItem[] = [
@@ -21,7 +22,7 @@ const menuItems: MenuItem[] = [
   { name: 'Our Team', href: '/team' },
 ];
 
-export default function Navbar({ alwaysLogoPill = false }: NavbarProps) {
+export default function Navbar({ alwaysLogoPill = false, withSpacer = true }: NavbarProps) {
   const [inWhatWeDo, setInWhatWeDo] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -221,7 +222,7 @@ export default function Navbar({ alwaysLogoPill = false }: NavbarProps) {
         </div>
       </motion.nav>
       {/* spacer to preserve layout since nav is fixed */}
-      <div aria-hidden="true" className="h-14 lg:h-16" />
+      {withSpacer && <div aria-hidden="true" className="h-14 lg:h-16" />}
     </>
   );
 }
