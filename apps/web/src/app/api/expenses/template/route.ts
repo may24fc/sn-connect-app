@@ -2,6 +2,7 @@ import {
   EXPENSE_IMPORT_TEMPLATE_HEADERS,
   EXPENSE_IMPORT_TEMPLATE_SAMPLE_ROWS,
 } from '@/lib/import/expense-template';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import ExcelJS from 'exceljs';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -11,14 +12,14 @@ export const runtime = 'nodejs';
 const ALLOWED_ROLES = new Set(['admin', 'super_admin', 'associate']);
 
 async function resolveRole(user: { id: string; app_metadata?: Record<string, unknown> }): Promise<string | null> {
-  const roleFromMetadata = user.app_metadata?.db_role;
-  if (typeof roleFromMetadata === 'string') {
+  const roleFromMetadata = getNormalizedMetadataRole(user.app_metadata);
+  if (roleFromMetadata) {
     return roleFromMetadata;
   }
 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.from('users').select('role').eq('id', user.id).is('deleted_at', null).maybeSingle();
-  return data?.role ?? null;
+  return normalizeDbRoleClaim(data?.role ?? null);
 }
 
 function toCsv(): string {

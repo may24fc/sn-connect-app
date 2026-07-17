@@ -1,6 +1,7 @@
 'use client';
 
 import { getAuthenticatedHomeRedirect } from '@/lib/auth/redirect-config';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
@@ -42,7 +43,9 @@ interface AuthContextValue {
 // DB roles: employee, associate, admin, super_admin
 // UI roles: employee, associate, admin, super_admin
 const resolveUiRole = (role: string | null | undefined): UserRoleType => {
-  switch (role) {
+  const normalizedRole = normalizeDbRoleClaim(role);
+
+  switch (normalizedRole) {
     case 'super_admin':
       return 'super_admin';
     case 'admin':
@@ -252,10 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
       }
 
       // Primary: read role from app_metadata (embedded in JWT, no DB call)
-      let dbRole: string | null = null;
-      if (typeof authUser.app_metadata?.db_role === 'string') {
-        dbRole = authUser.app_metadata.db_role;
-      }
+      let dbRole: string | null = getNormalizedMetadataRole(authUser.app_metadata);
 
       // Fallback: query public.users directly (RLS allows own-row reads)
       let userStatus: UserStatusType | null = null;
@@ -269,7 +269,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         if (error) {
           console.error('Failed to fetch user role:', error.message);
         } else {
-          dbRole = data?.role ?? null;
+          dbRole = normalizeDbRoleClaim(data?.role ?? null);
           userStatus = (data?.status as UserStatusType) ?? null;
         }
       } else {

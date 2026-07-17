@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export const CRM_TRACKER_VALUES = ['meta_leads', 'google_ads_leads', 'sn_tech_inquiries'] as const;
 export type CrmTrackerKey = (typeof CRM_TRACKER_VALUES)[number];
@@ -19,8 +20,7 @@ async function resolveUserRole(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   user: { id: string; app_metadata?: Record<string, unknown> }
 ): Promise<string | null> {
-  const metadataRole =
-    typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+  const metadataRole = getNormalizedMetadataRole(user.app_metadata);
 
   if (metadataRole) {
     return metadataRole;
@@ -37,7 +37,7 @@ async function resolveUserRole(
     throw new Error('Failed to resolve user role');
   }
 
-  return data?.role ?? null;
+  return normalizeDbRoleClaim(data?.role ?? null);
 }
 
 export function canAccessCrm(role: string | null): boolean {

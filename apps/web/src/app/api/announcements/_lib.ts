@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export const ANNOUNCEMENT_ADMIN_ROLES = ['admin', 'super_admin'];
 
@@ -26,10 +27,7 @@ export async function getAuthedSupabase() {
   }
 
   // Primary: read role from app_metadata (embedded in JWT, no DB call needed)
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
-  }
+  let role: string | null = getNormalizedMetadataRole(user.app_metadata);
 
   // Fallback: query public.users table
   if (!role) {
@@ -44,7 +42,7 @@ export async function getAuthedSupabase() {
       return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
     }
 
-    role = roleData?.role ?? null;
+    role = normalizeDbRoleClaim(roleData?.role ?? null);
   }
 
   return { supabase, user, role, error: null };

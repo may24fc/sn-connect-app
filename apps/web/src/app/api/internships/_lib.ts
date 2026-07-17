@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export const INTERNSHIP_ADMIN_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'];
 
@@ -17,10 +18,7 @@ export async function getAuthedInternshipContext() {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
-  }
+  let role: string | null = getNormalizedMetadataRole(user.app_metadata);
 
   if (!role) {
     const { data: roleData, error: roleError } = await supabase
@@ -39,7 +37,7 @@ export async function getAuthedInternshipContext() {
       };
     }
 
-    role = roleData?.role ?? null;
+    role = normalizeDbRoleClaim(roleData?.role ?? null);
   }
 
   return { supabase, user, role, error: null };

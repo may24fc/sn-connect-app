@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export const TICKET_TEAMS = ['hr', 'it'] as const;
 export const TICKET_PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
@@ -47,8 +48,7 @@ async function resolveUserRole(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   user: { id: string; app_metadata?: Record<string, unknown> }
 ): Promise<string | null> {
-  const metadataRole =
-    typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+  const metadataRole = getNormalizedMetadataRole(user.app_metadata);
 
   if (metadataRole) {
     return metadataRole;
@@ -65,7 +65,7 @@ async function resolveUserRole(
     throw new Error('Failed to resolve user role');
   }
 
-  return data?.role ?? null;
+  return normalizeDbRoleClaim(data?.role ?? null);
 }
 
 export async function isActiveItHandler(

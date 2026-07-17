@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 
 export const AI_ADMIN_ROLES = ['admin', 'super_admin', 'hr'];
 export const AI_KNOWLEDGE_ACCESS_ROLES = ['admin', 'super_admin', 'hr', 'cos', 'ceo'] as const;
@@ -15,10 +16,7 @@ export async function getAuthedSupabase() {
     return { supabase, user: null, role: null, error: 'Unauthorized' as const };
   }
 
-  let role: string | null = null;
-  if (typeof user.app_metadata?.db_role === 'string') {
-    role = user.app_metadata.db_role;
-  }
+  let role: string | null = getNormalizedMetadataRole(user.app_metadata);
 
   if (!role) {
     const { data: roleData, error: roleError } = await supabase
@@ -32,7 +30,7 @@ export async function getAuthedSupabase() {
       return { supabase, user, role: null, error: 'Failed to resolve user role' as const };
     }
 
-    role = roleData?.role ?? null;
+    role = normalizeDbRoleClaim(roleData?.role ?? null);
   }
 
   return { supabase, user, role, error: null };

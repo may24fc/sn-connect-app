@@ -1,4 +1,5 @@
 import { NOTIFICATION_PREFERENCES_ROLE_TYPE } from '@/lib/settings/notification-preferences';
+import { getNormalizedMetadataRole, normalizeDbRoleClaim } from '@/lib/auth/role';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -14,7 +15,7 @@ async function getUserRole(
     .eq('id', userId)
     .is('deleted_at', null)
     .maybeSingle();
-  return userData?.role ?? null;
+  return normalizeDbRoleClaim(userData?.role ?? null);
 }
 
 /**
@@ -37,9 +38,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     // Check authorization: self or admin
     const isSelf = user.id === targetUserId;
     if (!isSelf) {
-      let role = user.app_metadata?.db_role as string | undefined;
+      let role: string | null = getNormalizedMetadataRole(user.app_metadata);
       if (!role) {
-        role = (await getUserRole(supabase, user.id)) ?? undefined;
+        role = await getUserRole(supabase, user.id);
       }
       if (!role || !ADMIN_ROLES.includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -92,9 +93,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Check authorization: self or admin
     const isSelf = user.id === targetUserId;
     if (!isSelf) {
-      let role = user.app_metadata?.db_role as string | undefined;
+      let role: string | null = getNormalizedMetadataRole(user.app_metadata);
       if (!role) {
-        role = (await getUserRole(supabase, user.id)) ?? undefined;
+        role = await getUserRole(supabase, user.id);
       }
       if (!role || !['admin', 'super_admin', 'hr'].includes(role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

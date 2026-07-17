@@ -179,6 +179,7 @@ export function getPostLoginRedirect(role?: string, returnTo?: string | null): s
       return '/super-admin/dashboard';
     case 'admin':
       return '/admin/dashboard';
+    case 'intern':
     case 'associate':
       return '/associate/dashboard';
     case 'employee':
