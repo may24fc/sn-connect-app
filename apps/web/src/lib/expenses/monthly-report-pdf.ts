@@ -1,4 +1,5 @@
-﻿import { chromium } from 'playwright';
+﻿import chromium from '@sparticuz/chromium';
+import { chromium as playwrightChromium } from 'playwright-core';
 import type { MonthlyExpenseReport } from './monthly-report';
 
 const PIE_COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#14B8A6', '#F43F5E', '#94A3B8'];
@@ -681,14 +682,19 @@ export async function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport
   const html = buildMonthlyExpenseReportHtml(report);
   let browser;
   try {
-    browser = await chromium.launch({
+    const executablePath =
+      process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
+      (await chromium.executablePath());
+
+    browser = await playwrightChromium.launch({
+      executablePath,
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `Failed to launch Chromium for HTML-to-PDF rendering. Ensure Playwright browser binaries are installed in this runtime. Original error: ${msg}`,
+      `Failed to launch Chromium for HTML-to-PDF rendering. Ensure @sparticuz/chromium is available in this runtime or provide PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH. Original error: ${msg}`,
     );
   }
 
