@@ -18,8 +18,14 @@ const nextConfig: NextConfig = {
         ? '.next-build'
         : '.next',
   transpilePackages: ['@hr-portal/ui', '@hr-portal/database', '@hr-portal/auth', '@hr-portal/ai'],
-  serverExternalPackages: ['googleapis', 'pdfkit'],
+  serverExternalPackages: ['googleapis', 'pdfkit', '@sparticuz/chromium', 'playwright-core'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
+  outputFileTracingIncludes: {
+    '/api/expenses/reports/monthly': [
+      './node_modules/@sparticuz/chromium/**',
+      './node_modules/playwright-core/**',
+    ],
+  },
   async redirects() {
     return [
       {
