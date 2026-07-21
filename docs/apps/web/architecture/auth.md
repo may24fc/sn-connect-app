@@ -63,7 +63,7 @@ For `associate` role with completed onboarding accessing `/associate/dashboard`:
 
 1. Look up employee record
 2. Check for active internship record
-3. If none exists → redirect to `/associate/setup`
+3. If none exists → redirect to `/associate/setup` guidance route (admin-managed assignment required)
 
 ### 5. Security Headers
 

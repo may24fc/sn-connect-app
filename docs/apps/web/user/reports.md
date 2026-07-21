@@ -62,6 +62,14 @@ Below the KPIs is an **Insights Summary** with:
   - **Next Steps** section
   - **Submit** button — Submit a draft report directly from the detail view
 
+### Editing a Draft Report (`/reports/[id]/edit`)
+
+Draft reports can be edited before final submission.
+
+1. Open the draft report detail
+2. Choose edit
+3. Update fields and save draft or submit
+
 ## Filtering Reports
 
 - **Search** — Find reports by name or content

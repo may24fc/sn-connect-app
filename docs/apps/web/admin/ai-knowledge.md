@@ -15,6 +15,8 @@ The AI Assistant uses **Retrieval-Augmented Generation (RAG)** to answer employe
 
 ## AI Knowledge Page (`/admin/ai-knowledge`)
 
+Super admin route: `/super-admin/ai-knowledge` (role-prefixed access to the same capability set).
+
 The page has two panels:
 
 | Panel | Description |

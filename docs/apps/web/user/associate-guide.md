@@ -19,14 +19,25 @@ This guide covers features specific to associates. Associates share most feature
 
 ## Associate Setup
 
-When you first log in, the system redirects you to the **Associate Setup** page (`/associate/setup`) to collect:
+When you first log in without an active associate assignment, the system redirects you to the **Associate Setup** page (`/associate/setup`) with guidance to coordinate with HR/admin.
 
-- School and program
-- Start and end dates
-- Required hours
-- Supervisor assignment
+Internship assignment records are created through admin-managed assignment, not self-service setup.
 
-Complete this before accessing the rest of the portal.
+Compatibility routes that may still appear in some flows:
+
+- `/intern` (redirect alias)
+- `/intern/dashboard`
+- `/intern/profile`
+- `/intern/reports`
+- `/intern/settings`
+- `/intern/setup`
+
+Associate route variants:
+
+- `/associate`
+- `/associate/profile`
+- `/associate/reports`
+- `/associate/settings`
 
 ## Associate Dashboard (`/associate/dashboard`)
 

@@ -34,8 +34,8 @@ Three cards link to sub-pages:
 | Card | Links To | Description |
 |------|----------|-------------|
 | **OKRs** | `/performance/okrs` | Your objectives and key results with progress bars |
-| **KPIs** | `/performance/kpis` | Your key performance indicators with scores |
-| **Self-Assessment** | `/performance/review` | Start or resume your self-review |
+| **KPIs** | `/performance` | KPI summaries are shown in your main performance workspace |
+| **Self-Assessment** | `/performance/self-evaluation` | Start or resume your self-review |
 
 ## OKRs (Objectives & Key Results)
 
@@ -83,7 +83,7 @@ Progress updates are reflected in real-time via Supabase Realtime subscriptions.
 
 ## KPIs (Key Performance Indicators)
 
-Navigate to `/performance/kpis` to view your KPIs.
+KPI summaries are available in the main `/performance` workspace.
 
 Each KPI displays:
 - **KPI name** and description
@@ -105,7 +105,7 @@ Your manager and HR can review these attachments during evaluations. Evidence he
 
 ## Self-Assessment
 
-Navigate to `/performance/review` during an active cycle to complete your self-assessment.
+Navigate to `/performance/self-evaluation` during an active cycle to complete your self-assessment.
 
 1. Review your OKR progress and KPI scores
 2. Rate yourself on each objective and KPI

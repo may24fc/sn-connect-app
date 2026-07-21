@@ -9,7 +9,7 @@ The support ticket system lets employees and associates report issues, request a
 ## Navigation
 
 **Admin:** `/admin/tickets`  
-**Super Admin:** `/super-admin/tickets`
+**Super Admin:** `/admin/tickets` (shared admin ticket workspace)
 
 ---
 
@@ -106,7 +106,7 @@ The submitter receives an in-app notification when their ticket is resolved.
 
 ## Designating Ticket Handlers
 
-Super admins can grant specific users ticket handler status from the **Ticket Handlers** sub-page.
+Super admins can grant specific users ticket handler status from the ticket workspace handler controls.
 
 Ticket handlers:
 - Receive notifications for all new tickets submitted to their team
@@ -114,9 +114,10 @@ Ticket handlers:
 - Are listed in the **Assign to** dropdown
 
 To add a handler:
-1. Go to `/super-admin/tickets/handlers`
-2. Search for the user
-3. Click **Grant Handler Access**
+1. Open `/admin/tickets`
+2. Open handler management controls in the tickets workspace
+3. Search for the user
+4. Click **Grant Handler Access**
 
 ---
 

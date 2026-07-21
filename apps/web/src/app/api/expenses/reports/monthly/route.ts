@@ -78,6 +78,10 @@ function parseReferenceDate(searchParams: URLSearchParams): Date {
  * `?format=pdf` streams the rendered PDF; default returns the JSON summary.
  */
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const requestedFormat = searchParams.get('format') === 'pdf' ? 'pdf' : 'json';
+  const requestedMonth = searchParams.get('month') ?? 'current';
+
   try {
     const isServiceRequest = isAuthorizedServiceRequest(request);
 
@@ -88,8 +92,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const format = searchParams.get('format') === 'pdf' ? 'pdf' : 'json';
+    const format = requestedFormat;
     const referenceDate = parseReferenceDate(searchParams);
 
     const adminClient = createSupabaseAdminClient();
@@ -110,8 +113,18 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: report });
   } catch (error) {
-    console.error('GET /api/expenses/reports/monthly error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('GET /api/expenses/reports/monthly failed', {
+      format: requestedFormat,
+      month: requestedMonth,
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            }
+          : String(error),
+    });
+    return NextResponse.json({ error: 'Failed to generate monthly expense report' }, { status: 500 });
   }
 }

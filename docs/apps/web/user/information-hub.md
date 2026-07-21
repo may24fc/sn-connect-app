@@ -2,6 +2,19 @@
 
 The Information Hub (`/information-hub`) is your central place for company announcements and shared resources.
 
+## Route Map
+
+- /information-hub
+- /announcements
+- /announcements/starred
+- /information-hub/resources/new
+- /information-hub/resources/[id]
+- /information-hub/resources/bookmarks
+- /information-hub/resources/category/[category]
+- /information-hub/resources/folder/[id]
+
+Direct announcements route: `/announcements`
+
 ## Tabs
 
 The page is split into two tabs:
@@ -92,6 +105,14 @@ Click any resource to view its full detail page:
 - **Actions** — Bookmark, Download, Mark as Completed
 - **Related Resources** — Grid of similar resources
 - Views are tracked automatically
+
+### New Resource Route (`/information-hub/resources/new`)
+
+This route is used when creating or drafting new resource entries where permissions allow.
+
+### Resource Folder View (`/information-hub/resources/folder/[id]`)
+
+Folder view groups related resources for easier browsing within a collection-style experience.
 
 ### Bookmarks (`/information-hub/resources/bookmarks`)
 

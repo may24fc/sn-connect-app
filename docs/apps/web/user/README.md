@@ -12,6 +12,8 @@ Welcome to the Control Hub HR Portal user documentation. These guides help emplo
 | [Documents](documents.md) | Uploading and managing 201 files | All users |
 | [Reports](reports.md) | Submitting weekly reports | Employees |
 | [Invoices](invoices.md) | Submitting payroll invoices | Employees |
+| [Expenses](expenses.md) | Expense submission, verification, and desk analytics | Employees, Leadership |
+| [Projects](projects.md) | Project planning, detail tracking, and project pool workflows | Employees, Leadership |
 | [Performance](performance.md) | OKRs, KPIs, and self-assessments | All users |
 | [Information Hub](information-hub.md) | Announcements and company resources | All users |
 | [Profile](profile.md) | Managing your profile and avatar | All users |
@@ -20,6 +22,80 @@ Welcome to the Control Hub HR Portal user documentation. These guides help emplo
 | [Tickets](tickets.md) | Submitting and tracking IT/HR support tickets | All users |
 | [Associate Guide](associate-guide.md) | Associate-specific features and daily reports | Associates |
 | [Help Center](help.md) | Step-by-step guides for invoices, reports, and performance reviews | All users |
+
+## Route Map (Employee and Associate)
+
+### Core Employee Routes
+
+- /dashboard
+- /profile
+- /settings
+- /tasks
+- /tasks/[id]
+- /tickets
+- /notifications
+- /calendar
+- /files
+- /reports
+- /reports/new
+- /reports/[id]
+- /reports/[id]/edit
+- /invoice
+- /performance
+- /performance/okrs
+- /performance/okrs/[id]
+- /performance/self-evaluation
+- /information-hub
+- /information-hub/resources/new
+- /information-hub/resources/[id]
+- /information-hub/resources/bookmarks
+- /information-hub/resources/category/[category]
+- /information-hub/resources/folder/[id]
+- /announcements
+
+### Associate and Intern-Compatible Routes
+
+- /associate
+- /associate/dashboard
+- /associate/profile
+- /associate/reports
+- /associate/settings
+- /associate/setup
+- /intern
+- /intern/dashboard
+- /intern/profile
+- /intern/reports
+- /intern/settings
+- /intern/setup
+
+### Onboarding and Help Routes
+
+- /onboarding
+- /onboarding/setup
+- /onboarding/complete
+- /help
+- /help/reports
+- /help/invoices
+- /help/performance-reviews
+
+### ATS Delegated Access Routes
+
+- /ats/recruitment
+- /ats/jobs
+- /ats/jobs/applications
+- /ats/jobs/archive
+
+### Expenses, Projects, and Manager Views
+
+- /expenses
+- /expenses/verify
+- /expenses/desk
+- /expenses/desk/analytics
+- /projects
+- /projects/new
+- /projects/[id]
+- /projects/pool
+- /manager/team-performance
 
 ## Role Overview
 

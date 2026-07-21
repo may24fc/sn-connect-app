@@ -4,6 +4,28 @@ This guide covers features exclusive to Super Admins: task management, payroll a
 
 > Super Admins also have access to all Admin features. See the [Admin Guides index](README.md) for the complete list.
 
+## Super Admin Route Map
+
+### Dedicated Super Admin Pages
+
+- `/super-admin/dashboard`
+- `/super-admin/tasks`
+- `/super-admin/tasks/[id]`
+- `/super-admin/payroll-approvals`
+- `/super-admin/activity`
+- `/super-admin/profile`
+- `/super-admin/revenue-forecast`
+
+### Role-Prefixed Access Routes (Alias/Redirect or Reused View)
+
+- `/super-admin/announcements`, `/super-admin/announcements/new`, `/super-admin/announcements/[id]`
+- `/super-admin/resources`, `/super-admin/resources/new`, `/super-admin/resources/[id]`
+- `/super-admin/resources/collections`, `/super-admin/resources/collections/new`, `/super-admin/resources/collections/[id]`
+- `/super-admin/directory`, `/super-admin/directory/[userId]`
+- `/super-admin/calendar`, `/super-admin/company-pulse`, `/super-admin/crm`
+- `/super-admin/settings`, `/super-admin/notifications`
+- `/super-admin/performance/self-evaluation`, `/super-admin/performance/monthly-self-evaluations`
+
 ## Task Management (`/super-admin/tasks`)
 
 Super Admins are the only role that can create and assign tasks to employees.
@@ -81,6 +103,15 @@ Each entry shows:
 
 `GET /api/audit-logs?scope=super_admin` — Returns the scoped activity feed for super admins. The feed supports `limit` and `own=true`; `own=true` narrows results to the current super admin only.
 
+## Super Admin Profile (`/super-admin/profile`)
+
+The profile view supports account-level profile management for super admins, including:
+
+- Avatar upload/update
+- Contact and personal info edits
+- Emergency and payment information updates
+- Role metadata management controls
+
 ## Payroll Approvals (`/super-admin/payroll-approvals`)
 
 Review and approve employee invoice submissions.
@@ -144,6 +175,16 @@ The employee sees the updated status on their Invoice page.
 
 > **Tip:** For rejections, always include clear notes explaining what needs to be corrected so the employee can resubmit.
 
+## Revenue Forecast (`/super-admin/revenue-forecast`)
+
+The revenue forecast workspace provides leadership-level planning visibility and forecasting controls.
+
+Typical use cases:
+
+- Review forecast scenarios and assumptions
+- Compare projected performance windows
+- Support planning conversations with operations and finance
+
 ## System Health Monitoring
 
 The Super Admin Dashboard includes system-level monitoring:
@@ -200,6 +241,8 @@ The admin notification center displays system notifications with:
 - **Pagination** — Navigate through notification history
 
 Notification types include: task assignments, report submissions, onboarding completions, invoice approvals, and system alerts. Each type has a distinct icon and color.
+
+Super admins may also enter via `/super-admin/notifications`, which reuses the same notifications experience.
 
 ---
 

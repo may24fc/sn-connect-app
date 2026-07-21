@@ -2,6 +2,22 @@
 
 This guide covers creating review cycles, monitoring organization-wide performance, and conducting appraisals.
 
+## Route Map
+
+- `/admin/performance` — Performance dashboard
+- `/admin/performance/cycles` — Cycle management
+- `/admin/performance/evaluations` — Evaluation queue
+- `/admin/performance/individual` — Employee performance list
+- `/admin/performance/employee/[id]` — Employee performance detail
+- `/admin/performance/my-okrs` — Personal OKR workspace (redirects to self-service view)
+- `/admin/performance/self-evaluation` — Self-evaluation entry point
+- `/admin/performance/monthly-self-evaluations` — Monthly self-evaluation entry point
+
+Super admin aliases:
+
+- `/super-admin/performance/self-evaluation` — Redirects to admin self-evaluation route
+- `/super-admin/performance/monthly-self-evaluations` — Redirects to admin monthly self-evaluations route
+
 ## Performance Dashboard (`/admin/performance`)
 
 ### Current Cycle Banner
@@ -153,6 +169,15 @@ The evaluation is a 2-step modal:
 
 Click **Submit Evaluation** to finalize.
 
+## Self-Evaluation Routes
+
+The self-evaluation routes provide direct entry points for the personal evaluation flow:
+
+- `/admin/performance/self-evaluation`
+- `/admin/performance/monthly-self-evaluations`
+
+When accessed through super-admin prefixes, the app redirects to the corresponding admin route.
+
 ## KPI Evidence Attachments
 
 Employees can upload evidence files to support their KPI achievements. As an admin or manager, you can review uploaded evidence during the evaluation process.
@@ -171,11 +196,11 @@ Employees can upload evidence files to support their KPI achievements. As an adm
 | List evidence | `GET /api/performance/kpis/[id]/evidence` |
 | Upload evidence | `POST /api/performance/kpis/[id]/evidence` |
 
-## Team Performance (`/admin/performance/team`)
+## Team Performance (Dashboard and API)
 
-The **Team Performance** view provides an aggregate overview of all employees'’ performance in the current cycle. Use the multi-select filters for **department**, **role**, and **status** to slice the data.
+Team-level performance insights are surfaced in the performance dashboard and related review pages rather than a dedicated `/admin/performance/team` route.
 
-`GET /api/performance/team` — Returns aggregated performance data for team views.
+`GET /api/performance/team` — Returns aggregated performance data used by team-level widgets and summaries.
 
 ## Individual Performance (`/admin/performance/individual`)
 

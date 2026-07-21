@@ -2,6 +2,13 @@
 
 Your dashboard is the first page you see after logging in. It provides a personalized overview of your HR status and highlights the most important cards for the day.
 
+## Route Map
+
+- /dashboard
+- /associate/dashboard
+- /calendar
+- /manager/team-performance (manager-permission dependent)
+
 ## Employee Dashboard (`/dashboard`)
 
 ### Welcome Header
@@ -48,6 +55,8 @@ Celebrates employee milestones (birthdays, work anniversaries) with a dismissabl
 ## Associate Dashboard (`/associate/dashboard`)
 
 Associates have a specialized dashboard focused on hours tracking and daily reports. See the [Associate Guide](associate-guide.md) for details.
+
+Related productivity routes are listed in the route map above.
 
 ---
 

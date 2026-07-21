@@ -9,23 +9,10 @@ process.on('warning', (warning) => {
 });
 
 const nextConfig: NextConfig = {
-  // Keep Vercel on the default Next.js output directory, but isolate local
-  // production builds from the running dev server's locked .next directory.
-  distDir:
-    process.env.VERCEL === '1'
-      ? '.next'
-      : process.env.NODE_ENV === 'production'
-        ? '.next-build'
-        : '.next',
+  distDir: '.next',
   transpilePackages: ['@hr-portal/ui', '@hr-portal/database', '@hr-portal/auth', '@hr-portal/ai'],
-  serverExternalPackages: ['googleapis', 'pdfkit', '@sparticuz/chromium', 'playwright-core'],
+  serverExternalPackages: ['googleapis', 'pdfkit'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  outputFileTracingIncludes: {
-    '/api/expenses/reports/monthly': [
-      './node_modules/@sparticuz/chromium/**',
-      './node_modules/playwright-core/**',
-    ],
-  },
   async redirects() {
     return [
       {

@@ -66,6 +66,8 @@ Clicking an associate opens their full profile:
 
 The associate account is created with the `associate` role. When they log in, they are directed to the Associate Setup flow.
 
+Associate assignment data is saved through the admin assignment flow (`/api/users/assign-associate`, with `/api/users/assign-intern` kept as a compatibility alias).
+
 ## Associate Program Lifecycle
 
 | Status | Meaning |

@@ -15,7 +15,8 @@ User lifecycle management — inviting new users, approving completed onboarding
 | `POST` | `/api/users/invite` | admin, super_admin | Invite a new user |
 | `POST` | `/api/users/approve-onboarding` | admin, super_admin | Approve or reject onboarding |
 | `POST` | `/api/users/assign-employee` | admin, super_admin | Assign employee to probation |
-| `POST` | `/api/users/assign-intern` | admin, super_admin | Assign associate with program details |
+| `POST` | `/api/users/assign-associate` | admin, super_admin | Assign associate with program details |
+| `POST` | `/api/users/assign-intern` | admin, super_admin | Legacy alias for assign-associate |
 
 ---
 
@@ -152,7 +153,9 @@ Assign an approved employee to the probation tracker with stage details.
 ```json
 {
   "userId": "uuid",
-  "department": "Engineering",
+  "departmentId": "uuid",
+  "divisionId": "uuid",
+  "assignProbation": true,
   "stage": 1,
   "status": "on-track",
   "probationEndDate": "2026-08-27"
@@ -162,16 +165,20 @@ Assign an approved employee to the probation tracker with stage details.
 | Field | Type | Required | Validation |
 |-------|------|----------|------------|
 | `userId` | `uuid` | Yes | |
-| `department` | `string` | Yes | Min 1 char |
-| `stage` | `number` | Yes | 1-4 |
-| `status` | `enum` | Yes | `on-track` or `at-risk` |
-| `probationEndDate` | `string` | Yes | YYYY-MM-DD |
+| `departmentId` | `uuid` | Yes | Must match a saved department |
+| `divisionId` | `uuid` | Yes | Must match a saved division |
+| `assignProbation` | `boolean` | No | Default `true` |
+| `stage` | `number` | Conditionally | Required when `assignProbation=true`, range 1-3 |
+| `status` | `enum` | Conditionally | Required when `assignProbation=true`, `on-track` or `at-risk` |
+| `probationEndDate` | `string` | Conditionally | Required when `assignProbation=true`, YYYY-MM-DD |
 
 ### Behavior
 
 1. Finds the employee record for the given userId
-2. Updates employee's `department` and `probation_end_date`
-3. Logs operation to `audit_logs`
+2. Resolves `departmentId` and `divisionId` against saved lookup tables
+3. Updates `employees.department`, `employees.division`, and probation fields
+4. Syncs `users.department_id` and `users.division_id`
+5. Logs operation to `audit_logs`
 
 ### Response
 
@@ -182,6 +189,11 @@ Assign an approved employee to the probation tracker with stage details.
     "employeeId": "uuid",
     "userId": "uuid",
     "department": "Engineering",
+    "departmentId": "uuid",
+    "division": "SN International Group",
+    "divisionId": "uuid",
+    "employmentStatus": "probationary",
+    "assignProbation": true,
     "stage": 1,
     "status": "on-track",
     "probationEndDate": "2026-08-27"
@@ -206,10 +218,12 @@ Assign an approved associate with program details. Creates or updates an interns
 ```json
 {
   "userId": "uuid",
-  "department": "Engineering",
+  "departmentId": "uuid",
+  "divisionId": "uuid",
   "startDate": "2026-03-01",
   "endDate": "2026-06-30",
   "requiredHours": 480,
+  "weeklyRequiredHours": 20,
   "school": "University of the Philippines",
   "program": "BS Computer Science"
 }
@@ -218,10 +232,12 @@ Assign an approved associate with program details. Creates or updates an interns
 | Field | Type | Required | Validation |
 |-------|------|----------|------------|
 | `userId` | `uuid` | Yes | |
-| `department` | `string` | Yes | Min 1 char |
+| `departmentId` | `uuid` | Yes | Must match a saved department |
+| `divisionId` | `uuid` | Yes | Must match a saved division |
 | `startDate` | `string` | Yes | YYYY-MM-DD |
 | `endDate` | `string` | Yes | YYYY-MM-DD, must be after startDate |
 | `requiredHours` | `number` | Yes | Min 1 |
+| `weeklyRequiredHours` | `number` | Yes | Min 1 |
 | `school` | `string` | No | |
 | `program` | `string` | No | |
 
@@ -229,11 +245,17 @@ Assign an approved associate with program details. Creates or updates an interns
 
 1. Validates `endDate > startDate`
 2. Finds the employee record for userId
-3. Updates employee's department
+3. Resolves `departmentId` and `divisionId`
+4. Updates employee department/division and syncs users department_id/division_id
 4. Checks for existing `internships` record:
    - If exists: updates all fields (admin client to bypass RLS)
    - If not: inserts new record with `completed_hours: 0`, `status: 'active'`
 5. Logs operation to `audit_logs`
+
+### Endpoint Compatibility
+
+- Canonical endpoint: `/api/users/assign-associate`
+- Legacy alias: `/api/users/assign-intern` (kept temporarily for backward compatibility)
 
 ### Response
 

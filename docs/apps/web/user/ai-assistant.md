@@ -2,6 +2,10 @@
 
 The AI-powered HR Assistant is available to all users. It can answer questions about company policies, HR processes, documents, and more.
 
+## Route Map
+
+- Floating chat panel available throughout authenticated user pages
+
 ## Opening the Assistant
 
 Click the **floating chat button** (message icon) in the **bottom-left corner** of any page. The chat panel slides open.

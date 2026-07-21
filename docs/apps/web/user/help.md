@@ -9,6 +9,13 @@ The Help Center provides guided walkthroughs for the most common self-service wo
 - `/help/invoices`
 - `/help/performance-reviews`
 
+Delegated ATS routes (role-permission dependent):
+
+- `/ats/recruitment`
+- `/ats/jobs`
+- `/ats/jobs/applications`
+- `/ats/jobs/archive`
+
 ## How to Use It
 
 1. Open Help Center from the sidebar.

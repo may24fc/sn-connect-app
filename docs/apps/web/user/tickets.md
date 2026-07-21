@@ -2,7 +2,7 @@
 
 The Tickets page lets you submit HR or IT support requests and track ticket progress.
 
-## Route
+## Route Map
 
 - `/tickets`
 

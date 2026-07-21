@@ -140,7 +140,8 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/users/invite` | admin, super_admin | Invite user with email, role, temp password |
 | `POST` | `/api/users/approve-onboarding` | admin, super_admin | Approve or reject onboarding |
 | `POST` | `/api/users/assign-employee` | admin, super_admin | Assign probation details to employee |
-| `POST` | `/api/users/assign-intern` | admin, super_admin | Assign associate details + create record |
+| `POST` | `/api/users/assign-associate` | admin, super_admin | Assign associate details + create record |
+| `POST` | `/api/users/assign-intern` | admin, super_admin | Legacy alias for assign-associate |
 | `GET` | `/api/users/[id]/kpi-entries` | admin, super_admin | List KPI entries for user |
 | `POST` | `/api/users/[id]/kpi-entries` | admin, super_admin | Create KPI entry for user |
 | `GET` | `/api/users/[id]/metadata` | Any authenticated | Get user role metadata |
@@ -334,7 +335,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 |--------|------|------|-------------|
 | `GET` | `/api/internships` | Any (scoped) | List internships with filters |
 | `POST` | `/api/internships` | admin, super_admin | Create an internship record |
-| `POST` | `/api/internships/initialize` | associate | Self-initialize internship |
+| `POST` | `/api/internships/initialize` | associate | Disabled for self-service (returns 403, admin-managed assignment flow) |
 | `GET` | `/api/internships/[id]` | Owner, supervisor, admin | Get internship detail with logs |
 | `PATCH` | `/api/internships/[id]` | Admin or supervisor | Update internship fields |
 | `DELETE` | `/api/internships/[id]` | admin, super_admin | Soft-delete an internship record |

@@ -19,7 +19,7 @@ Internship lifecycle management — create, track, log daily hours, extend, and 
 | `GET` | `/api/internships/[id]` | Admin/Supervisor/Self | Get internship detail |
 | `PATCH` | `/api/internships/[id]` | Admin/Supervisor | Update internship |
 | `DELETE` | `/api/internships/[id]` | Admin | Soft-delete internship |
-| `POST` | `/api/internships/initialize` | Associate | Self-initialize internship |
+| `POST` | `/api/internships/initialize` | Associate | Disabled self-service endpoint (returns 403) |
 | `PATCH` | `/api/internships/[id]/extend` | Admin | Extend internship |
 | `GET` | `/api/internships/[id]/logs` | Admin/Supervisor/Self | List daily logs |
 | `POST` | `/api/internships/[id]/logs` | Any | Create daily log |
@@ -105,23 +105,15 @@ Create an internship record for an employee.
 
 ## POST /api/internships/initialize (Associate Only)
 
-Self-service internship initialization. The associate's employee record is resolved from their auth user.
+This endpoint is intentionally blocked for self-service and returns `403`.
 
-### Rules
+Internship assignment is admin-managed through the associate assignment flow.
 
-- Only users with `associate` role can call this endpoint
-- Prevents duplicates: if an `active` internship exists → **409 Conflict**
-- Action is audit-logged
+### Current Behavior
 
-```json
-{
-  "startDate": "2026-01-15",
-  "endDate": "2026-07-15",
-  "requiredHours": 500,
-  "department": "Engineering",
-  "position": "Software Engineering Associate"
-}
-```
+- Validates caller auth and role (`associate`)
+- Rejects creation with **403 Forbidden** and guidance to contact HR/admin
+- Writes a best-effort audit event for blocked self-initialization attempts
 
 ---
 

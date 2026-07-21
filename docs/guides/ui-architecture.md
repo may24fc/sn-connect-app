@@ -105,7 +105,7 @@ Next.js route groups organize pages by user role:
 # ═══════════════════════════════════════════════════════════════════
 /associate/dashboard          # (employee) Associate-specific dashboard
 /associate/profile            # (employee) Associate profile
-/associate/setup              # (employee) Associate onboarding setup
+/associate/setup              # (employee) Associate assignment/setup guidance
 /associate/reports            # (employee) Daily EOD reports
 # Interns also access: /onboarding, /files, /performance,
 # /announcements, /announcements/starred, /tasks, /tasks/[id],

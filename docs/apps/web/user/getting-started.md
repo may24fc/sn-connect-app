@@ -25,6 +25,12 @@ You will be redirected to your role's dashboard:
 
 ## First-Time Onboarding
 
+Onboarding routes:
+
+- `/onboarding` — Onboarding entry page
+- `/onboarding/setup` — Multi-step onboarding wizard
+- `/onboarding/complete` — Completion confirmation page
+
 New employees are redirected to the **Onboarding Wizard** before they can access the rest of the portal. The wizard has four steps:
 
 ### Step 1 — Personal Information
@@ -66,12 +72,9 @@ After submission you'll see an **"Onboarding Complete"** confirmation page and g
 
 ## Associate Setup
 
-Associates go through a separate setup flow at `/associate/setup` before accessing the portal. This collects:
+Associates may be redirected to `/associate/setup` when no active assignment exists.
 
-- School and program information
-- Start/end dates
-- Required hours
-- Supervisor assignment
+This page provides setup guidance, while internship assignment records are created through HR/admin assignment.
 
 ## Signing Out
 

@@ -2,6 +2,11 @@
 
 The Tasks page (`/tasks`) shows all tasks assigned to you and lets you track your progress.
 
+## Route Map
+
+- /tasks
+- /tasks/[id]
+
 ## Viewing Tasks
 
 Tasks are organized into tabs:

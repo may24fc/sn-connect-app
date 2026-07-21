@@ -11,6 +11,8 @@ Recruitment covers the full applicant tracking pipeline: job requisitions, open 
 **Admin / Super Admin:** `/admin/recruitment`  
 **Delegated employees:** `/ats/recruitment`
 
+Related admin route: `/admin/crm` for recruitment-linked pipeline views and CRM context.
+
 ---
 
 ## Recruitment Dashboard

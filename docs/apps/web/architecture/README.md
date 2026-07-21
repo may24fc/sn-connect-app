@@ -75,7 +75,7 @@ sn-hr-portal/
 Browser → Next.js Middleware → Supabase Session Check
   ├─ No session → Redirect to /login
   ├─ Incomplete onboarding → Redirect to /onboarding/setup
-  ├─ Associate without internship → Redirect to /associate/setup
+  ├─ Associate without internship → Redirect to /associate/setup (admin assignment guidance)
   └─ Valid session → Render page (Server Component)
        └─ Client Components fetch data via TanStack Query
             └─ API routes → Supabase with RLS → Response

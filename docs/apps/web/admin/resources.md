@@ -2,6 +2,29 @@
 
 This guide covers managing company resources — documents, links, videos, and other reference materials shared with employees through the Information Hub.
 
+## Route Map
+
+### Primary Admin Routes
+
+- `/admin/resources` — Main resources dashboard
+- `/admin/resources/new` — Create resource form
+- `/admin/resources/[id]` — Resource detail/editor
+- `/admin/resources/pending` — Pending review queue
+- `/admin/resources/archive` — Archived resources
+- `/admin/resources/categories` — Category management
+- `/admin/resources/collections` — Collections dashboard
+- `/admin/resources/collections/new` — Create collection form
+- `/admin/resources/collections/[id]` — Collection detail/editor
+
+### Super Admin Access Routes
+
+- `/super-admin/resources` — Redirects to admin resources dashboard
+- `/super-admin/resources/new` — Redirects to admin create resource form
+- `/super-admin/resources/[id]` — Redirects to admin resource detail
+- `/super-admin/resources/collections` — Redirects to admin collections dashboard
+- `/super-admin/resources/collections/new` — Redirects to admin create collection form
+- `/super-admin/resources/collections/[id]` — Redirects to admin collection detail
+
 ## Resources Dashboard (`/admin/resources` or `/super-admin/resources`)
 
 ### Browsing Resources
@@ -24,6 +47,8 @@ Each resource displays:
 
 ## Adding a Resource
 
+Route: `/admin/resources/new` (or `/super-admin/resources/new` redirect alias)
+
 1. Click **"Add Resource"**
 2. Fill in the resource form:
 
@@ -45,6 +70,12 @@ Each resource displays:
 | Storage bucket | `resources` |
 
 ## Managing Collections
+
+Routes:
+
+- `/admin/resources/collections`
+- `/admin/resources/collections/new`
+- `/admin/resources/collections/[id]`
 
 Resources can be organized into **collections** — themed groups of related resources.
 
@@ -73,6 +104,8 @@ Toggle the **Featured** flag on a resource card to:
 - Give it priority placement in search results
 
 ## Archiving and Restoring Resources
+
+Archive route: `/admin/resources/archive`
 
 Archive outdated resources using the action menu. Archived resources:
 
@@ -132,6 +165,25 @@ See [API: Resources](../api/resources.md) for full details.
 ## Resource Streaming
 
 Resources can be streamed directly in the browser via `GET /api/resources/[id]/stream`. This returns the raw file bytes with the appropriate `Content-Type` header, enabling in-browser preview for PDFs, images, and other supported formats.
+
+## Resource Detail (`/admin/resources/[id]`)
+
+Use the resource detail page to:
+
+- Edit title/description/metadata
+- Update target visibility and featured state
+- Replace file or update external URL
+- Review engagement/usage details where available
+
+## Pending Queue (`/admin/resources/pending`)
+
+Pending resources are items requiring review before broader visibility.
+
+Typical actions:
+
+- Review metadata completeness
+- Approve/publish to active catalog
+- Archive or delete rejected items
 
 ## Deleting Resources
 

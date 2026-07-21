@@ -2,6 +2,21 @@
 
 This guide covers creating, publishing, and managing company announcements.
 
+## Route Map
+
+### Primary Admin Routes
+
+- `/admin/announcements` — Announcement dashboard/list
+- `/admin/announcements/new` — Create announcement form
+- `/admin/announcements/archive` — Archived announcements view
+- `/admin/announcements/[id]` — Announcement detail/editor
+
+### Super Admin Access Routes
+
+- `/super-admin/announcements` — Role-prefixed entry point (redirects to admin announcements view)
+- `/super-admin/announcements/new` — Role-prefixed create route (redirects to admin create view)
+- `/super-admin/announcements/[id]` — Role-prefixed detail route (redirects to admin detail view)
+
 ## Announcements Dashboard (`/admin/announcements` or `/super-admin/announcements`)
 
 ### Filters
@@ -25,6 +40,8 @@ Each announcement entry shows:
 - Action menu
 
 ## Creating an Announcement
+
+Route: `/admin/announcements/new` (or `/super-admin/announcements/new` redirect alias)
 
 1. Click **"Create New"**
 2. Fill in the announcement form:
@@ -78,6 +95,8 @@ Archiving an announcement removes it from the employee-facing feed without delet
 
 ## Managing Existing Announcements
 
+Route: `/admin/announcements/[id]` (or `/super-admin/announcements/[id]` redirect alias)
+
 ### Editing
 
 Click an announcement to open the editor. You can modify the title, content, category, priority, targeting, and attachments. Published announcements can be edited — changes take effect immediately.
@@ -88,6 +107,17 @@ Select multiple announcements using checkboxes, then:
 
 - **Bulk Archive** — Archive all selected
 - **Bulk Delete** — Permanently remove all selected
+
+## Archived Announcements View (`/admin/announcements/archive`)
+
+Use this dedicated route to review previously archived announcements and restore them in batches.
+
+Typical actions:
+
+- Filter by category/priority/date
+- Open an archived record for review
+- Restore selected items back to published state
+- Permanently delete records that should not be restored
 
 ## Starring Announcements
 

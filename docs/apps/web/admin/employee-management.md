@@ -2,7 +2,14 @@
 
 This guide covers inviting new employees, approving onboarding, and managing employee records.
 
+Entry route: `/admin/employee-management`
+
 ## Employee Directory (`/admin/directory`)
+
+Super admin route aliases:
+
+- `/super-admin/directory` → redirects to admin directory view
+- `/super-admin/directory/[userId]` → redirects to admin employee detail view
 
 The directory provides a searchable list of all employees in the organization, powered by the `employee_directory` database view.
 
@@ -79,6 +86,11 @@ During onboarding approval, verify:
 - Birth certificate matches the provided details
 - CV/resume is complete
 - Profile photo meets company standards
+
+### Onboarding Admin Routes
+
+- `/admin/onboarding-setup` — Admin onboarding setup and workflow controls
+- `/admin/onboarding/[id]` — Review a specific onboarding profile submission
 
 ## Assigning Employee Records
 

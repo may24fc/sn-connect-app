@@ -2712,7 +2712,7 @@ Admin-initiated onboarding: Admin invites user → user receives credentials →
 
 - [x] **Create associate assignment API route**
   - File: `apps/web/src/app/api/users/assign-associate/route.ts`
-  - POST: Creates internship record from approved onboarding profile data
+  - POST: Canonical associate assignment endpoint (intern legacy alias remains for compatibility)
 
 - [x] **Create admin modal components**
   - File: `apps/web/src/components/admin/InviteUserModal.tsx`
@@ -2721,7 +2721,7 @@ Admin-initiated onboarding: Admin invites user → user receives credentials →
 
 - [x] **Create user management hooks**
   - File: `apps/web/src/hooks/useUserManagement.ts`
-  - Includes: useInviteUser, useApproveOnboarding, useAssignEmployee, useAssignIntern
+  - Includes: useInviteUser, useApproveOnboarding, useAssignEmployee, useAssignAssociate
 
 - [x] **Create awaiting approval page**
   - File: `apps/web/src/app/onboarding/awaiting-approval/page.tsx`

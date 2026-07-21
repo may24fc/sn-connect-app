@@ -78,6 +78,23 @@ Additional sections:
 | Approve an invoice | Payroll Approvals (Super Admin only) |
 | Create and assign a task | Task Management (Super Admin only) |
 
+## Profile and Activity Routes
+
+### Profile
+
+- `/admin/profile` — Admin profile, account details, and editable personal information
+- `/super-admin/profile` — Super admin profile with role metadata controls
+
+### Activity Views
+
+- `/admin/activity` — Admin-scoped activity and operational actions timeline
+- `/super-admin/activity` — Super-admin scoped activity including automated system events
+
+### Notifications
+
+- `/admin/notifications` — Notification center for admin workflows
+- `/super-admin/notifications` — Super-admin route that reuses the admin notifications page
+
 ---
 
 Next: [Employee Management](employee-management.md)

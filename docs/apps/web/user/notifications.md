@@ -2,6 +2,10 @@
 
 The Notifications page (`/notifications`) shows all your system notifications in one place.
 
+## Route Map
+
+- /notifications
+
 ## Viewing Notifications
 
 Notifications are displayed as a list, with unread items highlighted. Each notification shows:

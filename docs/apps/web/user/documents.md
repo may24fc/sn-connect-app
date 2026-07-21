@@ -2,6 +2,10 @@
 
 The Documents page (`/files`) is where you upload and manage your employment records — collectively known as your **201 file**.
 
+## Route Map
+
+- /files
+
 ## Document Overview
 
 At the top of the page you'll see:

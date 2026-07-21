@@ -2,6 +2,12 @@
 
 The Profile page (`/profile`) displays your personal information and lets you update your details.
 
+## Route Map
+
+- /profile
+- /settings (shared settings/notification preferences entry)
+- /associate/profile and /intern/profile role-compatible profile routes
+
 ## Profile Header
 
 Your profile header shows:

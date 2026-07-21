@@ -6,6 +6,8 @@ This guide covers creating, editing, archiving job postings and managing incomin
 
 The Jobs page displays all job postings in a sortable table with stats cards.
 
+Related route: `/admin/jobs/archive` for archived posting management.
+
 ### Dashboard Stats
 
 Three stat cards at the top:

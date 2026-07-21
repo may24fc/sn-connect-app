@@ -38,27 +38,25 @@ This document provides the Phase 2 (V2) implementation plan for Control Hub, der
 - [x] **Implement optional chaining and null-safe guards across associate UI**
   - File: `apps/web/src/hooks/useInternships.ts`
   - Hook already returned `{ data: null, isLoading, isError }` — no throwing behavior
-  - Added `useInitializeInternship()` mutation hook for the self-initialization flow
-  - Dashboard now redirects to `/associate/setup` instead of showing dead-end
+  - Dashboard now redirects to setup guidance instead of showing dead-end
 
 - [x] **Create "Complete Profile Setup" fallback flow**
   - File: `apps/web/src/app/(employee)/associate/setup/page.tsx`
-  - Guided form with: start date, end date, department (dropdown), school, program, required hours
+  - Guided experience with setup guidance and associate context
   - Client-side validation with clear error messages
-  - On success: redirects to `/associate/dashboard`
+  - Redirect behavior aligned with admin-managed assignment flow
 
-- [x] **Create API route for associate self-initialization**
+- [x] **Create API route for associate initialization guardrail**
   - File: `apps/web/src/app/api/internships/initialize/route.ts`
-  - POST: Creates internship record for authenticated associate
-  - Validates role is `associate`, prevents duplicate active records (409 Conflict)
-  - Zod schema: `initializeInternshipSchema` in `internship.schema.ts`
-  - Audit log entry written on successful initialization
+  - POST: Intentionally blocks self-service record creation
+  - Validates role is `associate`, returns 403 with admin-managed guidance
+  - Keeps audit visibility for blocked attempts
 
 - [x] **Update middleware to detect uninitialized interns**
   - File: `apps/web/src/middleware.ts`
   - After onboarding gate, checks if associate has active internship record
-  - Redirects to `/associate/setup` if no active record found
-  - Exempt paths: `/associate/setup`, `/api/internships/initialize`, `/onboarding/*`
+  - Redirects to setup guidance route if no active record found
+  - Exempt paths include setup and onboarding flows
 
 - [x] **Add E2E test for associate first-login experience**
   - File: `e2e/associate-first-login.spec.ts`
