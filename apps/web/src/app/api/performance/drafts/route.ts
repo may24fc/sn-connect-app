@@ -18,6 +18,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!parsed.success) {
+      console.warn('GET /api/performance/drafts validation failed', {
+        userId: user.id,
+        issues: parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          code: issue.code,
+          message: issue.message,
+        })),
+      });
       return NextResponse.json(
         { error: 'Invalid draft query', details: parsed.error.flatten() },
         { status: 400 }
@@ -62,6 +70,14 @@ export async function PUT(request: NextRequest) {
     const parsed = upsertPerformanceEvaluationDraftSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.warn('PUT /api/performance/drafts validation failed', {
+        userId: user.id,
+        issues: parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          code: issue.code,
+          message: issue.message,
+        })),
+      });
       return NextResponse.json(
         { error: 'Invalid draft payload', details: parsed.error.flatten() },
         { status: 400 }
@@ -119,6 +135,14 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!parsed.success) {
+      console.warn('DELETE /api/performance/drafts validation failed', {
+        userId: user.id,
+        issues: parsed.error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          code: issue.code,
+          message: issue.message,
+        })),
+      });
       return NextResponse.json(
         { error: 'Invalid draft query', details: parsed.error.flatten() },
         { status: 400 }

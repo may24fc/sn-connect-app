@@ -126,12 +126,12 @@ function collectInsights(report: MonthlyExpenseReport): string[] {
 }
 
 function drawFooter(doc: PDFKit.PDFDocument): void {
-  const y = doc.page.height - MARGIN + 14;
+  const y = doc.page.height - MARGIN - 12;
   doc
     .font('Helvetica')
     .fontSize(8)
     .fillColor('#94A3B8')
-    .text(FOOTER_TEXT, MARGIN, y, { width: CONTENT_WIDTH, align: 'center' });
+    .text(FOOTER_TEXT, MARGIN, y, { width: CONTENT_WIDTH, align: 'center', lineBreak: false });
 }
 
 export async function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport): Promise<Buffer> {
@@ -148,10 +148,7 @@ export async function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport
 
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
     doc.on('error', (error) => reject(error));
-    doc.on('pageAdded', () => drawFooter(doc));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
-
-    drawFooter(doc);
 
     doc.font('Helvetica-Bold').fontSize(18).fillColor('#1E293B').text(`Monthly Expense Analytics Report - ${report.reportMonthLabel}`);
     doc.moveDown(0.2);
@@ -233,6 +230,14 @@ export async function renderMonthlyExpenseReportPdf(report: MonthlyExpenseReport
         ]),
         [CONTENT_WIDTH * 0.28, CONTENT_WIDTH * 0.16, CONTENT_WIDTH * 0.2, CONTENT_WIDTH * 0.2, CONTENT_WIDTH * 0.16],
       );
+    }
+
+    // Render footers after all content pages are buffered to avoid mutating
+    // layout cursor during page creation (prevents recursive addPage flows).
+    const pages = doc.bufferedPageRange();
+    for (let pageIndex = pages.start; pageIndex < pages.start + pages.count; pageIndex += 1) {
+      doc.switchToPage(pageIndex);
+      drawFooter(doc);
     }
 
     doc.end();

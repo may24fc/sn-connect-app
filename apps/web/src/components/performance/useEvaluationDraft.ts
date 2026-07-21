@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FieldValues } from 'react-hook-form';
 
 const STORAGE_PREFIX = 'sn-performance-evaluation-draft';
@@ -18,6 +18,47 @@ type EvaluationDraftFormKey = keyof typeof FORM_KEY_TO_EVALUATION_KIND;
 export interface StoredEvaluationDraft<TValues extends FieldValues> {
   values: Partial<TValues>;
   savedAt: string;
+}
+
+function sanitizeDraftValue(value: unknown): unknown {
+  if (value == null) {
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().length > 0 ? value : undefined;
+  }
+
+  if (Array.isArray(value)) {
+    const sanitized = value
+      .map((entry) => sanitizeDraftValue(entry))
+      .filter((entry): entry is NonNullable<unknown> => entry !== undefined);
+    return sanitized.length > 0 ? sanitized : undefined;
+  }
+
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([key, entry]) => [key, sanitizeDraftValue(entry)] as const)
+      .filter(([, entry]) => entry !== undefined);
+
+    if (entries.length === 0) {
+      return undefined;
+    }
+
+    return Object.fromEntries(entries);
+  }
+
+  return value;
+}
+
+function sanitizeDraftValues<TValues extends FieldValues>(values: TValues): Partial<TValues> {
+  const sanitized = sanitizeDraftValue(values);
+
+  if (!sanitized || typeof sanitized !== 'object' || Array.isArray(sanitized)) {
+    return {} as Partial<TValues>;
+  }
+
+  return sanitized as Partial<TValues>;
 }
 
 function buildStorageKey(formKey: EvaluationDraftFormKey, cycleKey: string, identityKey: string): string {
@@ -115,7 +156,7 @@ async function fetchRemoteEvaluationDraft<TValues extends FieldValues>(
 async function persistRemoteEvaluationDraft<TValues extends FieldValues>(
   formKey: EvaluationDraftFormKey,
   cycleKey: string,
-  values: TValues
+  values: Partial<TValues>
 ): Promise<string> {
   const response = await fetch('/api/performance/drafts', {
     method: 'PUT',
@@ -263,10 +304,16 @@ export function useAutoSaveEvaluationDraft<TValues extends FieldValues>({
   enabled,
 }: UseAutoSaveEvaluationDraftOptions<TValues>) {
   const [autoSavedAt, setAutoSavedAt] = useState<string | null>(null);
+  const lastQueuedSnapshotRef = useRef<string>('');
 
   const clearDraft = useCallback(async () => {
     await clearEvaluationDraft(formKey, cycleKey, identityKey);
+    lastQueuedSnapshotRef.current = '';
     setAutoSavedAt(null);
+  }, [cycleKey, formKey, identityKey]);
+
+  useEffect(() => {
+    lastQueuedSnapshotRef.current = '';
   }, [cycleKey, formKey, identityKey]);
 
   useEffect(() => {
@@ -275,19 +322,28 @@ export function useAutoSaveEvaluationDraft<TValues extends FieldValues>({
     }
 
     const timeoutId = window.setTimeout(() => {
+      const sanitizedValues = sanitizeDraftValues(values);
+      const snapshot = JSON.stringify(sanitizedValues);
+
+      if (snapshot === lastQueuedSnapshotRef.current) {
+        return;
+      }
+
+      lastQueuedSnapshotRef.current = snapshot;
+
       const savedAt = new Date().toISOString();
       const payload: StoredEvaluationDraft<TValues> = {
-        values,
+        values: sanitizedValues,
         savedAt,
       };
 
       setLocalEvaluationDraft(formKey, cycleKey, identityKey, payload);
       setAutoSavedAt(savedAt);
 
-      void persistRemoteEvaluationDraft(formKey, cycleKey, values)
+      void persistRemoteEvaluationDraft(formKey, cycleKey, sanitizedValues)
         .then((remoteSavedAt) => {
           setLocalEvaluationDraft(formKey, cycleKey, identityKey, {
-            values,
+            values: sanitizedValues,
             savedAt: remoteSavedAt,
           });
           setAutoSavedAt(remoteSavedAt);
