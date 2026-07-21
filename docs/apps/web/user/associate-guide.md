@@ -1,8 +1,8 @@
 # Associate Guide
 
-This guide covers features specific to interns. Interns share most features with employees but have a specialized dashboard and daily reporting workflow.
+This guide covers features specific to associates. Associates share most features with employees but have a specialized dashboard and daily reporting workflow.
 
-## What's Different for Interns
+## What's Different for Associates
 
 | Feature | Employee | Associate |
 |---------|----------|--------|
@@ -68,7 +68,7 @@ Shows whether you've submitted today's EOD report:
 
 ## Daily EOD Reports
 
-Interns submit an **End-of-Day (EOD) report** every working day instead of weekly reports.
+Associates submit an **End-of-Day (EOD) report** every working day instead of weekly reports.
 
 ### Submitting a Report
 
@@ -100,7 +100,7 @@ After you submit a daily report, your supervisor can review and approve it. You'
 
 ## Shared Features
 
-Interns have full access to these features — see the respective guides:
+Associates have full access to these features — see the respective guides:
 
 - [Tasks](tasks.md) — View and update assigned tasks
 - [Documents](documents.md) — Upload 201 files
@@ -108,7 +108,7 @@ Interns have full access to these features — see the respective guides:
 - [Information Hub](information-hub.md) — Read announcements, browse resources
 - [AI Assistant](ai-assistant.md) — Ask HR questions
 
-## Tips for Interns
+## Tips for Associates
 
 - **Submit your EOD report daily** — Your dashboard clearly shows whether today's report is pending
 - **Log hours accurately** — Hours auto-accumulate toward your required total

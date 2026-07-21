@@ -4,7 +4,7 @@
 
 All API routes live under `apps/web/src/app/api/`. Every endpoint requires authentication via Supabase session cookie unless noted otherwise. Row Level Security (RLS) is the final gatekeeper — application-level checks are secondary.
 
-**Total: ~300 HTTP method handlers across 40+ domains.**
+**Total: 359 HTTP method handlers across 45 domains (route audit: 2026-07-20).**
 
 ---
 
@@ -16,7 +16,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Employees](#employees) | 5 | `/api/employees/` | [employees.md](employees.md) |
 | [Documents](#documents) | 4 | `/api/documents/` | [documents.md](documents.md) |
 | [Departments](#departments) | 2 | `/api/departments/` | [departments.md](departments.md) |
-| [Onboarding](#onboarding) | 16 | `/api/onboarding/` | [onboarding.md](onboarding.md) |
+| [Onboarding](#onboarding) | 21 | `/api/onboarding/` | [onboarding.md](onboarding.md) |
 | [Users](#users) | 9 | `/api/users/` | [users.md](users.md) |
 | [Tasks](#tasks) | 12 | `/api/tasks/` | [tasks.md](tasks.md) |
 | [Reports](#reports) | 7 | `/api/reports/` | [reports.md](reports.md) |
@@ -33,12 +33,12 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | [Dashboard](#dashboard) | 3 | `/api/dashboard/` | [dashboard.md](dashboard.md) |
 | [Directory](#directory) | 3 | `/api/directory/` | [directory.md](directory.md) |
 | [Jobs](#jobs) | 7 | `/api/jobs/` | [jobs.md](jobs.md) |
-| [Applications](#applications) | 6 | `/api/applications/` | [applications.md](applications.md) |
+| [Applications](#applications) | 7 | `/api/applications/` | [applications.md](applications.md) |
 | [ATS Access](#ats-access) | 4 | `/api/ats/` | [ats.md](ats.md) |
 | [Profile](#profile) | 3 | `/api/profile/` | [profile.md](profile.md) |
 | [Profile Change Requests](#profile-change-requests) | 3 | `/api/profile-change-requests/` | [profile-change-requests.md](profile-change-requests.md) |
 | [Banks](#banks) | 1 | `/api/banks/` | [banks.md](banks.md) |
-| [Tickets](#tickets) | 9 | `/api/tickets/` | [tickets.md](tickets.md) |
+| [Tickets](#tickets) | 8 | `/api/tickets/` | [tickets.md](tickets.md) |
 | [Ticket Handlers](#ticket-handlers) | 4 | `/api/ticket-handlers/` | [tickets.md](tickets.md) |
 | [Calendar](#calendar) | 1 | `/api/calendar/` | [calendar.md](calendar.md) |
 | [Audit Logs](#audit-logs) | 1 | `/api/audit-logs/` | — |
@@ -119,10 +119,15 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `GET` | `/api/onboarding/documents/[id]/preview` | Owner or admin | 10-minute signed preview URL |
 | `GET` | `/api/onboarding/profiles` | admin, super_admin | List all onboarding profiles (admin) |
 | `GET` | `/api/onboarding/profiles/[id]` | admin, super_admin | Get onboarding profile detail (admin) |
+| `DELETE` | `/api/onboarding/profiles/[id]` | admin, super_admin | Soft-delete onboarding profile |
 | `GET` | `/api/onboarding/profiles/[id]/documents` | admin, super_admin | List profile's documents (admin) |
+| `GET` | `/api/onboarding/profile/admin-status` | admin, super_admin | Get aggregate onboarding status metrics |
+| `POST` | `/api/onboarding/profile/admin-complete` | admin, super_admin | Mark onboarding complete on behalf of a user |
 | `GET` | `/api/onboarding/[id]/tasks` | Owner or admin | List checklist tasks |
 | `POST` | `/api/onboarding/[id]/tasks` | admin, super_admin | Create checklist task |
+| `PUT` | `/api/onboarding/[id]/tasks` | Owner or admin | Update checklist task fields |
 | `PATCH` | `/api/onboarding/[id]/tasks` | Owner or admin | Toggle task completion |
+| `DELETE` | `/api/onboarding/[id]/tasks` | admin, super_admin | Delete checklist task |
 
 → [Full reference](onboarding.md)
 
@@ -135,7 +140,7 @@ All API routes live under `apps/web/src/app/api/`. Every endpoint requires authe
 | `POST` | `/api/users/invite` | admin, super_admin | Invite user with email, role, temp password |
 | `POST` | `/api/users/approve-onboarding` | admin, super_admin | Approve or reject onboarding |
 | `POST` | `/api/users/assign-employee` | admin, super_admin | Assign probation details to employee |
-| `POST` | `/api/users/assign-associate` | admin, super_admin | Assign internship details + create record |
+| `POST` | `/api/users/assign-intern` | admin, super_admin | Assign associate details + create record |
 | `GET` | `/api/users/[id]/kpi-entries` | admin, super_admin | List KPI entries for user |
 | `POST` | `/api/users/[id]/kpi-entries` | admin, super_admin | Create KPI entry for user |
 | `GET` | `/api/users/[id]/metadata` | Any authenticated | Get user role metadata |

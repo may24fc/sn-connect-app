@@ -64,7 +64,7 @@ Requires `admin` or `super_admin` role.
   "metadata": {
     "total": 42,
     "active": 38,
-    "interns": 5,
+    "associates": 5,
     "onLeave": 2,
     "probation": 3
   },

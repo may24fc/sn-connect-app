@@ -143,7 +143,7 @@ Requires notification admin role (admin or super_admin).
 | `pendingReports` | Submitted reports awaiting review; `overdue` = period_end > 7 days ago |
 | `pendingInvoices` | Submitted invoices awaiting approval |
 | `pendingReviews` | Performance reviews with status `pending` or `in_progress` |
-| `lateEodReports` | Active interns who haven't submitted yesterday's EOD log |
+| `lateEodReports` | Active associates who haven't submitted yesterday's EOD log |
 | `totalPending` | Sum of all pending items |
 
 Each category includes up to 5 latest items.

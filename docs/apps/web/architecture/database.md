@@ -2,7 +2,7 @@
 
 > Audience: Developers, DevOps
 
-Supabase PostgreSQL database schema for Control Hub. 57 migration files, 20+ tables, 26+ RLS policies.
+Supabase PostgreSQL database schema for Control Hub. 62 migration files, 30+ tables, 70+ RLS policies.
 
 ---
 
@@ -145,7 +145,7 @@ Tracks sensitive operations. Insert-only (no update/delete).
 
 | Table | Description |
 |-------|-------------|
-| `standups` | Standup meeting recordings |
+| `standup_recordings` | Standup meeting recordings |
 | `standup_topics` | Discussion topics |
 
 ### AI Knowledge
@@ -154,7 +154,7 @@ Tracks sensitive operations. Insert-only (no update/delete).
 |-------|-------------|
 | `knowledge_sources` | Source documents for RAG. Has `current_version` integer for auto-versioning |
 | `knowledge_embeddings` | Vector chunks (pgvector, 1536-dim) |
-| `knowledge_source_versions` | Auto-snapshotted version history (trigger on `knowledge_sources` update). See [ADR-006](../adr/ADR-006-knowledge-versioning.md) |
+| `knowledge_source_versions` | Auto-snapshotted version history (trigger on `knowledge_sources` update). See [ADR-006](../../../adr/ADR-006-knowledge-versioning.md) |
 
 ### Notifications
 
@@ -173,7 +173,7 @@ Tracks sensitive operations. Insert-only (no update/delete).
 
 | Table | Description |
 |-------|-------------|
-| `resource_categories` | Dynamic hierarchical categories replacing static enum. Admin-managed with slugs, icons, display ordering. See [ADR-005](../adr/ADR-005-resource-categories-table.md) |
+| `resource_categories` | Dynamic hierarchical categories replacing static enum. Admin-managed with slugs, icons, display ordering. See [ADR-005](../../../adr/ADR-005-resource-categories-table.md) |
 
 ### Role Metadata
 
@@ -198,7 +198,7 @@ Tracks sensitive operations. Insert-only (no update/delete).
 
 | Enum | Values |
 |------|--------|
-| `user_role` | admin, hr, cos, ceo, employee, associate |
+| `user_role` | super_admin, admin, hr, cos, ceo, employee, associate |
 | `user_status` | active, on_leave, terminated |
 | `employment_type` | regular, probationary, associate, project_based |
 | `work_arrangement` | part_time, full_time |
@@ -256,7 +256,7 @@ Examples:
 
 ## Migration History
 
-57 migration files from `20260123` to `20260228`. Key phases:
+62 migration files from `20260123` to `20260228` (plus subsequent fixes and additions). Key phases:
 
 1. **20260123** — Core schema: enums, users, employees, departments, documents, audit_logs, triggers, helper functions
 2. **20260210** — Feature tables: reports, tasks, invoices, announcements, onboarding, offboarding, performance, internships
@@ -298,4 +298,4 @@ deleted_at timestamptz  -- soft delete
 
 ---
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-07-20*

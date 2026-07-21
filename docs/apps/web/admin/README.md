@@ -8,7 +8,7 @@ Documentation for HR Administrators and Super Administrators managing the Contro
 |-------|-------------|-------|
 | [Getting Started](getting-started.md) | Admin overview and navigation | Admin, Super Admin |
 | [Employee Management](employee-management.md) | Inviting, approving, and managing employees | Admin, Super Admin |
-| [Associate Management](associate-management.md) | Overseeing interns, reviewing daily reports | Admin, Super Admin |
+| [Associate Management](associate-management.md) | Overseeing associates, reviewing daily reports | Admin, Super Admin |
 | [Jobs Management](jobs-management.md) | Job postings and application tracking | Admin, Super Admin |
 | [Performance Management](performance-management.md) | Review cycles, OKRs, KPIs, appraisals | Admin, Super Admin |
 | [Probation Tracking](probation.md) | Monitoring and evaluating probationary employees | Admin, Super Admin |

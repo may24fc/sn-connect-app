@@ -21,7 +21,7 @@ Resource collections — curated groups of resources (documents, links) that can
 | `DELETE` | `/api/collections/[id]` | Admin | Soft-delete collection |
 | `GET` | `/api/collections/[id]/resources` | Any | List resources in collection |
 | `POST` | `/api/collections/[id]/resources` | Admin | Add resource to collection |
-| `DELETE` | `/api/collections/[id]/resources?resourceId=` | Admin | Remove resource from collection |
+| `DELETE` | `/api/collections/[id]/resources` | Admin | Remove resource from collection (requires `resourceId` query param) |
 
 ---
 
@@ -123,7 +123,7 @@ Add a resource to the collection.
 }
 ```
 
-## DELETE /api/collections/[id]/resources?resourceId=uuid (Admin)
+## DELETE /api/collections/[id]/resources (Admin)
 
 Remove a resource from the collection. Hard-delete from `collection_resources` junction table.
 

@@ -66,7 +66,7 @@ After submission you'll see an **"Onboarding Complete"** confirmation page and g
 
 ## Associate Setup
 
-Interns go through a separate setup flow at `/associate/setup` before accessing the portal. This collects:
+Associates go through a separate setup flow at `/associate/setup` before accessing the portal. This collects:
 
 - School and program information
 - Start/end dates

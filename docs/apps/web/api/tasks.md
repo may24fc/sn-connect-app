@@ -219,7 +219,7 @@ Soft-deletes a task by setting `deleted_at`.
 
 ## GET /api/tasks/assignees
 
-List users eligible to be task assignees. Returns employees and interns with their names and roles.
+List users eligible to be task assignees. Returns employees and associates with their names and roles.
 
 ### Authentication
 

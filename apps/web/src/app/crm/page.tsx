@@ -3,6 +3,8 @@ import AdminCrmPage from '@/app/(admin)/admin/crm/page';
 import { getCrmAuthedContext } from '@/app/api/crm/_lib';
 import { SelfServiceLayoutShell } from '@/components/layout/SelfServiceLayoutShell';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CrmPage() {
   const auth = await getCrmAuthedContext();
 

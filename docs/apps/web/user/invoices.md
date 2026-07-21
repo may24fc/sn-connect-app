@@ -2,7 +2,7 @@
 
 The Invoice page (`/invoice`) lets you submit payroll invoices and track their approval status.
 
-> **Note:** This feature is available to employees only. Interns do not have access to invoices.
+> **Note:** This feature is available to employees only. Associates do not have access to invoices.
 
 ## Invoice Overview
 

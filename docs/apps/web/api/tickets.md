@@ -2,7 +2,7 @@
 
 > Audience: Developers
 
-IT and HR support ticket system. Employees and interns submit tickets for issues, requests, or help. Admins and super admins triage, assign, and resolve tickets. Dedicated ticket handlers can be designated to receive and manage tickets.
+IT and HR support ticket system. Employees and associates submit tickets for issues, requests, or help. Admins and super admins triage, assign, and resolve tickets. Dedicated ticket handlers can be designated to receive and manage tickets.
 
 **Related hooks:** `useTickets`, `useTicket`, `useTicketHandlers`  
 **Zod schemas:** `apps/web/src/lib/schemas/ticket.schema.ts`  
@@ -20,7 +20,6 @@ IT and HR support ticket system. Employees and interns submit tickets for issues
 | `POST` | `/api/tickets` | Any authenticated | Submit a new ticket |
 | `GET` | `/api/tickets/[id]` | Any authenticated (RLS) | Get ticket detail |
 | `PATCH` | `/api/tickets/[id]` | admin/super_admin or owner | Update ticket status or fields |
-| `DELETE` | `/api/tickets/[id]` | super_admin or owner (draft) | Delete a ticket |
 | `POST` | `/api/tickets/[id]/comments` | Any authenticated (RLS) | Add a comment to a ticket |
 | `GET` | `/api/tickets/[id]/comments` | Any authenticated (RLS) | List comments on a ticket |
 | `POST` | `/api/tickets/[id]/attachments` | Any authenticated (RLS) | Upload an attachment |

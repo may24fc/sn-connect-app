@@ -34,11 +34,15 @@ Multi-step onboarding flow for new hires. Covers self-service profile creation, 
 | `POST` | `/api/onboarding` | Admin | Create checklist with tasks |
 | `GET` | `/api/onboarding/profiles` | Admin | List all onboarding profiles |
 | `GET` | `/api/onboarding/profiles/[id]` | Admin | Get profile detail |
+| `DELETE` | `/api/onboarding/profiles/[id]` | Admin | Soft-delete onboarding profile |
 | `GET` | `/api/onboarding/profiles/[id]/documents` | Admin | List profile documents |
-| `POST` | `/api/onboarding/initiate` | Admin | Invoke onboarding Edge Function |
+| `GET` | `/api/onboarding/profile/admin-status` | Admin | Get aggregate onboarding status metrics |
+| `POST` | `/api/onboarding/profile/admin-complete` | Admin | Mark onboarding complete on behalf of a user |
 | `GET` | `/api/onboarding/[id]/tasks` | Owner or admin | List checklist tasks |
 | `POST` | `/api/onboarding/[id]/tasks` | Admin | Add task to checklist |
+| `PUT` | `/api/onboarding/[id]/tasks` | Owner or admin | Update task fields |
 | `PATCH` | `/api/onboarding/[id]/tasks` | Owner or admin | Toggle task completion |
+| `DELETE` | `/api/onboarding/[id]/tasks` | Admin | Remove a checklist task |
 
 ---
 

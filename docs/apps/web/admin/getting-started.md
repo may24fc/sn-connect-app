@@ -15,7 +15,7 @@ Personalized greeting with a **"Manage Employees"** shortcut button.
 | Card | Description |
 |------|-------------|
 | **Total Employees** | Company-wide headcount (from `/api/dashboard/stats`) |
-| **Active Interns** | Currently active associate count |
+| **Active Associates** | Currently active associate count |
 | **Reviews Due** | Performance reviews needing attention |
 
 ### Needs Attention Carousel
@@ -71,7 +71,7 @@ Additional sections:
 | Create a job posting | Jobs → Create New |
 | Review applications | Jobs → Applications |
 | Create a performance cycle | Performance → Manage Cycles |
-| Review associate reports | Interns → Select associate → Reports |
+| Review associate reports | Associates → Select associate → Reports |
 | Publish an announcement | Announcements → Create New |
 | Upload AI knowledge | AI Knowledge → Upload |
 | Manage resource categories | Resources → Categories |

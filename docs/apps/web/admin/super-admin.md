@@ -186,7 +186,7 @@ Breakdown of users by role:
 |------|---------|
 | Employees | Count, percentage, progress bar |
 | Admins | Count, percentage, progress bar |
-| Interns | Count, percentage, progress bar |
+| Associates | Count, percentage, progress bar |
 | Super Admins | Count, percentage, progress bar |
 
 ## Admin Notifications (`/admin/notifications`)

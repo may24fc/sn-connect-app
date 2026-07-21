@@ -1,13 +1,13 @@
 # User Guides
 
-Welcome to the Control Hub HR Portal user documentation. These guides help employees and interns navigate the portal's features.
+Welcome to the Control Hub HR Portal user documentation. These guides help employees and associates navigate the portal's features.
 
 ## Quick Links
 
 | Guide | Description | Audience |
 |-------|-------------|----------|
 | [Getting Started](getting-started.md) | Login, onboarding, first-time setup | All users |
-| [Dashboard](dashboard.md) | Understanding your dashboard | Employees, Interns |
+| [Dashboard](dashboard.md) | Understanding your dashboard | Employees, Associates |
 | [Tasks](tasks.md) | Viewing and managing assigned tasks | All users |
 | [Documents](documents.md) | Uploading and managing 201 files | All users |
 | [Reports](reports.md) | Submitting weekly reports | Employees |
@@ -18,7 +18,7 @@ Welcome to the Control Hub HR Portal user documentation. These guides help emplo
 | [Notifications](notifications.md) | Viewing and managing notifications | All users |
 | [AI Assistant](ai-assistant.md) | Getting help from the HR AI chatbot | All users |
 | [Tickets](tickets.md) | Submitting and tracking IT/HR support tickets | All users |
-| [Associate Guide](associate-guide.md) | Associate-specific features and daily reports | Interns |
+| [Associate Guide](associate-guide.md) | Associate-specific features and daily reports | Associates |
 | [Help Center](help.md) | Step-by-step guides for invoices, reports, and performance reviews | All users |
 
 ## Role Overview
@@ -28,7 +28,7 @@ Welcome to the Control Hub HR Portal user documentation. These guides help emplo
 | **Employee** | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, Marketing Reports (conditional), Invoice, Documents, Announcements, Resources |
 | **Associate** | Profile, Dashboard, Checklist, Tasks, Tickets, Performance Reviews, EOD Reports, Documents, Announcements, Resources |
 
-> Interns do **not** have access to Invoice or Marketing Reports.
+> Associates do **not** have access to Invoice or Marketing Reports.
 
 ## Navigation
 

@@ -21,7 +21,7 @@ Control Hub is an enterprise HR Portal with an AI agent, deployed as a pnpm mono
 │                   Orchestration Layer                         │
 │  API Routes (apps/web/src/app/api/)                          │
 │  Supabase Edge Functions (supabase/functions/)               │
-│  n8n Workflows (n8n/workflows/) — planned                    │
+│  n8n Workflows (n8n/workflows/) — archived/deferred          │
 └───────────────────────┬─────────────────────────────────────┘
                         │ PostgreSQL / Storage / Auth
 ┌───────────────────────▼─────────────────────────────────────┐
@@ -53,10 +53,10 @@ sn-hr-portal/
 │   ├── ui/             # Shared UI components (100+)
 │   ├── database/       # Supabase types, branded IDs, enums
 │   ├── ai/             # Claude + OpenAI SDK wrappers
-│   ├── auth/           # Auth utilities (planned)
+│   ├── auth/           # Auth utilities
 │   └── config/         # Env validation (Zod)
 ├── supabase/
-│   ├── migrations/     # 48 SQL migration files
+│   ├── migrations/     # 62 SQL migration files
 │   ├── functions/      # Edge Functions
 │   └── seed/           # Seed data
 ├── e2e/                # Playwright E2E tests
@@ -146,10 +146,10 @@ All non-public responses include:
 
 | ADR | Title | Summary |
 |-----|-------|---------|
-| [ADR-001](../adr/ADR-001-role-mapping.md) | Role Mapping | UI ↔ DB role consolidation |
-| [ADR-002](../adr/ADR-002-resources-information-hub.md) | Resources Hub | Information hub architecture |
-| [ADR-004](../adr/ADR-004-edge-function-cron-pattern.md) | Edge Function Cron | Scheduled task pattern |
+| [ADR-001](../../../adr/ADR-001-role-mapping.md) | Role Mapping | UI ↔ DB role consolidation |
+| [ADR-002](../../../adr/ADR-002-resources-information-hub.md) | Resources Hub | Information hub architecture |
+| [ADR-004](../../../adr/ADR-004-edge-function-cron-pattern.md) | Edge Function Cron | Scheduled task pattern |
 
 ---
 
-*Last updated: 2026-02-27*
+*Last updated: 2026-07-20*

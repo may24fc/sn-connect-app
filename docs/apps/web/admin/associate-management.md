@@ -1,6 +1,6 @@
 # Associate Management
 
-This guide covers overseeing interns, reviewing daily reports, and managing internship records.
+This guide covers overseeing associates, reviewing daily reports, and managing associate program records.
 
 ## Associate Dashboard (`/admin/interns`)
 
@@ -10,14 +10,14 @@ Six cards at the top give you a snapshot:
 
 | Card | Description |
 |------|-------------|
-| **Total Interns** | All-time associate count |
-| **Active Interns** | Currently active |
-| **Completed Interns** | Successfully finished |
+| **Total Associates** | All-time associate count |
+| **Active Associates** | Currently active |
+| **Completed Associates** | Successfully finished |
 | **Average Progress** | Mean hours completion percentage |
-| **Total Hours Logged** | Aggregate hours across all interns |
+| **Total Hours Logged** | Aggregate hours across all associates |
 | **Pending Reports** | EOD reports awaiting review |
 
-### Filtering Interns
+### Filtering Associates
 
 - **Search** by name, email, or program
 - **Status filter** — Active, Completed, Terminated, On Hold
@@ -30,7 +30,7 @@ Six cards at the top give you a snapshot:
 Toggle between two layouts using the icons in the top-right:
 
 - **Grid view** — Card layout showing avatar, school, hours progress, status
-- **List view** — Compact row layout for scanning many interns quickly
+- **List view** — Compact row layout for scanning many associates quickly
 
 ### Associate Cards
 
@@ -64,18 +64,18 @@ Clicking an associate opens their full profile:
 2. Fill in associate details (name, email, school, program, supervisor, dates, required hours)
 3. Click **Save**
 
-The associate account is created with the `associate` role. When they log in, they'll be directed to the Associate Setup flow.
+The associate account is created with the `associate` role. When they log in, they are directed to the Associate Setup flow.
 
-## Internship Lifecycle
+## Associate Program Lifecycle
 
 | Status | Meaning |
 |--------|---------|
-| **Active** | Currently doing their internship |
+| **Active** | Currently participating in the associate program |
 | **Completed** | Successfully finished all requirements |
-| **Terminated** | Internship ended early |
+| **Terminated** | Associate program ended early |
 | **Converted** | Offered and accepted a regular position |
 
-### Extending an Internship
+### Extending an Associate Program
 
 If an associate needs more time:
 

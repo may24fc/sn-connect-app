@@ -133,7 +133,7 @@ Get detailed internship with daily logs aggregated into weekly hours, plus super
 
 - **Admins**: full access
 - **Supervisors**: can view internships they supervise
-- **Interns**: can view their own
+- **Associates**: can view their own
 
 ---
 

@@ -8,6 +8,8 @@ import { revenueForecastGrantSchema } from '@/lib/schemas/revenue-forecast.schem
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 function isMarketingOrFinanceDepartment(value: string | null | undefined): boolean {
   if (typeof value !== 'string') {
     return false;

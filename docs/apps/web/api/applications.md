@@ -17,7 +17,10 @@ Management of job applications submitted through job postings. Supports listing 
 | `GET` | `/api/applications` | admin | List job applications |
 | `GET` | `/api/applications/[id]` | admin | Get application detail with job posting |
 | `PATCH` | `/api/applications/[id]` | admin | Update application status |
+| `DELETE` | `/api/applications/[id]` | admin | Soft-delete an application |
+| `POST` | `/api/applications/[id]/evaluate` | admin | Persist interview/evaluation details |
 | `POST` | `/api/applications/[id]/hire` | admin | Hire an approved application and update headcount atomically |
+| `POST` | `/api/applications/bulk-import` | admin | Bulk import applications |
 
 ---
 

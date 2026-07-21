@@ -15,7 +15,7 @@ The directory provides a searchable list of all employees in the organization, p
 
 ### Metadata Summary
 
-Aggregate counts are shown at the top: total employees, active, interns, on leave, and on probation.
+Aggregate counts are shown at the top: total employees, active, associates, on leave, and on probation.
 
 ### Employee Records
 

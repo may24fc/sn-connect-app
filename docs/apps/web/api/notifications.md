@@ -18,7 +18,7 @@ In-app notification system with deep-link support, read tracking, and expiry. No
 | `GET` | `/api/notifications` | Any | List notifications for current user |
 | `PATCH` | `/api/notifications` | Any | Mark a single notification as read |
 | `POST` | `/api/notifications` | Any | Mark all notifications as read |
-| `DELETE` | `/api/notifications?id={uuid}` | Any | Delete a notification |
+| `DELETE` | `/api/notifications` | Any | Delete a notification (requires `id` query param) |
 
 ---
 
@@ -133,7 +133,7 @@ None required.
 
 ---
 
-## DELETE /api/notifications?id={uuid}
+## DELETE /api/notifications
 
 Permanently delete a notification belonging to the current user.
 

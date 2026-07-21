@@ -2,7 +2,7 @@
 
 > Audience: Admins, Super Admins, Ticket Handlers
 
-The support ticket system lets employees and interns report issues, request access, or ask for HR/IT help. Admins and designated ticket handlers receive, triage, assign, and resolve tickets.
+The support ticket system lets employees and associates report issues, request access, or ask for HR/IT help. Admins and designated ticket handlers receive, triage, assign, and resolve tickets.
 
 ---
 

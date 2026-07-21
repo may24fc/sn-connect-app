@@ -126,7 +126,7 @@ End-of-day report submission form. Fields: date, hours worked, progress and impa
 
 Dashboard summary cards.
 
-- `InternshipSummaryCards` — Admin view: active interns, total hours, completion rate
+- `InternshipSummaryCards` — Admin view: active associates, total hours, completion rate
 - `InternPersonalStats` — Associate's personal view: hours, days remaining, progress
 
 ---

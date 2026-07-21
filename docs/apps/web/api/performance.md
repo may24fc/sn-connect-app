@@ -15,9 +15,8 @@ Performance management system covering review cycles, performance reviews, OKRs 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/api/performance/cycles` | Any | List review cycles |
-| `POST` | `/api/performance/cycles` | Admin | Create review cycle |
 | `PATCH` | `/api/performance/cycles` | Admin | Update review cycle |
-| `DELETE` | `/api/performance/cycles?id=` | Admin | Delete review cycle |
+| `DELETE` | `/api/performance/cycles` | Admin | Delete review cycle |
 | `GET` | `/api/performance/reviews` | Any (scoped) | List performance reviews |
 | `POST` | `/api/performance/reviews` | Any | Create performance review |
 | `PATCH` | `/api/performance/reviews` | Any | Update performance review |
@@ -27,7 +26,7 @@ Performance management system covering review cycles, performance reviews, OKRs 
 | `GET` | `/api/performance/okr-targets` | Any (scoped) | List OKR targets |
 | `POST` | `/api/performance/okr-targets` | Any | Create OKR target |
 | `PATCH` | `/api/performance/okr-targets` | Any | Update OKR target |
-| `DELETE` | `/api/performance/okr-targets?id=` | Any | Delete OKR target |
+| `DELETE` | `/api/performance/okr-targets` | Any | Delete OKR target |
 | `GET` | `/api/performance/kpis` | Any (scoped) | List KPIs |
 | `POST` | `/api/performance/kpis` | Any | Create KPI |
 | `PATCH` | `/api/performance/kpis` | Any | Update KPI |
@@ -66,22 +65,6 @@ List review cycles. Optionally filter by status.
 }
 ```
 
-### POST /api/performance/cycles (Admin)
-
-Create a review cycle.
-
-```json
-{
-  "name": "Q1 2026 Review",
-  "description": "First quarter performance review",
-  "startDate": "2026-01-01",
-  "endDate": "2026-03-31",
-  "selfReviewDeadline": "2026-03-15",
-  "managerReviewDeadline": "2026-03-25",
-  "status": "active"
-}
-```
-
 ### PATCH /api/performance/cycles (Admin)
 
 Update a review cycle. Requires `id` in body.
@@ -93,7 +76,7 @@ Update a review cycle. Requires `id` in body.
 }
 ```
 
-### DELETE /api/performance/cycles?id=uuid (Admin)
+### DELETE /api/performance/cycles (Admin)
 
 Hard-delete a review cycle.
 

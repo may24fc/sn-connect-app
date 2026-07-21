@@ -9,7 +9,7 @@ This is the documentation index for the `apps/web` workspace — the main HR por
 
 ## By Audience
 
-### End Users (Employees & Interns)
+### End Users (Employees & Associates)
 
 Start here: **[User Guides](user/README.md)**
 
@@ -36,7 +36,7 @@ Start here: **[Admin Guides](admin/README.md)**
 |----------|-------------|
 | [admin/getting-started.md](admin/getting-started.md) | Admin/Super Admin dashboard orientation |
 | [admin/employee-management.md](admin/employee-management.md) | Inviting, approving, and managing employees |
-| [admin/associate-management.md](admin/associate-management.md) | Overseeing interns and reviewing daily reports |
+| [admin/associate-management.md](admin/associate-management.md) | Overseeing associates and reviewing daily reports |
 | [admin/performance-management.md](admin/performance-management.md) | Review cycles, OKRs, KPIs, appraisals |
 | [admin/probation.md](admin/probation.md) | Monitoring and evaluating probationary employees |
 | [admin/reports.md](admin/reports.md) | Tracking staff submissions and analytics |
@@ -68,7 +68,7 @@ Start here: **[Admin Guides](admin/README.md)**
 | Group | Path | Audience |
 |-------|------|----------|
 | `(auth)` | `/login`, `/forgot-password` | Unauthenticated users |
-| `(employee)` | `/dashboard`, `/profile`, `/files`, `/reports`, `/tasks`, `/performance`, `/invoice`, `/calendar`, `/ats` | Employees and interns |
+| `(employee)` | `/dashboard`, `/profile`, `/files`, `/reports`, `/tasks`, `/performance`, `/invoice`, `/calendar`, `/ats` | Employees and associates |
 | `(admin)` | `/admin/*` | Admins and HR |
 | `(super-admin)` | `/super-admin/*` | Super admins only |
 
@@ -92,9 +92,4 @@ Start here: **[Admin Guides](admin/README.md)**
 | Document | Description |
 |----------|-------------|
 | [audit-2026-03-29.md](audit-2026-03-29.md) | Live page audit — immediate fix list |
-| [deferred-backlog-2026-03-29.md](deferred-backlog-2026-03-29.md) | Deferred items from March 2026 audit |
-| [user-story-gap-plan.md](user-story-gap-plan.md) | Gap analysis for phone validation and multi-currency |
-| [ui-enhancement-checklist.md](ui-enhancement-checklist.md) | UI/UX improvement checklist (SlidePanel sizing, accessibility) |
-| [ui-fallback-states.md](ui-fallback-states.md) | Fallback/empty state implementation reference |
-| [notifications-bidirectional.md](notifications-bidirectional.md) | Bidirectional notification system summary |
-| [credentials-onboarding-flow.md](credentials-onboarding-flow.md) | Credential-first onboarding flow design |
+| *(Additional March 2026 planning docs were archived or moved; this index now lists only files currently present in `docs/apps/web`.)* | |

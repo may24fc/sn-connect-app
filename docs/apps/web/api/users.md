@@ -2,7 +2,7 @@
 
 > Audience: Developers
 
-User lifecycle management — inviting new users, approving completed onboarding, and assigning employees/interns to their respective trackers. All endpoints require admin-level access.
+User lifecycle management — inviting new users, approving completed onboarding, and assigning employees/associates to their respective trackers. All endpoints require admin-level access.
 
 **Database tables:** `users`, `employees`, `internships`, `onboarding_profiles`, `audit_logs`
 
@@ -15,7 +15,7 @@ User lifecycle management — inviting new users, approving completed onboarding
 | `POST` | `/api/users/invite` | admin, super_admin | Invite a new user |
 | `POST` | `/api/users/approve-onboarding` | admin, super_admin | Approve or reject onboarding |
 | `POST` | `/api/users/assign-employee` | admin, super_admin | Assign employee to probation |
-| `POST` | `/api/users/assign-associate` | admin, super_admin | Assign associate with details |
+| `POST` | `/api/users/assign-intern` | admin, super_admin | Assign associate with program details |
 
 ---
 
