@@ -52,6 +52,7 @@ const ACTION_LABELS: Record<string, string> = {
   create_ticket_comment: 'Added a ticket reply',
   // Internships
   internship_extended: 'Extended an internship',
+  upsert_associate_evaluation: 'Saved an associate evaluation',
   // Daily logs
   create_daily_log: 'Submitted a daily log',
   update_daily_log: 'Updated a daily log',
@@ -93,6 +94,7 @@ const TABLE_LABELS: Record<string, string> = {
   review_cycles: 'review cycle',
   performance_reviews: 'review',
   internships: 'internship',
+  associate_evaluations: 'associate evaluation',
   internship_daily_logs: 'daily log',
   onboarding_profiles: 'onboarding profile',
   onboarding_documents: 'onboarding document',
@@ -186,6 +188,7 @@ const TABLE_CATEGORIES: Record<string, { label: string; category: string }> = {
   kpis: { label: 'OKRs & KPIs', category: 'performance' },
   role_kpi_entries: { label: 'OKRs & KPIs', category: 'performance' },
   internships: { label: 'Internships', category: 'internships' },
+  associate_evaluations: { label: 'Internships', category: 'internships' },
   internship_daily_logs: { label: 'Associate Daily Logs', category: 'internships' },
   onboarding_profiles: { label: 'Onboarding', category: 'onboarding' },
   onboarding_documents: { label: 'Onboarding', category: 'onboarding' },

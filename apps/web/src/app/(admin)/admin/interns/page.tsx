@@ -64,11 +64,14 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+
+  Textarea,
 } from '@hr-portal/ui';
 import { useToast } from '@hr-portal/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
+  AlertTriangle,
   Calendar,
   CheckCircle2,
   Clock,
@@ -80,6 +83,7 @@ import {
   List,
   Search,
   RotateCcw,
+  Star,
   ThumbsUp,
   Trash2,
   TrendingUp,
@@ -101,6 +105,150 @@ function formatDateTime(dateString: string): string {
   }).format(date);
 }
 
+type AssociateEvaluationStage = 1 | 2 | 3 | 4;
+type AssociateEvaluationStatus = 'on-track' | 'at-risk' | 'completed' | 'extended';
+type AssociateEvaluationView = 'cards' | 'list';
+
+interface AssociateEvaluationRecord {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  department: string;
+  position: string;
+  startDate: string;
+  evaluationEndDate: string;
+  stage: AssociateEvaluationStage;
+  status: AssociateEvaluationStatus;
+  daysRemaining: number;
+  manager: string;
+}
+
+interface PersistedAssociateEvaluation {
+  id: string;
+  internship_id: string;
+  employee_id: string;
+  stage: number;
+  overall_assessment: string;
+  key_strengths: string;
+  areas_for_continued_growth: string;
+  overall_performance: number;
+  evaluated_by: string;
+  evaluated_at: string;
+  updated_at: string;
+}
+
+const ASSOCIATE_STAGE_LABELS: Record<AssociateEvaluationStage, { name: string; description: string }> = {
+  1: { name: '0-30 Days', description: 'Orientation and settling in' },
+  2: { name: '30-60 Days', description: 'Progress check' },
+  3: { name: '60-90 Days', description: 'Readiness review' },
+  4: { name: '90+ Days', description: 'Final evaluation' },
+};
+
+const ASSOCIATE_STATUS_CONFIG: Record<
+  AssociateEvaluationStatus,
+  { label: string; badgeClass: string; icon: typeof CheckCircle2 }
+> = {
+  'on-track': {
+    label: 'On Track',
+    badgeClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
+    icon: TrendingUp,
+  },
+  'at-risk': {
+    label: 'At Risk',
+    badgeClass: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+    icon: AlertTriangle,
+  },
+  completed: {
+    label: 'Completed',
+    badgeClass: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400',
+    icon: CheckCircle2,
+  },
+  extended: {
+    label: 'Extended',
+    badgeClass: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+    icon: Clock,
+  },
+};
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function getDaysRemaining(targetDate: string): number {
+  const now = new Date();
+  const end = new Date(targetDate);
+  const ms = end.getTime() - now.getTime();
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+function getAssociateStage(startDate: string, endDate: string): AssociateEvaluationStage {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const totalDays = Math.max(
+    1,
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  );
+  const elapsed = Math.max(0, Math.ceil((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  const ratio = elapsed / totalDays;
+
+  if (ratio >= 0.75) return 4;
+  if (ratio >= 0.5) return 3;
+  if (ratio >= 0.25) return 2;
+  return 1;
+}
+
+function StageIndicator({
+  stage,
+  status,
+}: { stage: AssociateEvaluationStage; status: AssociateEvaluationStatus }): ReactNode {
+  const stages: AssociateEvaluationStage[] = [1, 2, 3, 4];
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1">
+        {stages.map((currentStage) => (
+          <div
+            key={currentStage}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              currentStage < stage
+                ? 'bg-emerald-500 dark:bg-emerald-400'
+                : currentStage === stage
+                  ? status === 'at-risk'
+                    ? 'bg-amber-500 dark:bg-amber-400'
+                    : status === 'extended'
+                      ? 'bg-orange-500 dark:bg-orange-400'
+                      : 'bg-slate-800 dark:bg-zinc-400'
+                  : 'bg-zinc-200 dark:bg-zinc-700'
+            }`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+          {ASSOCIATE_STAGE_LABELS[stage].name}
+        </span>
+        <span className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          {ASSOCIATE_STAGE_LABELS[stage].description}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminInternsPage(): ReactNode {
   const router = useRouter();
   const pathname = usePathname();
@@ -114,6 +262,10 @@ export default function AdminInternsPage(): ReactNode {
   const [supervisorFilter, setSupervisorFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [hoursMode, setHoursMode] = useState<'weekly' | 'entire'>('weekly');
+  const [associateEvaluationSearch, setAssociateEvaluationSearch] = useState('');
+  const [associateEvaluationStatusFilter, setAssociateEvaluationStatusFilter] = useState<string>('all');
+  const [associateEvaluationDepartmentFilter, setAssociateEvaluationDepartmentFilter] = useState<string>('all');
+  const [associateEvaluationView, setAssociateEvaluationView] = useState<AssociateEvaluationView>('cards');
 
   // Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -125,6 +277,13 @@ export default function AdminInternsPage(): ReactNode {
     'employee-assignment' | 'employee-probation' | 'associate-assignment'
   >('associate-assignment');
   const [selectedEodLog, setSelectedEodLog] = useState<(typeof dailyLogs)[number] | null>(null);
+  const [associateEvaluationDialogOpen, setAssociateEvaluationDialogOpen] = useState(false);
+  const [selectedAssociateForEvaluation, setSelectedAssociateForEvaluation] =
+    useState<AssociateEvaluationRecord | null>(null);
+  const [overallAssessment, setOverallAssessment] = useState('');
+  const [keyStrengths, setKeyStrengths] = useState('');
+  const [areasForContinuedGrowth, setAreasForContinuedGrowth] = useState('');
+  const [overallPerformanceStars, setOverallPerformanceStars] = useState(3);
 
   // Delete associate state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -219,7 +378,7 @@ export default function AdminInternsPage(): ReactNode {
   }
 
   const internshipsQuery = useInternships(internshipFilters);
-  const internshipsForOnboardingQuery = useInternships({ page: 1, pageSize: 500 });
+  const internshipsForOnboardingQuery = useInternships({ page: 1, pageSize: 100 });
   const { data: employeeRecordsData } = useEmployees({ page: 1, pageSize: 500, status: 'active' });
 
   // Fetch associate onboarding profiles
@@ -325,6 +484,124 @@ export default function AdminInternsPage(): ReactNode {
     const matchesSupervisor = supervisorFilter === 'all' || associate.supervisor === supervisorFilter;
     return matchesSearch && matchesStatus && matchesSchool && matchesSupervisor;
   });
+
+  const associateEvaluationRecords = useMemo<Array<AssociateEvaluationRecord>>(
+    () =>
+      interns
+        .filter((associate) => Boolean(associate.startDate && associate.endDate))
+        .map((associate) => {
+          const daysRemaining = getDaysRemaining(associate.endDate);
+          const baseEndDate = new Date(associate.startDate);
+          // Use a 90-day baseline so extensions naturally shift stage and status windows.
+          baseEndDate.setDate(baseEndDate.getDate() + 90);
+          const isExtended = new Date(associate.endDate) > baseEndDate;
+
+          let status: AssociateEvaluationStatus;
+          if (associate.status === 'completed') {
+            status = 'completed';
+          } else if (isExtended) {
+            status = 'extended';
+          } else if (daysRemaining <= 14) {
+            status = 'at-risk';
+          } else {
+            status = 'on-track';
+          }
+
+          return {
+            id: associate.id,
+            name: associate.name,
+            email: associate.email,
+            ...(associate.avatarUrl ? { avatarUrl: associate.avatarUrl } : {}),
+            department: associate.department || 'Unassigned',
+            position: associate.program || 'Associate',
+            startDate: associate.startDate,
+            evaluationEndDate: associate.endDate,
+            stage: getAssociateStage(associate.startDate, associate.endDate),
+            status,
+            daysRemaining: Math.max(0, daysRemaining),
+            manager: associate.supervisor || 'Unassigned',
+          };
+        }),
+    [interns]
+  );
+
+  const associateEvaluationInternshipIds = useMemo(
+    () => associateEvaluationRecords.map((record) => record.id),
+    [associateEvaluationRecords]
+  );
+
+  const associateEvaluationsQuery = useQuery({
+    queryKey: ['associate-evaluations', associateEvaluationInternshipIds],
+    enabled: associateEvaluationInternshipIds.length > 0,
+    queryFn: async (): Promise<{ data: Array<PersistedAssociateEvaluation> }> => {
+      const params = new URLSearchParams({
+        internshipIds: associateEvaluationInternshipIds.join(','),
+      });
+      const response = await fetch(`/api/internships/evaluations?${params.toString()}`);
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to fetch associate evaluations' }));
+        throw new Error(error.error || 'Failed to fetch associate evaluations');
+      }
+
+      return response.json();
+    },
+  });
+
+  const evaluationsByInternshipAndStage = useMemo(() => {
+    const map = new Map<string, PersistedAssociateEvaluation>();
+    for (const evaluation of associateEvaluationsQuery.data?.data || []) {
+      map.set(`${evaluation.internship_id}:${evaluation.stage}`, evaluation);
+    }
+    return map;
+  }, [associateEvaluationsQuery.data?.data]);
+
+  const associateEvaluationDepartments = useMemo(
+    () =>
+      [...new Set(associateEvaluationRecords.map((record) => record.department))]
+        .filter(Boolean)
+        .sort((left, right) => left.localeCompare(right)),
+    [associateEvaluationRecords]
+  );
+
+  const filteredAssociateEvaluations = useMemo(
+    () =>
+      associateEvaluationRecords.filter((record) => {
+        const normalizedSearch = associateEvaluationSearch.trim().toLowerCase();
+        const matchesSearch =
+          normalizedSearch.length === 0 ||
+          record.name.toLowerCase().includes(normalizedSearch) ||
+          record.position.toLowerCase().includes(normalizedSearch);
+        const matchesStatus =
+          associateEvaluationStatusFilter === 'all' ||
+          record.status === associateEvaluationStatusFilter;
+        const matchesDepartment =
+          associateEvaluationDepartmentFilter === 'all' ||
+          record.department === associateEvaluationDepartmentFilter;
+        return matchesSearch && matchesStatus && matchesDepartment;
+      }),
+    [
+      associateEvaluationRecords,
+      associateEvaluationSearch,
+      associateEvaluationStatusFilter,
+      associateEvaluationDepartmentFilter,
+    ]
+  );
+
+  const associatesOnEvaluation = useMemo(
+    () =>
+      associateEvaluationRecords.filter(
+        (record) => record.status === 'on-track' || record.status === 'at-risk' || record.status === 'extended'
+      ).length,
+    [associateEvaluationRecords]
+  );
+
+  const associatesAtRisk = useMemo(
+    () => associateEvaluationRecords.filter((record) => record.status === 'at-risk').length,
+    [associateEvaluationRecords]
+  );
 
   const [exporting, setExporting] = useState(false);
 
@@ -460,6 +737,78 @@ export default function AdminInternsPage(): ReactNode {
     });
   };
 
+  const saveAssociateEvaluationMutation = useMutation({
+    mutationFn: async (payload: {
+      internshipId: string;
+      stage: number;
+      overallAssessment: string;
+      keyStrengths: string;
+      areasForContinuedGrowth: string;
+      overallPerformance: number;
+    }): Promise<{ data: PersistedAssociateEvaluation }> => {
+      const response = await fetch('/api/internships/evaluations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to save associate evaluation' }));
+        throw new Error(error.error || 'Failed to save associate evaluation');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['associate-evaluations'] });
+    },
+  });
+
+  const handleOpenAssociateEvaluation = (record: AssociateEvaluationRecord): void => {
+    const existingEvaluation = evaluationsByInternshipAndStage.get(`${record.id}:${record.stage}`);
+
+    setSelectedAssociateForEvaluation(record);
+    setOverallAssessment(existingEvaluation?.overall_assessment || '');
+    setKeyStrengths(existingEvaluation?.key_strengths || '');
+    setAreasForContinuedGrowth(existingEvaluation?.areas_for_continued_growth || '');
+    setOverallPerformanceStars(existingEvaluation?.overall_performance || 3);
+    setAssociateEvaluationDialogOpen(true);
+  };
+
+  const handleSubmitAssociateEvaluation = async (): Promise<void> => {
+    if (!selectedAssociateForEvaluation) {
+      return;
+    }
+
+    try {
+      await saveAssociateEvaluationMutation.mutateAsync({
+        internshipId: selectedAssociateForEvaluation.id,
+        stage: selectedAssociateForEvaluation.stage,
+        overallAssessment,
+        keyStrengths,
+        areasForContinuedGrowth,
+        overallPerformance: overallPerformanceStars,
+      });
+
+      addToast({
+        title: 'Associate evaluation submitted',
+        description: `${selectedAssociateForEvaluation.name}'s ${ASSOCIATE_STAGE_LABELS[selectedAssociateForEvaluation.stage].name} evaluation was recorded.`,
+        variant: 'success',
+      });
+
+      setAssociateEvaluationDialogOpen(false);
+      setSelectedAssociateForEvaluation(null);
+    } catch (error) {
+      addToast({
+        title: 'Failed to save associate evaluation',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'error',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 p-3">
       {/* Header */}
@@ -486,6 +835,12 @@ export default function AdminInternsPage(): ReactNode {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <TabsList>
             <TabsTrigger value="internships">Internships</TabsTrigger>
+            <TabsTrigger value="evaluations">
+              Evaluations
+              {associatesOnEvaluation > 0 && (
+                <CountBadge className="ml-2" variant="warning" size="md" count={associatesOnEvaluation} />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="onboarding">Onboarding Data</TabsTrigger>
             <TabsTrigger value="eod-reports">
               EOD Reports
@@ -749,6 +1104,264 @@ export default function AdminInternsPage(): ReactNode {
               <CardContent className="p-6 text-sm text-destructive">
                 Failed to load interns.
               </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="evaluations" className="space-y-6">
+          <StatCardGrid columns={2}>
+            <StatCard
+              label="On Evaluation"
+              value={associatesOnEvaluation}
+              icon={<Users className="h-4 w-4" strokeWidth={1.5} />}
+            />
+            <StatCard
+              label="At Risk"
+              value={associatesAtRisk}
+              trend={
+                associatesAtRisk > 0
+                  ? { direction: 'up', value: 'Needs attention' }
+                  : { direction: 'stable', value: 'No issues' }
+              }
+              icon={<AlertTriangle className="h-4 w-4" strokeWidth={1.5} />}
+            />
+          </StatCardGrid>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1 min-w-0">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.5} />
+              <Input
+                placeholder="Search associates..."
+                value={associateEvaluationSearch}
+                onChange={(event) => setAssociateEvaluationSearch(event.target.value)}
+                className="pl-10 bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={associateEvaluationStatusFilter} onValueChange={setAssociateEvaluationStatusFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Status</SelectItem>
+                  <SelectItem value="on-track">On Track</SelectItem>
+                  <SelectItem value="at-risk">At Risk</SelectItem>
+                  <SelectItem value="extended">Extended</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={associateEvaluationDepartmentFilter} onValueChange={setAssociateEvaluationDepartmentFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Department</SelectItem>
+                  {associateEvaluationDepartments.map((department) => (
+                    <SelectItem key={department} value={department}>
+                      {department}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="inline-flex items-center rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setAssociateEvaluationView('cards')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    associateEvaluationView === 'cards'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Cards
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAssociateEvaluationView('list')}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    associateEvaluationView === 'list'
+                      ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-50 shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                  }`}
+                >
+                  <List className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  List
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {filteredAssociateEvaluations.length === 0 ? (
+            <Card>
+              <CardContent>
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="No associates on evaluation"
+                  description="Associate 30-60-90 evaluation records will appear here when internship dates are assigned."
+                  size="sm"
+                />
+              </CardContent>
+            </Card>
+          ) : associateEvaluationView === 'cards' ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredAssociateEvaluations.map((record) => {
+                const isUrgent = record.daysRemaining <= 14;
+                const statusConfig = ASSOCIATE_STATUS_CONFIG[record.status];
+                const StatusIcon = statusConfig.icon;
+                const isAlreadyEvaluated =
+                  evaluationsByInternshipAndStage.has(`${record.id}:${record.stage}`);
+                const existingEvaluation = evaluationsByInternshipAndStage.get(
+                  `${record.id}:${record.stage}`
+                );
+
+                return (
+                  <Card key={record.id} className={isUrgent ? 'border-amber-300 dark:border-amber-700' : ''}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={record.avatarUrl} />
+                          <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
+                            {getInitials(record.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 flex-1">
+                          <CardTitle className="text-sm">{record.name}</CardTitle>
+                          <CardDescription className="text-xs">{record.position}</CardDescription>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${statusConfig.badgeClass}`}>
+                          <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
+                          {statusConfig.label}
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <StageIndicator stage={record.stage} status={record.status} />
+                      <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                        <span>Started: {formatDate(record.startDate)}</span>
+                        <span>{record.department}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock
+                          className={`h-3.5 w-3.5 ${isUrgent ? 'text-amber-500' : 'text-zinc-500 dark:text-zinc-400'}`}
+                          strokeWidth={1.5}
+                        />
+                        <span
+                          className={`text-xs font-medium ${isUrgent ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-600 dark:text-zinc-300'}`}
+                        >
+                          {record.daysRemaining <= 0
+                            ? 'Evaluation period ended'
+                            : `${record.daysRemaining} days remaining`}
+                        </span>
+                      </div>
+                      {isAlreadyEvaluated ? (
+                        <Badge variant="success" className="w-fit gap-1">
+                          <CheckCircle2 className="h-3 w-3" strokeWidth={1.5} />
+                          Evaluated
+                        </Badge>
+                      ) : null}
+                      {existingEvaluation?.evaluated_at ? (
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          Evaluated on {formatDate(existingEvaluation.evaluated_at)}
+                        </p>
+                      ) : null}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleOpenAssociateEvaluation(record)}
+                      >
+                        <Eye className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+                        {isAlreadyEvaluated ? 'Re-evaluate' : 'Evaluate'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card>
+              <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <div className="grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-800/30">
+                  <span>Associate</span>
+                  <span>Department</span>
+                  <span>Stage</span>
+                  <span>Remaining</span>
+                  <span>Status</span>
+                  <span>Action</span>
+                </div>
+                {filteredAssociateEvaluations.map((record) => {
+                  const statusConfig = ASSOCIATE_STATUS_CONFIG[record.status];
+                  const StatusIcon = statusConfig.icon;
+                  const isAlreadyEvaluated =
+                    evaluationsByInternshipAndStage.has(`${record.id}:${record.stage}`);
+
+                  return (
+                    <div
+                      key={record.id}
+                      className="grid grid-cols-[1fr_120px_160px_120px_100px_80px] gap-4 px-4 py-3 items-center hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Avatar className="h-8 w-8 shrink-0">
+                          <AvatarImage src={record.avatarUrl} />
+                          <AvatarFallback className="text-xs bg-slate-100 dark:bg-zinc-900/30 text-slate-700 dark:text-zinc-400">
+                            {getInitials(record.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50 truncate">{record.name}</p>
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{record.position}</p>
+                          {isAlreadyEvaluated ? (
+                            <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                              Evaluated
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-300 truncate">{record.department}</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-0.5">
+                          {([1, 2, 3, 4] as AssociateEvaluationStage[]).map((stage) => (
+                            <div
+                              key={stage}
+                              className={`h-1.5 w-5 rounded-full ${
+                                stage < record.stage
+                                  ? 'bg-emerald-500 dark:bg-emerald-400'
+                                  : stage === record.stage
+                                    ? record.status === 'at-risk'
+                                      ? 'bg-amber-500'
+                                      : record.status === 'extended'
+                                        ? 'bg-orange-500'
+                                        : 'bg-slate-800'
+                                    : 'bg-zinc-200 dark:bg-zinc-700'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+                          {ASSOCIATE_STAGE_LABELS[record.stage].name}
+                        </span>
+                      </div>
+                      <span className="text-xs text-zinc-600 dark:text-zinc-300">
+                        {record.daysRemaining <= 0 ? 'Ended' : `${record.daysRemaining}d left`}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium w-fit ${statusConfig.badgeClass}`}>
+                        <StatusIcon className="h-3 w-3" strokeWidth={1.5} />
+                        {statusConfig.label}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleOpenAssociateEvaluation(record)}
+                        aria-label={isAlreadyEvaluated ? 'Re-evaluate associate' : 'Evaluate associate'}
+                      >
+                        <Eye className="h-4 w-4" strokeWidth={1.5} />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
             </Card>
           )}
         </TabsContent>
@@ -1333,6 +1946,117 @@ export default function AdminInternsPage(): ReactNode {
         }}
         log={selectedEodLog}
       />
+
+      <Dialog
+        open={associateEvaluationDialogOpen}
+        onOpenChange={(open) => {
+          setAssociateEvaluationDialogOpen(open);
+          if (!open) {
+            setSelectedAssociateForEvaluation(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Associate Evaluation</DialogTitle>
+            <DialogDescription>
+              30-60-90 review for {selectedAssociateForEvaluation?.name ?? 'selected associate'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedAssociateForEvaluation && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted/50 p-4">
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{selectedAssociateForEvaluation.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {selectedAssociateForEvaluation.position} - {selectedAssociateForEvaluation.department}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Supervisor: {selectedAssociateForEvaluation.manager}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">1. Overall assessment</p>
+                <Textarea
+                  value={overallAssessment}
+                  onChange={(event) => setOverallAssessment(event.target.value)}
+                  className="min-h-[110px]"
+                  placeholder="Write the overall assessment as a paragraph."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">2. Key strengths</p>
+                <Textarea
+                  value={keyStrengths}
+                  onChange={(event) => setKeyStrengths(event.target.value)}
+                  className="min-h-[110px]"
+                  placeholder="Summarize key strengths as a paragraph."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">3. Areas for Continued Growth</p>
+                <Textarea
+                  value={areasForContinuedGrowth}
+                  onChange={(event) => setAreasForContinuedGrowth(event.target.value)}
+                  className="min-h-[110px]"
+                  placeholder="Describe growth areas as a paragraph."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">4. Overall performance</p>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      type="button"
+                      onClick={() => setOverallPerformanceStars(rating)}
+                      className="transition-transform hover:scale-110"
+                      aria-label={`Rate ${rating} star${rating > 1 ? 's' : ''}`}
+                    >
+                      <Star
+                        className={`h-6 w-6 ${rating <= overallPerformanceStars ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                      />
+                    </button>
+                  ))}
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    {overallPerformanceStars}/5
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAssociateEvaluationDialogOpen(false);
+                setSelectedAssociateForEvaluation(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                void handleSubmitAssociateEvaluation();
+              }}
+              disabled={
+                saveAssociateEvaluationMutation.isPending ||
+                !selectedAssociateForEvaluation ||
+                !overallAssessment.trim() ||
+                !keyStrengths.trim() ||
+                !areasForContinuedGrowth.trim()
+              }
+            >
+              {saveAssociateEvaluationMutation.isPending ? 'Saving...' : 'Submit Evaluation'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
