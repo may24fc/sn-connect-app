@@ -65,7 +65,6 @@ function drawMoneyValue(doc: PDFKit.PDFDocument, value: number, x: number, y: nu
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  const currencyWidth = 28;
 
   doc.font('Helvetica-Bold').fontSize(10).fillColor(COLORS.muted).text('AUD', x, y, {
     width,
@@ -73,7 +72,7 @@ function drawMoneyValue(doc: PDFKit.PDFDocument, value: number, x: number, y: nu
     lineBreak: false,
   });
   doc.font('Helvetica-Bold').fontSize(18).fillColor(COLORS.ink).text(amountText, x, y + 14, {
-    width: width - currencyWidth,
+    width,
     align: 'right',
     lineBreak: false,
   });
@@ -106,18 +105,23 @@ function drawMetricCard(
   options?: { momPercentChange?: number | null; fillColor?: string },
 ): void {
   const height = 84;
+  const contentX = x + 18;
+  const contentWidth = width - 36;
+  const valueTopY = y + 18;
+  const valueRowY = valueTopY + 14;
+
   doc.roundedRect(x, y, width, height, 9).fillColor(options?.fillColor ?? COLORS.cardFill).fill();
   doc.roundedRect(x, y, width, height, 9).lineWidth(1).strokeColor(COLORS.border).stroke();
 
-  doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted).text(metricLabel.toUpperCase(), x + 18, y + 14, {
-    width: width - 36,
+  doc.font('Helvetica').fontSize(8).fillColor(COLORS.muted).text(metricLabel.toUpperCase(), contentX, y + 14, {
+    width: contentWidth,
     lineBreak: false,
   });
 
-  drawMoneyValue(doc, value, x + 18, y + 18, width - 36);
+  drawMoneyValue(doc, value, contentX, valueTopY, contentWidth);
 
   if (options && 'momPercentChange' in options) {
-    drawMomBadge(doc, options.momPercentChange ?? null, x + 18, y + height - 28);
+    drawMomBadge(doc, options.momPercentChange ?? null, contentX, valueRowY + 1);
   }
 }
 
@@ -176,6 +180,14 @@ type DistributionSlice = {
   momPercent?: number | null;
 };
 
+type DistributionTableRow = {
+  label: string;
+  amount: string;
+  percent?: string | undefined;
+  mom?: string | undefined;
+  momValue?: number | null | undefined;
+};
+
 function drawSectionBanner(doc: PDFKit.PDFDocument, title: string): number {
   ensureSpace(doc, 32);
   const y = doc.y;
@@ -230,14 +242,14 @@ function drawPieChart(doc: PDFKit.PDFDocument, slices: DistributionSlice[], x: n
 
 function drawLegend(doc: PDFKit.PDFDocument, slices: DistributionSlice[], x: number, y: number, width: number): void {
   slices.forEach((slice, index) => {
-    const rowY = y + index * 20;
+    const rowY = y + index * 17;
     const color = CHART_PALETTE[index % CHART_PALETTE.length] ?? CHART_PALETTE[0];
     doc.roundedRect(x, rowY + 2, 10, 10, 2).fillColor(color).fill();
-    doc.font('Helvetica').fontSize(9).fillColor(COLORS.text).text(slice.label, x + 18, rowY, {
+    doc.font('Helvetica').fontSize(7.5).fillColor(COLORS.text).text(slice.label, x + 18, rowY + 1, {
       width: width - 70,
       lineBreak: false,
     });
-    doc.font('Helvetica').fontSize(9).fillColor(COLORS.muted).text(`${slice.percent.toFixed(1)}%`, x, rowY, {
+    doc.font('Helvetica').fontSize(7.5).fillColor(COLORS.muted).text(`${slice.percent.toFixed(1)}%`, x, rowY + 1, {
       width,
       align: 'right',
       lineBreak: false,
@@ -251,7 +263,7 @@ function drawColumnTable(
   y: number,
   columnWidth: number,
   headers: string[],
-  rows: Array<{ label: string; amount: string; percent?: string | undefined; mom?: string | undefined; momValue?: number | null | undefined }>,
+  rows: DistributionTableRow[],
 ): number {
   const headerHeight = 18;
   const rowHeight = 21;
@@ -320,6 +332,8 @@ function drawDistributionColumn(
   width: number,
   slices: DistributionSlice[],
   tableHeaders: string[],
+  tableRows: DistributionTableRow[],
+  tableY: number,
 ): number {
   doc.font('Helvetica-Bold').fontSize(10).fillColor(title === 'CURRENT MONTH' ? COLORS.ink : COLORS.muted).text(title, x, y, {
     width,
@@ -336,16 +350,40 @@ function drawDistributionColumn(
   drawPieChart(doc, slices, x + 8, chartY, 110);
   drawLegend(doc, slices, x + 132, chartY + 2, width - 132);
 
-  const tableRows = slices.map((slice) => ({
-    label: slice.label,
-    amount: formatMoney(slice.amount),
-    percent: `${slice.percent.toFixed(1)}%`,
-    mom: slice.momPercent === undefined || slice.momPercent === null ? '--' : formatPercent(slice.momPercent),
-    momValue: slice.momPercent,
-  }));
-
-  const tableY = chartY + Math.max(124, slices.length * 20 + 8);
   return drawColumnTable(doc, x, tableY, width, tableHeaders, tableRows);
+}
+
+function buildAlignedDistributionRows(
+  leftSlices: DistributionSlice[],
+  rightSlices: DistributionSlice[],
+): { leftRows: DistributionTableRow[]; rightRows: DistributionTableRow[] } {
+  const labelOrder = Array.from(new Set([...leftSlices.map((slice) => slice.label), ...rightSlices.map((slice) => slice.label)]));
+  const leftByLabel = new Map(leftSlices.map((slice) => [slice.label, slice]));
+  const rightByLabel = new Map(rightSlices.map((slice) => [slice.label, slice]));
+
+  const leftRows = labelOrder.map((label) => {
+    const slice = leftByLabel.get(label);
+    return {
+      label,
+      amount: slice ? formatMoney(slice.amount) : '--',
+      percent: slice ? `${slice.percent.toFixed(1)}%` : '--',
+      mom: '--',
+      momValue: null,
+    };
+  });
+
+  const rightRows = labelOrder.map((label) => {
+    const slice = rightByLabel.get(label);
+    return {
+      label,
+      amount: slice ? formatMoney(slice.amount) : '--',
+      percent: slice ? `${slice.percent.toFixed(1)}%` : '--',
+      mom: slice?.momPercent === undefined || slice.momPercent === null ? '--' : formatPercent(slice.momPercent),
+      momValue: slice?.momPercent ?? null,
+    };
+  });
+
+  return { leftRows, rightRows };
 }
 
 function drawDistributionSection(
@@ -364,9 +402,34 @@ function drawDistributionSection(
   const columnWidth = (CONTENT_WIDTH - gap) / 2;
   const leftX = MARGIN;
   const rightX = leftX + columnWidth + gap;
+  const chartY = sectionTop + 52;
+  const tableY = chartY + Math.max(124, Math.max(leftSlices.length, rightSlices.length) * 20 + 8);
+  const { leftRows, rightRows } = buildAlignedDistributionRows(leftSlices, rightSlices);
 
-  const leftBottom = drawDistributionColumn(doc, 'PREVIOUS MONTH', leftSubtitle, leftX, sectionTop, columnWidth, leftSlices, tableHeaders);
-  const rightBottom = drawDistributionColumn(doc, 'CURRENT MONTH', rightSubtitle, rightX, sectionTop, columnWidth, rightSlices, tableHeaders);
+  const leftBottom = drawDistributionColumn(
+    doc,
+    'PREVIOUS MONTH',
+    leftSubtitle,
+    leftX,
+    sectionTop,
+    columnWidth,
+    leftSlices,
+    tableHeaders,
+    leftRows,
+    tableY,
+  );
+  const rightBottom = drawDistributionColumn(
+    doc,
+    'CURRENT MONTH',
+    rightSubtitle,
+    rightX,
+    sectionTop,
+    columnWidth,
+    rightSlices,
+    tableHeaders,
+    rightRows,
+    tableY,
+  );
   const dividerX = leftX + columnWidth + gap / 2;
 
   doc.moveTo(dividerX, sectionTop + 34).lineTo(dividerX, Math.max(leftBottom, rightBottom)).lineWidth(1).strokeColor(COLORS.divider).stroke();
