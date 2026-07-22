@@ -131,7 +131,7 @@ export function ReportsPlansTab({ department }: ReportsPlansTabProps) {
     pageSize: 500,
     archived: 'exclude',
   });
-  const { data: internshipsData } = useInternships({ status: 'active', pageSize: 500 });
+  const { data: internshipsData } = useInternships({ status: 'active', pageSize: 100 });
 
   const activeInternEmployeeIds = useMemo(
     () => new Set((internshipsData?.data ?? []).map((internship) => internship.employeeId)),
