@@ -325,7 +325,7 @@ export const performanceEvaluationDraftKindSchema = z.enum([
 export const submitMonthlySelfEvaluationDraftSchema = submitMonthlySelfEvaluationSchema.partial();
 
 export const monthlyCallFeedbackValuablePartSchema = z.enum([
-  'CEO Discussion (Financial Growth)',
+  'CEO Discussion',
   'Icebreaker / Conversation Starters',
   '5% Reflection Worksheet Sharing',
   'Announcements',

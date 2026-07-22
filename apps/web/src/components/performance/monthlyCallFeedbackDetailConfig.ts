@@ -138,7 +138,7 @@ export const monthlyCallFeedbackDetailSections: MonthlyCallFeedbackDetailSection
         value: (record) => formatMonthlyCallLength(record.call_length),
       },
       {
-        label: 'Financial Growth Discussion clarity',
+        label: 'CEO Discussion clarity',
         value: (record) => formatMonthlyCallClarity(record.clarity_financial_growth_discussion),
       },
       {

@@ -524,7 +524,7 @@ export function MonthlyCallFeedbackForm() {
               {[
                 {
                   name: 'clarityFinancialGrowthDiscussion' as const,
-                  label: 'Financial Growth Discussion',
+                  label: 'CEO Discussion',
                 },
                 {
                   name: 'clarityIcebreakerConversationStarters' as const,
