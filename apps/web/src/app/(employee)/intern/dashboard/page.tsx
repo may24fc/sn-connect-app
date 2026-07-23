@@ -11,7 +11,13 @@ import {
 } from '@/components/data-display';
 import { CompanyPulseWidget } from '@/components/CompanyPulseWidget';
 import { EvaluationCadenceBanner } from '@/components/performance/EvaluationCadenceBanner';
-import { useCreateInternDailyLog, useInternship, useInternships } from '@/hooks/useInternships';
+import {
+  useAssociateEvaluations,
+  useCreateInternDailyLog,
+  useInternship,
+  useInternships,
+  type AssociateEvaluationRecord,
+} from '@/hooks/useInternships';
 import { useEmployeeDashboardAttentionItems } from '@/hooks/useEmployeeDashboardAttentionItems';
 import { useEvaluationCadence } from '@/hooks/useEvaluationCadence';
 import {
@@ -42,7 +48,9 @@ import {
   Clock,
   FileText,
   GraduationCap,
+  Loader2,
   Send,
+  Star,
   Target,
   TrendingUp,
   User,
@@ -51,6 +59,141 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type ReactNode, useMemo, useState } from 'react';
 
+const ASSOCIATE_STAGE_LABELS: Record<1 | 2 | 3 | 4, { name: string; description: string }> = {
+  1: { name: '0-30 Days', description: 'Orientation and settling in' },
+  2: { name: '30-60 Days', description: 'Progress check' },
+  3: { name: '60-90 Days', description: 'Readiness review' },
+  4: { name: '90+ Days', description: 'Final evaluation' },
+};
+
+function getAssociateStage(startDate: string, endDate: string): 1 | 2 | 3 | 4 {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const totalDays = Math.max(
+    1,
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  );
+  const elapsed = Math.max(0, Math.ceil((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  const ratio = elapsed / totalDays;
+
+  if (ratio >= 0.75) return 4;
+  if (ratio >= 0.5) return 3;
+  if (ratio >= 0.25) return 2;
+  return 1;
+}
+
+function formatEvaluationDate(value: string): string {
+  return new Date(value).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function renderStars(rating: number): Array<ReactNode> {
+  return Array.from({ length: 5 }, (_, index) => (
+    <Star
+      key={index}
+      className={index < rating ? 'h-4 w-4 fill-yellow-400 text-yellow-400' : 'h-4 w-4 text-zinc-300 dark:text-zinc-600'}
+    />
+  ));
+}
+
+function AssociateEvaluationCard({
+  profile,
+  evaluations,
+  isLoading,
+}: {
+  profile: { startDate: string; endDate: string };
+  evaluations: Array<AssociateEvaluationRecord>;
+  isLoading: boolean;
+}): ReactNode {
+  const currentStage = getAssociateStage(profile.startDate, profile.endDate);
+  const currentEvaluation =
+    evaluations.find((evaluation) => evaluation.stage === currentStage) ?? evaluations[0] ?? null;
+
+  return (
+    <BentoCard colSpan={2}>
+      <BentoCardHeader>
+        <BentoCardTitle icon={<Target className="h-4 w-4" strokeWidth={1.5} />}>
+          30-60-90 Evaluation
+        </BentoCardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">
+              {ASSOCIATE_STAGE_LABELS[currentEvaluation?.stage ?? currentStage].name}
+            </Badge>
+            <Link href="/associate/evaluations">
+              <Button variant="ghost" size="xs">
+                View History
+                <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
+              </Button>
+            </Link>
+          </div>
+      </BentoCardHeader>
+      <BentoCardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10 text-sm text-zinc-500 dark:text-zinc-400">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading evaluation...
+          </div>
+        ) : !currentEvaluation ? (
+          <div className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-800/40 dark:text-zinc-400">
+            Your {ASSOCIATE_STAGE_LABELS[currentStage].name} evaluation has not been submitted yet. You will be notified when an admin or super-admin completes it.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+              <div>
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  {ASSOCIATE_STAGE_LABELS[currentEvaluation.stage].name}
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {ASSOCIATE_STAGE_LABELS[currentEvaluation.stage].description}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="flex items-center gap-1 justify-end">{renderStars(currentEvaluation.overallPerformance)}</div>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  Submitted {formatEvaluationDate(currentEvaluation.evaluatedAt)}
+                </p>
+              </div>
+            </div>
+
+            <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+              <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
+                  Overall assessment
+                </p>
+                <p className="mt-2 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
+                  {currentEvaluation.overallAssessment}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
+                  Key strengths
+                </p>
+                <p className="mt-2 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
+                  {currentEvaluation.keyStrengths}
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
+                  Areas for continued growth
+                </p>
+                <p className="mt-2 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
+                  {currentEvaluation.areasForContinuedGrowth}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </BentoCardContent>
+    </BentoCard>
+  );
+}
+
 export default function InternDashboardPage(): ReactNode {
   const [showForm, setShowForm] = useState(false);
   const internRouter = useRouter();
@@ -58,6 +201,7 @@ export default function InternDashboardPage(): ReactNode {
   const listQuery = useInternships({ page: 1, pageSize: 1, status: 'active' });
   const activeInternshipId = listQuery.data?.data?.[0]?.id || null;
   const detailQuery = useInternship(activeInternshipId, !!activeInternshipId);
+  const evaluationQuery = useAssociateEvaluations(activeInternshipId, !!activeInternshipId);
   const createLogMutation = useCreateInternDailyLog();
   const { addToast, updateToast } = useToast();
   const { data: evaluationCadence } = useEvaluationCadence();
@@ -377,6 +521,12 @@ export default function InternDashboardPage(): ReactNode {
             <CompanyPulseWidget />
           </BentoCardContent>
         </BentoCard>
+
+        <AssociateEvaluationCard
+          profile={{ startDate: profile.startDate, endDate: profile.endDate }}
+          evaluations={evaluationQuery.data?.data ?? []}
+          isLoading={evaluationQuery.isLoading}
+        />
       </BentoGrid>
 
       {/* EOD Report — Slide Panel */}

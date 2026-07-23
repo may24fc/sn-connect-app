@@ -156,6 +156,24 @@ interface InternshipLogsResponse {
   }>;
 }
 
+export interface AssociateEvaluationRecord {
+  id: string;
+  internshipId: string;
+  employeeId: string;
+  stage: 1 | 2 | 3 | 4;
+  overallAssessment: string;
+  keyStrengths: string;
+  areasForContinuedGrowth: string;
+  overallPerformance: number;
+  evaluatedBy: string;
+  evaluatedAt: string;
+  updatedAt: string;
+}
+
+interface AssociateEvaluationsResponse {
+  data: Array<AssociateEvaluationRecord>;
+}
+
 function buildDailyLogFormData(payload: {
   logDate?: string;
   hoursWorked?: number;
@@ -259,6 +277,59 @@ export function useInternshipLogs(id: string | null, enabled = true) {
       }
 
       return response.json();
+    },
+  });
+}
+
+export function useAssociateEvaluations(internshipId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.internships.evaluations('self', internshipId || 'none'),
+    enabled: enabled && !!internshipId,
+    queryFn: async (): Promise<AssociateEvaluationsResponse> => {
+      const params = new URLSearchParams({ scope: 'self' });
+      if (internshipId) {
+        params.set('internshipId', internshipId);
+      }
+
+      const response = await fetch(`/api/internships/evaluations?${params.toString()}`);
+      if (!response.ok) {
+        const error = await response
+          .json()
+          .catch(() => ({ error: 'Failed to fetch associate evaluations' }));
+        throw new Error(error.error || 'Failed to fetch associate evaluations');
+      }
+
+      const payload = (await response.json()) as {
+        data?: Array<{
+          id: string;
+          internship_id: string;
+          employee_id: string;
+          stage: 1 | 2 | 3 | 4;
+          overall_assessment: string;
+          key_strengths: string;
+          areas_for_continued_growth: string;
+          overall_performance: number;
+          evaluated_by: string;
+          evaluated_at: string;
+          updated_at: string;
+        }>;
+      };
+
+      return {
+        data: (payload.data ?? []).map((record) => ({
+          id: record.id,
+          internshipId: record.internship_id,
+          employeeId: record.employee_id,
+          stage: record.stage,
+          overallAssessment: record.overall_assessment,
+          keyStrengths: record.key_strengths,
+          areasForContinuedGrowth: record.areas_for_continued_growth,
+          overallPerformance: record.overall_performance,
+          evaluatedBy: record.evaluated_by,
+          evaluatedAt: record.evaluated_at,
+          updatedAt: record.updated_at,
+        })),
+      };
     },
   });
 }
