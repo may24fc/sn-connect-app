@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, ChevronDown, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User, Phone } from 'lucide-react';
+import { Bell, ChevronDown, CircleHelp, LogOut, Menu, Moon, Search, Settings, Sun, User, Phone, Grid2x2 } from 'lucide-react';
 import * as React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../primitives/avatar';
 import { Badge } from '../primitives/badge';
@@ -175,6 +175,21 @@ export function Header({
             </a>
           )
         )}
+        <a href="/bingo" aria-label="Open wellness bingo">
+          <div className="flex items-center gap-1 group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md px-2 py-1 pr-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="group text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <Grid2x2
+                className="h-5 w-5 text-zinc-500 dark:text-zinc-400 transition-colors group-hover:text-zinc-700 dark:group-hover:text-zinc-200"
+                strokeWidth={1.5}
+              />
+            </Button>
+            <p>Wellness Bingo</p>
+          </div>
+        </a>
         {/* Help / Guided Tour */}
         {onHelpClick && (
           <Button

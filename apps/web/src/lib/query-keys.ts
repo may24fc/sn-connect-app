@@ -437,6 +437,8 @@ export const queryKeys = {
     details: () => [...queryKeys.internships.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.internships.details(), id] as const,
     logs: (id: string) => [...queryKeys.internships.all, 'logs', id] as const,
+    evaluations: (scope: 'self' | 'admin', internshipId: string) =>
+      [...queryKeys.internships.all, 'evaluations', scope, internshipId] as const,
   },
 
   // Announcements
@@ -629,6 +631,12 @@ export const queryKeys = {
   leaderboard: {
     all: ['leaderboard'] as const,
     list: (scope: string, period: string) => [...queryKeys.leaderboard.all, scope, period] as const,
+  },
+
+  bingo: {
+    all: ['bingo'] as const,
+    current: () => [...queryKeys.bingo.all, 'current'] as const,
+    partners: () => [...queryKeys.bingo.all, 'partners'] as const,
   },
 
   gamification: {

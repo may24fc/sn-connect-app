@@ -1,0 +1,618 @@
+'use client';
+
+import {
+  useBingoPartners,
+  useCurrentBingo,
+  useUpdateBingoBoard,
+  useUpdateBingoPartner,
+} from '@/hooks/useBingo';
+import {
+  BINGO_GRID,
+  BINGO_TILE_DEFINITIONS,
+  type BingoTileId,
+  CUSTOM_HABIT_TILE_ID,
+  EMPTY_BINGO_TILE_STATE,
+} from '@/lib/bingo';
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  cn,
+} from '@hr-portal/ui';
+import { Grid2x2, HeartHandshake, Target, Trophy } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+const totalTiles = BINGO_TILE_DEFINITIONS.length;
+const flatBingoTileIds = BINGO_GRID.flat();
+type BingoSnapshot = NonNullable<ReturnType<typeof useCurrentBingo>['data']>;
+
+export default function BingoPage() {
+  const { data, isLoading, error } = useCurrentBingo();
+  const { data: partners = [], isLoading: isLoadingPartners } = useBingoPartners();
+  const updateBoard = useUpdateBingoBoard();
+  const updatePartner = useUpdateBingoPartner();
+  const [customHabitDraft, setCustomHabitDraft] = useState('');
+
+  useEffect(() => {
+    setCustomHabitDraft(data?.board.customHabitText ?? '');
+  }, [data?.board.customHabitText]);
+
+  const tileState = data?.board.tileState ?? EMPTY_BINGO_TILE_STATE;
+  const completionPct = Math.round(
+    ((data?.personalScore.completedSquares ?? 0) / totalTiles) * 100
+  );
+
+  const mutationError =
+    updateBoard.error?.message ?? updatePartner.error?.message ?? error?.message;
+
+  const handleTileToggle = (tileId: BingoTileId) => {
+    updateBoard.mutate({
+      tileId,
+      checked: !tileState[tileId],
+    });
+  };
+
+  const handleCustomHabitSave = () => {
+    updateBoard.mutate({
+      customHabitText: customHabitDraft.trim() === '' ? null : customHabitDraft.trim(),
+    });
+  };
+
+  if (isLoading) {
+    return <BingoLoadingState />;
+  }
+
+  if (!data) {
+    return <BingoEmptyState message={mutationError ?? 'Unable to load the current bingo cycle.'} />;
+  }
+
+  return (
+    <BingoPageContent
+      data={data}
+      partners={partners}
+      isLoadingPartners={isLoadingPartners}
+      mutationError={mutationError}
+      customHabitDraft={customHabitDraft}
+      setCustomHabitDraft={setCustomHabitDraft}
+      completionPct={completionPct}
+      tileState={tileState}
+      isUpdatingBoard={updateBoard.isPending}
+      isUpdatingPartner={updatePartner.isPending}
+      onTileToggle={handleTileToggle}
+      onCustomHabitSave={handleCustomHabitSave}
+      onPartnerChange={(value) => updatePartner.mutate(value)}
+    />
+  );
+}
+
+function BingoLoadingState() {
+  return (
+    <div className="space-y-6 p-6">
+      <Skeleton className="h-20" />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_360px]">
+        <Skeleton className="h-[640px]" />
+        <Skeleton className="h-[640px]" />
+      </div>
+    </div>
+  );
+}
+
+function BingoEmptyState({ message }: { message: string }) {
+  return (
+    <div className="space-y-6 p-6">
+      <Card className="border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-100">
+        <CardContent className="py-4 text-sm">{message}</CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function BingoPageContent({
+  data,
+  partners,
+  isLoadingPartners,
+  mutationError,
+  customHabitDraft,
+  setCustomHabitDraft,
+  completionPct,
+  tileState,
+  isUpdatingBoard,
+  isUpdatingPartner,
+  onTileToggle,
+  onCustomHabitSave,
+  onPartnerChange,
+}: {
+  data: BingoSnapshot;
+  partners: Array<{ id: string; name: string }>;
+  isLoadingPartners: boolean;
+  mutationError: string | undefined;
+  customHabitDraft: string;
+  setCustomHabitDraft: (value: string) => void;
+  completionPct: number;
+  tileState: Record<BingoTileId, boolean>;
+  isUpdatingBoard: boolean;
+  isUpdatingPartner: boolean;
+  onTileToggle: (tileId: BingoTileId) => void;
+  onCustomHabitSave: () => void;
+  onPartnerChange: (value: string | null) => void;
+}) {
+  return (
+    <div className="space-y-6 p-6">
+      <BingoHero
+        cycleTitle={data.cycle.title}
+        startDate={data.cycle.startDate}
+        endDate={data.cycle.endDate}
+        completedSquares={data.personalScore.completedSquares}
+        personalPoints={data.personalScore.totalPoints}
+        combinedPoints={data.combinedScore}
+      />
+
+      {mutationError ? <BingoErrorBanner message={mutationError} /> : null}
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_360px]">
+        <section className="space-y-6">
+          <BingoBoardCard
+            completionPct={completionPct}
+            customHabitText={data.board.customHabitText}
+            tileState={tileState}
+            isPending={isUpdatingBoard}
+            onTileToggle={onTileToggle}
+          />
+          <CustomHabitCard
+            value={customHabitDraft}
+            disabled={isUpdatingBoard}
+            onChange={setCustomHabitDraft}
+            onSave={onCustomHabitSave}
+          />
+        </section>
+
+        <BingoSidebar
+          data={data}
+          partners={partners}
+          isLoadingPartners={isLoadingPartners}
+          isUpdatingPartner={isUpdatingPartner}
+          onPartnerChange={onPartnerChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+function BingoErrorBanner({ message }: { message: string }) {
+  return (
+    <Card className="border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-100">
+      <CardContent className="py-4 text-sm">{message}</CardContent>
+    </Card>
+  );
+}
+
+function CustomHabitCard({
+  value,
+  disabled,
+  onChange,
+  onSave,
+}: {
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+  onSave: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Custom Habit</CardTitle>
+        <CardDescription>
+          Personalize the custom habit square with the behavior you want to reinforce this cycle.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 sm:flex-row">
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          maxLength={80}
+          placeholder="Example: 10-minute evening walk"
+        />
+        <Button onClick={onSave} disabled={disabled} className="sm:min-w-32">
+          Save Habit
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BingoSidebar({
+  data,
+  partners,
+  isLoadingPartners,
+  isUpdatingPartner,
+  onPartnerChange,
+}: {
+  data: BingoSnapshot;
+  partners: Array<{ id: string; name: string }>;
+  isLoadingPartners: boolean;
+  isUpdatingPartner: boolean;
+  onPartnerChange: (value: string | null) => void;
+}) {
+  return (
+    <aside className="space-y-6">
+      <PointSystemCard />
+      <ScoreboardCard data={data} />
+      <PartnerPairingCard
+        currentPartner={data.partner}
+        partnerScore={data.partnerScore?.totalPoints ?? 0}
+        combinedScore={data.combinedScore}
+        partners={partners}
+        isLoadingPartners={isLoadingPartners}
+        isUpdatingPartner={isUpdatingPartner}
+        onPartnerChange={onPartnerChange}
+      />
+    </aside>
+  );
+}
+
+function PointSystemCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Point System</CardTitle>
+        <CardDescription>Match the challenge rules from the team card.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm text-muted-foreground">
+        <RuleLine label="Each completed square" value="1 point per person" />
+        <RuleLine label="Vertical bingo (A-D)" value="10 bonus points" />
+        <RuleLine label="Horizontal bingo (1-4)" value="5 bonus points" />
+        <RuleLine label="Partners combine scores" value="One shared total" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ScoreboardCard({ data }: { data: BingoSnapshot }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Your Scoreboard</CardTitle>
+        <CardDescription>Derived from the saved state of your tiles.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <MetricRow label="Completed squares" value={String(data.personalScore.completedSquares)} />
+        <MetricRow label="Horizontal bingos" value={String(data.personalScore.horizontalBingos)} />
+        <MetricRow label="Vertical bingos" value={String(data.personalScore.verticalBingos)} />
+        <MetricRow label="Bonus points" value={String(data.personalScore.bonusPoints)} />
+        <MetricRow label="Total points" value={String(data.personalScore.totalPoints)} strong />
+      </CardContent>
+    </Card>
+  );
+}
+
+function PartnerPairingCard({
+  currentPartner,
+  partnerScore,
+  combinedScore,
+  partners,
+  isLoadingPartners,
+  isUpdatingPartner,
+  onPartnerChange,
+}: {
+  currentPartner: BingoSnapshot['partner'];
+  partnerScore: number;
+  combinedScore: number;
+  partners: Array<{ id: string; name: string }>;
+  isLoadingPartners: boolean;
+  isUpdatingPartner: boolean;
+  onPartnerChange: (value: string | null) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Partner Pairing</CardTitle>
+        <CardDescription>
+          Pick one teammate for this cycle. Combined scores update from both boards.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Select
+          value={currentPartner?.id ?? 'none'}
+          onValueChange={(value) => onPartnerChange(value === 'none' ? null : value)}
+          disabled={isLoadingPartners || isUpdatingPartner}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Choose your partner" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No partner yet</SelectItem>
+            {partners.map((partner) => (
+              <SelectItem key={partner.id} value={partner.id}>
+                {partner.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <CurrentPartnerPanel
+          partner={currentPartner}
+          partnerScore={partnerScore}
+          combinedScore={combinedScore}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function CurrentPartnerPanel({
+  partner,
+  partnerScore,
+  combinedScore,
+}: {
+  partner: BingoSnapshot['partner'];
+  partnerScore: number;
+  combinedScore: number;
+}) {
+  const partnerMeta = partner
+    ? `${partner.role.replace('_', ' ')}${partner.email ? ` • ${partner.email}` : ''}`
+    : 'Choose a teammate to unlock combined totals.';
+
+  return (
+    <div className="rounded-2xl border border-border bg-muted/40 p-4">
+      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+        Current partner
+      </div>
+      <div className="mt-2 text-base font-semibold">{partner?.name ?? 'No partner selected'}</div>
+      <div className="mt-1 text-sm text-muted-foreground">{partnerMeta}</div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <PartnerMetric label="Partner points" value={String(partnerScore)} />
+        <PartnerMetric label="Combined points" value={String(combinedScore)} />
+      </div>
+    </div>
+  );
+}
+
+function BingoHero({
+  cycleTitle,
+  startDate,
+  endDate,
+  completedSquares,
+  personalPoints,
+  combinedPoints,
+}: {
+  cycleTitle: string;
+  startDate: string;
+  endDate: string;
+  completedSquares: number;
+  personalPoints: number;
+  combinedPoints: number;
+}) {
+  return (
+    <header className="rounded-3xl border border-sky-200/80 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_28%),linear-gradient(135deg,_rgba(248,250,252,0.98)_0%,_rgba(239,246,255,0.98)_45%,_rgba(236,253,245,0.96)_100%)] p-6 text-slate-900 shadow-[0_18px_50px_rgba(148,163,184,0.18)] dark:border-slate-800 dark:bg-[radial-gradient(circle_at_top_left,_rgba(129,140,248,0.28),_transparent_32%),linear-gradient(135deg,_#0f172a_0%,_#020617_60%,_#111827_100%)] dark:text-slate-50 dark:shadow-[0_20px_60px_rgba(15,23,42,0.35)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-3">
+          <Badge className="w-fit border border-sky-300/80 bg-white/80 text-sky-700 shadow-sm hover:bg-white/80 dark:border-indigo-400/40 dark:bg-indigo-500/15 dark:text-indigo-100 dark:hover:bg-indigo-500/15">
+            30-Day Team Wellness Bingo
+          </Badge>
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Consistency Is Key</h1>
+            <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
+              Win by building consistent habits, not just ticking boxes. Click any tile to mark it
+              complete, keep your custom habit updated, and combine totals with your selected
+              partner.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-200">
+            <span>{cycleTitle}</span>
+            <span className="text-slate-300 dark:text-slate-500">|</span>
+            <span>
+              {startDate} to {endDate}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <ScoreChip icon={Target} label="Completed" value={`${completedSquares}/${totalTiles}`} />
+          <ScoreChip icon={Trophy} label="Your Total" value={`${personalPoints} pts`} />
+          <ScoreChip icon={HeartHandshake} label="Combined" value={`${combinedPoints} pts`} />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function BingoBoardCard({
+  completionPct,
+  customHabitText,
+  tileState,
+  isPending,
+  onTileToggle,
+}: {
+  completionPct: number;
+  customHabitText: string | null;
+  tileState: Record<BingoTileId, boolean>;
+  isPending: boolean;
+  onTileToggle: (tileId: BingoTileId) => void;
+}) {
+  return (
+    <Card className="overflow-hidden border-sky-100 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.96))] text-slate-900 shadow-[0_18px_40px_rgba(148,163,184,0.14)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 dark:shadow-none">
+      <CardHeader className="border-b border-sky-100/90 bg-[linear-gradient(180deg,_rgba(255,255,255,0.94),_rgba(239,246,255,0.72))] dark:border-slate-800/80 dark:bg-white/5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Grid2x2 className="h-5 w-5 text-sky-600 dark:text-indigo-300" />
+              Your 4x4 Bingo Card
+            </CardTitle>
+            <CardDescription className="text-slate-500 dark:text-slate-400">
+              Every square is worth 1 point per person. Click again to undo a check.
+            </CardDescription>
+          </div>
+          <div className="min-w-36 text-right">
+            <div className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+              Progress
+            </div>
+            <div className="mt-1 text-2xl font-semibold">{completionPct}%</div>
+          </div>
+        </div>
+        <Progress className="mt-4 h-2 bg-sky-100 dark:bg-slate-800" value={completionPct} />
+      </CardHeader>
+      <CardContent className="p-4 sm:p-5">
+        <div className="grid gap-3 md:grid-cols-4">
+          {flatBingoTileIds.map((tileId) => {
+            const tile = BINGO_TILE_DEFINITIONS.find((entry) => entry.id === tileId);
+            if (!tile) return null;
+
+            return (
+              <BingoTileButton
+                key={tileId}
+                tileId={tileId}
+                title={tile.title}
+                subtitle={tile.subtitle}
+                checked={tileState[tileId]}
+                customHabitText={customHabitText}
+                disabled={isPending}
+                onToggle={onTileToggle}
+              />
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BingoTileButton({
+  tileId,
+  title,
+  subtitle,
+  checked,
+  customHabitText,
+  disabled,
+  onToggle,
+}: {
+  tileId: BingoTileId;
+  title: string;
+  subtitle: string | undefined;
+  checked: boolean;
+  customHabitText: string | null;
+  disabled: boolean;
+  onToggle: (tileId: BingoTileId) => void;
+}) {
+  const isCustomHabit = tileId === CUSTOM_HABIT_TILE_ID;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(tileId)}
+      disabled={disabled}
+      className={cn(
+        'group relative flex min-h-[168px] flex-col justify-between rounded-[22px] border px-4 py-4 text-left transition duration-200',
+        checked
+          ? 'border-sky-300 bg-[linear-gradient(180deg,_rgba(56,189,248,0.9),_rgba(59,130,246,0.82))] text-white shadow-[0_18px_36px_rgba(59,130,246,0.24)] dark:border-indigo-300 dark:bg-[linear-gradient(180deg,_rgba(129,140,248,0.82),_rgba(59,130,246,0.72))] dark:shadow-[0_18px_36px_rgba(99,102,241,0.32)]'
+          : 'border-sky-100 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(241,245,249,0.98))] text-slate-900 shadow-[0_10px_24px_rgba(148,163,184,0.12)] hover:border-sky-200 hover:bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(239,246,255,0.98))] dark:border-slate-700 dark:bg-[linear-gradient(180deg,_rgba(30,41,59,0.9),_rgba(15,23,42,0.96))] dark:text-slate-100 dark:shadow-none dark:hover:border-slate-500 dark:hover:bg-slate-900'
+      )}
+    >
+      <span
+        className={cn(
+          'text-xs font-semibold uppercase tracking-[0.25em]',
+          checked ? 'text-white/80' : 'text-sky-700 dark:text-slate-400'
+        )}
+      >
+        1 PT
+      </span>
+      <div className="space-y-2">
+        <div className="text-[1.05rem] font-semibold leading-tight">{title}</div>
+        {subtitle ? (
+          <div
+            className={cn(
+              'text-sm leading-snug',
+              checked ? 'text-white/85' : 'text-slate-600 dark:text-slate-300'
+            )}
+          >
+            {subtitle}
+          </div>
+        ) : null}
+        {isCustomHabit && customHabitText ? (
+          <div
+            className={cn(
+              'rounded-xl px-2 py-1 text-xs',
+              checked
+                ? 'bg-white/15 text-white'
+                : 'bg-sky-50 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+            )}
+          >
+            {customHabitText}
+          </div>
+        ) : null}
+      </div>
+      <div
+        className={cn(
+          'text-xs uppercase tracking-[0.2em]',
+          checked ? 'text-white/80' : 'text-slate-500 dark:text-slate-500'
+        )}
+      >
+        {checked ? 'Completed' : 'Tap to check'}
+      </div>
+    </button>
+  );
+}
+
+function ScoreChip({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Target;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-sky-200/70 bg-white/72 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-white/5 dark:shadow-none">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+        <Icon className="h-4 w-4 text-sky-600 dark:text-indigo-200" />
+        {label}
+      </div>
+      <div className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{value}</div>
+    </div>
+  );
+}
+
+function RuleLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-background/70 px-3 py-2">
+      <span className="font-medium text-foreground">{label}</span>
+      <span className="text-right">{value}</span>
+    </div>
+  );
+}
+
+function MetricRow({
+  label,
+  value,
+  strong = false,
+}: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2">
+      <span className={cn('text-muted-foreground', strong && 'font-semibold text-foreground')}>
+        {label}
+      </span>
+      <span className={cn('font-medium', strong && 'text-lg')}>{value}</span>
+    </div>
+  );
+}
+
+function PartnerMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-white/80 px-3 py-2 shadow-sm dark:bg-background dark:shadow-none">
+      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-xl font-semibold">{value}</div>
+    </div>
+  );
+}
