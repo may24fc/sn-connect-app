@@ -83,8 +83,8 @@ export async function PUT(request: NextRequest) {
       return saveResult;
     }
 
-    await ensureBoard(adminClient, cycle.id, user.id, user.id);
-    await ensureBoard(adminClient, cycle.id, partnerUserId, user.id);
+    await ensureBoard(adminClient, cycle, user.id, user.id);
+    await ensureBoard(adminClient, cycle, partnerUserId, user.id);
 
     void notifySelectedPartner({
       actorUserId: user.id,

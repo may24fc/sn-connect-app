@@ -43,7 +43,7 @@ export const FREE_SPACE_TILE_ID: BingoTileId = 'free_space';
 export const HORIZONTAL_BINGO_BONUS = 5;
 export const VERTICAL_BINGO_BONUS = 10;
 
-export const BINGO_TILE_DEFINITIONS: readonly BingoTileDefinition[] = [
+export const BINGO_TILE_DEFINITIONS: ReadonlyArray<BingoTileDefinition> = [
   { id: 'move_ritual', pointValue: 1, title: '5-MIN MOVE', subtitle: 'RITUAL' },
   { id: 'sleep_window', pointValue: 1, title: '7-9 HRS', subtitle: 'SLEEP' },
   { id: 'post_411', pointValue: 1, title: 'POST YOUR', subtitle: '411' },
@@ -67,7 +67,7 @@ export const BINGO_TILE_DEFINITIONS: readonly BingoTileDefinition[] = [
   { id: 'set_recharge_window', pointValue: 1, title: 'SET RECHARGE', subtitle: 'WINDOW' },
 ] as const;
 
-export const BINGO_GRID: readonly (readonly BingoTileId[])[] = [
+export const BINGO_GRID: ReadonlyArray<ReadonlyArray<BingoTileId>> = [
   ['move_ritual', 'sleep_window', 'post_411', 'custom_habit'],
   ['morning_sunlight', 'desk_stretches', 'free_space', 'celebrate_a_win'],
   ['drink_water', 'share_learning', 'share_goal', 'healthy_meal_prep'],
@@ -78,13 +78,36 @@ export const EMPTY_BINGO_TILE_STATE: BingoTileState = Object.fromEntries(
   BINGO_TILE_IDS.map((tileId) => [tileId, false] as const)
 ) as BingoTileState;
 
+export function buildBingoScoreSummary(
+  completedSquares: number,
+  horizontalBingos: number,
+  verticalBingos: number
+): BingoScoreSummary {
+  const horizontalBonus = horizontalBingos * HORIZONTAL_BINGO_BONUS;
+  const verticalBonus = verticalBingos * VERTICAL_BINGO_BONUS;
+  const bonusPoints = horizontalBonus + verticalBonus;
+
+  return {
+    completedSquares,
+    horizontalBingos,
+    verticalBingos,
+    horizontalBonus,
+    verticalBonus,
+    bonusPoints,
+    totalPoints: completedSquares + bonusPoints,
+  };
+}
+
 export function normalizeBingoTileState(value: unknown): BingoTileState {
   const raw = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 
-  return BINGO_TILE_IDS.reduce((accumulator, tileId) => {
-    accumulator[tileId] = raw[tileId] === true;
-    return accumulator;
-  }, { ...EMPTY_BINGO_TILE_STATE });
+  return BINGO_TILE_IDS.reduce(
+    (accumulator, tileId) => {
+      accumulator[tileId] = raw[tileId] === true;
+      return accumulator;
+    },
+    { ...EMPTY_BINGO_TILE_STATE }
+  );
 }
 
 export function computeBingoScore(tileState: BingoTileState): BingoScoreSummary {
@@ -93,7 +116,9 @@ export function computeBingoScore(tileState: BingoTileState): BingoScoreSummary 
     0
   );
 
-  const horizontalBingos = BINGO_GRID.filter((row) => row.every((tileId) => tileState[tileId])).length;
+  const horizontalBingos = BINGO_GRID.filter((row) =>
+    row.every((tileId) => tileState[tileId])
+  ).length;
   const columnCount = BINGO_GRID[0]?.length ?? 0;
   let verticalBingos = 0;
 
@@ -108,19 +133,7 @@ export function computeBingoScore(tileState: BingoTileState): BingoScoreSummary 
     }
   }
 
-  const horizontalBonus = horizontalBingos * HORIZONTAL_BINGO_BONUS;
-  const verticalBonus = verticalBingos * VERTICAL_BINGO_BONUS;
-  const bonusPoints = horizontalBonus + verticalBonus;
-
-  return {
-    completedSquares,
-    horizontalBingos,
-    verticalBingos,
-    horizontalBonus,
-    verticalBonus,
-    bonusPoints,
-    totalPoints: completedSquares + bonusPoints,
-  };
+  return buildBingoScoreSummary(completedSquares, horizontalBingos, verticalBingos);
 }
 
 export function getBingoTileDefinition(tileId: BingoTileId): BingoTileDefinition {

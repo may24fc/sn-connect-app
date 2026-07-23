@@ -50,9 +50,7 @@ export default function BingoPage() {
   }, [data?.board.customHabitText]);
 
   const tileState = data?.board.tileState ?? EMPTY_BINGO_TILE_STATE;
-  const completionPct = Math.round(
-    ((data?.personalScore.completedSquares ?? 0) / totalTiles) * 100
-  );
+  const completionPct = Math.round(((data?.weeklyScore.completedSquares ?? 0) / totalTiles) * 100);
 
   const mutationError =
     updateBoard.error?.message ?? updatePartner.error?.message ?? error?.message;
@@ -152,9 +150,13 @@ function BingoPageContent({
     <div className="space-y-6 p-6">
       <BingoHero
         cycleTitle={data.cycle.title}
+        weekIndex={data.activeWeek.index}
+        totalWeeks={data.activeWeek.totalWeeks}
+        weekStartDate={data.activeWeek.startDate}
+        weekEndDate={data.activeWeek.endDate}
         startDate={data.cycle.startDate}
         endDate={data.cycle.endDate}
-        completedSquares={data.personalScore.completedSquares}
+        completedSquares={data.weeklyScore.completedSquares}
         personalPoints={data.personalScore.totalPoints}
         combinedPoints={data.combinedScore}
       />
@@ -164,6 +166,8 @@ function BingoPageContent({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_360px]">
         <section className="space-y-6">
           <BingoBoardCard
+            weekIndex={data.activeWeek.index}
+            totalWeeks={data.activeWeek.totalWeeks}
             completionPct={completionPct}
             customHabitText={data.board.customHabitText}
             tileState={tileState}
@@ -267,7 +271,9 @@ function PointSystemCard() {
     <Card>
       <CardHeader>
         <CardTitle>Point System</CardTitle>
-        <CardDescription>Match the challenge rules from the team card.</CardDescription>
+        <CardDescription>
+          Checks reset every 7 days, but your points keep accumulating for the full 30-day cycle.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <RuleLine label="Each completed square" value="1 point per person" />
@@ -283,8 +289,8 @@ function ScoreboardCard({ data }: { data: BingoSnapshot }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your Scoreboard</CardTitle>
-        <CardDescription>Derived from the saved state of your tiles.</CardDescription>
+        <CardTitle>Your 30-Day Scoreboard</CardTitle>
+        <CardDescription>Accumulated totals across all weekly board refreshes.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <MetricRow label="Completed squares" value={String(data.personalScore.completedSquares)} />
@@ -372,8 +378,8 @@ function CurrentPartnerPanel({
       <div className="mt-2 text-base font-semibold">{partner?.name ?? 'No partner selected'}</div>
       <div className="mt-1 text-sm text-muted-foreground">{partnerMeta}</div>
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <PartnerMetric label="Partner points" value={String(partnerScore)} />
-        <PartnerMetric label="Combined points" value={String(combinedScore)} />
+        <PartnerMetric label="Partner 30-day points" value={String(partnerScore)} />
+        <PartnerMetric label="Combined 30-day points" value={String(combinedScore)} />
       </div>
     </div>
   );
@@ -381,6 +387,10 @@ function CurrentPartnerPanel({
 
 function BingoHero({
   cycleTitle,
+  weekIndex,
+  totalWeeks,
+  weekStartDate,
+  weekEndDate,
   startDate,
   endDate,
   completedSquares,
@@ -388,6 +398,10 @@ function BingoHero({
   combinedPoints,
 }: {
   cycleTitle: string;
+  weekIndex: number;
+  totalWeeks: number;
+  weekStartDate: string;
+  weekEndDate: string;
   startDate: string;
   endDate: string;
   completedSquares: number;
@@ -401,12 +415,15 @@ function BingoHero({
           <Badge className="w-fit border border-sky-300/80 bg-white/80 text-sky-700 shadow-sm hover:bg-white/80 dark:border-indigo-400/40 dark:bg-indigo-500/15 dark:text-indigo-100 dark:hover:bg-indigo-500/15">
             30-Day Team Wellness Bingo
           </Badge>
+          <Badge className="w-fit border border-emerald-300/80 bg-emerald-50/90 text-emerald-700 shadow-sm hover:bg-emerald-50/90 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-100 dark:hover:bg-emerald-500/15">
+            Week {weekIndex} of {totalWeeks}
+          </Badge>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Consistency Is Key</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-              Win by building consistent habits, not just ticking boxes. Click any tile to mark it
-              complete, keep your custom habit updated, and combine totals with your selected
-              partner.
+              Weekly checks refresh automatically, but your score keeps rolling up across the full
+              30-day challenge. Click any tile to mark it complete, keep your custom habit updated,
+              and combine totals with your selected partner.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-200">
@@ -415,13 +432,21 @@ function BingoHero({
             <span>
               {startDate} to {endDate}
             </span>
+            <span className="text-slate-300 dark:text-slate-500">|</span>
+            <span>
+              Current week: {weekStartDate} to {weekEndDate}
+            </span>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <ScoreChip icon={Target} label="Completed" value={`${completedSquares}/${totalTiles}`} />
-          <ScoreChip icon={Trophy} label="Your Total" value={`${personalPoints} pts`} />
-          <ScoreChip icon={HeartHandshake} label="Combined" value={`${combinedPoints} pts`} />
+          <ScoreChip icon={Target} label="This Week" value={`${completedSquares}/${totalTiles}`} />
+          <ScoreChip icon={Trophy} label="30-Day Total" value={`${personalPoints} pts`} />
+          <ScoreChip
+            icon={HeartHandshake}
+            label="30-Day Combined"
+            value={`${combinedPoints} pts`}
+          />
         </div>
       </div>
     </header>
@@ -429,12 +454,16 @@ function BingoHero({
 }
 
 function BingoBoardCard({
+  weekIndex,
+  totalWeeks,
   completionPct,
   customHabitText,
   tileState,
   isPending,
   onTileToggle,
 }: {
+  weekIndex: number;
+  totalWeeks: number;
   completionPct: number;
   customHabitText: string | null;
   tileState: Record<BingoTileId, boolean>;
@@ -451,7 +480,8 @@ function BingoBoardCard({
               Your 4x4 Bingo Card
             </CardTitle>
             <CardDescription className="text-slate-500 dark:text-slate-400">
-              Every square is worth 1 point per person. Click again to undo a check.
+              Week {weekIndex} of {totalWeeks}. Every square is worth 1 point per person, and the
+              board refreshes when the next week starts.
             </CardDescription>
           </div>
           <div className="min-w-36 text-right">

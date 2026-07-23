@@ -1,5 +1,5 @@
 import { bingoBoardUpdateSchema } from '@/lib/schemas/bingo.schema';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import {
   buildWellnessBingoSnapshot,
   ensureBoard,
@@ -29,10 +29,13 @@ export async function PATCH(request: NextRequest) {
     const cycle = await resolveActiveCycle(adminClient);
 
     if (!cycle) {
-      return NextResponse.json({ error: 'No active wellness bingo cycle is configured' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'No active wellness bingo cycle is configured' },
+        { status: 404 }
+      );
     }
 
-    const board = await ensureBoard(adminClient, cycle.id, user.id, user.id);
+    const board = await ensureBoard(adminClient, cycle, user.id, user.id);
     const nextTileState = { ...board.tile_state } as Record<string, unknown>;
 
     if (parsed.data.tileId !== undefined && parsed.data.checked !== undefined) {
