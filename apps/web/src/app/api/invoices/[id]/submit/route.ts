@@ -4,21 +4,9 @@ import {
   getUserDisplayName,
   getUserIdsByRoles,
 } from '@/lib/notifications/create-notification';
+import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
-
-function computeExchangeRate(rates: Record<string, number>, from: string, to: string): number {
-  if (from === to) return 1;
-
-  const fromRate = from === 'USD' ? 1 : rates[from];
-  const toRate = to === 'USD' ? 1 : rates[to];
-
-  if (!fromRate || !toRate) {
-    throw new Error(`Exchange rate not available for ${from}/${to}`);
-  }
-
-  return toRate / fromRate;
-}
 
 /**
  * POST /api/invoices/[id]/submit
@@ -73,35 +61,70 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       submitted_at: new Date().toISOString(),
     };
 
-    const sourceCurrency = (invoice.source_currency as string | null) || 'PHP';
+    let sourceCurrency = (invoice.source_currency as string | null) || 'PHP';
     const targetCurrency = (invoice.target_currency as string | null) || 'PHP';
     const netAmount = Number(invoice.net_amount || 0);
+    let resolvedNetAmount = netAmount;
 
-    if (sourceCurrency === targetCurrency) {
-      updates.exchange_rate = 1;
-      updates.converted_amount = netAmount;
-    } else {
-      const { data: latestRates, error: ratesError } = await supabaseAdmin
-        .from('fx_rates')
-        .select('rates')
-        .order('fetched_at', { ascending: false })
-        .limit(1)
-        .single();
+    if (invoice.document_id) {
+      const extraction = await extractAmountFromInvoiceDocument({
+        adminClient: supabaseAdmin,
+        documentId: invoice.document_id as string,
+        employeeId: invoice.employee_id as string,
+      });
 
-      if (ratesError || !latestRates) {
+      if (!extraction.invoiceNumber) {
         return NextResponse.json(
-          { error: 'Exchange rates unavailable for selected currencies' },
+          {
+            error:
+              'Invoice number must come from the uploaded invoice document OCR. Re-upload a clearer invoice that shows the document invoice number.',
+          },
           { status: 400 }
         );
       }
 
-      const exchangeRate = computeExchangeRate(
-        latestRates.rates as Record<string, number>,
-        sourceCurrency,
-        targetCurrency
-      );
-      updates.exchange_rate = exchangeRate;
-      updates.converted_amount = Math.round(netAmount * exchangeRate * 100) / 100;
+      updates.invoice_number = extraction.invoiceNumber;
+
+      if (typeof extraction.phpAmount === 'number' && extraction.phpAmount > 0) {
+        resolvedNetAmount = extraction.phpAmount;
+        updates.gross_amount = extraction.phpAmount;
+        updates.net_amount = extraction.phpAmount;
+        sourceCurrency = 'PHP';
+      }
+
+      if (sourceCurrency === 'PHP' && targetCurrency === 'AUD') {
+        if (typeof extraction.audAmount !== 'number' || extraction.audAmount <= 0) {
+          return NextResponse.json(
+            {
+              error:
+                extraction.reason ||
+                'Could not read the AUD amount from the uploaded invoice document. Re-upload a clearer invoice that shows both PHP and AUD totals.',
+            },
+            { status: 400 }
+          );
+        }
+
+        updates.converted_amount = extraction.audAmount;
+        updates.exchange_rate =
+          resolvedNetAmount > 0
+            ? Math.round((extraction.audAmount / resolvedNetAmount) * 1_000_000) / 1_000_000
+            : null;
+      }
+    }
+
+    if (sourceCurrency === targetCurrency) {
+      updates.exchange_rate = 1;
+      updates.converted_amount = resolvedNetAmount;
+    } else if (sourceCurrency === 'PHP' && targetCurrency === 'AUD') {
+      if (typeof updates.converted_amount !== 'number') {
+        return NextResponse.json(
+          {
+            error:
+              'AUD converted amount must come directly from the uploaded invoice document OCR. Re-upload a clearer invoice that shows both PHP and AUD totals.',
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const { data, error } = await supabaseAdmin
@@ -112,6 +135,12 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
       .single();
 
     if (error || !data) {
+      if (error?.code === '23505') {
+        return NextResponse.json(
+          { error: `Invoice number ${updates.invoice_number ?? invoice.invoice_number} already exists.` },
+          { status: 409 }
+        );
+      }
       console.error('Error submitting invoice:', error);
       return NextResponse.json({ error: 'Failed to submit invoice' }, { status: 500 });
     }

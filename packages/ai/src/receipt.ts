@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 
 export interface ReceiptExtractionFieldConfidence {
   vendorName: number;
+  invoiceNumber: number;
   transactionDate: number;
   totalAmount: number;
   taxAmount: number;
@@ -10,10 +11,15 @@ export interface ReceiptExtractionFieldConfidence {
 
 export interface ReceiptExtractionResult {
   vendorName: string;
+  invoiceNumber: string | null;
   transactionDate: string;
   totalAmount: number;
   taxAmount: number;
   currency: string;
+  /** PHP (₱) amount explicitly printed on the invoice, or null if not present. */
+  phpAmount: number | null;
+  /** AUD (A$) amount explicitly printed on the invoice, or null if not present. */
+  audAmount: number | null;
   fieldConfidence: ReceiptExtractionFieldConfidence;
   model: string;
 }
@@ -51,6 +57,7 @@ const RECEIPT_RESPONSE_JSON_SCHEMA = {
     additionalProperties: false,
     properties: {
       vendorName: { type: 'string' },
+      invoiceNumber: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       transactionDate: {
         type: 'string',
         pattern: '^\\d{4}-\\d{2}-\\d{2}$',
@@ -61,40 +68,49 @@ const RECEIPT_RESPONSE_JSON_SCHEMA = {
         type: 'string',
         enum: SUPPORTED_CURRENCY_CODES,
       },
+      phpAmount: { anyOf: [{ type: 'number', minimum: 0 }, { type: 'null' }] },
+      audAmount: { anyOf: [{ type: 'number', minimum: 0 }, { type: 'null' }] },
       fieldConfidence: {
         type: 'object',
         additionalProperties: false,
         properties: {
           vendorName: { type: 'number', minimum: 0, maximum: 1 },
+          invoiceNumber: { type: 'number', minimum: 0, maximum: 1 },
           transactionDate: { type: 'number', minimum: 0, maximum: 1 },
           totalAmount: { type: 'number', minimum: 0, maximum: 1 },
           taxAmount: { type: 'number', minimum: 0, maximum: 1 },
           currency: { type: 'number', minimum: 0, maximum: 1 },
         },
-        required: ['vendorName', 'transactionDate', 'totalAmount', 'taxAmount', 'currency'],
+        required: ['vendorName', 'invoiceNumber', 'transactionDate', 'totalAmount', 'taxAmount', 'currency'],
       },
     },
     required: [
       'vendorName',
+      'invoiceNumber',
       'transactionDate',
       'totalAmount',
       'taxAmount',
       'currency',
+      'phpAmount',
+      'audAmount',
       'fieldConfidence',
     ],
   },
 } as const;
 
-const RECEIPT_SYSTEM_PROMPT = `You extract receipt metadata for accounting draft entries.
+const RECEIPT_SYSTEM_PROMPT = `You extract invoice/receipt metadata for accounting draft entries.
 Return only the required JSON schema output.
 
 Extraction rules:
-- vendorName: merchant or issuing business name as shown on receipt.
+- vendorName: merchant or issuing business name as shown on the document.
+- invoiceNumber: the invoice number exactly as shown on the document, without inventing or reformatting it. If no invoice number is visible, return null.
 - transactionDate: date in YYYY-MM-DD.
-- totalAmount: final total paid, numeric only.
+- totalAmount: the primary final total paid, numeric only.
 - taxAmount: explicit tax/VAT amount. If missing, use 0.
-- Identify the currency symbol or text on the receipt and return its standard 3-letter ISO 4217 code.
+- Identify the primary currency symbol or text and return its standard 3-letter ISO 4217 code.
 - currency: one of PHP, USD, EUR, AUD, GBP, SGD, JPY.
+- phpAmount: if a Philippine Peso (₱ or PHP) total amount is explicitly shown anywhere on the document, return it as a positive number. Otherwise return null.
+- audAmount: if an Australian Dollar (A$ or AUD) total amount is explicitly shown anywhere on the document, return it as a positive number. Otherwise return null.
 - fieldConfidence values: between 0 and 1 and represent confidence per field.
 
 Do not add extra fields.`;

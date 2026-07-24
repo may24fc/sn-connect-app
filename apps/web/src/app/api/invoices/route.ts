@@ -1,14 +1,10 @@
 import { logActivity } from '@/lib/audit';
+import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
 import { invoiceCreateSchema } from '@/lib/schemas/invoice.schema';
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
-import { extractReceiptFromImage, extractReceiptFromText } from '@hr-portal/ai';
 import { type NextRequest, NextResponse } from 'next/server';
-import { extractText, getDocumentProxy } from 'unpdf';
 
 export const runtime = 'nodejs';
-
-const EMPLOYEE_DOCUMENTS_BUCKET = 'employee-documents';
-const OCR_SUPPORTED_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp']);
 
 function computeExchangeRate(rates: Record<string, number>, from: string, to: string): number {
   if (from === to) return 1;
@@ -21,97 +17,6 @@ function computeExchangeRate(rates: Record<string, number>, from: string, to: st
   }
 
   return toRate / fromRate;
-}
-
-async function extractFromPdf(fileBuffer: ArrayBuffer): Promise<{
-  totalAmount: number;
-  currency: string;
-}> {
-  const pdf = await getDocumentProxy(new Uint8Array(fileBuffer));
-  const { text } = await extractText(pdf, { mergePages: true });
-  await pdf.destroy();
-
-  if (text && text.trim().length >= 20) {
-    const extracted = await extractReceiptFromText(text);
-    return {
-      totalAmount: extracted.totalAmount,
-      currency: extracted.currency,
-    };
-  }
-
-  const extracted = await extractReceiptFromImage(
-    Buffer.from(fileBuffer).toString('base64'),
-    'application/pdf'
-  );
-  return {
-    totalAmount: extracted.totalAmount,
-    currency: extracted.currency,
-  };
-}
-
-async function extractAmountFromInvoiceDocument(params: {
-  adminClient: ReturnType<typeof createSupabaseAdminClient>;
-  documentId: string;
-  employeeId: string;
-}): Promise<{ amount: number | null; currency: string | null; reason?: string }> {
-  const { adminClient, documentId, employeeId } = params;
-
-  const { data: document, error: documentError } = await adminClient
-    .from('documents')
-    .select('id, employee_id, file_path, mime_type')
-    .eq('id', documentId)
-    .is('deleted_at', null)
-    .maybeSingle();
-
-  if (documentError || !document) {
-    return { amount: null, currency: null, reason: 'Document not found for OCR extraction' };
-  }
-
-  if (document.employee_id !== employeeId) {
-    return { amount: null, currency: null, reason: 'Document does not belong to invoice employee' };
-  }
-
-  if (!document.mime_type || !OCR_SUPPORTED_MIME_TYPES.has(document.mime_type)) {
-    return { amount: null, currency: null, reason: 'Unsupported file type for OCR extraction' };
-  }
-
-  const { data: fileBlob, error: downloadError } = await adminClient.storage
-    .from(EMPLOYEE_DOCUMENTS_BUCKET)
-    .download(document.file_path);
-
-  if (downloadError || !fileBlob) {
-    return { amount: null, currency: null, reason: 'Failed to download invoice document for OCR' };
-  }
-
-  const fileBuffer = await fileBlob.arrayBuffer();
-  if (fileBuffer.byteLength === 0) {
-    return { amount: null, currency: null, reason: 'Invoice document is empty' };
-  }
-
-  try {
-    const extracted =
-      document.mime_type === 'application/pdf'
-        ? await extractFromPdf(fileBuffer)
-        : await extractReceiptFromImage(Buffer.from(fileBuffer).toString('base64'), document.mime_type);
-
-    const parsedAmount = Number(extracted.totalAmount);
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      return { amount: null, currency: null, reason: 'OCR amount could not be determined' };
-    }
-
-    const normalizedCurrency =
-      typeof extracted.currency === 'string' && extracted.currency.trim().length === 3
-        ? extracted.currency.trim().toUpperCase()
-        : null;
-
-    return {
-      amount: Math.round(parsedAmount * 100) / 100,
-      currency: normalizedCurrency,
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown OCR extraction error';
-    return { amount: null, currency: null, reason: `OCR extraction failed: ${message}` };
-  }
 }
 
 /**
@@ -327,18 +232,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Auto-generate invoice number: INV-YYYYMMDD-XXXX
-    let invoiceNumber = parsed.data.invoiceNumber;
-    if (!invoiceNumber) {
-      const today = new Date();
-      const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-      const { count } = await supabaseAdmin
-        .from('invoices')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString().slice(0, 10));
-      const seq = String((count ?? 0) + 1).padStart(4, '0');
-      invoiceNumber = `INV-${dateStr}-${seq}`;
-    }
+    let invoiceNumber = parsed.data.invoiceNumber?.trim() || null;
 
     let exchangeRate = parsed.data.exchangeRate ?? null;
     let convertedAmount = parsed.data.convertedAmount ?? null;
@@ -355,20 +249,50 @@ export async function POST(request: NextRequest) {
         employeeId: resolvedEmployeeId,
       });
 
-      if (typeof extraction.amount === 'number') {
-        baseAmount = extraction.amount;
-        payableAmount = Math.max(0, Math.round((baseAmount - deductions) * 100) / 100);
+      if (extraction.invoiceNumber) {
+        invoiceNumber = extraction.invoiceNumber;
       }
 
-      if (extraction.currency) {
-        sourceCurrency = extraction.currency;
-        if (parsed.data.targetCurrency === parsed.data.sourceCurrency) {
-          targetCurrency = extraction.currency;
+      // If the PDF explicitly shows a PHP amount, use it as the authoritative source amount.
+      if (typeof extraction.phpAmount === 'number') {
+        baseAmount = extraction.phpAmount;
+        payableAmount = Math.max(0, Math.round((baseAmount - deductions) * 100) / 100);
+        sourceCurrency = 'PHP';
+
+        // If the PDF also shows an AUD amount, use it directly — no FX lookup needed.
+        if (typeof extraction.audAmount === 'number') {
+          convertedAmount = extraction.audAmount;
+          targetCurrency = 'AUD';
+          exchangeRate =
+            payableAmount > 0
+              ? Math.round((extraction.audAmount / payableAmount) * 1_000_000) / 1_000_000
+              : null;
+        }
+      } else if (typeof extraction.amount === 'number') {
+        // Fallback: single-currency extraction (non-PHP invoice).
+        baseAmount = extraction.amount;
+        payableAmount = Math.max(0, Math.round((baseAmount - deductions) * 100) / 100);
+
+        if (extraction.currency) {
+          sourceCurrency = extraction.currency;
+          if (parsed.data.targetCurrency === parsed.data.sourceCurrency) {
+            targetCurrency = extraction.currency;
+          }
         }
       }
     }
 
-    if (sourceCurrency !== targetCurrency) {
+    if (!invoiceNumber) {
+      return NextResponse.json(
+        {
+          error:
+            'Invoice number must come from the uploaded invoice document OCR. Re-upload a clearer invoice that shows the document invoice number.',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (sourceCurrency !== targetCurrency && convertedAmount === null) {
       if (exchangeRate === null || convertedAmount === null) {
         const { data: latestRates, error: ratesError } = await supabaseAdmin
           .from('fx_rates')
@@ -391,7 +315,7 @@ export async function POST(request: NextRequest) {
         );
         convertedAmount = Math.round(payableAmount * exchangeRate * 100) / 100;
       }
-    } else {
+    } else if (sourceCurrency === targetCurrency) {
       exchangeRate = 1;
       convertedAmount = payableAmount;
     }
@@ -427,6 +351,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (invoiceError || !invoice) {
+      if (invoiceError?.code === '23505') {
+        return NextResponse.json(
+          { error: `Invoice number ${invoiceNumber} already exists.` },
+          { status: 409 }
+        );
+      }
       console.error('Error creating invoice:', invoiceError);
       return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
     }

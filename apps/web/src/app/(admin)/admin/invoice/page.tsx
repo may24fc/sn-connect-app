@@ -63,6 +63,7 @@ type SubmittedInvoiceWithPayout = {
   submittedAt: string | null;
   amount: number;
   currency: string;
+  audAmount: number | null;
   payoutKey: string;
   payoutLabel: string;
 };
@@ -101,10 +102,17 @@ function getAvatarUrl(employee: unknown): string | undefined {
 }
 
 function extractUserNotes(notes: string | null | undefined): string {
-  if (!notes) return '';
+  if (!(typeof notes === 'string' && notes.trim().length > 0)) return '';
   return notes
     .split('\n')
-    .filter((line) => !line.trim().startsWith('PAYOUT_SCHEDULE:'))
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line.length > 0 &&
+        !line.startsWith('PAYOUT_SCHEDULE:') &&
+        !line.startsWith('Payout Schedule:') &&
+        !line.startsWith('Invoice file uploaded:')
+    )
     .join('\n')
     .trim();
 }
@@ -341,6 +349,10 @@ export default function AdminInvoicePage() {
           submittedAt: invoice.submitted_at,
           amount: Number(invoice.net_amount || 0),
           currency: (invoice.source_currency || invoice.target_currency || 'PHP').toUpperCase(),
+          audAmount:
+            invoice.converted_amount !== null && invoice.converted_amount !== undefined
+              ? Number(invoice.converted_amount)
+              : null,
           payoutKey: parsed?.key ?? '',
           payoutLabel: parsed
             ? formatPayoutScheduleLabel(parsed.monthKey, parsed.sequence)
@@ -433,6 +445,7 @@ export default function AdminInvoicePage() {
     department: (row) => row.employee.department ?? '',
     invoice_number: (row) => row.matchedInvoice?.invoiceNumber ?? '',
     amount: (row) => row.matchedInvoice?.amount ?? 0,
+    aud_amount: (row) => row.matchedInvoice?.audAmount ?? 0,
     status: (row) => (row.hasSubmitted ? 1 : 0),
   });
 
@@ -668,7 +681,8 @@ export default function AdminInvoicePage() {
                       <SortableTableHead column="employee" {...sortHeadProps}>Employee</SortableTableHead>
                       <SortableTableHead column="department" {...sortHeadProps}>Department</SortableTableHead>
                       <SortableTableHead column="invoice_number" {...sortHeadProps}>Invoice #</SortableTableHead>
-                      <SortableTableHead column="amount" {...sortHeadProps}>Amount</SortableTableHead>
+                      <SortableTableHead column="amount" {...sortHeadProps}>PHP Amount</SortableTableHead>
+                      <SortableTableHead column="aud_amount" {...sortHeadProps}>AUD Amount</SortableTableHead>
                       <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                       <TableHead className="w-12" />
                     </TableRow>
@@ -676,7 +690,7 @@ export default function AdminInvoicePage() {
                   <TableBody>
                     {sortedRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="py-10">
+                        <TableCell colSpan={7} className="py-10">
                           <EmptyState
                             icon={FileText}
                             title="No employees found"
@@ -717,6 +731,11 @@ export default function AdminInvoicePage() {
                                 ? row.matchedInvoice.amount > 0
                                   ? formatCurrency(row.matchedInvoice.amount, row.matchedInvoice.currency)
                                   : '-'
+                                : '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {row.matchedInvoice?.audAmount != null && row.matchedInvoice.audAmount > 0
+                                ? formatCurrency(row.matchedInvoice.audAmount, 'AUD')
                                 : '-'}
                             </TableCell>
                             <TableCell>

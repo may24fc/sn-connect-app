@@ -1,6 +1,7 @@
 import { logActivity } from '@/lib/audit';
+import { extractAmountFromInvoiceDocument } from '@/lib/payroll/invoiceDocumentOcr';
 import { invoiceLineItemSchema, invoiceUpdateSchema } from '@/lib/schemas/invoice.schema';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -11,6 +12,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   try {
     const { id } = await params;
     const supabase = await createSupabaseServerClient();
+    const supabaseAdmin = createSupabaseAdminClient();
 
     const {
       data: { user },
@@ -21,7 +23,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data, error } = await supabase
+    const { data: invoice, error } = await supabaseAdmin
       .from('invoices')
       .select(
         '*, employees!inner(id, user_id, first_name, last_name, department), invoice_line_items(*)'
@@ -30,8 +32,70 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       .is('deleted_at', null)
       .single();
 
-    if (error || !data) {
+    if (error || !invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+
+    const role = typeof user.app_metadata?.db_role === 'string' ? user.app_metadata.db_role : null;
+    const isAdmin = ['admin', 'super_admin'].includes(role ?? '');
+    const employeeRecord = invoice.employees as unknown as { user_id: string } | null;
+
+    if (!isAdmin && employeeRecord?.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const resyncDraft = _request.nextUrl.searchParams.get('resyncDraft') === 'true';
+    let data = invoice;
+
+    if (resyncDraft && invoice.status === 'draft' && invoice.document_id) {
+      const extraction = await extractAmountFromInvoiceDocument({
+        adminClient: supabaseAdmin,
+        documentId: invoice.document_id as string,
+        employeeId: invoice.employee_id as string,
+      });
+
+      const updates: Record<string, string | number | null> = {};
+      let resolvedNetAmount = Number(invoice.net_amount || 0);
+
+      if (extraction.invoiceNumber) {
+        updates.invoice_number = extraction.invoiceNumber;
+      }
+
+      if (typeof extraction.phpAmount === 'number' && extraction.phpAmount > 0) {
+        resolvedNetAmount = extraction.phpAmount;
+        updates.gross_amount = extraction.phpAmount;
+        updates.net_amount = extraction.phpAmount;
+        updates.source_currency = 'PHP';
+      }
+
+      if (typeof extraction.audAmount === 'number' && extraction.audAmount > 0) {
+        updates.target_currency = 'AUD';
+        updates.converted_amount = extraction.audAmount;
+        updates.exchange_rate =
+          resolvedNetAmount > 0
+            ? Math.round((extraction.audAmount / resolvedNetAmount) * 1_000_000) / 1_000_000
+            : null;
+      } else if (updates.source_currency === 'PHP') {
+        updates.target_currency = 'PHP';
+        updates.exchange_rate = 1;
+        updates.converted_amount = resolvedNetAmount;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        const { data: refreshedInvoice, error: refreshError } = await supabaseAdmin
+          .from('invoices')
+          .update(updates)
+          .eq('id', id)
+          .is('deleted_at', null)
+          .select(
+            '*, employees!inner(id, user_id, first_name, last_name, department), invoice_line_items(*)'
+          )
+          .single();
+
+        if (!refreshError && refreshedInvoice) {
+          data = refreshedInvoice;
+        }
+      }
     }
 
     return NextResponse.json({ data });

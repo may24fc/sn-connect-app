@@ -12,6 +12,7 @@ import {
 } from '@/lib/payroll/payoutSchedule';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateRange } from '@/lib/format';
+import { queryKeys } from '@/lib/query-keys';
 import { cn } from '@/lib/utils';
 import {
   Button,
@@ -38,11 +39,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Textarea,
   useToast,
   SectionTooltip,
   HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Download, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
@@ -67,6 +70,25 @@ const formatCurrency = (value: number, currencyCode = 'PHP') =>
     minimumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
     maximumFractionDigits: currencyCode === 'JPY' ? 0 : 2,
   }).format(value || 0);
+
+function extractUserNotes(notes: string | null | undefined): string {
+  if (!(typeof notes === 'string' && notes.trim().length > 0)) {
+    return '';
+  }
+
+  return notes
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(
+      (line) =>
+        line.length > 0 &&
+        !line.startsWith('PAYOUT_SCHEDULE:') &&
+        !line.startsWith('Payout Schedule:') &&
+        !line.startsWith('Invoice file uploaded:')
+    )
+    .join('\n')
+    .trim();
+}
 
 /* ------------------------------------------------------------------ */
 /*  Detail row used in both the View and Confirm dialogs               */
@@ -136,9 +158,7 @@ function InvoiceDetailDialog({
 
   const handleDownloadPDF = () => { window.print(); };
 
-  const userNotes = invoice.notes
-    ? invoice.notes.split('\n').filter((l) => !l.startsWith('PAYOUT_SCHEDULE:')).join('\n').trim()
-    : '';
+  const userNotes = extractUserNotes(invoice.notes);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -357,6 +377,7 @@ function SubmitConfirmDialog({
   const targetCurrency = invoice.target_currency || 'PHP';
   const amount = (v: number, currencyCode = sourceCurrency) =>
     showAmounts ? formatCurrency(v, currencyCode) : MASKED_AMOUNT;
+  const userNotes = extractUserNotes(invoice.notes);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -385,7 +406,7 @@ function SubmitConfirmDialog({
               value={amount(Number(invoice.converted_amount || 0), targetCurrency)}
             />
           )}
-          {invoice.notes && <DetailRow label="Notes" value={invoice.notes} />}
+          {userNotes && <DetailRow label="Notes" value={userNotes} />}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
@@ -407,6 +428,7 @@ function SubmitConfirmDialog({
 export default function InvoicePage() {
   const { addToast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Amount visibility toggle
   const [showAmounts, setShowAmounts] = useState(true);
@@ -415,6 +437,7 @@ export default function InvoicePage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedInvoiceFiles, setSelectedInvoiceFiles] = useState<File[]>([]);
   const [selectedPayoutSchedule, setSelectedPayoutSchedule] = useState<string>('');
+  const [createNotes, setCreateNotes] = useState('');
 
   // Detail / View dialog
   const [detailInvoice, setDetailInvoice] = useState<InvoiceRecord | null>(null);
@@ -458,6 +481,7 @@ export default function InvoicePage() {
   const resetCreateDialog = () => {
     setSelectedInvoiceFiles([]);
     setSelectedPayoutSchedule('');
+    setCreateNotes('');
   };
 
   const resolveCurrentEmployeeId = async (): Promise<string> => {
@@ -531,7 +555,14 @@ export default function InvoicePage() {
         deductions: 0,
         netAmount: draftAmount,
         status: 'draft',
-        notes: `${payoutTag}\nPayout Schedule: ${payoutSelection.label}\nInvoice file uploaded: ${file.name}`,
+        notes: [
+          payoutTag,
+          `Payout Schedule: ${payoutSelection.label}`,
+          createNotes.trim(),
+          `Invoice file uploaded: ${file.name}`,
+        ]
+          .filter((value) => value && value.trim().length > 0)
+          .join('\n'),
         lineItems: [],
         sourceCurrency: 'PHP',
         targetCurrency: 'PHP',
@@ -556,25 +587,64 @@ export default function InvoicePage() {
     }
   };
 
-  const handleRowClick = (invoice: InvoiceRecord) => {
-    setDetailInvoice(invoice);
-    setDetailOpen(true);
+  const syncDraftInvoiceFromOcr = async (invoice: InvoiceRecord): Promise<InvoiceRecord> => {
+    if (!(invoice.status === 'draft' && invoice.document_id)) {
+      return invoice;
+    }
+
+    const response = await fetch(`/api/invoices/${invoice.id}?resyncDraft=true`);
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.error || 'Failed to refresh invoice from OCR');
+    }
+
+    const payload = (await response.json()) as { data: InvoiceRecord };
+    await queryClient.invalidateQueries({ queryKey: queryKeys.payroll.all });
+    return payload.data;
   };
 
-  const handleSubmitClick = (invoice: InvoiceRecord, e: React.MouseEvent) => {
+  const handleRowClick = async (invoice: InvoiceRecord) => {
+    try {
+      const resolvedInvoice = await syncDraftInvoiceFromOcr(invoice);
+      setDetailInvoice(resolvedInvoice);
+      setDetailOpen(true);
+    } catch (err) {
+      addToast({
+        title: 'Failed to refresh invoice',
+        description: err instanceof Error ? err.message : 'Unable to refresh invoice from OCR.',
+        variant: 'error',
+      });
+      setDetailInvoice(invoice);
+      setDetailOpen(true);
+    }
+  };
+
+  const handleSubmitClick = async (invoice: InvoiceRecord, e: React.MouseEvent) => {
     e.stopPropagation();
-    setConfirmInvoice(invoice);
-    setConfirmOpen(true);
+    try {
+      const resolvedInvoice = await syncDraftInvoiceFromOcr(invoice);
+      setConfirmInvoice(resolvedInvoice);
+      setConfirmOpen(true);
+    } catch (err) {
+      addToast({
+        title: 'Failed to refresh invoice',
+        description: err instanceof Error ? err.message : 'Unable to refresh invoice from OCR.',
+        variant: 'error',
+      });
+      setConfirmInvoice(invoice);
+      setConfirmOpen(true);
+    }
   };
 
   const handleConfirmSubmit = () => {
     if (!confirmInvoice) return;
 
     submitInvoice.mutate(confirmInvoice.id, {
-      onSuccess: () => {
+      onSuccess: ({ data: submittedInvoice }) => {
         addToast({
           title: 'Invoice submitted',
-          description: `Invoice ${confirmInvoice.invoice_number} has been submitted for approval.`,
+          description: `Invoice ${submittedInvoice.invoice_number} has been submitted for approval.`,
           variant: 'success',
         });
         setConfirmOpen(false);
@@ -590,10 +660,21 @@ export default function InvoicePage() {
     });
   };
 
-  const handleViewClick = (invoice: InvoiceRecord, e: React.MouseEvent) => {
+  const handleViewClick = async (invoice: InvoiceRecord, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDetailInvoice(invoice);
-    setDetailOpen(true);
+    try {
+      const resolvedInvoice = await syncDraftInvoiceFromOcr(invoice);
+      setDetailInvoice(resolvedInvoice);
+      setDetailOpen(true);
+    } catch (err) {
+      addToast({
+        title: 'Failed to refresh invoice',
+        description: err instanceof Error ? err.message : 'Unable to refresh invoice from OCR.',
+        variant: 'error',
+      });
+      setDetailInvoice(invoice);
+      setDetailOpen(true);
+    }
   };
 
   const maskedCurrency = (value: number, currencyCode = 'PHP') =>
@@ -762,14 +843,14 @@ export default function InvoicePage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-xl max-h-[85vh] overflow-hidden">
+        <DialogContent className="sm:max-w-xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Create Invoice</DialogTitle>
             <DialogDescription>
               Upload your existing invoice file. We will create a draft invoice for submission.
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-4 max-h-[calc(85vh-11rem)] overflow-y-auto pr-1" onSubmit={handleCreate}>
+          <form className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1" onSubmit={handleCreate}>
             <FileDropZone
               onFilesSelected={(files) => setSelectedInvoiceFiles(files.slice(0, 1))}
               selectedFiles={selectedInvoiceFiles}
@@ -803,6 +884,19 @@ export default function InvoicePage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="invoice-create-notes" className="text-sm text-muted-foreground">
+                Notes (optional)
+              </label>
+              <Textarea
+                id="invoice-create-notes"
+                value={createNotes}
+                onChange={(event) => setCreateNotes(event.target.value)}
+                placeholder="Add optional notes for this invoice"
+                className="min-h-[96px] resize-y"
+              />
             </div>
 
             <DialogFooter>
