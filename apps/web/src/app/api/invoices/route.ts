@@ -176,8 +176,11 @@ export async function GET(request: NextRequest) {
     const adminRoles = ['admin', 'super_admin'];
     const isAdmin = adminRoles.includes(role ?? '');
 
-    if (!isAdmin && !employeeId) {
-      // Non-admin users can only see their own invoices.
+    const selfOnly = searchParams.get('selfOnly') === 'true';
+
+    if (!isAdmin || selfOnly) {
+      // Non-admin users always scope to their own invoices.
+      // Admin/super-admin users scope to their own when selfOnly=true (self-service page).
       // Use admin client for employee lookup to avoid RLS issues.
       const { data: empData } = await supabaseAdmin
         .from('employees')
@@ -416,6 +419,7 @@ export async function POST(request: NextRequest) {
         converted_amount: convertedAmount,
         status: parsed.data.status,
         notes: parsed.data.notes || null,
+        document_id: parsed.data.documentId ?? null,
         submitted_at: parsed.data.status === 'submitted' ? new Date().toISOString() : null,
         created_by: user.id,
       })

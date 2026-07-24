@@ -2,14 +2,16 @@
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 import { useEmployees } from '@/hooks/useEmployees';
-import { useInvoiceExchangeRateToAud, useInvoices } from '@/hooks/useInvoices';
+import { type InvoiceRecord, useInvoiceExchangeRateToAud, useInvoices } from '@/hooks/useInvoices';
 import { useInvoicesRealtime } from '@/hooks/useInvoicesRealtime';
 import {
   formatPayoutScheduleLabel,
+  getCurrentPayoutKey,
   getPayoutScheduleOptions,
   parsePayoutScheduleTag,
 } from '@/lib/payroll/payoutSchedule';
 import { useTableSort } from '@/hooks/useTableSort';
+import { formatDate, formatDateRange } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   Avatar,
@@ -21,14 +23,21 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
   EmptyState,
   Input,
+  InvoiceStatusBadge,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   SectionTooltip,
+  Separator,
   Tabs,
   TabsContent,
   TabsList,
@@ -40,7 +49,8 @@ import {
   TableHeader,
   TableRow,
 } from '@hr-portal/ui';
-import { AlertCircle, ChevronLeft, ChevronRight, FileText, Loader2, Plus } from 'lucide-react';
+import type { InvoiceStatus } from '@hr-portal/ui';
+import { AlertCircle, ChevronLeft, ChevronRight, ExternalLink, Eye, FileText, Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -90,12 +100,200 @@ function getAvatarUrl(employee: unknown): string | undefined {
   return users?.avatar_url ?? undefined;
 }
 
+function extractUserNotes(notes: string | null | undefined): string {
+  if (!notes) return '';
+  return notes
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('PAYOUT_SCHEDULE:'))
+    .join('\n')
+    .trim();
+}
+
+type DetailDialogRow = {
+  invoice: InvoiceRecord;
+  employeeName: string;
+  avatarUrl: string | undefined;
+  department: string;
+  payoutLabel: string;
+};
+
+function AdminInvoiceDetailDialog({
+  row,
+  open,
+  onOpenChange,
+}: {
+  row: DetailDialogRow | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewMimeType, setPreviewMimeType] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !row?.invoice?.document_id) {
+      setPreviewUrl(null);
+      setPreviewMimeType('');
+      return;
+    }
+
+    setPreviewLoading(true);
+    setPreviewUrl(null);
+
+    fetch(`/api/invoices/${row.invoice.id}/document`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { url?: string; mimeType?: string } | null) => {
+        if (data?.url) {
+          setPreviewUrl(data.url);
+          setPreviewMimeType(data.mimeType ?? '');
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPreviewLoading(false));
+  }, [open, row?.invoice?.id, row?.invoice?.document_id]);
+
+  if (!row) return null;
+  const { invoice, employeeName, avatarUrl, department, payoutLabel } = row;
+  const sourceCurrency = invoice.source_currency || 'PHP';
+  const userNotes = extractUserNotes(invoice.notes);
+  const nameParts = employeeName.split(' ');
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Invoice Details — {invoice.invoice_number}</DialogTitle>
+          <DialogDescription>Invoice submission details for {employeeName}</DialogDescription>
+        </DialogHeader>
+
+        {/* Dark header */}
+        <div className="bg-zinc-900 px-6 pt-5 pb-5 pr-14">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">Amount</p>
+              <p className="text-3xl font-bold text-white tabular-nums leading-tight">
+                {formatCurrency(Number(invoice.net_amount || 0), sourceCurrency)}
+              </p>
+              <p className="mt-2 text-sm text-zinc-400 tracking-tight">{invoice.invoice_number}</p>
+            </div>
+            <span className="shrink-0 mt-0.5">
+              <InvoiceStatusBadge status={invoice.status as InvoiceStatus} />
+            </span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+          {/* Employee */}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={employeeName} />}
+              <AvatarFallback>{getInitials(nameParts[0], nameParts.slice(1).join(' '))}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-semibold">{employeeName}</p>
+              <p className="text-xs text-muted-foreground">{department}</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Details */}
+          <div className="space-y-2">
+            {payoutLabel && (
+              <div className="flex items-start justify-between gap-4">
+                <span className="text-sm text-muted-foreground shrink-0">Payout Schedule</span>
+                <span className="text-sm font-medium text-right">{payoutLabel}</span>
+              </div>
+            )}
+            <div className="flex items-start justify-between gap-4">
+              <span className="text-sm text-muted-foreground shrink-0">Period</span>
+              <span className="text-sm font-medium text-right">{formatDateRange(invoice.period_start, invoice.period_end)}</span>
+            </div>
+            {invoice.submitted_at && (
+              <div className="flex items-start justify-between gap-4">
+                <span className="text-sm text-muted-foreground shrink-0">Submitted</span>
+                <span className="text-sm font-medium text-right">{formatDate(invoice.submitted_at)}</span>
+              </div>
+            )}
+            {invoice.converted_amount && sourceCurrency !== (invoice.target_currency || sourceCurrency) && (
+              <div className="flex items-start justify-between gap-4">
+                <span className="text-sm text-muted-foreground shrink-0">Converted Amount</span>
+                <span className="text-sm font-medium text-right">
+                  {formatCurrency(Number(invoice.converted_amount), invoice.target_currency || 'AUD')}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* User notes */}
+          {userNotes && (
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3">
+              <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-wide mb-1">Notes</p>
+              <p className="text-sm">{userNotes}</p>
+            </div>
+          )}
+
+          {/* Line items */}
+          {invoice.invoice_line_items && invoice.invoice_line_items.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-wide mb-2">Line Items</p>
+              <div className="space-y-1.5">
+                {invoice.invoice_line_items.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground truncate mr-2">{item.description}</span>
+                    <span className="font-medium tabular-nums shrink-0">{formatCurrency(item.total, sourceCurrency)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Document Preview */}
+          {invoice.document_id && (
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-2">Invoice Document</p>
+              {previewLoading && (
+                <div className="flex items-center justify-center h-40 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {!previewLoading && previewUrl && previewMimeType.startsWith('image/') && (
+                <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                  <img src={previewUrl} alt="Invoice document" className="w-full object-contain max-h-64" />
+                </div>
+              )}
+              {!previewLoading && previewUrl && !previewMimeType.startsWith('image/') && (
+                <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 h-64">
+                  <iframe src={previewUrl} className="w-full h-full" title="Invoice document preview" />
+                </div>
+              )}
+              {!previewLoading && previewUrl && (
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open in new tab
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminInvoicePage() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<'matrix' | 'conversion'>('matrix');
   const pageSize = 10;
   const [conversionCurrency, setConversionCurrency] = useState<'AUD'>('AUD');
   const [manualConversionRateInput, setManualConversionRateInput] = useState<string>('');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailRow, setDetailRow] = useState<DetailDialogRow | null>(null);
 
   useEffect(() => {
     const storedRate = window.localStorage.getItem(MANUAL_PHP_TO_AUD_RATE_STORAGE_KEY);
@@ -126,7 +324,7 @@ export default function AdminInvoicePage() {
     excludeInterns: true,
   });
 
-  const [payoutFilter, setPayoutFilter] = useState<string>('');
+  const [payoutFilter, setPayoutFilter] = useState<string>(() => getCurrentPayoutKey());
 
   const submittedInvoicesWithPayout = useMemo<Array<SubmittedInvoiceWithPayout>>(() => {
     const invoices = invoicesData?.data || [];
@@ -174,7 +372,8 @@ export default function AdminInvoicePage() {
 
     return Array.from(map.entries())
       .map(([value, label]) => ({ value, label }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+      // Sort descending: most recent payout first (key format `YYYY-MM:N` sorts lexicographically).
+      .sort((a, b) => b.value.localeCompare(a.value));
   }, [submittedInvoicesWithPayout]);
 
   const effectivePayoutFilter =
@@ -217,6 +416,14 @@ export default function AdminInvoicePage() {
     });
   }, [employeesData?.data, submittedByEmployeeForFilter]);
 
+  const invoiceById = useMemo(() => {
+    const map = new Map<string, InvoiceRecord>();
+    for (const inv of invoicesData?.data ?? []) {
+      map.set(inv.id, inv);
+    }
+    return map;
+  }, [invoicesData?.data]);
+
   const { sortColumn, sortDirection, handleSort, sortItems } = useTableSort({
     initialColumn: 'employee',
   });
@@ -230,6 +437,20 @@ export default function AdminInvoicePage() {
   });
 
   const sortHeadProps = { sortColumn, sortDirection, onSort: handleSort };
+
+  const handleViewInvoice = (row: (typeof sortedRows)[number]) => {
+    if (!row.hasSubmitted || !row.matchedInvoice) return;
+    const invoice = invoiceById.get(row.matchedInvoice.invoiceId);
+    if (!invoice) return;
+    setDetailRow({
+      invoice,
+      employeeName: `${row.employee.first_name} ${row.employee.last_name}`,
+      avatarUrl: getAvatarUrl(row.employee),
+      department: row.employee.department || '-',
+      payoutLabel: row.matchedInvoice.payoutLabel,
+    });
+    setDetailOpen(true);
+  };
   const {
     data: audRateData,
     isLoading: audRateLoading,
@@ -449,12 +670,13 @@ export default function AdminInvoicePage() {
                       <SortableTableHead column="invoice_number" {...sortHeadProps}>Invoice #</SortableTableHead>
                       <SortableTableHead column="amount" {...sortHeadProps}>Amount</SortableTableHead>
                       <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
+                      <TableHead className="w-12" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-10">
+                        <TableCell colSpan={6} className="py-10">
                           <EmptyState
                             icon={FileText}
                             title="No employees found"
@@ -472,9 +694,12 @@ export default function AdminInvoicePage() {
                           <TableRow
                             key={row.employee.id}
                             className={cn(
-                              row.hasSubmitted &&
-                                'bg-emerald-50/80 dark:bg-emerald-950/20 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/30'
+                              'transition-colors',
+                              row.hasSubmitted
+                                ? 'bg-emerald-50/80 dark:bg-emerald-950/20 hover:bg-emerald-100/80 dark:hover:bg-emerald-950/30 cursor-pointer'
+                                : 'cursor-default'
                             )}
+                            onClick={() => handleViewInvoice(row)}
                           >
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
@@ -499,6 +724,19 @@ export default function AdminInvoicePage() {
                                 <Badge variant="success">Submitted</Badge>
                               ) : (
                                 <Badge variant="secondary">No submission</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {row.hasSubmitted && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  aria-label="View invoice details"
+                                  onClick={(e) => { e.stopPropagation(); handleViewInvoice(row); }}
+                                >
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
+                                </Button>
                               )}
                             </TableCell>
                           </TableRow>
@@ -581,6 +819,11 @@ export default function AdminInvoicePage() {
           </CardContent>
         </Card>
       )}
+      <AdminInvoiceDetailDialog
+        row={detailRow}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   );
 }

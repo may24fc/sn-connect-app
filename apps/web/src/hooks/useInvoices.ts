@@ -42,6 +42,7 @@ export interface InvoiceRecord {
   approved_at: string | null;
   paid_at: string | null;
   notes: string | null;
+  document_id: string | null;
   created_at: string;
   updated_at: string;
   employees?: {
@@ -89,6 +90,7 @@ export function useInvoices(filters: InvoiceFilters = {}, options: UseInvoicesOp
 
       if (filters.status) params.append('status', filters.status);
       if (filters.employeeId) params.append('employeeId', filters.employeeId);
+      if (filters.selfOnly) params.append('selfOnly', 'true');
       if (filters.page) params.append('page', String(filters.page));
       if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
 

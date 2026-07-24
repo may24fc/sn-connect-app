@@ -43,9 +43,9 @@ import {
   HelpLink,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { AlertCircle, CheckCircle2, Download, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Download, ExternalLink, Eye, EyeOff, FileText, Loader2, Plus, X } from 'lucide-react';
 import Link from 'next/link';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
 
 const MASKED_AMOUNT = '••••••';
@@ -94,6 +94,32 @@ function InvoiceDetailDialog({
   onOpenChange: (open: boolean) => void;
   showAmounts: boolean;
 }) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewMimeType, setPreviewMimeType] = useState<string>('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !invoice?.document_id) {
+      setPreviewUrl(null);
+      setPreviewMimeType('');
+      return;
+    }
+
+    setPreviewLoading(true);
+    setPreviewUrl(null);
+
+    fetch(`/api/invoices/${invoice.id}/document`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { url?: string; mimeType?: string } | null) => {
+        if (data?.url) {
+          setPreviewUrl(data.url);
+          setPreviewMimeType(data.mimeType ?? '');
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPreviewLoading(false));
+  }, [open, invoice?.id, invoice?.document_id]);
+
   if (!invoice) return null;
 
   const sourceCurrency = invoice.source_currency || 'PHP';
@@ -110,10 +136,14 @@ function InvoiceDetailDialog({
 
   const handleDownloadPDF = () => { window.print(); };
 
+  const userNotes = invoice.notes
+    ? invoice.notes.split('\n').filter((l) => !l.startsWith('PAYOUT_SCHEDULE:')).join('\n').trim()
+    : '';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-md p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60"
+        className="sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60"
       >
         {/* Accessibility tokens — visually hidden */}
         <DialogTitle className="sr-only">
@@ -147,7 +177,7 @@ function InvoiceDetailDialog({
         </div>
 
         {/* ── Body ── */}
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
 
           {/* Financial Summary Card */}
           <div className="rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 px-4 py-3 space-y-2">
@@ -188,12 +218,12 @@ function InvoiceDetailDialog({
           </div>
 
           {/* Notes */}
-          {invoice.notes && (
+          {userNotes && (
             <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 px-4 py-3">
               <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-wide mb-1">
                 Notes
               </p>
-              <p className="text-sm text-foreground">{invoice.notes}</p>
+              <p className="text-sm text-foreground">{userNotes}</p>
             </div>
           )}
 
@@ -248,6 +278,38 @@ function InvoiceDetailDialog({
               ))}
             </div>
           </div>
+          {/* Document Preview */}
+          {invoice.document_id && (
+            <div>
+              <p className="text-[10px] font-bold text-zinc-400 tracking-wide mb-2">Invoice Document</p>
+              {previewLoading && (
+                <div className="flex items-center justify-center h-40 rounded-lg bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {!previewLoading && previewUrl && previewMimeType.startsWith('image/') && (
+                <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700">
+                  <img src={previewUrl} alt="Invoice document" className="w-full object-contain max-h-64" />
+                </div>
+              )}
+              {!previewLoading && previewUrl && !previewMimeType.startsWith('image/') && (
+                <div className="rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 h-64">
+                  <iframe src={previewUrl} className="w-full h-full" title="Invoice document preview" />
+                </div>
+              )}
+              {!previewLoading && previewUrl && (
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Open in new tab
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Footer ── */}
@@ -362,7 +424,7 @@ export default function InvoicePage() {
   const [confirmInvoice, setConfirmInvoice] = useState<InvoiceRecord | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 100 });
+  const { data, isLoading, error } = useInvoices({ page: 1, pageSize: 100, selfOnly: true });
   const createInvoice = useCreateInvoice();
   const uploadDocument = useUploadDocument();
   const submitInvoice = useSubmitInvoice();

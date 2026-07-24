@@ -36,7 +36,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const board = await ensureBoard(adminClient, cycle, user.id, user.id);
-    const nextTileState = { ...board.tile_state } as Record<string, unknown>;
+    const nextTileState: Record<string, unknown> =
+      board.tile_state && typeof board.tile_state === 'object'
+        ? { ...(board.tile_state as Record<string, unknown>) }
+        : {};
 
     if (parsed.data.tileId !== undefined && parsed.data.checked !== undefined) {
       nextTileState[parsed.data.tileId] = parsed.data.checked;

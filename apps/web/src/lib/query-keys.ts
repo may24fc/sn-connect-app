@@ -76,6 +76,8 @@ export interface ReportFilters {
 export interface InvoiceFilters {
   status?: 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
   employeeId?: string;
+  /** When true, the API scopes the result to the requesting user's own employee record, regardless of role. Used on self-service pages so admin/super-admin users don't see all employees' invoices. */
+  selfOnly?: boolean;
   page?: number;
   pageSize?: number;
 }

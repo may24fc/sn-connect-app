@@ -92,6 +92,26 @@ function getPayoutCutoffUtcMs(payoutDate: Date): number {
   return phDateTimeToUtcMs(year, month, day, 15, 0, 0);
 }
 
+/**
+ * Returns the payout schedule key that "covers" the given reference date in PH time.
+ *
+ * Coverage rules (evaluated in PH calendar):
+ *   - Day 1 through the 1st payout Friday  → `YYYY-MM:1`  (1st payout of that month)
+ *   - Day after 1st payout Friday through month-end → `YYYY-MM:2`  (2nd payout of that month)
+ *
+ * This ensures the default filter stays on the 2nd payout for the rest of the month
+ * after the 1st payout has already occurred, rather than jumping forward prematurely.
+ */
+export function getCurrentPayoutKey(referenceDate: Date = new Date()): string {
+  const { year: phYear, month: phMonth, day: phDay } = getPhDateParts(referenceDate);
+  const currentMonth = new Date(Date.UTC(phYear, phMonth - 1, 1));
+  const monthKey = toMonthKey(currentMonth);
+  const { firstPayout } = getMonthPayoutDates(currentMonth);
+
+  const sequence: PayoutSequence = phDay <= firstPayout.getUTCDate() ? 1 : 2;
+  return `${monthKey}:${sequence}`;
+}
+
 export function getPayoutScheduleOptions(referenceDate: Date = new Date()): PayoutScheduleOption[] {
   const { year: phYear, month: phMonth } = getPhDateParts(referenceDate);
   const currentMonth = new Date(Date.UTC(phYear, phMonth - 1, 1));

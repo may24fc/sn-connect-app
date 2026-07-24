@@ -78,6 +78,36 @@ interface BingoBoardRow {
   cumulative_vertical_bingos: number;
 }
 
+function toBingoBoardRow(value: unknown): BingoBoardRow | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const row = value as Record<string, unknown>;
+  const customHabitText = row.custom_habit_text;
+
+  if (
+    typeof row.id !== 'string' ||
+    typeof row.current_week_index !== 'number' ||
+    typeof row.cumulative_completed_squares !== 'number' ||
+    typeof row.cumulative_horizontal_bingos !== 'number' ||
+    typeof row.cumulative_vertical_bingos !== 'number' ||
+    (customHabitText !== null && typeof customHabitText !== 'string')
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    custom_habit_text: customHabitText,
+    tile_state: row.tile_state,
+    current_week_index: row.current_week_index,
+    cumulative_completed_squares: row.cumulative_completed_squares,
+    cumulative_horizontal_bingos: row.cumulative_horizontal_bingos,
+    cumulative_vertical_bingos: row.cumulative_vertical_bingos,
+  };
+}
+
 const BINGO_BOARD_SELECT = [
   'id',
   'custom_habit_text',
@@ -179,7 +209,11 @@ export async function ensureBoard(
   }
 
   if (existing) {
-    return rollBoardIntoActiveWeek(adminClient, existing as BingoBoardRow, activeWeek);
+    const existingBoard = toBingoBoardRow(existing);
+    if (!existingBoard) {
+      throw new Error('Invalid wellness bingo board data');
+    }
+    return rollBoardIntoActiveWeek(adminClient, existingBoard, activeWeek);
   }
 
   const { data: inserted, error: insertError } = await adminClient
@@ -198,7 +232,12 @@ export async function ensureBoard(
     throw new Error('Failed to initialize wellness bingo board');
   }
 
-  return inserted as BingoBoardRow;
+  const insertedBoard = toBingoBoardRow(inserted);
+  if (!insertedBoard) {
+    throw new Error('Invalid wellness bingo board data');
+  }
+
+  return insertedBoard;
 }
 
 export async function findUserPartnership(
@@ -391,7 +430,12 @@ async function rollBoardIntoActiveWeek(
     throw new Error('Failed to refresh weekly wellness bingo board');
   }
 
-  return updatedBoard as BingoBoardRow;
+  const normalizedBoard = toBingoBoardRow(updatedBoard);
+  if (!normalizedBoard) {
+    throw new Error('Invalid wellness bingo board data');
+  }
+
+  return normalizedBoard;
 }
 
 function parseDateOnly(value: string) {

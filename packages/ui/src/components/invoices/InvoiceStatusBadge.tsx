@@ -15,7 +15,7 @@ interface InvoiceStatusConfig {
 
 const INVOICE_STATUS_CONFIG: Record<InvoiceStatus, InvoiceStatusConfig> = {
   draft: { label: 'Draft', variant: 'secondary', icon: FileText },
-  submitted: { label: 'Pending', variant: 'pending', icon: Clock },
+  submitted: { label: 'Submitted', variant: 'pending', icon: Clock },
   approved: { label: 'Approved', variant: 'approved', icon: CheckCircle2 },
   sent: { label: 'Sent', variant: 'default', icon: Send },
   paid: { label: 'Paid', variant: 'success', icon: CheckCircle2 },
