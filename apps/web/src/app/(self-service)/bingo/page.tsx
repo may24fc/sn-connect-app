@@ -133,7 +133,12 @@ function BingoPageContent({
   onPartnerChange,
 }: {
   data: BingoSnapshot;
-  partners: Array<{ id: string; name: string }>;
+  partners: Array<{
+    id: string;
+    name: string;
+    hasPartner: boolean;
+    isSelectable: boolean;
+  }>;
   isLoadingPartners: boolean;
   mutationError: string | undefined;
   customHabitDraft: string;
@@ -244,7 +249,12 @@ function BingoSidebar({
   onPartnerChange,
 }: {
   data: BingoSnapshot;
-  partners: Array<{ id: string; name: string }>;
+  partners: Array<{
+    id: string;
+    name: string;
+    hasPartner: boolean;
+    isSelectable: boolean;
+  }>;
   isLoadingPartners: boolean;
   isUpdatingPartner: boolean;
   onPartnerChange: (value: string | null) => void;
@@ -272,7 +282,8 @@ function PointSystemCard() {
       <CardHeader>
         <CardTitle>Point System</CardTitle>
         <CardDescription>
-          Checks reset every 7 days, but your points keep accumulating for the full 30-day cycle.
+          Checks reset every Monday and run through Sunday, but your points keep accumulating for
+          the full 30-day cycle.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
@@ -315,7 +326,12 @@ function PartnerPairingCard({
   currentPartner: BingoSnapshot['partner'];
   partnerScore: number;
   combinedScore: number;
-  partners: Array<{ id: string; name: string }>;
+  partners: Array<{
+    id: string;
+    name: string;
+    hasPartner: boolean;
+    isSelectable: boolean;
+  }>;
   isLoadingPartners: boolean;
   isUpdatingPartner: boolean;
   onPartnerChange: (value: string | null) => void;
@@ -340,8 +356,15 @@ function PartnerPairingCard({
           <SelectContent>
             <SelectItem value="none">No partner yet</SelectItem>
             {partners.map((partner) => (
-              <SelectItem key={partner.id} value={partner.id}>
-                {partner.name}
+              <SelectItem key={partner.id} value={partner.id} disabled={!partner.isSelectable}>
+                <div className="flex w-full items-center justify-between gap-2">
+                  <span>{partner.name}</span>
+                  {partner.hasPartner ? (
+                    <Badge className="border border-amber-300/80 bg-amber-50 text-[10px] uppercase tracking-[0.2em] text-amber-700 shadow-none dark:border-amber-400/30 dark:bg-amber-500/15 dark:text-amber-100">
+                      Paired
+                    </Badge>
+                  ) : null}
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -421,9 +444,9 @@ function BingoHero({
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Consistency Is Key</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-              Weekly checks refresh automatically, but your score keeps rolling up across the full
-              30-day challenge. Click any tile to mark it complete, keep your custom habit updated,
-              and combine totals with your selected partner.
+              Weekly checks refresh every Monday for a Monday-Sunday board, but your score keeps
+              rolling up across the full 30-day challenge. Click any tile to mark it complete, keep
+              your custom habit updated, and combine totals with your selected partner.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-200">
@@ -481,7 +504,7 @@ function BingoBoardCard({
             </CardTitle>
             <CardDescription className="text-slate-500 dark:text-slate-400">
               Week {weekIndex} of {totalWeeks}. Every square is worth 1 point per person, and the
-              board refreshes when the next week starts.
+              board refreshes every Monday for the next Monday-Sunday window.
             </CardDescription>
           </div>
           <div className="min-w-36 text-right">

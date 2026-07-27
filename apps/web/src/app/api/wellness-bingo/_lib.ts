@@ -21,6 +21,8 @@ export interface BingoPartnerOption {
   role: string;
   name: string;
   email: string | null;
+  hasPartner: boolean;
+  isSelectable: boolean;
 }
 
 export interface BingoBoardSummary {
@@ -302,15 +304,9 @@ export async function fetchPartnerOptions(
     partneredUserIds.add(row.user_b_id);
   }
 
-  const candidateRows = ((users ?? []) as Array<UserRoleRow>).filter((candidate) => {
-    if (candidate.id === currentPartnerId) {
-      return true;
-    }
+  const candidateRows = (users ?? []) as Array<UserRoleRow>;
 
-    return !partneredUserIds.has(candidate.id);
-  });
-
-  return getPartnerProfiles(adminClient, candidateRows);
+  return getPartnerProfiles(adminClient, candidateRows, partneredUserIds, currentPartnerId);
 }
 
 export async function buildWellnessBingoSnapshot(
@@ -385,13 +381,14 @@ function getActiveWeekSummary(cycle: BingoCycleSummary): BingoWeekSummary {
   const cycleStart = parseDateOnly(cycle.startDate);
   const cycleEnd = parseDateOnly(cycle.endDate);
   const today = parseDateOnly(new Date().toISOString().slice(0, 10));
-  const totalDays = diffInDays(cycleStart, cycleEnd) + 1;
-  const totalWeeks = Math.max(1, Math.ceil(totalDays / 7));
-  const elapsedDays = clamp(diffInDays(cycleStart, today), 0, totalDays - 1);
-  const index = Math.min(totalWeeks, Math.floor(elapsedDays / 7) + 1);
-  const weekStart = addDays(cycleStart, (index - 1) * 7);
-  const weekEndCandidate = addDays(weekStart, 6);
-  const weekEnd = weekEndCandidate <= cycleEnd ? weekEndCandidate : cycleEnd;
+  const firstWeekStart = startOfWeekMonday(cycleStart);
+  const lastWeekStart = startOfWeekMonday(cycleEnd);
+  const todayWeekStart = startOfWeekMonday(today);
+  const totalWeeks = diffInWeeks(firstWeekStart, lastWeekStart) + 1;
+  const clampedWeekStart = clampDate(todayWeekStart, firstWeekStart, lastWeekStart);
+  const index = diffInWeeks(firstWeekStart, clampedWeekStart) + 1;
+  const weekStart = maxDate(cycleStart, clampedWeekStart);
+  const weekEnd = minDate(cycleEnd, addDays(clampedWeekStart, 6));
 
   return {
     index,
@@ -453,17 +450,37 @@ function addDays(value: Date, days: number) {
   return next;
 }
 
+function startOfWeekMonday(value: Date) {
+  const day = value.getUTCDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  return addDays(value, offset);
+}
+
 function diffInDays(start: Date, end: Date) {
   return Math.floor((end.getTime() - start.getTime()) / 86_400_000);
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
+function diffInWeeks(start: Date, end: Date) {
+  return Math.floor(diffInDays(start, end) / 7);
+}
+
+function maxDate(left: Date, right: Date) {
+  return left.getTime() >= right.getTime() ? left : right;
+}
+
+function minDate(left: Date, right: Date) {
+  return left.getTime() <= right.getTime() ? left : right;
+}
+
+function clampDate(value: Date, min: Date, max: Date) {
+  return minDate(maxDate(value, min), max);
 }
 
 async function getPartnerProfiles(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  users: Array<UserRoleRow>
+  users: Array<UserRoleRow>,
+  partneredUserIds?: ReadonlySet<string>,
+  currentPartnerId?: string | null
 ) {
   if (users.length === 0) {
     return [] satisfies Array<BingoPartnerOption>;
@@ -496,6 +513,8 @@ async function getPartnerProfiles(
           ? `${profile.first_name} ${profile.last_name}`.trim()
           : formatRoleLabel(entry.role),
         email: profile?.company_email || profile?.personal_email || null,
+        hasPartner: partneredUserIds?.has(entry.id) ?? false,
+        isSelectable: !partneredUserIds?.has(entry.id) || entry.id === currentPartnerId,
       } satisfies BingoPartnerOption;
     })
     .sort((left, right) => left.name.localeCompare(right.name));

@@ -76,6 +76,24 @@ function normalizeInvoiceNumber(raw) {
   return raw.trim().replace(/^invoice\s*(number|#|no\.?|num(?:ber)?)\s*[:#-]*\s*/i, '') || null;
 }
 
+function extractUploadedInvoiceFileName(notes) {
+  if (!(typeof notes === 'string' && notes.trim().length > 0)) {
+    return null;
+  }
+
+  const line = notes
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith('Invoice file uploaded:'));
+
+  if (!line) {
+    return null;
+  }
+
+  const fileName = line.replace(/^Invoice file uploaded:\s*/i, '').trim();
+  return fileName || null;
+}
+
 function isLikelyProdUrl(baseUrl) {
   return !/localhost|127\.0\.0\.1/i.test(baseUrl);
 }
@@ -246,9 +264,8 @@ async function fetchInvoices(supabase) {
   while (true) {
     let query = supabase
       .from('invoices')
-      .select('id, employee_id, invoice_number, gross_amount, deductions, net_amount, source_currency, target_currency, exchange_rate, converted_amount, status, document_id, created_at')
+      .select('id, employee_id, invoice_number, gross_amount, deductions, net_amount, source_currency, target_currency, exchange_rate, converted_amount, status, document_id, notes, created_at')
       .in('status', statuses)
-      .not('document_id', 'is', null)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range(from, from + pageSize - 1);
@@ -278,21 +295,67 @@ async function fetchInvoices(supabase) {
   return LIMIT !== null ? results.slice(0, LIMIT) : results;
 }
 
-async function fetchDocumentAndExtract(supabase, openaiClient, invoice, model) {
-  const { data: document, error: documentError } = await supabase
+async function resolveDocumentForInvoice(supabase, invoice) {
+  if (invoice.document_id) {
+    const { data: document, error: documentError } = await supabase
+      .from('documents')
+      .select('id, employee_id, file_path, mime_type, file_name, uploaded_at')
+      .eq('id', invoice.document_id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (documentError || !document) {
+      return { ok: false, reason: 'Linked document not found' };
+    }
+
+    if (document.employee_id !== invoice.employee_id) {
+      return { ok: false, reason: 'Linked document employee mismatch' };
+    }
+
+    return { ok: true, document, linkedDocumentId: document.id, recoveredLink: false };
+  }
+
+  const uploadedFileName = extractUploadedInvoiceFileName(invoice.notes);
+  if (!uploadedFileName) {
+    return { ok: false, reason: 'No document_id and no uploaded filename marker in invoice notes' };
+  }
+
+  const { data: documents, error: documentsError } = await supabase
     .from('documents')
-    .select('id, employee_id, file_path, mime_type')
-    .eq('id', invoice.document_id)
+    .select('id, employee_id, file_path, mime_type, file_name, uploaded_at, created_at')
+    .eq('employee_id', invoice.employee_id)
+    .eq('file_name', uploadedFileName)
     .is('deleted_at', null)
-    .maybeSingle();
+    .order('uploaded_at', { ascending: false })
+    .limit(20);
 
-  if (documentError || !document) {
-    return { ok: false, reason: 'Document not found' };
+  if (documentsError) {
+    return { ok: false, reason: `Failed to search documents: ${documentsError.message}` };
   }
 
-  if (document.employee_id !== invoice.employee_id) {
-    return { ok: false, reason: 'Document employee mismatch' };
+  if (!documents || documents.length === 0) {
+    return { ok: false, reason: `No matching document found for file name ${uploadedFileName}` };
   }
+
+  const invoiceCreatedAtMs = invoice.created_at ? new Date(invoice.created_at).getTime() : 0;
+  const bestMatch = documents
+    .slice()
+    .sort((a, b) => {
+      const aTime = new Date(a.uploaded_at || a.created_at || 0).getTime();
+      const bTime = new Date(b.uploaded_at || b.created_at || 0).getTime();
+      return Math.abs(aTime - invoiceCreatedAtMs) - Math.abs(bTime - invoiceCreatedAtMs);
+    })[0];
+
+  return { ok: true, document: bestMatch, linkedDocumentId: bestMatch.id, recoveredLink: true };
+}
+
+async function fetchDocumentAndExtract(supabase, openaiClient, invoice, model) {
+  const resolvedDocument = await resolveDocumentForInvoice(supabase, invoice);
+  if (!resolvedDocument.ok) {
+    return { ok: false, reason: resolvedDocument.reason };
+  }
+
+  const { document } = resolvedDocument;
 
   if (!document.mime_type || !OCR_SUPPORTED_MIME_TYPES.has(document.mime_type)) {
     return { ok: false, reason: `Unsupported document mime type: ${document.mime_type || 'unknown'}` };
@@ -313,7 +376,13 @@ async function fetchDocumentAndExtract(supabase, openaiClient, invoice, model) {
 
   try {
     const extracted = await extractInvoiceMetadata(openaiClient, fileBuffer, document.mime_type, model);
-    return { ok: true, extracted };
+    return {
+      ok: true,
+      extracted,
+      linkedDocumentId: resolvedDocument.linkedDocumentId,
+      recoveredLink: resolvedDocument.recoveredLink,
+      matchedFileName: document.file_name,
+    };
   } catch (error) {
     return {
       ok: false,
@@ -322,13 +391,7 @@ async function fetchDocumentAndExtract(supabase, openaiClient, invoice, model) {
   }
 }
 
-function buildInvoiceUpdates(invoice, extracted) {
-  if (typeof extracted.phpAmount !== 'number' || extracted.phpAmount <= 0) {
-    return null;
-  }
-
-  const deductions = Number(invoice.deductions || 0);
-  const resolvedNetAmount = Math.max(0, roundMoney(extracted.phpAmount - deductions));
+function buildInvoiceUpdates(invoice, extracted, linkedDocumentId) {
   const currentGross = Number(invoice.gross_amount || 0);
   const currentNet = Number(invoice.net_amount || 0);
   const currentConverted =
@@ -336,33 +399,48 @@ function buildInvoiceUpdates(invoice, extracted) {
       ? null
       : Number(invoice.converted_amount);
 
-  const updates = {
-    gross_amount: extracted.phpAmount,
-    net_amount: resolvedNetAmount,
-    source_currency: 'PHP',
-  };
+  const updates = {};
 
-  if (typeof extracted.audAmount === 'number' && extracted.audAmount > 0) {
-    updates.target_currency = 'AUD';
-    updates.converted_amount = extracted.audAmount;
-    updates.exchange_rate = resolvedNetAmount > 0 ? roundRate(extracted.audAmount / resolvedNetAmount) : null;
-  } else if (invoice.target_currency === 'AUD' && currentConverted !== null && currentConverted > 0) {
-    updates.target_currency = 'AUD';
-    updates.converted_amount = currentConverted;
-    updates.exchange_rate = resolvedNetAmount > 0 ? roundRate(currentConverted / resolvedNetAmount) : null;
-  } else {
-    updates.target_currency = 'PHP';
-    updates.converted_amount = resolvedNetAmount;
-    updates.exchange_rate = 1;
+  if (linkedDocumentId && invoice.document_id !== linkedDocumentId) {
+    updates.document_id = linkedDocumentId;
+  }
+
+  if (extracted.invoiceNumber && invoice.invoice_number !== extracted.invoiceNumber) {
+    updates.invoice_number = extracted.invoiceNumber;
+  }
+
+  if (typeof extracted.phpAmount === 'number' && extracted.phpAmount > 0) {
+    const deductions = Number(invoice.deductions || 0);
+    const resolvedNetAmount = Math.max(0, roundMoney(extracted.phpAmount - deductions));
+
+    updates.gross_amount = extracted.phpAmount;
+    updates.net_amount = resolvedNetAmount;
+    updates.source_currency = 'PHP';
+
+    if (typeof extracted.audAmount === 'number' && extracted.audAmount > 0) {
+      updates.target_currency = 'AUD';
+      updates.converted_amount = extracted.audAmount;
+      updates.exchange_rate = resolvedNetAmount > 0 ? roundRate(extracted.audAmount / resolvedNetAmount) : null;
+    } else if (invoice.target_currency === 'AUD' && currentConverted !== null && currentConverted > 0) {
+      updates.target_currency = 'AUD';
+      updates.converted_amount = currentConverted;
+      updates.exchange_rate = resolvedNetAmount > 0 ? roundRate(currentConverted / resolvedNetAmount) : null;
+    } else {
+      updates.target_currency = 'PHP';
+      updates.converted_amount = resolvedNetAmount;
+      updates.exchange_rate = 1;
+    }
   }
 
   const changed =
-    currentGross !== updates.gross_amount ||
-    currentNet !== updates.net_amount ||
-    invoice.source_currency !== updates.source_currency ||
-    invoice.target_currency !== updates.target_currency ||
-    Number(invoice.exchange_rate || 0) !== Number(updates.exchange_rate || 0) ||
-    Number(currentConverted || 0) !== Number(updates.converted_amount || 0);
+    Object.prototype.hasOwnProperty.call(updates, 'document_id') ||
+    Object.prototype.hasOwnProperty.call(updates, 'invoice_number') ||
+    (Object.prototype.hasOwnProperty.call(updates, 'gross_amount') && currentGross !== updates.gross_amount) ||
+    (Object.prototype.hasOwnProperty.call(updates, 'net_amount') && currentNet !== updates.net_amount) ||
+    (Object.prototype.hasOwnProperty.call(updates, 'source_currency') && invoice.source_currency !== updates.source_currency) ||
+    (Object.prototype.hasOwnProperty.call(updates, 'target_currency') && invoice.target_currency !== updates.target_currency) ||
+    (Object.prototype.hasOwnProperty.call(updates, 'exchange_rate') && Number(invoice.exchange_rate || 0) !== Number(updates.exchange_rate || 0)) ||
+    (Object.prototype.hasOwnProperty.call(updates, 'converted_amount') && Number(currentConverted || 0) !== Number(updates.converted_amount || 0));
 
   if (!changed) {
     return null;
@@ -403,6 +481,7 @@ async function main() {
     failed: 0,
     changes: [],
     failures: [],
+    recoveredDocumentLinks: 0,
   };
 
   for (const invoice of invoices) {
@@ -418,18 +497,25 @@ async function main() {
       continue;
     }
 
-    const updates = buildInvoiceUpdates(invoice, extraction.extracted);
+    const updates = buildInvoiceUpdates(invoice, extraction.extracted, extraction.linkedDocumentId);
     if (!updates) {
       summary.skipped += 1;
       continue;
     }
 
     summary.candidates += 1;
+    if (extraction.recoveredLink) {
+      summary.recoveredDocumentLinks += 1;
+    }
     summary.changes.push({
       invoiceId: invoice.id,
       invoiceNumber: invoice.invoice_number,
       extractedInvoiceNumber: extraction.extracted.invoiceNumber,
+      linkedDocumentId: extraction.linkedDocumentId,
+      matchedFileName: extraction.matchedFileName,
+      recoveredLink: extraction.recoveredLink,
       from: {
+        document_id: invoice.document_id,
         gross_amount: invoice.gross_amount,
         net_amount: invoice.net_amount,
         source_currency: invoice.source_currency,

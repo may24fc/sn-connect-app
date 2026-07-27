@@ -1,7 +1,7 @@
+import type { BingoPartnerOption, WellnessBingoSnapshot } from '@/app/api/wellness-bingo/_lib';
 import { STALE_TIMES } from '@/lib/query-client';
 import { queryKeys } from '@/lib/query-keys';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { WellnessBingoSnapshot, BingoPartnerOption } from '@/app/api/wellness-bingo/_lib';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url);
@@ -26,7 +26,7 @@ export function useCurrentBingo() {
 export function useBingoPartners() {
   return useQuery({
     queryKey: queryKeys.bingo.partners(),
-    queryFn: () => fetchJson<{ data: BingoPartnerOption[] }>('/api/wellness-bingo/partners'),
+    queryFn: () => fetchJson<{ data: Array<BingoPartnerOption> }>('/api/wellness-bingo/partners'),
     staleTime: STALE_TIMES.dynamic,
     select: (response) => response.data,
   });

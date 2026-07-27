@@ -176,23 +176,15 @@ async function validatePartnerSelection({
   const partnerPartnership = await findUserPartnership(adminClient, cycle.id, partnerUserId);
   if (
     partnerPartnership &&
-    getPartnerIdForUser(partnerPartnership, currentUserId) !== partnerUserId
+    !isPartnershipBetweenUsers(partnerPartnership, currentUserId, partnerUserId)
   ) {
-    const isSamePartnership =
-      (partnerPartnership.user_a_id === currentUserId &&
-        partnerPartnership.user_b_id === partnerUserId) ||
-      (partnerPartnership.user_b_id === currentUserId &&
-        partnerPartnership.user_a_id === partnerUserId);
-
-    if (!isSamePartnership) {
-      return {
-        response: NextResponse.json(
-          { error: 'That teammate is already paired in this wellness cycle' },
-          { status: 409 }
-        ),
-        isUnchangedPartner: false,
-      };
-    }
+    return {
+      response: NextResponse.json(
+        { error: 'That teammate is already paired in this wellness cycle' },
+        { status: 409 }
+      ),
+      isUnchangedPartner: false,
+    };
   }
 
   return {
@@ -230,24 +222,36 @@ async function savePartnership(
 ): Promise<NextResponse | null> {
   const [userAId, userBId] = normalizePartnershipUsers(userId, partnerUserId);
 
-  const { error } = await adminClient.from('wellness_bingo_partnerships').upsert(
-    {
-      cycle_id: cycleId,
-      user_a_id: userAId,
-      user_b_id: userBId,
-      created_by: userId,
-    },
-    {
-      onConflict: 'cycle_id,user_a_id,user_b_id',
-      ignoreDuplicates: false,
-    }
-  );
+  const { error } = await adminClient.from('wellness_bingo_partnerships').insert({
+    cycle_id: cycleId,
+    user_a_id: userAId,
+    user_b_id: userBId,
+    created_by: userId,
+  });
 
   if (error) {
+    if (error.code === '23505') {
+      return NextResponse.json(
+        { error: 'That teammate is already paired in this wellness cycle' },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json({ error: 'Failed to save wellness partner' }, { status: 500 });
   }
 
   return null;
+}
+
+function isPartnershipBetweenUsers(
+  partnership: NonNullable<ExistingPartnership>,
+  leftUserId: string,
+  rightUserId: string
+) {
+  return (
+    (partnership.user_a_id === leftUserId && partnership.user_b_id === rightUserId) ||
+    (partnership.user_a_id === rightUserId && partnership.user_b_id === leftUserId)
+  );
 }
 
 async function notifySelectedPartner({
