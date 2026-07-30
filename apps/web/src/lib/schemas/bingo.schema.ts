@@ -1,8 +1,4 @@
-import {
-  BINGO_TILE_IDS,
-  CUSTOM_HABIT_TILE_ID,
-  type BingoTileId,
-} from '@/lib/bingo';
+import { BINGO_TILE_IDS, type BingoTileId, CUSTOM_HABIT_TILE_ID } from '@/lib/bingo';
 import { z } from 'zod';
 
 export const bingoTileIdSchema = z.enum(BINGO_TILE_IDS);
@@ -29,6 +25,10 @@ export const bingoPartnersQuerySchema = z.object({
   cycleId: z.string().uuid().optional(),
 });
 
+export const bingoWeeklyRecordingUpdateSchema = z.object({
+  recordingUrl: z.string().trim().url().max(2048).nullable(),
+});
+
 export function isCustomHabitTile(tileId: BingoTileId): boolean {
   return tileId === CUSTOM_HABIT_TILE_ID;
 }
@@ -36,3 +36,4 @@ export function isCustomHabitTile(tileId: BingoTileId): boolean {
 export type BingoTileIdInput = z.infer<typeof bingoTileIdSchema>;
 export type BingoBoardUpdateInput = z.infer<typeof bingoBoardUpdateSchema>;
 export type BingoPartnerUpdateInput = z.infer<typeof bingoPartnerUpdateSchema>;
+export type BingoWeeklyRecordingUpdateInput = z.infer<typeof bingoWeeklyRecordingUpdateSchema>;

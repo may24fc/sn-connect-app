@@ -6799,6 +6799,66 @@ export type Database = {
           },
         ];
       };
+      wellness_bingo_weekly_recordings: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          cycle_id: string;
+          deleted_at: string | null;
+          id: string;
+          partnership_id: string;
+          recording_url: string;
+          updated_at: string;
+          updated_by: string | null;
+          week_end_date: string;
+          week_index: number;
+          week_start_date: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          cycle_id: string;
+          deleted_at?: string | null;
+          id?: string;
+          partnership_id: string;
+          recording_url: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          week_end_date: string;
+          week_index: number;
+          week_start_date: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          cycle_id?: string;
+          deleted_at?: string | null;
+          id?: string;
+          partnership_id?: string;
+          recording_url?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          week_end_date?: string;
+          week_index?: number;
+          week_start_date?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'wellness_bingo_weekly_recordings_cycle_id_fkey';
+            columns: ['cycle_id'];
+            isOneToOne: false;
+            referencedRelation: 'wellness_bingo_cycles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'wellness_bingo_weekly_recordings_partnership_id_fkey';
+            columns: ['partnership_id'];
+            isOneToOne: false;
+            referencedRelation: 'wellness_bingo_partnerships';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       wise_payments: {
         Row: {
           completed_at: string | null;

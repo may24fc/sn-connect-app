@@ -10,7 +10,7 @@ import {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { user, error } = await getAuthedSupabase();
+    const { user, role, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update wellness bingo board' }, { status: 500 });
     }
 
-    const data = await buildWellnessBingoSnapshot(adminClient, user.id);
+    const data = await buildWellnessBingoSnapshot(adminClient, user.id, role);
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PATCH /api/wellness-bingo/board:', error);

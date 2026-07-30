@@ -38,15 +38,36 @@ export interface BingoWeekSummary {
   endDate: string;
 }
 
+export interface BingoWeeklyRecordingSummary {
+  id: string;
+  weekIndex: number;
+  weekStartDate: string;
+  weekEndDate: string;
+  recordingUrl: string;
+  updatedAt: string;
+  updatedBy: string | null;
+}
+
+export interface BingoAdminWeeklyRecordingSummary extends BingoWeeklyRecordingSummary {
+  partnershipId: string;
+  partnerAUserId: string;
+  partnerAName: string;
+  partnerBUserId: string;
+  partnerBName: string;
+}
+
 export interface WellnessBingoSnapshot {
   cycle: BingoCycleSummary;
   activeWeek: BingoWeekSummary;
   board: BingoBoardSummary;
   weeklyScore: BingoScoreSummary;
   partner: BingoPartnerOption | null;
+  currentWeekRecording: BingoWeeklyRecordingSummary | null;
+  currentPartnershipId: string | null;
   personalScore: BingoScoreSummary;
   partnerScore: BingoScoreSummary | null;
   combinedScore: number;
+  adminWeeklyRecordings: Array<BingoAdminWeeklyRecordingSummary>;
 }
 
 interface UserRoleRow {
@@ -68,6 +89,18 @@ interface PartnershipRow {
   cycle_id: string;
   user_a_id: string;
   user_b_id: string;
+}
+
+interface WeeklyRecordingRow {
+  id: string;
+  cycle_id: string;
+  partnership_id: string;
+  week_index: number;
+  week_start_date: string;
+  week_end_date: string;
+  recording_url: string;
+  updated_at: string;
+  updated_by: string | null;
 }
 
 interface BingoBoardRow {
@@ -120,6 +153,9 @@ const BINGO_BOARD_SELECT = [
   'cumulative_vertical_bingos',
 ].join(', ');
 
+const ANCHORED_CYCLE_START_DATE = '2026-07-27';
+const CYCLE_LENGTH_DAYS = 30;
+
 export async function getAuthedSupabase() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -161,25 +197,39 @@ export function getBingoAdminClient() {
 export async function resolveActiveCycle(
   adminClient: ReturnType<typeof createSupabaseAdminClient>
 ) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = parseDateOnly(new Date().toISOString().slice(0, 10));
+  const { startDate, endDate } = getAnchoredCycleWindow(today);
+
+  const { error: deactivateError } = await adminClient
+    .from('wellness_bingo_cycles')
+    .update({ is_active: false })
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .or(`start_date.neq.${startDate},end_date.neq.${endDate}`);
+
+  if (deactivateError) {
+    throw new Error('Failed to refresh wellness bingo cycle activity state');
+  }
 
   const { data, error } = await adminClient
     .from('wellness_bingo_cycles')
+    .upsert(
+      {
+        title: '30-Day Team Wellness Bingo',
+        description:
+          'Win by building consistent habits, not just ticking boxes. A perfect week = a bingo.',
+        start_date: startDate,
+        end_date: endDate,
+        is_active: true,
+        deleted_at: null,
+      },
+      { onConflict: 'start_date,end_date' }
+    )
     .select('id, title, description, start_date, end_date')
-    .eq('is_active', true)
-    .is('deleted_at', null)
-    .lte('start_date', today)
-    .gte('end_date', today)
-    .order('start_date', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .single();
 
-  if (error) {
+  if (error || !data) {
     throw new Error('Failed to fetch the active wellness bingo cycle');
-  }
-
-  if (!data) {
-    return null;
   }
 
   return {
@@ -311,7 +361,8 @@ export async function fetchPartnerOptions(
 
 export async function buildWellnessBingoSnapshot(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
-  userId: string
+  userId: string,
+  requesterRole?: string | null
 ) {
   const cycle = await resolveActiveCycle(adminClient);
 
@@ -326,6 +377,9 @@ export async function buildWellnessBingoSnapshot(
   const personalScore = buildCycleToDateScore(boardRow, weeklyScore);
 
   const partnership = await findUserPartnership(adminClient, cycle.id, userId);
+  const currentWeekRecording = partnership
+    ? await findCurrentWeekRecording(adminClient, partnership.id, activeWeek)
+    : null;
   const partnerUserId = partnership
     ? partnership.user_a_id === userId
       ? partnership.user_b_id
@@ -346,6 +400,10 @@ export async function buildWellnessBingoSnapshot(
     partner = profiles[0] ?? null;
   }
 
+  const adminWeeklyRecordings = isAdminRole(requesterRole)
+    ? await fetchAdminWeeklyRecordings(adminClient, cycle.id)
+    : [];
+
   return {
     cycle,
     activeWeek,
@@ -356,9 +414,12 @@ export async function buildWellnessBingoSnapshot(
     },
     weeklyScore,
     partner,
+    currentWeekRecording,
+    currentPartnershipId: partnership?.id ?? null,
     personalScore,
     partnerScore,
     combinedScore: personalScore.totalPoints + (partnerScore?.totalPoints ?? 0),
+    adminWeeklyRecordings,
   } satisfies WellnessBingoSnapshot;
 }
 
@@ -377,7 +438,7 @@ function buildCycleToDateScore(boardRow: BingoBoardRow, weeklyScore: BingoScoreS
   );
 }
 
-function getActiveWeekSummary(cycle: BingoCycleSummary): BingoWeekSummary {
+export function getActiveWeekSummary(cycle: BingoCycleSummary): BingoWeekSummary {
   const cycleStart = parseDateOnly(cycle.startDate);
   const cycleEnd = parseDateOnly(cycle.endDate);
   const today = parseDateOnly(new Date().toISOString().slice(0, 10));
@@ -433,6 +494,140 @@ async function rollBoardIntoActiveWeek(
   }
 
   return normalizedBoard;
+}
+
+async function findCurrentWeekRecording(
+  adminClient: ReturnType<typeof createSupabaseAdminClient>,
+  partnershipId: string,
+  activeWeek: BingoWeekSummary
+) {
+  const { data, error } = await adminClient
+    .from('wellness_bingo_weekly_recordings')
+    .select(
+      'id, cycle_id, partnership_id, week_index, week_start_date, week_end_date, recording_url, updated_at, updated_by'
+    )
+    .eq('partnership_id', partnershipId)
+    .eq('week_index', activeWeek.index)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error('Failed to fetch weekly partner recording');
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return toWeeklyRecordingSummary(data as WeeklyRecordingRow);
+}
+
+async function fetchAdminWeeklyRecordings(
+  adminClient: ReturnType<typeof createSupabaseAdminClient>,
+  cycleId: string
+) {
+  const { data: recordingsData, error: recordingsError } = await adminClient
+    .from('wellness_bingo_weekly_recordings')
+    .select(
+      'id, cycle_id, partnership_id, week_index, week_start_date, week_end_date, recording_url, updated_at, updated_by'
+    )
+    .eq('cycle_id', cycleId)
+    .is('deleted_at', null)
+    .order('week_index', { ascending: false })
+    .order('updated_at', { ascending: false });
+
+  if (recordingsError) {
+    throw new Error('Failed to fetch admin weekly recordings');
+  }
+
+  const recordings = (recordingsData ?? []) as Array<WeeklyRecordingRow>;
+  if (recordings.length === 0) {
+    return [] satisfies Array<BingoAdminWeeklyRecordingSummary>;
+  }
+
+  const partnershipIds = [...new Set(recordings.map((entry) => entry.partnership_id))];
+
+  const { data: partnershipsData, error: partnershipsError } = await adminClient
+    .from('wellness_bingo_partnerships')
+    .select('id, user_a_id, user_b_id')
+    .in('id', partnershipIds)
+    .is('deleted_at', null);
+
+  if (partnershipsError) {
+    throw new Error('Failed to fetch partnerships for weekly recordings');
+  }
+
+  const partnerships = (partnershipsData ?? []) as Array<PartnershipRow>;
+  const partnershipById = new Map(partnerships.map((entry) => [entry.id, entry]));
+
+  const uniqueUserIds = [
+    ...new Set(partnerships.flatMap((entry) => [entry.user_a_id, entry.user_b_id])),
+  ];
+  if (uniqueUserIds.length === 0) {
+    return [] satisfies Array<BingoAdminWeeklyRecordingSummary>;
+  }
+
+  const { data: usersData, error: usersError } = await adminClient
+    .from('users')
+    .select('id, role, status')
+    .in('id', uniqueUserIds)
+    .is('deleted_at', null);
+
+  if (usersError) {
+    throw new Error('Failed to fetch user rows for weekly recordings');
+  }
+
+  const profileRows = (usersData ?? []) as Array<UserRoleRow>;
+  const profiles = await getPartnerProfiles(adminClient, profileRows);
+  const profileNameById = new Map(profiles.map((entry) => [entry.id, entry.name]));
+
+  return recordings
+    .map((recording) => {
+      const partnership = partnershipById.get(recording.partnership_id);
+
+      if (!partnership) {
+        return null;
+      }
+
+      return {
+        ...toWeeklyRecordingSummary(recording),
+        partnershipId: partnership.id,
+        partnerAUserId: partnership.user_a_id,
+        partnerAName: profileNameById.get(partnership.user_a_id) ?? 'Unknown user',
+        partnerBUserId: partnership.user_b_id,
+        partnerBName: profileNameById.get(partnership.user_b_id) ?? 'Unknown user',
+      } satisfies BingoAdminWeeklyRecordingSummary;
+    })
+    .filter((entry): entry is BingoAdminWeeklyRecordingSummary => entry !== null);
+}
+
+function toWeeklyRecordingSummary(recording: WeeklyRecordingRow): BingoWeeklyRecordingSummary {
+  return {
+    id: recording.id,
+    weekIndex: recording.week_index,
+    weekStartDate: recording.week_start_date,
+    weekEndDate: recording.week_end_date,
+    recordingUrl: recording.recording_url,
+    updatedAt: recording.updated_at,
+    updatedBy: recording.updated_by,
+  };
+}
+
+function isAdminRole(role: string | null | undefined) {
+  return role === 'admin' || role === 'super_admin';
+}
+
+function getAnchoredCycleWindow(today: Date) {
+  const anchor = parseDateOnly(ANCHORED_CYCLE_START_DATE);
+  const daysFromAnchor = diffInDays(anchor, today);
+  const cycleOffset = Math.floor(daysFromAnchor / CYCLE_LENGTH_DAYS);
+  const start = addDays(anchor, cycleOffset * CYCLE_LENGTH_DAYS);
+  const end = addDays(start, CYCLE_LENGTH_DAYS - 1);
+
+  return {
+    startDate: formatDateOnly(start),
+    endDate: formatDateOnly(end),
+  };
 }
 
 function parseDateOnly(value: string) {

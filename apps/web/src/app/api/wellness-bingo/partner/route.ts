@@ -17,7 +17,7 @@ type ExistingPartnership = Awaited<ReturnType<typeof findUserPartnership>>;
 
 export async function PUT(request: NextRequest) {
   try {
-    const { user, error } = await getAuthedSupabase();
+    const { user, role, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest) {
         return clearResult;
       }
 
-      const data = await buildWellnessBingoSnapshot(adminClient, user.id);
+      const data = await buildWellnessBingoSnapshot(adminClient, user.id, role);
       return NextResponse.json({ data });
     }
 
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (partnerValidation.isUnchangedPartner) {
-      const data = await buildWellnessBingoSnapshot(adminClient, user.id);
+      const data = await buildWellnessBingoSnapshot(adminClient, user.id, role);
       return NextResponse.json({ data });
     }
 
@@ -93,7 +93,7 @@ export async function PUT(request: NextRequest) {
       cycleId: cycle.id,
     });
 
-    const data = await buildWellnessBingoSnapshot(adminClient, user.id);
+    const data = await buildWellnessBingoSnapshot(adminClient, user.id, role);
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in PUT /api/wellness-bingo/partner:', error);

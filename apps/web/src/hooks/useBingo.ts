@@ -84,3 +84,27 @@ export function useUpdateBingoPartner() {
     },
   });
 }
+
+export function useUpdateBingoWeeklyRecording() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (recordingUrl: string | null) => {
+      const response = await fetch('/api/wellness-bingo/recording', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recordingUrl }),
+      });
+
+      if (!response.ok) {
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? 'Failed to update weekly recording link');
+      }
+
+      return (await response.json()) as { data: WellnessBingoSnapshot };
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.bingo.current() });
+    },
+  });
+}

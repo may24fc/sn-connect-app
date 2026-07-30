@@ -3,13 +3,13 @@ import { buildWellnessBingoSnapshot, getAuthedSupabase, getBingoAdminClient } fr
 
 export async function GET() {
   try {
-    const { user, error } = await getAuthedSupabase();
+    const { user, role, error } = await getAuthedSupabase();
 
     if (error || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const data = await buildWellnessBingoSnapshot(getBingoAdminClient(), user.id);
+    const data = await buildWellnessBingoSnapshot(getBingoAdminClient(), user.id, role);
     return NextResponse.json({ data });
   } catch (error) {
     console.error('Unexpected error in GET /api/wellness-bingo/current:', error);

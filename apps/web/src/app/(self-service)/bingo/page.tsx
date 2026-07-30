@@ -1,10 +1,12 @@
 'use client';
 
+import type { BingoPartnerOption } from '@/app/api/wellness-bingo/_lib';
 import {
   useBingoPartners,
   useCurrentBingo,
   useUpdateBingoBoard,
   useUpdateBingoPartner,
+  useUpdateBingoWeeklyRecording,
 } from '@/hooks/useBingo';
 import {
   BINGO_GRID,
@@ -43,17 +45,26 @@ export default function BingoPage() {
   const { data: partners = [], isLoading: isLoadingPartners } = useBingoPartners();
   const updateBoard = useUpdateBingoBoard();
   const updatePartner = useUpdateBingoPartner();
+  const updateRecording = useUpdateBingoWeeklyRecording();
   const [customHabitDraft, setCustomHabitDraft] = useState('');
+  const [recordingDraft, setRecordingDraft] = useState('');
 
   useEffect(() => {
     setCustomHabitDraft(data?.board.customHabitText ?? '');
   }, [data?.board.customHabitText]);
 
+  useEffect(() => {
+    setRecordingDraft(data?.currentWeekRecording?.recordingUrl ?? '');
+  }, [data?.currentWeekRecording?.recordingUrl]);
+
   const tileState = data?.board.tileState ?? EMPTY_BINGO_TILE_STATE;
   const completionPct = Math.round(((data?.weeklyScore.completedSquares ?? 0) / totalTiles) * 100);
 
   const mutationError =
-    updateBoard.error?.message ?? updatePartner.error?.message ?? error?.message;
+    updateBoard.error?.message ??
+    updatePartner.error?.message ??
+    updateRecording.error?.message ??
+    error?.message;
 
   const handleTileToggle = (tileId: BingoTileId) => {
     updateBoard.mutate({
@@ -84,13 +95,19 @@ export default function BingoPage() {
       mutationError={mutationError}
       customHabitDraft={customHabitDraft}
       setCustomHabitDraft={setCustomHabitDraft}
+      recordingDraft={recordingDraft}
+      setRecordingDraft={setRecordingDraft}
       completionPct={completionPct}
       tileState={tileState}
       isUpdatingBoard={updateBoard.isPending}
       isUpdatingPartner={updatePartner.isPending}
+      isUpdatingRecording={updateRecording.isPending}
       onTileToggle={handleTileToggle}
       onCustomHabitSave={handleCustomHabitSave}
       onPartnerChange={(value) => updatePartner.mutate(value)}
+      onRecordingSave={() =>
+        updateRecording.mutate(recordingDraft.trim() === '' ? null : recordingDraft.trim())
+      }
     />
   );
 }
@@ -124,32 +141,35 @@ function BingoPageContent({
   mutationError,
   customHabitDraft,
   setCustomHabitDraft,
+  recordingDraft,
+  setRecordingDraft,
   completionPct,
   tileState,
   isUpdatingBoard,
   isUpdatingPartner,
+  isUpdatingRecording,
   onTileToggle,
   onCustomHabitSave,
   onPartnerChange,
+  onRecordingSave,
 }: {
   data: BingoSnapshot;
-  partners: Array<{
-    id: string;
-    name: string;
-    hasPartner: boolean;
-    isSelectable: boolean;
-  }>;
+  partners: Array<BingoPartnerOption>;
   isLoadingPartners: boolean;
   mutationError: string | undefined;
   customHabitDraft: string;
   setCustomHabitDraft: (value: string) => void;
+  recordingDraft: string;
+  setRecordingDraft: (value: string) => void;
   completionPct: number;
   tileState: Record<BingoTileId, boolean>;
   isUpdatingBoard: boolean;
   isUpdatingPartner: boolean;
+  isUpdatingRecording: boolean;
   onTileToggle: (tileId: BingoTileId) => void;
   onCustomHabitSave: () => void;
   onPartnerChange: (value: string | null) => void;
+  onRecordingSave: () => void;
 }) {
   return (
     <div className="space-y-6 p-6">
@@ -192,9 +212,15 @@ function BingoPageContent({
           partners={partners}
           isLoadingPartners={isLoadingPartners}
           isUpdatingPartner={isUpdatingPartner}
+          recordingDraft={recordingDraft}
+          isUpdatingRecording={isUpdatingRecording}
           onPartnerChange={onPartnerChange}
+          onRecordingDraftChange={setRecordingDraft}
+          onRecordingSave={onRecordingSave}
         />
       </div>
+
+      <AdminWeeklyRecordingsCard items={data.adminWeeklyRecordings} />
     </div>
   );
 }
@@ -246,18 +272,21 @@ function BingoSidebar({
   partners,
   isLoadingPartners,
   isUpdatingPartner,
+  recordingDraft,
+  isUpdatingRecording,
   onPartnerChange,
+  onRecordingDraftChange,
+  onRecordingSave,
 }: {
   data: BingoSnapshot;
-  partners: Array<{
-    id: string;
-    name: string;
-    hasPartner: boolean;
-    isSelectable: boolean;
-  }>;
+  partners: Array<BingoPartnerOption>;
   isLoadingPartners: boolean;
   isUpdatingPartner: boolean;
+  recordingDraft: string;
+  isUpdatingRecording: boolean;
   onPartnerChange: (value: string | null) => void;
+  onRecordingDraftChange: (value: string) => void;
+  onRecordingSave: () => void;
 }) {
   return (
     <aside className="space-y-6">
@@ -272,7 +301,122 @@ function BingoSidebar({
         isUpdatingPartner={isUpdatingPartner}
         onPartnerChange={onPartnerChange}
       />
+      <WeeklyRecordingCard
+        hasPartner={Boolean(data.partner)}
+        weekIndex={data.activeWeek.index}
+        weekStartDate={data.activeWeek.startDate}
+        weekEndDate={data.activeWeek.endDate}
+        value={recordingDraft}
+        existingUrl={data.currentWeekRecording?.recordingUrl ?? null}
+        disabled={isUpdatingRecording}
+        onChange={onRecordingDraftChange}
+        onSave={onRecordingSave}
+      />
     </aside>
+  );
+}
+
+function WeeklyRecordingCard({
+  hasPartner,
+  weekIndex,
+  weekStartDate,
+  weekEndDate,
+  value,
+  existingUrl,
+  disabled,
+  onChange,
+  onSave,
+}: {
+  hasPartner: boolean;
+  weekIndex: number;
+  weekStartDate: string;
+  weekEndDate: string;
+  value: string;
+  existingUrl: string | null;
+  disabled: boolean;
+  onChange: (value: string) => void;
+  onSave: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Weekly Partner Recording</CardTitle>
+        <CardDescription>
+          Week {weekIndex} ({weekStartDate} to {weekEndDate}). Either partner can save one link for
+          this week.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="https://your-recording-link"
+          disabled={!hasPartner || disabled}
+        />
+        <Button onClick={onSave} disabled={!hasPartner || disabled} className="w-full">
+          Save Weekly Link
+        </Button>
+        {!hasPartner ? (
+          <p className="text-xs text-muted-foreground">
+            Pick a partner first to enable weekly recording links.
+          </p>
+        ) : null}
+        {existingUrl ? (
+          <a
+            href={existingUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex text-xs font-medium text-sky-700 underline underline-offset-4 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+          >
+            Open current weekly recording
+          </a>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AdminWeeklyRecordingsCard({
+  items,
+}: {
+  items: Array<BingoSnapshot['adminWeeklyRecordings'][number]>;
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Admin Weekly Recording Review</CardTitle>
+        <CardDescription>
+          Weekly links submitted by wellness pairs in the active cycle.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="rounded-xl border border-border bg-muted/30 p-3 text-sm shadow-sm"
+          >
+            <div className="font-medium text-foreground">
+              {item.partnerAName} and {item.partnerBName}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Week {item.weekIndex} ({item.weekStartDate} to {item.weekEndDate})
+            </div>
+            <a
+              href={item.recordingUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex text-xs font-medium text-sky-700 underline underline-offset-4 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+            >
+              Open recording
+            </a>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
