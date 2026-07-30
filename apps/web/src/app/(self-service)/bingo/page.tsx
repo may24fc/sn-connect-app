@@ -33,7 +33,7 @@ import {
   Skeleton,
   cn,
 } from '@hr-portal/ui';
-import { Grid2x2, HeartHandshake, Target, Trophy } from 'lucide-react';
+import { Grid2x2, HeartHandshake, Target, Trophy, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const totalTiles = BINGO_TILE_DEFINITIONS.length;
@@ -485,7 +485,8 @@ function PartnerPairingCard({
       <CardHeader>
         <CardTitle>Partner Pairing</CardTitle>
         <CardDescription>
-          Pick one teammate for this cycle. Combined scores update from both boards.
+          Pick one teammate for this cycle. You can switch partners anytime, and combined scores
+          update from both boards.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -494,13 +495,28 @@ function PartnerPairingCard({
           onValueChange={(value) => onPartnerChange(value === 'none' ? null : value)}
           disabled={isLoadingPartners || isUpdatingPartner}
         >
-          <SelectTrigger>
+          <SelectTrigger className={cn(currentPartner ? 'pr-9' : undefined)}>
             <SelectValue placeholder="Choose your partner" />
+            {currentPartner ? (
+              <button
+                type="button"
+                aria-label="Clear selected partner"
+                className="absolute right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onPartnerChange(null);
+                }}
+                disabled={isUpdatingPartner}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">No partner yet</SelectItem>
             {partners.map((partner) => (
-              <SelectItem key={partner.id} value={partner.id} disabled={!partner.isSelectable}>
+              <SelectItem key={partner.id} value={partner.id}>
                 <div className="flex w-full items-center justify-between gap-2">
                   <span>{partner.name}</span>
                   {partner.hasPartner ? (

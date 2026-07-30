@@ -318,13 +318,6 @@ export async function fetchPartnerOptions(
   cycleId: string,
   currentUserId: string
 ) {
-  const currentPartnership = await findUserPartnership(adminClient, cycleId, currentUserId);
-  const currentPartnerId = currentPartnership
-    ? currentPartnership.user_a_id === currentUserId
-      ? currentPartnership.user_b_id
-      : currentPartnership.user_a_id
-    : null;
-
   const { data: users, error: usersError } = await adminClient
     .from('users')
     .select('id, role, status')
@@ -356,7 +349,7 @@ export async function fetchPartnerOptions(
 
   const candidateRows = (users ?? []) as Array<UserRoleRow>;
 
-  return getPartnerProfiles(adminClient, candidateRows, partneredUserIds, currentPartnerId);
+  return getPartnerProfiles(adminClient, candidateRows, partneredUserIds);
 }
 
 export async function buildWellnessBingoSnapshot(
@@ -674,8 +667,7 @@ function clampDate(value: Date, min: Date, max: Date) {
 async function getPartnerProfiles(
   adminClient: ReturnType<typeof createSupabaseAdminClient>,
   users: Array<UserRoleRow>,
-  partneredUserIds?: ReadonlySet<string>,
-  currentPartnerId?: string | null
+  partneredUserIds?: ReadonlySet<string>
 ) {
   if (users.length === 0) {
     return [] satisfies Array<BingoPartnerOption>;
@@ -709,7 +701,7 @@ async function getPartnerProfiles(
           : formatRoleLabel(entry.role),
         email: profile?.company_email || profile?.personal_email || null,
         hasPartner: partneredUserIds?.has(entry.id) ?? false,
-        isSelectable: !partneredUserIds?.has(entry.id) || entry.id === currentPartnerId,
+        isSelectable: true,
       } satisfies BingoPartnerOption;
     })
     .sort((left, right) => left.name.localeCompare(right.name));

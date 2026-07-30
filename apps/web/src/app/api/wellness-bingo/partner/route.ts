@@ -2,7 +2,6 @@ import { createNotification, getUserDisplayName } from '@/lib/notifications/crea
 import { bingoPartnerUpdateSchema } from '@/lib/schemas/bingo.schema';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
-  type BingoCycleSummary,
   buildWellnessBingoSnapshot,
   ensureBoard,
   findUserPartnership,
@@ -54,7 +53,6 @@ export async function PUT(request: NextRequest) {
 
     const partnerValidation = await validatePartnerSelection({
       adminClient,
-      cycle,
       currentUserId: user.id,
       partnerUserId,
       existingPartnerUserId,
@@ -76,6 +74,20 @@ export async function PUT(request: NextRequest) {
     );
     if (clearResult) {
       return clearResult;
+    }
+
+    const selectedPartnerPartnership = await findUserPartnership(
+      adminClient,
+      cycle.id,
+      partnerUserId
+    );
+    const clearSelectedPartnerResult = await clearExistingPartnership(
+      adminClient,
+      selectedPartnerPartnership,
+      'Failed to reassign the selected partner'
+    );
+    if (clearSelectedPartnerResult) {
+      return clearSelectedPartnerResult;
     }
 
     const saveResult = await savePartnership(adminClient, cycle.id, user.id, partnerUserId);
@@ -140,13 +152,11 @@ function getPartnerIdForUser(
 
 async function validatePartnerSelection({
   adminClient,
-  cycle,
   currentUserId,
   partnerUserId,
   existingPartnerUserId,
 }: {
   adminClient: AdminClient;
-  cycle: BingoCycleSummary;
   currentUserId: string;
   partnerUserId: string;
   existingPartnerUserId: string | null;
@@ -169,20 +179,6 @@ async function validatePartnerSelection({
   if (partnerUserError || !partnerUser) {
     return {
       response: NextResponse.json({ error: 'Partner not found' }, { status: 404 }),
-      isUnchangedPartner: false,
-    };
-  }
-
-  const partnerPartnership = await findUserPartnership(adminClient, cycle.id, partnerUserId);
-  if (
-    partnerPartnership &&
-    !isPartnershipBetweenUsers(partnerPartnership, currentUserId, partnerUserId)
-  ) {
-    return {
-      response: NextResponse.json(
-        { error: 'That teammate is already paired in this wellness cycle' },
-        { status: 409 }
-      ),
       isUnchangedPartner: false,
     };
   }
@@ -241,17 +237,6 @@ async function savePartnership(
   }
 
   return null;
-}
-
-function isPartnershipBetweenUsers(
-  partnership: NonNullable<ExistingPartnership>,
-  leftUserId: string,
-  rightUserId: string
-) {
-  return (
-    (partnership.user_a_id === leftUserId && partnership.user_b_id === rightUserId) ||
-    (partnership.user_a_id === rightUserId && partnership.user_b_id === leftUserId)
-  );
 }
 
 async function notifySelectedPartner({

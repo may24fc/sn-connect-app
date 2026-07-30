@@ -14,7 +14,7 @@ export const BINGO_TILE_IDS = [
   'weekly_partner_call',
   'schedule_recharge_plan',
   'partner_encouragement',
-  'set_recharge_window',
+  'screen_free',
 ] as const;
 
 export type BingoTileId = (typeof BINGO_TILE_IDS)[number];
@@ -61,17 +61,22 @@ export const BINGO_TILE_DEFINITIONS: ReadonlyArray<BingoTileDefinition> = [
     id: 'schedule_recharge_plan',
     pointValue: 1,
     title: 'SCHEDULE',
-    subtitle: 'RECHARGE WINDOW WEEKLY PLAN',
+    subtitle: 'RECHARGE WINDOW',
   },
   { id: 'partner_encouragement', pointValue: 1, title: 'PARTNER', subtitle: 'ENCOURAGEMENT' },
-  { id: 'set_recharge_window', pointValue: 1, title: 'SET RECHARGE', subtitle: 'WINDOW' },
+  {
+    id: 'screen_free',
+    pointValue: 1,
+    title: 'SCREEN FREE',
+    subtitle: '15-MINUTE SCREEN-FREE BEFORE BED',
+  },
 ] as const;
 
 export const BINGO_GRID: ReadonlyArray<ReadonlyArray<BingoTileId>> = [
   ['move_ritual', 'sleep_window', 'post_411', 'custom_habit'],
   ['morning_sunlight', 'desk_stretches', 'free_space', 'celebrate_a_win'],
   ['drink_water', 'share_learning', 'share_goal', 'healthy_meal_prep'],
-  ['weekly_partner_call', 'schedule_recharge_plan', 'partner_encouragement', 'set_recharge_window'],
+  ['weekly_partner_call', 'schedule_recharge_plan', 'partner_encouragement', 'screen_free'],
 ] as const;
 
 export const EMPTY_BINGO_TILE_STATE: BingoTileState = Object.fromEntries(
