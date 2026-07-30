@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('employees')
       .select(
-        'id, user_id, employee_number, immediate_head, first_name, middle_name, last_name, birthday, date_hired, employment_type, work_arrangement, position, department, division, probation_end_date, phone, company_email, created_at, updated_at, deleted_at, users!employees_user_id_fkey(id, role, status, department_id, division_id, avatar_url), manager:users!employees_immediate_head_fkey(id, role, status)',
+        'id, user_id, employee_number, immediate_head, first_name, middle_name, last_name, birthday, date_hired, employment_type, work_arrangement, position, department, division, probation_end_date, phone, company_email, created_at, updated_at, deleted_at, users!employees_user_id_fkey!inner(id, role, status, department_id, division_id, avatar_url), manager:users!employees_immediate_head_fkey(id, role, status)',
         { count: 'exact' }
       )
       .is('deleted_at', null);
