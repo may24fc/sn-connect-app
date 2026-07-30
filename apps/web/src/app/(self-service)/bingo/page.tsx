@@ -108,6 +108,10 @@ export default function BingoPage() {
       onRecordingSave={() =>
         updateRecording.mutate(recordingDraft.trim() === '' ? null : recordingDraft.trim())
       }
+      onRecordingRemove={() => {
+        setRecordingDraft('');
+        updateRecording.mutate(null);
+      }}
     />
   );
 }
@@ -152,6 +156,7 @@ function BingoPageContent({
   onCustomHabitSave,
   onPartnerChange,
   onRecordingSave,
+  onRecordingRemove,
 }: {
   data: BingoSnapshot;
   partners: Array<BingoPartnerOption>;
@@ -170,6 +175,7 @@ function BingoPageContent({
   onCustomHabitSave: () => void;
   onPartnerChange: (value: string | null) => void;
   onRecordingSave: () => void;
+  onRecordingRemove: () => void;
 }) {
   return (
     <div className="space-y-6 p-6">
@@ -217,6 +223,7 @@ function BingoPageContent({
           onPartnerChange={onPartnerChange}
           onRecordingDraftChange={setRecordingDraft}
           onRecordingSave={onRecordingSave}
+          onRecordingRemove={onRecordingRemove}
         />
       </div>
 
@@ -277,6 +284,7 @@ function BingoSidebar({
   onPartnerChange,
   onRecordingDraftChange,
   onRecordingSave,
+  onRecordingRemove,
 }: {
   data: BingoSnapshot;
   partners: Array<BingoPartnerOption>;
@@ -287,6 +295,7 @@ function BingoSidebar({
   onPartnerChange: (value: string | null) => void;
   onRecordingDraftChange: (value: string) => void;
   onRecordingSave: () => void;
+  onRecordingRemove: () => void;
 }) {
   return (
     <aside className="space-y-6">
@@ -311,6 +320,7 @@ function BingoSidebar({
         disabled={isUpdatingRecording}
         onChange={onRecordingDraftChange}
         onSave={onRecordingSave}
+        onRemove={onRecordingRemove}
       />
     </aside>
   );
@@ -326,6 +336,7 @@ function WeeklyRecordingCard({
   disabled,
   onChange,
   onSave,
+  onRemove,
 }: {
   hasPartner: boolean;
   weekIndex: number;
@@ -336,7 +347,10 @@ function WeeklyRecordingCard({
   disabled: boolean;
   onChange: (value: string) => void;
   onSave: () => void;
+  onRemove: () => void;
 }) {
+  const saveButtonLabel = existingUrl ? 'Update Weekly Link' : 'Save Weekly Link';
+
   return (
     <Card>
       <CardHeader>
@@ -353,12 +367,28 @@ function WeeklyRecordingCard({
           placeholder="https://your-recording-link"
           disabled={!hasPartner || disabled}
         />
-        <Button onClick={onSave} disabled={!hasPartner || disabled} className="w-full">
-          Save Weekly Link
-        </Button>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button onClick={onSave} disabled={!hasPartner || disabled} className="w-full">
+            {saveButtonLabel}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onRemove}
+            disabled={!hasPartner || disabled || !existingUrl}
+            className="w-full"
+          >
+            Remove Current Link
+          </Button>
+        </div>
         {!hasPartner ? (
           <p className="text-xs text-muted-foreground">
             Pick a partner first to enable weekly recording links.
+          </p>
+        ) : null}
+        {hasPartner ? (
+          <p className="text-xs text-muted-foreground">
+            Submitted the wrong link? Paste a new URL then click {saveButtonLabel}, or remove the
+            current link.
           </p>
         ) : null}
         {existingUrl ? (
