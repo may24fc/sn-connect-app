@@ -114,8 +114,8 @@ Planning rule:
 - review actual Wise pricing for your real payout routes before the first live payroll batch
 
 Operational references:
-- [docs/WISE_CREDENTIALS_COLLECTION_FORM.md](WISE_CREDENTIALS_COLLECTION_FORM.md)
-- [WISE_WEBHOOK_SETUP.md](../WISE_WEBHOOK_SETUP.md)
+- [docs/payments/wise-credentials-collection-form.md](../payments/wise-credentials-collection-form.md)
+- [docs/payments/wise-webhook-setup.md](../payments/wise-webhook-setup.md)
 
 ## Scenario Model
 
@@ -239,7 +239,7 @@ Recommended approval posture:
 - [apps/web/src/app/api/ai/chat/route.ts](../apps/web/src/app/api/ai/chat/route.ts)
 - [apps/web/src/app/api/ai/suggestions/route.ts](../apps/web/src/app/api/ai/suggestions/route.ts)
 - [packages/ai/README.md](../packages/ai/README.md)
-- [docs/WISE_CREDENTIALS_COLLECTION_FORM.md](WISE_CREDENTIALS_COLLECTION_FORM.md)
+- [docs/payments/wise-credentials-collection-form.md](../payments/wise-credentials-collection-form.md)
 
 ---
 

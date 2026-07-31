@@ -197,7 +197,7 @@ Always reference migration files by timestamp when schema changes are included.
 Never document behaviour that does not yet exist. If a feature is planned but not implemented, mark it explicitly:
 
 ```markdown
-> **Not yet implemented** — tracked in PENDING_TASKS.md
+> **Not yet implemented** — tracked in GitHub Issues
 ```
 
 ---
@@ -215,7 +215,7 @@ Plan → Implement → Self-Review → Fix → Validate → Done
 ```
 
 **Step 1 — Plan**  
-Before writing code, state what you will change and why. Check `PENDING_TASKS.md` and existing docs for relevant context. Identify affected files, RLS policies, and any downstream consumers.
+Before writing code, state what you will change and why. Check open GitHub Issues and existing docs for relevant context. Identify affected files, RLS policies, and any downstream consumers.
 
 **Step 2 — Implement**  
 Make the smallest change that fully addresses the task. One concern per commit.
@@ -285,7 +285,7 @@ A task is done only when Steps 1–5 are complete **and** documentation is updat
 - [ ] CHANGELOG.md updated
 - [ ] ADR created if an architectural decision was made
 - [ ] ENVIRONMENT.md updated if env vars changed
-- [ ] PENDING_TASKS.md updated if a tracked item was completed
+- [ ] Related GitHub Issue updated or closed if a tracked item was completed
 ```
 
 ### 3.3 When Blocked
@@ -293,8 +293,8 @@ A task is done only when Steps 1–5 are complete **and** documentation is updat
 If a task cannot be completed cleanly within scope:
 
 1. **Do not ship a partial solution silently.** Document what was done and what remains.
-2. Add the remaining work to `PENDING_TASKS.md` with a clear description and reason for deferral.
-3. Leave `TODO:` comments in code pointing to the `PENDING_TASKS.md` entry — never leave unexplained `TODO`s.
+2. File the remaining work as a GitHub Issue with a clear description and reason for deferral.
+3. Leave `TODO:` comments in code pointing to the GitHub Issue — never leave unexplained `TODO`s.
 
 ---
 

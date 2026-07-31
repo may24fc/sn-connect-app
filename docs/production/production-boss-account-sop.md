@@ -220,7 +220,7 @@ For each new boss account, verify:
 
 The current pattern for privileged-account creation already exists in script form at:
 
-- [scripts/create-admin-test-accounts.mjs](../scripts/create-admin-test-accounts.mjs)
+- [scripts/create-admin-test-accounts.mjs](../scripts/accounts/create-admin-test-accounts.mjs)
 
 Use it as a fallback reference for manual flow only.
 
@@ -243,7 +243,7 @@ That is a follow-up implementation item, not a launch blocker for this SOP.
 - [apps/web/src/components/admin/InviteUserModal.tsx](../apps/web/src/components/admin/InviteUserModal.tsx)
 - [apps/web/src/contexts/AuthContext.tsx](../apps/web/src/contexts/AuthContext.tsx)
 - [apps/web/src/lib/auth/redirect-config.ts](../apps/web/src/lib/auth/redirect-config.ts)
-- [scripts/create-admin-test-accounts.mjs](../scripts/create-admin-test-accounts.mjs)
+- [scripts/create-admin-test-accounts.mjs](../scripts/accounts/create-admin-test-accounts.mjs)
 - [docs/production-launch-checklist.md](production-launch-checklist.md)
 
 ---

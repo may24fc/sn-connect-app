@@ -64,7 +64,7 @@ Root-level files you'll need:
 
 For automated setup, use:
 ```bash
-./scripts/vercel-setup.sh
+./scripts/deployment/vercel-setup.sh
 ```
 
 This script will guide you through the entire setup process interactively.

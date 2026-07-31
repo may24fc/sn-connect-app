@@ -221,7 +221,7 @@ Operational check:
 ### Wise
 
 - [ ] Required credentials collected
-- [ ] Credential handoff is complete using [docs/WISE_CREDENTIALS_COLLECTION_FORM.md](WISE_CREDENTIALS_COLLECTION_FORM.md)
+- [ ] Credential handoff is complete using [docs/payments/wise-credentials-collection-form.md](../payments/wise-credentials-collection-form.md)
 - [ ] Webhook configuration is ready
 - [ ] Live payroll is either verified or explicitly deferred
 
@@ -270,7 +270,7 @@ If any of the above is false, the launch is `NO-GO`.
 - [docs/production-boss-account-sop.md](production-boss-account-sop.md)
 - [docs/production-cost-model.md](production-cost-model.md)
 - [docs/ENVIRONMENT.md](ENVIRONMENT.md)
-- [docs/WISE_CREDENTIALS_COLLECTION_FORM.md](WISE_CREDENTIALS_COLLECTION_FORM.md)
+- [docs/payments/wise-credentials-collection-form.md](../payments/wise-credentials-collection-form.md)
 - [vercel.json](../vercel.json)
 - [apps/web/src/app/api/users/invite/route.ts](../apps/web/src/app/api/users/invite/route.ts)
 - [apps/web/src/contexts/AuthContext.tsx](../apps/web/src/contexts/AuthContext.tsx)

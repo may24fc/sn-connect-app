@@ -340,5 +340,5 @@ Update any hardcoded references to manager routes.
 
 - [AuthContext Implementation](../../apps/web/src/contexts/AuthContext.tsx)
 - [Sidebar Configuration](../../packages/ui/src/layout/Sidebar.tsx)
-- [RBAC Implementation Guide](../../RBAC-IMPLEMENTATION.md)
+- [Auth Architecture](../apps/web/architecture/auth.md)
 - [Project Guidelines](../../CLAUDE.md)

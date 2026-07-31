@@ -45,7 +45,7 @@ Recommended local workflow:
 pnpm env:use-local
 pnpm supabase:start
 pnpm supabase:status
-node scripts/setup-sample-accounts.mjs
+node scripts/accounts/setup-sample-accounts.mjs
 pnpm dev:web
 ```
 

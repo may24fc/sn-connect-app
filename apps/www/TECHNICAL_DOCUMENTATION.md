@@ -300,7 +300,7 @@ Make sure that you receive access to these items:
 | Testing guide | `docs/apps/www/testing-guide.md` |
 | UI enhancement checklist | `docs/apps/www/ui-enhancement-checklist.md` |
 | Vercel deployment guide | `docs/deployment/VERCEL_DEPLOYMENT.md` |
-| Local Supabase workflow | `docs/local-supabase-workflow.md` |
+| Local Supabase workflow | `docs/guides/local-supabase-workflow.md` |
 
 ---
 

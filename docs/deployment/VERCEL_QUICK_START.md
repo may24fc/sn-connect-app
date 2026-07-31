@@ -14,7 +14,7 @@ This is a condensed guide to get your HR Portal deployed to Vercel in minutes.
 ### Step 1: Run Setup Script
 
 ```bash
-./scripts/vercel-setup.sh
+./scripts/deployment/vercel-setup.sh
 ```
 
 This automated script will:

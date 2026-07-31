@@ -607,7 +607,7 @@ If she is taking over today, this is the safest order of execution.
 Primary references:
 - `../docs/README.md`
 - `../../supabase/config.toml`
-- `../docs/local-supabase-workflow.md`
+- `../docs/guides/local-supabase-workflow.md`
 - `../docs/apps/www/hidden-sections-2026-03-30.md`
 - `../docs/apps/www/priority-handoff.csv`
 - `../docs/apps/www/real-data-checklist.csv`

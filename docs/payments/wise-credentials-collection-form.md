@@ -4,7 +4,7 @@
 ---
 
 ### Instructions for Your Boss:
-Follow the guide in `WISE_PRODUCTION_SETUP_FOR_NON_TECH.md`, then fill in the values below.
+Follow the guide in `wise-production-setup-for-non-tech.md`, then fill in the values below.
 
 ---
 
@@ -83,6 +83,6 @@ Once filled in, send this form to your developer along with a note:
 ## Support
 
 If you get stuck on any step, refer to:
-1. The detailed guide: `WISE_PRODUCTION_SETUP_FOR_NON_TECH.md`
+1. The detailed guide: `wise-production-setup-for-non-tech.md`
 2. Wise Help: https://support.wise.com
 3. Your developer

@@ -26,7 +26,7 @@ Repository deployment split:
    - `SETUP_SUMMARY.md` - This file
 
 3. **Scripts**
-   - `scripts/vercel-setup.sh` - Automated setup script
+   - `scripts/deployment/vercel-setup.sh` - Automated setup script
 
 4. **GitHub Actions**
    - `.github/workflows/vercel-deploy.yml` - Already configured!
@@ -70,7 +70,7 @@ Gather these before starting:
 
 **Option 1: Automated Script (Recommended)**
 ```bash
-./scripts/vercel-setup.sh
+./scripts/deployment/vercel-setup.sh
 ```
 
 **Option 2: Manual Step-by-Step**
@@ -192,7 +192,8 @@ sn-hr-portal/
 │   └── web/                   ✅ Configured for deployment
 ├── packages/                  ✅ Will be transpiled
 ├── scripts/
-│   └── vercel-setup.sh       ✅ Automated setup
+│   └── deployment/
+│       └── vercel-setup.sh   ✅ Automated setup
 ├── .vercel/                   ⏳ Created after 'vercel link'
 ├── vercel.json               ✅ Deployment config
 ├── .vercelignore             ✅ Exclusion rules
@@ -312,7 +313,7 @@ Increase maxDuration in vercel.json
 
 Choose your path:
 
-1. **Automated**: `./scripts/vercel-setup.sh`
+1. **Automated**: `./scripts/deployment/vercel-setup.sh`
 2. **Guided**: Follow `VERCEL_SETUP_STEPS.md`
 3. **Quick**: Follow `VERCEL_QUICK_START.md`
 

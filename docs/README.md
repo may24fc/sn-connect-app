@@ -124,10 +124,33 @@ This hub maps each application and audience to its documentation entry point.
 |----------|----------|-------------|
 | [CLAUDE.md](../CLAUDE.md) | Root | Master project guide (tech stack, conventions, design system) |
 | [CHANGELOG.md](../CHANGELOG.md) | Root | Release history |
-| [PENDING_TASKS.md](../PENDING_TASKS.md) | Root | Tracked work items and progress |
-| [RBAC-IMPLEMENTATION.md](../RBAC-IMPLEMENTATION.md) | Root | Role-based access control implementation details |
 | [supabase/SCHEMA_SUMMARY.md](../supabase/SCHEMA_SUMMARY.md) | Supabase | Schema overview (30+ tables, 3 views, 70+ RLS policies) |
 | [supabase/QUICK_REFERENCE.md](../supabase/QUICK_REFERENCE.md) | Supabase | SQL + TypeScript query examples (all domains) |
+
+---
+
+## Payments (Wise)
+
+| Document | Description |
+|----------|-------------|
+| [payments/wise-production-setup-for-non-tech.md](payments/wise-production-setup-for-non-tech.md) | Non-technical guide for collecting Wise production credentials |
+| [payments/wise-credentials-collection-form.md](payments/wise-credentials-collection-form.md) | Form to record collected Wise credentials |
+| [payments/wise-webhook-setup.md](payments/wise-webhook-setup.md) | Local Wise webhook setup via ngrok |
+
+---
+
+## Planning & Proposals
+
+| Document | Description |
+|----------|-------------|
+| [planning/sn-management-setup-v1.md](planning/sn-management-setup-v1.md) | V1 implementation checklist |
+| [planning/sn-management-setup-v2.md](planning/sn-management-setup-v2.md) | V2 implementation checklist (user testing feedback) |
+| [planning/sn-management-setup-v3.md](planning/sn-management-setup-v3.md) | V3 implementation plan |
+| [planning/control-hub-sprint-summary.md](planning/control-hub-sprint-summary.md) | 8-sprint delivery plan |
+| [proposals/expense-tracking-system-proposal-v1.md](proposals/expense-tracking-system-proposal-v1.md) | Expense tracking system proposal (v1) |
+| [proposals/expense-tracking-system-proposal-v2.md](proposals/expense-tracking-system-proposal-v2.md) | Expense tracking & matching system proposal (v2) |
+| [proposals/pa-productivity-system.md](proposals/pa-productivity-system.md) | PA workflow & productivity system proposal |
+| [proposals/sfo-meta-report-template.md](proposals/sfo-meta-report-template.md) | Meta Ads campaign reporting template |
 
 ---
 
@@ -136,7 +159,7 @@ This hub maps each application and audience to its documentation entry point.
 All documentation follows the rules in [AGENT-GUIDELINES.md](AGENT-GUIDELINES.md):
 
 - **Every doc states its audience** in the first line
-- **Unimplemented features** are marked: `> **Not yet implemented** — tracked in PENDING_TASKS.md`
+- **Unimplemented features** are marked: `> **Not yet implemented** — tracked in GitHub Issues`
 - **Docs are updated immediately** when the corresponding code changes
 - **ADRs are immutable** once accepted — new decisions supersede the old
 
