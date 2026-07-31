@@ -1,11 +1,12 @@
 'use client';
 
-import { type ReactNode, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { MessageSquare, Send, CheckCircle, X } from 'lucide-react';
+import { type InquiryFormData, inquirySchema } from '@/lib/schemas/inquiry.schema';
+import { InquiryPhoneInput } from '@/components/ui/InquiryPhoneInput';
 import { cn } from '@/lib/utils';
-import { inquirySchema, type InquiryFormData } from '@/lib/schemas/inquiry.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle, MessageSquare, Send, X } from 'lucide-react';
+import { type ReactNode, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
 interface InquiryFormProps {
   businessUnitId?: string;
@@ -19,13 +20,17 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<InquiryFormData>({
     resolver: zodResolver(inquirySchema),
     defaultValues: {
       business_unit_id: businessUnitId ?? null,
+      company_website: '',
+      form_started_at: Date.now(),
     },
   });
 
@@ -42,9 +47,17 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
         throw new Error(err.error ?? 'Submission failed');
       }
       setSubmitted(true);
-      reset();
+      reset({
+        business_unit_id: businessUnitId ?? null,
+        company_website: '',
+        form_started_at: Date.now(),
+      });
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Unable to submit your inquiry. Please check your connection and try again.');
+      setSubmitError(
+        e instanceof Error
+          ? e.message
+          : 'Unable to submit your inquiry. Please check your connection and try again.'
+      );
     }
   }
 
@@ -56,6 +69,8 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
         onClick={() => {
           setIsOpen(true);
           setSubmitted(false);
+          setValue('form_started_at', Date.now());
+          setValue('company_website', '');
         }}
         className={cn(
           'fixed right-6 bottom-6 z-30 flex items-center gap-2 rounded-full px-5 py-3 font-semibold shadow-lg transition-all',
@@ -101,15 +116,26 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-3">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -left-[10000px] h-px w-px overflow-hidden"
+              >
+                <label htmlFor="business-inquiry-company-website">Company website</label>
+                <input
+                  id="business-inquiry-company-website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  {...register('company_website')}
+                />
+              </div>
+              <input type="hidden" {...register('form_started_at', { valueAsNumber: true })} />
               <div>
                 <input
                   {...register('name')}
                   placeholder="Your name"
                   className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
                 />
-                {errors.name && (
-                  <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
-                )}
+                {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
               </div>
               <div>
                 <input
@@ -123,11 +149,21 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
                 )}
               </div>
               <div>
-                <input
-                  {...register('phone')}
-                  placeholder="Phone (optional)"
-                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                <Controller
+                  name="phone"
+                  control={control}
+                  render={({ field }) => (
+                    <InquiryPhoneInput
+                      value={field.value ?? ''}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder="Enter phone number"
+                    />
+                  )}
                 />
+                {errors.phone && (
+                  <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>
+                )}
               </div>
               <div>
                 <input
@@ -151,9 +187,7 @@ export function InquiryForm({ businessUnitId, businessName }: InquiryFormProps):
                 )}
               </div>
 
-              {submitError && (
-                <p className="text-sm text-red-500">{submitError}</p>
-              )}
+              {submitError && <p className="text-sm text-red-500">{submitError}</p>}
 
               <button
                 type="submit"

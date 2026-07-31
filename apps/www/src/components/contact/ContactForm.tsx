@@ -1,12 +1,13 @@
 'use client';
 
-import { type ReactNode, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle, User, Mail, Phone, MessageSquare, Type, Clock } from 'lucide-react';
-import { inquirySchema, type InquiryFormData } from '@/lib/schemas/inquiry.schema';
 import SplitCTA from '@/components/ui/SplitCTA';
+import { InquiryPhoneInput } from '@/components/ui/InquiryPhoneInput';
+import { type InquiryFormData, inquirySchema } from '@/lib/schemas/inquiry.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircle, Clock, Mail, MessageSquare, Type, User } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { type ReactNode, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
 export function ContactForm(): ReactNode {
   const [submitted, setSubmitted] = useState(false);
@@ -15,6 +16,7 @@ export function ContactForm(): ReactNode {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setValue,
@@ -23,6 +25,8 @@ export function ContactForm(): ReactNode {
     resolver: zodResolver(inquirySchema),
     defaultValues: {
       business_unit_id: null,
+      company_website: '',
+      form_started_at: Date.now(),
     },
   });
 
@@ -33,10 +37,7 @@ export function ContactForm(): ReactNode {
       return;
     }
 
-    const normalizedService = requestedService
-      .replace(/[-_]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const normalizedService = requestedService.replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
 
     if (!normalizedService) {
       return;
@@ -61,9 +62,17 @@ export function ContactForm(): ReactNode {
         throw new Error(err.error ?? 'Submission failed');
       }
       setSubmitted(true);
-      reset();
+      reset({
+        business_unit_id: null,
+        company_website: '',
+        form_started_at: Date.now(),
+      });
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Unable to send your message. Please check your connection and try again.');
+      setSubmitError(
+        e instanceof Error
+          ? e.message
+          : 'Unable to send your message. Please check your connection and try again.'
+      );
     }
   }
 
@@ -73,7 +82,8 @@ export function ContactForm(): ReactNode {
         <CheckCircle className="h-12 w-12 text-primary-800" />
         <h3 className="mt-4 text-2xl font-bold text-zinc-900">Brief received</h3>
         <p className="mt-2 text-zinc-600">
-          Thank you for sharing your support needs. We&apos;ll review the brief and reply with next steps within 1 business day.
+          Thank you for sharing your support needs. We&apos;ll review the brief and reply with next
+          steps within 1 business day.
         </p>
         <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-800">
           <Clock className="h-3.5 w-3.5" />
@@ -97,6 +107,19 @@ export function ContactForm(): ReactNode {
       onSubmit={handleSubmit(onSubmit)}
       className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-8 shadow-card"
     >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-[10000px] h-px w-px overflow-hidden"
+      >
+        <label htmlFor="contact-company-website">Company website</label>
+        <input
+          id="contact-company-website"
+          tabIndex={-1}
+          autoComplete="off"
+          {...register('company_website')}
+        />
+      </div>
+      <input type="hidden" {...register('form_started_at', { valueAsNumber: true })} />
       {/* <h3 className="text-xl font-semibold text-[#0c1d2e]">Request support</h3>
       <p className="mt-1 text-sm text-zinc-500">
         Give us enough context to scope the right role, working style, and next step.
@@ -137,9 +160,7 @@ export function ContactForm(): ReactNode {
               className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
-          {errors.email && (
-            <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
-          )}
+          {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         {/* Phone */}
@@ -147,15 +168,20 @@ export function ContactForm(): ReactNode {
           <label htmlFor="contact-phone" className="block text-xs">
             Phone
           </label>
-          <div className="relative mt-1">
-            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              id="contact-phone"
-              {...register('phone')}
-              placeholder="Optional"
-              className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
-            />
-          </div>
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <InquiryPhoneInput
+                id="contact-phone"
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Enter phone number"
+              />
+            )}
+          />
+          {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>}
         </div>
 
         {/* Subject */}
@@ -172,9 +198,7 @@ export function ContactForm(): ReactNode {
               className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
-          {errors.subject && (
-            <p className="mt-1 text-xs text-red-500">{errors.subject.message}</p>
-          )}
+          {errors.subject && <p className="mt-1 text-xs text-red-500">{errors.subject.message}</p>}
         </div>
 
         {/* Message */}
@@ -192,9 +216,7 @@ export function ContactForm(): ReactNode {
               className="w-full rounded-lg border border-zinc-200 py-2.5 pl-10 pr-3 text-xs uppercase focus:border-primary-800 focus:ring-1 focus:ring-primary-800 focus:outline-none"
             />
           </div>
-          {errors.message && (
-            <p className="mt-1 text-xs text-red-500">{errors.message.message}</p>
-          )}
+          {errors.message && <p className="mt-1 text-xs text-red-500">{errors.message.message}</p>}
         </div>
       </div>
 
