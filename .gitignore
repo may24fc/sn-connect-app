@@ -17,6 +17,7 @@ ios/
 coverage/
 playwright-report/
 test-results/
+playwright-auth.json
 
 # Environment variables
 .env
