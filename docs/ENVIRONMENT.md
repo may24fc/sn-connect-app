@@ -42,6 +42,7 @@ This document describes all environment variables required by the HR Portal appl
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `RESEND_API_KEY` | API key for Resend transactional email service. Must start with `re_`. Used by Edge Functions to send emails. Obtain from [Resend Dashboard](https://resend.com/api-keys). Sender policy: keep a single verified From address (`no-reply@sngroup.com.au`) and vary only display names per email context. | Yes |
+| `INQUIRY_ABUSE_SECRET` | Server-only random secret used by `apps/www` to HMAC inquiry IP, email, and duplicate identifiers. Generate at least 32 random bytes; never prefix with `NEXT_PUBLIC_`. Use a distinct stable value per environment. | Yes |
 | `CRON_SECRET` | Secret used by Vercel to authenticate cron job requests. Must be at least 16 characters. Set in Vercel project settings. | Yes |
 | `ADMIN_SECRET_KEY` | Secret key for manual Edge Function invocation via `X-Admin-Key` header. Must be at least 32 characters. Generate with `openssl rand -base64 32`. | No |
 | `APP_URL` | Canonical internal app base URL for Edge Functions and other server-side jobs that generate absolute links outside the Next.js runtime. Set to `https://app.sngroup.com.au` in production. | No |
