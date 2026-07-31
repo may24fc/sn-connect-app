@@ -23,6 +23,14 @@ function getResendClient(): Resend | null {
   return new Resend(apiKey);
 }
 
+export type EmailSendResult =
+  | { sent: true; id: string | null }
+  | { sent: false; error: string };
+
+function getEmailErrorMessage(error: unknown): string {
+  return (error instanceof Error ? error.message : String(error)).slice(0, 500);
+}
+
 export async function sendApplicationConfirmation({
   to,
   applicantName,
@@ -82,21 +90,22 @@ export async function sendInquiryNotification({
   phone: string | null;
   subject: string;
   message: string;
-}) {
+}): Promise<EmailSendResult> {
   const resend = getResendClient();
-  if (!resend) return;
+  if (!resend) return { sent: false, error: 'RESEND_API_KEY is not configured' };
 
   const notificationEmail =
     process.env.INQUIRY_NOTIFICATION_EMAIL?.trim() || INQUIRY_NOTIFICATION_FALLBACK;
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: getFromEmail('recruitment'),
-      to: notificationEmail,
-      subject: `New inquiry received — ${subject}`,
-      html: buildEmailHtml({
-        heading: 'New Inquiry Received',
-        body: `
+    const { data, error } = await resend.emails.send(
+      {
+        from: getFromEmail('recruitment'),
+        to: notificationEmail,
+        subject: `New inquiry received — ${subject}`,
+        html: buildEmailHtml({
+          heading: 'New Inquiry Received',
+          body: `
       <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
         A new inquiry has been submitted through the website.
       </p>
@@ -107,58 +116,70 @@ export async function sendInquiryNotification({
       <p style="margin:0 0 8px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Subject:</strong> ${escapeHtml(subject)}</p>
       <p style="margin:0 0 12px;color:#18181b;font-size:14px;line-height:1.6;"><strong>Message:</strong></p>
       <div style="border:1px solid #e4e4e7;border-radius:10px;background:#fafafa;padding:16px;color:#3f3f46;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(message)}</div>`,
-      }),
-    });
+        }),
+      },
+      { idempotencyKey: `inquiry-internal/${inquiryId}` },
+    );
 
     if (error) {
-      console.error('[Email] Resend API error for inquiry notification:', error);
-    } else {
-      console.log('[Email] Inquiry notification sent successfully, id:', data?.id);
+      const messageText = getEmailErrorMessage(error.message);
+      console.error('[Email] Inquiry notification failed', { inquiryId, error: messageText });
+      return { sent: false, error: messageText };
     }
+    console.log('[Email] Inquiry notification sent', { inquiryId, resendId: data?.id ?? null });
+    return { sent: true, id: data?.id ?? null };
   } catch (error) {
-    console.error('[Email] Failed to send inquiry notification email:', error);
+    const messageText = getEmailErrorMessage(error);
+    console.error('[Email] Inquiry notification failed', { inquiryId, error: messageText });
+    return { sent: false, error: messageText };
   }
 }
 
 export async function sendInquiryConfirmation({
+  inquiryId,
   to,
-  name,
   subject,
 }: {
+  inquiryId: string;
   to: string;
-  name: string;
   subject: string;
-}) {
+}): Promise<EmailSendResult> {
   const resend = getResendClient();
-  if (!resend) return;
+  if (!resend) return { sent: false, error: 'RESEND_API_KEY is not configured' };
 
   try {
-    const { data, error } = await resend.emails.send({
-      from: getFromEmail('recruitment'),
-      to,
-      subject: `We received your inquiry — ${subject}`,
-      html: buildEmailHtml({
-        heading: 'Inquiry Received',
-        body: `
+    const { data, error } = await resend.emails.send(
+      {
+        from: getFromEmail('recruitment'),
+        to,
+        subject: 'We received your quick brief',
+        html: buildEmailHtml({
+          heading: 'Quick Brief Received',
+          body: `
       <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Dear ${escapeHtml(name)},
+        Thank you for contacting SN International Group. We received your quick brief.
       </p>
-      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;">
-        Thank you for contacting SN International Group. We have received your inquiry regarding <strong>${escapeHtml(subject)}</strong>.
-      </p>
+      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;"><strong>Inquiry ID:</strong> ${escapeHtml(inquiryId)}</p>
+      <p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;"><strong>Topic:</strong> ${escapeHtml(subject)}</p>
       <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;">
         Our team will review your message and get back to you as soon as possible.
       </p>`,
-      }),
-    });
+        }),
+      },
+      { idempotencyKey: `inquiry-confirmation/${inquiryId}` },
+    );
 
     if (error) {
-      console.error('[Email] Resend API error for inquiry confirmation:', error);
-    } else {
-      console.log('[Email] Inquiry confirmation sent successfully, id:', data?.id);
+      const messageText = getEmailErrorMessage(error.message);
+      console.error('[Email] Inquiry confirmation failed', { inquiryId, error: messageText });
+      return { sent: false, error: messageText };
     }
+    console.log('[Email] Inquiry confirmation sent', { inquiryId, resendId: data?.id ?? null });
+    return { sent: true, id: data?.id ?? null };
   } catch (error) {
-    console.error('[Email] Failed to send inquiry confirmation email:', error);
+    const messageText = getEmailErrorMessage(error);
+    console.error('[Email] Inquiry confirmation failed', { inquiryId, error: messageText });
+    return { sent: false, error: messageText };
   }
 }
 
