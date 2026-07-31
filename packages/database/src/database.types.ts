@@ -4729,48 +4729,108 @@ export type Database = {
           },
         ];
       };
+      inquiry_deduplication_keys: {
+        Row: {
+          expires_at: string;
+          fingerprint: string;
+        };
+        Insert: {
+          expires_at: string;
+          fingerprint: string;
+        };
+        Update: {
+          expires_at?: string;
+          fingerprint?: string;
+        };
+        Relationships: [];
+      };
+      inquiry_rate_limit_buckets: {
+        Row: {
+          expires_at: string;
+          identifier_hash: string;
+          last_refill_at: string;
+          scope: string;
+          tokens: number;
+        };
+        Insert: {
+          expires_at: string;
+          identifier_hash: string;
+          last_refill_at: string;
+          scope: string;
+          tokens: number;
+        };
+        Update: {
+          expires_at?: string;
+          identifier_hash?: string;
+          last_refill_at?: string;
+          scope?: string;
+          tokens?: number;
+        };
+        Relationships: [];
+      };
       public_inquiries: {
         Row: {
           business_unit_id: string | null;
+          confirmation_email_error: string | null;
+          confirmation_email_resend_id: string | null;
+          confirmation_email_status: string;
           created_at: string;
           deleted_at: string | null;
           email: string;
           id: string;
+          internal_email_error: string | null;
+          internal_email_resend_id: string | null;
+          internal_email_status: string;
           message: string;
           name: string;
           phone: string | null;
           responded_at: string | null;
           responded_by: string | null;
+          source: string;
           status: string;
           subject: string;
           updated_at: string;
         };
         Insert: {
           business_unit_id?: string | null;
+          confirmation_email_error?: string | null;
+          confirmation_email_resend_id?: string | null;
+          confirmation_email_status?: string;
           created_at?: string;
           deleted_at?: string | null;
           email: string;
           id?: string;
+          internal_email_error?: string | null;
+          internal_email_resend_id?: string | null;
+          internal_email_status?: string;
           message: string;
           name: string;
           phone?: string | null;
           responded_at?: string | null;
           responded_by?: string | null;
+          source?: string;
           status?: string;
           subject: string;
           updated_at?: string;
         };
         Update: {
           business_unit_id?: string | null;
+          confirmation_email_error?: string | null;
+          confirmation_email_resend_id?: string | null;
+          confirmation_email_status?: string;
           created_at?: string;
           deleted_at?: string | null;
           email?: string;
           id?: string;
+          internal_email_error?: string | null;
+          internal_email_resend_id?: string | null;
+          internal_email_status?: string;
           message?: string;
           name?: string;
           phone?: string | null;
           responded_at?: string | null;
           responded_by?: string | null;
+          source?: string;
           status?: string;
           subject?: string;
           updated_at?: string;
@@ -7091,6 +7151,10 @@ export type Database = {
       };
     };
     Functions: {
+      claim_inquiry_deduplication_key: {
+        Args: { p_fingerprint: string; p_ttl_seconds?: number };
+        Returns: boolean;
+      };
       calculate_milestone_progress: {
         Args: { p_milestone_id: string };
         Returns: number;
@@ -7114,6 +7178,18 @@ export type Database = {
       };
       calculate_tenure_days: { Args: { employee_id: string }; Returns: number };
       compute_tier: { Args: { p_points: number }; Returns: string };
+      consume_inquiry_rate_limit: {
+        Args: {
+          p_capacity: number;
+          p_identifier_hash: string;
+          p_scope: string;
+          p_window_seconds: number;
+        };
+        Returns: {
+          allowed: boolean;
+          retry_after_seconds: number;
+        }[];
+      };
       create_job_posting_with_requisition: {
         Args: {
           p_benefits: string;
@@ -7357,6 +7433,10 @@ export type Database = {
       resources_search_vector: {
         Args: { description: string; tags: string[]; title: string };
         Returns: unknown;
+      };
+      release_inquiry_deduplication_key: {
+        Args: { p_fingerprint: string };
+        Returns: undefined;
       };
       restore_knowledge_source_version: {
         Args: { p_source_id: string; p_version_number: number };
