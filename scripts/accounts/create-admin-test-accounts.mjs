@@ -9,7 +9,7 @@
  * - employee, associate, admin, super_admin
  *
  * Usage:
- *   node scripts/create-admin-test-accounts.mjs
+ *   node scripts/accounts/create-admin-test-accounts.mjs
  *
  * Creates the following accounts:
  * - admin@test.com (role: admin)

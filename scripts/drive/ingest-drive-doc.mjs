@@ -1,7 +1,7 @@
 // Usage:
-//   node scripts/ingest-drive-doc.mjs <FILE_ID_OR_GOOGLE_DOC_URL>
-//   node scripts/ingest-drive-doc.mjs <FILE_ID> --state=change
-//   node scripts/ingest-drive-doc.mjs <FILE_ID_OR_GOOGLE_DOC_URL> --direct
+//   node scripts/drive/ingest-drive-doc.mjs <FILE_ID_OR_GOOGLE_DOC_URL>
+//   node scripts/drive/ingest-drive-doc.mjs <FILE_ID> --state=change
+//   node scripts/drive/ingest-drive-doc.mjs <FILE_ID_OR_GOOGLE_DOC_URL> --direct
 //
 // This script force-triggers the existing /api/webhooks/drive endpoint,
 // which then emits the drive/document.updated Inngest event.
@@ -16,7 +16,7 @@ loadWebEnv();
 
 function printUsageAndExit() {
   console.error(
-    'Usage: node scripts/ingest-drive-doc.mjs <FILE_ID_OR_GOOGLE_DOC_URL> [--state=update|change] [--direct]'
+    'Usage: node scripts/drive/ingest-drive-doc.mjs <FILE_ID_OR_GOOGLE_DOC_URL> [--state=update|change] [--direct]'
   );
   process.exit(1);
 }

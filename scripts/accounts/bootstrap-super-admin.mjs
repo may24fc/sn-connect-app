@@ -5,7 +5,7 @@
  * This account is required before the leadership invite flow can be used.
  *
  * Usage:
- *   node scripts/bootstrap-super-admin.mjs \
+ *   node scripts/accounts/bootstrap-super-admin.mjs \
  *     --email may@24fitclub.com.au \
  *     --password '<temporary-password>' \
  *     --first-name May \

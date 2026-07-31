@@ -2,7 +2,7 @@
  * generate-implementation-checklist.mjs
  *
  * Generates docs/Implementation-Checklist-SN-Connect.docx
- * Run: node scripts/generate-implementation-checklist.mjs
+ * Run: node scripts/reports/generate-implementation-checklist.mjs
  */
 
 import {

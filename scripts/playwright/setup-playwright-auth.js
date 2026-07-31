@@ -3,7 +3,7 @@
  * Logs in with mock admin credentials and saves the session state
  * Reference: https://playwright.dev/docs/auth
  * 
- * Run with: node scripts/setup-playwright-auth.js
+ * Run with: node scripts/playwright/setup-playwright-auth.js
  */
 
 const { chromium } = require('@playwright/test');

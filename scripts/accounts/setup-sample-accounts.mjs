@@ -11,7 +11,7 @@
  * All accounts use password: password
  *
  * Usage:
- *   node scripts/setup-sample-accounts.mjs
+ *   node scripts/accounts/setup-sample-accounts.mjs
  */
 
 import fs from 'node:fs';

@@ -6,7 +6,7 @@ const target = process.argv[2];
 const validTargets = new Set(['localdev', 'stagingdev', 'prodops']);
 
 if (!validTargets.has(target)) {
-  console.error('Usage: node scripts/switch-env-target.mjs <localdev|stagingdev|prodops>');
+  console.error('Usage: node scripts/env/switch-env-target.mjs <localdev|stagingdev|prodops>');
   process.exit(1);
 }
 

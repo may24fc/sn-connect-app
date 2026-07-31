@@ -5,7 +5,7 @@
  * Non-technical, boss-friendly version of the 4-week sprint plan.
  * Structured to match the SN_Portal_WEB_Progress_Report format.
  *
- * Run: node scripts/generate-sprint-report.mjs
+ * Run: node scripts/reports/generate-sprint-report.mjs
  */
 
 import {

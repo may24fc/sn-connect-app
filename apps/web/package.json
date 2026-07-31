@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node ../../scripts/generate-application-update-summary.mjs",
+    "predev": "node ../../scripts/reports/generate-application-update-summary.mjs",
     "dev": "next dev --port 3001",
-    "prebuild": "node ../../scripts/generate-application-update-summary.mjs",
+    "prebuild": "node ../../scripts/reports/generate-application-update-summary.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",

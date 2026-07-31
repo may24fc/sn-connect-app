@@ -20,7 +20,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'node scripts/start-playwright-web.js',
+    command: 'node scripts/playwright/start-playwright-web.js',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
