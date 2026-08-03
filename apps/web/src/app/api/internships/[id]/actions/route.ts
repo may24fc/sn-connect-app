@@ -150,7 +150,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const typedEmployee = employee as EmployeeRecord;
 
-    const [{ error: convertError }, { error: userRoleError }, { error: employmentTypeError }] =
+    const [{ error: convertError }, { error: userRoleError }, { error: employmentTypeError }, { error: authUpdateError }] =
       await Promise.all([
         adminClient
           .from('internships')
@@ -167,13 +167,24 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           .update({ employment_type: 'probationary', updated_at: nowIso() })
           .eq('id', typedEmployee.id)
           .is('deleted_at', null),
+        adminClient.auth.admin.updateUserById(typedEmployee.user_id, {
+          app_metadata: {
+            ...(access as { user?: { app_metadata?: Record<string, unknown> } }).user?.app_metadata,
+            db_role: 'employee',
+          },
+          user_metadata: {
+            ...(access as { user?: { user_metadata?: Record<string, unknown> } }).user?.user_metadata,
+            role: 'employee',
+          },
+        }),
       ]);
 
-    if (convertError || userRoleError || employmentTypeError) {
+    if (convertError || userRoleError || employmentTypeError || authUpdateError) {
       console.error('Failed to convert associate to employee:', {
         convertError,
         userRoleError,
         employmentTypeError,
+        authUpdateError,
       });
       return NextResponse.json({ error: 'Failed to hire associate as employee' }, { status: 500 });
     }
