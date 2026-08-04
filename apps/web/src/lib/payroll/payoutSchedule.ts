@@ -247,7 +247,8 @@ export function formatPayoutScheduleLabel(monthKey: string, sequence: PayoutSequ
   const monthLabel = toMonthLabel(date);
   const payouts = getBiweeklyPayoutsInMonth(date);
   const seqIndex = Math.min(Math.max(sequence - 1, 0), payouts.length - 1);
-  const payoutDate = payouts[seqIndex] ?? payouts[0];
+  const fallbackDate = new Date(Date.UTC(year, monthIndex, 1));
+  const payoutDate: Date = (payouts[seqIndex] ?? payouts[0]) ?? fallbackDate;
   const ordinal = sequence === 1 ? '1st' : sequence === 2 ? '2nd' : '3rd';
   return `${monthLabel} - ${ordinal} Payout (${toShortDateLabel(payoutDate)})`;
 }
