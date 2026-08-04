@@ -147,7 +147,9 @@ export function getCurrentPayoutKey(referenceDate: Date = new Date()): string {
   // Determine sequence by comparing day to payout dates
   let sequence: number = 1;
   for (let i = 0; i < payouts.length; i++) {
-    const pd = payouts[i].getUTCDate();
+    const p = payouts[i];
+    if (!p) continue;
+    const pd = p.getUTCDate();
     if (phDay <= pd) {
       sequence = i + 1;
       break;
@@ -169,7 +171,7 @@ export function getPayoutScheduleOptions(referenceDate: Date = new Date()): Payo
   const nowUtcMs = referenceDate.getTime();
   // Determine if we've passed the last payout cutoff of the current month
   const currentPayouts = getBiweeklyPayoutsInMonth(currentMonth);
-  const lastPayout = currentPayouts[currentPayouts.length - 1];
+  const lastPayout = currentPayouts[currentPayouts.length - 1] ?? startOfMonthUtc(currentMonth);
   const isPastLastPayout = nowUtcMs > getPayoutCutoffUtcMs(lastPayout);
 
   const targetMonth = isPastLastPayout ? addMonths(currentMonth, 1) : currentMonth;
