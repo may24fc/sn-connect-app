@@ -519,7 +519,7 @@ export default function AdminInvoicePage() {
           <Button asChild>
             <Link href="/admin/invoice/create">
               <Plus className="mr-2 h-4 w-4" />
-              Create My Invoice
+              Submit My Invoice
             </Link>
           </Button>
         </div>
