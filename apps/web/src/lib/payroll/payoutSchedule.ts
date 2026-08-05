@@ -36,58 +36,24 @@ function addMonths(date: Date, count: number): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + count, 1));
 }
 
-// Baseline anchor for biweekly payouts (Friday July 24, 2026)
-const BASELINE_UTC_MS = Date.UTC(2026, 6, 24); // months 0-indexed: 6 = July
-
-function startOfMonthUtc(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+function getNthWeekdayOfMonth(year: number, monthIndex: number, weekday: number, nth: number): Date {
+  const firstOfMonth = new Date(Date.UTC(year, monthIndex, 1));
+  const firstWeekdayOffset = (weekday - firstOfMonth.getUTCDay() + 7) % 7;
+  const dayOfMonth = 1 + firstWeekdayOffset + (nth - 1) * 7;
+  return new Date(Date.UTC(year, monthIndex, dayOfMonth));
 }
 
-function endOfMonthUtc(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0));
-}
+function getMonthPayoutDates(monthDate: Date): { firstPayout: Date; secondPayout: Date } {
+  const year = monthDate.getUTCFullYear();
+  const monthIndex = monthDate.getUTCMonth();
 
-function getBiweeklyPayoutsInMonth(monthDate: Date): Date[] {
-  const monthStart = startOfMonthUtc(monthDate);
-  const monthEnd = endOfMonthUtc(monthDate);
+  // SN Connect payout policy: first and third Friday of the month.
+  // When a month has a fifth Friday, that date is not scheduled in that month;
+  // the next month simply starts again on its first Friday.
+  const firstPayout = getNthWeekdayOfMonth(year, monthIndex, 5, 1);
+  const secondPayout = getNthWeekdayOfMonth(year, monthIndex, 5, 3);
 
-  const payouts: Date[] = [];
-
-  // Start from baseline and step by 14 days until beyond month end.
-  // Find the first baseline occurrence that is <= monthEnd.
-  // If baseline is after monthEnd, step backward by 14 days until before monthEnd.
-  let cursorMs = BASELINE_UTC_MS;
-
-  // Move cursor forward until it's >= monthStart - 14 days to ensure we cover earlier payouts
-  while (cursorMs < monthStart.getTime() - 14 * 24 * 60 * 60 * 1000) {
-    cursorMs += 14 * 24 * 60 * 60 * 1000;
-  }
-
-  // Step backward if we overshot
-  while (cursorMs - 14 * 24 * 60 * 60 * 1000 >= monthStart.getTime()) {
-    cursorMs -= 14 * 24 * 60 * 60 * 1000;
-  }
-
-  // Collect payouts that fall within the month
-  while (cursorMs <= monthEnd.getTime()) {
-    const d = new Date(cursorMs);
-    // normalize to Friday (baseline is Friday, stepping by 14 days preserves weekday)
-    if (d.getUTCDay() === 5 && d >= monthStart && d <= monthEnd) {
-      payouts.push(d);
-    }
-    cursorMs += 14 * 24 * 60 * 60 * 1000;
-  }
-
-  // As a fallback, ensure at least one Friday payout exists in the month (shouldn't be needed)
-  if (payouts.length === 0) {
-    // find the first Friday in the month
-    const first = monthStart.getUTCDay();
-    const offset = (5 - first + 7) % 7;
-    const d = new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), 1 + offset));
-    payouts.push(d);
-  }
-
-  return payouts.sort((a, b) => a.getTime() - b.getTime());
+  return { firstPayout, secondPayout };
 }
 
 function getPhDateParts(referenceDate: Date): {
@@ -133,64 +99,57 @@ function getPayoutCutoffUtcMs(payoutDate: Date): number {
  *
  * Coverage rules (evaluated in PH calendar):
  *   - Day 1 through the 1st payout Friday  → `YYYY-MM:1`  (1st payout of that month)
- *   - Day after 1st payout Friday through month-end → `YYYY-MM:2`  (2nd payout of that month)
+ *   - Day after 1st payout Friday through the 3rd Friday → `YYYY-MM:2`  (2nd payout of that month)
+ *   - After the 3rd Friday, roll to the next month’s `YYYY-MM:1`
  *
- * This ensures the default filter stays on the 2nd payout for the rest of the month
- * after the 1st payout has already occurred, rather than jumping forward prematurely.
+ * This keeps each month to two payout options and rolls anything after the second
+ * payout into the next month’s first payout.
  */
 export function getCurrentPayoutKey(referenceDate: Date = new Date()): string {
   const { year: phYear, month: phMonth, day: phDay } = getPhDateParts(referenceDate);
   const currentMonth = new Date(Date.UTC(phYear, phMonth - 1, 1));
+  const currentMonthDates = getMonthPayoutDates(currentMonth);
   const monthKey = toMonthKey(currentMonth);
-  const payouts = getBiweeklyPayoutsInMonth(currentMonth);
 
-  // Determine sequence by comparing day to payout dates
-  let sequence: number = 1;
-  for (let i = 0; i < payouts.length; i++) {
-    const p = payouts[i];
-    if (!p) continue;
-    const pd = p.getUTCDate();
-    if (phDay <= pd) {
-      sequence = i + 1;
-      break;
-    }
-    // if we reached the end without break, choose last
-    if (i === payouts.length - 1) {
-      sequence = payouts.length;
-    }
+  if (phDay <= currentMonthDates.firstPayout.getUTCDate()) {
+    return `${monthKey}:1`;
   }
 
-  // Clamp to PayoutSequence union (1..3)
-  const seq = Math.min(Math.max(sequence, 1), 3) as PayoutSequence;
-  return `${monthKey}:${seq}`;
+  if (phDay <= currentMonthDates.secondPayout.getUTCDate()) {
+    return `${monthKey}:2`;
+  }
+
+  const nextMonth = addMonths(currentMonth, 1);
+  return `${toMonthKey(nextMonth)}:1`;
 }
 
 export function getPayoutScheduleOptions(referenceDate: Date = new Date()): PayoutScheduleOption[] {
   const { year: phYear, month: phMonth } = getPhDateParts(referenceDate);
   const currentMonth = new Date(Date.UTC(phYear, phMonth - 1, 1));
   const nowUtcMs = referenceDate.getTime();
-  // Determine if we've passed the last payout cutoff of the current month
-  const currentPayouts = getBiweeklyPayoutsInMonth(currentMonth);
-  const lastPayout = currentPayouts[currentPayouts.length - 1] ?? startOfMonthUtc(currentMonth);
-  const isPastLastPayout = nowUtcMs > getPayoutCutoffUtcMs(lastPayout);
+  const payouts = getMonthPayoutDates(currentMonth);
+  const monthKey = toMonthKey(currentMonth);
+  const monthLabel = toMonthLabel(currentMonth);
 
-  const targetMonth = isPastLastPayout ? addMonths(currentMonth, 1) : currentMonth;
-  const payouts = getBiweeklyPayoutsInMonth(targetMonth);
-  const monthKey = toMonthKey(targetMonth);
-  const monthLabel = toMonthLabel(targetMonth);
+  const firstDisabled = nowUtcMs > getPayoutCutoffUtcMs(payouts.firstPayout);
+  const secondDisabled = nowUtcMs > getPayoutCutoffUtcMs(payouts.secondPayout);
 
-  return payouts.map((payoutDate, idx) => {
-    const seq = (idx + 1) as PayoutSequence;
-    const disabled = nowUtcMs > getPayoutCutoffUtcMs(payoutDate) && !isPastLastPayout;
-    const ordinal = seq === 1 ? '1st' : seq === 2 ? '2nd' : '3rd';
-    return {
-      key: `${monthKey}:${seq}`,
+  return [
+    {
+      key: `${monthKey}:1`,
       monthKey,
-      sequence: seq,
-      label: `${monthLabel} - ${ordinal} Payout (${toShortDateLabel(payoutDate)})`,
-      disabled,
-    };
-  });
+      sequence: 1,
+      label: `${monthLabel} - 1st Payout (${toShortDateLabel(payouts.firstPayout)})`,
+      disabled: firstDisabled,
+    },
+    {
+      key: `${monthKey}:2`,
+      monthKey,
+      sequence: 2,
+      label: `${monthLabel} - 2nd Payout (${toShortDateLabel(payouts.secondPayout)})`,
+      disabled: secondDisabled,
+    },
+  ];
 }
 
 export function buildPayoutScheduleTag(monthKey: string, sequence: PayoutSequence): string {
@@ -240,15 +199,14 @@ export function formatPayoutScheduleLabel(monthKey: string, sequence: PayoutSequ
   const monthIndex = Number(monthRaw) - 1;
 
   if (!(Number.isFinite(year) && Number.isFinite(monthIndex) && monthIndex >= 0 && monthIndex <= 11)) {
-    return `${monthKey} - ${sequence === 1 ? '1st' : '2nd'} Payout`;
+    const fallbackOrdinal = sequence === 1 ? '1st' : sequence === 2 ? '2nd' : '3rd';
+    return `${monthKey} - ${fallbackOrdinal} Payout`;
   }
 
   const date = new Date(Date.UTC(year, monthIndex, 1));
   const monthLabel = toMonthLabel(date);
-  const payouts = getBiweeklyPayoutsInMonth(date);
-  const seqIndex = Math.min(Math.max(sequence - 1, 0), payouts.length - 1);
-  const fallbackDate = new Date(Date.UTC(year, monthIndex, 1));
-  const payoutDate: Date = (payouts[seqIndex] ?? payouts[0]) ?? fallbackDate;
+  const payouts = getMonthPayoutDates(date);
+  const payoutDate = sequence === 1 ? payouts.firstPayout : payouts.secondPayout;
   const ordinal = sequence === 1 ? '1st' : sequence === 2 ? '2nd' : '3rd';
   return `${monthLabel} - ${ordinal} Payout (${toShortDateLabel(payoutDate)})`;
 }
