@@ -17,6 +17,8 @@ export interface EditableField {
   key: string;
   /** Display label */
   label: string;
+  /** If true, blocks save until a value is provided */
+  required?: boolean | undefined;
   /** Icon element */
   icon: React.ReactNode;
   /** Current display value (formatted for view mode) */
@@ -104,6 +106,7 @@ function EditField({
         <div className="min-w-0 flex-1">
           <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-0.5 block">
             {field.label}
+            {field.required ? <span className="ml-1 text-rose-500">*</span> : null}
           </label>
           <Select value={value} onValueChange={(nextValue) => onChange(field.key, nextValue)}>
             <SelectTrigger className="h-8 text-sm">
@@ -128,6 +131,7 @@ function EditField({
       <div className="min-w-0 flex-1">
         <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-0.5 block">
           {field.label}
+          {field.required ? <span className="ml-1 text-rose-500">*</span> : null}
         </label>
         <Input
           type={field.inputType ?? 'text'}
@@ -170,6 +174,7 @@ export function EditableProfileSection({
 }: EditableProfileSectionProps): React.ReactNode {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const editableFields = fields.filter((f) => !f.readOnly);
 
@@ -180,36 +185,55 @@ export function EditableProfileSection({
       initial[field.key] = field.editValue ?? field.displayValue ?? '';
     }
     setDraft(initial);
+    setValidationError(null);
     setIsEditing(true);
   }, [editableFields]);
 
   const handleCancel = useCallback(() => {
     setDraft({});
+    setValidationError(null);
     setIsEditing(false);
   }, []);
 
   const handleFieldChange = useCallback((key: string, value: string) => {
+    if (validationError) {
+      setValidationError(null);
+    }
     setDraft((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  }, [validationError]);
 
   const handleSave = useCallback(async () => {
-    // Only send fields that actually changed
-    const changes: Record<string, string> = {};
     for (const field of editableFields) {
-      const original = field.editValue ?? field.displayValue ?? '';
-      const current = draft[field.key] ?? '';
-      if (current !== original) {
-        changes[field.key] = current;
+      if (!field.required) {
+        continue;
+      }
+
+      const current = String(draft[field.key] ?? '').trim();
+      if (!current) {
+        setValidationError(`${field.label} is required.`);
+        return;
       }
     }
 
-    if (Object.keys(changes).length === 0) {
-      // Nothing changed — just close
-      setIsEditing(false);
-      return;
-    }
+    setValidationError(null);
 
     try {
+      // Only send fields that actually changed
+      const changes: Record<string, string> = {};
+      for (const field of editableFields) {
+        const original = field.editValue ?? field.displayValue ?? '';
+        const current = draft[field.key] ?? '';
+        if (current !== original) {
+          changes[field.key] = current;
+        }
+      }
+
+      if (Object.keys(changes).length === 0) {
+        // Nothing changed — just close
+        setIsEditing(false);
+        return;
+      }
+
       await onSave(changes);
       setIsEditing(false);
       setDraft({});
@@ -262,6 +286,10 @@ export function EditableProfileSection({
           )}
         </div>
       </BentoCardHeader>
+
+      {validationError ? (
+        <div className="px-5 pb-1 text-xs text-rose-600 dark:text-rose-400">{validationError}</div>
+      ) : null}
 
       <BentoCardContent>
         {isLoading ? (

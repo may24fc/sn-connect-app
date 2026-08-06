@@ -187,6 +187,8 @@ export default function SuperAdminProfilePage() {
       paymentEmail: profile?.payment_email ?? null,
       paymentPhoneNumber: profile?.payment_phone_number ?? null,
       paymentCity: profile?.payment_city ?? null,
+      paymentProvince: profile?.payment_province ?? null,
+      paymentZipcode: profile?.payment_zipcode ?? null,
     };
   }, [profile, employee, user?.email]);
 
@@ -385,6 +387,7 @@ export default function SuperAdminProfilePage() {
       icon: <Building2 className="h-4 w-4" />,
       displayValue: mergedData.paymentBankName,
       placeholder: 'e.g. BDO Unibank',
+      required: true,
     },
     {
       key: 'paymentCountryCode',
@@ -395,12 +398,14 @@ export default function SuperAdminProfilePage() {
       inputType: 'select',
       options: SELECTABLE_SUPPORTED_COUNTRIES,
       placeholder: 'Select country',
+      required: true,
     },
     {
       key: 'paymentAccountName',
       label: 'Account Name',
       icon: <User className="h-4 w-4" />,
       displayValue: mergedData.paymentAccountName,
+      required: true,
     },
     {
       key: 'paymentAccountNumber',
@@ -408,6 +413,7 @@ export default function SuperAdminProfilePage() {
       icon: <CreditCard className="h-4 w-4" />,
       displayValue: mergedData.paymentAccountNumber,
       placeholder: 'Account number',
+      required: true,
     },
     {
       key: 'paymentEmail',
@@ -416,6 +422,7 @@ export default function SuperAdminProfilePage() {
       displayValue: mergedData.paymentEmail,
       href: mergedData.paymentEmail ? `mailto:${mergedData.paymentEmail}` : undefined,
       inputType: 'email',
+      required: true,
     },
     {
       key: 'paymentPhoneNumber',
@@ -423,12 +430,28 @@ export default function SuperAdminProfilePage() {
       icon: <Phone className="h-4 w-4" />,
       displayValue: mergedData.paymentPhoneNumber,
       inputType: 'tel',
+      required: true,
     },
     {
       key: 'paymentCity',
       label: 'Payment City',
       icon: <MapPin className="h-4 w-4" />,
       displayValue: mergedData.paymentCity,
+      required: true,
+    },
+    {
+      key: 'paymentProvince',
+      label: 'Payment Province',
+      icon: <MapPin className="h-4 w-4" />,
+      displayValue: mergedData.paymentProvince,
+      required: true,
+    },
+    {
+      key: 'paymentZipcode',
+      label: 'Payment Zip Code',
+      icon: <CreditCard className="h-4 w-4" />,
+      displayValue: mergedData.paymentZipcode,
+      required: true,
     },
   ];
 

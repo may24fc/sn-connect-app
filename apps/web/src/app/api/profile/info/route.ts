@@ -36,6 +36,8 @@ const partialProfileSchema = z
     paymentEmail: z.union([z.string().email(), z.literal('')]).optional(),
     paymentPhoneNumber: z.string().max(30).optional(),
     paymentCity: z.string().max(120).optional(),
+    paymentProvince: z.string().max(120).optional(),
+    paymentZipcode: z.string().max(20).optional(),
   })
   .strict();
 
@@ -64,6 +66,8 @@ const fieldMap: Record<string, string> = {
   paymentEmail: 'payment_email',
   paymentPhoneNumber: 'payment_phone_number',
   paymentCity: 'payment_city',
+  paymentProvince: 'payment_province',
+  paymentZipcode: 'payment_zipcode',
 };
 
 /**
