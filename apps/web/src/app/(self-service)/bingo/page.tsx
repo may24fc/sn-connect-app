@@ -227,7 +227,12 @@ function BingoPageContent({
         />
       </div>
 
-      <AdminWeeklyRecordingsCard items={data.adminWeeklyRecordings} />
+      <AdminWeeklySummaryCard
+        items={data.adminWeeklyRecordings}
+        partnershipSummaries={data.adminPartnershipSummaries}
+        totalWeeks={data.activeWeek.totalWeeks}
+        activeWeekIndex={data.activeWeek.index}
+      />
     </div>
   );
 }
@@ -406,45 +411,126 @@ function WeeklyRecordingCard({
   );
 }
 
-function AdminWeeklyRecordingsCard({
+function AdminWeeklySummaryCard({
   items,
+  partnershipSummaries,
+  totalWeeks,
+  activeWeekIndex,
 }: {
   items: Array<BingoSnapshot['adminWeeklyRecordings'][number]>;
+  partnershipSummaries: Array<BingoSnapshot['adminPartnershipSummaries'][number]>;
+  totalWeeks: number;
+  activeWeekIndex: number;
 }) {
-  if (items.length === 0) {
+  if (items.length === 0 && partnershipSummaries.length === 0) {
     return null;
   }
+
+  const byWeek = new Map<number, typeof items>();
+  for (const item of items) {
+    const existing = byWeek.get(item.weekIndex) ?? [];
+    existing.push(item);
+    byWeek.set(item.weekIndex, existing);
+  }
+
+  const weekDates = new Map<number, { start: string; end: string }>();
+  for (const item of items) {
+    if (!weekDates.has(item.weekIndex)) {
+      weekDates.set(item.weekIndex, { start: item.weekStartDate, end: item.weekEndDate });
+    }
+  }
+
+  const pointsByPartnershipId = new Map(
+    partnershipSummaries.map((s) => [s.partnershipId, s])
+  );
+
+  const weeks = Array.from({ length: totalWeeks }, (_, i) => i + 1);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Admin Weekly Recording Review</CardTitle>
-        <CardDescription>
-          Weekly links submitted by wellness pairs in the active cycle.
-        </CardDescription>
+        <CardTitle>Weekly Progress Summary</CardTitle>
+        <CardDescription>Pair participation, recordings, and cycle-to-date points.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-xl border border-border bg-muted/30 p-3 text-sm shadow-sm"
-          >
-            <div className="font-medium text-foreground">
-              {item.partnerAName} and {item.partnerBName}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Week {item.weekIndex} ({item.weekStartDate} to {item.weekEndDate})
-            </div>
-            <a
-              href={item.recordingUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-2 inline-flex text-xs font-medium text-sky-700 underline underline-offset-4 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+        {weeks.map((weekNum) => {
+          const recordings = byWeek.get(weekNum) ?? [];
+          const dates = weekDates.get(weekNum);
+          const isActive = weekNum === activeWeekIndex;
+          const isPast = weekNum < activeWeekIndex;
+
+          return (
+            <div
+              key={weekNum}
+              className={cn(
+                'rounded-xl border p-4',
+                isActive
+                  ? 'border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-950/40'
+                  : 'border-border bg-muted/30'
+              )}
             >
-              Open recording
-            </a>
-          </div>
-        ))}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">Week {weekNum}</span>
+                  {dates ? (
+                    <span className="text-xs text-muted-foreground">
+                      {dates.start} – {dates.end}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {recordings.length} {recordings.length === 1 ? 'pair' : 'pairs'}
+                  </span>
+                  {isActive ? (
+                    <Badge className="border-indigo-300 bg-indigo-100 text-[10px] uppercase tracking-widest text-indigo-700 shadow-none dark:border-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300">
+                      Active
+                    </Badge>
+                  ) : null}
+                </div>
+              </div>
+
+              {recordings.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {recordings.map((rec) => {
+                    const pts = pointsByPartnershipId.get(rec.partnershipId);
+                    return (
+                      <div
+                        key={rec.id}
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">
+                            {rec.partnerAName} &amp; {rec.partnerBName}
+                          </span>
+                          <a
+                            href={rec.recordingUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-medium text-sky-700 underline underline-offset-4 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
+                          >
+                            Recording
+                          </a>
+                        </div>
+                        {pts ? (
+                          <div className="mt-1.5 flex gap-4 text-xs text-muted-foreground">
+                            <span>{rec.partnerAName.split(' ')[0]}: <strong className="text-foreground">{pts.partnerAPoints} pts</strong></span>
+                            <span>{rec.partnerBName.split(' ')[0]}: <strong className="text-foreground">{pts.partnerBPoints} pts</strong></span>
+                            <span>Combined: <strong className="text-foreground">{pts.combinedPoints} pts</strong></span>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {isPast ? 'No submissions for this week.' : 'No submissions yet.'}
+                </p>
+              )}
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

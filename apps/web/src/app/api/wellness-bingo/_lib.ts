@@ -56,6 +56,17 @@ export interface BingoAdminWeeklyRecordingSummary extends BingoWeeklyRecordingSu
   partnerBName: string;
 }
 
+export interface BingoAdminPartnershipSummary {
+  partnershipId: string;
+  partnerAUserId: string;
+  partnerAName: string;
+  partnerAPoints: number;
+  partnerBUserId: string;
+  partnerBName: string;
+  partnerBPoints: number;
+  combinedPoints: number;
+}
+
 export interface WellnessBingoSnapshot {
   cycle: BingoCycleSummary;
   activeWeek: BingoWeekSummary;
@@ -68,6 +79,7 @@ export interface WellnessBingoSnapshot {
   partnerScore: BingoScoreSummary | null;
   combinedScore: number;
   adminWeeklyRecordings: Array<BingoAdminWeeklyRecordingSummary>;
+  adminPartnershipSummaries: Array<BingoAdminPartnershipSummary>;
 }
 
 interface UserRoleRow {
@@ -397,6 +409,10 @@ export async function buildWellnessBingoSnapshot(
     ? await fetchAdminWeeklyRecordings(adminClient, cycle.id)
     : [];
 
+  const adminPartnershipSummaries = isAdminRole(requesterRole)
+    ? await fetchAdminPartnershipSummaries(adminClient, cycle)
+    : [];
+
   return {
     cycle,
     activeWeek,
@@ -413,6 +429,7 @@ export async function buildWellnessBingoSnapshot(
     partnerScore,
     combinedScore: personalScore.totalPoints + (partnerScore?.totalPoints ?? 0),
     adminWeeklyRecordings,
+    adminPartnershipSummaries,
   } satisfies WellnessBingoSnapshot;
 }
 
@@ -513,6 +530,79 @@ async function findCurrentWeekRecording(
   }
 
   return toWeeklyRecordingSummary(data as WeeklyRecordingRow);
+}
+
+async function fetchAdminPartnershipSummaries(
+  adminClient: ReturnType<typeof createSupabaseAdminClient>,
+  cycle: BingoCycleSummary
+): Promise<Array<BingoAdminPartnershipSummary>> {
+  const { data: partnershipsData, error: partnershipsError } = await adminClient
+    .from('wellness_bingo_partnerships')
+    .select('id, user_a_id, user_b_id')
+    .eq('cycle_id', cycle.id)
+    .is('deleted_at', null);
+
+  if (partnershipsError) {
+    throw new Error('Failed to fetch partnerships for summary');
+  }
+
+  const partnerships = (partnershipsData ?? []) as Array<PartnershipRow>;
+  if (partnerships.length === 0) {
+    return [];
+  }
+
+  const uniqueUserIds = [...new Set(partnerships.flatMap((p) => [p.user_a_id, p.user_b_id]))];
+
+  const { data: boardsWithUser, error: boardsWithUserError } = await adminClient
+    .from('wellness_bingo_boards')
+    .select(
+      'user_id, id, custom_habit_text, tile_state, current_week_index, cumulative_completed_squares, cumulative_horizontal_bingos, cumulative_vertical_bingos'
+    )
+    .eq('cycle_id', cycle.id)
+    .in('user_id', uniqueUserIds)
+    .is('deleted_at', null);
+
+  if (boardsWithUserError) {
+    throw new Error('Failed to fetch boards with user ids');
+  }
+
+  const boardMapByUserId = new Map<string, BingoBoardRow>();
+  for (const raw of (boardsWithUser ?? []) as unknown as Array<Record<string, unknown>>) {
+    const board = toBingoBoardRow(raw);
+    if (board && typeof raw.user_id === 'string') {
+      boardMapByUserId.set(raw.user_id, board);
+    }
+  }
+
+  const userRoleRows: Array<UserRoleRow> = uniqueUserIds.map((id) => ({
+    id,
+    role: 'employee',
+    status: null,
+  }));
+  const profiles = await getPartnerProfiles(adminClient, userRoleRows);
+  const nameById = new Map(profiles.map((p) => [p.id, p.name]));
+
+  const getPoints = (userId: string): number => {
+    const board = boardMapByUserId.get(userId);
+    if (!board) return 0;
+    const weekly = computeBingoScore(normalizeBingoTileState(board.tile_state));
+    return buildCycleToDateScore(board, weekly).totalPoints;
+  };
+
+  return partnerships.map((p) => {
+    const aPoints = getPoints(p.user_a_id);
+    const bPoints = getPoints(p.user_b_id);
+    return {
+      partnershipId: p.id,
+      partnerAUserId: p.user_a_id,
+      partnerAName: nameById.get(p.user_a_id) ?? 'Unknown',
+      partnerAPoints: aPoints,
+      partnerBUserId: p.user_b_id,
+      partnerBName: nameById.get(p.user_b_id) ?? 'Unknown',
+      partnerBPoints: bPoints,
+      combinedPoints: aPoints + bPoints,
+    } satisfies BingoAdminPartnershipSummary;
+  });
 }
 
 async function fetchAdminWeeklyRecordings(

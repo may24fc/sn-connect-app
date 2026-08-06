@@ -701,7 +701,7 @@ export default function InvoicePage() {
             {showAmounts ? <Eye className="h-4 w-4 mr-1.5" /> : <EyeOff className="h-4 w-4 mr-1.5" />}
             {showAmounts ? 'Hide Amounts' : 'Show Amounts'}
           </Button>
-          <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Create Invoice</Button>
+          <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Submit Invoice</Button>
         </div>
       </div>
 
@@ -845,7 +845,7 @@ export default function InvoicePage() {
       >
         <DialogContent className="sm:max-w-xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Create Invoice</DialogTitle>
+            <DialogTitle>Submit Invoice</DialogTitle>
             <DialogDescription>
               Upload your existing invoice file. We will create a draft invoice for submission.
             </DialogDescription>

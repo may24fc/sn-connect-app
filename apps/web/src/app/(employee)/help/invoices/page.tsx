@@ -13,7 +13,7 @@ const faqs: FAQItem[] = [
   {
     question: 'How do I create a new invoice?',
     answer:
-      'Click the "Create Invoice" button, upload your invoice file, and select the payout schedule. The system saves a draft and extracts the amount from the uploaded document.',
+      'Click the "Submit Invoice" button, upload your invoice file, and select the payout schedule. The system saves a draft and extracts the amount from the uploaded document.',
   },
   {
     question: 'What happens after I submit an invoice?',
@@ -174,7 +174,7 @@ export default function InvoicesHelpPage(): ReactNode {
         <CardContent>
           <ol className="space-y-3">
             {[
-              'Click the "Create Invoice" button at the top of the Invoice page',
+              'Click the "Submit Invoice" button at the top of the Invoice page',
               'Upload your existing invoice file',
               'Select the payout schedule for submission',
               'Click "Upload & Save Draft" to create the draft invoice',
