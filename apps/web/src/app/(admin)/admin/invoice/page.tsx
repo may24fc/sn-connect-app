@@ -169,14 +169,14 @@ function AdminInvoiceDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60">
+      <DialogContent className="w-[calc(100vw-32px)] sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60">
         <DialogHeader className="sr-only">
           <DialogTitle>Invoice Details — {invoice.invoice_number}</DialogTitle>
           <DialogDescription>Invoice submission details for {employeeName}</DialogDescription>
         </DialogHeader>
 
         {/* Dark header */}
-        <div className="bg-zinc-900 px-6 pt-5 pb-5 pr-14">
+        <div className="bg-zinc-900 px-4 sm:px-6 pt-5 pb-5 pr-12 sm:pr-14">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">Amount</p>
@@ -192,7 +192,7 @@ function AdminInvoiceDetailDialog({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+        <div className="px-4 sm:px-6 py-5 space-y-4 overflow-y-auto flex-1">
           {/* Employee */}
           <div className="flex items-center gap-3">
             <Avatar className="h-9 w-9">
@@ -208,27 +208,27 @@ function AdminInvoiceDetailDialog({
           <Separator />
 
           {/* Details */}
-          <div className="space-y-2">
+          <div className="space-y-3 sm:space-y-2">
             {payoutLabel && (
-              <div className="flex items-start justify-between gap-4">
-                <span className="text-sm text-muted-foreground shrink-0">Payout Schedule</span>
-                <span className="text-sm font-medium text-right">{payoutLabel}</span>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground">Payout Schedule</span>
+                <span className="text-sm font-medium">{payoutLabel}</span>
               </div>
             )}
-            <div className="flex items-start justify-between gap-4">
-              <span className="text-sm text-muted-foreground shrink-0">Period</span>
-              <span className="text-sm font-medium text-right">{formatDateRange(invoice.period_start, invoice.period_end)}</span>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+              <span className="text-sm text-muted-foreground">Period</span>
+              <span className="text-sm font-medium">{formatDateRange(invoice.period_start, invoice.period_end)}</span>
             </div>
             {invoice.submitted_at && (
-              <div className="flex items-start justify-between gap-4">
-                <span className="text-sm text-muted-foreground shrink-0">Submitted</span>
-                <span className="text-sm font-medium text-right">{formatDate(invoice.submitted_at)}</span>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground">Submitted</span>
+                <span className="text-sm font-medium">{formatDate(invoice.submitted_at)}</span>
               </div>
             )}
             {invoice.converted_amount && sourceCurrency !== (invoice.target_currency || sourceCurrency) && (
-              <div className="flex items-start justify-between gap-4">
-                <span className="text-sm text-muted-foreground shrink-0">Converted Amount</span>
-                <span className="text-sm font-medium text-right">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                <span className="text-sm text-muted-foreground">Converted Amount</span>
+                <span className="text-sm font-medium">
                   {formatCurrency(Number(invoice.converted_amount), invoice.target_currency || 'AUD')}
                 </span>
               </div>
@@ -392,14 +392,14 @@ function PaymentDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60">
+      <DialogContent className="w-[calc(100vw-32px)] sm:w-full sm:max-w-md flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60">
         <DialogHeader className="sr-only">
           <DialogTitle>Payment Details — {employeeName}</DialogTitle>
           <DialogDescription>Payment information for {employeeName}</DialogDescription>
         </DialogHeader>
 
         {/* Dark header */}
-        <div className="bg-zinc-900 px-6 pt-5 pb-5 pr-14">
+        <div className="bg-zinc-900 px-4 sm:px-6 pt-5 pb-5 pr-12 sm:pr-14">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">PAYMENT DETAILS</p>
@@ -413,7 +413,7 @@ function PaymentDetailsDialog({
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+        <div className="px-4 sm:px-6 py-5 space-y-4 overflow-y-auto flex-1">
           {loading ? (
             // Skeleton Loading State
             <>
@@ -738,7 +738,7 @@ export default function AdminInvoicePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-3">
         <div>
           <div className="flex items-center gap-1.5">
             <h1 className="text-2xl font-bold text-foreground">Invoice</h1>
@@ -749,8 +749,8 @@ export default function AdminInvoicePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="w-[320px]">
+        <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:items-center">
+          <div className="w-full sm:w-[320px]">
             <Select
               value={effectivePayoutFilter}
               onValueChange={(value) => {
@@ -770,7 +770,7 @@ export default function AdminInvoicePage() {
               </SelectContent>
             </Select>
           </div>
-          <Button asChild>
+          <Button asChild className="w-full sm:w-auto">
             <Link href="/admin/invoice/create">
               <Plus className="mr-2 h-4 w-4" />
               Submit My Invoice
