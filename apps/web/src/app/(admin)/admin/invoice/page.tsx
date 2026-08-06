@@ -316,15 +316,17 @@ function PaymentDetailsDialog({
   row,
   open,
   onOpenChange,
+  loading,
 }: {
   row: PaymentDetailsDialogRow | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  loading: boolean;
 }) {
-  if (!row) return null;
+  if (!row && !loading) return null;
 
   const {
-    employeeName,
+    employeeName = '',
     avatarUrl,
     department,
     paymentBankName,
@@ -336,7 +338,7 @@ function PaymentDetailsDialog({
     paymentCity,
     paymentProvince,
     paymentZipcode,
-  } = row;
+  } = row || {};
 
   const nameParts = employeeName.split(' ');
 
@@ -401,41 +403,75 @@ function PaymentDetailsDialog({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">PAYMENT DETAILS</p>
-              <p className="text-xl font-bold text-white">{paymentBankName || 'Not specified'}</p>
+              {loading ? (
+                <div className="h-6 w-48 bg-zinc-700 rounded animate-pulse" />
+              ) : (
+                <p className="text-xl font-bold text-white">{paymentBankName || 'Not specified'}</p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
-          {/* Employee */}
-          <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt={employeeName} />}
-              <AvatarFallback>{getInitials(nameParts[0], nameParts.slice(1).join(' '))}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-semibold">{employeeName}</p>
-              <p className="text-xs text-muted-foreground">{department}</p>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Payment Details */}
-          <div className="space-y-3">
-            {paymentFields.map((field) => (
-              <div key={field.label} className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5 text-muted-foreground">{field.icon}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-muted-foreground">{field.label}</p>
-                  <p className="text-sm text-foreground mt-0.5 break-words">
-                    {field.value || <span className="text-muted-foreground italic">Not provided</span>}
-                  </p>
+          {loading ? (
+            // Skeleton Loading State
+            <>
+              {/* Employee Skeleton */}
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 bg-muted rounded-full animate-pulse" />
+                <div className="flex-1">
+                  <div className="h-4 w-24 bg-muted rounded animate-pulse mb-2" />
+                  <div className="h-3 w-32 bg-muted rounded animate-pulse" />
                 </div>
               </div>
-            ))}
-          </div>
+              <Separator />
+              {/* Payment Fields Skeleton */}
+              <div className="space-y-3">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 h-4 w-4 bg-muted rounded animate-pulse" />
+                    <div className="flex-1 min-w-0">
+                      <div className="h-3 w-20 bg-muted rounded animate-pulse mb-2" />
+                      <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            // Actual Content
+            <>
+              {/* Employee */}
+              <div className="flex items-center gap-3">
+                <Avatar className="h-9 w-9">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={employeeName} />}
+                  <AvatarFallback>{getInitials(nameParts[0], nameParts.slice(1).join(' '))}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold">{employeeName}</p>
+                  <p className="text-xs text-muted-foreground">{department}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Payment Details */}
+              <div className="space-y-3">
+                {paymentFields.map((field) => (
+                  <div key={field.label} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5 text-muted-foreground">{field.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-muted-foreground">{field.label}</p>
+                      <p className="text-sm text-foreground mt-0.5 break-words">
+                        {field.value || <span className="text-muted-foreground italic">Not provided</span>}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -452,6 +488,7 @@ export default function AdminInvoicePage() {
   const [detailRow, setDetailRow] = useState<DetailDialogRow | null>(null);
   const [paymentDetailsOpen, setPaymentDetailsOpen] = useState(false);
   const [paymentDetailsRow, setPaymentDetailsRow] = useState<PaymentDetailsDialogRow | null>(null);
+  const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false);
   const [selectedEmployeeIdForPayment, setSelectedEmployeeIdForPayment] = useState<string | null>(null);
   const { data: selectedEmployeeData } = useEmployee(selectedEmployeeIdForPayment);
 
@@ -618,6 +655,8 @@ export default function AdminInvoicePage() {
   };
 
   const handleViewPayment = (row: (typeof sortedRows)[number]) => {
+    setPaymentDetailsRow(null); // Clear previous data
+    setPaymentDetailsLoading(true); // Start loading
     setSelectedEmployeeIdForPayment(row.employee.id);
     setPaymentDetailsOpen(true);
   };
@@ -672,6 +711,8 @@ export default function AdminInvoicePage() {
           paymentProvince: null,
           paymentZipcode: null,
         });
+      } finally {
+        setPaymentDetailsLoading(false); // Stop loading
       }
     };
 
@@ -1072,6 +1113,7 @@ export default function AdminInvoicePage() {
         row={paymentDetailsRow}
         open={paymentDetailsOpen}
         onOpenChange={setPaymentDetailsOpen}
+        loading={paymentDetailsLoading}
       />
     </div>
   );
