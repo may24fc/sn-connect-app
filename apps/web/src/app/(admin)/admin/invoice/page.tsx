@@ -1,7 +1,7 @@
 'use client';
 
 import { SortableTableHead } from '@/components/data-display/SortableTableHead';
-import { useEmployees } from '@/hooks/useEmployees';
+import { useEmployees, useEmployee } from '@/hooks/useEmployees';
 import { type InvoiceRecord, useInvoiceExchangeRateToAud, useInvoices } from '@/hooks/useInvoices';
 import { useInvoicesRealtime } from '@/hooks/useInvoicesRealtime';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/lib/payroll/payoutSchedule';
 import { useTableSort } from '@/hooks/useTableSort';
 import { formatDate, formatDateRange } from '@/lib/format';
+import { getSupportedCountryLabel } from '@/lib/validation/phone';
 import { cn } from '@/lib/utils';
 import {
   Avatar,
@@ -50,7 +51,7 @@ import {
   TableRow,
 } from '@hr-portal/ui';
 import type { InvoiceStatus } from '@hr-portal/ui';
-import { AlertCircle, ChevronLeft, ChevronRight, ExternalLink, Eye, FileText, Loader2, Plus } from 'lucide-react';
+import { AlertCircle, Building2, ChevronLeft, ChevronRight, CreditCard, ExternalLink, Eye, FileText, Flag, Loader2, Mail, MapPin, Phone, Plus, User } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -294,6 +295,153 @@ function AdminInvoiceDetailDialog({
   );
 }
 
+type PaymentDetailsDialogRow = {
+  employeeId: string;
+  employeeName: string;
+  avatarUrl: string | undefined;
+  department: string;
+  paymentBankName: string | null;
+  paymentCountryCode: string;
+  paymentCountryLabel: string | null;
+  paymentAccountName: string | null;
+  paymentAccountNumber: string | null;
+  paymentEmail: string | null;
+  paymentPhoneNumber: string | null;
+  paymentCity: string | null;
+  paymentProvince: string | null;
+  paymentZipcode: string | null;
+};
+
+function PaymentDetailsDialog({
+  row,
+  open,
+  onOpenChange,
+}: {
+  row: PaymentDetailsDialogRow | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  if (!row) return null;
+
+  const {
+    employeeName,
+    avatarUrl,
+    department,
+    paymentBankName,
+    paymentCountryLabel,
+    paymentAccountName,
+    paymentAccountNumber,
+    paymentEmail,
+    paymentPhoneNumber,
+    paymentCity,
+    paymentProvince,
+    paymentZipcode,
+  } = row;
+
+  const nameParts = employeeName.split(' ');
+
+  const paymentFields = [
+    {
+      label: 'Bank Name',
+      value: paymentBankName,
+      icon: <Building2 className="h-4 w-4" />,
+    },
+    {
+      label: 'Payment Country',
+      value: paymentCountryLabel,
+      icon: <MapPin className="h-4 w-4" />,
+    },
+    {
+      label: 'Account Name',
+      value: paymentAccountName,
+      icon: <User className="h-4 w-4" />,
+    },
+    {
+      label: 'Account Number',
+      value: paymentAccountNumber,
+      icon: <CreditCard className="h-4 w-4" />,
+    },
+    {
+      label: 'Payment Email',
+      value: paymentEmail,
+      icon: <Mail className="h-4 w-4" />,
+    },
+    {
+      label: 'Payment Phone Number',
+      value: paymentPhoneNumber,
+      icon: <Phone className="h-4 w-4" />,
+    },
+    {
+      label: 'Payment City',
+      value: paymentCity,
+      icon: <MapPin className="h-4 w-4" />,
+    },
+    {
+      label: 'Payment Province',
+      value: paymentProvince,
+      icon: <Flag className="h-4 w-4" />,
+    },
+    {
+      label: 'Payment Zip Code',
+      value: paymentZipcode,
+      icon: <CreditCard className="h-4 w-4" />,
+    },
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg flex flex-col max-h-[90vh] p-0 gap-0 overflow-hidden [&>button:last-child]:!text-white [&>button:last-child]:!bg-zinc-700/60">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Payment Details — {employeeName}</DialogTitle>
+          <DialogDescription>Payment information for {employeeName}</DialogDescription>
+        </DialogHeader>
+
+        {/* Dark header */}
+        <div className="bg-zinc-900 px-6 pt-5 pb-5 pr-14">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-zinc-400 tracking-wide mb-1.5">PAYMENT DETAILS</p>
+              <p className="text-xl font-bold text-white">{paymentBankName || 'Not specified'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+          {/* Employee */}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={employeeName} />}
+              <AvatarFallback>{getInitials(nameParts[0], nameParts.slice(1).join(' '))}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-semibold">{employeeName}</p>
+              <p className="text-xs text-muted-foreground">{department}</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Payment Details */}
+          <div className="space-y-3">
+            {paymentFields.map((field) => (
+              <div key={field.label} className="flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5 text-muted-foreground">{field.icon}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-muted-foreground">{field.label}</p>
+                  <p className="text-sm text-foreground mt-0.5 break-words">
+                    {field.value || <span className="text-muted-foreground italic">Not provided</span>}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminInvoicePage() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<'matrix' | 'conversion'>('matrix');
@@ -302,6 +450,10 @@ export default function AdminInvoicePage() {
   const [manualConversionRateInput, setManualConversionRateInput] = useState<string>('');
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailRow, setDetailRow] = useState<DetailDialogRow | null>(null);
+  const [paymentDetailsOpen, setPaymentDetailsOpen] = useState(false);
+  const [paymentDetailsRow, setPaymentDetailsRow] = useState<PaymentDetailsDialogRow | null>(null);
+  const [selectedEmployeeIdForPayment, setSelectedEmployeeIdForPayment] = useState<string | null>(null);
+  const { data: selectedEmployeeData } = useEmployee(selectedEmployeeIdForPayment);
 
   useEffect(() => {
     const storedRate = window.localStorage.getItem(MANUAL_PHP_TO_AUD_RATE_STORAGE_KEY);
@@ -464,6 +616,67 @@ export default function AdminInvoicePage() {
     });
     setDetailOpen(true);
   };
+
+  const handleViewPayment = (row: (typeof sortedRows)[number]) => {
+    setSelectedEmployeeIdForPayment(row.employee.id);
+    setPaymentDetailsOpen(true);
+  };
+
+  // Update payment details row when employee data is loaded
+  useEffect(() => {
+    if (!selectedEmployeeData?.data) return;
+
+    const emp = selectedEmployeeData.data;
+    const employeeName = `${emp.first_name} ${emp.last_name}`;
+
+    // Fetch payment details (all fields from onboarding profile)
+    const fetchPaymentDetails = async () => {
+      try {
+        const res = await fetch(`/api/employees/${emp.id}/payment-details`);
+        const data = res.ok ? await res.json() : null;
+
+        const paymentCountryCode = data?.data?.payment_country_code ?? 'PH';
+
+        setPaymentDetailsRow({
+          employeeId: emp.id,
+          employeeName,
+          avatarUrl: getAvatarUrl(emp),
+          department: emp.department || '-',
+          paymentBankName: data?.data?.payment_bank_name ?? null,
+          paymentCountryCode,
+          paymentCountryLabel: getSupportedCountryLabel(paymentCountryCode),
+          paymentAccountName: data?.data?.payment_account_name ?? null,
+          paymentAccountNumber: data?.data?.payment_account_number ?? null,
+          paymentEmail: data?.data?.payment_email ?? null,
+          paymentPhoneNumber: data?.data?.payment_phone_number ?? null,
+          paymentCity: data?.data?.payment_city ?? null,
+          paymentProvince: data?.data?.payment_province ?? null,
+          paymentZipcode: data?.data?.payment_zipcode ?? null,
+        });
+      } catch (error) {
+        console.error('Failed to fetch payment details:', error);
+        // Fallback: show minimal payment data
+        setPaymentDetailsRow({
+          employeeId: emp.id,
+          employeeName,
+          avatarUrl: getAvatarUrl(emp),
+          department: emp.department || '-',
+          paymentBankName: null,
+          paymentCountryCode: 'PH',
+          paymentCountryLabel: getSupportedCountryLabel('PH'),
+          paymentAccountName: null,
+          paymentAccountNumber: null,
+          paymentEmail: null,
+          paymentPhoneNumber: null,
+          paymentCity: null,
+          paymentProvince: null,
+          paymentZipcode: null,
+        });
+      }
+    };
+
+    fetchPaymentDetails();
+  }, [selectedEmployeeData?.data]);
   const {
     data: audRateData,
     isLoading: audRateLoading,
@@ -685,12 +898,13 @@ export default function AdminInvoicePage() {
                       <SortableTableHead column="aud_amount" {...sortHeadProps}>AUD Amount</SortableTableHead>
                       <SortableTableHead column="status" {...sortHeadProps}>Status</SortableTableHead>
                       <TableHead className="w-12" />
+                      <TableHead className="w-12" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="py-10">
+                        <TableCell colSpan={8} className="py-10">
                           <EmptyState
                             icon={FileText}
                             title="No employees found"
@@ -757,6 +971,17 @@ export default function AdminInvoicePage() {
                                   <Eye className="h-4 w-4 text-muted-foreground" />
                                 </Button>
                               )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                aria-label="View payment details"
+                                onClick={(e) => { e.stopPropagation(); handleViewPayment(row); }}
+                              >
+                                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                              </Button>
                             </TableCell>
                           </TableRow>
                         );
@@ -842,6 +1067,11 @@ export default function AdminInvoicePage() {
         row={detailRow}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+      />
+      <PaymentDetailsDialog
+        row={paymentDetailsRow}
+        open={paymentDetailsOpen}
+        onOpenChange={setPaymentDetailsOpen}
       />
     </div>
   );
