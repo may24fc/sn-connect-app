@@ -1016,12 +1016,12 @@ export default function AdminInvoicePage() {
                             <TableCell className="text-right">
                               <Button
                                 variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
+                                size="sm"
+                                className="text-xs h-7 px-2 bg-blue-100 hover:bg-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 text-foreground"
                                 aria-label="View payment details"
                                 onClick={(e) => { e.stopPropagation(); handleViewPayment(row); }}
                               >
-                                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                Payment Details
                               </Button>
                             </TableCell>
                           </TableRow>
