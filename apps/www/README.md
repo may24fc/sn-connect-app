@@ -61,6 +61,7 @@ Provide actual values for:
 - `NEXT_PUBLIC_GOOGLE_APPOINTMENT_EMBED_URL` if used
 - `NEXT_PUBLIC_WWW_HIDE_EXPANSION_SECTIONS`
 - `RESEND_API_KEY`
+- `INQUIRY_ABUSE_SECRET`
 - `INQUIRY_NOTIFICATION_EMAIL`
 - `INNGEST_EVENT_KEY` if ATS resume processing is enabled
 - `INNGEST_BASE_URL` if not using the default
@@ -188,6 +189,7 @@ Minimum variables required for the app to boot cleanly:
 
 Required for full form behavior:
 - `RESEND_API_KEY`
+- `INQUIRY_ABUSE_SECRET`
 - `INQUIRY_NOTIFICATION_EMAIL`
 
 Required for booking CTA behavior:

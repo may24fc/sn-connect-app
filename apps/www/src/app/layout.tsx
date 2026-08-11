@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import 'react-phone-number-input/style.css';
 import './globals.css';
 import { PageTransitionWrapper } from '@/components/layout/PageTransitionWrapper';
 import { SiteFrame } from '@/components/layout/SiteFrame';

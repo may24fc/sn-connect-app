@@ -20,6 +20,7 @@ This is the documentation index for the `apps/www` workspace — the public-faci
 | Document | Description |
 |----------|-------------|
 | [hidden-sections-2026-03-30.md](hidden-sections-2026-03-30.md) | Feature-flagged hidden routes and restore checklist |
+| [inquiry-email-service-enhancement.md](inquiry-email-service-enhancement.md) | Plain-language and technical guide to the secured quick-brief inquiry and email flow |
 | [priority-handoff.csv](priority-handoff.csv) | Content handoff priority matrix (what stakeholders need to provide) |
 | [real-data-checklist.csv](real-data-checklist.csv) | Full checklist of pages still using mock/placeholder data |
 

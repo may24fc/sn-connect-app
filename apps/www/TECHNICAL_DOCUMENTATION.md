@@ -180,6 +180,7 @@ Set the values in `apps/www/.env.local` for local work. Set the values in the Ve
 | Variable | Function |
 | --- | --- |
 | `RESEND_API_KEY` | Email service key |
+| `INQUIRY_ABUSE_SECRET` | Server-only HMAC secret for inquiry abuse controls |
 | `INQUIRY_NOTIFICATION_EMAIL` | Receiver of inquiry notifications |
 | `NEXT_PUBLIC_GOOGLE_APPOINTMENT_SCHEDULE_URL` | Booking link. Alternative name: `NEXT_PUBLIC_GOOGLE_BOOKING_URL` |
 | `NEXT_PUBLIC_GOOGLE_APPOINTMENT_EMBED_URL` | Embedded booking calendar (optional) |

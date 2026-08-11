@@ -67,7 +67,7 @@ export default function AboutHero() {
       {/* ── Bottom row: scroll button left · subtitle right ── */}
       <div className="flex items-start gap-8">
         <motion.a
-          href="#about-card"
+          href="#our-story-section"
           aria-label="Scroll to content"
           className="hidden sm:block group relative w-12 h-12 rounded-lg border border-[#0c1d2e]/20
                      group-hover:border-transparent cursor-pointer shrink-0 overflow-hidden
@@ -76,7 +76,7 @@ export default function AboutHero() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.85 }}
           onClick={(e) => {
-            const target = document.getElementById('about-card');
+            const target = document.getElementById('our-story-section');
             if (!target) return;
             const lenis = getLenis();
             if (lenis) {

@@ -12,7 +12,8 @@
         "NEXT_PUBLIC_WWW_URL",
         "SUPABASE_SERVICE_ROLE_KEY",
         "OPENAI_API_KEY",
-        "RESEND_API_KEY"
+        "RESEND_API_KEY",
+        "INQUIRY_ABUSE_SECRET"
       ]
     },
     "dev": {
