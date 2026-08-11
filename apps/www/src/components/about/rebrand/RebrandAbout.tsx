@@ -1,10 +1,11 @@
 'use client';
 
 import { useSmoothScroll } from '../../../hooks/useSmoothScroll';
-import Navbar from '../../home/rebrand/Navbar';
 import Footer from '../../home/rebrand/Footer';
-import AboutHero from './AboutHero';
+import Navbar from '../../home/rebrand/Navbar';
 import AboutCard from './AboutCard';
+import AboutHero from './AboutHero';
+import OurStorySection from './OurStorySection';
 import VisionSection from './VisionSection';
 
 export default function RebrandAbout() {
@@ -15,6 +16,8 @@ export default function RebrandAbout() {
       <Navbar alwaysLogoPill />
 
       <AboutHero />
+
+      <OurStorySection />
 
       <AboutCard />
 
