@@ -91,6 +91,17 @@ type PaTaskListRow = PaTaskRecord & {
 };
 
 const NONE_VALUE = '__none__';
+const ALLOWED_ATTACHMENT_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.doc', '.docx', '.txt'];
+const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+]);
 
 function colorClass(color: PaTaskLookupColor) {
   const map: Record<PaTaskLookupColor, string> = {
@@ -237,17 +248,23 @@ export default function PaTasksPage() {
     notes: '',
   });
 
-  const [createAttachmentForm, setCreateAttachmentForm] = useState<{
+  type AttachmentDraft = {
     type: 'link' | 'file';
     title: string;
     url: string;
     file: File | null;
-  }>({
-    type: 'link',
-    title: '',
-    url: '',
-    file: null,
-  });
+  };
+
+  function createAttachmentDraft(): AttachmentDraft {
+    return {
+      type: 'link',
+      title: '',
+      url: '',
+      file: null,
+    };
+  }
+
+  const [createAttachmentDrafts, setCreateAttachmentDrafts] = useState<AttachmentDraft[]>([createAttachmentDraft()]);
 
   const [categoryForm, setCategoryForm] = useState({
     id: '',
@@ -267,6 +284,19 @@ export default function PaTasksPage() {
     url: '',
     file: null,
   });
+
+  const createAttachmentError = useMemo(
+    () => createAttachmentDrafts.find((attachment) => attachment.title.trim() || attachment.url.trim() || attachment.file) ? createAttachmentDrafts.map((attachment) => getAttachmentValidationError(attachment)).find((error) => Boolean(error)) ?? null : null,
+    [createAttachmentDrafts]
+  );
+
+  const detailAttachmentError = useMemo(
+    () =>
+      attachmentForm.title.trim() || attachmentForm.url.trim() || attachmentForm.file
+        ? getAttachmentValidationError(attachmentForm)
+        : null,
+    [attachmentForm]
+  );
 
   const categoryColorOptions: PaTaskLookupColor[] = ['zinc', 'sky', 'amber', 'rose', 'emerald', 'orange', 'violet'];
 
@@ -365,6 +395,50 @@ export default function PaTasksPage() {
         variant: 'error',
       });
     }
+  }
+
+  function getAttachmentValidationError(attachment: Pick<AttachmentDraft, 'type' | 'title' | 'url' | 'file'>): string | null {
+    if (!attachment.title.trim()) {
+      return 'Attachment title is required.';
+    }
+
+    if (attachment.type === 'link') {
+      if (!attachment.url.trim()) {
+        return 'Attachment link is required.';
+      }
+      return null;
+    }
+
+    if (!attachment.file) {
+      return 'Please select a valid file.';
+    }
+
+    const fileName = attachment.file.name.toLowerCase();
+    const mimeType = attachment.file.type.toLowerCase();
+    const hasAllowedMime = ALLOWED_ATTACHMENT_MIME_TYPES.has(mimeType);
+    const hasAllowedExtension = ALLOWED_ATTACHMENT_EXTENSIONS.some((extension) => fileName.endsWith(extension));
+
+    if (!hasAllowedMime && !hasAllowedExtension) {
+      return 'Unsupported file type. Allowed: JPG, JPEG, PNG, WEBP, GIF, PDF, DOC, DOCX, and TXT.';
+    }
+
+    if (attachment.file.size > 10 * 1024 * 1024) {
+      return 'File exceeds 10MB size limit.';
+    }
+
+    return null;
+  }
+
+  function isValidAttachmentDraft(attachment: AttachmentDraft) {
+    if (!attachment.title.trim()) {
+      return false;
+    }
+
+    if (attachment.type === 'link') {
+      return attachment.url.trim().length > 0 && !getAttachmentValidationError(attachment);
+    }
+
+    return Boolean(attachment.file) && !getAttachmentValidationError(attachment);
   }
 
   async function addTaskAttachment(
@@ -939,47 +1013,88 @@ export default function PaTasksPage() {
                 <Label>Waiting On</Label>
                 <Input value={createForm.waitingOn} onChange={(e) => setCreateForm((p) => ({ ...p, waitingOn: e.target.value }))} />
               </div>
-              <div className="space-y-2 rounded-md border p-3">
-                <div className="text-sm font-medium text-muted-foreground">Attachments</div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <Select
-                    value={createAttachmentForm.type}
-                    onValueChange={(value: 'link' | 'file') =>
-                      setCreateAttachmentForm((p) => ({ ...p, type: value }))
-                    }
+              <div className="space-y-3 rounded-md border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-medium text-muted-foreground">Attachments</div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCreateAttachmentDrafts((prev) => [...prev, createAttachmentDraft()])}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="link">Link</SelectItem>
-                      <SelectItem value="file">File</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="Attachment title"
-                    value={createAttachmentForm.title}
-                    onChange={(e) =>
-                      setCreateAttachmentForm((p) => ({ ...p, title: e.target.value }))
-                    }
-                  />
-                  {createAttachmentForm.type === 'link' ? (
-                    <Input
-                      key="create-link-input"
-                      placeholder="https://..."
-                      value={createAttachmentForm.url}
-                      onChange={(e) =>
-                        setCreateAttachmentForm((p) => ({ ...p, url: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <Input
-                      key="create-file-input"
-                      type="file"
-                      onChange={(e) =>
-                        setCreateAttachmentForm((p) => ({ ...p, file: e.target.files?.[0] ?? null }))
-                      }
-                    />
-                  )}
+                    <Plus className="mr-1 h-4 w-4" /> Add attachment
+                  </Button>
                 </div>
+
+                {createAttachmentDrafts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No attachments added yet.</p>
+                ) : (
+                  createAttachmentDrafts.map((attachment, index) => (
+                    <div key={`create-attachment-${index}`} className="space-y-2 rounded-md border p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Attachment {index + 1}</span>
+                        {createAttachmentDrafts.length > 1 ? (
+                          <Button type="button" variant="outline" size="sm" onClick={() => setCreateAttachmentDrafts((prev) => prev.filter((_, i) => i !== index))}>
+                            Remove
+                          </Button>
+                        ) : null}
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <Select
+                          value={attachment.type}
+                          onValueChange={(value: 'link' | 'file') =>
+                            setCreateAttachmentDrafts((prev) =>
+                              prev.map((item, itemIndex) => (itemIndex === index ? { ...item, type: value } : item))
+                            )
+                          }
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="link">Link</SelectItem>
+                            <SelectItem value="file">File</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          placeholder="Attachment title"
+                          value={attachment.title}
+                          onChange={(e) =>
+                            setCreateAttachmentDrafts((prev) =>
+                              prev.map((item, itemIndex) => (itemIndex === index ? { ...item, title: e.target.value } : item))
+                            )
+                          }
+                        />
+                        {attachment.type === 'link' ? (
+                          <Input
+                            key={`create-link-input-${index}`}
+                            placeholder="https://..."
+                            value={attachment.url}
+                            onChange={(e) =>
+                              setCreateAttachmentDrafts((prev) =>
+                                prev.map((item, itemIndex) => (itemIndex === index ? { ...item, url: e.target.value } : item))
+                              )
+                            }
+                          />
+                        ) : (
+                          <Input
+                            key={`create-file-input-${index}`}
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.txt,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                            onChange={(e) =>
+                              setCreateAttachmentDrafts((prev) =>
+                                prev.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, file: e.target.files?.[0] ?? null } : item
+                                )
+                              )
+                            }
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {createAttachmentError ? (
+                  <p className="text-sm text-red-600 dark:text-red-400">{createAttachmentError}</p>
+                ) : null}
               </div>
               <div className="space-y-1.5">
                 <Label>Notes/Remarks</Label>
@@ -990,7 +1105,17 @@ export default function PaTasksPage() {
           <SlidePanelFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button
-              disabled={createTask.isPending || !createForm.title.trim() || !createForm.statusId || !createForm.priorityId}
+              disabled={
+                createTask.isPending ||
+                !createForm.title.trim() ||
+                !createForm.statusId ||
+                !createForm.priorityId ||
+                createAttachmentDrafts.some(
+                  (attachment) =>
+                    (attachment.title.trim() || attachment.url.trim() || attachment.file) &&
+                    Boolean(getAttachmentValidationError(attachment))
+                )
+              }
               onClick={() => {
                 void createTask
                   .mutateAsync({
@@ -1006,36 +1131,51 @@ export default function PaTasksPage() {
                     notes: createForm.notes || null,
                   })
                   .then(async (response) => {
-                    const hasAttachment =
-                      createAttachmentForm.title.trim() &&
-                      ((createAttachmentForm.type === 'link' && createAttachmentForm.url.trim()) ||
-                        (createAttachmentForm.type === 'file' && createAttachmentForm.file));
+                    const validAttachments = createAttachmentDrafts.filter(isValidAttachmentDraft);
+                    let attachmentSuccessCount = 0;
+                    let attachmentFailureCount = 0;
 
-                    if (hasAttachment) {
+                    for (const attachment of validAttachments) {
                       try {
                         const attachmentPayload =
-                          createAttachmentForm.type === 'link'
+                          attachment.type === 'link'
                             ? {
                                 attachmentType: 'link' as const,
-                                title: createAttachmentForm.title.trim(),
-                                url: createAttachmentForm.url.trim(),
+                                title: attachment.title.trim(),
+                                url: attachment.url.trim(),
                               }
                             : {
                                 attachmentType: 'file' as const,
-                                title: createAttachmentForm.title.trim(),
-                                file: createAttachmentForm.file as File,
+                                title: attachment.title.trim(),
+                                file: attachment.file as File,
                               };
 
                         await addTaskAttachment(response.data.id, attachmentPayload);
+                        attachmentSuccessCount += 1;
                       } catch (error) {
-                        addToast({
-                          title: 'Task created but attachment could not be added',
-                          description: error instanceof Error ? error.message : 'Unable to attach the file or link',
-                        });
+                        attachmentFailureCount += 1;
+                        console.error('Failed to add PA task attachment during creation:', error);
                       }
                     }
 
-                    addToast({ title: 'Task created', description: 'PA task has been added.' });
+                    if (attachmentFailureCount > 0) {
+                      addToast({
+                        title: 'Task created with attachment issue',
+                        description:
+                          attachmentSuccessCount > 0
+                            ? `${attachmentSuccessCount} attachment(s) were saved, but ${attachmentFailureCount} could not be added.`
+                            : 'Task was created, but one or more attachments could not be added.',
+                      });
+                    } else {
+                      addToast({
+                        title: 'Task created',
+                        description:
+                          attachmentSuccessCount > 0
+                            ? `PA task has been added with ${attachmentSuccessCount} attachment(s).`
+                            : 'PA task has been added.',
+                      });
+                    }
+
                     setCreateOpen(false);
                     setCreateForm({
                       title: '',
@@ -1049,7 +1189,7 @@ export default function PaTasksPage() {
                       waitingOn: '',
                       notes: '',
                     });
-                    setCreateAttachmentForm({ type: 'link', title: '', url: '', file: null });
+                    setCreateAttachmentDrafts([createAttachmentDraft()]);
                   })
                   .catch((error: unknown) => {
                     addToast({
@@ -1173,13 +1313,22 @@ export default function PaTasksPage() {
                         <Input
                           key="detail-file-input"
                           type="file"
+                          accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.doc,.docx,.txt,image/jpeg,image/png,image/webp,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                           onChange={(e) => setAttachmentForm((p) => ({ ...p, file: e.target.files?.[0] ?? null }))}
                         />
                       )}
                     </div>
+                    {detailAttachmentError ? (
+                      <p className="text-sm text-red-600 dark:text-red-400">{detailAttachmentError}</p>
+                    ) : null}
                     <Button
                       size="sm"
-                      disabled={createAttachment.isPending || !attachmentForm.title.trim() || (attachmentForm.type === 'link' ? !attachmentForm.url.trim() : !attachmentForm.file)}
+                      disabled={
+                        createAttachment.isPending ||
+                        Boolean(detailAttachmentError) ||
+                        !attachmentForm.title.trim() ||
+                        (attachmentForm.type === 'link' ? !attachmentForm.url.trim() : !attachmentForm.file)
+                      }
                       onClick={() => {
                         const request =
                           attachmentForm.type === 'link'

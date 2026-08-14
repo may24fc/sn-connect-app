@@ -14,7 +14,24 @@ const ALLOWED_MIME_TYPES = new Set([
   'text/plain',
 ]);
 
+const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf', '.doc', '.docx', '.txt']);
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+function getAttachmentFileError(file: File): string | null {
+  const fileName = file.name.toLowerCase();
+  const hasAllowedMime = ALLOWED_MIME_TYPES.has(file.type.toLowerCase());
+  const hasAllowedExtension = Array.from(ALLOWED_EXTENSIONS).some((extension) => fileName.endsWith(extension));
+
+  if (!hasAllowedMime && !hasAllowedExtension) {
+    return 'Unsupported file type. Allowed: JPG, JPEG, PNG, WEBP, GIF, PDF, DOC, DOCX, and TXT.';
+  }
+
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return 'File exceeds 10MB size limit.';
+  }
+
+  return null;
+}
 
 async function ensureTaskExists(
   supabaseAdmin: { from: (table: string) => any },
@@ -129,12 +146,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         return NextResponse.json({ error: 'A file is required' }, { status: 400 });
       }
 
-      if (!ALLOWED_MIME_TYPES.has(file.type)) {
-        return NextResponse.json({ error: 'Unsupported file type' }, { status: 400 });
-      }
-
-      if (file.size > MAX_FILE_SIZE_BYTES) {
-        return NextResponse.json({ error: 'File exceeds 10MB size limit' }, { status: 400 });
+      const fileValidationError = getAttachmentFileError(file);
+      if (fileValidationError) {
+        return NextResponse.json({ error: fileValidationError }, { status: 400 });
       }
 
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -170,7 +184,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         await supabaseAdmin.storage.from('pa-task-attachments').remove([storagePath]);
       }
     } else {
-      const parsed = paTaskAttachmentCreateSchema.safeParse(await request.json());
+      const rawBody = await request.text();
+
+      if (!rawBody.trim()) {
+        return NextResponse.json({ error: 'Request body is required.' }, { status: 400 });
+      }
+
+      let parsedJson: unknown;
+      try {
+        parsedJson = JSON.parse(rawBody);
+      } catch {
+        return NextResponse.json({ error: 'Invalid JSON request body.' }, { status: 400 });
+      }
+
+      const parsed = paTaskAttachmentCreateSchema.safeParse(parsedJson);
       if (!parsed.success) {
         return NextResponse.json(
           { error: 'Invalid request body', details: parsed.error.flatten() },
