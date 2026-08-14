@@ -6,6 +6,7 @@ import { type UserRoleType, useAuth, useRequireAuth } from '@/contexts/AuthConte
 import { useAIChat } from '@/hooks/useAIChat';
 import { useAIChatSuggestions } from '@/hooks/useAIChatSuggestions';
 import { useAtsAccess } from '@/hooks/useAtsAccess';
+import { usePaTaskAccess } from '@/hooks/usePaTaskAccess';
 import {
   useConversations,
   useCreateConversation,
@@ -141,6 +142,9 @@ function SelfServiceLayoutInner({
   const marketingReportsAccess = useMarketingReportsAccess();
   const atsAccess = useAtsAccess(user.role === 'employee' || user.role === 'associate');
   const crmAccess = useCrmAccess(user.role === 'employee' || user.role === 'associate');
+  const paTaskAccess = usePaTaskAccess(
+    user.role === 'employee' || user.role === 'associate' || user.role === 'admin' || user.role === 'super_admin'
+  );
   const revenueForecastAccess = useRevenueForecastAccess(
     user.role === 'employee' || user.role === 'associate'
   );
@@ -164,6 +168,7 @@ function SelfServiceLayoutInner({
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           showMarketingReports={marketingReportsAccess.canAccess}
           showAtsAccess={Boolean(atsAccess.data?.canAccess)}
+          showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
           showCrmAccess={Boolean(crmAccess.data?.canAccess)}
           showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
           showExpenseDeskAccess={
@@ -194,6 +199,7 @@ function SelfServiceLayoutInner({
               onNavigate={onNavigate}
               showMarketingReports={marketingReportsAccess.canAccess}
               showAtsAccess={Boolean(atsAccess.data?.canAccess)}
+              showPaTaskAccess={Boolean(paTaskAccess.data?.canAccess)}
               showCrmAccess={Boolean(crmAccess.data?.canAccess)}
               showRevenueForecastAccess={Boolean(revenueForecastAccess.data?.canAccess)}
               showExpenseDeskAccess={

@@ -50,6 +50,7 @@ export interface SidebarProps {
   onToggleCollapse?: () => void;
   showMarketingReports?: boolean;
   showAtsAccess?: boolean;
+  showPaTaskAccess?: boolean;
   showCrmAccess?: boolean;
   showRevenueForecastAccess?: boolean;
   showExpenseDeskAccess?: boolean;
@@ -199,6 +200,7 @@ export function Sidebar({
   onToggleCollapse,
   showMarketingReports = true,
   showAtsAccess = false,
+  showPaTaskAccess = false,
   showCrmAccess = false,
   showRevenueForecastAccess = false,
   showExpenseDeskAccess = true,
@@ -240,6 +242,20 @@ export function Sidebar({
     (variant === 'employee' || variant === 'associate') && showAtsAccess
       ? [...filteredNavItems, ...employeeAtsNavItems]
       : filteredNavItems;
+
+  if (
+    (variant === 'employee' || variant === 'associate'
+      ? showPaTaskAccess
+      : variant === 'admin' || variant === 'super_admin')
+  ) {
+    const paTaskItem: NavItem = { label: 'PA Tracker', href: '/pa-tasks', icon: ClipboardList };
+    const tasksIndex = navItems.findIndex((it) => it.href === '/tasks' || it.href === '/super-admin/tasks');
+    if (tasksIndex >= 0) {
+      navItems = [...navItems.slice(0, tasksIndex + 1), paTaskItem, ...navItems.slice(tasksIndex + 1)];
+    } else {
+      navItems = [...navItems, paTaskItem];
+    }
+  }
 
   // Insert CRM nav item for granted non-admin users directly below Marketing Reports
   if ((variant === 'employee' || variant === 'associate') && showCrmAccess) {

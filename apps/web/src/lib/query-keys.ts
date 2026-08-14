@@ -47,6 +47,22 @@ export interface TaskFilters {
   pageSize?: number;
 }
 
+export interface PaTaskFilters {
+  search?: string;
+  statusId?: string;
+  priorityId?: string;
+  categoryId?: string;
+  assigneeId?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+  dateGivenFrom?: string;
+  dateGivenTo?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'updated_at' | 'due_date' | 'date_given' | 'created_at' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface ProjectFilters {
   status?: 'planning' | 'active' | 'on_hold' | 'completed' | 'archived';
   health?: 'on_track' | 'at_risk' | 'overdue';
@@ -551,6 +567,20 @@ export const queryKeys = {
     all: ['ats'] as const,
     access: () => [...queryKeys.ats.all, 'access'] as const,
     accessGrants: () => [...queryKeys.ats.all, 'access-grants'] as const,
+  },
+
+  paTasks: {
+    all: ['pa-tasks'] as const,
+    lists: () => [...queryKeys.paTasks.all, 'list'] as const,
+    list: (filters: PaTaskFilters) => [...queryKeys.paTasks.lists(), filters] as const,
+    detail: (id: string) => [...queryKeys.paTasks.all, 'detail', id] as const,
+    attachments: (taskId: string) => [...queryKeys.paTasks.all, 'attachments', taskId] as const,
+    statuses: () => [...queryKeys.paTasks.all, 'statuses'] as const,
+    priorities: () => [...queryKeys.paTasks.all, 'priorities'] as const,
+    categories: () => [...queryKeys.paTasks.all, 'categories'] as const,
+    access: () => [...queryKeys.paTasks.all, 'access'] as const,
+    accessGrants: () => [...queryKeys.paTasks.all, 'access-grants'] as const,
+    assignableUsers: () => [...queryKeys.paTasks.all, 'assignable-users'] as const,
   },
 
   // Tickets
