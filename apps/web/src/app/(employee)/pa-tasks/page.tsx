@@ -121,6 +121,58 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleDateString();
 }
 
+function getTaskDueStatus(task: PaTaskListRow): 'completed' | 'overdue' | 'on_time' | 'no_due_date' {
+  if (task.status?.label?.toLowerCase() === 'overdue') {
+    return 'overdue';
+  }
+
+  if (task.status?.is_terminal) {
+    return 'completed';
+  }
+
+  if (!task.due_date) {
+    return 'no_due_date';
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dueDate = new Date(task.due_date);
+  dueDate.setHours(0, 0, 0, 0);
+
+  if (dueDate < today) {
+    return 'overdue';
+  }
+
+  return 'on_time';
+}
+
+function getDueStatusBadgeClass(status: ReturnType<typeof getTaskDueStatus>) {
+  switch (status) {
+    case 'overdue':
+      return 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300';
+    case 'on_time':
+      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300';
+    case 'completed':
+      return 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300';
+    default:
+      return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200';
+  }
+}
+
+function getDueStatusLabel(status: ReturnType<typeof getTaskDueStatus>) {
+  switch (status) {
+    case 'overdue':
+      return 'Overdue';
+    case 'on_time':
+      return 'On Time';
+    case 'completed':
+      return 'Completed';
+    default:
+      return 'No Due Date';
+  }
+}
+
 function formatRole(role: string | null): string {
   if (!role) return 'Unknown role';
   return role
@@ -148,6 +200,7 @@ export default function PaTasksPage() {
   const [priorityId, setPriorityId] = useState('all');
   const [categoryId, setCategoryId] = useState('all');
   const [assigneeId, setAssigneeId] = useState('all');
+  const [dueStatus, setDueStatus] = useState<'all' | 'overdue' | 'on_time' | 'completed' | 'no_due_date'>('all');
 
   const [createOpen, setCreateOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -185,6 +238,7 @@ export default function PaTasksPage() {
       priorityId?: string;
       categoryId?: string;
       assigneeId?: string;
+      dueStatus?: 'overdue' | 'on_time' | 'completed' | 'no_due_date';
       sortBy: 'updated_at';
       sortOrder: 'desc';
       pageSize: number;
@@ -200,12 +254,20 @@ export default function PaTasksPage() {
     if (priorityId !== 'all') nextFilters.priorityId = priorityId;
     if (categoryId !== 'all') nextFilters.categoryId = categoryId;
     if (assigneeId !== 'all') nextFilters.assigneeId = assigneeId;
+    if (dueStatus !== 'all') nextFilters.dueStatus = dueStatus;
 
     return nextFilters;
-  }, [search, statusId, priorityId, categoryId, assigneeId]);
+  }, [search, statusId, priorityId, categoryId, assigneeId, dueStatus]);
 
   const tasksQuery = usePaTasks(filters, { enabled: canAccess });
   const taskRows = (tasksQuery.data?.data ?? []) as PaTaskListRow[];
+  const filteredTaskRows = useMemo(() => {
+    if (dueStatus === 'all') {
+      return taskRows;
+    }
+
+    return taskRows.filter((task) => getTaskDueStatus(task) === dueStatus);
+  }, [taskRows, dueStatus]);
   const selectedTaskQuery = usePaTask(selectedTaskId, detailOpen && Boolean(selectedTaskId));
   const selectedTask = (selectedTaskQuery.data?.data ?? null) as (PaTaskListRow & {
     attachments?: Array<{ id: string }>;
@@ -219,6 +281,10 @@ export default function PaTasksPage() {
   const deleteAttachment = useDeletePaTaskAttachment(selectedTaskId ?? '');
 
   const statuses = (statusesQuery.data?.data ?? []) as LookupItem[];
+  const selectableStatuses = useMemo(
+    () => statuses.filter((item) => !item.label || item.label.toLowerCase() !== 'overdue'),
+    [statuses]
+  );
   const priorities = (prioritiesQuery.data?.data ?? []) as LookupItem[];
   const categories = (categoriesQuery.data?.data ?? []) as LookupItem[];
 
@@ -478,7 +544,7 @@ export default function PaTasksPage() {
     if (!createOpen) {
       return;
     }
-    const defaultStatus = statuses.find((item) => item.is_default) ?? statuses[0];
+    const defaultStatus = selectableStatuses.find((item) => item.is_default) ?? selectableStatuses[0];
     const defaultPriority = priorities.find((item) => item.is_default) ?? priorities[0];
     setCreateForm((prev) => ({
       ...prev,
@@ -735,8 +801,8 @@ export default function PaTasksPage() {
           <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-            <div className="space-y-1.5 lg:col-span-2">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            <div className="space-y-1.5 xl:col-span-2">
               <Label>Search</Label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -749,7 +815,7 @@ export default function PaTasksPage() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {statuses.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
+                  {selectableStatuses.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -785,6 +851,19 @@ export default function PaTasksPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5">
+              <Label>Due Status</Label>
+              <Select value={dueStatus} onValueChange={(value) => setDueStatus(value as 'all' | 'overdue' | 'on_time' | 'completed' | 'no_due_date')}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                  <SelectItem value="on_time">On Time</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="no_due_date">No Due Date</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -797,6 +876,7 @@ export default function PaTasksPage() {
                 <TableRow>
                   <TableHead>Date Given</TableHead>
                   <TableHead>Due Date</TableHead>
+                  <TableHead>Due Status</TableHead>
                   <TableHead>Assigned To</TableHead>
                   <TableHead>Task</TableHead>
                   <TableHead>Document / Email Link (if available)</TableHead>
@@ -810,11 +890,11 @@ export default function PaTasksPage() {
               </TableHeader>
               <TableBody>
                 {tasksQuery.isLoading ? (
-                  <TableRow><TableCell colSpan={11} className="py-8 text-center text-muted-foreground">Loading tasks...</TableCell></TableRow>
-                ) : taskRows.length === 0 ? (
-                  <TableRow><TableCell colSpan={11} className="py-8 text-center text-muted-foreground">No tasks found.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={12} className="py-8 text-center text-muted-foreground">Loading tasks...</TableCell></TableRow>
+                ) : filteredTaskRows.length === 0 ? (
+                  <TableRow><TableCell colSpan={12} className="py-8 text-center text-muted-foreground">No tasks found.</TableCell></TableRow>
                 ) : (
-                  taskRows.map((task) => (
+                  filteredTaskRows.map((task) => (
                     <TableRow
                       key={task.id}
                       className="cursor-pointer align-top"
@@ -825,6 +905,11 @@ export default function PaTasksPage() {
                     >
                       <TableCell>{formatDate(task.date_given)}</TableCell>
                       <TableCell>{formatDate(task.due_date)}</TableCell>
+                      <TableCell>
+                        <Badge className={getDueStatusBadgeClass(getTaskDueStatus(task))}>
+                          {getDueStatusLabel(getTaskDueStatus(task))}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{task.assignee_name ?? 'Unassigned'}</TableCell>
                       <TableCell className="max-w-[320px] truncate font-medium">{task.title}</TableCell>
                       <TableCell className="max-w-[220px] align-top">
@@ -960,7 +1045,7 @@ export default function PaTasksPage() {
                   <Label>Status</Label>
                   <Select value={createForm.statusId} onValueChange={(value) => setCreateForm((p) => ({ ...p, statusId: value }))}>
                     <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
-                    <SelectContent>{statuses.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{selectableStatuses.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
@@ -1232,7 +1317,7 @@ export default function PaTasksPage() {
                       <Label>Status</Label>
                       <Select value={editForm.statusId} onValueChange={(value) => setEditForm((p) => ({ ...p, statusId: value }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>{statuses.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}</SelectContent>
+                        <SelectContent>{selectableStatuses.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">

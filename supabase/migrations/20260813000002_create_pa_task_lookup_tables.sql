@@ -162,9 +162,8 @@ INSERT INTO public.pa_task_statuses (label, color, is_default, is_terminal, sort
   ('Waiting for Response', 'amber', false, false, 30),
   ('Scheduled', 'violet', false, false, 40),
   ('Completed', 'emerald', false, true, 50),
-  ('Overdue', 'rose', false, true, 60),
-  ('Cancelled', 'zinc', false, true, 70),
-  ('Recurring', 'orange', false, false, 80);
+  ('Cancelled', 'zinc', false, true, 60),
+  ('Recurring', 'orange', false, false, 70);
 
 INSERT INTO public.pa_task_priorities (label, color, is_default, sort_order) VALUES
   ('Critical', 'rose', false, 10),

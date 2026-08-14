@@ -24,6 +24,7 @@ function parseQueryFilters(request: NextRequest) {
     priorityId: searchParams.get('priorityId') ?? undefined,
     categoryId: searchParams.get('categoryId') ?? undefined,
     assigneeId: searchParams.get('assigneeId') ?? undefined,
+    dueStatus: searchParams.get('dueStatus') ?? undefined,
     dueDateFrom: searchParams.get('dueDateFrom') ?? undefined,
     dueDateTo: searchParams.get('dueDateTo') ?? undefined,
     dateGivenFrom: searchParams.get('dateGivenFrom') ?? undefined,
@@ -111,7 +112,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch PA tasks' }, { status: 500 });
     }
 
-    const taskRows = rows ?? [];
+    const taskRows = (rows ?? []).filter((row) => {
+      if (!filters.dueStatus) {
+        return true;
+      }
+
+      const statusLabel = row.status?.label?.toLowerCase();
+      if (statusLabel === 'overdue' || row.status?.is_terminal) {
+        return filters.dueStatus === 'overdue' || (row.status?.is_terminal && filters.dueStatus === 'completed');
+      }
+
+      if (!row.due_date) {
+        return filters.dueStatus === 'no_due_date';
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dueDate = new Date(row.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+
+      return filters.dueStatus === (dueDate < today ? 'overdue' : 'on_time');
+    });
+
     const userIds = Array.from(
       new Set(
         taskRows

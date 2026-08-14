@@ -76,12 +76,15 @@ export interface PaTaskAssignableUser {
   accessLevel: PaTaskAccessLevel;
 }
 
+export type PaTaskDueStatusFilter = 'overdue' | 'on_time' | 'completed' | 'no_due_date';
+
 export interface PaTaskFilters {
   search?: string;
   statusId?: string;
   priorityId?: string;
   categoryId?: string;
   assigneeId?: string;
+  dueStatus?: PaTaskDueStatusFilter;
   dueDateFrom?: string;
   dueDateTo?: string;
   dateGivenFrom?: string;

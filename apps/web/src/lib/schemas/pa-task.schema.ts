@@ -51,6 +51,7 @@ export const paTaskFiltersSchema = z.object({
   priorityId: z.string().uuid().optional(),
   categoryId: z.string().uuid().optional(),
   assigneeId: z.string().uuid().optional(),
+  dueStatus: z.enum(['overdue', 'on_time', 'completed', 'no_due_date']).optional(),
   dueDateFrom: dateOnlySchema.optional(),
   dueDateTo: dateOnlySchema.optional(),
   dateGivenFrom: dateOnlySchema.optional(),
