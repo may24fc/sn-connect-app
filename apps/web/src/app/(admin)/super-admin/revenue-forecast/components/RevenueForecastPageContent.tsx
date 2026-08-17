@@ -69,7 +69,9 @@ const scenarioOptions: Array<{ key: ForecastScenarioKey; label: string; subLabel
 export function RevenueForecastPageContent({
   canManage,
 }: RevenueForecastPageContentProps): ReactNode {
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
   const { addToast } = useToast();
 
   const [targetYear, setTargetYear] = useState(currentYear);
@@ -117,6 +119,31 @@ export function RevenueForecastPageContent({
     targetYearActual: row.targetYearActual,
     targetYearProjected: row.targetYearProjected,
   }));
+
+  const earnedPeriodEndMonth = useMemo(() => {
+    if (targetYear < currentYear) {
+      return 12;
+    }
+    if (targetYear > currentYear) {
+      return 0;
+    }
+    return currentMonth;
+  }, [currentMonth, currentYear, targetYear]);
+
+  const earnedRangeLabel = useMemo(() => {
+    if (earnedPeriodEndMonth <= 0) {
+      return 'Earned (no elapsed months)';
+    }
+    return `Earned Jan-${REVENUE_MONTHS[earnedPeriodEndMonth - 1]}`;
+  }, [earnedPeriodEndMonth]);
+
+  const projectionRangeLabel = useMemo(() => {
+    if (earnedPeriodEndMonth >= 12) {
+      return null;
+    }
+    const startMonth = earnedPeriodEndMonth + 1;
+    return `${REVENUE_MONTHS[startMonth - 1]}-Dec projected from historical growth scenarios.`;
+  }, [earnedPeriodEndMonth]);
 
   const isBusy =
     entriesQuery.isLoading ||
@@ -267,7 +294,10 @@ export function RevenueForecastPageContent({
             {targetYear} Projection
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Jan-Jun actuals locked in. Jul-Dec projected from historical growth scenarios.
+            {earnedPeriodEndMonth > 0
+              ? `Jan-${REVENUE_MONTHS[Math.max(earnedPeriodEndMonth - 1, 0)]} actuals locked in.`
+              : 'No months elapsed yet in this forecast year.'}{' '}
+            {projectionRangeLabel ?? ''}
           </p>
         </div>
 
@@ -344,7 +374,7 @@ export function RevenueForecastPageContent({
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>Earned Jan-Jun</CardDescription>
+                <CardDescription>{earnedRangeLabel}</CardDescription>
                 <CardTitle className="text-3xl text-blue-500">
                   {formatCurrency(forecast.earnedJanToDateAud, 'AUD')}
                 </CardTitle>
